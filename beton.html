@@ -3,139 +3,140 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BridgeAI Studios — Calculs quotidiens Béton</title>
+<title>BridgeAI Studios — Calculs Béton</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#f7f6f3;--bg2:#eeecea;--white:#ffffff;
-  --ink:#1a1c22;--ink2:#3a3d48;--ink3:#6b7080;
-  --gold:#b8922a;--gold2:#d4a843;--gold-light:#fdf6e3;
-  --blue:#1e56c8;--teal:#0e9b88;
-  --border:#e0ddd8;--border2:rgba(184,146,42,.25);
-  --shadow:0 2px 12px rgba(0,0,0,.06);
+  --bg:#f9f8f5;--bg2:#f0ede8;--white:#fff;
+  --ink:#18191f;--ink2:#3c3f4d;--ink3:#7a7e8e;
+  --gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;
+  --blue:#1a4fd6;--teal:#0a8a78;--red:#c0392b;
+  --border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);
 }
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px}
 
-/* NAV */
-nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(--border);background:rgba(247,246,243,.95);backdrop-filter:blur(12px)}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px;max-width:1280px;margin:0 auto}
-.nav-logo{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;color:var(--ink);text-decoration:none}
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(249,248,245,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 40px}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px;max-width:1280px;margin:0 auto}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--ink);text-decoration:none;letter-spacing:.01em}
 .nav-logo span{color:var(--gold)}
-.nav-back{font-size:12px;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s;letter-spacing:.02em}
+.nav-center{display:flex;align-items:center;gap:6px}
+.nav-norm{display:flex;gap:2px;background:var(--bg2);border-radius:6px;padding:3px;border:1px solid var(--border)}
+.norm-btn{padding:5px 14px;border-radius:4px;border:none;font-size:11px;font-weight:400;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:all .2s}
+.norm-btn.active{background:var(--gold);color:var(--white);font-weight:500}
+.nav-right{display:flex;align-items:center;gap:10px}
+.lang-toggle{display:flex;gap:2px;background:var(--bg2);border-radius:6px;padding:3px;border:1px solid var(--border)}
+.lang-btn{padding:4px 10px;border-radius:4px;border:none;font-size:11px;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:all .2s}
+.lang-btn.active{background:var(--gold);color:var(--white);font-weight:500}
+.nav-back{font-size:12px;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s}
 .nav-back:hover{color:var(--ink)}
 .nav-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.lang-toggle{display:flex;gap:1px;background:var(--bg2);border-radius:6px;padding:3px;border:1px solid var(--border)}
-.lang-btn{padding:4px 11px;border-radius:4px;border:none;font-size:11px;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;letter-spacing:.06em;transition:all .2s}
-.lang-btn.active{background:var(--gold);color:var(--white);font-weight:500}
 
-/* LAYOUT */
-.page{display:grid;grid-template-columns:256px 1fr;min-height:calc(100vh - 60px);max-width:1280px;margin:0 auto;padding:0 5%}
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:220px 1fr;max-width:1280px;margin:0 auto;padding:0 40px;min-height:calc(100vh - 56px)}
 
-/* SIDEBAR */
-.sidebar{border-right:1px solid var(--border);padding:28px 20px 28px 0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
-.sidebar-norm{display:flex;gap:3px;margin-bottom:24px;background:var(--bg2);border-radius:8px;padding:3px;border:1px solid var(--border)}
-.norm-btn{flex:1;padding:7px;border-radius:6px;border:none;font-size:12px;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;transition:all .2s;text-align:center;font-weight:400}
-.norm-btn.active{background:var(--gold);color:var(--white);font-weight:500}
-.sidebar-label{font-size:10px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;font-weight:400}
-.sidebar-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;transition:all .2s;margin-bottom:3px;border:1px solid transparent}
-.sidebar-item:hover{background:var(--white);border-color:var(--border)}
-.sidebar-item.active{background:var(--white);border-color:var(--border2);box-shadow:var(--shadow)}
-.sidebar-item-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.sidebar-item-label{font-size:13px;color:var(--ink3);transition:color .2s}
-.sidebar-item.active .sidebar-item-label,.sidebar-item:hover .sidebar-item-label{color:var(--ink)}
+/* ── SIDEBAR ── */
+.sidebar{border-right:1px solid var(--border);padding:28px 20px 40px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sidebar-section{margin-bottom:6px}
+.sidebar-label{font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:0 10px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:all .18s;border:1px solid transparent;margin-bottom:2px}
+.nav-item:hover{background:var(--white);border-color:var(--border)}
+.nav-item.active{background:var(--white);border-color:var(--gold-border);box-shadow:var(--shadow)}
+.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.nav-label{font-size:12px;color:var(--ink3);transition:color .2s}
+.nav-item.active .nav-label,.nav-item:hover .nav-label{color:var(--ink);font-weight:400}
 
-/* CONTENT */
-.content{padding:32px 0 48px 40px}
+/* ── CONTENT ── */
+.content{padding:36px 0 60px 44px}
 
-/* CALC HEADER */
-.calc-header{margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
-.calc-eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
-.calc-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;color:var(--ink);margin-bottom:8px;line-height:1.2}
-.calc-norm-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 11px;border-radius:99px;border:1px solid var(--border2);background:var(--gold-light);font-size:11px;color:var(--gold);letter-spacing:.06em;margin-bottom:8px}
-.calc-desc{font-size:13px;color:var(--ink3);line-height:1.7;max-width:580px}
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:32px}
+.page-eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--ink);margin-bottom:10px;line-height:1.2}
+.norm-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:10px;color:var(--gold);letter-spacing:.08em;margin-bottom:8px}
+.page-desc{font-size:13px;color:var(--ink3);line-height:1.7;max-width:560px;font-weight:300}
+.page-divider{height:1px;background:var(--border);margin:24px 0}
 
-/* SCHEMA */
-.schema-box{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+/* ── SCHEMA ── */
+.schema{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:center}
 
-/* FORM */
-.calc-form{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
-.form-section-title{font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
-.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
-.form-grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+/* ── CARD ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+
+/* ── FORM ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px}
 .field{display:flex;flex-direction:column;gap:4px}
 .field label{font-size:11px;color:var(--ink3);letter-spacing:.02em}
-.field input,.field select{height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
-.field input:focus,.field select:focus{border-color:var(--gold);background:var(--white)}
-.field-unit{position:relative}
-.field-unit input{padding-right:44px}
-.unit-label{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--ink3);pointer-events:none}
-.btn-calc{padding:10px 24px;border-radius:7px;background:var(--gold);border:none;color:var(--white);font-size:13px;font-weight:400;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.04em;transition:opacity .2s}
-.btn-calc:hover{opacity:.88}
-.btn-reset{padding:10px 18px;border-radius:7px;background:transparent;border:1px solid var(--border);color:var(--ink3);font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-left:8px}
-.btn-reset:hover{border-color:var(--ink3);color:var(--ink)}
-.btn-export{padding:10px 18px;border-radius:7px;background:transparent;border:1px solid var(--border2);color:var(--gold);font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s;margin-left:8px;letter-spacing:.02em}
-.btn-export:hover{background:var(--gold-light);border-color:var(--gold)}
-.error-msg{display:none;padding:10px 14px;border-radius:7px;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;font-size:12px;margin-bottom:14px}
-.error-msg.show{display:block}
+.field input,.field select{height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border-color .2s,background .2s}
+.field input:focus,.field select:focus{border-color:var(--gold2);background:var(--white)}
+.fu{position:relative}
+.fu input{padding-right:40px}
+.fu-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--ink3);pointer-events:none}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-primary{padding:9px 22px;border-radius:7px;background:var(--gold);border:none;color:var(--white);font-size:12px;font-weight:400;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:opacity .2s}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{padding:9px 16px;border-radius:7px;background:transparent;border:1px solid var(--border);color:var(--ink3);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.btn-secondary:hover{border-color:var(--ink3);color:var(--ink)}
+.btn-pdf{padding:9px 16px;border-radius:7px;background:transparent;border:1px solid var(--gold-border);color:var(--gold);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.04em;transition:all .2s}
+.btn-pdf:hover{background:var(--gold-bg);border-color:var(--gold2)}
+.err{display:none;padding:9px 13px;border-radius:7px;background:#fdf2f2;border:1px solid #f5c0be;color:var(--red);font-size:12px;margin-bottom:14px}
+.err.on{display:block}
 
-/* RESULTS */
-.results{background:var(--white);border:1px solid var(--border2);border-radius:14px;padding:24px;display:none;box-shadow:var(--shadow)}
-.results.show{display:block}
-.results-title{font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
-.result-card{background:var(--bg);border-radius:9px;padding:13px;border:1px solid var(--border)}
-.result-card.highlight{border-color:var(--border2);background:var(--gold-light)}
-.result-label{font-size:10px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
-.result-value{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--ink)}
-.result-value.gold{color:var(--gold)}
-.result-value.ok{color:var(--teal)}
-.result-value.nok{color:#dc2626}
-.result-unit{font-size:11px;color:var(--ink3);margin-left:3px;font-family:'Outfit',sans-serif}
-.result-note{font-size:11px;color:var(--ink3);margin-top:3px}
-.verif-row{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-radius:7px;background:var(--bg);margin-bottom:6px;border:1px solid var(--border)}
-.verif-label{font-size:12px;color:var(--ink3)}
-.verif-val{font-size:12px;font-weight:400}
-.verif-val.ok{color:var(--teal)}
-.verif-val.nok{color:#dc2626}
-.verif-val.warn{color:#d97706}
-.formula-box{background:var(--bg2);border-radius:8px;padding:14px;border:1px solid var(--border);font-size:12px;color:var(--ink3);line-height:1.9;font-family:'Courier New',monospace;margin-top:14px}
-.formula-box span{color:var(--gold);font-weight:500}
+/* ── RESULTS ── */
+.results{background:var(--white);border:1px solid var(--gold-border);border-radius:12px;padding:24px;display:none;box-shadow:var(--shadow)}
+.results.on{display:block}
+.res-title{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.res-card{background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)}
+.res-card.hi{border-color:var(--gold-border);background:var(--gold-bg)}
+.res-lbl{font-size:9px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.res-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--ink)}
+.res-val.gold{color:var(--gold)}
+.res-val.ok{color:var(--teal)}
+.res-val.ko{color:var(--red)}
+.res-unit{font-size:10px;color:var(--ink3);margin-left:2px;font-family:'Outfit',sans-serif}
+.res-note{font-size:10px;color:var(--ink3);margin-top:3px}
+.chk-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:7px;background:var(--bg);margin-bottom:5px;border:1px solid var(--border)}
+.chk-lbl{font-size:11px;color:var(--ink3)}
+.chk-val{font-size:11px;font-weight:400}
+.chk-val.ok{color:var(--teal)}
+.chk-val.ko{color:var(--red)}
+.chk-val.warn{color:#c07830}
+.formula{background:var(--bg2);border-radius:8px;padding:13px 16px;font-family:'Courier New',monospace;font-size:11px;color:var(--ink3);line-height:2;margin-top:14px;border:1px solid var(--border)}
+.formula b{color:var(--gold);font-weight:normal}
 
-/* CARACT TABLE */
-.caract-table{width:100%;border-collapse:collapse;font-size:13px}
-.caract-table th{padding:9px 14px;text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--border)}
-.caract-table td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--ink)}
-.caract-table tr:last-child td{border:none}
-.caract-table tr:hover td{background:var(--bg)}
-.caract-table .val{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);font-weight:400}
-.class-select{width:100%;height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border-color .2s;cursor:pointer}
-.class-select:focus{border-color:var(--gold)}
+/* ── CARACT TABLE ── */
+.ctable{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
+.ctable th{padding:8px 12px;text-align:left;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--border)}
+.ctable td{padding:9px 12px;border-bottom:1px solid rgba(226,221,214,.6);color:var(--ink2);vertical-align:middle}
+.ctable tr:last-child td{border:none}
+.ctable tr:hover td{background:var(--bg)}
+.ctable .sym{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--gold);font-weight:400}
+.ctable .val{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--ink)}
+.ctable .unit{font-size:11px;color:var(--ink3)}
 
-@media(max-width:900px){.page{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);padding:20px 0}.content{padding:24px 0}.form-grid,.form-grid-3,.form-grid-4{grid-template-columns:1fr 1fr}}
-@media(max-width:540px){.form-grid,.form-grid-3,.form-grid-4{grid-template-columns:1fr}}
-
-@media print {
-  nav, .sidebar, .btn-calc, .btn-reset, .btn-export, .error-msg { display: none !important; }
-  body { background: white; color: black; font-size: 11px; }
-  .page { grid-template-columns: 1fr; padding: 0; }
-  .content { padding: 0; }
-  [id^="calc-"] { display: block !important; }
-  .results { display: block !important; border: 1px solid #ddd; }
-  .calc-form { box-shadow: none; border: 1px solid #ddd; }
-  .schema-box { border: 1px solid #ddd; }
-  .result-card { border: 1px solid #ddd; }
-  .verif-row { border: 1px solid #eee; }
-  .caract-table th { background: #f5f5f5; }
-  .formula-box { background: #f9f9f9; }
-  @page { margin: 15mm; size: A4; }
+/* ── PRINT ── */
+@media print{
+  nav,.sidebar,.actions,.err{display:none!important}
+  body{background:#fff;font-size:10px}
+  .layout{grid-template-columns:1fr;padding:0}
+  .content{padding:0}
+  [id^="sec-"]{display:none!important}
+  .results{display:block!important;border:1px solid #ccc;box-shadow:none}
+  .card{box-shadow:none;border:1px solid #ddd}
+  .schema{border:1px solid #ddd}
+  .ctable th{background:#f5f5f5}
+  @page{margin:15mm;size:A4}
 }
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);padding:16px 0}.content{padding:24px 0}.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -143,93 +144,97 @@ nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(-
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
-    <a href="index.html" class="nav-back">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      <span data-fr="Retour à l'accueil" data-en="Back to home">Retour à l'accueil</span>
-    </a>
-    <div class="lang-toggle">
-      <button class="lang-btn active" id="btn-fr" onclick="setLang('fr')">FR</button>
-      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    <div class="nav-center">
+      <div class="nav-norm">
+        <button class="norm-btn active" id="norm-ec2" onclick="setNorm('ec2')">EC2</button>
+        <button class="norm-btn" id="norm-bael" onclick="setNorm('bael')">BAEL 91</button>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="btn-fr" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+      </div>
+      <a href="index.html" class="nav-back">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <span data-fr="Accueil" data-en="Home">Accueil</span>
+      </a>
     </div>
   </div>
 </nav>
 
-<div class="page">
+<div class="layout">
+
+  <!-- SIDEBAR -->
   <aside class="sidebar">
-    <div class="sidebar-norm">
-      <button class="norm-btn active" id="norm-ec2" onclick="setNorm('ec2')">EC2</button>
-      <button class="norm-btn" id="norm-bael" onclick="setNorm('bael')">BAEL 91</button>
-    </div>
-    <div class="sidebar-label" data-fr="Calculs disponibles" data-en="Available calculations">Calculs disponibles</div>
-    <div class="sidebar-item active" onclick="showCalc('caract',this)">
-      <div class="sidebar-item-dot" style="background:#64748b"></div>
-      <span class="sidebar-item-label" data-fr="Caractéristiques béton" data-en="Concrete properties">Caractéristiques béton</span>
-    </div>
-    <div class="sidebar-item" onclick="showCalc('flex-simple',this)">
-      <div class="sidebar-item-dot" style="background:var(--gold)"></div>
-      <span class="sidebar-item-label" data-fr="Flexion simple" data-en="Simple bending">Flexion simple</span>
-    </div>
-    <div class="sidebar-item" onclick="showCalc('flex-composee',this)">
-      <div class="sidebar-item-dot" style="background:var(--blue)"></div>
-      <span class="sidebar-item-label" data-fr="Flexion composée" data-en="Combined bending">Flexion composée</span>
-    </div>
-    <div class="sidebar-item" onclick="showCalc('cisaillement',this)">
-      <div class="sidebar-item-dot" style="background:var(--teal)"></div>
-      <span class="sidebar-item-label" data-fr="Cisaillement" data-en="Shear">Cisaillement</span>
+    <div class="sidebar-section">
+      <div class="sidebar-label" data-fr="Béton" data-en="Concrete">Béton</div>
+      <div class="nav-item active" onclick="show('caract',this)">
+        <div class="nav-dot" style="background:#64748b"></div>
+        <span class="nav-label" data-fr="Caractéristiques" data-en="Properties">Caractéristiques</span>
+      </div>
+      <div class="nav-item" onclick="show('flexsimple',this)">
+        <div class="nav-dot" style="background:var(--gold)"></div>
+        <span class="nav-label" data-fr="Flexion simple" data-en="Simple bending">Flexion simple</span>
+      </div>
+      <div class="nav-item" onclick="show('flexcomposee',this)">
+        <div class="nav-dot" style="background:var(--blue)"></div>
+        <span class="nav-label" data-fr="Flexion composée" data-en="Combined bending">Flexion composée</span>
+      </div>
+      <div class="nav-item" onclick="show('cisaillement',this)">
+        <div class="nav-dot" style="background:var(--teal)"></div>
+        <span class="nav-label" data-fr="Cisaillement" data-en="Shear">Cisaillement</span>
+      </div>
     </div>
   </aside>
 
   <main class="content">
 
-    <!-- ══════════════════════════════════════
-         CARACTÉRISTIQUES BÉTON
-    ══════════════════════════════════════ -->
-    <div id="calc-caract">
-      <div class="calc-header">
-        <div class="calc-eyebrow" data-fr="Calculs quotidiens Béton" data-en="Daily Concrete Calculations">Calculs quotidiens Béton</div>
-        <div class="calc-title" data-fr="Caractéristiques du béton" data-en="Concrete properties">Caractéristiques du béton</div>
-        <div class="calc-norm-badge" id="badge-norm-ca">EC2 — EN 1992-1-1</div>
-        <p class="calc-desc" data-fr="Propriétés mécaniques du béton selon la classe de résistance. Résistances caractéristiques, module d'élasticité, déformations limites." data-en="Mechanical properties of concrete by strength class. Characteristic strengths, elastic modulus, limit strains.">Propriétés mécaniques du béton selon la classe de résistance. Résistances caractéristiques, module d'élasticité, déformations limites.</p>
+    <!-- ════════════════════════════════
+         CARACTÉRISTIQUES
+    ════════════════════════════════ -->
+    <div id="sec-caract">
+      <div class="page-header">
+        <div class="page-eyebrow" data-fr="Calculs béton" data-en="Concrete calculations">Calculs béton</div>
+        <div class="page-title" data-fr="Caractéristiques du béton" data-en="Concrete properties">Caractéristiques du béton</div>
+        <div class="norm-tag" id="ntag-ca">EC2 — EN 1992-1-1</div>
+        <p class="page-desc" data-fr="Propriétés mécaniques selon la classe de résistance : résistances caractéristiques, module d'élasticité, déformations limites." data-en="Mechanical properties by strength class: characteristic strengths, elastic modulus, limit strains.">Propriétés mécaniques selon la classe de résistance : résistances caractéristiques, module d'élasticité, déformations limites.</p>
       </div>
 
-      <!-- Schéma courbe σ-ε béton -->
-      <div class="schema-box">
-        <svg width="520" height="200" viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg">
-          <!-- Axes -->
-          <line x1="60" y1="170" x2="460" y2="170" stroke="#d0ccc6" stroke-width="1.5"/>
-          <line x1="60" y1="20" x2="60" y2="170" stroke="#d0ccc6" stroke-width="1.5"/>
-          <!-- Arrow axes -->
-          <polyline points="455,165 460,170 455,175" fill="none" stroke="#d0ccc6" stroke-width="1.5" stroke-linecap="round"/>
-          <polyline points="55,25 60,20 65,25" fill="none" stroke="#d0ccc6" stroke-width="1.5" stroke-linecap="round"/>
-          <!-- Labels axes -->
-          <text x="465" y="174" font-family="Outfit" font-size="11" fill="#9ca3af">ε</text>
-          <text x="46" y="18" font-family="Outfit" font-size="11" fill="#9ca3af">σ</text>
-          <!-- Courbe EC2 (parabole-rectangle) -->
-          <path d="M60,170 Q140,40 200,32 L320,32 L320,170" fill="rgba(184,146,42,.08)" stroke="#b8922a" stroke-width="2" fill-opacity="1"/>
-          <!-- BAEL (parabole seule) -->
-          <path d="M60,170 Q160,45 260,35 L340,35 L340,170" fill="none" stroke="#1e56c8" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <!-- Schéma courbe σ-ε -->
+      <div class="schema">
+        <svg width="500" height="180" viewBox="0 0 500 180">
+          <line x1="50" y1="155" x2="450" y2="155" stroke="#d0ccc6" stroke-width="1.2"/>
+          <line x1="50" y1="20" x2="50" y2="155" stroke="#d0ccc6" stroke-width="1.2"/>
+          <polyline points="446,151 450,155 446,159" fill="none" stroke="#d0ccc6" stroke-width="1.2" stroke-linecap="round"/>
+          <polyline points="46,24 50,20 54,24" fill="none" stroke="#d0ccc6" stroke-width="1.2" stroke-linecap="round"/>
+          <text x="455" y="158" font-family="Cormorant Garamond" font-size="13" fill="#9ca3af" font-style="italic">ε</text>
+          <text x="38" y="18" font-family="Cormorant Garamond" font-size="13" fill="#9ca3af" font-style="italic">σ</text>
+          <!-- Courbe EC2 parabole-rectangle -->
+          <path d="M50,155 C100,155 140,40 180,28 L290,28 L290,155" fill="rgba(160,120,40,.08)" stroke="#a07828" stroke-width="1.8"/>
+          <!-- Courbe BAEL parabole -->
+          <path d="M50,155 C110,155 160,42 210,30 L310,30 L310,155" fill="none" stroke="#1a4fd6" stroke-width="1.4" stroke-dasharray="6 4"/>
           <!-- Annotations -->
-          <line x1="200" y1="32" x2="200" y2="170" stroke="#b8922a" stroke-width="1" stroke-dasharray="3 3"/>
-          <line x1="320" y1="32" x2="320" y2="170" stroke="#b8922a" stroke-width="1" stroke-dasharray="3 3"/>
-          <text x="185" y="185" font-family="Outfit" font-size="10" fill="#b8922a">ε_c2</text>
-          <text x="308" y="185" font-family="Outfit" font-size="10" fill="#b8922a">ε_cu2</text>
-          <text x="62" y="28" font-family="Outfit" font-size="10" fill="#b8922a">fcd</text>
+          <line x1="180" y1="28" x2="180" y2="155" stroke="#a07828" stroke-width="0.8" stroke-dasharray="3 3"/>
+          <line x1="290" y1="28" x2="290" y2="155" stroke="#a07828" stroke-width="0.8" stroke-dasharray="3 3"/>
+          <text x="165" y="170" font-family="Outfit" font-size="9" fill="#a07828">ε_c2</text>
+          <text x="278" y="170" font-family="Outfit" font-size="9" fill="#a07828">ε_cu2</text>
+          <text x="53" y="25" font-family="Cormorant Garamond" font-size="12" fill="#a07828" font-style="italic">f_cd</text>
           <!-- Légende -->
-          <line x1="360" y1="50" x2="385" y2="50" stroke="#b8922a" stroke-width="2"/>
-          <text x="390" y="54" font-family="Outfit" font-size="10" fill="#6b7080">EC2</text>
-          <line x1="360" y1="68" x2="385" y2="68" stroke="#1e56c8" stroke-width="1.5" stroke-dasharray="5 4"/>
-          <text x="390" y="72" font-family="Outfit" font-size="10" fill="#6b7080">BAEL</text>
-          <!-- Zone hachurée -->
-          <text x="180" y="110" font-family="Cormorant Garamond" font-size="13" fill="#b8922a" font-style="italic">Parabole-rectangle</text>
+          <line x1="340" y1="45" x2="365" y2="45" stroke="#a07828" stroke-width="1.8"/>
+          <text x="370" y="49" font-family="Outfit" font-size="10" fill="#7a7e8e">EC2</text>
+          <line x1="340" y1="63" x2="365" y2="63" stroke="#1a4fd6" stroke-width="1.4" stroke-dasharray="6 4"/>
+          <text x="370" y="67" font-family="Outfit" font-size="10" fill="#7a7e8e">BAEL 91</text>
+          <text x="160" y="95" font-family="Cormorant Garamond" font-size="12" fill="#a07828" font-style="italic">Parabole — rectangle</text>
         </svg>
       </div>
 
-      <div class="calc-form">
-        <div class="form-section-title" data-fr="Classe de résistance" data-en="Strength class">Classe de résistance</div>
-        <div class="form-grid">
+      <div class="card">
+        <div class="card-title" data-fr="Classe de résistance" data-en="Strength class">Classe de résistance</div>
+        <div style="max-width:180px">
           <div class="field">
             <label data-fr="Classe béton" data-en="Concrete class">Classe béton</label>
-            <select class="class-select" id="ca-fck" onchange="calcCaract()">
+            <select id="ca-fck" onchange="calcCaract()">
               <option value="20">C20/25</option>
               <option value="25">C25/30</option>
               <option value="30" selected>C30/37</option>
@@ -239,25 +244,17 @@ nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(-
               <option value="50">C50/60</option>
             </select>
           </div>
-          <div class="field">
-            <label data-fr="Environnement" data-en="Environment">Environnement</label>
-            <select class="class-select" id="ca-env">
-              <option value="sec" data-fr="Sec (XC1)" data-en="Dry (XC1)">Sec (XC1)</option>
-              <option value="humide" selected data-fr="Humide (XC2/XC3)" data-en="Humid (XC2/XC3)">Humide (XC2/XC3)</option>
-              <option value="agressif" data-fr="Agressif (XC4/XS)" data-en="Aggressive (XC4/XS)">Agressif (XC4/XS)</option>
-            </select>
-          </div>
+        </div>
+        <div style="margin-top:14px" class="actions">
+          <button class="btn-pdf" onclick="exportPDF('caract')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
         </div>
       </div>
 
-      <div style="margin-bottom:12px">
-        <button class="btn-export" onclick="exportPDF('caract')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
-      </div>
-      <div class="results show" id="ca-results">
-        <div class="results-title" data-fr="Caractéristiques mécaniques" data-en="Mechanical properties">Caractéristiques mécaniques</div>
-        <div class="results-grid" id="ca-grid"></div>
-        <div style="margin-top:16px;overflow-x:auto">
-          <table class="caract-table" id="ca-table">
+      <div class="results on" id="res-ca">
+        <div class="res-title" data-fr="Propriétés mécaniques" data-en="Mechanical properties">Propriétés mécaniques</div>
+        <div class="res-grid" id="ca-cards"></div>
+        <div style="overflow-x:auto">
+          <table class="ctable">
             <thead>
               <tr>
                 <th data-fr="Propriété" data-en="Property">Propriété</th>
@@ -274,328 +271,295 @@ nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(-
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
+    <!-- ════════════════════════════════
          FLEXION SIMPLE
-    ══════════════════════════════════════ -->
-    <div id="calc-flex-simple" style="display:none">
-      <div class="calc-header">
-        <div class="calc-eyebrow" data-fr="Calculs quotidiens Béton" data-en="Daily Concrete Calculations">Calculs quotidiens Béton</div>
-        <div class="calc-title" data-fr="Flexion simple" data-en="Simple bending">Flexion simple</div>
-        <div class="calc-norm-badge" id="badge-norm-fs">EC2 — EN 1992-1-1</div>
-        <p class="calc-desc" data-fr="Calcul de la section d'armatures longitudinales pour une section rectangulaire soumise à un moment de flexion. Vérification ELU et ELS." data-en="Calculation of longitudinal reinforcement for a rectangular section under bending moment. ULS and SLS verification.">Calcul de la section d'armatures longitudinales pour une section rectangulaire soumise à un moment de flexion. Vérification ELU et ELS.</p>
+    ════════════════════════════════ -->
+    <div id="sec-flexsimple" style="display:none">
+      <div class="page-header">
+        <div class="page-eyebrow" data-fr="Calculs béton" data-en="Concrete calculations">Calculs béton</div>
+        <div class="page-title" data-fr="Flexion simple" data-en="Simple bending">Flexion simple</div>
+        <div class="norm-tag" id="ntag-fs">EC2 — EN 1992-1-1</div>
+        <p class="page-desc" data-fr="Section rectangulaire soumise à un moment de flexion. Calcul de la section d'armatures longitudinales — ELU et ELS." data-en="Rectangular section under bending. Calculation of longitudinal reinforcement — ULS and SLS.">Section rectangulaire soumise à un moment de flexion. Calcul de la section d'armatures longitudinales — ELU et ELS.</p>
       </div>
 
-      <!-- Schéma flexion simple -->
-      <div class="schema-box">
-        <svg width="560" height="200" viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
-          <!-- Section rectangulaire -->
-          <rect x="60" y="30" width="120" height="140" fill="rgba(184,146,42,.06)" stroke="#b8922a" stroke-width="1.5" rx="2"/>
-          <!-- Armatures tendues -->
-          <circle cx="90" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="115" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="140" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <!-- Enrobage -->
-          <line x1="60" y1="149" x2="84" y2="149" stroke="#b8922a" stroke-width="0.8" stroke-dasharray="3 2"/>
-          <text x="62" y="145" font-family="Outfit" font-size="9" fill="#b8922a">c</text>
-          <!-- Cotes b -->
-          <line x1="60" y1="20" x2="180" y2="20" stroke="#9ca3af" stroke-width="1" marker-start="url(#arr)" marker-end="url(#arr)"/>
-          <text x="113" y="16" font-family="Outfit" font-size="10" fill="#6b7080" text-anchor="middle">b</text>
-          <!-- Cotes h -->
-          <line x1="195" y1="30" x2="195" y2="170" stroke="#9ca3af" stroke-width="1" marker-start="url(#arr2)" marker-end="url(#arr2)"/>
-          <text x="202" y="105" font-family="Outfit" font-size="10" fill="#6b7080">h</text>
-          <!-- Cote d -->
-          <line x1="210" y1="30" x2="210" y2="155" stroke="#b8922a" stroke-width="1" stroke-dasharray="3 2"/>
-          <text x="217" y="100" font-family="Outfit" font-size="10" fill="#b8922a">d</text>
-          <!-- Moment flèche -->
-          <path d="M30,100 Q20,115 30,130" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-          <polyline points="27,128 30,130 28,125" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="10" y="115" font-family="Cormorant Garamond" font-size="13" fill="#dc2626" font-style="italic">M</text>
-
-          <!-- Diagramme contraintes béton -->
-          <text x="270" y="22" font-family="Outfit" font-size="10" fill="#6b7080" text-anchor="middle">Diagramme σ</text>
-          <rect x="230" y="30" width="80" height="112" fill="none" stroke="#e0ddd8" stroke-width="1" rx="2"/>
-          <!-- Zone comprimée (parabole-rectangle) -->
-          <path d="M230,30 L310,30 L310,95 L230,95Z" fill="rgba(184,146,42,.15)" stroke="none"/>
-          <text x="265" y="68" font-family="Outfit" font-size="9" fill="#b8922a" text-anchor="middle">fcd</text>
-          <!-- Axe neutre -->
-          <line x1="225" y1="95" x2="315" y2="95" stroke="#b8922a" stroke-width="1" stroke-dasharray="4 2"/>
-          <text x="318" y="98" font-family="Outfit" font-size="9" fill="#b8922a">x</text>
-          <!-- Zone tendue -->
-          <path d="M230,95 L230,142 L310,142 L310,95Z" fill="rgba(30,86,200,.06)" stroke="none"/>
-          <!-- Armatures -->
-          <circle cx="270" cy="148" r="5" fill="#1e56c8" stroke="#fff" stroke-width="1"/>
-          <text x="318" y="151" font-family="Outfit" font-size="9" fill="#1e56c8">As</text>
-          <line x1="315" y1="148" x2="275" y2="148" stroke="#1e56c8" stroke-width="0.8" stroke-dasharray="2 2"/>
-
-          <!-- Diagramme effort résultant -->
-          <text x="430" y="22" font-family="Outfit" font-size="10" fill="#6b7080" text-anchor="middle">Effort résultant</text>
-          <rect x="390" y="30" width="80" height="142" fill="none" stroke="#e0ddd8" stroke-width="1" rx="2"/>
-          <line x1="430" y1="30" x2="430" y2="172" stroke="#e0ddd8" stroke-width="1"/>
-          <!-- Compression béton -->
-          <line x1="430" y1="42" x2="470" y2="42" stroke="#b8922a" stroke-width="2"/>
-          <polyline points="466,38 470,42 466,46" fill="none" stroke="#b8922a" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="435" y="38" font-family="Outfit" font-size="9" fill="#b8922a">Fc</text>
-          <!-- Bras levier -->
-          <line x1="432" y1="42" x2="432" y2="148" stroke="#9ca3af" stroke-width="0.8" stroke-dasharray="2 2"/>
-          <text x="436" y="100" font-family="Outfit" font-size="9" fill="#6b7080">z</text>
-          <!-- Traction acier -->
-          <line x1="430" y1="148" x2="390" y2="148" stroke="#1e56c8" stroke-width="2"/>
-          <polyline points="394,144 390,148 394,152" fill="none" stroke="#1e56c8" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="435" y="152" font-family="Outfit" font-size="9" fill="#1e56c8">Fs</text>
-
+      <!-- Schéma -->
+      <div class="schema">
+        <svg width="540" height="185" viewBox="0 0 540 185">
           <defs>
-            <marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10" fill="none" stroke="#9ca3af" stroke-width="1.5"/>
-            </marker>
-            <marker id="arr2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10" fill="none" stroke="#9ca3af" stroke-width="1.5"/>
-            </marker>
+            <marker id="a1" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1,1 L7,4 L1,7" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round"/></marker>
           </defs>
+          <!-- Section -->
+          <rect x="55" y="25" width="110" height="135" fill="rgba(160,120,40,.05)" stroke="#a07828" stroke-width="1.5" rx="2"/>
+          <!-- Armatures -->
+          <circle cx="83" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="110" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="137" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <!-- Cotes -->
+          <line x1="55" y1="14" x2="165" y2="14" stroke="#9ca3af" stroke-width="1" marker-start="url(#a1)" marker-end="url(#a1)"/>
+          <text x="110" y="10" font-family="Cormorant Garamond" font-size="12" fill="#7a7e8e" text-anchor="middle" font-style="italic">b</text>
+          <line x1="178" y1="25" x2="178" y2="160" stroke="#9ca3af" stroke-width="1" marker-start="url(#a1)" marker-end="url(#a1)"/>
+          <text x="185" y="98" font-family="Cormorant Garamond" font-size="12" fill="#7a7e8e" font-style="italic">h</text>
+          <line x1="192" y1="25" x2="192" y2="148" stroke="#a07828" stroke-width="0.8" stroke-dasharray="3 2"/>
+          <text x="198" y="95" font-family="Cormorant Garamond" font-size="12" fill="#a07828" font-style="italic">d</text>
+          <!-- Moment -->
+          <path d="M28,82 Q18,97 28,112" fill="none" stroke="#c0392b" stroke-width="1.5"/>
+          <polyline points="25,110 28,112 26,107" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="8" y="100" font-family="Cormorant Garamond" font-size="13" fill="#c0392b" font-style="italic">M</text>
+          <!-- Diagramme contraintes -->
+          <text x="265" y="17" font-family="Outfit" font-size="9" fill="#7a7e8e" text-anchor="middle" letter-spacing=".06em">CONTRAINTES</text>
+          <rect x="225" y="25" width="80" height="135" fill="none" stroke="#e2ddd6" stroke-width="1" rx="2"/>
+          <path d="M225,25 L305,25 L305,88 L225,88Z" fill="rgba(160,120,40,.12)"/>
+          <text x="260" y="62" font-family="Cormorant Garamond" font-size="11" fill="#a07828" text-anchor="middle" font-style="italic">f_cd</text>
+          <line x1="220" y1="88" x2="310" y2="88" stroke="#a07828" stroke-width="0.8" stroke-dasharray="4 2"/>
+          <text x="313" y="91" font-family="Outfit" font-size="9" fill="#a07828">x</text>
+          <circle cx="265" cy="142" r="5" fill="#1a4fd6" stroke="white" stroke-width="1"/>
+          <text x="313" y="145" font-family="Cormorant Garamond" font-size="11" fill="#1a4fd6" font-style="italic">A_s</text>
+          <line x1="308" y1="142" x2="270" y2="142" stroke="#1a4fd6" stroke-width="0.8" stroke-dasharray="2 2"/>
+          <!-- Effort résultant -->
+          <text x="420" y="17" font-family="Outfit" font-size="9" fill="#7a7e8e" text-anchor="middle" letter-spacing=".06em">RÉSULTANTES</text>
+          <rect x="380" y="25" width="80" height="135" fill="none" stroke="#e2ddd6" stroke-width="1" rx="2"/>
+          <line x1="420" y1="25" x2="420" y2="160" stroke="#e2ddd6" stroke-width="0.8"/>
+          <line x1="420" y1="38" x2="452" y2="38" stroke="#a07828" stroke-width="2"/>
+          <polyline points="448,34 452,38 448,42" fill="none" stroke="#a07828" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="425" y="34" font-family="Cormorant Garamond" font-size="11" fill="#a07828" font-style="italic">F_c</text>
+          <line x1="423" y1="38" x2="423" y2="142" stroke="#d0ccc6" stroke-width="0.8" stroke-dasharray="2 2"/>
+          <text x="427" y="96" font-family="Cormorant Garamond" font-size="11" fill="#7a7e8e" font-style="italic">z</text>
+          <line x1="420" y1="142" x2="388" y2="142" stroke="#1a4fd6" stroke-width="2"/>
+          <polyline points="392,138 388,142 392,146" fill="none" stroke="#1a4fd6" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="425" y="146" font-family="Cormorant Garamond" font-size="11" fill="#1a4fd6" font-style="italic">F_s</text>
         </svg>
       </div>
 
-      <div class="calc-form">
-        <div class="form-section-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
-        <div class="form-grid-4">
-          <div class="field field-unit"><label>b</label><input type="number" id="fs-b" value="300" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>h</label><input type="number" id="fs-h" value="500" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label data-fr="Enrobage c" data-en="Cover c">Enrobage c</label><input type="number" id="fs-c" value="35" min="10" step="5"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>Ø</label><input type="number" id="fs-phi" value="16" min="6" step="2"><span class="unit-label">mm</span></div>
+      <div class="card">
+        <div class="card-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
+        <div class="grid4">
+          <div class="field fu"><label>b (mm)</label><input type="number" id="fs-b" value="300" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>h (mm)</label><input type="number" id="fs-h" value="500" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label data-fr="Enrobage c" data-en="Cover c">Enrobage c</label><input type="number" id="fs-c" value="35" min="10" step="5"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>Ø (mm)</label><input type="number" id="fs-phi" value="16" min="6" step="2"><span class="fu-unit">mm</span></div>
         </div>
-        <div class="form-section-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
-        <div class="form-grid">
-          <div class="field"><label data-fr="Classe béton" data-en="Concrete class">Classe béton</label>
+        <div class="card-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
+        <div class="grid2">
+          <div class="field"><label data-fr="Classe béton" data-en="Concrete">Classe béton</label>
             <select id="fs-fck"><option value="25">C25/30</option><option value="30" selected>C30/37</option><option value="35">C35/45</option><option value="40">C40/50</option></select></div>
           <div class="field"><label data-fr="Acier" data-en="Steel">Acier</label>
             <select id="fs-fe"><option value="235">FeE 235</option><option value="400">FeE 400</option><option value="500" selected>FeE 500 (HA)</option></select></div>
         </div>
-        <div class="form-section-title" data-fr="Sollicitations" data-en="Actions">Sollicitations</div>
-        <div class="form-grid">
-          <div class="field field-unit"><label>Mu (ELU)</label><input type="number" id="fs-mu" value="120" min="0" step="1"><span class="unit-label">kN·m</span></div>
-          <div class="field field-unit"><label>Ms (ELS)</label><input type="number" id="fs-ms" value="85" min="0" step="1"><span class="unit-label">kN·m</span></div>
+        <div class="card-title" data-fr="Sollicitations" data-en="Actions">Sollicitations</div>
+        <div class="grid2">
+          <div class="field fu"><label>Mu — ELU</label><input type="number" id="fs-mu" value="120" min="0" step="1"><span class="fu-unit">kN·m</span></div>
+          <div class="field fu"><label>Ms — ELS</label><input type="number" id="fs-ms" value="85" min="0" step="1"><span class="fu-unit">kN·m</span></div>
         </div>
-        <div class="error-msg" id="fs-error"></div>
-        <button class="btn-calc" onclick="calcFlexSimple()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
-        <button class="btn-reset" onclick="resetCalc('flex-simple')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
-        <button class="btn-export" onclick="exportPDF('flex-simple')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        <div class="err" id="fs-err"></div>
+        <div class="actions">
+          <button class="btn-primary" onclick="calcFS()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
+          <button class="btn-secondary" onclick="reset('flexsimple')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
+          <button class="btn-pdf" onclick="exportPDF('flexsimple')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        </div>
       </div>
 
-      <div class="results" id="fs-results">
-        <div class="results-title" data-fr="Résultats — Flexion simple" data-en="Results — Simple bending">Résultats — Flexion simple</div>
-        <div class="results-grid">
-          <div class="result-card highlight"><div class="result-label">As</div><div><span class="result-value gold" id="fs-As">—</span><span class="result-unit">cm²</span></div><div class="result-note" id="fs-As-note"></div></div>
-          <div class="result-card"><div class="result-label" data-fr="Hauteur utile d" data-en="Effective depth d">Hauteur utile d</div><div><span class="result-value" id="fs-d">—</span><span class="result-unit">mm</span></div></div>
-          <div class="result-card"><div class="result-label">µ (moment réduit)</div><div><span class="result-value" id="fs-mured">—</span></div></div>
-          <div class="result-card"><div class="result-label" data-fr="Bras de levier z" data-en="Lever arm z">Bras de levier z</div><div><span class="result-value" id="fs-z">—</span><span class="result-unit">mm</span></div></div>
+      <div class="results" id="res-fs">
+        <div class="res-title" data-fr="Résultats — Flexion simple" data-en="Results — Simple bending">Résultats — Flexion simple</div>
+        <div class="res-grid">
+          <div class="res-card hi"><div class="res-lbl">As</div><div><span class="res-val gold" id="fs-As">—</span><span class="res-unit">cm²</span></div><div class="res-note" id="fs-note"></div></div>
+          <div class="res-card"><div class="res-lbl" data-fr="Hauteur utile d" data-en="Effective depth">Hauteur utile d</div><div><span class="res-val" id="fs-d">—</span><span class="res-unit">mm</span></div></div>
+          <div class="res-card"><div class="res-lbl">µ réduit</div><div><span class="res-val" id="fs-mu2">—</span></div></div>
+          <div class="res-card"><div class="res-lbl" data-fr="Bras de levier z" data-en="Lever arm z">Bras de levier z</div><div><span class="res-val" id="fs-z">—</span><span class="res-unit">mm</span></div></div>
         </div>
-        <div id="fs-verifs"></div>
-        <div class="formula-box" id="fs-formulas"></div>
+        <div id="fs-chks"></div>
+        <div class="formula" id="fs-form"></div>
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
+    <!-- ════════════════════════════════
          FLEXION COMPOSÉE
-    ══════════════════════════════════════ -->
-    <div id="calc-flex-composee" style="display:none">
-      <div class="calc-header">
-        <div class="calc-eyebrow" data-fr="Calculs quotidiens Béton" data-en="Daily Concrete Calculations">Calculs quotidiens Béton</div>
-        <div class="calc-title" data-fr="Flexion composée" data-en="Combined bending">Flexion composée</div>
-        <div class="calc-norm-badge" id="badge-norm-fc">EC2 — EN 1992-1-1</div>
-        <p class="calc-desc" data-fr="Section rectangulaire soumise à un moment de flexion et un effort normal (compression ou traction)." data-en="Rectangular section under combined bending and axial force (compression or tension).">Section rectangulaire soumise à un moment de flexion et un effort normal (compression ou traction).</p>
+    ════════════════════════════════ -->
+    <div id="sec-flexcomposee" style="display:none">
+      <div class="page-header">
+        <div class="page-eyebrow" data-fr="Calculs béton" data-en="Concrete calculations">Calculs béton</div>
+        <div class="page-title" data-fr="Flexion composée" data-en="Combined bending">Flexion composée</div>
+        <div class="norm-tag" id="ntag-fc">EC2 — EN 1992-1-1</div>
+        <p class="page-desc" data-fr="Section rectangulaire soumise à un moment de flexion et un effort normal (compression ou traction)." data-en="Rectangular section under combined bending and axial force.">Section rectangulaire soumise à un moment de flexion et un effort normal (compression ou traction).</p>
       </div>
 
-      <!-- Schéma flexion composée -->
-      <div class="schema-box">
-        <svg width="520" height="200" viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg">
+      <div class="schema">
+        <svg width="500" height="185" viewBox="0 0 500 185">
           <!-- Section -->
-          <rect x="80" y="30" width="110" height="140" fill="rgba(30,86,200,.05)" stroke="#1e56c8" stroke-width="1.5" rx="2"/>
-          <!-- As1 tendues bas -->
-          <circle cx="108" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="135" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="162" cy="155" r="6" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <!-- As2 comprimées haut -->
-          <circle cx="108" cy="45" r="5" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="162" cy="45" r="5" fill="#dc2626" stroke="#fff" stroke-width="1.5"/>
-          <!-- Labels -->
-          <text x="210" y="160" font-family="Outfit" font-size="10" fill="#1e56c8">As1</text>
-          <text x="210" y="50" font-family="Outfit" font-size="10" fill="#dc2626">As2</text>
-          <!-- Effort normal compression -->
-          <line x1="135" y1="10" x2="135" y2="28" stroke="#b8922a" stroke-width="2"/>
-          <polyline points="130,24 135,28 140,24" fill="none" stroke="#b8922a" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="118" y="10" font-family="Cormorant Garamond" font-size="13" fill="#b8922a" font-style="italic">Nu</text>
-          <!-- Moment -->
-          <path d="M55,90 Q45,105 55,120" fill="none" stroke="#dc2626" stroke-width="1.5"/>
-          <polyline points="52,118 55,120 53,115" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round"/>
-          <text x="34" y="108" font-family="Cormorant Garamond" font-size="13" fill="#dc2626" font-style="italic">Mu</text>
-          <!-- Centre géométrique -->
-          <line x1="80" y1="100" x2="190" y2="100" stroke="#9ca3af" stroke-width="0.8" stroke-dasharray="3 2"/>
-          <text x="195" y="103" font-family="Outfit" font-size="9" fill="#9ca3af">G</text>
-
+          <rect x="70" y="25" width="110" height="135" fill="rgba(26,79,214,.05)" stroke="#1a4fd6" stroke-width="1.5" rx="2"/>
+          <!-- As1 tendues -->
+          <circle cx="98" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="125" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="152" cy="148" r="6" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <!-- As2 comprimées -->
+          <circle cx="98" cy="40" r="5" fill="#c0392b" stroke="white" stroke-width="1.5"/>
+          <circle cx="152" cy="40" r="5" fill="#c0392b" stroke="white" stroke-width="1.5"/>
+          <text x="195" y="153" font-family="Cormorant Garamond" font-size="11" fill="#1a4fd6" font-style="italic">A_s1</text>
+          <text x="195" y="45" font-family="Cormorant Garamond" font-size="11" fill="#c0392b" font-style="italic">A_s2</text>
+          <!-- Nu -->
+          <line x1="125" y1="8" x2="125" y2="23" stroke="#a07828" stroke-width="1.8"/>
+          <polyline points="120,19 125,23 130,19" fill="none" stroke="#a07828" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="110" y="8" font-family="Cormorant Garamond" font-size="13" fill="#a07828" font-style="italic">N_u</text>
+          <!-- Mu -->
+          <path d="M42,82 Q32,97 42,112" fill="none" stroke="#c0392b" stroke-width="1.5"/>
+          <polyline points="39,110 42,112 40,107" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-linecap="round"/>
+          <text x="22" y="100" font-family="Cormorant Garamond" font-size="13" fill="#c0392b" font-style="italic">M_u</text>
+          <!-- Axe G -->
+          <line x1="70" y1="92" x2="180" y2="92" stroke="#9ca3af" stroke-width="0.8" stroke-dasharray="3 2"/>
+          <text x="184" y="95" font-family="Outfit" font-size="9" fill="#9ca3af">G</text>
           <!-- Diagramme déformations -->
-          <text x="330" y="22" font-family="Outfit" font-size="10" fill="#6b7080" text-anchor="middle">Diagramme ε</text>
-          <rect x="285" y="30" width="90" height="140" fill="none" stroke="#e0ddd8" stroke-width="1" rx="2"/>
-          <line x1="330" y1="30" x2="330" y2="170" stroke="#e0ddd8" stroke-width="1"/>
-          <!-- Déformation comprimée -->
-          <line x1="330" y1="38" x2="365" y2="38" stroke="#b8922a" stroke-width="1.5"/>
-          <text x="368" y="42" font-family="Outfit" font-size="9" fill="#b8922a">εc</text>
-          <!-- Axe neutre -->
-          <line x1="280" y1="95" x2="380" y2="95" stroke="#9ca3af" stroke-width="0.8" stroke-dasharray="3 2"/>
-          <!-- Déformation tendue -->
-          <line x1="330" y1="152" x2="295" y2="152" stroke="#1e56c8" stroke-width="1.5"/>
-          <text x="268" y="156" font-family="Outfit" font-size="9" fill="#1e56c8">εs</text>
-          <!-- Ligne déformation -->
-          <line x1="365" y1="38" x2="295" y2="152" stroke="#6b7080" stroke-width="1.2"/>
-
+          <text x="300" y="17" font-family="Outfit" font-size="9" fill="#7a7e8e" text-anchor="middle" letter-spacing=".06em">DÉFORMATIONS</text>
+          <rect x="260" y="25" width="80" height="135" fill="none" stroke="#e2ddd6" stroke-width="1" rx="2"/>
+          <line x1="300" y1="25" x2="300" y2="160" stroke="#e2ddd6" stroke-width="0.8"/>
+          <line x1="300" y1="38" x2="332" y2="38" stroke="#a07828" stroke-width="1.5"/>
+          <text x="336" y="42" font-family="Cormorant Garamond" font-size="11" fill="#a07828" font-style="italic">ε_c</text>
+          <line x1="300" y1="92" x2="340" y2="92" stroke="#9ca3af" stroke-width="0.6" stroke-dasharray="3 2"/>
+          <line x1="300" y1="148" x2="268" y2="148" stroke="#1a4fd6" stroke-width="1.5"/>
+          <text x="248" y="152" font-family="Cormorant Garamond" font-size="11" fill="#1a4fd6" font-style="italic">ε_s</text>
+          <line x1="332" y1="38" x2="268" y2="148" stroke="#7a7e8e" stroke-width="1"/>
           <!-- Excentricité -->
-          <line x1="430" y1="100" x2="430" y2="30" stroke="#b8922a" stroke-width="1" stroke-dasharray="3 2"/>
-          <line x1="425" y1="100" x2="435" y2="100" stroke="#9ca3af" stroke-width="1"/>
-          <line x1="425" y1="30" x2="435" y2="30" stroke="#9ca3af" stroke-width="1"/>
-          <text x="438" y="68" font-family="Cormorant Garamond" font-size="13" fill="#b8922a" font-style="italic">e</text>
-          <polyline points="427,35 430,30 433,35" fill="none" stroke="#9ca3af" stroke-width="1" stroke-linecap="round"/>
-          <polyline points="427,95 430,100 433,95" fill="none" stroke="#9ca3af" stroke-width="1" stroke-linecap="round"/>
+          <line x1="415" y1="92" x2="415" y2="25" stroke="#a07828" stroke-width="0.8" stroke-dasharray="3 2"/>
+          <line x1="410" y1="92" x2="420" y2="92" stroke="#9ca3af" stroke-width="1"/>
+          <line x1="410" y1="25" x2="420" y2="25" stroke="#9ca3af" stroke-width="1"/>
+          <text x="422" y="62" font-family="Cormorant Garamond" font-size="13" fill="#a07828" font-style="italic">e</text>
+          <polyline points="412,30 415,25 418,30" fill="none" stroke="#9ca3af" stroke-width="1" stroke-linecap="round"/>
+          <polyline points="412,87 415,92 418,87" fill="none" stroke="#9ca3af" stroke-width="1" stroke-linecap="round"/>
         </svg>
       </div>
 
-      <div class="calc-form">
-        <div class="form-section-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
-        <div class="form-grid-4">
-          <div class="field field-unit"><label>b</label><input type="number" id="fc-b" value="300" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>h</label><input type="number" id="fc-h" value="500" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>Enrobage c</label><input type="number" id="fc-c" value="35" min="10" step="5"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>Ø</label><input type="number" id="fc-phi" value="16" min="6" step="2"><span class="unit-label">mm</span></div>
+      <div class="card">
+        <div class="card-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
+        <div class="grid4">
+          <div class="field fu"><label>b</label><input type="number" id="fc-b" value="300" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>h</label><input type="number" id="fc-h" value="500" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>Enrobage c</label><input type="number" id="fc-c" value="35" min="10" step="5"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>Ø</label><input type="number" id="fc-phi" value="16" min="6" step="2"><span class="fu-unit">mm</span></div>
         </div>
-        <div class="form-section-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
-        <div class="form-grid">
+        <div class="card-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
+        <div class="grid2">
           <div class="field"><label>Classe béton</label>
             <select id="fc-fck"><option value="25">C25/30</option><option value="30" selected>C30/37</option><option value="35">C35/45</option><option value="40">C40/50</option></select></div>
           <div class="field"><label>Acier</label>
             <select id="fc-fe"><option value="235">FeE 235</option><option value="400">FeE 400</option><option value="500" selected>FeE 500 (HA)</option></select></div>
         </div>
-        <div class="form-section-title" data-fr="Sollicitations ELU" data-en="ULS Actions">Sollicitations ELU</div>
-        <div class="form-grid-3">
-          <div class="field field-unit"><label>Mu</label><input type="number" id="fc-mu" value="120" step="1"><span class="unit-label">kN·m</span></div>
-          <div class="field field-unit"><label>Nu</label><input type="number" id="fc-nu" value="500" step="1"><span class="unit-label">kN</span></div>
-          <div class="field"><label>Type</label>
+        <div class="card-title" data-fr="Sollicitations ELU" data-en="ULS Actions">Sollicitations ELU</div>
+        <div class="grid3">
+          <div class="field fu"><label>Mu</label><input type="number" id="fc-mu" value="120" step="1"><span class="fu-unit">kN·m</span></div>
+          <div class="field fu"><label>Nu</label><input type="number" id="fc-nu" value="500" step="1"><span class="fu-unit">kN</span></div>
+          <div class="field"><label data-fr="Type" data-en="Type">Type</label>
             <select id="fc-type"><option value="comp" selected data-fr="Compression" data-en="Compression">Compression</option><option value="trac" data-fr="Traction" data-en="Tension">Traction</option></select></div>
         </div>
-        <div class="error-msg" id="fc-error"></div>
-        <button class="btn-calc" onclick="calcFlexComposee()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
-        <button class="btn-reset" onclick="resetCalc('flex-composee')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
-        <button class="btn-export" onclick="exportPDF('flex-composee')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        <div class="err" id="fc-err"></div>
+        <div class="actions">
+          <button class="btn-primary" onclick="calcFC()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
+          <button class="btn-secondary" onclick="reset('flexcomposee')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
+          <button class="btn-pdf" onclick="exportPDF('flexcomposee')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        </div>
       </div>
 
-      <div class="results" id="fc-results">
-        <div class="results-title" data-fr="Résultats — Flexion composée" data-en="Results — Combined bending">Résultats — Flexion composée</div>
-        <div class="results-grid">
-          <div class="result-card highlight"><div class="result-label">As1 (tendues)</div><div><span class="result-value gold" id="fc-As1">—</span><span class="result-unit">cm²</span></div></div>
-          <div class="result-card highlight"><div class="result-label">As2 (comprimées)</div><div><span class="result-value gold" id="fc-As2">—</span><span class="result-unit">cm²</span></div></div>
-          <div class="result-card"><div class="result-label">Hauteur utile d</div><div><span class="result-value" id="fc-d">—</span><span class="result-unit">mm</span></div></div>
-          <div class="result-card"><div class="result-label">Excentricité e</div><div><span class="result-value" id="fc-e">—</span><span class="result-unit">mm</span></div></div>
+      <div class="results" id="res-fc">
+        <div class="res-title" data-fr="Résultats — Flexion composée" data-en="Results — Combined bending">Résultats — Flexion composée</div>
+        <div class="res-grid">
+          <div class="res-card hi"><div class="res-lbl">As1 (tendues)</div><div><span class="res-val gold" id="fc-As1">—</span><span class="res-unit">cm²</span></div></div>
+          <div class="res-card hi"><div class="res-lbl">As2 (comprimées)</div><div><span class="res-val gold" id="fc-As2">—</span><span class="res-unit">cm²</span></div></div>
+          <div class="res-card"><div class="res-lbl">Hauteur utile d</div><div><span class="res-val" id="fc-d">—</span><span class="res-unit">mm</span></div></div>
+          <div class="res-card"><div class="res-lbl">Excentricité e</div><div><span class="res-val" id="fc-e">—</span><span class="res-unit">mm</span></div></div>
         </div>
-        <div id="fc-verifs"></div>
+        <div id="fc-chks"></div>
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
+    <!-- ════════════════════════════════
          CISAILLEMENT
-    ══════════════════════════════════════ -->
-    <div id="calc-cisaillement" style="display:none">
-      <div class="calc-header">
-        <div class="calc-eyebrow" data-fr="Calculs quotidiens Béton" data-en="Daily Concrete Calculations">Calculs quotidiens Béton</div>
-        <div class="calc-title" data-fr="Cisaillement" data-en="Shear">Cisaillement</div>
-        <div class="calc-norm-badge" id="badge-norm-ci">EC2 — EN 1992-1-1</div>
-        <p class="calc-desc" data-fr="Calcul des armatures transversales (cadres / étriers) pour une section rectangulaire soumise à un effort tranchant." data-en="Calculation of transverse reinforcement (stirrups) for a rectangular section under shear force.">Calcul des armatures transversales (cadres / étriers) pour une section rectangulaire soumise à un effort tranchant.</p>
+    ════════════════════════════════ -->
+    <div id="sec-cisaillement" style="display:none">
+      <div class="page-header">
+        <div class="page-eyebrow" data-fr="Calculs béton" data-en="Concrete calculations">Calculs béton</div>
+        <div class="page-title" data-fr="Cisaillement" data-en="Shear">Cisaillement</div>
+        <div class="norm-tag" id="ntag-ci">EC2 — EN 1992-1-1</div>
+        <p class="page-desc" data-fr="Calcul des armatures transversales (cadres / étriers) pour une section soumise à un effort tranchant." data-en="Calculation of transverse reinforcement (stirrups) for a section under shear force.">Calcul des armatures transversales (cadres / étriers) pour une section soumise à un effort tranchant.</p>
       </div>
 
-      <!-- Schéma cisaillement (bielle-tirant) -->
-      <div class="schema-box">
-        <svg width="540" height="200" viewBox="0 0 540 200" xmlns="http://www.w3.org/2000/svg">
-          <!-- Poutre -->
-          <rect x="40" y="60" width="340" height="100" fill="rgba(184,146,42,.06)" stroke="#b8922a" stroke-width="1.5" rx="2"/>
-          <!-- Armatures longitudinales -->
-          <circle cx="70" cy="145" r="5" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="210" cy="145" r="5" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <circle cx="350" cy="145" r="5" fill="#1e56c8" stroke="#fff" stroke-width="1.5"/>
-          <!-- Cadres / étriers -->
-          <rect x="100" y="68" width="12" height="84" fill="none" stroke="#0e9b88" stroke-width="2"/>
-          <rect x="160" y="68" width="12" height="84" fill="none" stroke="#0e9b88" stroke-width="2"/>
-          <rect x="220" y="68" width="12" height="84" fill="none" stroke="#0e9b88" stroke-width="2"/>
-          <rect x="280" y="68" width="12" height="84" fill="none" stroke="#0e9b88" stroke-width="2"/>
-          <!-- Espacement St -->
-          <line x1="106" y1="52" x2="166" y2="52" stroke="#0e9b88" stroke-width="1" marker-start="url(#arrt)" marker-end="url(#arrt)"/>
-          <text x="128" y="48" font-family="Outfit" font-size="10" fill="#0e9b88" text-anchor="middle">St</text>
-          <!-- Effort tranchant -->
-          <line x1="40" y1="110" x2="15" y2="110" stroke="#dc2626" stroke-width="2"/>
-          <polyline points="19,106 15,110 19,114" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/>
-          <text x="3" y="108" font-family="Cormorant Garamond" font-size="13" fill="#dc2626" font-style="italic">V</text>
-          <!-- Bielle compression (diagonale) -->
-          <line x1="100" y1="68" x2="166" y2="152" stroke="#b8922a" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.7"/>
-          <text x="118" y="115" font-family="Outfit" font-size="9" fill="#b8922a" transform="rotate(52,118,115)">bielle</text>
-          <!-- Angle θ -->
-          <path d="M100,140 A30,30 0 0,1 121,117" fill="none" stroke="#b8922a" stroke-width="1"/>
-          <text x="108" y="135" font-family="Outfit" font-size="9" fill="#b8922a">θ=45°</text>
-          <!-- Labels b et d -->
-          <line x1="395" y1="60" x2="395" y2="160" stroke="#9ca3af" stroke-width="1" marker-start="url(#arrt2)" marker-end="url(#arrt2)"/>
-          <text x="400" y="115" font-family="Outfit" font-size="10" fill="#6b7080">d</text>
-          <!-- Ø cadre -->
-          <text x="108" y="190" font-family="Outfit" font-size="10" fill="#0e9b88">Ø cadre = Øt</text>
-          <text x="230" y="190" font-family="Outfit" font-size="10" fill="#1e56c8">n branches</text>
-
-          <!-- Diagramme effort tranchant -->
-          <text x="475" y="52" font-family="Outfit" font-size="10" fill="#6b7080" text-anchor="middle">Diagramme V</text>
-          <line x1="460" y1="60" x2="460" y2="170" stroke="#e0ddd8" stroke-width="1"/>
-          <rect x="440" y="65" width="20" height="90" fill="rgba(220,38,38,.1)" stroke="#dc2626" stroke-width="1"/>
-          <rect x="480" y="65" width="20" height="90" fill="rgba(220,38,38,.1)" stroke="#dc2626" stroke-width="1"/>
-          <text x="450" y="170" font-family="Outfit" font-size="9" fill="#dc2626" text-anchor="middle">+Vu</text>
-          <text x="490" y="170" font-family="Outfit" font-size="9" fill="#dc2626" text-anchor="middle">-Vu</text>
-
+      <div class="schema">
+        <svg width="520" height="185" viewBox="0 0 520 185">
           <defs>
-            <marker id="arrt" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10" fill="none" stroke="#0e9b88" stroke-width="2"/>
-            </marker>
-            <marker id="arrt2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10" fill="none" stroke="#9ca3af" stroke-width="2"/>
-            </marker>
+            <marker id="a2" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M1,1 L7,4 L1,7" fill="none" stroke="#0a8a78" stroke-width="1.5" stroke-linecap="round"/></marker>
           </defs>
+          <!-- Poutre -->
+          <rect x="35" y="55" width="320" height="90" fill="rgba(160,120,40,.05)" stroke="#a07828" stroke-width="1.5" rx="2"/>
+          <!-- Armatures longitudinales -->
+          <circle cx="65" cy="133" r="5" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="195" cy="133" r="5" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <circle cx="325" cy="133" r="5" fill="#1a4fd6" stroke="white" stroke-width="1.5"/>
+          <!-- Cadres -->
+          <rect x="95" y="62" width="11" height="76" fill="none" stroke="#0a8a78" stroke-width="2"/>
+          <rect x="148" y="62" width="11" height="76" fill="none" stroke="#0a8a78" stroke-width="2"/>
+          <rect x="201" y="62" width="11" height="76" fill="none" stroke="#0a8a78" stroke-width="2"/>
+          <rect x="254" y="62" width="11" height="76" fill="none" stroke="#0a8a78" stroke-width="2"/>
+          <!-- St -->
+          <line x1="100" y1="44" x2="153" y2="44" stroke="#0a8a78" stroke-width="1" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <text x="121" y="40" font-family="Cormorant Garamond" font-size="12" fill="#0a8a78" text-anchor="middle" font-style="italic">S_t</text>
+          <!-- Effort tranchant -->
+          <line x1="35" y1="100" x2="12" y2="100" stroke="#c0392b" stroke-width="2"/>
+          <polyline points="16,96 12,100 16,104" fill="none" stroke="#c0392b" stroke-width="2" stroke-linecap="round"/>
+          <text x="1" y="98" font-family="Cormorant Garamond" font-size="13" fill="#c0392b" font-style="italic">V</text>
+          <!-- Bielle (θ=45°) -->
+          <line x1="95" y1="62" x2="153" y2="138" stroke="#a07828" stroke-width="1.2" stroke-dasharray="5 3" opacity=".7"/>
+          <path d="M95,124 A28,28 0 0,1 113,104" fill="none" stroke="#a07828" stroke-width="1"/>
+          <text x="103" y="122" font-family="Outfit" font-size="9" fill="#a07828">θ=45°</text>
+          <!-- d -->
+          <line x1="370" y1="55" x2="370" y2="145" stroke="#9ca3af" stroke-width="1" marker-start="url(#a2)" marker-end="url(#a2)"/>
+          <text x="376" y="105" font-family="Cormorant Garamond" font-size="12" fill="#7a7e8e" font-style="italic">d</text>
+          <!-- Ø cadre -->
+          <text x="100" y="178" font-family="Cormorant Garamond" font-size="12" fill="#0a8a78" font-style="italic">Ø_t</text>
+          <text x="170" y="178" font-family="Outfit" font-size="10" fill="#1a4fd6">n branches</text>
+          <!-- Diagramme V -->
+          <text x="450" y="46" font-family="Outfit" font-size="9" fill="#7a7e8e" text-anchor="middle" letter-spacing=".06em">EFF. TRANCHANT</text>
+          <line x1="450" y1="55" x2="450" y2="145" stroke="#e2ddd6" stroke-width="1"/>
+          <rect x="430" y="58" width="20" height="82" fill="rgba(192,57,43,.1)" stroke="#c0392b" stroke-width="1"/>
+          <rect x="470" y="58" width="20" height="82" fill="rgba(192,57,43,.1)" stroke="#c0392b" stroke-width="1"/>
+          <text x="440" y="155" font-family="Outfit" font-size="8" fill="#c0392b" text-anchor="middle">+Vu</text>
+          <text x="480" y="155" font-family="Outfit" font-size="8" fill="#c0392b" text-anchor="middle">−Vu</text>
         </svg>
       </div>
 
-      <div class="calc-form">
-        <div class="form-section-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
-        <div class="form-grid-4">
-          <div class="field field-unit"><label>b</label><input type="number" id="ci-b" value="300" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>d (utile)</label><input type="number" id="ci-d" value="450" min="50" step="10"><span class="unit-label">mm</span></div>
-          <div class="field field-unit"><label>Ø cadres</label><input type="number" id="ci-phit" value="8" min="6" step="2"><span class="unit-label">mm</span></div>
-          <div class="field"><label>Nb branches</label>
+      <div class="card">
+        <div class="card-title" data-fr="Données géométriques" data-en="Geometric data">Données géométriques</div>
+        <div class="grid4">
+          <div class="field fu"><label>b</label><input type="number" id="ci-b" value="300" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>d (utile)</label><input type="number" id="ci-d" value="450" min="50" step="10"><span class="fu-unit">mm</span></div>
+          <div class="field fu"><label>Ø cadres</label><input type="number" id="ci-phit" value="8" min="6" step="2"><span class="fu-unit">mm</span></div>
+          <div class="field"><label data-fr="Nb branches" data-en="Legs">Nb branches</label>
             <select id="ci-n"><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select></div>
         </div>
-        <div class="form-section-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
-        <div class="form-grid">
+        <div class="card-title" data-fr="Matériaux" data-en="Materials">Matériaux</div>
+        <div class="grid2">
           <div class="field"><label>Classe béton</label>
             <select id="ci-fck"><option value="25">C25/30</option><option value="30" selected>C30/37</option><option value="35">C35/45</option><option value="40">C40/50</option></select></div>
           <div class="field"><label>Acier cadres</label>
             <select id="ci-fe"><option value="235">FeE 235</option><option value="400">FeE 400</option><option value="500" selected>FeE 500</option></select></div>
         </div>
-        <div class="form-section-title" data-fr="Sollicitations" data-en="Actions">Sollicitations</div>
-        <div class="form-grid">
-          <div class="field field-unit"><label>Vu (ELU)</label><input type="number" id="ci-vu" value="200" min="0" step="1"><span class="unit-label">kN</span></div>
-          <div class="field field-unit"><label>As long.</label><input type="number" id="ci-asl" value="15" min="0" step="0.1"><span class="unit-label">cm²</span></div>
+        <div class="card-title" data-fr="Sollicitations" data-en="Actions">Sollicitations</div>
+        <div class="grid2">
+          <div class="field fu"><label>Vu (ELU)</label><input type="number" id="ci-vu" value="200" min="0" step="1"><span class="fu-unit">kN</span></div>
+          <div class="field fu"><label>As long.</label><input type="number" id="ci-asl" value="15" min="0" step="0.1"><span class="fu-unit">cm²</span></div>
         </div>
-        <div class="error-msg" id="ci-error"></div>
-        <button class="btn-calc" onclick="calcCisaillement()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
-        <button class="btn-reset" onclick="resetCalc('cisaillement')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
-        <button class="btn-export" onclick="exportPDF('cisaillement')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        <div class="err" id="ci-err"></div>
+        <div class="actions">
+          <button class="btn-primary" onclick="calcCI()" data-fr="Calculer →" data-en="Calculate →">Calculer →</button>
+          <button class="btn-secondary" onclick="reset('cisaillement')" data-fr="Réinitialiser" data-en="Reset">Réinitialiser</button>
+          <button class="btn-pdf" onclick="exportPDF('cisaillement')" data-fr="⬇ Exporter PDF" data-en="⬇ Export PDF">⬇ Exporter PDF</button>
+        </div>
       </div>
 
-      <div class="results" id="ci-results">
-        <div class="results-title" data-fr="Résultats — Cisaillement" data-en="Results — Shear">Résultats — Cisaillement</div>
-        <div class="results-grid">
-          <div class="result-card highlight"><div class="result-label">Espacement St</div><div><span class="result-value gold" id="ci-st">—</span><span class="result-unit">mm</span></div><div class="result-note" id="ci-st-note"></div></div>
-          <div class="result-card"><div class="result-label">Ast/m</div><div><span class="result-value" id="ci-astm">—</span><span class="result-unit">cm²/m</span></div></div>
-          <div class="result-card"><div class="result-label">VRd,c</div><div><span class="result-value" id="ci-vrdc">—</span><span class="result-unit">kN</span></div></div>
-          <div class="result-card"><div class="result-label">VRd,max</div><div><span class="result-value" id="ci-vrdmax">—</span><span class="result-unit">kN</span></div></div>
+      <div class="results" id="res-ci">
+        <div class="res-title" data-fr="Résultats — Cisaillement" data-en="Results — Shear">Résultats — Cisaillement</div>
+        <div class="res-grid">
+          <div class="res-card hi"><div class="res-lbl">Espacement St</div><div><span class="res-val gold" id="ci-st">—</span><span class="res-unit">mm</span></div><div class="res-note" id="ci-note"></div></div>
+          <div class="res-card"><div class="res-lbl">Ast/m</div><div><span class="res-val" id="ci-astm">—</span><span class="res-unit">cm²/m</span></div></div>
+          <div class="res-card"><div class="res-lbl">VRd,c</div><div><span class="res-val" id="ci-vrdc">—</span><span class="res-unit">kN</span></div></div>
+          <div class="res-card"><div class="res-lbl">VRd,max</div><div><span class="res-val" id="ci-vrdmax">—</span><span class="res-unit">kN</span></div></div>
         </div>
-        <div id="ci-verifs"></div>
+        <div id="ci-chks"></div>
       </div>
     </div>
 
@@ -603,217 +567,196 @@ nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(-
 </div>
 
 <script>
-let norm = 'ec2';
-let lang = 'fr';
+let norm='ec2', lang='fr';
 
-// ─── LANG ───
+// ── NAVIGATION ──
+function show(id, el) {
+  document.querySelectorAll('[id^="sec-"]').forEach(s=>s.style.display='none');
+  document.getElementById('sec-'+id).style.display='block';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── LANG ──
 function setLang(l) {
-  lang = l;
-  document.getElementById('btn-fr').classList.toggle('active', l==='fr');
-  document.getElementById('btn-en').classList.toggle('active', l==='en');
-  document.querySelectorAll('[data-fr]').forEach(el => {
-    const val = el.getAttribute('data-'+l);
-    if(val && el.tagName !== 'OPTION') el.textContent = val;
+  lang=l;
+  document.getElementById('btn-fr').classList.toggle('active',l==='fr');
+  document.getElementById('btn-en').classList.toggle('active',l==='en');
+  document.querySelectorAll('[data-fr]').forEach(el=>{
+    const v=el.getAttribute('data-'+l);
+    if(v&&el.tagName!=='OPTION') el.textContent=v;
   });
 }
 
-// ─── NORM ───
+// ── NORM ──
 function setNorm(n) {
-  norm = n;
-  document.getElementById('norm-ec2').classList.toggle('active', n==='ec2');
-  document.getElementById('norm-bael').classList.toggle('active', n==='bael');
-  const labels = { ec2:'EC2 — EN 1992-1-1', bael:'BAEL 91 mod.99' };
-  ['ca','fs','fc','ci'].forEach(p => {
-    const el = document.getElementById('badge-norm-'+p);
-    if(el) el.textContent = labels[n];
-  });
+  norm=n;
+  document.getElementById('norm-ec2').classList.toggle('active',n==='ec2');
+  document.getElementById('norm-bael').classList.toggle('active',n==='bael');
+  const lbl=n==='ec2'?'EC2 — EN 1992-1-1':'BAEL 91 mod.99';
+  ['ca','fs','fc','ci'].forEach(p=>{const el=document.getElementById('ntag-'+p);if(el)el.textContent=lbl;});
   calcCaract();
-  document.querySelectorAll('.results').forEach(r => { if(r.id!=='ca-results') r.classList.remove('show'); });
+  ['res-fs','res-fc','res-ci'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
 }
 
-// ─── NAVIGATION ───
-function showCalc(id, item) {
-  document.querySelectorAll('[id^="calc-"]').forEach(el => el.style.display = 'none');
-  document.getElementById('calc-'+id).style.display = 'block';
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  item.classList.add('active');
-}
-
-// ─── FORMULES SVG ───
-function renderFormula(prop, n) {
-  const f = {
-    // EC2
-    'fck':        svgF('f<tspan dy="3" font-size="8">ck</tspan>', '—  (donnée)'),
-    'fck,cube':   svgF('f<tspan dy="3" font-size="8">ck,cube</tspan>', '= f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> + 7</tspan>'),
-    'fcm':        svgF('f<tspan dy="3" font-size="8">cm</tspan>', '= f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> + 8</tspan>'),
-    'fctm':       svgF('f<tspan dy="3" font-size="8">ctm</tspan>', '= 0.30 · f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"></tspan><tspan baseline-shift="super" font-size="8">2/3</tspan>'),
-    'fctk,0.05':  svgF('f<tspan dy="3" font-size="8">ctk,0.05</tspan>', '= 0.7 · f<tspan dy="3" font-size="8">ctm</tspan>'),
-    'fctk,0.95':  svgF('f<tspan dy="3" font-size="8">ctk,0.95</tspan>', '= 1.3 · f<tspan dy="3" font-size="8">ctm</tspan>'),
-    'Ecm':        svgF('E<tspan dy="3" font-size="8">cm</tspan>', '= 22 000 · (f<tspan dy="3" font-size="8">cm</tspan><tspan dy="-3">/10)</tspan><tspan baseline-shift="super" font-size="8">0.3</tspan>'),
-    'fcd':        svgF('f<tspan dy="3" font-size="8">cd</tspan>', '= f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> / γ</tspan><tspan dy="3" font-size="8">c</tspan><tspan dy="-3"> = f</tspan><tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> / 1.5</tspan>'),
-    'εc2':        svgF('ε<tspan dy="3" font-size="8">c2</tspan>', '= 2.0 ‰  (f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> ≤ 50 MPa)</tspan>'),
-    'εcu2':       svgF('ε<tspan dy="3" font-size="8">cu2</tspan>', '= 3.5 ‰  (f<tspan dy="3" font-size="8">ck</tspan><tspan dy="-3"> ≤ 50 MPa)</tspan>'),
-    // BAEL
-    'fc28':       svgF('f<tspan dy="3" font-size="8">c28</tspan>', '—  (donnée)'),
-    'ft28':       svgF('f<tspan dy="3" font-size="8">t28</tspan>', '= 0.6 + 0.06 · f<tspan dy="3" font-size="8">c28</tspan>'),
-    'fbu':        svgF('f<tspan dy="3" font-size="8">bu</tspan>', '= 0.85 · f<tspan dy="3" font-size="8">c28</tspan><tspan dy="-3"> / (θ · γ</tspan><tspan dy="3" font-size="8">b</tspan><tspan dy="-3">)</tspan>'),
-    'Ei28':       svgF('E<tspan dy="3" font-size="8">i28</tspan>', '= 11 000 · f<tspan dy="3" font-size="8">c28</tspan><tspan dy="-3"></tspan><tspan baseline-shift="super" font-size="8">1/3</tspan>'),
-    'Ev28':       svgF('E<tspan dy="3" font-size="8">v28</tspan>', '= 3 700 · f<tspan dy="3" font-size="8">c28</tspan><tspan dy="-3"></tspan><tspan baseline-shift="super" font-size="8">1/3</tspan>'),
-    'τu':         svgF('τ<tspan dy="3" font-size="8">u</tspan>', '= min(0.2 · f<tspan dy="3" font-size="8">c28</tspan><tspan dy="-3"> / γ</tspan><tspan dy="3" font-size="8">b</tspan><tspan dy="-3"> ; 5 MPa)</tspan>'),
-    'εbc,lim':    svgF('ε<tspan dy="3" font-size="8">bc,lim</tspan>', '= 3.5 ‰'),
-    'εs,lim':     svgF('ε<tspan dy="3" font-size="8">s,lim</tspan>', '= 10 ‰'),
-  };
-  return f[prop] || '<span style="color:var(--ink3);font-size:11px">—</span>';
-}
-
+// ── RENDER SVG FORMULA ──
 function svgF(sym, expr) {
-  return `<svg height="28" viewBox="0 0 280 28" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">
-    <text y="18" font-family="'Cormorant Garamond',Georgia,serif" font-size="13" font-style="italic" fill="#b8922a">${sym}</text>
-    <text x="55" y="18" font-family="'Cormorant Garamond',Georgia,serif" font-size="13" fill="#3a3d48">${expr}</text>
+  return `<svg height="26" viewBox="0 0 300 26" style="display:block;overflow:visible">
+    <text y="17" font-family="'Cormorant Garamond',Georgia,serif" font-size="13" font-style="italic" fill="#a07828">${sym}</text>
+    <text x="52" y="17" font-family="'Cormorant Garamond',Georgia,serif" font-size="13" fill="#3c3f4d">${expr}</text>
   </svg>`;
 }
 
-// ─── CARACTÉRISTIQUES BÉTON ───
+const FORMULAS_EC2 = {
+  'fck':       svgF('f<tspan dy="3" font-size="9">ck</tspan>','<tspan dy="-3">— (donnée)</tspan>'),
+  'fck,cube':  svgF('f<tspan dy="3" font-size="9">ck,cube</tspan>','<tspan dy="-3">= f</tspan><tspan dy="3" font-size="9">ck</tspan><tspan dy="-3"> + 7</tspan>'),
+  'fcm':       svgF('f<tspan dy="3" font-size="9">cm</tspan>','<tspan dy="-3">= f</tspan><tspan dy="3" font-size="9">ck</tspan><tspan dy="-3"> + 8</tspan>'),
+  'fctm':      svgF('f<tspan dy="3" font-size="9">ctm</tspan>','<tspan dy="-3">= 0.30 · f</tspan><tspan dy="3" font-size="9">ck</tspan><tspan dy="-3"> </tspan><tspan baseline-shift="super" font-size="9">2/3</tspan>'),
+  'fctk,0.05': svgF('f<tspan dy="3" font-size="9">ctk,0.05</tspan>','<tspan dy="-3">= 0.7 · f</tspan><tspan dy="3" font-size="9">ctm</tspan>'),
+  'fctk,0.95': svgF('f<tspan dy="3" font-size="9">ctk,0.95</tspan>','<tspan dy="-3">= 1.3 · f</tspan><tspan dy="3" font-size="9">ctm</tspan>'),
+  'Ecm':       svgF('E<tspan dy="3" font-size="9">cm</tspan>','<tspan dy="-3">= 22 000 · (f</tspan><tspan dy="3" font-size="9">cm</tspan><tspan dy="-3">/10)</tspan><tspan baseline-shift="super" font-size="9">0.3</tspan>'),
+  'fcd':       svgF('f<tspan dy="3" font-size="9">cd</tspan>','<tspan dy="-3">= f</tspan><tspan dy="3" font-size="9">ck</tspan><tspan dy="-3"> / γ</tspan><tspan dy="3" font-size="9">c</tspan><tspan dy="-3"> = f</tspan><tspan dy="3" font-size="9">ck</tspan><tspan dy="-3"> / 1.5</tspan>'),
+  'εc2':       svgF('ε<tspan dy="3" font-size="9">c2</tspan>','<tspan dy="-3">= 2.0 ‰</tspan>'),
+  'εcu2':      svgF('ε<tspan dy="3" font-size="9">cu2</tspan>','<tspan dy="-3">= 3.5 ‰</tspan>'),
+};
+const FORMULAS_BAEL = {
+  'fc28':      svgF('f<tspan dy="3" font-size="9">c28</tspan>','<tspan dy="-3">— (donnée)</tspan>'),
+  'ft28':      svgF('f<tspan dy="3" font-size="9">t28</tspan>','<tspan dy="-3">= 0.6 + 0.06 · f</tspan><tspan dy="3" font-size="9">c28</tspan>'),
+  'fbu':       svgF('f<tspan dy="3" font-size="9">bu</tspan>','<tspan dy="-3">= 0.85 · f</tspan><tspan dy="3" font-size="9">c28</tspan><tspan dy="-3"> / (θ · γ</tspan><tspan dy="3" font-size="9">b</tspan><tspan dy="-3">)</tspan>'),
+  'Ei28':      svgF('E<tspan dy="3" font-size="9">i28</tspan>','<tspan dy="-3">= 11 000 · f</tspan><tspan dy="3" font-size="9">c28</tspan><tspan dy="-3"> </tspan><tspan baseline-shift="super" font-size="9">1/3</tspan>'),
+  'Ev28':      svgF('E<tspan dy="3" font-size="9">v28</tspan>','<tspan dy="-3">= 3 700 · f</tspan><tspan dy="3" font-size="9">c28</tspan><tspan dy="-3"> </tspan><tspan baseline-shift="super" font-size="9">1/3</tspan>'),
+  'τu':        svgF('τ<tspan dy="3" font-size="9">u</tspan>','<tspan dy="-3">= min(0.2 · f</tspan><tspan dy="3" font-size="9">c28</tspan><tspan dy="-3"> / γ</tspan><tspan dy="3" font-size="9">b</tspan><tspan dy="-3"> ; 5 MPa)</tspan>'),
+  'εbc,lim':   svgF('ε<tspan dy="3" font-size="9">bc,lim</tspan>','<tspan dy="-3">= 3.5 ‰</tspan>'),
+  'εs,lim':    svgF('ε<tspan dy="3" font-size="9">s,lim</tspan>','<tspan dy="-3">= 10 ‰</tspan>'),
+};
+
+// ── CARACTÉRISTIQUES ──
 function calcCaract() {
-  const fck = parseFloat(document.getElementById('ca-fck').value);
-
+  const fck=+document.getElementById('ca-fck').value;
   let props;
-  if(norm === 'ec2') {
-    const fcm = fck + 8;
-    const fctm = fck <= 50 ? 0.30 * Math.pow(fck, 2/3) : 2.12 * Math.log(1 + fcm/10);
-    const fctk005 = 0.7 * fctm;
-    const fctk095 = 1.3 * fctm;
-    const Ecm = 22000 * Math.pow(fcm/10, 0.3);
-    const fcd = fck / 1.5;
-    const ec2 = 0.002;
-    const ecu2 = 0.0035;
-    const eps_c3 = 0.00175;
-    const eps_cu3 = 0.0035;
-
-    props = [
-      { prop: 'fck', sym: 'fck', val: fck.toFixed(0), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique cylindrique':'Characteristic compressive strength' },
-      { prop: 'fck,cube', sym: 'fck,cube', val: (fck+7).toFixed(0), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique cubique':'Characteristic cube strength' },
-      { prop: 'fcm', sym: 'fcm', val: fcm.toFixed(0), unit: 'MPa', desc: lang==='fr'?'Résistance moyenne en compression':'Mean compressive strength' },
-      { prop: 'fctm', sym: 'fctm', val: fctm.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Résistance moyenne en traction':'Mean tensile strength' },
-      { prop: 'fctk,0.05', sym: 'fctk,0.05', val: fctk005.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique traction (5%)':'Characteristic tensile strength (5%)' },
-      { prop: 'fctk,0.95', sym: 'fctk,0.95', val: fctk095.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique traction (95%)':'Characteristic tensile strength (95%)' },
-      { prop: 'Ecm', sym: 'Ecm', val: Math.round(Ecm).toLocaleString('fr-FR'), unit: 'MPa', desc: lang==='fr'?'Module sécant d\'élasticité':'Secant modulus of elasticity' },
-      { prop: 'fcd', sym: 'fcd', val: fcd.toFixed(1), unit: 'MPa', desc: lang==='fr'?'Résistance de calcul en compression':'Design compressive strength' },
-      { prop: 'εc2', sym: 'εc2', val: (ec2*1000).toFixed(1)+'‰', unit: '—', desc: lang==='fr'?'Déformation au début du palier':'Strain at peak stress' },
-      { prop: 'εcu2', sym: 'εcu2', val: (ecu2*1000).toFixed(1)+'‰', unit: '—', desc: lang==='fr'?'Déformation ultime de compression':'Ultimate compressive strain' },
+  if(norm==='ec2'){
+    const fcm=fck+8, fctm=fck<=50?0.30*Math.pow(fck,2/3):2.12*Math.log(1+fcm/10);
+    const fctk005=0.7*fctm, fctk095=1.3*fctm, Ecm=22000*Math.pow(fcm/10,0.3), fcd=fck/1.5;
+    props=[
+      {k:'fck',     sym:'fck',      val:fck.toFixed(0),                    unit:'MPa', desc:lang==='fr'?'Résistance caractéristique cylindrique':'Char. compressive strength'},
+      {k:'fck,cube',sym:'fck,cube', val:(fck+7).toFixed(0),                unit:'MPa', desc:lang==='fr'?'Résistance caractéristique cubique':'Char. cube strength'},
+      {k:'fcm',     sym:'fcm',      val:fcm.toFixed(0),                    unit:'MPa', desc:lang==='fr'?'Résistance moyenne en compression':'Mean compressive strength'},
+      {k:'fctm',    sym:'fctm',     val:fctm.toFixed(2),                   unit:'MPa', desc:lang==='fr'?'Résistance moyenne en traction':'Mean tensile strength'},
+      {k:'fctk,0.05',sym:'fctk,0.05',val:fctk005.toFixed(2),              unit:'MPa', desc:lang==='fr'?'Résistance traction 5%':'Tensile strength 5%'},
+      {k:'fctk,0.95',sym:'fctk,0.95',val:fctk095.toFixed(2),              unit:'MPa', desc:lang==='fr'?'Résistance traction 95%':'Tensile strength 95%'},
+      {k:'Ecm',     sym:'Ecm',      val:Math.round(Ecm).toLocaleString(),  unit:'MPa', desc:lang==='fr'?'Module sécant d\'élasticité':'Secant elastic modulus'},
+      {k:'fcd',     sym:'fcd',      val:fcd.toFixed(1),                    unit:'MPa', desc:lang==='fr'?'Résistance de calcul':'Design compressive strength'},
+      {k:'εc2',     sym:'εc2',      val:'2.0 ‰',                           unit:'—',   desc:lang==='fr'?'Déformation au début du palier':'Strain at peak stress'},
+      {k:'εcu2',    sym:'εcu2',     val:'3.5 ‰',                           unit:'—',   desc:lang==='fr'?'Déformation ultime':'Ultimate compressive strain'},
     ];
   } else {
-    // BAEL 91
-    const fbu = 0.85 * fck / 1.5;
-    const ftj = 0.6 + 0.06 * fck;
-    const Eij = 11000 * Math.pow(fck, 1/3);
-    const Evj = 3700 * Math.pow(fck, 1/3);
-    const tau_u = Math.min(0.2 * fck / 1.5, 5.0);
-
-    props = [
-      { prop: 'fc28', sym: 'fc28', val: fck.toFixed(0), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique à 28j':'Characteristic strength at 28d' },
-      { prop: 'ft28', sym: 'ft28', val: ftj.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Résistance caractéristique en traction':'Characteristic tensile strength' },
-      { prop: 'fbu', sym: 'fbu', val: fbu.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Contrainte limite de compression':'Design compressive stress' },
-      { prop: 'Ei28', sym: 'Ei28', val: Math.round(Eij).toLocaleString('fr-FR'), unit: 'MPa', desc: lang==='fr'?'Module instantané':'Instantaneous modulus' },
-      { prop: 'Ev28', sym: 'Ev28', val: Math.round(Evj).toLocaleString('fr-FR'), unit: 'MPa', desc: lang==='fr'?'Module différé (déformation totale)':'Long-term modulus' },
-      { prop: 'τu', sym: 'τu', val: tau_u.toFixed(2), unit: 'MPa', desc: lang==='fr'?'Contrainte ultime de cisaillement':'Ultimate shear stress' },
-      { prop: 'εbc,lim', sym: 'εbc,lim', val: '3.5‰', unit: '—', desc: lang==='fr'?'Déformation ultime du béton comprimé':'Ultimate compressive strain' },
-      { prop: 'εs,lim', sym: 'εs,lim', val: '10‰', unit: '—', desc: lang==='fr'?'Déformation limite de l\'acier':'Steel limit strain' },
+    const ftj=0.6+0.06*fck, fbu=0.85*fck/1.5, Eij=11000*Math.pow(fck,1/3), Evj=3700*Math.pow(fck,1/3), tau_u=Math.min(0.2*fck/1.5,5);
+    props=[
+      {k:'fc28',    sym:'fc28',     val:fck.toFixed(0),                    unit:'MPa', desc:lang==='fr'?'Résistance caractéristique à 28j':'Char. strength at 28d'},
+      {k:'ft28',    sym:'ft28',     val:ftj.toFixed(2),                    unit:'MPa', desc:lang==='fr'?'Résistance en traction':'Tensile strength'},
+      {k:'fbu',     sym:'fbu',      val:fbu.toFixed(2),                    unit:'MPa', desc:lang==='fr'?'Contrainte limite compression':'Design compressive stress'},
+      {k:'Ei28',    sym:'Ei28',     val:Math.round(Eij).toLocaleString(),  unit:'MPa', desc:lang==='fr'?'Module instantané':'Instantaneous modulus'},
+      {k:'Ev28',    sym:'Ev28',     val:Math.round(Evj).toLocaleString(),  unit:'MPa', desc:lang==='fr'?'Module différé':'Long-term modulus'},
+      {k:'τu',      sym:'τu',       val:tau_u.toFixed(2),                  unit:'MPa', desc:lang==='fr'?'Contrainte ultime cisaillement':'Ultimate shear stress'},
+      {k:'εbc,lim', sym:'εbc,lim',  val:'3.5 ‰',                           unit:'—',   desc:lang==='fr'?'Déformation ultime béton':'Ultimate compressive strain'},
+      {k:'εs,lim',  sym:'εs,lim',   val:'10 ‰',                            unit:'—',   desc:lang==='fr'?'Déformation limite acier':'Steel limit strain'},
     ];
   }
 
-  // Cards principales
-  const grid = document.getElementById('ca-grid');
-  grid.innerHTML = props.slice(0,4).map(p => `
-    <div class="result-card ${p.prop==='fck'||p.prop==='fc28'?'highlight':''}">
-      <div class="result-label">${p.sym}</div>
-      <div><span class="result-value ${p.prop==='fck'||p.prop==='fc28'?'gold':''}">${p.val}</span><span class="result-unit">${p.unit!=='—'?p.unit:''}</span></div>
-      <div class="result-note">${p.desc}</div>
+  const FMAP = norm==='ec2' ? FORMULAS_EC2 : FORMULAS_BAEL;
+
+  document.getElementById('ca-cards').innerHTML = props.slice(0,4).map(p=>`
+    <div class="res-card ${p.k==='fck'||p.k==='fc28'?'hi':''}">
+      <div class="res-lbl">${p.sym}</div>
+      <div><span class="res-val ${p.k==='fck'||p.k==='fc28'?'gold':''}">${p.val}</span><span class="res-unit">${p.unit!=='—'?p.unit:''}</span></div>
+      <div class="res-note">${p.desc}</div>
     </div>`).join('');
 
-  // Tableau complet
-  const tbody = document.getElementById('ca-tbody');
-  tbody.innerHTML = props.map(p => `
+  document.getElementById('ca-tbody').innerHTML = props.map(p=>`
     <tr>
-      <td>${p.prop}</td>
-      <td style="font-style:italic;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:15px">${p.sym}</td>
+      <td>${p.k}</td>
+      <td class="sym">${p.sym}</td>
       <td class="val">${p.val}</td>
-      <td style="color:var(--ink3);font-size:12px">${p.unit!=='—'?p.unit:'—'}</td>
-      <td>${renderFormula(p.prop, p.norm || norm)}</td>
-      <td style="color:var(--ink3);font-size:12px">${p.desc}</td>
+      <td class="unit">${p.unit}</td>
+      <td>${FMAP[p.k]||'—'}</td>
+      <td style="font-size:11px;color:var(--ink3)">${p.desc}</td>
     </tr>`).join('');
 }
 
-// ─── FLEXION SIMPLE ───
-function calcFlexSimple() {
+// ── FLEXION SIMPLE ──
+function calcFS() {
   const b=+document.getElementById('fs-b').value, h=+document.getElementById('fs-h').value;
   const c=+document.getElementById('fs-c').value, phi=+document.getElementById('fs-phi').value;
   const fck=+document.getElementById('fs-fck').value, fe=+document.getElementById('fs-fe').value;
-  const Mu=+document.getElementById('fs-mu').value*1e6, Ms=+document.getElementById('fs-ms').value*1e6;
-  const errEl=document.getElementById('fs-error');
-  if(!b||!h||!Mu){errEl.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';errEl.classList.add('show');return;}
-  errEl.classList.remove('show');
+  const Mu=+document.getElementById('fs-mu').value*1e6;
+  const err=document.getElementById('fs-err');
+  if(!b||!h||!Mu){err.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';err.classList.add('on');return;}
+  err.classList.remove('on');
 
   const d=h-c-phi/2;
   const fcd=norm==='ec2'?fck/1.5:0.85*fck/1.5;
   const fyd=fe/1.15;
-  const mured=Mu/(b*d*d*fcd);
+  const mu=Mu/(b*d*d*fcd);
   const lim=norm==='ec2'?0.372:0.392;
-  if(mured>lim){errEl.textContent=(lang==='fr'?'Section insuffisante (µ = ':'Section insufficient (µ = ')+mured.toFixed(3)+' > '+lim+')';errEl.classList.add('show');return;}
-  const alpha_x=(1-Math.sqrt(1-2*mured))/0.8;
-  const z=d*(1-0.4*alpha_x);
+
+  if(mu>lim){
+    err.textContent=(lang==='fr'?`Section insuffisante — µ = ${mu.toFixed(3)} > ${lim}. Augmenter b ou h.`:`Insufficient section — µ = ${mu.toFixed(3)} > ${lim}.`);
+    err.classList.add('on');return;
+  }
+
+  const alpha=(1-Math.sqrt(1-2*mu))/0.8;
+  const z=d*(1-0.4*alpha);
   const As=Mu/(fyd*z);
   const As_cm2=(As/100).toFixed(2);
   const nBars=Math.ceil(As/(Math.PI*phi*phi/4));
 
   document.getElementById('fs-As').textContent=As_cm2;
-  document.getElementById('fs-As-note').textContent=(lang==='fr'?`Soit ${nBars} barres Ø${phi}`:`i.e. ${nBars} bars Ø${phi}`);
+  document.getElementById('fs-note').textContent=`→ ${nBars} barres Ø${phi} mm`;
   document.getElementById('fs-d').textContent=Math.round(d);
-  document.getElementById('fs-mured').textContent=mured.toFixed(4);
+  document.getElementById('fs-mu2').textContent=mu.toFixed(4);
   document.getElementById('fs-z').textContent=Math.round(z);
 
-  const Asmin=Math.max(0.26*Math.pow(fck,2/3)/fe*b*d,0.0013*b*d);
+  const Asmin=Math.max(0.26*Math.pow(fck,2/3)/fe*b*d, 0.0013*b*d);
   const Asmax=0.04*b*h;
-  const verifs=[
-    {label:'As calculé',val:As_cm2+' cm²',s:'ok'},
-    {label:'As,min',val:(Asmin/100).toFixed(2)+' cm²',s:As>=Asmin?'ok':'nok'},
-    {label:'As,max (4%)',val:(Asmax/100).toFixed(1)+' cm²',s:As<=Asmax?'ok':'nok'},
-    {label:'µ < '+lim,val:mured.toFixed(4),s:mured<lim?'ok':'nok'},
-  ];
-  document.getElementById('fs-verifs').innerHTML=verifs.map(v=>`<div class="verif-row"><span class="verif-label">${v.label}</span><span class="verif-val ${v.s}">${v.val} ${v.s==='ok'?'✓':'✗'}</span></div>`).join('');
+  chks('fs-chks',[
+    {l:'As calculé',v:As_cm2+' cm²',s:'ok'},
+    {l:'As,min',v:(Asmin/100).toFixed(2)+' cm²',s:As>=Asmin?'ok':'ko'},
+    {l:'As,max (4%)',v:(Asmax/100).toFixed(1)+' cm²',s:As<=Asmax?'ok':'ko'},
+    {l:'µ < '+lim,v:mu.toFixed(4),s:mu<lim?'ok':'ko'},
+  ]);
 
-  const fEl=document.getElementById('fs-formulas');
+  const fEl=document.getElementById('fs-form');
   fEl.innerHTML=norm==='ec2'
-    ?`<span>fcd</span> = fck/γc = ${fck}/1.5 = ${(fck/1.5).toFixed(1)} MPa\n<span>fyd</span> = fyk/γs = ${fe}/1.15 = ${(fe/1.15).toFixed(0)} MPa\n<span>d</span>  = h - c - Ø/2 = ${h} - ${c} - ${phi/2} = ${Math.round(d)} mm\n<span>µ</span>  = Mu/(b·d²·fcd) = ${mured.toFixed(4)}\n<span>α</span>  = (1-√(1-2µ))/0.8 = ${alpha_x.toFixed(4)}\n<span>z</span>  = d·(1-0.4·α) = ${Math.round(z)} mm\n<span>As</span> = Mu/(fyd·z) = ${As_cm2} cm²`
-    :`<span>fbu</span> = 0.85·fck/γb = ${(0.85*fck/1.5).toFixed(2)} MPa\n<span>σs</span>  = fe/γs = ${(fe/1.15).toFixed(0)} MPa\n<span>µ</span>   = Mu/(b·d²·fbu) = ${mured.toFixed(4)}\n<span>α</span>   = (1-√(1-2µ))/0.8 = ${alpha_x.toFixed(4)}\n<span>z</span>   = d·(1-0.4·α) = ${Math.round(z)} mm\n<span>As</span>  = Mu/(σs·z) = ${As_cm2} cm²`;
+    ?`<b>fcd</b> = fck / γc = ${fck} / 1.5 = ${(fck/1.5).toFixed(1)} MPa\n<b>fyd</b> = fyk / γs = ${fe} / 1.15 = ${(fe/1.15).toFixed(0)} MPa\n<b>d</b>   = h - c - Ø/2 = ${h} - ${c} - ${phi/2} = ${Math.round(d)} mm\n<b>µ</b>   = Mu / (b·d²·fcd) = ${mu.toFixed(4)}\n<b>α</b>   = (1 - √(1-2µ)) / 0.8 = ${alpha.toFixed(4)}\n<b>z</b>   = d · (1 - 0.4·α) = ${Math.round(z)} mm\n<b>As</b>  = Mu / (fyd·z) = ${As_cm2} cm²`
+    :`<b>fbu</b> = 0.85·fc28 / (θ·γb) = ${(0.85*fck/1.5).toFixed(2)} MPa\n<b>σs</b>  = fe / γs = ${(fe/1.15).toFixed(0)} MPa\n<b>µ</b>   = Mu / (b·d²·fbu) = ${mu.toFixed(4)}\n<b>α</b>   = (1 - √(1-2µ)) / 0.8 = ${alpha.toFixed(4)}\n<b>z</b>   = d · (1 - 0.4·α) = ${Math.round(z)} mm\n<b>As</b>  = Mu / (σs·z) = ${As_cm2} cm²`;
 
-  document.getElementById('fs-results').classList.add('show');
+  document.getElementById('res-fs').classList.add('on');
 }
 
-// ─── FLEXION COMPOSÉE ───
-function calcFlexComposee() {
+// ── FLEXION COMPOSÉE ──
+function calcFC() {
   const b=+document.getElementById('fc-b').value, h=+document.getElementById('fc-h').value;
   const c=+document.getElementById('fc-c').value, phi=+document.getElementById('fc-phi').value;
   const fck=+document.getElementById('fc-fck').value, fe=+document.getElementById('fc-fe').value;
   const Mu=+document.getElementById('fc-mu').value*1e6, Nu=+document.getElementById('fc-nu').value*1e3;
   const type=document.getElementById('fc-type').value;
-  const errEl=document.getElementById('fc-error');
-  if(!b||!h){errEl.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';errEl.classList.add('show');return;}
-  errEl.classList.remove('show');
+  const err=document.getElementById('fc-err');
+  if(!b||!h){err.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';err.classList.add('on');return;}
+  err.classList.remove('on');
 
   const d=h-c-phi/2, d2=c+phi/2;
   const fcd=norm==='ec2'?fck/1.5:0.85*fck/1.5, fyd=fe/1.15;
-  const Nu_val=type==='comp'?Nu:-Nu;
-  const e0=Math.abs(Mu/Nu_val), ea=Math.max(h/30,20), e=e0+ea;
+  const Nu_v=type==='comp'?Nu:-Nu;
+  const e0=Math.abs(Mu/Nu_v), ea=Math.max(h/30,20), e=e0+ea;
   const yg=h/2, e1=e+yg-d2, e2=e-yg+d2;
   let As1,As2;
 
   if(type==='comp'){
-    As2=Math.max(0,(Nu_val*e1-fcd*b*0.8*d*(d-d2))/(fyd*(d-d2)));
-    As1=Math.max(0,(Nu_val-fcd*b*0.8*d+fyd*As2)/fyd);
+    As2=Math.max(0,(Nu_v*e1-fcd*b*0.8*d*(d-d2))/(fyd*(d-d2)));
+    As1=Math.max(0,(Nu_v-fcd*b*0.8*d+fyd*As2)/fyd);
   } else {
-    As1=Math.max(0,Math.abs(Nu_val)*e1/(fyd*(d-d2)));
-    As2=Math.max(0,Math.abs(Nu_val)*e2/(fyd*(d-d2)));
+    As1=Math.max(0,Math.abs(Nu_v)*e1/(fyd*(d-d2)));
+    As2=Math.max(0,Math.abs(Nu_v)*e2/(fyd*(d-d2)));
   }
 
   document.getElementById('fc-As1').textContent=(As1/100).toFixed(2);
@@ -821,105 +764,109 @@ function calcFlexComposee() {
   document.getElementById('fc-d').textContent=Math.round(d);
   document.getElementById('fc-e').textContent=Math.round(e);
 
-  const verifs=[
-    {label:'As1 ('+( lang==='fr'?'tendues':'tension')+')',val:(As1/100).toFixed(2)+' cm²',s:'ok'},
-    {label:'As2 ('+( lang==='fr'?'comprimées':'compression')+')',val:(As2/100).toFixed(2)+' cm²',s:'ok'},
-    {label:lang==='fr'?'Excentricité e':'Eccentricity e',val:Math.round(e)+' mm',s:'ok'},
-    {label:lang==='fr'?'Hauteur utile d':'Effective depth d',val:Math.round(d)+' mm',s:'ok'},
-  ];
-  document.getElementById('fc-verifs').innerHTML=verifs.map(v=>`<div class="verif-row"><span class="verif-label">${v.label}</span><span class="verif-val ${v.s}">${v.val}</span></div>`).join('');
-  document.getElementById('fc-results').classList.add('show');
+  chks('fc-chks',[
+    {l:'As1 ('+( lang==='fr'?'tendues':'tension')+')',v:(As1/100).toFixed(2)+' cm²',s:'ok'},
+    {l:'As2 ('+( lang==='fr'?'comprimées':'compression')+')',v:(As2/100).toFixed(2)+' cm²',s:'ok'},
+    {l:lang==='fr'?'Excentricité e':'Eccentricity e',v:Math.round(e)+' mm',s:'ok'},
+  ]);
+  document.getElementById('res-fc').classList.add('on');
 }
 
-// ─── CISAILLEMENT ───
-function calcCisaillement() {
+// ── CISAILLEMENT ──
+function calcCI() {
   const b=+document.getElementById('ci-b').value, d=+document.getElementById('ci-d').value;
   const phit=+document.getElementById('ci-phit').value, n=+document.getElementById('ci-n').value;
   const fck=+document.getElementById('ci-fck').value, fe=+document.getElementById('ci-fe').value;
   const Vu=+document.getElementById('ci-vu').value*1e3, Asl=+document.getElementById('ci-asl').value*100;
-  const errEl=document.getElementById('ci-error');
-  if(!b||!d||!Vu){errEl.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';errEl.classList.add('show');return;}
-  errEl.classList.remove('show');
+  const err=document.getElementById('ci-err');
+  if(!b||!d||!Vu){err.textContent=lang==='fr'?'Veuillez remplir tous les champs.':'Please fill all fields.';err.classList.add('on');return;}
+  err.classList.remove('on');
 
   const fyd_t=fe/1.15, At=n*Math.PI*phit*phit/4;
   let VRdc,VRdmax,St;
 
   if(norm==='ec2'){
-    const fcd=fck/1.5, k=Math.min(1+Math.sqrt(200/d),2.0), rho_l=Math.min(Asl/(b*d),0.02);
-    VRdc=Math.max(0.18/1.5*k*Math.pow(100*rho_l*fck,1/3)*b*d,(0.035*Math.pow(k,1.5)*Math.sqrt(fck))*b*d);
-    const cot_t=1.0;
-    VRdmax=0.9*d*b*0.6*(1-fck/250)*fcd/(cot_t+1/cot_t);
-    if(Vu>VRdmax){errEl.textContent=(lang==='fr'?`Vu (${(Vu/1000).toFixed(0)} kN) > VRd,max (${(VRdmax/1000).toFixed(1)} kN). Section insuffisante.`:`Vu > VRd,max. Increase section.`);errEl.classList.add('show');return;}
-    St=At*fyd_t*0.9*d*cot_t/Vu;
+    const fcd=fck/1.5, k=Math.min(1+Math.sqrt(200/d),2), rho=Math.min(Asl/(b*d),0.02);
+    VRdc=Math.max(0.18/1.5*k*Math.pow(100*rho*fck,1/3)*b*d, 0.035*Math.pow(k,1.5)*Math.sqrt(fck)*b*d);
+    VRdmax=0.9*d*b*0.6*(1-fck/250)*fcd/2;
+    if(Vu>VRdmax){err.textContent=`Vu (${(Vu/1000).toFixed(0)} kN) > VRd,max (${(VRdmax/1000).toFixed(1)} kN) — ${lang==='fr'?'Section insuffisante':'Insufficient section'}`;err.classList.add('on');return;}
+    St=At*fyd_t*0.9*d/Vu;
   } else {
-    const tau_u=Math.min(0.2*fck/1.5,5.0);
+    const tau_u=Math.min(0.2*fck/1.5,5);
     VRdc=0; VRdmax=tau_u*b*d;
-    const tau_v=Vu/(b*d);
-    St=At*fyd_t/(tau_v*b);
+    St=At*fyd_t/(Vu/(b*d)*b);
   }
 
-  const St_max=Math.min(0.75*d,400);
-  St=Math.min(St,St_max);
+  const Stmax=Math.min(0.75*d,400);
+  St=Math.min(St,Stmax);
   St=Math.floor(St/25)*25;
   const Astm=At/St*1000/100;
 
   document.getElementById('ci-st').textContent=Math.round(St);
+  document.getElementById('ci-note').textContent=`Cadres Ø${phit} — ${n} branches`;
   document.getElementById('ci-astm').textContent=Astm.toFixed(2);
   document.getElementById('ci-vrdc').textContent=(VRdc/1000).toFixed(1);
   document.getElementById('ci-vrdmax').textContent=(VRdmax/1000).toFixed(1);
-  document.getElementById('ci-st-note').textContent=(lang==='fr'?`Cadres Ø${phit} — ${n} branches`:`Stirrups Ø${phit} — ${n} legs`);
 
-  const needsAr=Vu>VRdc;
-  const verifs=[
-    {label:'VRd,c',val:(VRdc/1000).toFixed(1)+' kN',s:Vu<=VRdc?'ok':'warn'},
-    {label:'Vu',val:(Vu/1000).toFixed(0)+' kN',s:'ok'},
-    {label:lang==='fr'?'Armatures requises':'Reinforcement required',val:needsAr?(lang==='fr'?'Oui ⚠':'Yes ⚠'):(lang==='fr'?'Non ✓':'No ✓'),s:needsAr?'warn':'ok'},
-    {label:'Vu ≤ VRd,max',val:(Vu/1000).toFixed(0)+'≤'+(VRdmax/1000).toFixed(1)+' kN',s:Vu<=VRdmax?'ok':'nok'},
-    {label:'St ≤ St,max',val:Math.round(St)+'≤'+Math.round(St_max)+' mm',s:St<=St_max?'ok':'nok'},
-  ];
-  document.getElementById('ci-verifs').innerHTML=verifs.map(v=>`<div class="verif-row"><span class="verif-label">${v.label}</span><span class="verif-val ${v.s}">${v.val} ${v.s==='ok'?'✓':v.s==='nok'?'✗':'⚠'}</span></div>`).join('');
-  document.getElementById('ci-results').classList.add('show');
+  chks('ci-chks',[
+    {l:'VRd,c',v:(VRdc/1000).toFixed(1)+' kN',s:Vu<=VRdc?'ok':'warn'},
+    {l:'Vu',v:(Vu/1000).toFixed(0)+' kN',s:'ok'},
+    {l:lang==='fr'?'Armatures requises':'Reinforcement required',v:Vu>VRdc?(lang==='fr'?'Oui':'Yes'):(lang==='fr'?'Non':'No'),s:Vu>VRdc?'warn':'ok'},
+    {l:'Vu ≤ VRd,max',v:(Vu/1000).toFixed(0)+' ≤ '+(VRdmax/1000).toFixed(1)+' kN',s:Vu<=VRdmax?'ok':'ko'},
+    {l:'St ≤ St,max',v:Math.round(St)+' ≤ '+Math.round(Stmax)+' mm',s:St<=Stmax?'ok':'ko'},
+  ]);
+  document.getElementById('res-ci').classList.add('on');
 }
 
-function resetCalc(id) {
-  document.getElementById('calc-'+id).querySelectorAll('input').forEach(i=>i.value=i.defaultValue||'');
-  const pref=id==='flex-simple'?'fs':id==='flex-composee'?'fc':'ci';
-  document.getElementById(pref+'-results').classList.remove('show');
-  document.getElementById(pref+'-error').classList.remove('show');
+// ── HELPERS ──
+function chks(id, rows) {
+  document.getElementById(id).innerHTML = rows.map(r=>`
+    <div class="chk-row">
+      <span class="chk-lbl">${r.l}</span>
+      <span class="chk-val ${r.s}">${r.v} ${r.s==='ok'?'✓':r.s==='ko'?'✗':'⚠'}</span>
+    </div>`).join('');
 }
 
-// ─── EXPORT PDF ───
-function exportPDF(calcId) {
-  // Hide all calc sections except current
-  document.querySelectorAll('[id^="calc-"]').forEach(el => {
-    el.setAttribute('data-prev-display', el.style.display);
-    el.style.display = 'none';
-  });
-  const current = document.getElementById('calc-' + calcId);
-  current.style.display = 'block';
+function reset(id) {
+  document.getElementById('sec-'+id).querySelectorAll('input').forEach(i=>i.value=i.defaultValue);
+  const map={caract:'ca',flexsimple:'fs',flexcomposee:'fc',cisaillement:'ci'};
+  const p=map[id];
+  const r=document.getElementById('res-'+p);
+  if(r) r.classList.remove('on');
+  const e=document.getElementById(p+'-err');
+  if(e) e.classList.remove('on');
+}
 
-  // Add header for print
-  const header = document.createElement('div');
-  header.id = 'pdf-header';
-  header.style.cssText = 'text-align:center;padding:16px 0 24px;border-bottom:2px solid #b8922a;margin-bottom:24px';
-  header.innerHTML = `
-    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;color:#1a1c22">BridgeAI Studios</div>
-    <div style="font-size:11px;color:#6b7080;letter-spacing:.1em;text-transform:uppercase;margin-top:4px">
-      Note de calcul — ${lang==='fr'?'Calculs quotidiens Béton':'Daily Concrete Calculations'}
-    </div>
-    <div style="font-size:11px;color:#b8922a;margin-top:4px">${norm==='ec2'?'EC2 — EN 1992-1-1':'BAEL 91 mod.99'} — ${new Date().toLocaleDateString(lang==='fr'?'fr-FR':'en-GB')}</div>
-  `;
-  document.querySelector('.content').prepend(header);
+// ── EXPORT PDF ──
+function exportPDF(id) {
+  const map={caract:'ca',flexsimple:'fs',flexcomposee:'fc',cisaillement:'ci'};
+  const p=map[id];
+  const res=document.getElementById('res-'+p);
+  if(id!=='caract'&&(!res||!res.classList.contains('on'))){
+    alert(lang==='fr'?'Veuillez d\'abord lancer le calcul.':'Please run the calculation first.');
+    return;
+  }
+  // Hide all except current
+  document.querySelectorAll('[id^="sec-"]').forEach(s=>{s.setAttribute('data-pd',s.style.display);s.style.display='none';});
+  document.getElementById('sec-'+id).style.display='block';
+  if(res) res.style.display='block';
+
+  // Header
+  const hdr=document.createElement('div');
+  hdr.id='pdf-hdr';
+  hdr.style.cssText='text-align:center;padding:14px 0 20px;border-bottom:1.5px solid #a07828;margin-bottom:20px';
+  hdr.innerHTML=`
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#18191f;letter-spacing:.02em">BridgeAI Studios</div>
+    <div style="font-size:10px;color:#7a7e8e;letter-spacing:.12em;text-transform:uppercase;margin-top:3px">${lang==='fr'?'Note de calcul — Béton':'Calculation report — Concrete'}</div>
+    <div style="font-size:10px;color:#a07828;margin-top:3px">${norm==='ec2'?'EC2 — EN 1992-1-1':'BAEL 91 mod.99'} · ${new Date().toLocaleDateString(lang==='fr'?'fr-FR':'en-GB')}</div>`;
+  document.querySelector('.content').prepend(hdr);
 
   window.print();
 
-  // Restore
-  setTimeout(() => {
-    document.getElementById('pdf-header')?.remove();
-    document.querySelectorAll('[id^="calc-"]').forEach(el => {
-      el.style.display = el.getAttribute('data-prev-display') || '';
-    });
-  }, 500);
+  setTimeout(()=>{
+    document.getElementById('pdf-hdr')?.remove();
+    document.querySelectorAll('[id^="sec-"]').forEach(s=>s.style.display=s.getAttribute('data-pd')||'');
+  },600);
 }
 
 // Init
