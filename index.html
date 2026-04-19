@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BridgeAI Studios — Ponts routiers & ferroviaires | Plateforme IA</title>
+<meta name="description" content="BridgeAI Studios — Plateforme IA de conception des ponts routiers et ferroviaires. Calculs automatiques, plans de coffrage, ferraillage, métrés et notes de calcul. Conforme EC2 & réglements français. Export DXF AutoCAD.">
+<meta name="keywords" content="calcul pont, plan coffrage pont, ferraillage pont, pont routier, pont ferroviaire, bridge design software, calcul structure pont, EN 1991-2, EC2, BAEL, SETRA, DXF AutoCAD, bureau études ponts">
+<meta name="author" content="BridgeAI Studios">
+<meta property="og:title" content="BridgeAI Studios — Plateforme IA pour la conception des ponts">
+<meta property="og:description" content="Calculez et dessinez vos ponts routiers et ferroviaires automatiquement. Notes de calcul, plans coffrage/ferraillage, métrés, export DXF. Bridge Composer avec descente de charges automatique.">
+<meta property="og:url" content="https://www.bridgeaistudios.com">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.bridgeaistudios.com">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -822,6 +831,13 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
         </ul>
       </div>
     </div>
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;display:flex;justify-content:center">
+      <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 20px;border-radius:99px;border:1px solid rgba(201,168,76,.15);background:rgba(201,168,76,.03)">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;display:inline-block"></span>
+        <span style="font-size:11px;color:var(--silver)" data-fr="Visiteurs" data-en="Visitors">Visiteurs</span>
+        <span style="font-size:13px;font-weight:400;color:var(--gold);font-family:'Cormorant Garamond',serif" id="visit-count">—</span>
+      </div>
+    </div>
     <div class="footer-bottom">
       <p>&copy; 2025 BridgeAI Studios — <span data-fr="Tous droits réservés" data-en="All rights reserved">Tous droits réservés</span></p>
       <p>bridgeaistudios.com</p>
@@ -867,6 +883,20 @@ function updateCount() {
   const el = document.getElementById('mod-count');
   if(el) el.textContent = n;
 }
+</script>
+<script>
+async function loadVisitors() {
+  try {
+    const res = await fetch('https://api.countapi.xyz/hit/bridgeaistudios.com/visits');
+    const data = await res.json();
+    document.getElementById('visit-count').textContent = data.value.toLocaleString('fr-FR');
+  } catch(e) {
+    let c = parseInt(localStorage.getItem('vc') || '0') + 1;
+    localStorage.setItem('vc', c);
+    document.getElementById('visit-count').textContent = c.toLocaleString('fr-FR');
+  }
+}
+loadVisitors();
 </script>
 </body>
 </html>
