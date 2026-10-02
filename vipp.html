@@ -301,6 +301,16 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .skf .mk{stroke:var(--ink3);stroke-width:.7;stroke-dasharray:2 3}.skf .mk.hl{stroke:var(--gold);stroke-width:1.6}
 @media(max-width:1100px){.sg-body{grid-template-columns:minmax(0,1fr)}.sg-sk{position:static;order:-1}}
 @media(max-width:600px){.sg-cabsk .skf{overflow-x:auto}.sg-cabsk .skf svg{min-width:620px}.sg-st{padding:6px 8px}.sg-st:not(.on) span{display:none}.sg-st:not(.on){grid-template-columns:auto;column-gap:0}.sg-row{grid-template-columns:1fr 1fr}.sg-fs{grid-template-columns:1fr 1fr}.sg-st small{display:none}}
+.sg-proj{background:var(--gold-bg);border-color:var(--gold-border)}
+.sg-proj .sf input{background:var(--white)}
+.sg-prog{height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0 6px}
+.sg-prog>div{height:100%;background:var(--gold);transition:width .2s}
+.sg-dlog .sg-ck{margin-top:12px}
+.sg-t.log{margin-top:10px;font-size:11.5px}
+.sg-t.log thead th{font-family:'Outfit',sans-serif;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;font-size:9.5px;text-align:left}
+.sg-t.log td{padding:5px 8px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+.sg-t.log td.okc{color:var(--teal)}.sg-t.log td.koc{color:var(--ink3)}
+.sg-adv{margin:8px 0 0 18px;font-size:11.5px;color:var(--ink2);line-height:1.6}
 </style>
 </head>
 <body>
@@ -316,14 +326,14 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-section">
-      <div class="sidebar-label">VIPP-EL · Vérificateur</div>
+      <div class="sidebar-label">VIPP-EL · Vérificateur et projeteur</div>
       <div class="nav-item active" data-sec="bordereau"><div class="nav-dot" style="background:var(--gold)"></div><span class="nav-label">1 · Bordereau des données</span></div>
       <div class="nav-item" data-sec="resultats"><div class="nav-dot" style="background:var(--teal)"></div><span class="nav-label">2 · Résultats</span></div>
       <div class="nav-item" data-sec="note"><div class="nav-dot" style="background:var(--blue)"></div><span class="nav-label">3 · Note de calcul</span></div>
     </div>
     <div class="sidebar-section" style="margin-top:22px">
       <div class="sidebar-label">À propos</div>
-      <div class="hint" style="padding:0 10px">Travée indépendante à poutres précontraintes par post-tension. BPEL 91, fascicule 61 titre II. Calcul conforme à VIPP-EL (SETRA), validé sur 11 notes de calcul.</div>
+      <div class="hint" style="padding:0 10px">Travée indépendante à poutres précontraintes par post-tension. BPEL 91 (classes I, II, III), fascicule 61 titre II. Vérification conforme à VIPP-EL (SETRA), validée sur 11 notes de calcul ; projeteur selon la méthode VIPP du SETRA.</div>
     </div>
   </aside>
   <main class="content">
@@ -332,7 +342,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
       <div class="page-header">
         <div class="page-eyebrow">Ouvrages d'art · VIPP</div>
         <div class="page-title">Bordereau des données</div>
-        <div class="norm-tag">BPEL 91 · Fascicule 61 titre II · Classe II</div>
+        <div class="norm-tag">BPEL 91 · Fascicule 61 titre II · Classes I, II, III</div>
         <div class="page-desc">Renseignez l'ouvrage étape par étape, guidé par des croquis cotés, ou travaillez directement sur le texte du bordereau VIPP-EL. Une note de calcul VIPP-EL existante peut être importée : son bordereau est relu depuis le PDF.</div>
       </div>
       <div class="card">
@@ -405,7 +415,7 @@ const store = { get() { try { return localStorage.getItem('vipp-bordereau'); } c
 function bordText() { return mode === 'guide' && sg ? sg.text() : $('#bord').value; }
 function loadText(txt, quiet) {
   if (mode === 'texte') { $('#bord').value = txt; }
-  try { const bd = VIPPSaisie.parseBordereau(txt); sg ? sg.set(bd) : (sg = VIPPSaisie.mount($('#sg'), bd, { onChange: () => store.set(sg.text()) })); if (mode === 'guide') $('#bord').value = txt; if (!quiet) store.set(txt); return true; }
+  try { const bd = VIPPSaisie.parseBordereau(txt); sg ? sg.set(bd) : (sg = VIPPSaisie.mount($('#sg'), bd, { onChange: () => store.set(sg.text()), onDesign: runDesign })); if (mode === 'guide') $('#bord').value = txt; if (!quiet) store.set(txt); return true; }
   catch (e) { if (!quiet) err('Bordereau illisible : ' + (e.message || e)); return false; }
 }
 function setMode(m) {
@@ -463,6 +473,27 @@ $('#file').onchange = e => e.target.files[0] && load(e.target.files[0]);
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && load(e.dataTransfer.files[0]); };
+
+// ── projeteur : génération du câblage dans un Web Worker dédié
+function runDesign(bd, o) {
+  const msg = { type: 'design', text: VIPPSaisie.formatBordereau(bd), options: o };
+  const fail = m => sg.designDone({ ok: false, steps: [], advice: [], perBeam: [], critical: 0, error: m });
+  const go = (w, retry) => {
+    w.onmessage = ev => {
+      const m = ev.data;
+      if (m.type === 'dprogress') { sg.designProgress(m.msg, m.step, m.total); return; }
+      if (m.type !== 'designed') return;
+      w.terminate();
+      const nb = m.text ? VIPPSaisie.parseBordereau(m.text) : undefined;
+      sg.designDone(m.log, nb);
+      if (nb) { store.set(m.text); $('#bord').value = m.text; }
+      if (m.summary) { summary = m.summary; pages = m.pages; curBeam = 0; renderResults(); renderNote(); $('#plbl').textContent = 'Câblage généré par le projeteur — résultats et note de calcul disponibles (sections 2 et 3).'; }
+    };
+    w.onerror = async e => { w.terminate(); if (retry) { try { go(await blobWorker(), false); return; } catch (_) {} } fail(e.message || 'le moteur de calcul n\'a pas pu démarrer'); };
+    w.postMessage(msg);
+  };
+  try { go(new Worker('vipp/vipp-worker.js'), true); } catch (_) { blobWorker().then(w => go(w, false)).catch(e => fail(e.message)); }
+}
 
 // ── calcul (Web Worker)
 let worker;
