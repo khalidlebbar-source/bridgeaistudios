@@ -188,6 +188,116 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
   body.print-note .note pre{font-size:7.4px;line-height:1.25;border:none;page-break-after:always;margin:0;padding:0}
   @page{size:A4 landscape;margin:9mm}
 }
+/* ── SAISIE GUIDÉE ── */
+.seg{display:inline-flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:16px}
+.seg button{padding:7px 16px;border-radius:6px;border:none;background:transparent;font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink3);cursor:pointer;letter-spacing:.03em}
+.seg button.on{background:var(--white);color:var(--ink);box-shadow:var(--shadow)}
+.sg-steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.sg-st{position:relative;flex:0 0 auto;display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;text-align:left;padding:8px 12px 8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-family:'Outfit',sans-serif}
+.sg-st b{grid-row:1/3;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:500;background:var(--white);border:1px solid var(--border);color:var(--ink3)}
+.sg-st span{font-size:12px;color:var(--ink2);line-height:1.2}
+.sg-st small{font-size:9.5px;color:var(--ink3);letter-spacing:.06em;line-height:1.2}
+.sg-st.on{background:var(--white);border-color:var(--gold-border);box-shadow:var(--shadow)}
+.sg-st.on b{background:var(--gold);border-color:var(--gold);color:var(--white)}
+.sg-st i{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%}
+.sg-st i.e{background:var(--red)}.sg-st i.w{background:#c07830}
+.sg-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:22px;align-items:start}
+.sg-body>*{min-width:0}
+.sg-sk{position:sticky;top:72px}
+.sg-body.wide{grid-template-columns:minmax(0,1fr)}
+.sg-body.wide .sg-sk{position:static;order:-1}
+.sg-body.wide .sg-skc{display:none}
+.sg-intro{font-size:12.5px;color:var(--ink3);line-height:1.6;margin-bottom:14px;font-weight:300;max-width:62ch}
+.sg-g{border:1px solid var(--border);border-radius:10px;padding:14px 14px 12px;margin-bottom:14px;background:var(--white);min-width:0}
+.sg-g legend{font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;padding:0 6px}
+.sg-g legend small{color:var(--ink3);letter-spacing:.08em;margin-left:4px}
+.sg-fs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 12px}
+.sg-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.sf{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sf.wide{grid-column:1/-1}
+.sf-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.sf-h code,.sg-mx code,.sg-info code{font-family:'Courier New',monospace;font-size:11px;color:var(--gold);letter-spacing:.02em}
+.sf-h em{font-style:normal;font-size:10px;color:var(--ink3)}
+.sf-l{font-size:10.5px;color:var(--ink3);line-height:1.35}
+.sf input,.sf select,.sg-mx input,.sg-mx select{width:100%;height:32px;padding:0 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;font-variant-numeric:tabular-nums;outline:none;transition:border-color .15s,background .15s}
+.sf input:focus,.sf select:focus,.sg-mx input:focus,.sg-mx select:focus{border-color:var(--gold2);background:var(--white)}
+.sg-g .bad,.sg-g input.bad{border-color:var(--red)!important;background:#fdf2f2!important}
+.sg-mx{overflow-x:auto}
+.sg-mx table{border-collapse:collapse;width:100%}
+.sg-mx th{font-weight:400;text-align:left;padding:4px 6px 4px 0;vertical-align:middle}
+.sg-mx thead th{font-size:9.5px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;text-align:center;padding-bottom:6px}
+.sg-mx tbody th{display:flex;flex-direction:column;min-width:150px}
+.sg-mx tbody th span{font-size:10.5px;color:var(--ink3);line-height:1.3}
+.sg-mx tbody th em{font-style:normal}
+.sg-mx td{padding:3px}
+.sg-mx td.na{text-align:center;color:var(--border)}
+.sg-t thead th{text-transform:none;letter-spacing:.02em;font-family:'Courier New',monospace;font-size:10.5px;color:var(--gold)}
+.sg-t thead th input{font-family:'Outfit',sans-serif;color:var(--ink);font-weight:500;background:var(--gold-bg);border-color:var(--gold-border)}
+.sg-t tbody th{display:table-cell;min-width:0;font-family:'Courier New',monospace;font-size:11px;padding:0 8px 0 2px;color:var(--ink2);white-space:nowrap}
+.sg-t tbody th.f1{border-left:3px solid var(--teal)}.sg-t tbody th.f2{border-left:3px solid var(--blue)}
+.sg-t td input{min-width:62px}
+.sg-t.dp td input{min-width:66px;padding:0 6px;font-size:12px}
+.sg-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.sg-tab{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-size:11px;color:var(--ink3);cursor:pointer;font-family:'Outfit',sans-serif}
+.sg-tab.active{background:var(--gold);border-color:var(--gold);color:var(--white)}
+.sg-tab.add{border-style:dashed}
+.btn-secondary.sm{padding:6px 12px;font-size:11px;margin-top:10px}
+.sg-x{border:none;background:none;color:var(--ink3);font-size:16px;cursor:pointer;padding:0 6px}
+.sg-note{font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5}
+.sg-checks{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.sg-ck{font-size:11.5px;padding:8px 11px;border-radius:7px;border:1px solid;line-height:1.5}
+.sg-ck.err{background:#fdf2f2;border-color:#f5c0be;color:var(--red)}
+.sg-ck.warn{background:#fdf7ee;border-color:#efd9b0;color:#9a6420}
+.sg-ck.ok{background:#eef8f6;border-color:#bfe3dc;color:var(--teal)}
+.sg-info{margin-top:10px;font-size:12px;color:var(--ink2);line-height:1.55;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:8px;padding:10px 12px}
+.sg-info p{margin-top:4px;color:var(--ink3);font-size:11.5px}.sg-info p:first-child{margin-top:0}.sg-info .mute{font-size:11px}
+.sg-info em{font-style:normal;color:var(--ink3)}
+.sg-nav{display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.sg-nav button:disabled{opacity:.35;cursor:default}
+.sg-pos{font-size:11px;color:var(--ink3);letter-spacing:.1em}
+.sg-cabsk{margin-bottom:14px}
+.skf{margin:0 0 12px}
+.skf figcaption{font-size:9.5px;font-weight:500;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.skf svg{display:block;width:100%;height:auto;background:var(--white);border:1px solid var(--border);border-radius:8px}
+.sk-empty{padding:30px;text-align:center;color:var(--ink3);font-size:12px;border:1px dashed var(--border);border-radius:8px}
+.sk-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin:-4px 0 6px}
+.sk-leg i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.sk-leg span.hl{color:var(--gold);font-weight:500}
+.sk-leg .lf1{background:var(--teal)}.sk-leg .lf2{background:var(--blue)}
+.skf .beam{fill:#e7e1d5;stroke:var(--ink2);stroke-width:1;stroke-linejoin:round}
+.skf .slab{fill:#f3eee4;stroke:var(--ink2);stroke-width:1;stroke-linejoin:round}
+.skf .amorce{fill:#e7e1d5;stroke:var(--ink3);stroke-width:.8}
+.skf .ent{fill:#ddd3c1;stroke:var(--ink3);stroke-width:.8}
+.skf .ent.hl{fill:var(--gold-bg);stroke:var(--gold);stroke-width:1.6}
+.skf .thick{fill:none;stroke:var(--gold);stroke-width:1;stroke-dasharray:4 3}
+.skf .thick.hl{fill:var(--gold-bg);stroke-width:2}
+.skf .trot{fill:#d8d0c0;stroke:var(--ink3);stroke-width:.6}
+.skf .road{stroke:var(--ink);stroke-width:2.2;fill:none}
+.skf .lane{stroke:var(--ink3);stroke-width:.8;stroke-dasharray:3 3}
+.skf .bar{fill:var(--ink2)}.skf .bar.hl{fill:var(--gold)}
+.skf .axis{stroke:var(--blue);stroke-width:.8;stroke-dasharray:9 3 2 3}
+.skf .dim{stroke:var(--ink3);stroke-width:.8}.skf .dim.hl{stroke:var(--gold);stroke-width:2}
+.skf .ext{stroke:var(--ink3);stroke-width:.5;opacity:.55}
+.skf .tx{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink2)}
+.skf .tx.dl{font-size:10.5px}
+.skf .tx.sm{font-size:10px}
+.skf .tx.mute{fill:var(--ink3)}
+.skf .tx.hl{fill:var(--gold);font-weight:600;paint-order:stroke;stroke:var(--white);stroke-width:3px}
+.skf .bn{fill:var(--white);stroke:var(--ink3);stroke-width:.8}.skf .bn.on{fill:var(--gold);stroke:var(--gold)}
+.skf .bnt{font-size:10px;fill:var(--ink2)}.skf .bnt.on{fill:var(--white);font-weight:600}
+.skf .sup{fill:var(--ink2)}
+.skf .beamline{stroke:var(--ink3);stroke-width:.6;stroke-dasharray:6 3}
+.skf .supl{stroke:var(--ink);stroke-width:1.6}.skf .supl.hl{stroke:var(--gold);stroke-width:2.4}
+.skf .rb{fill:var(--ink2)}.skf .rb.hl{fill:var(--gold)}
+.skf .tl{stroke:var(--ink2);stroke-width:1.2}
+.skf .dot{fill:var(--ink2)}.skf .dot.hl{fill:var(--gold)}
+.skf .duct{fill:var(--white);stroke:var(--ink2);stroke-width:1}.skf .duct.hl{stroke:var(--gold);stroke-width:2.2}
+.skf .strand{fill:var(--ink3)}
+.skf .cab{fill:none;stroke-width:1.3}.skf .cab.f1{stroke:var(--teal)}.skf .cab.f2{stroke:var(--blue)}.skf .cab.sel{stroke:var(--gold);stroke-width:2.6}
+.skf .pt.f1{fill:var(--teal)}.skf .pt.f2{fill:var(--blue)}.skf .pt.hl{fill:var(--gold)}
+.skf .mk{stroke:var(--ink3);stroke-width:.7;stroke-dasharray:2 3}.skf .mk.hl{stroke:var(--gold);stroke-width:1.6}
+@media(max-width:1100px){.sg-body{grid-template-columns:minmax(0,1fr)}.sg-sk{position:static;order:-1}}
+@media(max-width:600px){.sg-cabsk .skf{overflow-x:auto}.sg-cabsk .skf svg{min-width:620px}.sg-st{padding:6px 8px}.sg-st:not(.on) span{display:none}.sg-st:not(.on){grid-template-columns:auto;column-gap:0}.sg-row{grid-template-columns:1fr 1fr}.sg-fs{grid-template-columns:1fr 1fr}.sg-st small{display:none}}
 </style>
 </head>
 <body>
@@ -220,18 +330,24 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
         <div class="page-eyebrow">Ouvrages d'art · VIPP</div>
         <div class="page-title">Bordereau des données</div>
         <div class="norm-tag">BPEL 91 · Fascicule 61 titre II · Classe II</div>
-        <div class="page-desc">Saisissez le bordereau au format VIPP-EL (tableaux A à D'), ou importez une note de calcul VIPP-EL existante : le bordereau est relu automatiquement depuis le PDF.</div>
+        <div class="page-desc">Renseignez l'ouvrage étape par étape, guidé par des croquis cotés, ou travaillez directement sur le texte du bordereau VIPP-EL. Une note de calcul VIPP-EL existante peut être importée : son bordereau est relu depuis le PDF.</div>
       </div>
       <div class="card">
         <div class="card-title">Bordereau VIPP-EL</div>
-        <div class="drop" id="drop">Déposer ici une note VIPP-EL (PDF) ou un bordereau (.txt) — ou <u>parcourir</u><input type="file" id="file" accept=".pdf,.txt" hidden></div>
+        <div class="seg" role="tablist"><button class="on" data-mode="guide">Saisie guidée</button><button data-mode="texte">Texte VIPP</button></div>
+        <div class="drop" id="drop">Importer une note VIPP-EL (PDF) ou un bordereau (.txt) — déposer ici ou <u>parcourir</u><input type="file" id="file" accept=".pdf,.txt" hidden></div>
         <div class="err" id="err"></div>
-        <textarea class="bord" id="bord" spellcheck="false"></textarea>
-        <div class="hint">Les cartes sont lues par en-têtes (LIGNE A1 … LIGNE D'), comme dans la reproduction du bordereau imprimée en tête des notes VIPP-EL. L'exemple chargé est un VIPP de 39 m à 5 poutres.</div>
+        <div id="sg"></div>
+        <div id="txtw" hidden>
+          <textarea class="bord" id="bord" spellcheck="false"></textarea>
+          <div class="hint">Les cartes sont lues par en-têtes (LIGNE A1 … LIGNE D'), comme dans la reproduction du bordereau imprimée en tête des notes VIPP-EL. Les modifications sont reprises dans la saisie guidée.</div>
+        </div>
         <div class="actions" style="margin-top:16px">
           <button class="btn-primary" id="run">Lancer le calcul</button>
           <button class="btn-secondary" id="ex">Recharger l'exemple</button>
-          <button class="btn-secondary" id="clr">Vider</button>
+          <button class="btn-secondary" id="save">Enregistrer le bordereau (.txt)</button>
+          <button class="btn-secondary" id="clr" hidden>Vider</button>
+          <span class="hint" id="draft" style="margin:0"></span>
         </div>
         <div class="progress" id="prog"><div></div></div>
         <div class="prog-lbl" id="plbl"></div>
@@ -265,6 +381,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
   </main>
 </div>
 
+<script src="vipp/vipp-saisie.js"></script>
 <script>const EXAMPLE = "                                                        BORDEREAU DES DONNEES\n                                                        =====================\n\n\nLIGNE NO                                 TITRE                                  NO    DATE\n\n  1 :   KLE__ING                                                                     0067 240718\n  2 :   VIADUC\n  3 :   PORTEE39\n\n\n                                           E   C   O             R\n                                           X V A T P     F E   M E   D\n                                           C E B R T   V E T D O A M E\n                                           E R L A I   E R R I M P E S\n                                           N O A C G   R P I F E P T S\n                                           T D G A O   I A E F N U R I\n                  POUTRES A CALCULER       R O E B U   F S R U T I E N\n             ----------------------------------------------------------\n  4 :         1     2     3     4     5    1 0 0 0 0 0 2 1 1 0 1 1 0 0\n  5 :                                      1 0 0 0 0 1 0 0 0 0 0 0 0 0\n\n\n\n                              TABLEAU A - CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE\n                              ======================================================\n\n                                                                    ENTRA\nLIGNE A1   SYMTAB NVOIE ETROTG   EGAU ESURCH     EDROI ETROTD NPOUT POUT DPOUT1 PORTEE ABOUT NE ENTINT ENTAPP NT BIAIS EDESS\n             0      0    2.000   0.000 8.950     1.050 0.000    5   2.600 5.675 39.000 0.500 2 0.000 0.300 1 100.00 0.000 0\n\n\n           POUTRES INTERMEDIAIRES\n                                                                                                 GOU\nLIGNE A2   PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G DAM LIN EPAM LONGOUS PLAB HPLA\n             0.000 1.600 0.800 2.100 0.200 0.430 1.170 0.150 0.150 0.100 0.220 0.220 0.540 0.540 2   1 0.180   9.750 0 0.000\n\n\nLIGNE A3   HHOUR H AXE   PENT SUP PENT INF   AMEN H5D    H5G   H7D   H7G   H9D   H9G     AMORD     AMORG    HENTA   HENTI   EABOUT DEXTR\n           0.200 0.200     0.025    0.065     1   0.200 0.200 0.000 0.000 0.200 0.200    0.800     0.800    1.900   0.000   0.000 0.000\n\n\n          POUTRES DE RIVE\nLIGNE A4                                                                                        GOU\n  TYPOURI PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G DAM LIN EPAM LONGOUS PLAB HPLA\n    1 1     0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0   0 0.000   0.000 0 0.000\n\n\n           ENCORBELLEMENT DE GAUCHE\nLIGNE A5   HHOUR H GAU E GAUH PENTSUPG PENTINFG     AMEN H5D    H5G   H7D   H7G   H9D     AMORD     AMORG   EABOUT DEXTR\n           0.200 0.180 0.800     0.025    0.000      1   0.200 0.200 0.000 0.000 0.200    0.800     0.800   0.000 0.000\n\n\n           ENCORBELLEMENT DE DROITE\nLIGNE A6   HHOUR HDROI EDROIH PENTSUPD PENTINFD     AMEN H5D    H5G   H7D   H7G   H9G     AMORD     AMORG   EABOUT DEXTR\n           0.200 0.220 0.800     0.025    0.000      1   0.200 0.200 0.000 0.000 0.200    0.800     0.800   0.000 0.000\n                                     TABLEAU B - DEFINITION DES ACTIONS ET SOLLICITATIONS\n                                     ====================================================\n\n                       POUTRE            HOURDIS\nLIGNE B1   MASVOL OSSAMAX OSSAMIN OSSAMAX OSSAMIN                      DBAG PBAGMAX PBAGMIN       DBAD PBADMAX PBADMIN PREDALMAX PREDALMIN\n           2.500   1.000   1.000   1.000    1.000                      1.222 1.549   1.402        0.811 0.818   0.740    0.000     0.000\n\n\n           NUM QSUP QSUP                NUM QSUP QSUP              NUM QSUP QSUP          NUM QSUP QSUP\nLIGNE B2   POUT MAX    MIN              POUT MAX    MIN            POUT MAX    MIN        POUT MAX    MIN\n            1 1 0.048 0.026              2 2 0.972 0.574            3 4 0.682 0.311        5 5 0.480 0.219\n\n\nLIGNE B3   CLASSE     A             B           CM          CE         PSTROT     A1     A2       A3\n             100         1           1           4           2         0.150    0.000   0.000    0.000\n\n\nLIGNE B4   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B5   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B6   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B7   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\n\n                                     TABLEAU C - DEFINITION DES MATERIAUX\n                                     ====================================\n\nLIGNE C1   CL BP POIS          FC1        FC2        FC28     FC4H       FC5H   FC28H    EPS R\n            200 0.200          35.0       35.0       35.0     30.0       30.0    30.0    4.000\n\n\nLIGNE C2     FE1      SIGS         TYPE        D          ES             FE2   NH    NS3 NP3      NP0     RO    S.PSI1   D.FPRG   KF\n            500.0     250.0          1       0.050      200000.         500.0 5.0   15.0 15.0     5.0    0.00      0.0      0.0   0\n\n\nLIGNE C3   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH\n            11    1860.0       1660.0        1488.0     190000. 1050. 0.071 0.071 0.007 0.200 0.0020                0.006 2.50 1     2 0.220 0.220\n\n\nLIGNE C4   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH\n            22    1860.0       1660.0        1488.0     190000. 1050. 0.071 0.071 0.007 0.200 0.0020                0.006 2.50 1     2 0.220 0.220\n\n\nLIGNE C5    J1      J2        J3        J4      J5      J6        J7     JSUP\n            28      28        35        63      65      70        90       0\n\n\nLIGNE C6               CABLAGE 1\n               POUTRES         NCAB\n             A CALCULER     11 12               2\n            1 2 3 4 5        5   0              2\n                              TABLEAU D - DEFINITION DU TRACE DU CABLAGE 1\n                              ============================================\n\n                                    ABSCISSES DE DEFINITION DES CABLES\n\nLIGNE D   0     0.500    3.492   6.833 10.175 20.000\n\n                                  ORDONNEES DES AXES DES GAINES EN CES ABSCISSES\n\nLIGNE D   1     0.237    0.177   0.129    0.108   0.107\n\nLIGNE D   2     0.613    0.369   0.190    0.111   0.107\n\nLIGNE D   3     0.989    0.563   0.251    0.114   0.107\n\nLIGNE D   4     1.364    0.756   0.312    0.117   0.107\n\nLIGNE D   5     1.744    0.982   0.410    0.135   0.107\n\nLIGNE D   6     0.000    2.110   1.052    0.407   0.178\n\nLIGNE D   7     0.000    0.000   2.110    1.052   0.178\n\n\n                              TABLEAU D' - CARACTERISTIQUES COMPLEMENTAIRES DES CABLES DANS LE CABLAGE 1\n                               ==========================================================================\n\n              NUM ARMA SECAB     SIGPO    MODE NCASY ABDECO ORFICO ABFICO ABSOR ANGSOR EXTRAN ABDEHO ABFIHO YENCO DENCO\n\nLIGNE D' 1      1   11   1050.    1488.     2     1    0.700 0.107   11.120   0.150   1.51   0.28    0.700   9.244 0.000 0.000\n\nLIGNE D' 2      2   11   1050.    1488.     2     2    0.700 0.107   11.120   0.150   5.91   0.28    0.700   9.244 0.000 0.000\n\nLIGNE D' 3      3   11   1050.    1488.     2     3    0.700 0.107   11.120   0.150 10.26    0.14    1.490   9.244 0.000 0.000\n\nLIGNE D' 4      4   11   1050.    1488.     2     4    0.700 0.107   11.120   0.150 14.51    0.14    3.059   9.244 0.000 0.000\n\nLIGNE D' 5      5   11   1050.    1488.     2     5    0.700 0.107   11.620   0.150 17.91    0.00    3.059   9.244 0.000 0.000\n\nLIGNE D' 6      6   22   1050.    1488.     2     6    4.009 0.178   13.671   3.492 22.00    0.14    8.225 18.671 0.331 0.405\n\nLIGNE D' 7      7   22   1050.    1488.     2     7    7.351 0.178   17.012   6.833 22.00    0.14   11.567 18.671 0.331 0.405\n";</script>
 <script>
 const $ = s => document.querySelector(s);
@@ -279,9 +396,37 @@ function show(name) {
 document.querySelectorAll('.nav-item').forEach(n => n.onclick = () => show(n.dataset.sec));
 const err = m => { const e = $('#err'); e.textContent = m || ''; e.classList.toggle('on', !!m); };
 
-$('#bord').value = EXAMPLE;
-$('#ex').onclick = () => { $('#bord').value = EXAMPLE; err(''); };
+// ── bordereau : saisie guidée (vipp-saisie.js) ou texte VIPP
+let mode = 'guide', sg = null;
+const store = { get() { try { return localStorage.getItem('vipp-bordereau'); } catch (_) { return null; } }, set(v) { try { localStorage.setItem('vipp-bordereau', v); } catch (_) {} } };
+function bordText() { return mode === 'guide' && sg ? sg.text() : $('#bord').value; }
+function loadText(txt, quiet) {
+  if (mode === 'texte') { $('#bord').value = txt; }
+  try { const bd = VIPPSaisie.parseBordereau(txt); sg ? sg.set(bd) : (sg = VIPPSaisie.mount($('#sg'), bd, { onChange: () => store.set(sg.text()) })); if (mode === 'guide') $('#bord').value = txt; if (!quiet) store.set(txt); return true; }
+  catch (e) { if (!quiet) err('Bordereau illisible : ' + (e.message || e)); return false; }
+}
+function setMode(m) {
+  if (m === mode) return;
+  if (m === 'texte') { $('#bord').value = sg ? sg.text() : $('#bord').value; }
+  else { const ok = loadText($('#bord').value); if (!ok) return; err(''); }
+  mode = m;
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('#sg').hidden = m !== 'guide'; $('#txtw').hidden = m !== 'texte'; $('#clr').hidden = m !== 'texte';
+}
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+$('#bord').addEventListener('input', () => store.set($('#bord').value));
+const draft = store.get();
+if (!(draft && loadText(draft, true))) loadText(EXAMPLE, true);
+else $('#draft').textContent = 'Dernière saisie restaurée.';
+$('#bord').value = sg ? sg.text() : EXAMPLE;
+$('#ex').onclick = () => { err(''); $('#draft').textContent = ''; loadText(EXAMPLE); $('#bord').value = mode === 'texte' ? EXAMPLE : $('#bord').value; };
 $('#clr').onclick = () => { $('#bord').value = ''; };
+$('#save').onclick = () => {
+  const t = bordText(), a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' }));
+  let no = 'bordereau'; try { no = 'bordereau_' + VIPPSaisie.parseBordereau(t).numero; } catch (_) {}
+  a.download = `VIPP-EL_${no}.txt`; a.click();
+};
 
 // ── import : texte ou note VIPP-EL en PDF (texte relu avec pdf.js)
 async function pdfText(file) {
@@ -306,7 +451,7 @@ async function pdfText(file) {
 }
 async function load(file) {
   err('');
-  try { $('#bord').value = /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text(); }
+  try { const t = /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text(); if (loadText(t)) { $('#draft').textContent = 'Importé : ' + file.name; if (mode === 'texte') $('#bord').value = t; } }
   catch (e) { err(e.message || String(e)); }
 }
 const drop = $('#drop');
@@ -320,6 +465,9 @@ drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); e.dataTr
 let worker;
 $('#run').onclick = () => {
   err('');
+  if (mode === 'texte' && !loadText($('#bord').value)) return;
+  const bad = sg ? sg.errors().filter(c => c.level === 'err') : [];
+  if (bad.length) { err(`${bad.length} erreur(s) dans les données à corriger avant le calcul — ${bad[0].msg}`); if (mode === 'guide') sg.go(bad[0].step); return; }
   if (worker) worker.terminate();
   try { worker = new Worker('vipp/vipp-worker.js'); }
   catch (e) { err("Impossible de démarrer le moteur de calcul : " + e.message); return; }
@@ -346,7 +494,7 @@ function startWorker() {
     if (!worker._blob) { try { worker = await blobWorker(); worker._blob = true; return startWorker(); } catch (_) {} }
     $('#run').disabled = false; bar.classList.remove('on'); err('Erreur du calcul : ' + (e.message || e));
   };
-  worker.postMessage({ text: $('#bord').value });
+  worker.postMessage({ text: bordText() });
 }
 
 const n = (v, d = 2) => (v === undefined || v === null || !isFinite(v)) ? '—' : v.toFixed(d);
