@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BridgeAI Studios — VIPP-EL</title>
+<meta name="description" content="Vérification des tabliers à poutres précontraintes (VIPP) selon le BPEL 91 et le fascicule 61 titre II — calcul conforme au programme VIPP-EL du SETRA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f9f8f5;--bg2:#f0ede8;--white:#fff;
+  --ink:#18191f;--ink2:#3c3f4d;--ink3:#7a7e8e;
+  --gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;
+  --blue:#1a4fd6;--teal:#0a8a78;--red:#c0392b;
+  --border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(249,248,245,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 40px}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px;max-width:1280px;margin:0 auto}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--ink);text-decoration:none;letter-spacing:.01em}
+.nav-logo span{color:var(--gold)}
+.nav-center{display:flex;align-items:center;gap:6px}
+.nav-norm{display:flex;gap:2px;background:var(--bg2);border-radius:6px;padding:3px;border:1px solid var(--border)}
+.norm-btn{padding:5px 14px;border-radius:4px;border:none;font-size:11px;font-weight:400;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:all .2s}
+.norm-btn.active{background:var(--gold);color:var(--white);font-weight:500}
+.nav-right{display:flex;align-items:center;gap:10px}
+.lang-toggle{display:flex;gap:2px;background:var(--bg2);border-radius:6px;padding:3px;border:1px solid var(--border)}
+.lang-btn{padding:4px 10px;border-radius:4px;border:none;font-size:11px;cursor:pointer;background:transparent;color:var(--ink3);font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:all .2s}
+.lang-btn.active{background:var(--gold);color:var(--white);font-weight:500}
+.nav-back{font-size:12px;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s}
+.nav-back:hover{color:var(--ink)}
+.nav-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:220px 1fr;max-width:1280px;margin:0 auto;padding:0 40px;min-height:calc(100vh - 56px)}
+
+/* ── SIDEBAR ── */
+.sidebar{border-right:1px solid var(--border);padding:28px 20px 40px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.sidebar-section{margin-bottom:6px}
+.sidebar-label{font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:0 10px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;cursor:pointer;transition:all .18s;border:1px solid transparent;margin-bottom:2px}
+.nav-item:hover{background:var(--white);border-color:var(--border)}
+.nav-item.active{background:var(--white);border-color:var(--gold-border);box-shadow:var(--shadow)}
+.nav-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.nav-label{font-size:12px;color:var(--ink3);transition:color .2s}
+.nav-item.active .nav-label,.nav-item:hover .nav-label{color:var(--ink);font-weight:400}
+
+/* ── CONTENT ── */
+.content{padding:36px 0 60px 44px}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:32px}
+.page-eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--ink);margin-bottom:10px;line-height:1.2}
+.norm-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:10px;color:var(--gold);letter-spacing:.08em;margin-bottom:8px}
+.page-desc{font-size:13px;color:var(--ink3);line-height:1.7;max-width:560px;font-weight:300}
+.page-divider{height:1px;background:var(--border);margin:24px 0}
+
+/* ── SCHEMA ── */
+.schema{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:center}
+
+/* ── CARD ── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+
+/* ── FORM ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--ink3);letter-spacing:.02em}
+.field input,.field select{height:36px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border-color .2s,background .2s}
+.field input:focus,.field select:focus{border-color:var(--gold2);background:var(--white)}
+.fu{position:relative}
+.fu input{padding-right:40px}
+.fu-unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--ink3);pointer-events:none}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-primary{padding:9px 22px;border-radius:7px;background:var(--gold);border:none;color:var(--white);font-size:12px;font-weight:400;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.05em;transition:opacity .2s}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{padding:9px 16px;border-radius:7px;background:transparent;border:1px solid var(--border);color:var(--ink3);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .2s}
+.btn-secondary:hover{border-color:var(--ink3);color:var(--ink)}
+.btn-pdf{padding:9px 16px;border-radius:7px;background:transparent;border:1px solid var(--gold-border);color:var(--gold);font-size:12px;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.04em;transition:all .2s}
+.btn-pdf:hover{background:var(--gold-bg);border-color:var(--gold2)}
+.err{display:none;padding:9px 13px;border-radius:7px;background:#fdf2f2;border:1px solid #f5c0be;color:var(--red);font-size:12px;margin-bottom:14px}
+.err.on{display:block}
+
+/* ── RESULTS ── */
+.results{background:var(--white);border:1px solid var(--gold-border);border-radius:12px;padding:24px;display:none;box-shadow:var(--shadow)}
+.results.on{display:block}
+.res-title{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.res-card{background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)}
+.res-card.hi{border-color:var(--gold-border);background:var(--gold-bg)}
+.res-lbl{font-size:9px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.res-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--ink)}
+.res-val.gold{color:var(--gold)}
+.res-val.ok{color:var(--teal)}
+.res-val.ko{color:var(--red)}
+.res-unit{font-size:10px;color:var(--ink3);margin-left:2px;font-family:'Outfit',sans-serif}
+.res-note{font-size:10px;color:var(--ink3);margin-top:3px}
+.chk-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:7px;background:var(--bg);margin-bottom:5px;border:1px solid var(--border)}
+.chk-lbl{font-size:11px;color:var(--ink3)}
+.chk-val{font-size:11px;font-weight:400}
+.chk-val.ok{color:var(--teal)}
+.chk-val.ko{color:var(--red)}
+.chk-val.warn{color:#c07830}
+.formula{background:var(--bg2);border-radius:8px;padding:13px 16px;font-family:'Courier New',monospace;font-size:11px;color:var(--ink3);line-height:2;margin-top:14px;border:1px solid var(--border)}
+.formula b{color:var(--gold);font-weight:normal}
+
+/* ── CARACT TABLE ── */
+.ctable{width:100%;border-collapse:collapse;font-size:12px;margin-top:16px}
+.ctable th{padding:8px 12px;text-align:left;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--border)}
+.ctable td{padding:9px 12px;border-bottom:1px solid rgba(226,221,214,.6);color:var(--ink2);vertical-align:middle}
+.ctable tr:last-child td{border:none}
+.ctable tr:hover td{background:var(--bg)}
+.ctable .sym{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--gold);font-weight:400}
+.ctable .val{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--ink)}
+.ctable .unit{font-size:11px;color:var(--ink3)}
+
+/* ── PRINT ── */
+@media print{
+  nav,.sidebar,.actions,.err{display:none!important}
+  body{background:#fff;font-size:10px}
+  .layout{grid-template-columns:1fr;padding:0}
+  .content{padding:0}
+  [id^="sec-"]{display:none!important}
+  .results{display:block!important;border:1px solid #ccc;box-shadow:none}
+  .card{box-shadow:none;border:1px solid #ddd}
+  .schema{border:1px solid #ddd}
+  .ctable th{background:#f5f5f5}
+  @page{margin:15mm;size:A4}
+}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border);padding:16px 0}.content{padding:24px 0}.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.grid2,.grid3,.grid4{grid-template-columns:1fr}}
+
+/* ── VIPP ── */
+.mono{font-family:'Courier New',monospace}
+textarea.bord{width:100%;min-height:360px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-family:'Courier New',monospace;font-size:11px;line-height:1.45;white-space:pre;overflow:auto;outline:none;resize:vertical}
+textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
+.hint{font-size:11px;color:var(--ink3);margin:10px 0 0;font-weight:300;line-height:1.6}
+.drop{border:1px dashed var(--gold-border);border-radius:8px;padding:14px;text-align:center;font-size:12px;color:var(--ink3);background:var(--gold-bg);margin-bottom:14px;cursor:pointer}
+.drop.over{border-color:var(--gold);color:var(--gold)}
+.progress{height:4px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:14px 0 4px;display:none}
+.progress.on{display:block}
+.progress>div{height:100%;width:0;background:var(--gold);transition:width .15s}
+.prog-lbl{font-size:11px;color:var(--ink3);min-height:16px}
+.banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:9px;margin-bottom:16px;border:1px solid}
+.banner.ok{background:#eef8f6;border-color:#bfe3dc;color:var(--teal)}
+.banner.ko{background:#fdf2f2;border-color:#f5c0be;color:var(--red)}
+.banner b{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400}
+.warn-box{padding:10px 13px;border-radius:7px;background:#fdf7ee;border:1px solid #efd9b0;color:#9a6420;font-size:12px;margin-bottom:14px;line-height:1.6}
+.beam-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.beam-tab{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-size:11px;color:var(--ink3);cursor:pointer;font-family:'Outfit',sans-serif}
+.beam-tab.active{background:var(--gold);border-color:var(--gold);color:var(--white)}
+.stable{width:100%;border-collapse:collapse;font-size:11.5px}
+.stable th{padding:7px 8px;text-align:right;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);background:var(--bg2);border-bottom:1px solid var(--border);white-space:nowrap}
+.stable th:first-child,.stable td:first-child,.stable th:nth-child(2),.stable td:nth-child(2){text-align:left}
+.stable td{padding:7px 8px;border-bottom:1px solid rgba(226,221,214,.6);color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stable tr:hover td{background:var(--bg)}
+.tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;letter-spacing:.04em}
+.tag.ok{background:#e6f5f2;color:var(--teal)}
+.tag.ko{background:#fbe6e4;color:var(--red)}
+.ratio{display:inline-flex;align-items:center;gap:6px}
+.ratio i{display:inline-block;width:46px;height:4px;border-radius:99px;background:var(--bg2);position:relative;overflow:hidden}
+.ratio i b{position:absolute;left:0;top:0;bottom:0;background:var(--teal)}
+.ratio i b.hi{background:#c07830}.ratio i b.ko{background:var(--red)}
+.scroll-x{overflow-x:auto}
+.note-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.note-tools input{height:32px;padding:0 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);font-family:'Outfit',sans-serif;font-size:12px;width:220px}
+.note{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px;max-height:75vh;overflow:auto}
+.note pre{font-family:'Courier New',monospace;font-size:10.5px;line-height:1.32;color:#222;white-space:pre;margin:0 0 18px;padding-bottom:18px;border-bottom:1px dashed var(--border)}
+.note pre mark{background:#fbe7b5;color:inherit}
+.empty{padding:40px;text-align:center;color:var(--ink3);font-size:13px;font-weight:300}
+
+.layout>*{min-width:0}
+.content{min-width:0}
+@media(max-width:900px){nav{padding:0 16px}.layout{padding:0 16px}.content{padding:20px 0 40px}.nav-center{display:none}.res-grid{grid-template-columns:repeat(2,1fr)}textarea.bord{min-height:260px}}
+@media print{
+  body.print-note nav,body.print-note .sidebar,body.print-note [id^="sec-"]:not(#sec-note),body.print-note .note-tools,body.print-note .page-header{display:none!important}
+  body.print-note #sec-note{display:block!important}
+  body.print-note .note{border:none;max-height:none;overflow:visible;padding:0}
+  body.print-note .note pre{font-size:7.4px;line-height:1.25;border:none;page-break-after:always;margin:0;padding:0}
+  @page{size:A4 landscape;margin:9mm}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <div class="nav-center"><div class="nav-norm"><button class="norm-btn active">BPEL 91</button><button class="norm-btn" disabled title="Prochainement">EC2</button></div></div>
+    <div class="nav-right">
+      <a href="index.html" class="nav-back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>Accueil</span></a>
+    </div>
+  </div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">VIPP-EL · Vérificateur</div>
+      <div class="nav-item active" data-sec="bordereau"><div class="nav-dot" style="background:var(--gold)"></div><span class="nav-label">1 · Bordereau des données</span></div>
+      <div class="nav-item" data-sec="resultats"><div class="nav-dot" style="background:var(--teal)"></div><span class="nav-label">2 · Résultats</span></div>
+      <div class="nav-item" data-sec="note"><div class="nav-dot" style="background:var(--blue)"></div><span class="nav-label">3 · Note de calcul</span></div>
+    </div>
+    <div class="sidebar-section" style="margin-top:22px">
+      <div class="sidebar-label">À propos</div>
+      <div class="hint" style="padding:0 10px">Travée indépendante à poutres précontraintes par post-tension. BPEL 91, fascicule 61 titre II. Calcul conforme à VIPP-EL (SETRA), validé sur 11 notes de calcul.</div>
+    </div>
+  </aside>
+  <main class="content">
+
+    <div id="sec-bordereau">
+      <div class="page-header">
+        <div class="page-eyebrow">Ouvrages d'art · VIPP</div>
+        <div class="page-title">Bordereau des données</div>
+        <div class="norm-tag">BPEL 91 · Fascicule 61 titre II · Classe II</div>
+        <div class="page-desc">Saisissez le bordereau au format VIPP-EL (tableaux A à D'), ou importez une note de calcul VIPP-EL existante : le bordereau est relu automatiquement depuis le PDF.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bordereau VIPP-EL</div>
+        <div class="drop" id="drop">Déposer ici une note VIPP-EL (PDF) ou un bordereau (.txt) — ou <u>parcourir</u><input type="file" id="file" accept=".pdf,.txt" hidden></div>
+        <div class="err" id="err"></div>
+        <textarea class="bord" id="bord" spellcheck="false"></textarea>
+        <div class="hint">Les cartes sont lues par en-têtes (LIGNE A1 … LIGNE D'), comme dans la reproduction du bordereau imprimée en tête des notes VIPP-EL. L'exemple chargé est un VIPP de 39 m à 5 poutres.</div>
+        <div class="actions" style="margin-top:16px">
+          <button class="btn-primary" id="run">Lancer le calcul</button>
+          <button class="btn-secondary" id="ex">Recharger l'exemple</button>
+          <button class="btn-secondary" id="clr">Vider</button>
+        </div>
+        <div class="progress" id="prog"><div></div></div>
+        <div class="prog-lbl" id="plbl"></div>
+      </div>
+    </div>
+
+    <div id="sec-resultats" style="display:none">
+      <div class="page-header">
+        <div class="page-eyebrow">Mode vérificateur</div>
+        <div class="page-title" id="r-title">Résultats</div>
+        <div class="page-desc" id="r-desc"></div>
+      </div>
+      <div id="r-body"><div class="empty">Lancez un calcul depuis le bordereau.</div></div>
+    </div>
+
+    <div id="sec-note" style="display:none">
+      <div class="page-header">
+        <div class="page-eyebrow">Format VIPP-EL</div>
+        <div class="page-title">Note de calcul</div>
+        <div class="page-desc">Note complète, section par section, dans la présentation des notes SETRA : caractéristiques, sollicitations, pertes, contraintes, justifications ELS et ELU, cisaillement, ferraillages, réactions d'appui.</div>
+      </div>
+      <div class="note-tools">
+        <button class="btn-pdf" id="print">Imprimer / PDF</button>
+        <button class="btn-secondary" id="dl">Télécharger (.txt)</button>
+        <input id="find" placeholder="Rechercher (ex. ABSCISSE : 20.000)">
+        <span class="hint" id="npages" style="margin:0"></span>
+      </div>
+      <div class="note" id="note"><div class="empty">Aucune note pour l'instant.</div></div>
+    </div>
+
+  </main>
+</div>
+
+<script>const EXAMPLE = "                                                        BORDEREAU DES DONNEES\n                                                        =====================\n\n\nLIGNE NO                                 TITRE                                  NO    DATE\n\n  1 :   KLE__ING                                                                     0067 240718\n  2 :   VIADUC\n  3 :   PORTEE39\n\n\n                                           E   C   O             R\n                                           X V A T P     F E   M E   D\n                                           C E B R T   V E T D O A M E\n                                           E R L A I   E R R I M P E S\n                                           N O A C G   R P I F E P T S\n                                           T D G A O   I A E F N U R I\n                  POUTRES A CALCULER       R O E B U   F S R U T I E N\n             ----------------------------------------------------------\n  4 :         1     2     3     4     5    1 0 0 0 0 0 2 1 1 0 1 1 0 0\n  5 :                                      1 0 0 0 0 1 0 0 0 0 0 0 0 0\n\n\n\n                              TABLEAU A - CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE\n                              ======================================================\n\n                                                                    ENTRA\nLIGNE A1   SYMTAB NVOIE ETROTG   EGAU ESURCH     EDROI ETROTD NPOUT POUT DPOUT1 PORTEE ABOUT NE ENTINT ENTAPP NT BIAIS EDESS\n             0      0    2.000   0.000 8.950     1.050 0.000    5   2.600 5.675 39.000 0.500 2 0.000 0.300 1 100.00 0.000 0\n\n\n           POUTRES INTERMEDIAIRES\n                                                                                                 GOU\nLIGNE A2   PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G DAM LIN EPAM LONGOUS PLAB HPLA\n             0.000 1.600 0.800 2.100 0.200 0.430 1.170 0.150 0.150 0.100 0.220 0.220 0.540 0.540 2   1 0.180   9.750 0 0.000\n\n\nLIGNE A3   HHOUR H AXE   PENT SUP PENT INF   AMEN H5D    H5G   H7D   H7G   H9D   H9G     AMORD     AMORG    HENTA   HENTI   EABOUT DEXTR\n           0.200 0.200     0.025    0.065     1   0.200 0.200 0.000 0.000 0.200 0.200    0.800     0.800    1.900   0.000   0.000 0.000\n\n\n          POUTRES DE RIVE\nLIGNE A4                                                                                        GOU\n  TYPOURI PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G DAM LIN EPAM LONGOUS PLAB HPLA\n    1 1     0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0.000 0   0 0.000   0.000 0 0.000\n\n\n           ENCORBELLEMENT DE GAUCHE\nLIGNE A5   HHOUR H GAU E GAUH PENTSUPG PENTINFG     AMEN H5D    H5G   H7D   H7G   H9D     AMORD     AMORG   EABOUT DEXTR\n           0.200 0.180 0.800     0.025    0.000      1   0.200 0.200 0.000 0.000 0.200    0.800     0.800   0.000 0.000\n\n\n           ENCORBELLEMENT DE DROITE\nLIGNE A6   HHOUR HDROI EDROIH PENTSUPD PENTINFD     AMEN H5D    H5G   H7D   H7G   H9G     AMORD     AMORG   EABOUT DEXTR\n           0.200 0.220 0.800     0.025    0.000      1   0.200 0.200 0.000 0.000 0.200    0.800     0.800   0.000 0.000\n                                     TABLEAU B - DEFINITION DES ACTIONS ET SOLLICITATIONS\n                                     ====================================================\n\n                       POUTRE            HOURDIS\nLIGNE B1   MASVOL OSSAMAX OSSAMIN OSSAMAX OSSAMIN                      DBAG PBAGMAX PBAGMIN       DBAD PBADMAX PBADMIN PREDALMAX PREDALMIN\n           2.500   1.000   1.000   1.000    1.000                      1.222 1.549   1.402        0.811 0.818   0.740    0.000     0.000\n\n\n           NUM QSUP QSUP                NUM QSUP QSUP              NUM QSUP QSUP          NUM QSUP QSUP\nLIGNE B2   POUT MAX    MIN              POUT MAX    MIN            POUT MAX    MIN        POUT MAX    MIN\n            1 1 0.048 0.026              2 2 0.972 0.574            3 4 0.682 0.311        5 5 0.480 0.219\n\n\nLIGNE B3   CLASSE     A             B           CM          CE         PSTROT     A1     A2       A3\n             100         1           1           4           2         0.150    0.000   0.000    0.000\n\n\nLIGNE B4   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B5   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B6   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\nLIGNE B7   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR\n            1   0.000         0.000       0.000       0.000       0.000     0.000    0.000    0.000       0.000    0.000    0.000\n\n\n                                     TABLEAU C - DEFINITION DES MATERIAUX\n                                     ====================================\n\nLIGNE C1   CL BP POIS          FC1        FC2        FC28     FC4H       FC5H   FC28H    EPS R\n            200 0.200          35.0       35.0       35.0     30.0       30.0    30.0    4.000\n\n\nLIGNE C2     FE1      SIGS         TYPE        D          ES             FE2   NH    NS3 NP3      NP0     RO    S.PSI1   D.FPRG   KF\n            500.0     250.0          1       0.050      200000.         500.0 5.0   15.0 15.0     5.0    0.00      0.0      0.0   0\n\n\nLIGNE C3   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH\n            11    1860.0       1660.0        1488.0     190000. 1050. 0.071 0.071 0.007 0.200 0.0020                0.006 2.50 1     2 0.220 0.220\n\n\nLIGNE C4   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH\n            22    1860.0       1660.0        1488.0     190000. 1050. 0.071 0.071 0.007 0.200 0.0020                0.006 2.50 1     2 0.220 0.220\n\n\nLIGNE C5    J1      J2        J3        J4      J5      J6        J7     JSUP\n            28      28        35        63      65      70        90       0\n\n\nLIGNE C6               CABLAGE 1\n               POUTRES         NCAB\n             A CALCULER     11 12               2\n            1 2 3 4 5        5   0              2\n                              TABLEAU D - DEFINITION DU TRACE DU CABLAGE 1\n                              ============================================\n\n                                    ABSCISSES DE DEFINITION DES CABLES\n\nLIGNE D   0     0.500    3.492   6.833 10.175 20.000\n\n                                  ORDONNEES DES AXES DES GAINES EN CES ABSCISSES\n\nLIGNE D   1     0.237    0.177   0.129    0.108   0.107\n\nLIGNE D   2     0.613    0.369   0.190    0.111   0.107\n\nLIGNE D   3     0.989    0.563   0.251    0.114   0.107\n\nLIGNE D   4     1.364    0.756   0.312    0.117   0.107\n\nLIGNE D   5     1.744    0.982   0.410    0.135   0.107\n\nLIGNE D   6     0.000    2.110   1.052    0.407   0.178\n\nLIGNE D   7     0.000    0.000   2.110    1.052   0.178\n\n\n                              TABLEAU D' - CARACTERISTIQUES COMPLEMENTAIRES DES CABLES DANS LE CABLAGE 1\n                               ==========================================================================\n\n              NUM ARMA SECAB     SIGPO    MODE NCASY ABDECO ORFICO ABFICO ABSOR ANGSOR EXTRAN ABDEHO ABFIHO YENCO DENCO\n\nLIGNE D' 1      1   11   1050.    1488.     2     1    0.700 0.107   11.120   0.150   1.51   0.28    0.700   9.244 0.000 0.000\n\nLIGNE D' 2      2   11   1050.    1488.     2     2    0.700 0.107   11.120   0.150   5.91   0.28    0.700   9.244 0.000 0.000\n\nLIGNE D' 3      3   11   1050.    1488.     2     3    0.700 0.107   11.120   0.150 10.26    0.14    1.490   9.244 0.000 0.000\n\nLIGNE D' 4      4   11   1050.    1488.     2     4    0.700 0.107   11.120   0.150 14.51    0.14    3.059   9.244 0.000 0.000\n\nLIGNE D' 5      5   11   1050.    1488.     2     5    0.700 0.107   11.620   0.150 17.91    0.00    3.059   9.244 0.000 0.000\n\nLIGNE D' 6      6   22   1050.    1488.     2     6    4.009 0.178   13.671   3.492 22.00    0.14    8.225 18.671 0.331 0.405\n\nLIGNE D' 7      7   22   1050.    1488.     2     7    7.351 0.178   17.012   6.833 22.00    0.14   11.567 18.671 0.331 0.405\n";</script>
+<script>
+const $ = s => document.querySelector(s);
+let pages = [], summary = null, curBeam = 0;
+
+function show(name) {
+  document.querySelectorAll('[id^="sec-"]').forEach(e => e.style.display = 'none');
+  $('#sec-' + name).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.sec === name));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.nav-item').forEach(n => n.onclick = () => show(n.dataset.sec));
+const err = m => { const e = $('#err'); e.textContent = m || ''; e.classList.toggle('on', !!m); };
+
+$('#bord').value = EXAMPLE;
+$('#ex').onclick = () => { $('#bord').value = EXAMPLE; err(''); };
+$('#clr').onclick = () => { $('#bord').value = ''; };
+
+// ── import : texte ou note VIPP-EL en PDF (texte relu avec pdf.js)
+async function pdfText(file) {
+  if (!window.pdfjsLib) {
+    await new Promise((ok, ko) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  let out = [];
+  for (let p = 1; p <= Math.min(doc.numPages, 8); p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    const rows = new Map();
+    for (const it of tc.items) { const y = Math.round(it.transform[5]); (rows.get(y) || rows.set(y, []).get(y)).push(it); }
+    [...rows.keys()].sort((a, b) => b - a).forEach(y => out.push(rows.get(y).sort((a, b) => a.transform[4] - b.transform[4]).map(i => i.str).join(' ')));
+    if (out.some(l => /VIPPEL NO/.test(l))) break;
+  }
+  const txt = out.join('\n');
+  const i = txt.indexOf('BORDEREAU DES DONNEES');
+  if (i < 0) throw new Error("Aucun bordereau VIPP-EL trouvé dans ce PDF (le texte doit être sélectionnable).");
+  const j = txt.indexOf('VIPPEL NO', i);
+  return txt.slice(i, j > 0 ? j : undefined);
+}
+async function load(file) {
+  err('');
+  try { $('#bord').value = /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text(); }
+  catch (e) { err(e.message || String(e)); }
+}
+const drop = $('#drop');
+drop.onclick = () => $('#file').click();
+$('#file').onchange = e => e.target.files[0] && load(e.target.files[0]);
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && load(e.dataTransfer.files[0]); };
+
+// ── calcul (Web Worker)
+let worker;
+$('#run').onclick = () => {
+  err('');
+  if (worker) worker.terminate();
+  try { worker = new Worker('vipp/vipp-worker.js'); }
+  catch (e) { err("Impossible de démarrer le moteur de calcul : " + e.message); return; }
+  startWorker();
+};
+// repli : certains hébergements interdisent le chargement direct d'un worker → worker depuis un Blob
+async function blobWorker() {
+  const src = await (await fetch('vipp/vipp-worker.js')).text();
+  return new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+}
+function startWorker() {
+  const bar = $('#prog'), fill = bar.firstElementChild;
+  bar.classList.add('on'); fill.style.width = '0'; $('#plbl').textContent = 'Lecture du bordereau…'; $('#run').disabled = true;
+  worker.onmessage = ev => {
+    const m = ev.data;
+    if (m.type === 'progress') { fill.style.width = (100 * m.done / m.total).toFixed(1) + '%'; $('#plbl').textContent = `Sections calculées : ${m.done} / ${m.total}`; return; }
+    $('#run').disabled = false; bar.classList.remove('on');
+    if (m.type === 'error') { $('#plbl').textContent = ''; err('Bordereau illisible ou incomplet : ' + m.message); return; }
+    summary = m.summary; pages = m.pages; curBeam = 0;
+    $('#plbl').textContent = `Calcul terminé en ${(summary.ms / 1000).toFixed(1)} s — ${pages.length} pages de note.`;
+    renderResults(); renderNote(); show('resultats');
+  };
+  worker.onerror = async e => {
+    if (!worker._blob) { try { worker = await blobWorker(); worker._blob = true; return startWorker(); } catch (_) {} }
+    $('#run').disabled = false; bar.classList.remove('on'); err('Erreur du calcul : ' + (e.message || e));
+  };
+  worker.postMessage({ text: $('#bord').value });
+}
+
+const n = (v, d = 2) => (v === undefined || v === null || !isFinite(v)) ? '—' : v.toFixed(d);
+const tag = ok => `<span class="tag ${ok ? 'ok' : 'ko'}">${ok ? 'OK' : 'NON'}</span>`;
+const ratio = r => `<span class="ratio"><i><b class="${r > 1 ? 'ko' : r > 0.9 ? 'hi' : ''}" style="width:${Math.min(100, 100 * r)}%"></b></i>${n(r, 2)}</span>`;
+const KIND = { appui: "Appui", h2: "h/2", 'arret-sans': 'Arrêt (sans)', 'arret-avec': 'Arrêt (avec)', inter: 'Courante', mediane: 'Médiane' };
+
+function renderResults() {
+  const s = summary, d = s.deck;
+  $('#r-title').textContent = s.titre.filter(Boolean).join(' — ') || 'Résultats';
+  $('#r-desc').textContent = `Calcul n° ${s.numero} du ${s.date} · portée ${n(d.L, 2)} m · ${d.n} poutres`;
+  const all = s.beams.flatMap(b => b.sections);
+  const ko = all.filter(x => !(x.els && x.elu && x.shear));
+  let h = `<div class="banner ${s.ok ? 'ok' : 'ko'}"><b>${s.ok ? 'Toutes les justifications sont satisfaites' : 'Justifications non satisfaites'}</b><span>${s.ok ? all.length + ' sections vérifiées (ELS, ELU, cisaillement)' : ko.length + ' section(s) sur ' + all.length + ' à reprendre'}</span></div>`;
+  if (s.warnings.length) h += `<div class="warn-box"><b>Avertissements sur les données</b><br>${s.warnings.map(w => `Câblage ${w.cablage}, câble ${w.cable} : ${w.message}`).join('<br>')}</div>`;
+  const maxMu = Math.max(...all.map(x => x.muRatio)), maxTau = Math.max(...all.map(x => x.tauRatio));
+  const sigMax = Math.max(...all.map(x => x.sigMax)), sigMin = Math.min(...all.map(x => x.sigMin));
+  h += `<div class="res-grid">
+    <div class="res-card hi"><div class="res-lbl">Taux ELU flexion max</div><div class="res-val ${maxMu > 1 ? 'ko' : 'gold'}">${n(maxMu, 2)}</div><div class="res-note">M sollicitant / M résistant</div></div>
+    <div class="res-card"><div class="res-lbl">Taux cisaillement max</div><div class="res-val ${maxTau > 1 ? 'ko' : ''}">${n(maxTau, 2)}</div><div class="res-note">|τ| / τ limite (ELS, ELU)</div></div>
+    <div class="res-card"><div class="res-lbl">σ max en service</div><div class="res-val">${n(sigMax, 1)}<span class="res-unit">MPa</span></div><div class="res-note">combinaisons rares</div></div>
+    <div class="res-card"><div class="res-lbl">σ min en service</div><div class="res-val">${n(sigMin, 1)}<span class="res-unit">MPa</span></div><div class="res-note">traction &lt; 0</div></div>
+    <div class="res-card"><div class="res-lbl">Majoration dynamique</div><div class="res-val">${n(d.delta, 3)}</div><div class="res-note">B · militaires ${n(d.deltaMil, 3)}</div></div>
+    <div class="res-card"><div class="res-lbl">Guyon-Massonnet</div><div class="res-val">${n(d.theta, 3)}</div><div class="res-note">θ · α = ${n(d.alpha, 3)}</div></div>
+  </div>`;
+  h += `<div class="card"><div class="card-title">Sections vérifiées</div><div class="beam-tabs">${s.beams.map((b, i) => `<button class="beam-tab ${i === curBeam ? 'active' : ''}" data-i="${i}">Poutre ${b.beam}${s.beams.some(x => x.cabling > 1) ? ' · câblage ' + b.cabling : ''}</button>`).join('')}</div><div class="scroll-x" id="stab"></div></div>`;
+  h += `<div class="card"><div class="card-title">Réactions d'appui (MN, sans majoration dynamique)</div><div class="scroll-x" id="reac"></div></div>`;
+  $('#r-body').innerHTML = h;
+  document.querySelectorAll('.beam-tab').forEach(t => t.onclick = () => { curBeam = +t.dataset.i; document.querySelectorAll('.beam-tab').forEach(x => x.classList.toggle('active', x === t)); renderBeam(); });
+  renderBeam(); renderReac();
+}
+function renderBeam() {
+  const b = summary.beams[curBeam];
+  $('#stab').innerHTML = `<table class="stable"><thead><tr><th>x (m)</th><th>Section</th><th>ELS</th><th>σ min</th><th>σ max</th><th>ELU</th><th>Taux ELU</th><th>Cisaill.</th><th>Taux τ</th><th>A inf poutre</th><th>A sup hourdis</th><th>Étriers</th><th>σp final min</th></tr></thead><tbody>${
+    b.sections.map(x => `<tr><td>${n(x.x, 3)}</td><td>${KIND[x.kind] || x.kind}</td><td>${tag(x.els)}</td><td>${n(x.sigMin)}</td><td>${n(x.sigMax)}</td><td>${tag(x.elu)}</td><td>${ratio(x.muRatio)}</td><td>${tag(x.shear)}</td><td>${ratio(x.tauRatio)}</td><td>${n(x.steel.infP)} cm²</td><td>${n(x.steel.supH)} cm²</td><td>${n(x.stirrups.area)} cm²/m · e ≤ ${n(x.stirrups.spacing)} m${x.stirrups.cause === 'ELU' ? ' (ELU)' : ''}</td><td>${n(x.sigEndMin, 0)} MPa</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function renderReac() {
+  const K = ['A', 'Bc', 'Bt', 'Me', 'Mc', 'E', 'T'], L = { A: 'A(L)', Bc: 'Bc', Bt: 'Bt', Me: 'Me120', Mc: 'Mc120', E: 'E', T: 'Trott.' };
+  $('#reac').innerHTML = `<table class="stable"><thead><tr><th>Poutre</th><th></th><th>Poutre seule</th><th>Hourdis</th><th>Superstr.</th><th>Total G</th>${K.map(k => `<th>${L[k]}</th>`).join('')}</tr></thead><tbody>${
+    summary.beams.map(b => { const R = b.reactions; return ['max', 'min'].map(m => `<tr><td>${m === 'max' ? b.beam : ''}</td><td>${m}</td><td>${n(R.perm.poutre[m], 4)}</td><td>${n(R.perm.hourdis[m], 4)}</td><td>${n(R.perm.sup[m], 4)}</td><td>${n(R.cumul[4][m], 4)}</td>${K.map(k => `<td>${n(R.variable[k][m], 4)}</td>`).join('')}</tr>`).join(''); }).join('')
+  }</tbody></table>`;
+}
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+function renderNote(q = '') {
+  $('#npages').textContent = pages.length + ' pages';
+  const re = q ? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g') : null;
+  $('#note').innerHTML = pages.map(p => '<pre>' + (re ? esc(p).replace(re, m => '<mark>' + m + '</mark>') : esc(p)) + '</pre>').join('');
+  if (re) { const m = $('#note mark'); m && m.scrollIntoView({ block: 'center' }); }
+}
+let ft; $('#find').oninput = e => { clearTimeout(ft); ft = setTimeout(() => renderNote(e.target.value.trim()), 300); };
+$('#print').onclick = () => { document.body.classList.add('print-note'); show('note'); setTimeout(() => { window.print(); document.body.classList.remove('print-note'); }, 50); };
+$('#dl').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([pages.join('\n\f\n')], { type: 'text/plain' }));
+  a.download = `VIPP-EL_${summary ? summary.numero : 'note'}.txt`; a.click();
+};
+</script>
+</body>
+</html>
