@@ -334,6 +334,12 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .skf .rail{fill:#8a91a0;stroke:#3c3f4d;stroke-width:.6}
 .skf .bolt{stroke:#3c3f4d;stroke-width:1.2}
 .skf .edge{stroke:var(--ink3);stroke-width:.8}
+.sk-view{display:inline-flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px;margin-bottom:10px}
+.sk-view button{border:none;background:transparent;padding:4px 10px;border-radius:5px;font-family:'Outfit',sans-serif;font-size:11px;color:var(--ink3);cursor:pointer}
+.sk-view button.on{background:var(--white);color:var(--ink);box-shadow:var(--shadow)}
+.skf.sch svg{background:#fbfaf6;border-style:dashed}
+.skf.sch figcaption{color:var(--gold)}
+.skf .enc{fill:var(--white);stroke:var(--ink2);stroke-width:.8;stroke-dasharray:3 2}.skf .enc.hl{stroke:var(--gold);stroke-width:1.6}
 </style>
 </head>
 <body>
@@ -381,6 +387,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
         <div class="actions" style="margin-top:16px">
           <button class="btn-primary" id="run">Lancer le calcul</button>
           <button class="btn-secondary" id="ex">Recharger l'exemple</button>
+          <button class="btn-secondary" id="blank">Nouveau projet</button>
           <button class="btn-secondary" id="save">Enregistrer le bordereau (.txt)</button>
           <button class="btn-secondary" id="clr" hidden>Vider</button>
           <span class="hint" id="draft" style="margin:0"></span>
@@ -457,6 +464,12 @@ else $('#draft').textContent = 'Dernière saisie restaurée.';
 $('#bord').value = sg ? sg.text() : EXAMPLE;
 $('#ex').onclick = () => { err(''); $('#draft').textContent = ''; loadText(EXAMPLE); $('#bord').value = mode === 'texte' ? EXAMPLE : $('#bord').value; };
 $('#clr').onclick = () => { $('#bord').value = ''; };
+$('#blank').onclick = () => {
+  err(''); if (mode === 'texte') setMode('guide');
+  const nb = VIPPSaisie.blankBordereau(sg.get()); sg.set(nb); sg.go('ouvrage');
+  const t = sg.text(); store.set(t); $('#bord').value = t;
+  $('#draft').textContent = 'Nouveau projet : le dessin se construit au fur et à mesure de la saisie.';
+};
 $('#save').onclick = () => {
   const t = bordText(), a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([t], { type: 'text/plain' }));
