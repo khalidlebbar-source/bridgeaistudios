@@ -487,7 +487,7 @@ $('#ex').onclick = () => { err(''); $('#draft').textContent = ''; loadText(EXAMP
 $('#clr').onclick = () => { $('#bord').value = ''; };
 $('#blank').onclick = () => {
   err(''); if (mode === 'texte') setMode('guide');
-  const nb = VIPPSaisie.blankBordereau(sg.get()); sg.set(nb); sg.go('ouvrage');
+  const nb = VIPPSaisie.blankBordereau(sg.get()); sg.set(nb); sg.go('principal');
   const t = sg.text(); store.set(t); $('#bord').value = t;
   $('#draft').textContent = 'Nouveau projet : le dessin se construit au fur et à mesure de la saisie.';
 };
