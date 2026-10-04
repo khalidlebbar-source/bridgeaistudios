@@ -361,6 +361,104 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sidebar .sidebar-label{padding:0 6px 0 0;margin:0}
 .sidebar .nav-item{margin:0}
 .content{padding:26px 0 60px}
+
+/* ── Bordereau compact : tout l'écran utile sans défilement ── */
+.sidebar{padding:6px 0}
+.content{padding:10px 0 30px}
+.bord-card{padding:12px 16px 12px}
+.bord-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}
+.bh-title{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0;flex-wrap:wrap}
+.bh-title h1{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--ink);line-height:1.1;margin:0}
+.bh-title .norm-tag{margin:0}
+.bord-head .seg{margin:0}
+.bord-head .drop{margin:0;padding:6px 12px;font-size:11.5px;white-space:nowrap}
+.bh-act .btn-primary,.bh-act .btn-secondary{padding:7px 13px;font-size:12px}
+.sg-top{display:flex;align-items:stretch;gap:6px;margin-bottom:10px}
+.sg-top .sg-steps{flex:1;min-width:0;flex-wrap:nowrap;overflow-x:auto;margin:0;scrollbar-width:thin;gap:4px;padding-bottom:2px}
+.sg-top .sg-arw{flex:0 0 auto;width:30px;border:1px solid var(--border);border-radius:8px;background:var(--white);color:var(--ink2);cursor:pointer;font-size:15px}
+.sg-top .sg-arw:disabled{opacity:.35;cursor:default}
+.sg-st{padding:5px 9px 5px 6px;column-gap:6px}
+.sg-st b{width:19px;height:19px;font-size:10px}
+.sg-st span{font-size:11.5px;white-space:nowrap}
+.sg-st small{display:none}
+.sg-intro{font-size:12px;margin-bottom:8px;line-height:1.5;max-width:none}
+.sg-g{padding:8px 10px 9px;margin-bottom:8px}
+.sg-fs{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px 10px}
+.sf{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"c l u" "i i i";column-gap:5px;row-gap:2px;align-items:baseline}
+.sf-h{display:contents}
+.sf-h code{grid-area:c}
+.sf-h em{grid-area:u}
+.sf-l{grid-area:l;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
+.sf>input,.sf>select{grid-area:i}
+.sf input,.sf select,.sg-mx input,.sg-mx select{height:28px}
+.sg-mx tbody th{min-width:130px}
+.sg-ck{padding:5px 10px;font-size:11px}
+.sg-checks{gap:4px}
+.sg-schema{margin-bottom:8px}
+.sg-schema .skf{margin-bottom:6px}
+.sk-legend{padding:6px 10px;margin:0 0 8px;gap:2px 14px}
+.skf figcaption{margin-bottom:3px}
+.sg-win{top:62px;max-height:calc(100vh - 70px)}
+.sg-pin{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.sg-pin .sf{width:150px}
+.sg-pin .sg-pinfo{flex:1 1 220px;min-width:0}
+.sg-pin .sg-note{margin:0}
+.sg-nav{display:none}
+
+/* ── Saisie : panneaux schéma / ouvrage en haut, formulaire pleine largeur dessous ── */
+#sg{--ph:clamp(300px,calc(100vh - 500px),560px)}
+.sg-panels{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:8px}
+.sg-pan{border:1px solid var(--border);border-radius:10px;background:#fcfbf8;padding:8px 10px;display:flex;flex-direction:column;height:var(--ph);min-width:0}
+.sg-pan.sg-win{position:static;max-height:none;border-color:var(--gold-border);background:var(--white);box-shadow:none;padding:8px 10px}
+.sg-pan-h{display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;margin-bottom:6px;min-height:26px}
+.sg-pan-h b{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:500;white-space:nowrap}
+.sg-win-h{display:none}
+.sg-ftabs,.sg-wtabs{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px;max-width:100%}
+.sg-ftabs:empty{display:none}
+.sg-ftabs.sub{align-self:flex-start;margin-bottom:6px}
+.sg-ftabs button,.sg-wtabs button{border:none;background:transparent;padding:3px 9px;border-radius:5px;font-family:'Outfit',sans-serif;font-size:11px;color:var(--ink3);cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-ftabs button.on,.sg-wtabs button.on{background:var(--white);color:var(--ink);box-shadow:var(--shadow)}
+.sg-pv{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;justify-content:center}
+.sg-pv .skf{margin:0}
+.sg-pv.multi figcaption{display:none}
+.sg-pv .skf svg{max-height:calc(var(--ph) - 62px);width:auto;max-width:100%}
+.sg-win .sg-pv .skf svg{max-height:calc(var(--ph) - 66px)}
+.sg-win .sg-pv.multi .skf svg{max-height:calc(var(--ph) - 84px)}
+.sg-pv .sk-leg{margin-top:4px}
+.sg-info{margin:0 0 8px;font-size:12px;line-height:1.45;padding:6px 12px;border-radius:8px;min-height:30px;display:block}
+.sg-info i{font-style:normal;color:var(--ink3)}
+.sg-info .mute{font-size:12px;color:var(--ink2)}
+.sg-leg .sk-legend{margin:0 0 8px}
+.sg-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:0 10px;align-items:start}
+.sg-form>*{min-width:0}
+.sg-form>.sg-checks,.sg-form>.sg-tabs,.sg-form>.sg-row,.sg-form>.sg-proj,.sg-form>fieldset:has(.sg-mx),.sg-form>.sg-note{grid-column:1/-1}
+@media(max-width:1100px){.sg-panels{grid-template-columns:minmax(0,1fr)}#sg{--ph:340px}.sg-form{grid-template-columns:minmax(0,1fr)}}
+
+/* ── en-tête unique du bordereau ── */
+.layout:has(#sec-bordereau[style*="block"]) .sidebar,.layout:has(#sec-bordereau:not([style])) .sidebar{display:none}
+.bh-nav{display:flex;align-items:center;gap:4px;margin-right:auto;flex-wrap:wrap}
+.bh-nav .nav-item{margin:0;padding:6px 10px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.bord-head{margin-bottom:8px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,12px);background:var(--ink);color:var(--white);font-size:12px;padding:8px 16px;border-radius:8px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:200;max-width:calc(100vw - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.sg-ck.ok{display:none}
+.sg-checks:empty{display:none}
+.sg-leg .sk-legend{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:baseline}
+.sg-leg .sk-legend>b{margin:0 6px 0 0}
+.sg-fs{grid-template-columns:repeat(auto-fill,minmax(122px,1fr))}
+.sg-pin{align-items:center;gap:8px 16px}
+.sg-pin .sf{width:auto;display:flex;flex-direction:row;align-items:center;gap:6px}
+.sg-pin .sf .sf-h{display:flex;gap:4px;align-items:baseline}
+.sg-pin .sf .sf-l{display:none}
+.sg-pin .sf input{width:70px}
+.sg-pin .sf select{width:170px}
+.sg-pcomp legend{float:left;margin:0 14px 0 0;padding:6px 0 0}
+#sg{--ph:clamp(300px,calc(100vh - 515px),580px)}
+.content{padding-bottom:12px}
+.bord-card{margin-bottom:0}
+.sg-pcomp{padding-top:6px;padding-bottom:6px}
+.sg-pcomp legend{padding-top:7px}
 </style>
 </head>
 <body>
@@ -373,6 +471,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
     </div>
   </div>
 </nav>
+<div class="toast" id="draft" role="status" aria-live="polite"></div>
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-section">
@@ -389,32 +488,32 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
   <main class="content">
 
     <div id="sec-bordereau">
-      <div class="page-header">
-        <div class="page-eyebrow">Ouvrages d'art · VIPP</div>
-        <div class="page-title">Bordereau des données</div>
-        <div class="norm-tag">BPEL 91 · Fascicule 61 titre II · Classes I, II, III</div>
-        <div class="page-desc">Renseignez l'ouvrage étape par étape, guidé par des croquis cotés, ou travaillez directement sur le texte du bordereau VIPP-EL. Une note de calcul VIPP-EL existante peut être importée : son bordereau est relu depuis le PDF.</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Bordereau VIPP-EL</div>
-        <div class="seg" role="tablist"><button class="on" data-mode="guide">Saisie guidée</button><button data-mode="texte">Texte VIPP</button></div>
-        <div class="drop" id="drop">Importer une note VIPP-EL (PDF) ou un bordereau (.txt) — déposer ici ou <u>parcourir</u><input type="file" id="file" accept=".pdf,.txt" hidden></div>
+      <div class="card bord-card">
+        <div class="bord-head">
+          <h1 class="sr-only">VIPP-EL — Bordereau des données</h1>
+          <nav class="bh-nav" aria-label="VIPP-EL" title="VIPP-EL · BPEL 91, fascicule 61 titre II, classes I, II, III">
+            <div class="nav-item active" data-sec="bordereau"><div class="nav-dot" style="background:var(--gold)"></div><span class="nav-label">1 · Bordereau des données</span></div>
+            <div class="nav-item" data-sec="resultats"><div class="nav-dot" style="background:var(--teal)"></div><span class="nav-label">2 · Résultats</span></div>
+            <div class="nav-item" data-sec="note"><div class="nav-dot" style="background:var(--blue)"></div><span class="nav-label">3 · Note de calcul</span></div>
+          </nav>
+          <div class="seg" role="tablist"><button class="on" data-mode="guide">Saisie guidée</button><button data-mode="texte">Texte VIPP</button></div>
+          <div class="drop" id="drop" title="Importer une note VIPP-EL (PDF) ou un bordereau (.txt) : cliquer ou déposer le fichier ici">Importer PDF / .txt<input type="file" id="file" accept=".pdf,.txt" hidden></div>
+          <div class="actions bh-act">
+            <button class="btn-primary" id="run">Lancer le calcul</button>
+            <button class="btn-secondary" id="ex">Exemple</button>
+            <button class="btn-secondary" id="blank">Nouveau projet</button>
+            <button class="btn-secondary" id="save" title="Enregistrer le bordereau (.txt)">Enregistrer</button>
+            <button class="btn-secondary" id="clr" hidden>Vider</button>
+          </div>
+        </div>
+        <div class="progress" id="prog"><div></div></div>
+        <div class="prog-lbl" id="plbl"></div>
         <div class="err" id="err"></div>
         <div id="sg"></div>
         <div id="txtw" hidden>
           <textarea class="bord" id="bord" spellcheck="false"></textarea>
           <div class="hint">Les cartes sont lues par en-têtes (LIGNE A1 … LIGNE D'), comme dans la reproduction du bordereau imprimée en tête des notes VIPP-EL. Les modifications sont reprises dans la saisie guidée.</div>
         </div>
-        <div class="actions" style="margin-top:16px">
-          <button class="btn-primary" id="run">Lancer le calcul</button>
-          <button class="btn-secondary" id="ex">Recharger l'exemple</button>
-          <button class="btn-secondary" id="blank">Nouveau projet</button>
-          <button class="btn-secondary" id="save">Enregistrer le bordereau (.txt)</button>
-          <button class="btn-secondary" id="clr" hidden>Vider</button>
-          <span class="hint" id="draft" style="margin:0"></span>
-        </div>
-        <div class="progress" id="prog"><div></div></div>
-        <div class="prog-lbl" id="plbl"></div>
       </div>
     </div>
 
@@ -458,6 +557,8 @@ function show(name) {
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('.nav-item').forEach(n => n.onclick = () => show(n.dataset.sec));
+// messages d'information éphémères (restauration, import, nouveau projet)
+{ const d = $('#draft'); let t; new MutationObserver(() => { clearTimeout(t); d.classList.toggle('on', !!d.textContent); if (d.textContent) t = setTimeout(() => d.classList.remove('on'), 4500); }).observe(d, { childList: true, characterData: true, subtree: true }); }
 const err = m => { const e = $('#err'); e.textContent = m || ''; e.classList.toggle('on', !!m); };
 
 // ── bordereau : saisie guidée (vipp-saisie.js) ou texte VIPP
