@@ -220,7 +220,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-fs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 12px}
 .sg-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
 .sf{display:flex;flex-direction:column;gap:3px;min-width:0}
-.sf.wide{grid-column:1/-1}
+.sf.wide{grid-column:span 2}
 .sf-h{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
 .sf-h code,.sg-mx code,.sg-info code{font-family:'Courier New',monospace;font-size:11px;color:var(--gold);letter-spacing:.02em}
 .sf-h em{font-style:normal;font-size:10px;color:var(--ink3)}
@@ -431,7 +431,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-leg .sk-legend{margin:0 0 8px}
 .sg-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:0 10px;align-items:start}
 .sg-form>*{min-width:0}
-.sg-form>.sg-checks,.sg-form>.sg-tabs,.sg-form>.sg-row,.sg-form>.sg-proj,.sg-form>fieldset:has(.sg-mx),.sg-form>.sg-note{grid-column:1/-1}
+.sg-form>.sg-checks,.sg-form>.sg-tabs,.sg-form>.sg-row,.sg-form>.sg-proj,.sg-form>fieldset:has(.sg-mx2),.sg-form>fieldset:has(.sg-t),.sg-form>.sg-note{grid-column:1/-1}
 @media(max-width:1100px){.sg-panels{grid-template-columns:minmax(0,1fr)}#sg{--ph:340px}.sg-form{grid-template-columns:minmax(0,1fr)}}
 
 /* ── en-tête unique du bordereau ── */
@@ -488,6 +488,44 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .skf .railin{fill:#b9bec8;stroke:none}
 .skf .steel.post.hl{fill:var(--gold-bg);stroke:var(--gold)}
 .skf .clamp{fill:none;stroke:#3c3f4d;stroke-width:1.1;stroke-linejoin:round}
+
+/* ── pages de saisie (sans défilement) ── */
+.sg-info{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:30px;min-height:0}
+.sg-leg{position:relative;cursor:pointer;margin-bottom:8px}
+.sg-leg .sk-legend{margin:0;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;height:28px;padding-right:28px;align-items:center}
+.sg-leg .sk-legend::after{content:'▾';position:absolute;right:10px;top:5px;color:var(--gold);font-size:12px}
+.sg-leg.open .sk-legend{position:absolute;left:0;right:0;top:0;z-index:30;height:auto;flex-wrap:wrap;white-space:normal;background:var(--white);box-shadow:var(--shadow-lg,0 8px 24px rgba(0,0,0,.12))}
+.sg-leg.open .sk-legend::after{content:'▴'}
+.sg-leg:empty{display:none}
+.sg-pages{grid-column:1/-1;display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sg-pages button{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border:1px solid var(--border);border-radius:7px;background:var(--white);font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--ink2);cursor:pointer}
+.sg-pages button b{width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:500;background:var(--bg2);color:var(--ink3)}
+.sg-pages button.on{border-color:var(--gold);background:var(--gold-bg);color:var(--ink)}
+.sg-pages button.on b{background:var(--gold);color:var(--white)}
+.sg-pg-n{margin-left:auto;font-size:10.5px;color:var(--ink3);letter-spacing:.06em}
+
+.sg-mx2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 18px}
+.layout{min-height:calc(100vh - 58px)}
+
+.sg-mx2.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sg-mx tbody th{flex-direction:row;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;max-width:0;width:44%}
+.sg-mx tbody th span{overflow:hidden;text-overflow:ellipsis}
+.sg-mx td{padding:2px 3px}
+.sg-mx thead th{padding-bottom:3px}
+
+/* ligne d'information + bouton « autres données » (fenêtre surgissante) */
+.sg-info{display:flex;align-items:center;gap:10px;white-space:normal;overflow:visible;padding:0 6px 0 12px}
+.sg-info-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-legbtn{flex:0 0 auto;border:1px solid var(--gold-border);background:var(--white);color:var(--gold);border-radius:6px;padding:3px 9px;font-family:'Outfit',sans-serif;font-size:11px;cursor:pointer;white-space:nowrap}
+.sg-legbtn.on{background:var(--gold);color:var(--white);border-color:var(--gold)}
+.sg-leg{position:relative;height:0;margin:0;cursor:default}
+.sg-leg .sk-legend{display:none}
+.sg-leg.open .sk-legend{display:flex;position:absolute;left:0;right:0;top:-6px;z-index:30;height:auto;max-height:50vh;overflow:auto;flex-wrap:wrap;white-space:normal;background:var(--white);border-style:solid;box-shadow:0 10px 28px rgba(30,25,15,.16);padding:10px 12px;gap:4px 18px}
+.sg-leg .sk-legend::after{content:none}
+.sg-form>fieldset:only-of-type{grid-column:1/-1}
+@media(max-width:1500px){.layout{padding:0 22px}}
+.bord-head{flex-wrap:nowrap}.bord-head .bh-nav{flex-wrap:nowrap;min-width:0;overflow:hidden}
+@media(max-width:1100px){.bord-head{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -521,12 +559,12 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
         <div class="bord-head">
           <h1 class="sr-only">VIPP-EL — Bordereau des données</h1>
           <nav class="bh-nav" aria-label="VIPP-EL" title="VIPP-EL · BPEL 91, fascicule 61 titre II, classes I, II, III">
-            <div class="nav-item active" data-sec="bordereau"><div class="nav-dot" style="background:var(--gold)"></div><span class="nav-label">1 · Bordereau des données</span></div>
+            <div class="nav-item active" data-sec="bordereau"><div class="nav-dot" style="background:var(--gold)"></div><span class="nav-label">1 · Bordereau</span></div>
             <div class="nav-item" data-sec="resultats"><div class="nav-dot" style="background:var(--teal)"></div><span class="nav-label">2 · Résultats</span></div>
             <div class="nav-item" data-sec="note"><div class="nav-dot" style="background:var(--blue)"></div><span class="nav-label">3 · Note de calcul</span></div>
           </nav>
           <div class="seg" role="tablist"><button class="on" data-mode="guide">Saisie guidée</button><button data-mode="texte">Texte VIPP</button></div>
-          <div class="drop" id="drop" title="Importer une note VIPP-EL (PDF) ou un bordereau (.txt) : cliquer ou déposer le fichier ici">Importer PDF / .txt<input type="file" id="file" accept=".pdf,.txt" hidden></div>
+          <div class="drop" id="drop" title="Importer une note VIPP-EL (PDF) ou un bordereau (.txt) : cliquer ou déposer le fichier ici">Importer…<input type="file" id="file" accept=".pdf,.txt" hidden></div>
           <div class="actions bh-act">
             <button class="btn-primary" id="run">Lancer le calcul</button>
             <button class="btn-secondary" id="ex">Exemple</button>
