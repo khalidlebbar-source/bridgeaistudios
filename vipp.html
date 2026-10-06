@@ -594,14 +594,19 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 /* convention : saisie de l'utilisateur en rouge, valeurs produites par le programme ou non modifiables en noir */
 #sg input[data-p],#sg select[data-p]{color:#c62828}
 #sg input[data-p].auto,#sg select[data-p].auto,#sg input[data-p].lk,#sg .sf.lk input,#sg .sf.lk select{color:var(--ink)}
-#sg .skf .tx.usr{fill:#c62828}
-#sg .skf .tx.usr.hl{fill:#c62828;font-weight:700}
 #sg .sg-edge>b{font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--gold);font-weight:700;text-align:center;background:var(--gold-bg);border:1px solid var(--gold-border);border-radius:6px;padding:3px 0;white-space:nowrap}
 #sg .sg-edge{flex:0 0 74px;gap:4px;align-self:stretch;justify-content:center;min-height:0;padding:4px 0}
 #sg .sg-edge>b{flex:0 0 auto}
 #sg .sg-edge .sg-tile{flex:0 1 84px;min-height:0;max-height:84px}
 #sg .sg-edge .sg-tile svg{flex:1 1 0;min-height:0;height:100%}
 #sg .sg-edge .sg-tile span{flex:0 0 auto}
+
+/* cotations chiffrées des dessins en bleu */
+:root{--cote:#1f5fbf}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cote:#7fb0ff}}
+:root[data-theme="dark"]{--cote:#7fb0ff}
+#sg .skf .tx.num,#sg .skf:not(.sch) .tx.cote,.skf:not(.sch) .tx.cote{fill:var(--cote)}
+#sg .skf .tx.num.hl,#sg .skf:not(.sch) .tx.cote.hl{fill:var(--cote);font-weight:700}
 </style>
 </head>
 <body>
