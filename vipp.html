@@ -566,6 +566,13 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-figcell figcaption{display:none}
 .sg-figcell .skf svg{max-height:200px;width:auto;max-width:100%;margin:0 auto;border:none;background:transparent}
 .sg-figcell .skf .tx{font-size:12px;fill:var(--ink)}
+
+/* champs condensés (une ligne par champ) */
+.sg-compact .sg-fs{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.sg-compact .sf{grid-template-columns:auto minmax(0,1fr) 64px 26px;grid-template-areas:"c l i u";align-items:center;row-gap:0}
+.sg-compact .sf input{height:25px;padding:0 6px;font-size:12.5px}
+.sg-compact .sf-h em{text-align:left}
+.sg-figcell.reel{background:var(--white);border-style:solid;border-color:var(--gold-border)}
 </style>
 </head>
 <body>
