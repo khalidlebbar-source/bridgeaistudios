@@ -577,7 +577,7 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-figcell .skf svg{max-height:none}
 
 /* paramètres de l'étape 0 verrouillés aux étapes suivantes */
-#sg .sf.lk input,#sg .sf.lk select,#sg input.lk{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 35%,transparent);color:color-mix(in srgb,currentColor 75%,transparent);cursor:not-allowed;opacity:1}
+#sg .sf.lk input,#sg .sf.lk select,#sg input.lk{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:color-mix(in srgb,var(--gold) 35%,transparent);color:var(--ink);cursor:not-allowed;opacity:1}
 #sg .sf.lk input:focus,#sg input.lk:focus{outline:none;box-shadow:none}
 #sg .sf.lk .sf-h code::after{content:" \1F512";font-size:.8em;opacity:.55}
 #sg td:has(> input.lk){background:color-mix(in srgb,var(--gold) 8%,transparent)}
@@ -590,6 +590,10 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 #sg .sg-mxc .sg-mx td{padding:2px 3px}
 #sg .sg-mxc .sg-mx td input{width:100%;min-width:0;padding:5px 6px}
 #sg .sg-hrow{grid-column:span 6;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.65fr) minmax(0,1.1fr);gap:inherit;align-items:start}
+
+/* convention : saisie de l'utilisateur en rouge, valeurs produites par le programme ou non modifiables en noir */
+#sg input[data-p],#sg select[data-p]{color:#c62828}
+#sg input[data-p].auto,#sg select[data-p].auto,#sg input[data-p].lk,#sg .sf.lk input,#sg .sf.lk select{color:var(--ink)}
 </style>
 </head>
 <body>
