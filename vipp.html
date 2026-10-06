@@ -522,10 +522,27 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-leg .sk-legend{display:none}
 .sg-leg.open .sk-legend{display:flex;position:absolute;left:0;right:0;top:-6px;z-index:30;height:auto;max-height:50vh;overflow:auto;flex-wrap:wrap;white-space:normal;background:var(--white);border-style:solid;box-shadow:0 10px 28px rgba(30,25,15,.16);padding:10px 12px;gap:4px 18px}
 .sg-leg .sk-legend::after{content:none}
-.sg-form>fieldset:only-of-type{grid-column:1/-1}
 @media(max-width:1500px){.layout{padding:0 22px}}
 .bord-head{flex-wrap:nowrap}.bord-head .bh-nav{flex-wrap:nowrap;min-width:0;overflow:hidden}
 @media(max-width:1100px){.bord-head{flex-wrap:wrap}}
+
+/* textes des croquis lisibles dans les panneaux */
+.sg-pv .skf .tx{font-size:12px}
+.sg-pv .skf .tx.dl{font-size:12px}
+.sg-pv .skf .tx.sm{font-size:11px}
+.sg-pv .skf .tx.lb{font-size:12.5px}
+
+.bord-head{margin-bottom:6px}
+.bord-head .seg button{padding:5px 14px}
+.bh-act .btn-primary,.bh-act .btn-secondary{padding:6px 12px}
+.sg-top{margin-bottom:8px}
+.sg-st{padding:4px 9px 4px 5px}
+.sg-edge{flex:0 0 60px}
+.sg-tile span{font-size:10px;gap:4px}
+.sg-form{grid-template-columns:repeat(6,minmax(0,1fr))}
+.sg-form>.sg-proj:not(.sg-pcomp),.sg-form>.sg-pages,.sg-form>.sg-checks,.sg-form>.sg-tabs,.sg-form>.sg-row{grid-column:1/-1}
+.sg-pcomp .sg-pin{gap:6px 10px}.sg-pcomp legend{float:none;padding:0 6px}.sg-pcomp .sg-pinfo{flex-basis:100%}
+#sg.sg-wide-s .sg-panels{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
 </style>
 </head>
 <body>
