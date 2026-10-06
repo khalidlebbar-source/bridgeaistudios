@@ -1,34 +1,3184 @@
-"use strict";(()=>{var jt=/-?\d+(?:\.\d*)?|-?\.\d+/g,Ye=e=>(e.match(jt)??[]).map(Number);function Ot(e){let i=e.split(/\r?\n/),o=i.findIndex(te=>/BORDEREAU DES DONNEES/.test(te));if(o<0)throw new Error("bordereau introuvable");let s=i.findIndex((te,f)=>f>o&&/VIPPEL NO/.test(te));s<0&&(s=i.length);let n=i.slice(o,s).map(te=>te.replace(/\s+/g," ").trim()).filter(te=>te.length),t=(te,f=0)=>{let g=-1;for(let h=0;h<n.length;h++)if(te.test(n[h])&&f--===0){g=h;break}if(g<0)throw new Error("ligne absente : "+te);for(let h=g+1;h<n.length;h++){let c=Ye(n[h]);if(c.length&&!/[A-Z]{3,}/.test(n[h].replace(/E[+-]?\d/g,"")))return c}throw new Error("donn\xE9es absentes : "+te)},l=te=>{let f=n.find(g=>g.startsWith(te+" :"))?.replace(/^\d+ :\s*/,"")??"";return f==="-"?"":f},u=l(1).split(" "),a=u.pop()??"",m=u.pop()??"",r=[u.join(" "),l(2),l(3)],E=Ye(l(4)),T=E.slice(0,E.length-14),N=t(/^LIGNE A1\b/),[v,O,F,U,S,p,$,I,b,M,G,B,R,W,_,P,y]=N,K=te=>{let[f,g,h,c,d,A,D,L,Z,Y,V,oe,me,Ne,Ie,Ge,ve,nt,at,rt]=te;return{PENTPOUT:f,ETAB:g,ETALON:h,HPOUT:c,HPIED:d,H1:A,H2:D,H3D:L,H3G:Z,HTAB:Y,E1:V,E2:oe,D3D:me,D3G:Ne,GDA:Ie,LIN:Ge,EPAM:ve,LONGOUS:nt,PLA:at,HPLA:rt}},re=K(t(/^LIGNE A2\b/)),q=t(/^LIGNE A3\b/),x={AMEN:q[4],H5D:q[5],H5G:q[6],H7D:q[7],H7G:q[8],H9D:q[9],H9G:q[10],AMORD:q[11],AMORG:q[12]},X=t(/^TYPOURI\b/),J=[X[0],X[1]],se=J[0]===0||J[1]===0?K(X.slice(2)):void 0,z=(te,f)=>{let[g,h,c,d,A,D,L,Z,Y,V,oe,me,Ne]=te;return{HHOUR:g,HEXT:h,EEXT:c,PENTSUP:d,PENTINF:A,cross:{AMEN:D,H5D:L,H5G:Z,H7D:Y,H7G:V,H9D:oe,H9G:oe,AMORD:me,AMORG:Ne}}},ie=z(t(/^LIGNE A5\b/),!0),Te=z(t(/^LIGNE A6\b/),!1),Q=t(/^LIGNE B1\b/),w=t(/^LIGNE B2\b/),ce=[];for(let te=0;te+3<w.length;te+=4)ce.push({de:w[te],a:w[te+1],max:w[te+2],min:w[te+3]});let k=t(/^LIGNE B3\b/),j=t(/^LIGNE C1\b/),ae=t(/^LIGNE C2\b/),ee=te=>{let[f,g,h,c,d,A,D,L,Z,Y,V,oe,me,Ne,Ie,Ge,ve]=te;return{ARMA:f,FPRG:g,FPEG:h,SIGP0:c,EP:d,SECAB:A,DGAINE:D,ENROB:L,DECAL:Z,F:Y,PHI:V,RECUL:oe,R1000:me,NGA:Ne,TYPE:Ie,AV:Ge,AH:ve}},pe=[ee(t(/^LIGNE C3\b/)),ee(t(/^LIGNE C4\b/))],de=t(/^LIGNE C5\b/),Ee=[];try{Ee=t(/^A CALCULER\b/)}catch{Ee=[]}let fe=[],He=Math.floor(Ee.length/8),xe=n.map((te,f)=>/TABLEAU D - DEFINITION DU TRACE/.test(te)?f:-1).filter(te=>te>=0);for(let te=0;te<He;te++){let f=Ee.slice(8*te,8*te+8),g=xe[te],h=te+1<xe.length?xe[te+1]:n.length,c=[],d=[],A=[];for(let D=g;D<h;D++){let L=n[D];if(/^LIGNE D' /.test(L)){let Z=Ye(L.slice(8)),[,Y,V,oe,me,Ne,Ie,Ge,ve,nt,at,rt,Yt,Vt,Jt,qt,kt]=Z;A.push({num:Y,ARMA:V,SECAB:oe,SIGP0:me,ANPA:Ne,SYM:Ie,ABDECO:Ge,ORFICO:ve,ABFICO:nt,ABSOR:at,ANGSOR:rt,EXTRAN:Yt,ABDEHO:Vt,ABFIHO:Jt,YENCO:qt,DENCO:kt})}else if(/^LIGNE D /.test(L)){let Z=Ye(L.slice(7));Z[0]===0&&!c.length?c=Z.slice(1):d.push(Z.slice(1))}}fe.push({poutres:f.slice(0,5).filter(D=>D>0),NCAB11:f[5],NCAB12:f[6],NCAB2:f[7],abscisses:c,ordonnees:d,cables:A})}return{titre:r,numero:m,date:a.replace(/^(\d\d)(\d\d)(\d\d)$/,"$1.$2.$3"),poutresACalculer:T,SYMTAB:v,NVOIE:O,ETROTG:F,EGAU:U,ESURCH:S,EDROI:p,ETROTD:$,NPOUT:I,ENTRAPOUT:b,DPOUT1:M,PORTEE:G,ABOUT:B,NE:R,ENTINT:W,ENTAPP:_,NT:P,BIAIS:y,beam:re,slab:{HHOUR:q[0],HAXE:q[1],PENTSUP:q[2],PENTINF:q[3]},cross:x,HENTA:q[13],HENTI:q[14],TYPOURI:J,beamRive:se,slabG:ie,slabD:Te,MASVOL:Q[0],OSSAMAXP:Q[1],OSSAMINP:Q[2],OSSAMAXH:Q[3],OSSAMINH:Q[4],DBAG:Q[5],PBAGMAX:Q[6],PBAGMIN:Q[7],DBAD:Q[8],PBADMAX:Q[9],PBADMIN:Q[10],PDALMAX:Q[11],PDALMIN:Q[12],qsup:ce,CLASSE:k[0]>=100?Math.round(k[0]/100):k[0],A:k[1],B:k[2],CM:k[3],CE:k[4],PSTROT:k[5],A1:k[6],A2:k[7],A3:k[8],CLASSEBP:j[0]>=100?Math.round(j[0]/100):j[0],POISSON:j[1],FC11:j[2],FC12:j[3],FC28:j[4],FC4H:j[5],FC5H:j[6],FC28H:j[7],EPSR:j[8],FE1:ae[0],SIGS:ae[1],TYPEAP:ae[2],DAP:ae[3],ES:ae[4],FE2:ae[5],NH:ae[6],NS3:ae[7],NP3:ae[8],NP0:ae[9],RO:ae[10],SPSI1:ae[11],DFPRG:ae[12],KTABF:ae[13],systems:pe,J:{J1:de[0],J2:de[1],J3:de[2],J4:de[3],J5:de[4],J6:de[5],J999:de[6],JSUP:de[7]},cablings:fe}}function Ht(e){let i=[];return e.cablings.forEach((o,s)=>o.cables.forEach(n=>{if(n.ABSOR<1||!n.ANGSOR)return;let t=Math.tan(n.ANGSOR*Math.PI/200),u=e.beam.HPOUT-t*(n.ABDECO-n.ABSOR)-n.ORFICO,a=t*(n.ABFICO-n.ABDECO)/2,m=u/a;Math.abs(m-1)>.03&&i.push({cablage:s+1,cable:n.num,message:`trac\xE9 vertical non parabolique : chute ${u.toFixed(3)} m pour ${a.toFixed(3)} m attendus (rapport ${m.toFixed(2)}) \u2014 r\xE9sultats de tension pouvant diff\xE9rer de VIPP-EL de quelques MPa`})})),i}var H=(e,i=3)=>{isFinite(e)||(e=0);for(let o=i;o<=6;o++){let s=e.toFixed(o);if(Math.abs(Number(s)-e)<1e-9)return s}return String(+e.toFixed(8))},ue=e=>String(Math.round(e||0)),ye=e=>Number.isInteger(e)?e+".":H(e),ge=(e,i=8)=>"           "+e.map(o=>o.padStart(i)).join(" "),xt=e=>[H(e.PENTPOUT),H(e.ETAB),H(e.ETALON),H(e.HPOUT),H(e.HPIED),H(e.H1),H(e.H2),H(e.H3D),H(e.H3G),H(e.HTAB),H(e.E1),H(e.E2),H(e.D3D),H(e.D3G),ue(e.GDA),ue(e.LIN),H(e.EPAM),H(e.LONGOUS),ue(e.PLA),H(e.HPLA)],Wt={PENTPOUT:0,ETAB:0,ETALON:0,HPOUT:0,HPIED:0,H1:0,H2:0,H3D:0,H3G:0,HTAB:0,E1:0,E2:0,D3D:0,D3G:0,GDA:0,LIN:0,EPAM:0,LONGOUS:0,PLA:0,HPLA:0},Nt=(e,i)=>[H(e.HHOUR),H(e.HEXT),H(e.EEXT),H(e.PENTSUP),H(e.PENTINF),ue(e.cross.AMEN),H(e.cross.H5D),H(e.cross.H5G),H(e.cross.H7D),H(e.cross.H7G),H(i?e.cross.H9D:e.cross.H9G),H(e.cross.AMORD),H(e.cross.AMORG),H(0),H(0)],Bt=e=>[ue(e.ARMA),H(e.FPRG,1),H(e.FPEG,1),H(e.SIGP0,1),ye(e.EP),ye(e.SECAB),H(e.DGAINE),H(e.ENROB),H(e.DECAL),H(e.F),H(e.PHI,4),H(e.RECUL),H(e.R1000,2),ue(e.NGA),ue(e.TYPE),H(e.AV),H(e.AH)];function it(e){let i=[],o=(...l)=>i.push(...l),s=(e.date||"").replace(/^(\d\d)\.(\d\d)\.(\d\d)$/,"$1$2$3")||"000000",n=[...e.titre,"","",""].slice(0,3).map(l=>(l||"").toUpperCase().replace(/\s+/g," ").trim()||"-");o("                                                        BORDEREAU DES DONNEES","                                                        =====================","","LIGNE NO                                 TITRE                                  NO    DATE","","  1 :   "+n[0].padEnd(72)+" "+(e.numero||"0001").padStart(5)+" "+s,"  2 :   "+n[1],"  3 :   "+n[2],"","                  POUTRES A CALCULER","             ----------------------------------------------------------","  4 :   "+e.poutresACalculer.map(l=>String(l).padStart(5)).join(" ")+"    1 0 0 0 0 0 2 1 1 0 1 1 0 0","  5 :                                      1 0 0 0 0 1 0 0 0 0 0 0 0 0","","                              TABLEAU A - CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE","                              ======================================================","","LIGNE A1   SYMTAB NVOIE ETROTG   EGAU ESURCH     EDROI ETROTD NPOUT ENTRAPOUT DPOUT1 PORTEE ABOUT NE ENTINT ENTAPP NT BIAIS EDESS",ge([ue(e.SYMTAB),ue(e.NVOIE),H(e.ETROTG),H(e.EGAU),H(e.ESURCH),H(e.EDROI),H(e.ETROTD),ue(e.NPOUT),H(e.ENTRAPOUT),H(e.DPOUT1),H(e.PORTEE),H(e.ABOUT),ue(e.NE),H(e.ENTINT),H(e.ENTAPP),ue(e.NT),H(e.BIAIS,2),H(0),"0"],6),"","           POUTRES INTERMEDIAIRES","LIGNE A2   PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G GOUDAM LIN EPAM LONGOUS PLAB HPLA",ge(xt(e.beam),6),"","LIGNE A3   HHOUR H AXE   PENT SUP PENT INF   AMEN H5D    H5G   H7D   H7G   H9D   H9G     AMORD     AMORG    HENTA   HENTI   EABOUT DEXTR",ge([H(e.slab.HHOUR),H(e.slab.HAXE),H(e.slab.PENTSUP),H(e.slab.PENTINF),ue(e.cross.AMEN),H(e.cross.H5D),H(e.cross.H5G),H(e.cross.H7D),H(e.cross.H7G),H(e.cross.H9D),H(e.cross.H9G),H(e.cross.AMORD),H(e.cross.AMORG),H(e.HENTA),H(e.HENTI),H(0),H(0)],6),"","          POUTRES DE RIVE","LIGNE A4","  TYPOURI PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G GOUDAM LIN EPAM LONGOUS PLAB HPLA","    "+ue(e.TYPOURI[0])+" "+ue(e.TYPOURI[1])+" "+xt(e.beamRive??Wt).map(l=>l.padStart(6)).join(" "),"","           ENCORBELLEMENT DE GAUCHE","LIGNE A5   HHOUR H GAU E GAUH PENTSUPG PENTINFG     AMEN H5D    H5G   H7D   H7G   H9D     AMORD     AMORG   EABOUT DEXTR",ge(Nt(e.slabG,!0),6),"","           ENCORBELLEMENT DE DROITE","LIGNE A6   HHOUR HDROI EDROIH PENTSUPD PENTINFD     AMEN H5D    H5G   H7D   H7G   H9G     AMORD     AMORG   EABOUT DEXTR",ge(Nt(e.slabD,!1),6),"","                                     TABLEAU B - DEFINITION DES ACTIONS ET SOLLICITATIONS","                                     ====================================================","","                       POUTRE            HOURDIS","LIGNE B1   MASVOL OSSAMAX OSSAMIN OSSAMAX OSSAMIN                      DBAG PBAGMAX PBAGMIN       DBAD PBADMAX PBADMIN PREDALMAX PREDALMIN",ge([H(e.MASVOL),H(e.OSSAMAXP),H(e.OSSAMINP),H(e.OSSAMAXH),H(e.OSSAMINH),H(e.DBAG),H(e.PBAGMAX),H(e.PBAGMIN),H(e.DBAD),H(e.PBADMAX),H(e.PBADMIN),H(e.PDALMAX),H(e.PDALMIN)],7),"","           NUM QSUP QSUP                NUM QSUP QSUP              NUM QSUP QSUP          NUM QSUP QSUP","LIGNE B2   POUT MAX    MIN              POUT MAX    MIN            POUT MAX    MIN        POUT MAX    MIN","           "+(e.qsup.length?e.qsup:[{de:1,a:e.NPOUT,max:0,min:0}]).map(l=>`${ue(l.de)} ${ue(l.a)} ${H(l.max)} ${H(l.min)}`).join("        "),"","LIGNE B3   CLASSE     A             B           CM          CE         PSTROT     A1     A2       A3",ge([ue(e.CLASSE*100),ue(e.A),ue(e.B),ue(e.CM),ue(e.CE),H(e.PSTROT),H(e.A1),H(e.A2),H(e.A3)],9),"");for(let l of[4,5,6,7])o(`LIGNE B${l}   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR`,ge(["1",...Array(11).fill(H(0))],7),"");o("                                     TABLEAU C - DEFINITION DES MATERIAUX","                                     ====================================","","LIGNE C1   CL BP POIS          FC1        FC2        FC28     FC4H       FC5H   FC28H    EPS R",ge([ue(e.CLASSEBP*100),H(e.POISSON),H(e.FC11,1),H(e.FC12,1),H(e.FC28,1),H(e.FC4H,1),H(e.FC5H,1),H(e.FC28H,1),H(e.EPSR)],9),"","LIGNE C2     FE1      SIGS         TYPE        D          ES             FE2   NH    NS3 NP3      NP0     RO    S.PSI1   D.FPRG   KF",ge([H(e.FE1,1),H(e.SIGS,1),ue(e.TYPEAP),H(e.DAP),ye(e.ES),H(e.FE2,1),H(e.NH,1),H(e.NS3,1),H(e.NP3,1),H(e.NP0,1),H(e.RO,2),H(e.SPSI1,1),H(e.DFPRG,1),ue(e.KTABF)],8),""),e.systems.slice(0,2).forEach((l,u)=>o(`LIGNE C${3+u}   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH`,ge(Bt(l),7),"")),e.systems.length<2&&o("LIGNE C4   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH",ge(Bt(e.systems[0]),7),"");let t=e.J;return o("LIGNE C5    J1      J2        J3        J4      J5      J6        J7     JSUP",ge([t.J1,t.J2,t.J3,t.J4,t.J5,t.J6,t.J999,t.JSUP].map(ue),7),""),o("LIGNE C6   "+e.cablings.map((l,u)=>`            CABLAGE ${u+1}          `).join(""),"           "+e.cablings.map(()=>"   POUTRES         NCAB          ").join(""),"A CALCULER "+e.cablings.map(()=>"                11 12   2        ").join(""),"           "+e.cablings.map(l=>[...l.poutres,0,0,0,0,0].slice(0,5).map(ue).join(" ")+"   "+[l.NCAB11,l.NCAB12,l.NCAB2].map(ue).join(" ")).join("     "),""),e.cablings.forEach((l,u)=>{o(`                              TABLEAU D - DEFINITION DU TRACE DU CABLAGE ${u+1}`,"                              ============================================","","                                    ABSCISSES DE DEFINITION DES CABLES","","LIGNE D   0  "+l.abscisses.map(a=>H(a).padStart(8)).join(" "),"","                                  ORDONNEES DES AXES DES GAINES EN CES ABSCISSES",""),l.ordonnees.forEach((a,m)=>o(`LIGNE D   ${m+1}  `+a.map(r=>H(r).padStart(8)).join(" "),"")),o("",`                              TABLEAU D' - CARACTERISTIQUES COMPLEMENTAIRES DES CABLES DANS LE CABLAGE ${u+1}`,"                               ==========================================================================","","              NUM ARMA SECAB     SIGPO    MODE NCASY ABDECO ORFICO ABFICO ABSOR ANGSOR EXTRAN ABDEHO ABFIHO YENCO DENCO",""),l.cables.forEach((a,m)=>o(`LIGNE D' ${m+1}  `+[ue(a.num),ue(a.ARMA),ye(a.SECAB),ye(a.SIGP0),ue(a.ANPA),ue(a.SYM),H(a.ABDECO),H(a.ORFICO),H(a.ABFICO),H(a.ABSOR),H(a.ANGSOR,2),H(a.EXTRAN,2),H(a.ABDEHO),H(a.ABFIHO),H(a.YENCO),H(a.DENCO)].map(r=>r.padStart(8)).join(" "),""))}),i.join(`
-`)}function ot(e,i){let o=e.length,s=Array.from({length:o},()=>new Array(o).fill(0));for(let n=0;n<o;n++)for(let t=0;t<o;t++){let l=e[n][t];if(l!==0)for(let u=0;u<o;u++)s[n][u]+=l*i[t][u]}return s}function Ve(e,i){return e.map(o=>o.reduce((s,n,t)=>s+n*i[t],0))}function Je(e){let i=e.length,o=0;for(let a of e)o=Math.max(o,a.reduce((m,r)=>m+Math.abs(r),0));let s=0;for(;o>.25;)o/=2,s++;let n=Math.pow(2,s),t=e.map(a=>a.map(m=>m/n)),l=Array.from({length:i},(a,m)=>Array.from({length:i},(r,E)=>m===E?1:0)),u=l.map(a=>a.slice());for(let a=1;a<24;a++){l=ot(l,t).map(m=>m.map(r=>r/a));for(let m=0;m<i;m++)for(let r=0;r<i;r++)u[m][r]+=l[m][r]}for(let a=0;a<s;a++)u=ot(u,u);return u}function Kt(e,i){let o=i.length,s=e.map((n,t)=>[...n,i[t]]);for(let n=0;n<o;n++){let t=n;for(let l=n+1;l<o;l++)Math.abs(s[l][n])>Math.abs(s[t][n])&&(t=l);[s[n],s[t]]=[s[t],s[n]];for(let l=0;l<o;l++)if(l!==n){let u=s[l][n]/s[n][n];for(let a=n;a<=o;a++)s[l][a]-=u*s[n][a]}}return s.map((n,t)=>n[o]/n[t])}function Rt(e,i,o,s){let n=Math.PI*e,t=2*i,l=[[0,1,0,0],[0,0,1,0],[0,0,0,1],[-1,0,2*i,0]],u=s*n,a=Je(l.map($=>$.map(I=>I*(u+n)))),m=Je(l.map($=>$.map(I=>I*(n-u)))),r=[0,0,0,n],E=[[0,0,1,0],[0,-t,0,1]],T=ot(m,a),N=($,I)=>[0,1,2,3].map(b=>$.reduce((M,G,B)=>M+G*I[B][b],0)),v=[E[0],E[1],N(E[0],T),N(E[1],T)],O=Ve(m,r),F=[0,0,-E[0].reduce(($,I,b)=>$+I*O[b],0),-E[1].reduce(($,I,b)=>$+I*O[b],0)],U=Kt(v,F),S=o*n,p;if(S<=u)p=Ve(Je(l.map($=>$.map(I=>I*(S+n)))),U);else{let $=Ve(a,U).map((I,b)=>I+r[b]);p=Ve(Je(l.map(I=>I.map(b=>b*(S-u)))),$)}return 2*p[0]}var qe=class qe{constructor(i,o){this.theta=i;this.alpha=o;this.cache=new Map;this.grids=new Map}exact(i,o){let s=Rt(this.theta,0,i,o),n=Rt(this.theta,1-1e-9,i,o);return s+(n-s)*Math.sqrt(this.alpha)}K(i,o){let s=Math.max(-1,Math.min(1,o)),n=i.toFixed(9),t=qe.N,l=this.grids.get(n);if(!l){l=new Float64Array(2*(t+1));for(let S=0;S<=t;S++)l[S]=this.exact(i,-1+(i+1)*S/t),l[t+1+S]=this.exact(i,i+(1-i)*S/t);this.grids.set(n,l)}let u=s<=i,a=u?-1:i,m=u?i+1:1-i,r=u?0:t+1;if(m<1e-12)return l[r];let E=(s-a)/m*t,T=Math.min(t-1,Math.floor(E)),N=E-T,v=l[r+T],O=l[r+T+1],F=T>0?l[r+T-1]:2*v-O,U=T+2<=t?l[r+T+2]:2*O-v;return v+.5*N*(O-F+N*(2*F-5*v+4*O-U+N*(3*(v-O)+U-F)))}Kexact(i,o){let s=i.toFixed(9)+"|"+o.toFixed(9),n=this.cache.get(s);return n===void 0&&(n=this.exact(i,Math.max(-1,Math.min(1,o))),this.cache.set(s,n)),n}};qe.N=400;var lt=qe;function Dt(e,i,o,s){let n=(e[0]-i[0])*(o[1]-s[1])-(e[1]-i[1])*(o[0]-s[0]),t=e[0]*i[1]-e[1]*i[0],l=o[0]*s[1]-o[1]*s[0];return[(t*(o[0]-s[0])-(e[0]-i[0])*l)/n,(t*(o[1]-s[1])-(e[1]-i[1])*l)/n]}function Me(e,i){let o=e.HPIED+e.H1,s=o+e.H2,n=u=>{let a=u>0?e.H3D:e.H3G,m=u>0?e.D3D:e.D3G,r=e.ETALON/2,E=e.E1/2,T=e.E2/2,N=e.ETAB/2,v=N-m,O=s+a,F=e.HPOUT+u*e.PENTPOUT*N,U=i/2,S=[E+U,o],p=[T+U,s],$,I;U<=1e-12?($=[E,o],I=[T,s]):($=Dt([r,e.HPIED],[E,o],S,p),e.GDA===2?I=[T+U,s]:I=Dt([T,s],[v,O],S,p));let b=[[r,0],[r,e.HPIED],$,I];return e.GDA===2&&U>0?b.push([Math.min(v+U,N),O]):b.push([v,O]),b.push([N,F-e.HTAB],[N,F]),b.map(([M,G])=>[u*M,G])},t=n(1),l=n(-1);return[...t,...l.reverse()]}function Mt(e,i,o){let s=e.PORTEE+2*e.ABOUT,n=o<=s/2?o:s-o;if(i.GDA===0||i.EPAM<=0)return 0;let t=e.ABOUT+i.EPAM/2,l=e.ABOUT+i.LONGOUS;return i.LIN===0?n<=l?i.EPAM:0:n<=t?i.EPAM:n>=l?0:i.EPAM*(l-n)/(l-t)}function De(e,i){let o=e.NPOUT,s=e.ENTRAPOUT,n=i===1,t=i===o,l=n?-e.slabG.EEXT:-s/2,u=t?e.slabD.EEXT:s/2,a=n?e.slabG.HHOUR:t?e.slabD.HHOUR:e.slab.HHOUR;return{xl:l,xr:u,HHOUR:a,psL:n?e.slabG.PENTSUP:e.slab.PENTSUP,psR:t?e.slabD.PENTSUP:e.slab.PENTSUP,piL:n?e.slabG.PENTINF:e.slab.PENTINF,piR:t?e.slabD.PENTINF:e.slab.PENTINF,hMidL:n?e.slabG.HEXT:e.slab.HAXE,hMidR:t?e.slabD.HEXT:e.slab.HAXE,cantL:n,cantR:t}}function ke(e,i){let o=e.HPOUT,s=e.ETAB/2,n=a=>o+i.HHOUR+(a>=0?i.psR:i.psL)*a,t=a=>o+e.PENTPOUT*a,l=a=>{let m=a>0,r=m?i.xr:i.xl;return n(r)-(m?i.hMidR:i.hMidL)+(m?i.piR:i.piL)*(a-r)},u=[];return i.xl<-s-1e-9&&(u.push([i.xl,l(i.xl)]),u.push([-s,l(-s-1e-12)])),u.push([Math.max(i.xl,-s),t(Math.max(i.xl,-s))]),u.push([0,t(0)]),u.push([Math.min(i.xr,s),t(Math.min(i.xr,s))]),i.xr>s+1e-9&&(u.push([s,l(s+1e-12)]),u.push([i.xr,l(i.xr)])),[...u,[i.xr,n(i.xr)],[0,n(0)],[i.xl,n(i.xl)]]}var ct=e=>typeof globalThis<"u"&&globalThis.process?.env?globalThis.process.env[e]:void 0;function Se(e){let i=e.ETROTG+e.EGAU,o=i+e.ESURCH,s=o+e.EDROI+e.ETROTD,n=i+e.ESURCH/2-e.DPOUT1,t=Array.from({length:e.NPOUT},(m,r)=>n+r*e.ENTRAPOUT),l=n+(e.NPOUT-1)*e.ENTRAPOUT/2,u=e.NPOUT*e.ENTRAPOUT/2,a=e.NVOIE;return a||(a=Math.floor(e.ESURCH/3+1e-9),e.ESURCH>=5&&e.ESURCH<6&&(a=2),a<1&&(a=1)),a=Math.min(a,10),{width:s,X3:i,X6:o,xBeam:t,xc:l,b:u,NV:a,v:e.ESURCH/a}}var gs=ct("ACAL")?+ct("ACAL"):.99065;var ut=Math.PI/200,Zt="exp";function Qt(e,i,o,s,n,t,l){let u=s-e,a=(l-e)/u,m=2*a**3-3*a**2+1,r=a**3-2*a**2+a,E=-2*a**3+3*a**2,T=a**3-a**2,N=6*a*a-6*a,v=3*a*a-4*a+1,O=-6*a*a+6*a,F=3*a*a-2*a;return{y:m*i+r*u*o+E*n+T*u*t,d:(N*i+v*u*o+O*n+F*u*t)/u}}function St(e,i,o,s){let n=e.systems.find(c=>c.ARMA===o.ARMA)??e.systems[0],t=i.NCAB11+i.NCAB12,l=s<t?1:2,u=s<i.NCAB11?1:s<t?2:3,a=i.ordonnees[s],m=i.abscisses,r=Math.tan(o.ANGSOR*ut),E=e.ABOUT+e.PORTEE/2,T=m.map((c,d)=>({x:c,y:a[d]})).filter(c=>c.y>0&&c.x>=o.ABSOR-1e-9),N=T[0],v=c=>N.y+r*(N.x-c),O=o.ABSOR,F=v(o.ABSOR),U=v(o.ABDECO),S=T.filter(c=>c.x>o.ABDECO+1e-9&&c.x<o.ABFICO-1e-9),p=[{x:o.ABDECO,y:U,s:-r},...S.map(c=>({x:c.x,y:c.y,s:0})),{x:o.ABFICO,y:o.ORFICO,s:0}],$=p.length,I=c=>(p[c+1].y-p[c].y)/(p[c+1].x-p[c].x);for(let c=1;c<$-1;c++)if(c===1)p[c].s=2*I(0)-p[0].s;else{let d=p[c].x-p[c-1].x,A=p[c+1].x-p[c].x;p[c].s=(I(c-1)*A+I(c)*d)/(d+A)}let b=c=>{let d=Math.min(c,2*E-c);if(d<=o.ABDECO)return{y:v(d),d:-r};if(d>=o.ABFICO)return{y:o.ORFICO,d:0};for(let A=0;A<$-1;A++)if(d<=p[A+1].x+1e-12)return Qt(p[A].x,p[A].y,p[A].s,p[A+1].x,p[A+1].y,p[A+1].s,d);return{y:o.ORFICO,d:0}},M=o.EXTRAN,G=o.ABDEHO,B=o.ABFIHO,R=B-G,W=(G+B)/2,_=c=>{let d=Math.min(c,2*E-c);if(M===0||d<=G||d>=B)return 0;let A=2*M/(R*R);return d<=W?2*A*(d-G):2*A*(B-d)},P=c=>Math.atan(_(c))/ut,y=M===0?0:2*Math.atan(2*M/R),K=c=>M===0||c<=G?0:c>=B?y:y*(c-G)/R,re=c=>c<=E?K(c):2*K(E)-K(2*E-c),q=[O,o.ABDECO,...S.map(c=>c.x),o.ABFICO].filter((c,d,A)=>A.indexOf(c)===d).sort((c,d)=>c-d),x=c=>Math.atan(Math.abs(b(c).d)),X=c=>{let d=Math.atan(r);return c<=E?d-x(c):d+x(c)},J=[O,...q.filter(c=>c>O),E].filter((c,d,A)=>A.indexOf(c)===d).sort((c,d)=>c-d),se=c=>{let d=0,A=O,D=b(O).y;for(let L of J){if(L<=O)continue;let Z=Math.min(L,c),Y=b(Z).y;if(d+=Math.hypot(Z-A,Y-D),A=Z,D=Y,L>=c)break}return d},z=o.SIGP0||n.SIGP0||Math.min(.8*n.FPRG,.9*n.FPEG),ie=o.SECAB||n.SECAB,Q=[...q,E].map(c=>({x:c,s:se(c),alpha:X(c)+re(c)})),w=[...Q,...Q.slice(0,-1).reverse().map(c=>({x:2*E-c.x,s:2*Q[Q.length-1].s-c.s,alpha:2*Q[Q.length-1].alpha-c.alpha}))],ce=c=>{for(let d=0;d+1<Q.length;d++){let A=Q[d],D=Q[d+1];if(c<=D.x+1e-12){let L=(c-A.x)/(D.x-A.x||1);return X(A.x)+L*(X(D.x)-X(A.x))}}return X(E)},k=c=>{for(let d=0;d+1<w.length;d++){let A=w[d],D=w[d+1];if(c>=A.x-1e-12&&c<=D.x+1e-12){let L=(c-A.x)/(D.x-A.x||1);return{s:A.s+L*(D.s-A.s),alpha:A.alpha+L*(D.alpha-A.alpha)}}}return{s:w[w.length-1].s,alpha:w[w.length-1].alpha}},j=c=>{let{s:d,alpha:A}=k(c);return z*Math.exp(-(n.F*A+n.PHI*d))},ae=w.map(c=>z*Math.exp(-(n.F*c.alpha+n.PHI*c.s))),ee=c=>{for(let d=0;d+1<w.length;d++){let A=w[d],D=w[d+1];if(c>=A.x-1e-12&&c<=D.x+1e-12){let Z=(k(c).s-A.s)/(D.s-A.s||1);return ae[d]+Z*(ae[d+1]-ae[d])}}return ae[ae.length-1]},pe=Zt==="exp"?j:ee,de=n.RECUL*n.EP,Ee=c=>{let d=[...w.map(Z=>Z.x).filter(Z=>Z>O+1e-9&&Z<c-1e-9),c],A=0,D=O,L=ee(c);for(let Z of d)A+=2*((ee(D)+ee(Z))/2-L)*(k(Z).s-k(D).s),D=Z;return A},fe,He=0;if(Ee(E)<de)fe=E,He=(de-Ee(E))/(k(E).s-k(O).s);else{let c=O,d=E;for(let A=0;A<60;A++){let D=(c+d)/2;Ee(D)<de?c=D:d=D}fe=(c+d)/2}let xe=j(fe),te=c=>{let d=Math.min(c,2*E-c),A=d<=O?z:z*Math.exp(-(n.F*(X(d)+k(d).alpha-ce(d))+n.PHI*k(d).s)),D=d<fe||He>0?2*xe-A-He:A;return{f:A-z,c:D-A,sig:D}},g=[...q,fe,E].filter((c,d,A)=>A.findIndex(D=>Math.abs(D-c)<1e-6)===d).sort((c,d)=>c-d).map(c=>{let{s:d,alpha:A}=k(c),D=pe(c);return{x:c,s:d,alpha:A,sig0:D,sigBlock:c<fe?2*xe-D:D}}),h=0;{for(let d=0;d<400;d++){let A=O+(E-O)*d/400,D=O+(E-O)*(d+1)/400;h+=(pe(A)+pe(D))/2*(k(D).s-k(A).s)}h/=n.EP}return{def:o,sys:n,family:l,stage:u,nodes:p,xExit:O,yExit:F,slope0:r,y:c=>b(c).y,yp:c=>b(c).d,zp:_,angleV:c=>Math.atan(Math.abs(b(c).d))/ut,angleH:P,exists:c=>Math.min(c,2*E-c)>=O-1e-9,diag:g,lambda:fe,allongement:h,sigAfter:te,sigP0:z,area:ie,_dbg:c=>({s:k(c).s,alpha:k(c).alpha,h:k(c).alpha-ce(c)})}}var le=e=>Math.round(e*10)/10,Be=460,Le=e=>e.replace(/&/g,"&amp;").replace(/</g,"&lt;"),C=(e,i=3)=>Number.isInteger(e)&&i<=2?String(e):(+e).toFixed(i),Ct=0,je=!1,mt=null,pt=!1;function It(e){pt=!0;try{return e()}finally{pt=!1}}var $e=860,dt=1;function We(e){dt=Math.max(.3,Math.min(1,e))}function Gt(e){$e=Math.max(360,Math.min(1e3,Math.round(e)))}function Pe(e,i){je=!0,mt=i??null;try{return e()}finally{je=!1,mt=null}}var _t={W:"largeur totale",Lt:"longueur des poutres"},Ae=class{constructor(i,o,s,n,t,l,u={l:30,r:30,t:30,b:30},a=""){this.x0=i;this.x1=o;this.y0=s;this.y1=n;this.sx=t;this.sy=l;this.pad=u;this.hl=a;this.parts=[];this.top=[];this.schema=je;this.vals=mt;this.vonly=pt;this.X=i=>this.pad.l+(i-this.x0)*this.sx;this.Y=i=>this.pad.t+(this.y1-i)*this.sy;this.pts=i=>i.map(([o,s])=>`${le(this.X(o))},${le(this.Y(s))}`).join(" ");this.sx=t*dt,this.sy=l*dt}lab(i,o=""){if(i==="")return"";if(this.vonly){let t=i.match(/(?:^|\s)(-?\d[\d.,]*(?:\s*(?:m|%))?)/);return t?t[1]:""}if(!this.schema)return i;let s=o.split("|")[0],n=s?_t[s]??s.split(".").pop():"";if(n){let t=this.vals?.(o);return t!==void 0?`${n} = ${t}`:n}return i.replace(/\s*[-+]?\d[\d.,]*\s*(m|gr|%|MPa)?\s*$/,"").trim()}get W(){return Math.ceil(this.pad.l+(this.x1-this.x0)*this.sx+this.pad.r)}get H(){return Math.ceil(this.pad.t+(this.y1-this.y0)*this.sy+this.pad.b)}poly(i,o){this.parts.push(`<polygon class="${o}" points="${this.pts(i)}"/>`)}pline(i,o){this.parts.push(`<polyline class="${o}" points="${this.pts(i)}"/>`)}line(i,o,s,n,t){this.lineP(this.X(i),this.Y(o),this.X(s),this.Y(n),t)}lineP(i,o,s,n,t,l=!1){(l?this.top:this.parts).push(`<line class="${t}" x1="${le(i)}" y1="${le(o)}" x2="${le(s)}" y2="${le(n)}"/>`)}text(i,o,s,n="tx",t="middle",l=!0){if(this.schema&&!/\bbnt\b/.test(n)){let u=s.match(/^([A-Z][A-Z0-9]+(?: [A-Z][A-Z0-9]+)?)\s+[-+]?\d/);u?s=u[1]:/^[-+]?\d[\d.,]*(\s*(m|gr|%))?$/.test(s)&&(s="")}if(this.vonly&&!/\bbnt\b/.test(n)){let u=s.match(/^[A-Z][A-Z0-9]*(?: [A-Z][A-Z0-9]*)?\s+([+-]?\d[\d.,]*(?:\s*(?:m|%|gr))?)\s*$/);s=u?u[1]:/^[+-]?\d[\d.,]*(\s*(m|%|gr))?$/.test(s.trim())?s.trim():""}s&&(this.schema&&this.vals&&!/\bbnt\b/.test(n)&&(s=s.replace(/(^|[\s(·,/])([A-Z][A-Z0-9]*)(?=$|[),·/]|\s(?!=))/g,(u,a,m)=>{let r=this.vals(m);return r!==void 0?`${a}${m} = ${r}`:u})),(l?this.top:this.parts).push(`<text class="${n}" x="${le(i)}" y="${le(o)}" text-anchor="${t}">${Le(s)}</text>`))}circleP(i,o,s,n){this.parts.push(`<circle class="${n}" cx="${le(i)}" cy="${le(o)}" r="${le(s)}"/>`)}isHl(i){if(!i||!this.hl)return!1;let o=this.hl.split(".").pop();return i.split("|").some(s=>s===this.hl||s===o)}dimH(i,o,s,n,t,l="",u=s,a){if(Math.abs(o-i)<1e-6)return;t=this.lab(t,l);let m=this.isHl(l),r=m?"dim hl":"dim",E=this.X(i),T=this.X(o),N=Math.max(this.Y(s),this.Y(u))*(n>0?1:0)+Math.min(this.Y(s),this.Y(u))*(n>0?0:1)+n;this.lineP(E,this.Y(s)+Math.sign(n)*3,E,N+Math.sign(n)*4,"ext",!0),this.lineP(T,this.Y(u)+Math.sign(n)*3,T,N+Math.sign(n)*4,"ext",!0),this.lineP(E,N,T,N,r,!0);for(let S of[E,T])this.lineP(S-3,N+3,S+3,N-3,r,!0);let v=t.length*6.9,O=Math.abs(T-E)>v+6,F=(E+T)/2,U=a?a==="r":Math.max(E,T)+4+v<this.W-2;this.text(O?F:U?Math.max(E,T)+4:Math.min(E,T)-4,N-4,t,m?"tx dl cote hl":"tx dl cote",O?"middle":U?"start":"end")}dimV(i,o,s,n,t,l="",u=n>0?"r":"l"){if(Math.abs(o-i)<1e-6)return;t=this.lab(t,l);let a=this.isHl(l),m=a?"dim hl":"dim",r=this.X(s)+n,E=this.Y(i),T=this.Y(o);this.lineP(this.X(s)+Math.sign(n)*3,E,r+Math.sign(n)*4,E,"ext",!0),this.lineP(this.X(s)+Math.sign(n)*3,T,r+Math.sign(n)*4,T,"ext",!0),this.lineP(r,E,r,T,m,!0);for(let v of[E,T])this.lineP(r-3,v+3,r+3,v-3,m,!0);let N=(E+T)/2+4;this.text(u==="r"?r+5:r-5,N,t,a?"tx dl cote hl":"tx dl cote",u==="r"?"start":"end")}svg(i,o=i){return`<figure class="skf${this.schema?" sch":""}"><figcaption>${this.schema?"Sch\xE9ma de principe \u2014 ":""}${Le(i)}</figcaption><svg viewBox="0 0 ${this.W} ${this.H}" style="max-width:${this.W}px;margin:0 auto" role="img" aria-label="${Le(o)}"><defs><pattern id="hx" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hxb" width="6" height="6"/><line class="hxl" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>${this.parts.join("")}${this.top.join("")}</svg></figure>`}},zt=(e,i)=>i===1&&e.TYPOURI[0]===0||i===e.NPOUT&&e.TYPOURI[1]===0?e.beamRive??e.beam:e.beam,$t=(e,i)=>i===1?e.slabG.cross:i===e.NPOUT?e.slabD.cross:e.cross,Ut=(e,i,o=0)=>e.map(([s,n])=>[s+i,n+o]),es=(e,i)=>e.beam.HPOUT-i.HPOUT;function Ke(e){let i=Se(e);e.NPOUT>=1&&e.beam.HPOUT>0&&e.beam.ETAB>0&&(e.NPOUT===1||e.ENTRAPOUT>0)||(i.xBeam=[]);let s=i.xBeam.map((a,m)=>{let r=m+1,E=zt(e,r);return{ip:r,x:a,s:E,g:De(e,r),dy:es(e,E)}}),n=(a,m)=>a.s.HPOUT+a.dy+a.g.HHOUR+(m>=0?a.g.psR:a.g.psL)*m;for(let a=1;a<s.length;a++){let m=s[a-1],r=s[a],E=(r.x-m.x)/2;r.dy+=n(m,E)-n(r,-E)}let t=Math.min(...s.map(a=>a.dy));s.forEach(a=>a.dy-=t);let l=s.map(({ip:a,x:m,s:r,g:E,dy:T})=>({ip:a,x:m,dy:T,s:r,outline:Ut(Me(r,0),m,T),slab:Ut(ke(r,E),m,T),xl:m+E.xl,xr:m+E.xr}));return{L:i,beams:l,topAt:a=>{if(!l.length)return e.slab.PENTSUP*(a-i.X3-e.ESURCH/2);let m=l.find(T=>a>=T.xl-1e-9&&a<=T.xr+1e-9)??(a<l[0].xl?l[0]:l[l.length-1]),r=De(e,m.ip),E=Math.max(r.xl,Math.min(r.xr,a-m.x));return m.s.HPOUT+m.dy+r.HHOUR+(E>=0?r.psR:r.psL)*E}}}function Ze(e,i){for(let s of i)e.poly(s,"slabf");let o=[];i.forEach((s,n)=>{let t=s.slice(0,-3),l=s.slice(-3).reverse();e.pline(t,"slabl"),o.push(...n?l.slice(1):l),n===0&&e.line(t[0][0],t[0][1],l[0][0],l[0][1],"slabl"),n===i.length-1&&e.line(t[t.length-1][0],t[t.length-1][1],l[l.length-1][0],l[l.length-1][1],"slabl")}),e.pline(o,"slabl")}function Et(e,i,o="geo"){let s=Ke(e),{L:n}=s,t=Math.min(0,s.beams[0].xl),l=Math.max(n.width,s.beams[s.beams.length-1].xr),u=Math.max(...s.beams.map(b=>b.s.HPOUT+b.dy))+.6,a=Math.min(...s.beams.map(b=>b.dy)),m=Be/Math.max(1,l-t),r=new Ae(t,l,a,u,m,m,{l:24,r:86,t:o==="charges"?58:50,b:84},i);for(let b of s.beams)r.poly(b.outline,"beam");Ze(r,s.beams.map(b=>b.slab));let E=.18,T=(b,M,G)=>{if(M-b<1e-6)return;let B=12,R=[];for(let W=0;W<=B;W++){let _=b+(M-b)*W/B;R.push([_,s.topAt(_)])}for(let W=B;W>=0;W--){let _=b+(M-b)*W/B;R.push([_,s.topAt(_)+E])}r.poly(R,G)};T(0,e.ETROTG,"trot"),T(n.width-e.ETROTD,n.width,"trot");let N=b=>s.topAt(b)+.08;r.pline([[n.X3,N(n.X3)],[n.X6,N(n.X6)]].map(([b])=>[b,N(b)]),"road");for(let b=1;b<n.NV;b++){let M=n.X3+b*n.v;r.line(M,N(M),M,N(M)+.25,"lane")}for(let b=0;b<n.NV;b++){let M=n.X3+(b+.5)*n.v;r.text(r.X(M),r.Y(N(M))-6,`voie ${b+1}`,"tx sm mute")}let v=(b,M,G)=>{let B=s.topAt(b),R=.55,W=.16,_=r.isHl(M)?"bar hl":"bar";r.poly([[b-W,B],[b+W,B],[b+W*.45,B+R],[b-W*.45,B+R]],_)};(e.PBAGMAX>0||e.DBAG>0)&&v(n.X3-e.DBAG,"DBAG|PBAGMAX|PBAGMIN",`${C(e.PBAGMAX)} t/m`),(e.PBADMAX>0||e.DBAD>0)&&v(n.X6+e.DBAD,"DBAD|PBADMAX|PBADMIN",`${C(e.PBADMAX)} t/m`);let O=n.X3+e.ESURCH/2;r.line(O,a-.15,O,s.topAt(O)+.5,"axis");let F=Math.max(...[0,n.X3,n.X6,n.width].map(b=>s.topAt(b)))+E,U=!(r.schema&&o==="charges"),S=0;if(U){for(let[b,M]of[["ETROTG",e.ETROTG],["EGAU",e.EGAU],["ESURCH",e.ESURCH],["EDROI",e.EDROI],["ETROTD",e.ETROTD]]){let G=(r.schema?1.6:1.2)>M;r.dimH(S,S+M,F,-(o==="charges"?26:18),M<1.2?C(M,2):`${b} ${C(M,2)}`,b,F,G?b==="EGAU"?"r":b==="EDROI"?"l":void 0:void 0),S+=M}r.dimH(0,n.width,F,-(o==="charges"?44:36),`largeur ${C(n.width,2)} m`,"W")}o==="charges"&&(e.DBAG>0&&r.dimH(n.X3-e.DBAG,n.X3,s.topAt(n.X3),22,`DBAG ${C(e.DBAG,2)}`,"DBAG"),e.DBAD>0&&r.dimH(n.X6,n.X6+e.DBAD,s.topAt(n.X6),22,`DBAD ${C(e.DBAD,2)}`,"DBAD"));for(let b of s.beams){let M=o==="calc"&&e.poutresACalculer.includes(b.ip);r.circleP(r.X(b.x),r.Y(a)+15,9,M?"bn on":"bn"),r.text(r.X(b.x),r.Y(a)+19,String(b.ip),M?"tx bnt on":"tx bnt")}let p=s.beams[0],$=s.beams[s.beams.length-1];if(U){r.dimH(p.xl,p.x,a,42,`EEXT ${C(e.slabG.EEXT,2)}`,"slabG.EEXT|EEXT");for(let b=0;b+1<s.beams.length;b++)r.dimH(s.beams[b].x,s.beams[b+1].x,a,42,b===0?`ENTRAPOUT ${C(e.ENTRAPOUT,2)}`:C(e.ENTRAPOUT,2),"ENTRAPOUT");r.dimH($.x,$.xr,a,42,`EEXT ${C(e.slabD.EEXT,2)}`,"slabD.EEXT|EEXT"),r.dimH(p.x,O,a,64,`DPOUT1 ${C(e.DPOUT1,3)}`,"DPOUT1"),r.dimV($.dy,$.s.HPOUT+$.dy,$.xr,14,`HPOUT ${C(e.beam.HPOUT,2)}`,"beam.HPOUT|HPOUT")}let I=s.topAt($.xr);if(o==="charges"){let b=(P,y,K,re,q="middle")=>r.text(P,y,K,r.isHl(re)?"tx dl hl":"tx dl",q),M=(P,y,K,re)=>r.lineP(P,y,K,re,"lead",!0),G=(P,y,K)=>{if(y-P<1e-6)return;let re=Math.max(2,Math.round((y-P)/.5));for(let q=0;q<=re;q++){let x=P+(y-P)*q/re,X=r.Y(s.topAt(x)+E),J=r.isHl(K)?"dim hl":"dim";r.lineP(r.X(x),X-14,r.X(x),X-2,J,!0),r.lineP(r.X(x)-2.5,X-6,r.X(x),X-2,J,!0),r.lineP(r.X(x)+2.5,X-6,r.X(x),X-2,J,!0)}};G(0,e.ETROTG,"PSTROT"),G(n.width-e.ETROTD,n.width,"PSTROT");let B=16,R=32,W=r.schema;if(W&&e.ETROTG>0){let P=r.X(e.ETROTG*.3);M(P,r.Y(s.topAt(e.ETROTG*.3)+E)-15,P,R+3),b(P-2,R,W?"PSTROT":`${C(e.PSTROT)} t/m\xB2`,"PSTROT","start")}if(W&&(e.PBAGMAX>0||e.DBAG>0)){let P=r.X(n.X3-e.DBAG),y=r.Y(s.topAt(n.X3)+.55);M(P,y,P,B+3),b(P-2,B,W?"PBAGMAX / PBAGMIN":`${C(e.PBAGMAX)} / ${C(e.PBAGMIN)} t/m`,"PBAGMAX|PBAGMIN|DBAG","start")}if(W&&(e.PBADMAX>0||e.DBAD>0)){let P=r.X(n.X6+e.DBAD),y=r.Y(s.topAt(n.X6)+.55);M(P,y,P,R+3),b(P+2,R,W?"PBADMAX / PBADMIN":`${C(e.PBADMAX)} / ${C(e.PBADMIN)} t/m`,"PBADMAX|PBADMIN|DBAD","end")}if(W&&b(r.X(O),r.Y(s.topAt(O)+.08)-20,"CLASSE \xB7 A (A1, A2, A3) \xB7 B \xB7 CM \xB7 CE","CLASSE|A|B|CM|CE|A1|A2|A3"),W){let P=r.H-26,y=s.beams[Math.min(s.beams.length-1,2)],K=r.X(y.x)+4,re=r.Y(y.dy+y.s.HPOUT*.5);if(M(K,re,K+14,P-4),b(K+16,P,"MASVOL \xB7 OSSAMAX P/H \xB7 OSSAMIN P/H","MASVOL|OSSAMAX|OSSAMIN","start"),s.beams.length>1){let q=(s.beams[0].x+s.beams[1].x)/2,x=r.X(q),X=r.Y(s.topAt(q)-e.slab.HHOUR)+2;M(x,X,x,r.H-10-10),b(x-4,r.H-10,"PREDALMAX / PREDALMIN (pr\xE9dalles)","PREDALMAX|PREDALMIN","start")}}if(r.schema)return r.svg("Coupe transversale \u2014 charges","Coupe transversale avec charges");let _=(P,y)=>`<span${r.isHl(P)?' class="hl"':""}>${Le(y)}</span>`;return r.svg("Coupe transversale \u2014 charges","Coupe transversale avec barri\xE8res et trottoirs")+`<div class="sk-leg">${[_("PBAGMAX|PBAGMIN|DBAG",`Barri\xE8re G : ${C(e.PBAGMAX)} / ${C(e.PBAGMIN)} t/m`),_("PBADMAX|PBADMIN|DBAD",`Barri\xE8re D : ${C(e.PBADMAX)} / ${C(e.PBADMIN)} t/m`),_("PSTROT",`Trottoirs : ${C(e.PSTROT)} t/m\xB2`),`<span>${n.NV} voie(s) de ${C(n.v,2)} m</span>`].join("")}</div>`}return r.svg("Coupe transversale","Coupe transversale du tablier cot\xE9e")}function Qe(e,i,o={}){let s=e.PORTEE+2*e.ABOUT,n=e.beam,t=n.HPOUT,l=e.slab.HHOUR,u=s/2,a=$e-20,m=a/(s+1.4),r=Math.min((o.h??150)/(t+l),m*8),E=r/m,T=new Ae(-.7,s+.7,-1,t+l+.12,m,r,{l:84,r:96,t:46,b:72},i),N=n.HPIED+n.H1,v=N+n.H2;for(let P of[e.ABOUT,s-e.ABOUT]){let y=P<u?-1:1;T.poly([[P-.9*(y<0?1.4:1),-1],[P+.9*(y>0?1.4:1),-1],[P+.9*(y>0?1.4:1),-.1],[P-.9*(y<0?1.4:1),-.1]].map(([K,re])=>[Math.max(-.7,Math.min(s+.7,K)),re]),"pier"),T.poly([[P-.2,-.1],[P+.2,-.1],[P+.2,0],[P-.2,0]],"pad"),T.line(P,-1,P,t+l+.12,"axis")}if(T.poly([[0,0],[s,0],[s,t],[0,t]],"beam"),T.line(0,N,s,N,"hid"),T.line(0,v,s,v,"hid"),n.GDA>0&&n.EPAM>0){let P=e.ABOUT+n.LONGOUS,y="beam.EPAM|beam.LONGOUS|EPAM|LONGOUS";for(let[K,re]of[[0,Math.min(P,u)],[Math.max(s-P,u),s]])T.poly([[K,N],[re,N],[re,v],[K,v]],T.isHl(y)?"gous hl":"gous");T.text(T.X((e.ABOUT+Math.min(P,u))/2+1),T.Y((N+v)/2)+4,`\xE2me \xE9paissie sur ${C(n.LONGOUS,2)} m`,T.isHl(y)?"tx sm hl":"tx sm")}T.poly([[0,t],[s,t],[s,t+l],[0,t+l]],"slab"),T.poly([[0,t+l],[s,t+l],[s,t+l+.08],[0,t+l+.08]],"rev");let O=(P,y,K,re)=>{if(K<=0)return;let q=Math.max(y,.3);T.poly([[P-q/2,Math.max(.05,t-K)],[P+q/2,Math.max(.05,t-K)],[P+q/2,t],[P-q/2,t]],T.isHl(re)?"ent hl":"ent")};O(e.ABOUT,e.ENTAPP,e.HENTA,"ENTAPP|HENTA"),O(s-e.ABOUT,e.ENTAPP,e.HENTA,"ENTAPP|HENTA");let F=Math.max(0,e.NE-2);for(let P=1;P<=F;P++)O(e.ABOUT+e.PORTEE*P/(F+1),e.ENTINT,e.HENTI,"ENTINT|HENTI|NE");for(let P of[0,s])T.lineP(T.X(P),T.Y(t+l+.08)-2,T.X(P),T.Y(t+l+.08)+8,"joint",!0);if(T.line(u,-.3,u,t+l+.12,"axis"),T.text(T.X(u)+4,T.Y(-.3)-4,"mi-trav\xE9e","tx sm mute","start"),T.text(T.X(e.ABOUT)+4,T.Y(-1)-6,"axe d'appui","tx sm mute","start"),T.dimH(0,e.ABOUT,-1,22,`ABOUT ${C(e.ABOUT,2)}`,"ABOUT",-1,"l"),T.dimH(e.ABOUT,s-e.ABOUT,-1,22,`PORTEE ${C(e.PORTEE,2)} m`,"PORTEE"),T.dimH(s-e.ABOUT,s,-1,22,`ABOUT ${C(e.ABOUT,2)}`,"ABOUT",-1,"r"),T.dimH(0,s,-1,46,`longueur des poutres ${C(s,2)} m`,"Lt"),e.ENTAPP>0&&T.dimH(e.ABOUT-Math.max(e.ENTAPP,.3)/2,e.ABOUT+Math.max(e.ENTAPP,.3)/2,t+l+.08,-12,`ENTAPP ${C(e.ENTAPP,2)}`,"ENTAPP",t+l+.08,"r"),F>0&&e.ENTINT>0){let P=e.ABOUT+e.PORTEE/(F+1);T.dimH(P-Math.max(e.ENTINT,.3)/2,P+Math.max(e.ENTINT,.3)/2,t+l+.08,-12,`ENTINT ${C(e.ENTINT,2)}`,"ENTINT",t+l+.08,"r")}if(T.text(T.X(e.ABOUT+e.PORTEE*.3),T.Y(t+l+.08)-28,T.schema?"NE entretoises (abouts compris)":`NE = ${e.NE} entretoises (abouts compris)`,T.isHl("NE")?"tx dl hl":"tx sm mute"),T.dimV(0,t,s,18,`HPOUT ${C(t,2)}`,"beam.HPOUT|HPOUT"),T.dimV(t,t+l,s,18,`HHOUR ${C(l,2)}`,"slab.HHOUR|HHOUR"),e.HENTA>0&&T.dimV(Math.max(.05,t-e.HENTA),t,0,-10,`HENTA ${C(e.HENTA,2)}`,"HENTA","l"),F>0&&e.HENTI>0){let P=e.ABOUT+e.PORTEE/(F+1);T.dimV(Math.max(.05,t-e.HENTI),t,P+Math.max(e.ENTINT,.3)/2,8,`HENTI ${C(e.HENTI,2)}`,"HENTI")}T.text(T.W-8,14,`\xE9chelle des hauteurs \xD7${C(E,1)}`,"tx sm mute","end");let U=T.svg("\xC9l\xE9vation d'une poutre","\xC9l\xE9vation d'une poutre avec appuis, entretoises et \xE2me \xE9paissie");if(o.plan===!1)return U;let S=Se(e),p=S.width,$=(e.BIAIS||100)*Math.PI/200,I=Math.abs($-Math.PI/2)<1e-9?0:p/Math.tan($),b=Math.min(0,I)-.6,M=Math.max(s,s+I)+.6,G=Math.min(a/(M-b),240/p),B=new Ae(b,M,0,p,G,G,{l:110,r:30,t:20,b:46},i),R=P=>I*(p-P)/p;B.poly([[R(0),0],[s+R(0),0],[s+R(p),p],[R(p),p]],"slab");for(let P of[S.X3,S.X6]){let y=p-P;B.line(R(y),y,s+R(y),y,"edge")}B.text(B.X(s/2+R(p-S.X3)),B.Y(p-S.X3)-4,"bord de chauss\xE9e","tx sm mute");let W=(P,y,K)=>{let re=Math.max(y,.3);B.poly([[P-re/2+R(0),0],[P+re/2+R(0),0],[P+re/2+R(p),p],[P-re/2+R(p),p]],B.isHl(K)?"ent hl":"ent")};W(e.ABOUT,e.ENTAPP,"ENTAPP|HENTA"),W(s-e.ABOUT,e.ENTAPP,"ENTAPP|HENTA");for(let P=1;P<=F;P++)W(e.ABOUT+e.PORTEE*P/(F+1),e.ENTINT,"ENTINT|HENTI|NE");S.xBeam.forEach((P,y)=>{let K=p-P;B.line(R(K),K,s+R(K),K,"beamline"),B.circleP(B.X(R(K))-16,B.Y(K),8,"bn"),B.text(B.X(R(K))-16,B.Y(K)+3.5,String(y+1),"tx bnt")});for(let P of[e.ABOUT,s-e.ABOUT])B.line(P+R(0),0,P+R(p),p,B.isHl("BIAIS")?"supl hl":"supl");let _=(e.BIAIS||100).toFixed(2).replace(".",",");return B.text(B.X(e.ABOUT+R(p/2))+10,B.Y(p*.75),`BIAIS ${_} gr`,B.isHl("BIAIS")?"tx dl hl":"tx dl","start"),B.dimV(0,p,b+.6,-40,`${C(p,2)} m`,"W"),B.dimH(e.ABOUT+R(0),s-e.ABOUT+R(0),0,22,`PORTEE ${C(e.PORTEE,2)} m`,"PORTEE"),B.text(B.X(M)-4,B.H-8,e.BIAIS&&Math.abs(e.BIAIS-100)>1e-6?"ouvrage biais : angle entre l'axe et la ligne d'appui":"ouvrage droit (100 gr)","tx sm mute","end"),U+B.svg("Vue en plan","Vue en plan du tablier, des poutres et du biais")}function Ue(e,i,o=!1){let s=o?e.beamRive??e.beam:e.beam,n=o?"beamRive.":"beam.",t=O=>`${n}${O}|${O}`;if(!(s.HPOUT>0&&s.ETAB>0))return'<div class="sk-empty">G\xE9om\xE9trie de poutre de rive identique aux poutres interm\xE9diaires.</div>';let l=s.ETAB/2,u=260/s.HPOUT,a=new Ae(-l,l,0,s.HPOUT+Math.abs(s.PENTPOUT)*l,u,u,{l:140,r:110,t:38,b:40},i);s.GDA>0&&s.EPAM>0&&a.poly(Me(s,s.EPAM),a.isHl(t("EPAM"))||a.isHl(t("GDA"))?"thick hl":"thick"),a.poly(Me(s,0),"beam"),a.line(0,-.05,0,s.HPOUT+.05,"axis");let m=s.HPIED+s.H1,r=m+s.H2,E=l;a.dimV(0,s.HPIED,E,14,`HPIED ${C(s.HPIED,2)}`,t("HPIED")),a.dimV(s.HPIED,m,E,14,`H1 ${C(s.H1,2)}`,t("H1")),a.dimV(m,r,E,14,`H2 ${C(s.H2,2)}`,t("H2")),a.dimV(r,r+s.H3D,E,14,`H3D ${C(s.H3D,2)}`,t("H3D"));let T=s.HPOUT+s.PENTPOUT*l;a.dimV(T-s.HTAB,T,E,14,`HTAB ${C(s.HTAB,2)}`,t("HTAB")),a.dimV(0,s.HPOUT,-l,-54,`HPOUT ${C(s.HPOUT,2)}`,t("HPOUT")),a.dimV(r,r+s.H3G,-l,-14,"H3G",t("H3G")),a.dimH(-l,l,s.HPOUT+Math.abs(s.PENTPOUT)*l,-14,`ETAB ${C(s.ETAB,2)}`,t("ETAB")),a.dimH(-s.ETALON/2,s.ETALON/2,0,18,`ETALON ${C(s.ETALON,2)}`,t("ETALON"));let N=(O,F,U,S)=>a.text(a.X(O),a.Y(F),U,a.isHl(S)?"tx dl hl":"tx dl","start");a.lineP(a.X(-s.E1/2),a.Y(m+.06),a.X(s.E1/2),a.Y(m+.06),a.isHl(t("E1"))?"dim hl":"dim",!0),a.text(a.X(s.E1/2+.02),a.Y(m+.08),a.lab(`E1 ${C(s.E1,2)}`,t("E1")),a.isHl(t("E1"))?"tx dl cote hl":"tx dl cote","start"),a.lineP(a.X(-s.E2/2),a.Y(r-.06),a.X(s.E2/2),a.Y(r-.06),a.isHl(t("E2"))?"dim hl":"dim",!0),a.text(a.X(s.E2/2+.02),a.Y(r-.04),a.lab(`E2 ${C(s.E2,2)}`,t("E2")),a.isHl(t("E2"))?"tx dl cote hl":"tx dl cote","start"),a.dimH(l-s.D3D,l,r+s.H3D,16,"D3D",t("D3D"),r+s.H3D,"l"),a.dimH(-l,-l+s.D3G,r+s.H3G,16,"D3G",t("D3G"),r+s.H3G,"r"),s.GDA>0&&s.EPAM>0&&N(s.E1/2+s.EPAM/2+.03,(m+r)/2,`EPAM +${C(s.EPAM,2)}`,t("EPAM")),s.PENTPOUT&&a.text(a.X(l*.5),a.Y(s.HPOUT+s.PENTPOUT*l*.5)-6,`PENTPOUT ${C(s.PENTPOUT*100,1)} %`,a.isHl(t("PENTPOUT"))?"tx dl hl":"tx dl");let v=a.svg(o?"Poutre de rive \u2014 coupe":"Poutre pr\xE9fabriqu\xE9e \u2014 coupe courante","Coupe de la poutre pr\xE9fabriqu\xE9e");if(s.GDA>0&&s.EPAM>0){let O=e.ABOUT+e.PORTEE/2,F=Be/O,U=46/s.EPAM,S=new Ae(0,O,0,s.EPAM,F*(Be-50)/Be,U,{l:74,r:24,t:16,b:48},i),p=[[0,0]];for(let $=0;$<=120;$++){let I=O*$/120;p.push([I,Mt(e,s,I)])}p.push([O,0]),S.poly(p,a.isHl(t("EPAM"))||a.isHl(t("LONGOUS"))||a.isHl(t("LIN"))?"thick hl":"thick"),S.line(0,0,O,0,"beamline"),S.parts.push(`<polygon class="sup" points="${S.X(e.ABOUT)},${S.Y(0)} ${S.X(e.ABOUT)-6},${S.Y(0)+10} ${S.X(e.ABOUT)+6},${S.Y(0)+10}"/>`),S.dimH(e.ABOUT,e.ABOUT+s.LONGOUS,0,30,`LONGOUS ${C(s.LONGOUS,2)}`,t("LONGOUS")),S.dimV(0,s.EPAM,0,-6,`EPAM ${C(s.EPAM,2)}`,t("EPAM")),S.text(S.X(e.ABOUT+s.LONGOUS*.6),S.Y(s.EPAM*.55),a.schema?"GOUDAM = 1 : \xE2me \xE9paissie aux abouts":"\xE2me \xE9paissie aux abouts (GOUDAM = 1)",a.isHl(t("GDA"))||a.isHl("GOUDAM")?"tx sm hl":"tx sm","start"),S.text(S.X(O),12,s.LIN?"variation lin\xE9aire (LIN = 1)":"variation discontinue (LIN = 0)","tx sm mute","end"),v+=S.svg("Sur\xE9paisseur d'\xE2me sur appui (demi-poutre)","Sur\xE9paisseur d'\xE2me le long de la demi-poutre")}if(s.PLA>0&&s.HPLA>0){let O=130/s.HPOUT,F=Math.max(e.ABOUT+1.5,(Be-136)/O-.2),U=.2,S=new Ae(-.2,F,-.15,s.HPOUT+.1,O,O,{l:112,r:24,t:18,b:30},i);S.poly([[0,0],[F,0],[F,s.HPOUT],[0,s.HPOUT]],"beam"),S.poly([[0,0],[U,0],[U,Math.min(s.HPLA,s.HPOUT)],[0,Math.min(s.HPLA,s.HPOUT)]],S.isHl(t("HPLA"))||S.isHl(t("PLA"))?"ent hl":"ent"),S.parts.push(`<polygon class="sup" points="${S.X(e.ABOUT)},${S.Y(0)} ${S.X(e.ABOUT)-6},${S.Y(0)+10} ${S.X(e.ABOUT)+6},${S.Y(0)+10}"/>`),S.line(e.ABOUT,-.15,e.ABOUT,s.HPOUT+.1,"axis"),S.dimV(0,Math.min(s.HPLA,s.HPOUT),0,-12,`HPLA ${C(s.HPLA,2)}`,t("HPLA")),S.dimV(0,s.HPOUT,0,-50,`HPOUT ${C(s.HPOUT,2)}`,t("HPOUT")),S.text(S.X(e.ABOUT)+8,S.Y(Math.min(s.HPLA,s.HPOUT)*.5),S.schema?"PLAB = 1 : plaque d'about pr\xE9fabriqu\xE9e":"plaque d'about pr\xE9fabriqu\xE9e",S.isHl(t("PLA"))||S.isHl("PLAB")?"tx sm hl":"tx sm","start"),v+=S.svg("Extr\xE9mit\xE9 de poutre \u2014 plaque d'about","\xC9l\xE9vation de l'extr\xE9mit\xE9 de poutre avec la plaque d'about pr\xE9fabriqu\xE9e")}return v}function Xe(e,i,o=""){let s=Ke(e),n=s.beams.length,t=/^slabD\./.test(o),l=t?s.beams.slice(Math.max(0,n-2)):s.beams.slice(0,Math.min(2,n)),u=t?s.beams[n-1].xr:s.beams[0].xl,a=t?l[0].x-e.ENTRAPOUT/2:l[l.length-1].x+(n>2?e.ENTRAPOUT/2:l[l.length-1].xr-l[l.length-1].x),m=Math.min(u,a)-.05,r=Math.max(u,a)+.05,E=Math.max(...l.map(B=>B.s.HPOUT+B.dy))+.45,T=E-1.5,N=Be/(r-m),v=new Ae(m,r,T,E,N,N,{l:84,r:84,t:58,b:40},i),O="cz"+ ++Ct;v.parts.push(`<clipPath id="${O}"><rect x="${le(v.X(m))}" y="0" width="${le(v.X(r)-v.X(m))}" height="${le(v.Y(T))}"/></clipPath><g clip-path="url(#${O})">`);for(let B of l)v.poly(B.outline,"beam");Ze(v,s.beams.map(B=>B.slab)),v.parts.push("</g>");let F=t?"slabD":"slabG",U=t?e.slabD:e.slabG,S=t?l[l.length-1]:l[0],p=t?l[0]:l[l.length-1],$=S.s.HPOUT+S.dy,I=B=>s.topAt(B);if(v.dimV(I(u)-U.HEXT,I(u),u,t?14:-14,t?`HEXT ${C(U.HEXT,2)}`:`HEXT ${C(U.HEXT,2)}`,`${F}.HEXT`),v.dimV($,$+U.HHOUR,S.x,t?-10:10,`HHOUR ${C(U.HHOUR,2)}`,`${F}.HHOUR`,t?"l":"r"),n>2||l.length>1){let B=(l[0].x+l[l.length-1].x)/2;v.dimV(I(B)-e.slab.HAXE,I(B),B,10,`HAXE ${C(e.slab.HAXE,2)}`,"slab.HAXE"),n>2&&v.dimV(p.s.HPOUT+p.dy,p.s.HPOUT+p.dy+e.slab.HHOUR,p.x,t?-10:10,`HHOUR ${C(e.slab.HHOUR,2)}`,"slab.HHOUR",t?"l":"r")}v.dimH(Math.min(u,S.x),Math.max(u,S.x),$,-(I(S.x)-$)*v.sx-34,`EEXT ${C(U.EEXT,2)}`,`${F}.EEXT`),l.length>1&&v.dimH(l[0].x,l[1].x,$,-(I(l[0].x)-$)*v.sx-34,`ENTRAPOUT ${C(e.ENTRAPOUT,2)}`,"ENTRAPOUT");let b=(B,R,W,_,P)=>{v.text(v.X(B),v.Y(I(B)-(_?.35:0))+(_?14:-6),`${P} ${C(R*100,1)} %`,v.isHl(W)?"tx dl hl":"tx sm")},M=(u+S.x)/2,G=(l[0].x+l[l.length-1].x)/2;return b(M,U.PENTSUP,`${F}.PENTSUP`,!1,"PENTSUP"),b(M,U.PENTINF,`${F}.PENTINF`,!0,"PENTINF"),l.length>1&&(b(G+.4*(t?-1:1)*e.ENTRAPOUT/4,e.slab.PENTSUP,"slab.PENTSUP",!1,"PENTSUP"),b(G,e.slab.PENTINF,"slab.PENTINF",!0,"PENTINF")),v.svg(t?"Hourdis \u2014 encorbellement droit":"Hourdis \u2014 encorbellement gauche","D\xE9tail du hourdis et de l'encorbellement")}function ht(e,i,o=""){let s=e.NPOUT;if(s<2)return"";let n=s>=4?2:1;/^slabG\./.test(o)?n=1:/^slabD\./.test(o)?n=s-1:/^cross\./.test(o)&&s>=3&&(n=Math.min(2,s-1));let t=n+1,l=Ke(e),u=l.beams[n-1],a=l.beams[t-1],m=$t(e,n),r=$t(e,t),E=n===1?"slabG.cross":n===s?"slabD.cross":"cross",T=t===1?"slabG.cross":t===s?"slabD.cross":"cross",N=u.x-u.s.ETAB/2-.1,v=a.x+a.s.ETAB/2+.1,O=Math.max(u.s.HPOUT+u.dy,a.s.HPOUT+a.dy)+.45,F=Math.min(Be/(v-N),240/O),U=new Ae(N,v,0,O,F,F,{l:70,r:70,t:22,b:40},i),S=De(e,n),p=De(e,t),$=(G,B,R)=>{let W=y=>G.s.HPOUT+G.dy+B.HHOUR+(y>=0?B.psR:B.psL)*y,_=R>0,P=_?B.xr:B.xl;return W(P)-(_?B.hMidR:B.hMidL)+(_?B.piR:B.piL)*(R-P)},I=(u.x+a.x)/2,b=(G,B,R,W)=>{let _=R>0?B.AMORD:B.AMORG,P=(R>0?B.H5D:B.H5G)+G.dy,y=R>0?B.H7D:B.H7G,K=(R>0?B.H9D:B.H9G)+G.dy,re=Math.abs(I-G.x);if(B.AMEN&&_>0){let x=G.s.E2/2,X=y>0&&_>x?P+y:K;U.poly([[G.x,P],[G.x+R*x,P],[G.x+R*_,X],[G.x+R*_,G.s.HPOUT+G.dy+.02],[G.x,G.s.HPOUT+G.dy+.02]],"amorce")}let q=B.AMEN?_:G.s.ETAB/2;if(re>q&&e.HENTA>0){let x=$(G,W,R*re)-e.HENTA;U.poly([[G.x+R*q,B.AMEN?K:x],[G.x+R*re,x],[G.x+R*re,$(G,W,R*re)+.05],[G.x+R*q,$(G,W,R*q)+.05]],"ent")}};b(u,m,1,S),b(a,r,-1,p),U.poly(u.outline,"beam"),U.poly(a.outline,"beam"),Ze(U,[u.slab,a.slab]),U.line(I,0,I,O,"axis"),m.AMEN&&(U.dimH(u.x,u.x+m.AMORD,u.dy,18,`AMORD ${C(m.AMORD,2)}`,`${E}.AMORD`),U.dimV(u.dy,m.H5D+u.dy,u.x+u.s.E2/2,-u.s.E2*U.sx-30,`H5D ${C(m.H5D,2)}`,`${E}.H5D`),U.dimV(u.dy,m.H9D+u.dy,u.x+m.AMORD,-8,`H9D ${C(m.H9D,2)}`,`${E}.H9D`),m.H7D>0&&U.dimV(m.H5D+u.dy,m.H5D+m.H7D+u.dy,u.x+m.AMORD,8,`H7D ${C(m.H7D,2)}`,`${E}.H7D`)),r.AMEN&&(U.dimH(a.x-r.AMORG,a.x,a.dy,18,`AMORG ${C(r.AMORG,2)}`,`${T}.AMORG`),U.dimV(a.dy,r.H9G+a.dy,a.x-r.AMORG,8,`H9G ${C(r.H9G,2)}`,`${T}.H9G`),r.H7G>0&&U.dimV(r.H5G+a.dy,r.H5G+r.H7G+a.dy,a.x-r.AMORG,-8,`H7G ${C(r.H7G,2)}`,`${T}.H7G`),U.dimV(a.dy,r.H5G+a.dy,a.x-a.s.E2/2,a.s.E2*U.sx+30,`H5G ${C(r.H5G,2)}`,`${T}.H5G`));let M=$(u,S,I-u.x);return e.HENTA>0&&U.dimV(M-e.HENTA,M,I,8,`HENTA ${C(e.HENTA,2)}`,"HENTA"),U.text(U.X(u.x),U.Y(0)+34,`poutre ${n}`,"tx sm mute"),U.text(U.X(a.x),U.Y(0)+34,`poutre ${t}`,"tx sm mute"),U.svg(`Entretoise d'about entre les poutres ${n} et ${t}`,"Vue de l'entretoise d'about avec amorces")}function At(e,i){let o=e.beam,s=e.NPOUT,n=s>=3?2:1,t=De(e,n),l=Math.min(t.xl,-o.ETAB/2),u=Math.max(t.xr,o.ETAB/2),a=o.HPOUT+t.HHOUR+.05,m=Math.min(250/(u-l),290/a),r=new Ae(l,u,0,a,m,m,{l:20,r:190,t:30,b:16},i);r.poly(Me(o,0),"beam"),r.poly(ke(o,t),"slab");let E=e.DAP,T=o.HPOUT,N=T+t.HHOUR,v=r.isHl("DAP"),O=[[N-E,t.xr-E,"aciers sup\xE9rieurs du hourdis"],[T+E,t.xr-E,"aciers inf\xE9rieurs du hourdis"],[T-E,o.ETAB/2-E,"aciers sup\xE9rieurs de la poutre"],[E,o.ETALON/2-E,"aciers inf\xE9rieurs de la poutre"]],F=-1/0,U=r.X(u)+34;for(let[S,p,$]of O){for(let b=0;b<=6;b++){let M=-p+2*p*b/6;r.circleP(r.X(M),r.Y(S),2.2,v?"rb hl":"rb")}let I=Math.max(r.Y(S),F+15);F=I,r.lineP(r.X(p)+4,r.Y(S),U-4,I,"ext",!0),r.text(U,I+4,$,"tx sm","start")}return r.dimV(0,E,o.ETALON/2,14,`D ${C(E,3)}`,"D|DAP"),r.text(r.X(l),14,r.schema?"Hourdis : FC28H (FC4H, FC5H)":`Hourdis : fc28 = ${C(e.FC28H,1)} MPa`,r.isHl("FC28H")||r.isHl("FC4H")||r.isHl("FC5H")?"tx sm hl":"tx sm","start"),r.text(r.X(-o.E1/2)-8,r.Y(T*.55),"Poutre","tx sm mute","end"),r.text(r.X(-o.E1/2)-8,r.Y(T*.55)+14,r.schema?"FC28 (FC1, FC2)":`fc28 = ${C(e.FC28,1)} MPa`,r.isHl("FC28")||r.isHl("FC11")||r.isHl("FC12")?"tx sm hl":"tx sm","end"),r.svg("Section composite et aciers passifs","Section composite avec les lits d'aciers passifs")}function Tt(e,i){let o=e.J,s=[["J.J1",o.J1,"tension de la 1re famille"],["J.J2",o.J2,"2e partie de la 1re famille"],["J.J3",o.J3,"b\xE9tonnage du hourdis"],["J.J4",o.J4,"tension de la 2e famille"],["J.J5",o.J5,"superstructures"],["J.J6",o.J6,"mise en service"]],n=Math.max(10,...s.map(R=>R[1]))*1.1,t=190,l=Be+60,u=l+30,a=22,m=14,r=m+s.length*a+26,E=R=>t+(l-t)*R/n,T=n>150?50:n>60?20:10,N=[];for(let R=0;R<=n;R+=T)N.push(`<line class="ext" x1="${le(E(R))}" y1="${m-4}" x2="${le(E(R))}" y2="${r-22}"/><text class="tx sm mute" x="${le(E(R))}" y="${r-8}" text-anchor="middle">${R}</text>`);s.forEach(([R,W,_],P)=>{let y=m+P*a+10,K=i===R||i===R.slice(2);N.push(`<text class="tx dl${K?" hl":""}" x="6" y="${y+4}">${R.slice(2)}</text><text class="tx sm${K?" hl":" mute"}" x="30" y="${y+4}">${Le(_)}</text>`),N.push(`<line class="${K?"dim hl":"tl"}" x1="${t}" y1="${y}" x2="${le(E(W))}" y2="${y}"/><circle class="dot${K?" hl":""}" cx="${le(E(W))}" cy="${y}" r="${K?5:3.5}"/><text class="tx sm${K?" hl":""}" x="${le(E(W))+8}" y="${y+4}">j${W}</text>`)});let v=`<figure class="skf"><figcaption>Phasage (\xE2ge du b\xE9ton de la poutre, en jours)</figcaption><svg viewBox="0 0 ${u} ${r}" role="img" aria-label="Phasage de construction">${N.join("")}</svg></figure>`,O=e.systems[0],F=O.DGAINE/2,U=O.ENROB,S=O.DECAL,p=1500,$=new Ae(-.1,.1,0,U+2*F+.02,p,p,{l:150,r:150,t:34,b:12},i);$.poly([[-.1,0],[.1,0],[.1,U+2*F+.02],[-.1,U+2*F+.02]],"beam"),$.circleP($.X(0),$.Y(U+F),F*$.sx,$.isHl("systems.0.DGAINE")?"duct hl":"duct");let I=F*.75;$.circleP($.X(0),$.Y(U+F-S),I*$.sx,"strand"),$.dimV(0,U,.1,12,`ENROB ${C(U,3)}`,"systems.0.ENROB"),$.dimH(-F,F,U+2*F,-14,`DGAINE ${C(2*F,3)}`,"systems.0.DGAINE"),$.dimV(U+F-S,U+F,-.1,-12,`DECAL ${C(S,3)}`,"systems.0.DECAL"),$.text($.X(.1)+12,$.Y(U+2*F+.02)+14,"talon de la poutre","tx sm mute","start");let b=O.AV||.22,M=O.AH||.22,G=Math.min(260/Math.max(b,M),600),B=new Ae(-M,M,-b,b,G,G,{l:120,r:120,t:16,b:24},i);return B.poly([[-M/2,-b/2],[M/2,-b/2],[M/2,b/2],[-M/2,b/2]],B.isHl("systems.0.AV")||B.isHl("systems.0.AH")?"steel hl":"steel"),B.circleP(B.X(0),B.Y(0),l*B.sx,"duct"),B.dimH(-M/2,M/2,b/2,-10,`AH ${C(M,3)}`,"systems.0.AH"),B.dimV(-b/2,b/2,M/2,12,`AV ${C(b,3)}`,"systems.0.AV"),v+$.svg("Gaine en partie basse (syst\xE8me 1)","Coupe d'une gaine avec enrobage et d\xE9calage du c\xE2ble")+B.svg("Plaque d'ancrage (syst\xE8me 1)","Encombrement de la plaque d'ancrage")}function vt(e,i,o,s=""){let n=e.cablings[i];if(!n)return"";let t=e.ABOUT+e.PORTEE/2,l=e.beam.HPOUT,u=e.slab.HHOUR,a=($e+100)/t,m=Math.min(240/(l+u),a*8),r=new Ae(0,t,-0,l+u,a,m,{l:36,r:20,t:46,b:64},o);r.poly([[0,0],[t,0],[t,l],[0,l]],"beam"),r.poly([[0,l],[t,l],[t,l+u],[0,l+u]],"slab"),r.parts.push(`<polygon class="sup" points="${r.X(e.ABOUT)},${r.Y(0)} ${r.X(e.ABOUT)-7},${r.Y(0)+11} ${r.X(e.ABOUT)+7},${r.Y(0)+11}"/>`),r.line(t,-.05,t,l+u+.05,"axis"),r.text(r.X(t)-4,r.Y(l+u)-6,"mi-trav\xE9e","tx sm mute","end");let E=s.match(/^cablings\.\d+\.(?:ordonnees|cables)\.(\d+)(?:\.(\w+))?/),T=E?+E[1]:-1,N=E?E[2]??"":"",v=s.match(/^cablings\.\d+\.(?:abscisses|ordonnees\.\d+)\.(\d+)$/),O=v?+v[1]:-1;n.abscisses.forEach((p,$)=>{let I=$===O;r.lineP(r.X(p),r.Y(0)+2,r.X(p),r.Y(0)+8,I?"dim hl":"ext",!0),r.text(r.X(p),r.Y(0)+($%2?32:20),C(p,2),I?"tx sm hl":"tx sm mute")}),r.text(r.X(0),r.Y(0)+48,"abscisses depuis l'about (m)","tx sm mute","start");let F=n.NCAB11+n.NCAB12,U=[];if(U=n.cables.map((p,$)=>{try{return St(e,n,p,$)}catch{return null}}),U.forEach((p,$)=>{let I=n.cables[$],b=$<F?1:2,M=$===T;if(p){let B=[],R=Math.max(0,I.ABSOR);for(let W=0;W<=160;W++){let _=R+(t-R)*W/160;B.push([_,p.y(_)])}r.pline(B,`cab f${b}${M?" sel":""}`),r.text(r.X(R)+(R>.3?-3:3),r.Y(p.y(R))-3,String(I.num||$+1),M?"tx sm hl":"tx sm",R>.3?"end":"start")}(n.ordonnees[$]??[]).forEach((B,R)=>{B>0&&n.abscisses[R]!==void 0&&r.circleP(r.X(n.abscisses[R]),r.Y(B),M||R===O?3.6:2.4,`pt f${b}${M&&(R===O||O<0)?" hl":""}`)})}),T>=0&&n.cables[T]){let p=n.cables[T],$=U[T],I=0,b=(M,G,B)=>{let R=N===G;r.lineP(r.X(M),r.Y(0),r.X(M),r.Y(l+u)-4-12*I,R?"mk hl":"mk",!0),r.text(r.X(M)+3,r.Y(l+u)-7-12*I,`${B} ${C(M,3)}`,R?"tx sm hl":"tx sm","start"),I++};b(p.ABSOR,"ABSOR","ABSOR"),b(p.ABDECO,"ABDECO","ABDECO"),b(p.ABFICO,"ABFICO","ABFICO"),(N==="ABDEHO"||N==="ABFIHO"||N==="EXTRAN")&&(b(p.ABDEHO,"ABDEHO","ABDEHO"),b(p.ABFIHO,"ABFIHO","ABFIHO")),$&&N==="ORFICO"&&r.dimV(0,p.ORFICO,Math.min(t,p.ABFICO+.4),8,`ORFICO ${C(p.ORFICO,3)}`,"ORFICO"),N==="ANGSOR"&&$&&r.text(r.X(p.ABSOR)+6,r.Y($.y(p.ABSOR))+14,`ANGSOR ${C(p.ANGSOR,2)} gr`,"tx dl hl","start")}let S=`<div class="sk-leg"><span><i class="lf1"></i>1re famille (${F})</span><span><i class="lf2"></i>2e famille (${n.NCAB2})</span><span>\xE9chelle verticale \xD7${C(m/a,1)}</span></div>`;return r.svg(`C\xE2blage ${i+1} \u2014 trac\xE9 des c\xE2bles (demi-poutre)`,"\xC9l\xE9vation de la demi-poutre avec le trac\xE9 des c\xE2bles")+S}var ft={BN4:"Barri\xE8re BN4",GBA:"GBA (glissi\xE8re b\xE9ton)",GC:"Garde-corps",AUCUN:"Aucun"};function gt(e){let i=e.ETROTG>0?"BN4":"GBA",o=e.ETROTD>0?"BN4":"GBA";return{L:i,R:o,corL:i!=="GBA",corR:o!=="GBA"}}var Ce=(e,i)=>i==="L"?e.corL??e.L!=="GBA":e.corR??e.R!=="GBA",_e=(e,i)=>(i==="L"?e.trL:e.trR)??!0;function yt(e,i){return`<svg viewBox="0 0 74 48" aria-hidden="true"${i==="R"?' style="transform:scaleX(-1)"':""}><path class="i-slab" d="M4 30 H70 V38 H22 L14 44 H4 Z"/>${e==="BN4"?'<rect class="i-lon" x="4" y="25" width="18" height="5"/><path class="i-steel" d="M7 25 H15 V4 H12 Z"/><path class="i-steel" d="M15 25 H17 L15 21 Z"/><rect class="i-rail" x="16" y="17.5" width="5" height="3.2" rx=".8"/><rect class="i-rail" x="16" y="10.5" width="5" height="3.2" rx=".8"/><rect class="i-rail" x="16" y="3.4" width="5" height="3.2" rx=".8"/>':e==="TR"?'<path class="i-tro" d="M4 30 V24 H44 L46 25 V30 Z"/><rect class="i-bord" x="40" y="24" width="6" height="6"/><path class="i-rev" d="M46 30 H70 V28.6 H46 Z"/>':'<path class="i-gba" d="M4 30 V8 H11 L13 21 L22 28 V30 Z"/><path class="i-rev" d="M22 30 H70 V28.6 H22 Z"/>'}</svg>`}function Oe(e,i,o=gt(e),s="geo",n,t={}){let l=Ke(e),{L:u}=l,a=u.width,m=x=>l.topAt(Math.max(0,Math.min(a,x))),r=2.6,E=n?m(n==="L"?0:a):0;if(!(a>0))return'<div class="sk-empty">La coupe se dessine au fur et \xE0 mesure : commencez par les largeurs (trottoirs, bandes, chauss\xE9e).</div>';let T=l.beams.length;if(n&&!T)return"";let N=n==="L"?-.3:n==="R"?a-r:Math.min(-.2,T?l.beams[0].xl-.2:-.2),v=n==="L"?r:n==="R"?a+.3:Math.max(a+.2,T?l.beams[T-1].xr+.2:a+.2),O=n?E-.75:T?Math.min(...l.beams.map(x=>x.dy)):-.6,F=n?E+1.45:Math.max(m(0),m(a))+(t.bare?.35:1.95),U=n?Math.min(420,$e):$e,S=U/(v-N),p=new Ae(N,v,O,F,S,S,n?{l:16,r:16,t:14,b:40}:t.bare?{l:84,r:100,t:68,b:116}:{l:84,r:96,t:66,b:t.clean&&s!=="calc"?82:je?116:100},i);t.clean&&(p.vonly=!0);let $="cw"+ ++Ct;n&&p.parts.push(`<clipPath id="${$}"><rect x="${le(p.X(N))}" y="0" width="${le(p.X(v)-p.X(N))}" height="${le(p.Y(O))}"/></clipPath><g clip-path="url(#${$})">`);let I=.08,b=(x,X)=>x==="L"?X:a-X,M=(x,X,J)=>X.map(([se,z])=>{let ie=b(x,se);return[ie,J(ie)+z]});for(let x of l.beams)p.poly(x.outline,"beam");Ze(p,l.beams.map(x=>x.slab));let G=[],B={L:{inner:0},R:{inner:0}};for(let x of t.bare?[]:["L","R"]){let X=x==="L"?e.ETROTG:e.ETROTD,J=x==="L"?o.L:o.R,se=m(b(x,0)),z=x==="L"?-1:1,ie=X>0?.25:I+.04,Te=Ce(o,x);Te&&(p.poly(M(x,[[-.12,ie+.02],[.18,ie+.02],[.18,0],[0,0],[0,-.38],[-.04,-.46],[-.12,-.46]],()=>se),"cor"),G.push({x:b(x,-.06),y:se-.42,t:"Corniche",dx:z*14,dy:x==="R"?84:36}));let Q=Te?.18:0;if(J==="BN4"||J==="GC"){let w=J==="BN4"?.5:.3,ce=Math.max(ie,.25);p.poly(M(x,[[Q,0],[Q+w,0],[Q+w,ce-.03],[Q+w-.03,ce],[Q,ce]],m),"lon");let k=Q+(J==="BN4"?.2:w/2),j=ce,ae=(ee,pe)=>p.poly(M(x,ee,()=>se),pe);ae(J==="BN4"?[[k-.19,j],[k+.14,j],[k+.14,j+.025],[k-.19,j+.025]]:[[k-.11,j],[k+.11,j],[k+.11,j+.025],[k-.11,j+.025]],"steel");for(let ee of J==="BN4"?[-.13,.1]:[-.07,.07]){let[pe,de]=M(x,[[k+ee,j-.16],[k+ee,j]],()=>se);p.line(pe[0],pe[1],de[0],de[1],"bolt")}if(J==="BN4"){let ee=k+.06;ae([[k-.17,j+.025],[ee,j+.025],[ee,j+1],[ee-.09,j+1]],"steel post"),ae([[ee,j+.025],[ee+.06,j+.025],[ee,j+.13]],"steel");for(let pe of[.385,.7,1]){let de=j+pe-.075,Ee=j+pe+.01;ae([[ee,de+.012],[ee+.035,de+.012],[ee+.035,Ee-.012],[ee,Ee-.012]],"steel"),ae([[ee+.035,de],[ee+.11,de],[ee+.12,de+.012],[ee+.12,Ee-.012],[ee+.11,Ee],[ee+.035,Ee]],"rail"),ae([[ee+.05,de+.02],[ee+.1,de+.02],[ee+.1,Ee-.02],[ee+.05,Ee-.02]],"railin"),p.pline(M(x,[[ee+.02,de-.012],[ee+.125,de-.012],[ee+.14,de+.004],[ee+.14,Ee-.004],[ee+.125,Ee+.012],[ee+.02,Ee+.012]],()=>se),"clamp")}}else p.poly(M(x,[[k-.07,j+.98],[k+.07,j+.98],[k+.07,j+1.03],[k-.07,j+1.03]],()=>se),"steel"),p.poly(M(x,[[k-.02,j+.5],[k+.02,j+.5],[k+.02,j+.54],[k-.02,j+.54]],()=>se),"steel"),G.push({x:b(x,k),y:se+j+1.03,t:"Garde-corps",dx:-z*46,dy:-6,key:x==="L"?"DBAG|PBAGMAX|PBAGMIN":"DBAD|PBADMAX|PBADMIN"});Q=Q+w}if(X>0&&_e(o,x)){let w=Math.max(Q,X);p.poly(M(x,[[Q,0],[w,0],[w,ie],[Q,ie]],m),"trotb"),p.poly(M(x,[[w-.15,0],[w,0],[w,ie-.02],[w-.03,ie],[w-.15,ie]],m),"bord"),G.push({x:b(x,(Q+w)/2),y:m(b(x,(Q+w)/2))+ie,t:"Trottoir",dx:-z*30,dy:-40,key:x==="L"?"ETROTG":"ETROTD"}),Q=w}if(J==="GBA"){let w=Q,ce=.42,k=[[w,0],[w,I+.8],[w+.19,I+.8],[w+.24,I+.33],[w+.42-0,I+.075],[w+ce,0]];p.poly(M(x,k,m),"gba"),G.push({x:b(x,w+.1),y:m(b(x,w))+I+.8,t:"GBA",dx:-z*46,dy:-4,key:x==="L"?"DBAG|PBAGMAX|PBAGMIN":"DBAD|PBADMAX|PBADMIN"}),Q=w+ce}B[x].inner=Q}let R=B.L.inner,W=a-B.R.inner;if(W>R&&!t.bare){let X=[];for(let se=0;se<=24;se++){let z=R+(W-R)*se/24;X.push([z,m(z)])}for(let se=24;se>=0;se--){let z=R+(W-R)*se/24;X.push([z,m(z)+I])}p.poly(X,"rev");let J=R+(W-R)*.58;G.push({x:J,y:m(J)+I,t:"Enrob\xE9 + \xE9tanch\xE9it\xE9",dx:-10,dy:-30})}let _=u.X3+e.ESURCH/2;if(!n){if(!t.bare)for(let X=1;X<u.NV;X++){let J=u.X3+X*u.v;p.line(J,m(J)+I,J,m(J)+I+.12,"lane")}if(!t.bare&&!t.clean)for(let X=0;X<u.NV;X++){let J=u.X3+(X+.5)*u.v;p.text(p.X(J),p.Y(m(J)+I)-7,p.schema?X===0?"NVOIE voies":"":`voie ${X+1}`,p.isHl("NVOIE")?"tx sm hl":"tx sm mute")}p.line(_,O-.2,_,m(_)+(t.bare?.15:1),"axis"),!t.bare&&!t.clean&&p.text(p.X(_)+4,p.Y(m(_)+1)+10,"axe","tx sm mute","start");let x=e.slab.PENTSUP;if(Math.abs(x)>1e-6&&!t.bare&&!t.clean){let X=u.X3+u.v*.15,J=X+1.6,se=m(X)+I+.35,z=m(J)+I+.35,[ie,Te,Q,w]=x>0?[J,z,X,se]:[X,se,J,z];p.lineP(p.X(ie),p.Y(Te),p.X(Q),p.Y(w),p.isHl("slab.PENTSUP")?"arrow hl":"arrow",!0);let ce=Math.atan2(p.Y(w)-p.Y(Te),p.X(Q)-p.X(ie));p.top.push(`<polygon class="arrowh" points="${le(p.X(Q))},${le(p.Y(w))} ${le(p.X(Q)-8*Math.cos(ce)+3.5*Math.sin(ce))},${le(p.Y(w)-8*Math.sin(ce)-3.5*Math.cos(ce))} ${le(p.X(Q)-8*Math.cos(ce)-3.5*Math.sin(ce))},${le(p.Y(w)-8*Math.sin(ce)+3.5*Math.cos(ce))}"/>`),p.text((p.X(X)+p.X(J))/2,Math.min(p.Y(se),p.Y(z))-6,p.schema?"PENTSUP":`${C(Math.abs(x)*100,1)} %`,p.isHl("slab.PENTSUP")?"tx dl hl":"tx dl")}}if(n){p.parts.push("</g>");let x=n,X=x==="L"?e.ETROTG:e.ETROTD,J=x==="L"?e.slabG:e.slabD,se=x==="L"?"slabG.":"slabD.",z=b(x,0),ie=m(z),Te=w=>b(x,w);X>0&&p.dimH(Math.min(z,Te(X)),Math.max(z,Te(X)),ie+.25,-16,`${x==="L"?"ETROTG":"ETROTD"} ${C(X,2)}`,x==="L"?"ETROTG":"ETROTD"),p.dimV(ie-J.HEXT,ie,z,x==="L"?34:-34,`HEXT ${C(J.HEXT,2)}`,se+"HEXT",x==="L"?"r":"l");let Q=x==="L"?o.L:o.R;if(X>0){let w=Te(X);p.dimV(m(w)+I,m(w)+.25,w,x==="L"?10:-10,"bordure 0.17","",x==="L"?"r":"l")}for(let w of G.filter(ce=>ce.x>N&&ce.x<v)){let ce=w.t==="Corniche"?-w.dx*1.6:w.dx,k=p.X(w.x),j=p.Y(w.y),ae=k+ce*.8,ee=j+w.dy*.8,pe=!!w.key&&p.isHl(w.key);p.lineP(k,j,ae,ee+(w.dy<0?3:-10),pe?"lead hl":"lead",!0),p.text(ae,ee,w.t,pe?"tx lb hl":"tx lb",ce<0?"end":ce>0?"start":"middle")}return p.svg(x==="L"?"D\xE9tail rive gauche":"D\xE9tail rive droite","D\xE9tail de la rive avec \xE9quipements")}for(let x of t.clean?[]:G){let X=p.X(x.x),J=p.Y(x.y),se=X+x.dx,z=J+x.dy,ie=!!x.key&&p.isHl(x.key);p.lineP(X,J,se,z+(x.dy<0?3:-10),ie?"lead hl":"lead",!0),p.text(se,z,x.t,ie?"tx lb hl":"tx lb",x.dx<0?"end":x.dx>0?"start":"middle")}let P=Math.max(m(0),m(a))+(t.bare?.3:1.62),y=0,K=!1;for(let[x,X]of[["ETROTG",e.ETROTG],["EGAU",e.EGAU],["ESURCH",e.ESURCH],["EDROI",e.EDROI],["ETROTD",e.ETROTD]]){let J=X<1?C(X,2):`${x} ${C(X,2)}`,se=p.lab(J,x),z=Math.abs(p.X(y+X)-p.X(y))>se.length*6.9+6,ie=(x==="EGAU"||x==="EDROI")&&!z&&X>0;ie&&(K=!0),p.dimH(y,y+X,P,ie?-28:-10,J,x,P,x==="EGAU"?"r":x==="EDROI"||x==="ETROTG"?"l":x==="ETROTD"?"r":void 0),y+=X}p.dimH(0,a,P,K?-48:-30,`largeur totale ${C(a,2)} m`,"W");for(let x of l.beams){let X=s==="calc"&&e.poutresACalculer.includes(x.ip);p.circleP(p.X(x.x),p.Y(O)+16,10,X?"bn on":"bn"),p.text(p.X(x.x),p.Y(O)+20,String(x.ip),X?"tx bnt on":"tx bnt")}if(!T)return p.text(p.X(a/2),p.Y(O)+30,"Les poutres appara\xEEtront avec NPOUT, ENTRAPOUT, DPOUT1 et la hauteur de poutre (\xE9tape Poutre).","tx sm mute"),p.svg("Coupe transversale g\xE9n\xE9rale","Coupe transversale du tablier en cours de saisie");if(p.schema){let x=p.X((l.beams[0].x+l.beams[l.beams.length-1].x)/2),X=p.isHl("DPOUT1")?"tx def hl":"tx def";p.text(x,p.Y(O)+90,"DPOUT1 : distance, en valeur absolue, de l'axe de la poutre de gauche",X,"middle"),p.text(x,p.Y(O)+107,"num\xE9rot\xE9e 1 \xE0 l'axe de la chauss\xE9e proprement dite",X,"middle")}let re=l.beams[0],q=l.beams[l.beams.length-1];if(t.clean&&l.beams.length)for(let[x,X]of[[re,-1],[q,1]]){let J=x.x+X*x.s.ETAB/2,se=X<0?x.xl:x.xr,z=Math.abs(se-J);if(z>.01){let ie=x.dy+x.s.HPOUT;p.dimH(Math.min(se,J),Math.max(se,J),ie,12,`d\xE9bord ${C(z,2)}`,X<0?"slabG.EEXT":"slabD.EEXT",ie,X<0?"l":"r")}}p.dimH(re.xl,re.x,O,46,`EEXT ${C(e.slabG.EEXT,2)}`,"slabG.EEXT|EEXT",O,"l");{let x=`ENTRAPOUT ${C(e.ENTRAPOUT,2)}`,X=p.lab(x,"ENTRAPOUT"),J=l.beams.length,se=J>1&&Math.abs(p.X(l.beams[1].x)-p.X(l.beams[0].x))>X.length*6.9+6;for(let z=0;z+1<J;z++)p.dimH(l.beams[z].x,l.beams[z+1].x,O,46,se?z===0||p.schema?x:C(e.ENTRAPOUT,2):"","ENTRAPOUT");!se&&J>1&&p.text((p.X(l.beams[0].x)+p.X(l.beams[J-1].x))/2,p.Y(O)+42,J>2?`${X} (\xD7${J-1})`:X,p.isHl("ENTRAPOUT")?"tx dl hl":"tx dl")}return p.dimH(q.x,q.xr,O,46,`EEXT ${C(e.slabD.EEXT,2)}`,"slabD.EEXT|EEXT",O,"r"),p.dimH(re.x,_,O,70,`DPOUT1 ${C(e.DPOUT1,3)}`,"DPOUT1"),p.dimV(q.dy,q.s.HPOUT+q.dy,q.xr+.2,t.clean?46:16,`HPOUT ${C(q.s.HPOUT,2)}`,"beam.HPOUT|HPOUT"),p.dimV(q.s.HPOUT+q.dy,q.s.HPOUT+q.dy+e.slabD.HHOUR,q.xr+.2,t.clean?46:16,`HHOUR ${C(e.slabD.HHOUR,2)}`,"slabD.HHOUR|HHOUR"),p.svg("Coupe transversale g\xE9n\xE9rale","Coupe transversale du tablier avec \xE9quipements, cot\xE9e")}function Lt(e,i,o,s="geo"){return Oe(e,i,o,s)+`<div class="sk-pair">${Oe(e,i,o,s,"L")}${Oe(e,i,o,s,"R")}</div>`}function Xt(e){let i=JSON.parse(JSON.stringify(e));Object.assign(i,{NPOUT:4,NVOIE:2,ETROTG:1.5,EGAU:.5,ESURCH:7,EDROI:.5,ETROTD:1,ENTRAPOUT:2.667,DPOUT1:4.25,PORTEE:30,ABOUT:.5,NE:3,ENTINT:.25,ENTAPP:.3,HENTA:1.25,HENTI:1,BIAIS:80,TYPOURI:[1,1],DBAG:.9,PBAGMAX:1,PBAGMIN:.9,DBAD:.6,PBADMAX:1,PBADMIN:.9,PSTROT:.15}),i.beam={...i.beam,HPOUT:1.7,HPIED:.25,H1:.3,H2:.8,H3D:.15,H3G:.15,HTAB:.12,ETAB:1.4,ETALON:.7,E1:.2,E2:.2,D3D:.45,D3G:.45,PENTPOUT:.02,GDA:1,LIN:1,EPAM:.16,LONGOUS:7,PLA:1,HPLA:1},i.slab={HHOUR:.22,HAXE:.2,PENTSUP:.025,PENTINF:.06};let o={AMEN:1,H5D:.25,H5G:.25,H7D:.2,H7G:.2,H9D:.45,H9G:.45,AMORD:.9,AMORG:.9};return i.cross={...o},i.slabG={HHOUR:.22,HEXT:.18,EEXT:1.25,PENTSUP:.025,PENTINF:0,cross:{...o}},i.slabD={HHOUR:.22,HEXT:.18,EEXT:1.25,PENTSUP:.025,PENTINF:0,cross:{...o}},i}function Ft(e,i=""){let o=(i.match(/cables\.\d+\.(\w+)$/)??[])[1]??"",s=P=>o===P,n=12,t=3,l=Math.max(34,Math.min(62,($e+100)/(n+1))),u=new Ae(-.6,n+.4,-.2,t+.9,l,l,{l:20,r:70,t:34,b:74},"");u.schema=!0,u.poly([[0,0],[n,0],[n,t],[0,t]],"beam"),u.poly([[0,t],[n,t],[n,t+.35],[0,t+.35]],"slab"),u.line(n,-.2,n,t+.6,"axis"),u.text(u.X(n)-4,u.Y(t+.6)-4,"mi-trav\xE9e","tx sm mute","end");let a={absor:.4,abdeco:1.6,abfico:7,orf:.35,t:.3},m=a.orf+a.t*(a.abdeco-a.absor+(a.abfico-a.abdeco)/2),r=P=>P<=a.abdeco?m-a.t*(P-a.absor):P>=a.abfico?a.orf:a.orf+a.t*(a.abfico-P)**2/(2*(a.abfico-a.abdeco)),E=[];for(let P=0;P<=80;P++){let y=a.absor+(n-a.absor)*P/80;E.push([y,r(y)])}u.pline(E,"cab f1 sel"),[.9,3.4,5.9,n].forEach((P,y)=>{u.circleP(u.X(P),u.Y(r(P)),3.5,"pt f1 hl"),u.lineP(u.X(P),u.Y(0)+2,u.X(P),u.Y(r(P)),"ext",!0),y===1&&u.text(u.X(P)+5,u.Y(r(P))-8,"points du tableau D : abscisse x, ordonn\xE9e y",s("D")?"tx sm hl":"tx sm","start")});let N={absor:4.2,abdeco:4.9,orf:.65,t:.42},v=N.abdeco+2*(t-N.t*(N.abdeco-N.absor)-N.orf)/N.t,O=P=>P<=N.abdeco?t-N.t*(P-N.absor):P>=v?N.orf:N.orf+N.t*(v-P)**2/(2*(v-N.abdeco)),F=[];for(let P=0;P<=80;P++){let y=N.absor+(n-N.absor)*P/80;F.push([y,O(y)])}u.pline(F,"cab f2"),u.poly([[N.absor-.35,t+.35],[N.absor+.25,t+.35],[N.absor+.25,t-.25],[N.absor-.05,t-.25]],s("YENCO")||s("DENCO")?"enc hl":"enc");let U=(P,y,K)=>{u.lineP(u.X(P),u.Y(0)+2,u.X(P),u.Y(t+.35),s(y)?"mk hl":"mk",!0),u.dimH(0,P,0,16+K*18,y,s(y)?y:"",0,"r")};U(a.absor,"ABSOR",0),U(a.abdeco,"ABDECO",1),U(a.abfico,"ABFICO",2),u.dimV(0,a.orf,a.abfico+1.5,10,"ORFICO",s("ORFICO")?"ORFICO":"");let S=u.X(a.absor),p=u.Y(m),$=34,I=Math.atan(a.t);u.top.push(`<path class="${s("ANGSOR")?"dim hl":"dim"}" fill="none" d="M ${le(S+$)} ${le(p)} A ${$} ${$} 0 0 1 ${le(S+$*Math.cos(I))} ${le(p+$*Math.sin(I))}"/>`),u.lineP(S,p,S+$+10,p,"ext",!0),u.text(S+$+12,p+14,"ANGSOR",s("ANGSOR")?"tx dl hl":"tx dl","start"),u.dimH(N.absor-.35,N.absor+.25,t+.35,-10,"DENCO",s("DENCO")?"DENCO":"",t+.35,"l"),u.dimV(t-.25,t+.35,N.absor-.35,-8,"YENCO",s("YENCO")?"YENCO":""),u.text(u.X(N.absor+.25)+60,u.Y(t+.35)-6,"c\xE2ble relev\xE9, ancr\xE9 dans une encoche","tx sm","start"),u.text(u.X(a.absor),u.Y(m)-8,"c\xE2ble d'about","tx sm","start");let b=u.svg("C\xE2ble \u2014 trac\xE9 vertical (tableau D')","Sch\xE9ma de principe du trac\xE9 vertical d'un c\xE2ble"),M=new Ae(-.6,n+.4,-.9,.9,l,l,{l:20,r:70,t:14,b:56},"");M.schema=!0,M.poly([[0,-.6],[n,-.6],[n,.6],[0,.6]],"beam"),M.line(0,0,n,0,"axis");let G=3,B=8,R=.42,W=P=>P<=G?0:P>=B?R:(()=>{let y=(P-G)/(B-G);return R*(y<.5?2*y*y:1-2*(1-y)*(1-y))})(),_=[];for(let P=0;P<=80;P++){let y=a.absor+(n-a.absor)*P/80;_.push([y,W(y)])}M.pline(_,"cab f1 sel");for(let[P,y]of[[G,"ABDEHO"],[B,"ABFIHO"]])M.lineP(M.X(P),M.Y(-.6),M.X(P),M.Y(.6),s(y)?"mk hl":"mk",!0),M.dimH(0,P,-.6,y==="ABDEHO"?14:32,y,s(y)?y:"",-.6,"r");return M.dimV(0,R,n-.6,8,"EXTRAN",s("EXTRAN")?"EXTRAN":""),M.text(M.X(.2),M.Y(.6)-4,"axe de l'\xE2me","tx sm mute","start"),b+=M.svg("C\xE2ble \u2014 d\xE9viation en plan dans le talon","Sch\xE9ma de principe de la d\xE9viation horizontale d'un c\xE2ble"),b}var be={v:null,get(e){if(!this.v)try{let i=localStorage.getItem("vipp-equip");i&&(this.v=JSON.parse(i))}catch{}return this.v??gt(e)},set(e,i,o){this.v={...this.get(o),[e]:i};try{localStorage.setItem("vipp-equip",JSON.stringify(this.v))}catch{}}},st=[[0,"non"],[1,"oui"]],bt=e=>[{g:"Contour",f:[{p:e+"HPOUT",c:"HPOUT",l:"Hauteur de la poutre (dans l'axe)",u:"m"},{p:e+"ETAB",c:"ETAB",l:"Largeur de la table de compression",u:"m"},{p:e+"ETALON",c:"ETALON",l:"Largeur du talon",u:"m"},{p:e+"HPIED",c:"HPIED",l:"Hauteur du pied de talon (partie verticale)",u:"m"},{p:e+"H1",c:"H1",l:"Hauteur du chanfrein du talon",u:"m"},{p:e+"H2",c:"H2",l:"Hauteur de l'\xE2me",u:"m"},{p:e+"E1",c:"E1",l:"\xC9paisseur d'\xE2me en bas (jonction talon)",u:"m"},{p:e+"E2",c:"E2",l:"\xC9paisseur d'\xE2me en haut (sous goussets)",u:"m"},{p:e+"HTAB",c:"HTAB",l:"\xC9paisseur de la table \xE0 son extr\xE9mit\xE9",u:"m"},{p:e+"PENTPOUT",c:"PENTPOUT",l:"Pente du dessus de la table",u:"m/m",h:"Positive vers la droite (0,025 = 2,5 %)."}]},{g:"Goussets sup\xE9rieurs",m:{cols:[["gauche","G"],["droit","D"]],rows:[[e+"H3","H3","Hauteur du gousset","m"],[e+"D3","D3","D\xE9bord de table au-del\xE0 du gousset","m"]]}},{g:"Sur\xE9paisseur d'\xE2me sur appui",f:[{p:e+"GDA",c:"GOUDAM",l:"\xC9paississement de l'\xE2me",t:"sel",o:[[0,"0 \u2014 aucun"],[1,"1 \u2014 goussets non renforc\xE9s"],[2,"2 \u2014 goussets renforc\xE9s"]],re:!0},{p:e+"LIN",c:"LIN",l:"Loi de variation",t:"sel",o:[[0,"0 \u2014 discontinue"],[1,"1 \u2014 lin\xE9aire"]]},{p:e+"EPAM",c:"EPAM",l:"Sur\xE9paisseur totale de l'\xE2me sur appui",u:"m"},{p:e+"LONGOUS",c:"LONGOUS",l:"Longueur de variation, depuis l'axe d'appui",u:"m"}]},{g:"Plaque d'about",f:[{p:e+"PLA",c:"PLAB",l:"Plaque d'about pr\xE9fabriqu\xE9e",t:"sel",o:st},{p:e+"HPLA",c:"HPLA",l:"Hauteur de la plaque d'about",u:"m"}]}],ts=e=>[[e+"AMEN","AMEN","Amorces d'entretoises sur la poutre","","sel",st]];function Fe(e,i=.5,o=!1){let s=(E,T=.005)=>Math.round(E/T)*T,n=E=>Math.round(E*1e3)/1e3,t=(E,T,N)=>{(!o||!(E[T]>0))&&(E[T]=N)},l=e.NPOUT,u=e.beam.HPOUT,a=e.beam.ETAB,m=e.PORTEE,r=e.slab.HHOUR;if(u>0){let E=e.beam,T=u<1.5;o||(E.PENTPOUT=0),t(E,"ETALON",T?.6:.8),t(E,"E1",T?.2:.22),t(E,"E2",T?.2:.22),t(E,"HPIED",s(Math.min(.25,Math.max(.15,.1*u)),.01)),t(E,"H1",n(s((E.ETALON-E.E1)/2*1.2,.01))),t(E,"H3D",.12),t(E,"H3G",.12),t(E,"HTAB",.12),a>0&&(t(E,"D3D",n(Math.max(.1,(a-E.E2)/2-.13))),t(E,"D3G",n(Math.max(.1,(a-E.E2)/2-.13)))),t(E,"H2",n(u-E.HPIED-E.H1-Math.max(E.H3D,E.H3G)-E.HTAB)),(!o||!(E.GDA>0))&&(E.GDA=1,E.LIN=1),t(E,"EPAM",.16),m>0&&t(E,"LONGOUS",s(m/4,.25)),o||(E.PLA=0,E.HPLA=0),e.beamRive=JSON.parse(JSON.stringify(E)),e.TYPOURI=[1,1],t(e,"HENTA",n(Math.max(.5,u-.4))),o||(e.HENTI=0,e.NE=2,e.ENTINT=0),t(e,"ENTAPP",.4);let N={AMEN:1,H5D:.2,H5G:.2,H7D:0,H7G:0,H9D:n(Math.max(.3,.2*u)),H9G:n(Math.max(.3,.2*u)),AMORD:.75,AMORG:.75};for(let v of[e.cross,e.slabG.cross,e.slabD.cross])for(let[O,F]of Object.entries(N))t(v,O,F)}if(r>0){t(e.slab,"HAXE",r),o?t(e.slab,"PENTSUP",.025):(e.slab.PENTSUP=.025,e.slab.PENTINF=.025);for(let E of[e.slabG,e.slabD])t(E,"HHOUR",r),t(E,"HEXT",n(Math.max(.16,r-.04))),o?t(E,"PENTSUP",.025):(E.PENTSUP=.025,E.PENTINF=0)}if(l>=2&&a>0){let E=e.ETROTG+e.EGAU+e.ESURCH+e.EDROI+e.ETROTD,T=n(a/2+Math.max(0,i));t(e.slabG,"EEXT",T),t(e.slabD,"EEXT",T);let N=e.slabG.EEXT,v=e.slabD.EEXT;E-N-v>0&&(e.ENTRAPOUT=n((E-N-v)/(l-1)),e.DPOUT1=n(e.ETROTG+e.EGAU+e.ESURCH/2-N))}e.PORTEE>0}var ss=e=>e>0?Math.round(e/17.5/.05)*.05:0,he=[{id:"principal",t:"Dimensions principales",lines:"travers \xB7 poutre \xB7 hourdis",custom:"principal",intro:"Profil en travers, poutre et hourdis de l'ouvrage. Les dimensions non saisies (position des poutres, entretoises, sur\xE9paisseur d'\xE2me\u2026) sont compl\xE9t\xE9es dans les proportions courantes des VIPP et restent modifiables aux \xE9tapes suivantes.",sk:(e,i)=>Oe(e,i,be.get(e),"geo"),gs:[{g:"Profil en travers (de gauche \xE0 droite)",f:[{p:"ETROTG",c:"ETROTG",l:"Trottoir G",u:"m",h:"Largeur du trottoir gauche."},{p:"EGAU",c:"EGAU",l:"Bande G",u:"m",h:"Bande d\xE9ras\xE9e gauche."},{p:"ESURCH",c:"ESURCH",l:"Chargeable",u:"m",h:"Largeur chargeable de la chauss\xE9e."},{p:"EDROI",c:"EDROI",l:"Bande D",u:"m",h:"Bande d\xE9ras\xE9e droite."},{p:"ETROTD",c:"ETROTD",l:"Trottoir D",u:"m",h:"Largeur du trottoir droit."},{p:"NPOUT",c:"NPOUT",l:"Nb poutres",t:"i",min:2,h:"Nombre de poutres."}]},{g:"Poutre",f:[...(bt("beam.")[0].f??[]).map(e=>({...e,l:{HPOUT:"Hauteur",ETAB:"Table",ETALON:"Talon",HPIED:"Pied talon",H1:"Chanfrein",H2:"\xC2me",E1:"\xC2me bas",E2:"\xC2me haut",HTAB:"Bout table",PENTPOUT:"Pente table"}[e.c]??e.l,h:e.l+(e.h?". "+e.h:"")})),{p:"beam.H3G",c:"H3G",l:"Gousset G",u:"m",h:"Hauteur du gousset gauche."},{p:"beam.D3G",c:"D3G",l:"D\xE9bord G",u:"m",h:"D\xE9bord de table au-del\xE0 du gousset gauche."},{p:"beam.H3D",c:"H3D",l:"Gousset D",u:"m",h:"Hauteur du gousset droit."},{p:"beam.D3D",c:"D3D",l:"D\xE9bord D",u:"m",h:"D\xE9bord de table au-del\xE0 du gousset droit."}]},{g:"Hourdis",m:{cols:[["enc. gauche","slabG."],["courant","slab."],["enc. droit","slabD."]],rows:[["HHOUR","HHOUR","\xC9paisseur dans l'axe de la poutre","m"],["","HAXE / HEXT","\xC9paisseur \xE0 mi-distance (courant) ou en bout d'encorbellement","m"],["EEXT","EEXT","Largeur de l'encorbellement depuis l'axe de la poutre de rive","m"],["PENTSUP","PENTSUP","Pente du dessus","m/m"],["PENTINF","PENTINF","Pente du dessous","m/m"]]}}]},{id:"ouvrage",t:"Ouvrage",lines:"Titre \xB7 ligne 4",top:!0,intro:"Identification du calcul et choix des poutres \xE0 justifier. Les poutres retenues sont rep\xE9r\xE9es en or sur la coupe.",sk:e=>Oe(e,"",be.get(e),"calc"),gs:[{g:"Identification",f:[{p:"titre.0",c:"TITRE 1",l:"Ma\xEEtre d'ouvrage / bureau d'\xE9tudes",t:"s"},{p:"titre.1",c:"TITRE 2",l:"Ouvrage",t:"s"},{p:"titre.2",c:"TITRE 3",l:"Pr\xE9cision (trav\xE9e, variante\u2026)",t:"s"},{p:"numero",c:"NO",l:"Num\xE9ro du calcul",t:"s"},{p:"date",c:"DATE",l:"Date (jj.mm.aa)",t:"s"},{p:"poutresACalculer",c:"POUTRES",l:"Poutres \xE0 calculer (ex. 1 2 3)",t:"list",h:"Num\xE9rot\xE9es de gauche \xE0 droite, de 1 \xE0 NPOUT. Chaque poutre doit appartenir \xE0 un c\xE2blage (\xE9tape C\xE2blages)."},{p:"SYMTAB",c:"SYMTAB",l:"Tablier sym\xE9trique",t:"sel",o:[[0,"0 \u2014 non"],[1,"1 \u2014 oui"]]}]}]},{id:"travers",t:"Profil en travers",lines:"A1",top:!0,custom:"equip",intro:"R\xE9partition de la largeur et position des poutres. L'axe de la chauss\xE9e (tiret\xE9) sert d'origine \xE0 DPOUT1. La coupe g\xE9n\xE9rale se met \xE0 jour \xE0 chaque saisie ; les dispositifs de retenue dessin\xE9s se choisissent plus bas.",sk:(e,i)=>Lt(e,i,be.get(e),"geo"),gs:[{g:"Largeurs (de gauche \xE0 droite)",f:[{p:"ETROTG",c:"ETROTG",l:"Trottoir gauche",u:"m"},{p:"EGAU",c:"EGAU",l:"Bande d\xE9ras\xE9e gauche",u:"m"},{p:"ESURCH",c:"ESURCH",l:"Largeur chargeable",u:"m"},{p:"EDROI",c:"EDROI",l:"Bande d\xE9ras\xE9e droite",u:"m"},{p:"ETROTD",c:"ETROTD",l:"Trottoir droit",u:"m"},{p:"NVOIE",c:"NVOIE",l:"Nombre de voies (0 = r\xE8gle du fascicule 61)",t:"i"}]},{g:"Poutres",f:[{p:"NPOUT",c:"NPOUT",l:"Nombre de poutres",t:"i",min:2,re:!0},{p:"ENTRAPOUT",c:"ENTRAPOUT",l:"Entraxe des poutres",u:"m"},{p:"DPOUT1",c:"DPOUT1",l:"Distance de l'axe de la chauss\xE9e \xE0 l'axe de la poutre 1",u:"m",h:"Distance, en valeur absolue, de l'axe de la poutre de gauche num\xE9rot\xE9e 1 \xE0 l'axe de la chauss\xE9e proprement dite."}]}]},{id:"travee",t:"Trav\xE9e",lines:"A1 \xB7 A3",top:!0,intro:"Port\xE9e, about, biais et entretoises. L'\xE9l\xE9vation est dessin\xE9e avec une \xE9chelle verticale dilat\xE9e.",sk:(e,i)=>Qe(e,i),gs:[{g:"Trav\xE9e",f:[{p:"PORTEE",c:"PORTEE",l:"Port\xE9e entre axes d'appui",u:"m"},{p:"ABOUT",c:"ABOUT",l:"About (extr\xE9mit\xE9 de poutre \u2014 axe d'appui)",u:"m"},{p:"BIAIS",c:"BIAIS",l:"Biais (100 = ouvrage droit)",u:"gr"},{p:"NT",c:"NT",l:"NT",t:"i"}]},{g:"Entretoises",f:[{p:"NE",c:"NE",l:"Nombre d'entretoises (2 = abouts seuls)",t:"i"},{p:"ENTAPP",c:"ENTAPP",l:"\xC9paisseur des entretoises d'about",u:"m"},{p:"HENTA",c:"HENTA",l:"Retomb\xE9e des entretoises d'about sous le hourdis",u:"m"},{p:"ENTINT",c:"ENTINT",l:"\xC9paisseur des entretoises interm\xE9diaires",u:"m"},{p:"HENTI",c:"HENTI",l:"Retomb\xE9e des entretoises interm\xE9diaires",u:"m"}]}]},{id:"poutre",t:"Poutre",lines:"A2 \xB7 A4",intro:"Contour de la poutre pr\xE9fabriqu\xE9e courante. La sur\xE9paisseur d'\xE2me sur appui est trac\xE9e en tiret\xE9.",sk:(e,i,o)=>Ue(e,i,/^beamRive\./.test(o)),gs:[...bt("beam."),{g:"Poutres de rive",f:[{p:"TYPOURI.0",c:"TYPOURI G",l:"Poutre de rive gauche",t:"sel",o:[[1,"1 \u2014 identique"],[0,"0 \u2014 g\xE9om\xE9trie propre"]],re:!0},{p:"TYPOURI.1",c:"TYPOURI D",l:"Poutre de rive droite",t:"sel",o:[[1,"1 \u2014 identique"],[0,"0 \u2014 g\xE9om\xE9trie propre"]],re:!0}]},...bt("beamRive.").map(e=>({...e,g:"Rive \xB7 "+e.g,when:i=>i.TYPOURI[0]===0||i.TYPOURI[1]===0}))]},{id:"hourdis",t:"Hourdis",lines:"A3 \xB7 A5 \xB7 A6",intro:"Hourdis coul\xE9 en place et encorbellements. Le croquis montre le c\xF4t\xE9 de la donn\xE9e en cours de saisie.",sk:(e,i,o)=>Xe(e,i,o),gs:[{g:"\xC9paisseurs et pentes",m:{cols:[["enc. gauche","slabG."],["courant","slab."],["enc. droit","slabD."]],rows:[["HHOUR","HHOUR","\xC9paisseur dans l'axe de la poutre","m"],["","HAXE / HEXT","\xC9paisseur \xE0 mi-distance (courant) ou en bout d'encorbellement","m"],["EEXT","EEXT","Largeur de l'encorbellement depuis l'axe de la poutre de rive","m"],["PENTSUP","PENTSUP","Pente du dessus","m/m"],["PENTINF","PENTINF","Pente du dessous","m/m"]]}}]},{id:"entretoises",t:"Amorces",lines:"A3 \xB7 A5 \xB7 A6",intro:"Amorces d'entretoises d'about port\xE9es par les poutres pr\xE9fabriqu\xE9es, et partie coul\xE9e en place.",sk:(e,i,o)=>ht(e,i,o),gs:[{g:"Amorces d'entretoises d'about",m:{cols:[["poutre de rive G","slabG.cross."],["poutres courantes","cross."],["poutre de rive D","slabD.cross."]],rows:[...ts(""),["AMORG","AMORG","Longueur de l'amorce c\xF4t\xE9 gauche (depuis l'axe)","m"],["AMORD","AMORD","Longueur de l'amorce c\xF4t\xE9 droit (depuis l'axe)","m"],["H5G","H5G","Cote de la sous-face au nu de l'\xE2me, c\xF4t\xE9 gauche","m"],["H5D","H5D","Cote de la sous-face au nu de l'\xE2me, c\xF4t\xE9 droit","m"],["H7G","H7G","Remont\xE9e de la sous-face jusqu'au bout de l'amorce, gauche","m"],["H7D","H7D","Remont\xE9e de la sous-face jusqu'au bout de l'amorce, droite","m"],["H9G","H9G","Cote de la sous-face en bout d'amorce, gauche","m"],["H9D","H9D","Cote de la sous-face en bout d'amorce, droite","m"]]},note:"Cotes mesur\xE9es depuis la sous-face de la poutre. La retomb\xE9e HENTA de la partie coul\xE9e en place se saisit \xE0 l'\xE9tape Trav\xE9e."}]},{id:"charges",t:"Charges",lines:"B1 \xB7 B2 \xB7 B3",intro:"Poids propres, \xE9quipements et charges d'exploitation du fascicule 61 titre II.",sk:(e,i)=>Et(e,i,"charges"),custom:"qsup",gs:[{g:"Poids propres",f:[{p:"MASVOL",c:"MASVOL",l:"Masse volumique du b\xE9ton",u:"t/m\xB3"},{p:"OSSAMAXP",c:"OSSAMAX P",l:"Coefficient max. sur le poids des poutres",t:"n"},{p:"OSSAMINP",c:"OSSAMIN P",l:"Coefficient min. sur le poids des poutres",t:"n"},{p:"OSSAMAXH",c:"OSSAMAX H",l:"Coefficient max. sur le poids du hourdis",t:"n"},{p:"OSSAMINH",c:"OSSAMIN H",l:"Coefficient min. sur le poids du hourdis",t:"n"},{p:"PDALMAX",c:"PREDALMAX",l:"Pr\xE9dalles, valeur max. par intervalle",u:"t/m"},{p:"PDALMIN",c:"PREDALMIN",l:"Pr\xE9dalles, valeur min. par intervalle",u:"t/m"}]},{g:"Barri\xE8res et corniches",m:{cols:[["gauche","G"],["droite","D"]],rows:[["DBA","DBAG / DBAD","Distance au bord de la largeur chargeable","m"],["PBA\xB7MAX","PBAMAX","Poids lin\xE9ique max.","t/m"],["PBA\xB7MIN","PBAMIN","Poids lin\xE9ique min.","t/m"]]}},{g:"Charges d'exploitation",f:[{p:"CLASSE",c:"CLASSE",l:"Classe du pont",t:"sel",o:[[1,"1re classe"],[2,"2e classe"],[3,"3e classe"]]},{p:"A",c:"A",l:"Charge A(l)",t:"sel",o:st},{p:"B",c:"B",l:"Syst\xE8me B (Bc, Bt)",t:"sel",o:st},{p:"CM",c:"CM",l:"Charges militaires",t:"sel",o:[[0,"0 \u2014 aucune"],[4,"4 \u2014 Mc 120 / Me 120"]]},{p:"CE",c:"CE",l:"Convoi exceptionnel",t:"sel",o:[[0,"0 \u2014 aucun"],[1,"1 \u2014 convoi D"],[2,"2 \u2014 convoi E"]]},{p:"PSTROT",c:"PSTROT",l:"Charge des trottoirs",u:"t/m\xB2"},{p:"A1",c:"A1",l:"A(l) = A1 + A2 / (A3 + L) \u2014 A1 (0 = 0,23)",u:"t/m\xB2"},{p:"A2",c:"A2",l:"A2 (0 = 36)",t:"n"},{p:"A3",c:"A3",l:"A3 (0 = 12)",u:"m"}]}]},{id:"materiaux",t:"Mat\xE9riaux",lines:"C1 \xB7 C2",intro:"B\xE9tons de la poutre et du hourdis, aciers passifs et coefficients d'\xE9quivalence.",sk:(e,i)=>At(e,i),gs:[{g:"B\xE9tons",f:[{p:"CLASSEBP",c:"CL BP",l:"Classe de v\xE9rification BPEL",t:"sel",o:[[1,"classe I"],[2,"classe II"],[3,"classe III"]]},{p:"POISSON",c:"POIS",l:"Coefficient de Poisson",t:"n"},{p:"FC11",c:"FC1",l:"Poutre : fcj \xE0 la 1re mise en tension",u:"MPa"},{p:"FC12",c:"FC2",l:"Poutre : fcj \xE0 la 2e partie de la 1re famille",u:"MPa"},{p:"FC28",c:"FC28",l:"Poutre : fc28",u:"MPa"},{p:"FC4H",c:"FC4H",l:"Hourdis : fcj \xE0 la tension de la 2e famille",u:"MPa"},{p:"FC5H",c:"FC5H",l:"Hourdis : fcj \xE0 la pose des superstructures",u:"MPa"},{p:"FC28H",c:"FC28H",l:"Hourdis : fc28",u:"MPa"},{p:"EPSR",c:"EPS R",l:"Retrait final \u03B5r",u:"\xD710\u207B\u2074"}]},{g:"Aciers passifs",f:[{p:"FE1",c:"FE1",l:"Limite \xE9lastique des aciers longitudinaux",u:"MPa"},{p:"SIGS",c:"SIGS",l:"Contrainte limite en service",u:"MPa"},{p:"TYPEAP",c:"TYPE",l:"Type d'aciers (1 = haute adh\xE9rence)",t:"i"},{p:"DAP",c:"D",l:"Distance de l'axe des aciers au parement",u:"m"},{p:"ES",c:"ES",l:"Module d'\xE9lasticit\xE9",u:"MPa"},{p:"FE2",c:"FE2",l:"Limite \xE9lastique des armatures d'effort tranchant",u:"MPa"}]},{g:"Coefficients d'\xE9quivalence et relaxation",f:[{p:"NH",c:"NH",l:"NH",t:"n"},{p:"NS3",c:"NS3",l:"NS3",t:"n"},{p:"NP3",c:"NP3",l:"NP3",t:"n"},{p:"NP0",c:"NP0",l:"Coefficient d'\xE9quivalence acier de pr\xE9contrainte / b\xE9ton (instantan\xE9)",t:"n"},{p:"RO",c:"RO",l:"RO (0 = relaxation par \u03C11000)",t:"n"},{p:"SPSI1",c:"S.PSI1",l:"S.PSI1",t:"n"},{p:"DFPRG",c:"D.FPRG",l:"D.FPRG",t:"n"},{p:"KTABF",c:"KF",l:"KF",t:"i"}]}]},{id:"precontrainte",t:"Pr\xE9contrainte",lines:"C3 \xB7 C4 \xB7 C5",intro:"Syst\xE8mes de pr\xE9contrainte (deux au plus) et dates du phasage, compt\xE9es en \xE2ge du b\xE9ton de la poutre.",sk:(e,i)=>Tt(e,i),gs:[{g:"Syst\xE8mes",m:{cols:[["syst\xE8me 1","systems.0."],["syst\xE8me 2","systems.1."]],rows:[["ARMA","ARMA","R\xE9f\xE9rence de l'armature (rappel\xE9e en D')","","i"],["FPRG","FPRG","Contrainte de rupture garantie","MPa"],["FPEG","FPEG","Limite \xE9lastique garantie","MPa"],["SIGP0","SIGPO","Tension \xE0 l'origine","MPa"],["EP","EP","Module d'\xE9lasticit\xE9","MPa"],["SECAB","SECAB","Section d'un c\xE2ble","mm\xB2"],["DGAINE","DGAINE","Diam\xE8tre ext\xE9rieur de la gaine","m"],["ENROB","ENROB","Enrobage de la gaine","m"],["DECAL","DECAL","D\xE9calage du c\xE2ble dans la gaine","m"],["F","F","Coefficient de frottement en courbe f","/rad"],["PHI","PHI","Coefficient de perte en ligne \u03C6","/m"],["RECUL","RECUL","Recul \xE0 l'ancrage","m"],["R1000","R1000","Relaxation \xE0 1000 h \u03C11000","%"],["NGA","NG","Nombre de gaines par lit","","i"],["TYPE","TYPE","Loi de l'acier (1 \xE9lasto-plastique, 2 BPEL)","","i"],["AV","AV","AV","m"],["AH","AH","AH","m"]]}},{g:"Phasage (jours)",f:[{p:"J.J1",c:"J1",l:"Mise en tension de la 1re famille",t:"i"},{p:"J.J2",c:"J2",l:"Tension de la 2e partie de la 1re famille",t:"i"},{p:"J.J3",c:"J3",l:"B\xE9tonnage du hourdis",t:"i"},{p:"J.J4",c:"J4",l:"Mise en tension de la 2e famille",t:"i"},{p:"J.J5",c:"J5",l:"Mise en place des superstructures",t:"i"},{p:"J.J6",c:"J6",l:"Mise en service",t:"i"},{p:"J.J999",c:"J7",l:"J7",t:"i"},{p:"J.JSUP",c:"JSUP",l:"JSUP",t:"i"}]}]},{id:"cables",t:"C\xE2blages",lines:"C6 \xB7 D \xB7 D'",intro:"Trac\xE9 des c\xE2bles par c\xE2blage : abscisses de d\xE9finition, ordonn\xE9es des axes de gaine (tableau D) et caract\xE9ristiques compl\xE9mentaires (tableau D').",sk:()=>"",custom:"cables",gs:[]}],ze=[["num","NUM","Num\xE9ro du c\xE2ble","i"],["ARMA","ARMA","R\xE9f\xE9rence de l'armature (syst\xE8me C3/C4)","i"],["SECAB","SECAB","Section du c\xE2ble (mm\xB2)","n"],["SIGP0","SIGPO","Tension \xE0 l'origine (MPa)","n"],["ANPA","MODE","Mise en tension : 1 par une extr\xE9mit\xE9, 2 par les deux","i"],["SYM","NCASY","Num\xE9ro du c\xE2ble sym\xE9trique","i"],["ABDECO","ABDECO","Abscisse du d\xE9but de la courbe verticale (m)","n"],["ORFICO","ORFICO","Ordonn\xE9e de l'axe de gaine en fin de courbe (m)","n"],["ABFICO","ABFICO","Abscisse de fin de la courbe verticale (m)","n"],["ABSOR","ABSOR","Abscisse de sortie du c\xE2ble (m)","n"],["ANGSOR","ANGSOR","Angle vertical de sortie (gr)","n"],["EXTRAN","EXTRAN","D\xE9placement transversal du c\xE2ble (m)","n"],["ABDEHO","ABDEHO","Abscisse du d\xE9but de la courbe horizontale (m)","n"],["ABFIHO","ABFIHO","Abscisse de fin de la courbe horizontale (m)","n"],["YENCO","YENCO","Profondeur de l'encoche d'ancrage (m)","n"],["DENCO","DENCO","Largeur de l'encoche d'ancrage (m)","n"]],Re=(e,i)=>i.split(".").reduce((o,s)=>o==null?o:o[s],e);function ns(e,i,o){let s=i.split("."),n=s.pop(),t=s.reduce((l,u)=>l[u],e);t[n]=o}var et=(e,i="n")=>i==="list"?(e??[]).join(" "):i==="s"?e??"":e==null||!isFinite(e)?"":String(+(+e).toFixed(6)),ne=e=>String(e).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");function wt(e,i,o){return e==="G"||e==="D"?i==="DBA"?{p:"DBA"+e,c:"DBA"+e}:i.startsWith("PBA\xB7")?{p:"PBA"+e+i.slice(4),c:"PBA"+e+i.slice(4)}:{p:i+e,c:o+e}:o==="HAXE / HEXT"?e==="slab."?{p:"slab.HAXE",c:"HAXE"}:{p:e+"HEXT",c:"HEXT"}:i==="EEXT"&&e==="slab."?null:e.startsWith("systems.")?{p:e+i,c:o}:{p:e+i,c:o}}var Pt=null;function as(){if(Pt)return Pt;let e=new Map,i=(o,s)=>{if(!/^[A-Z][A-Z0-9.]*$/.test(o))return;let n=e.get(o)??[];n.includes(s)||n.push(s),e.set(o,n)};for(let o of he)for(let s of o.gs)if(s.f?.forEach(n=>i(n.c,n.p)),s.m)for(let[n,t]of s.m.rows)for(let[,l]of s.m.cols){let u=wt(l,n,t);u&&i(u.c,u.p)}return Pt=e}var we=e=>{if(typeof e=="number"&&isFinite(e))return String(Math.round(e*1e3)/1e3).replace(".",",");if(Array.isArray(e)&&e.every(i=>typeof i=="number"))return e.join(" ")};function tt(e){let i=[],o=(m,r,E)=>i.push({step:m,level:"err",msg:r,p:E}),s=(m,r,E)=>i.push({step:m,level:"warn",msg:r,p:E}),n=e.NPOUT;if(e.PORTEE>0&&e.beam.HPOUT>0){let m=e.PORTEE/e.beam.HPOUT;(m>22||m<14)&&s("principal",`\xC9lancement L/HPOUT = ${m.toFixed(1)} : inhabituel pour une VIPP (couramment 16 \xE0 19).`,"beam.HPOUT")}n>=2&&e.ENTRAPOUT>0&&e.beam.ETAB>=e.ENTRAPOUT&&o("principal",`La table des poutres (ETAB = ${e.beam.ETAB}) est plus large que l'entraxe (${e.ENTRAPOUT.toFixed(3)} m) : r\xE9duire ETAB ou le nombre de poutres.`,"beam.ETAB"),n>=2&&e.ENTRAPOUT>0&&e.ENTRAPOUT-e.beam.ETAB<.3&&e.beam.ETAB<e.ENTRAPOUT&&s("principal",`Espace entre tables ${(e.ENTRAPOUT-e.beam.ETAB).toFixed(2)} m : faible pour les pr\xE9dalles.`,"beam.ETAB"),e.PORTEE>0&&!(n>=2)&&o("principal","Il faut au moins 2 poutres.","NPOUT"),n>=2||o("travers","Il faut au moins 2 poutres.","NPOUT"),e.ESURCH>0||o("travers","La largeur chargeable ESURCH doit \xEAtre positive.","ESURCH");try{let m=Se(e),r=m.xBeam[0]-e.slabG.EEXT,E=m.xBeam[n-1]+e.slabD.EEXT;Math.abs(r)>.01&&s("travers",`Le bord gauche du hourdis (poutre 1 \u2212 EEXT) tombe \xE0 ${r.toFixed(3)} m du bord du tablier : v\xE9rifier DPOUT1, ENTRAPOUT et EEXT gauche.`,"DPOUT1"),Math.abs(E-m.width)>.01&&s("travers",`Le bord droit du hourdis tombe \xE0 ${(E-m.width).toFixed(3)} m du bord du tablier : v\xE9rifier ENTRAPOUT et EEXT droit.`,"ENTRAPOUT")}catch{}e.poutresACalculer.length||o("ouvrage","Indiquer au moins une poutre \xE0 calculer.","poutresACalculer");for(let[m,r,E]of[["G",e.slabG,"gauche"],["D",e.slabD,"droite"]]){let T=((m==="G"?e.TYPOURI[0]:e.TYPOURI[1])===0&&e.beamRive?e.beamRive:e.beam).ETAB/2;r.EEXT-T<.05&&s("travers",`Poutre de rive ${E} au nu du tablier : le hourdis n'a pas d'encorbellement (EEXT ${r.EEXT.toFixed(2)} m \u2264 demi-table ${T.toFixed(2)} m). Utiliser \xAB Mettre les poutres de rive en retrait \xBB pour cr\xE9er un d\xE9bord.`,`slab${m}.EEXT`)}for(let m of e.poutresACalculer)(m<1||m>n)&&o("ouvrage",`La poutre ${m} n'existe pas (1 \xE0 ${n}).`,"poutresACalculer");e.PORTEE>0||o("travee","La port\xE9e doit \xEAtre positive.","PORTEE"),(e.BIAIS<=0||e.BIAIS>100)&&o("travee","Le biais doit \xEAtre compris entre 0 et 100 gr (100 = droit).","BIAIS"),e.NE<2&&s("travee","NE < 2 : pas d'entretoise d'about.","NE");let t=(m,r,E)=>{let T=m.HPIED+m.H1,N=T+m.H2;if(!(m.HPOUT>0)){o(E,"Hauteur de poutre nulle.",r+"HPOUT");return}N+Math.max(m.H3D,m.H3G)>m.HPOUT-m.HTAB+1e-6&&o(E,`HPIED + H1 + H2 + H3 = ${(N+Math.max(m.H3D,m.H3G)).toFixed(3)} m d\xE9passe HPOUT \u2212 HTAB = ${(m.HPOUT-m.HTAB).toFixed(3)} m.`,r+"H2"),m.E1>m.ETALON&&o(E,"L'\xE2me (E1) est plus large que le talon.",r+"E1"),m.E2/2>m.ETAB/2-Math.max(m.D3D,m.D3G)&&o(E,"Le gousset est plus large que la table : r\xE9duire D3 ou E2.",r+"D3D"),m.GDA>0&&m.EPAM<=0&&s(E,"\xC9paississement d'\xE2me demand\xE9 (GOUDAM > 0) sans sur\xE9paisseur EPAM.",r+"EPAM")};t(e.beam,"beam.","poutre"),(e.TYPOURI[0]===0||e.TYPOURI[1]===0)&&e.beamRive&&t(e.beamRive,"beamRive.","poutre"),(e.slab.HAXE<=0||e.slab.HHOUR<=0)&&o("hourdis","\xC9paisseurs du hourdis nulles.","slab.HHOUR");for(let[m,r]of[[e.slabG,"gauche"],[e.slabD,"droit"]])m.EEXT<e.beam.ETAB/2&&s("hourdis",`Encorbellement ${r} plus court que la demi-table de la poutre.`,(r==="gauche"?"slabG":"slabD")+".EEXT");let l=[e.J.J1,e.J.J3,e.J.J4,e.J.J5,e.J.J6];for(let m=1;m<l.length;m++)l[m]<l[m-1]&&o("precontrainte","Les dates du phasage doivent cro\xEEtre : J1 \u2264 J3 \u2264 J4 \u2264 J5 \u2264 J6.","J.J1");e.J.J2<e.J.J1&&s("precontrainte","J2 est ant\xE9rieur \xE0 J1.","J.J2");let u=new Set,a=e.ABOUT+e.PORTEE/2;e.cablings.forEach((m,r)=>{let E=`C\xE2blage ${r+1} : `,T=`cablings.${r}.`;m.poutres.forEach(O=>u.add(O));let N=m.NCAB11+m.NCAB12+m.NCAB2;N!==m.cables.length&&o("cables",E+`NCAB11 + NCAB12 + NCAB2 = ${N} mais ${m.cables.length} c\xE2ble(s) d\xE9crit(s) en D'.`,T+"NCAB11"),m.ordonnees.length!==m.cables.length&&o("cables",E+`le tableau D compte ${m.ordonnees.length} ligne(s) d'ordonn\xE9es pour ${m.cables.length} c\xE2ble(s).`);for(let O=1;O<m.abscisses.length;O++)m.abscisses[O]>m.abscisses[O-1]||o("cables",E+"les abscisses de d\xE9finition doivent \xEAtre croissantes.",T+"abscisses."+O);let v=m.abscisses[m.abscisses.length-1];v!==void 0&&Math.abs(v-a)>.005&&s("cables",E+`la derni\xE8re abscisse (${v}) devrait \xEAtre la mi-trav\xE9e (ABOUT + PORTEE/2 = ${a.toFixed(3)}).`,T+"abscisses."+(m.abscisses.length-1)),m.cables.forEach((O,F)=>{let U=T+"cables."+F+".";e.systems.some(p=>p.ARMA===O.ARMA)||o("cables",E+`c\xE2ble ${O.num} : ARMA ${O.ARMA} ne correspond \xE0 aucun syst\xE8me (C3/C4).`,U+"ARMA"),O.ABDECO<O.ABFICO||o("cables",E+`c\xE2ble ${O.num} : ABDECO doit pr\xE9c\xE9der ABFICO.`,U+"ABDECO"),O.ABSOR>O.ABDECO+1e-9&&o("cables",E+`c\xE2ble ${O.num} : la sortie (ABSOR) doit pr\xE9c\xE9der le d\xE9but de courbe (ABDECO).`,U+"ABSOR"),O.ABFICO>a+1e-6&&o("cables",E+`c\xE2ble ${O.num} : la fin de courbe d\xE9passe la mi-trav\xE9e.`,U+"ABFICO"),(O.ORFICO<=0||O.ORFICO>=e.beam.HPOUT)&&o("cables",E+`c\xE2ble ${O.num} : ORFICO hors de la poutre.`,U+"ORFICO"),(m.ordonnees[F]??[]).some((p,$)=>p>0&&m.abscisses[$]>=O.ABSOR-1e-9)||o("cables",E+`c\xE2ble ${O.num} : aucune ordonn\xE9e d\xE9finie au-del\xE0 de la sortie.`,`${T}ordonnees.${F}.0`)})});for(let m of e.poutresACalculer)u.has(m)||o("cables",`La poutre ${m} n'est rattach\xE9e \xE0 aucun c\xE2blage.`);try{for(let m of Ht(e))s("cables",`C\xE2blage ${m.cablage}, c\xE2ble ${m.cable} : ${m.message}.`)}catch{}return i}function rs(e,i,o={}){let s={angleRel:22,angleTop:20,absorAbout:.15,debord:.5},n={running:!1,msg:"",k:0,n:1},t=JSON.parse(JSON.stringify(i)),l=0,u=0,a="",m="",r=f=>!(f.PORTEE>0)&&!(f.NPOUT>0)&&!(f.beam.HPOUT>0),E=r(t),T=()=>{for(t.beamRive||(t.beamRive=JSON.parse(JSON.stringify(t.beam)));t.systems.length<2;)t.systems.push(JSON.parse(JSON.stringify(t.systems[0])))};T(),e.innerHTML=`<div class="sg-top"><button class="sg-arw" data-nav="-1" title="\xC9tape pr\xE9c\xE9dente" aria-label="\xC9tape pr\xE9c\xE9dente">\u2039</button><div class="sg-steps" role="tablist"></div><button class="sg-arw" data-nav="1" title="\xC9tape suivante" aria-label="\xC9tape suivante">\u203A</button></div>
+"use strict";
+(() => {
+  // src/engine/bordereau.ts
+  var NUM = /-?\d+(?:\.\d*)?|-?\.\d+/g;
+  var nums = (s) => (s.match(NUM) ?? []).map(Number);
+  function parseBordereau(text) {
+    const all = text.split(/\r?\n/);
+    const start = all.findIndex((l) => /BORDEREAU DES DONNEES/.test(l));
+    if (start < 0) throw new Error("bordereau introuvable");
+    let end = all.findIndex((l, i) => i > start && /VIPPEL NO/.test(l));
+    if (end < 0) end = all.length;
+    const L = all.slice(start, end).map((l) => l.replace(/\s+/g, " ").trim()).filter((l) => l.length);
+    const after = (re, occ = 0) => {
+      let k = -1;
+      for (let i = 0; i < L.length; i++) if (re.test(L[i])) {
+        if (occ-- === 0) {
+          k = i;
+          break;
+        }
+      }
+      if (k < 0) throw new Error("ligne absente : " + re);
+      for (let j = k + 1; j < L.length; j++) {
+        const v = nums(L[j]);
+        if (v.length && !/[A-Z]{3,}/.test(L[j].replace(/E[+-]?\d/g, ""))) return v;
+      }
+      throw new Error("donn\xE9es absentes : " + re);
+    };
+    const t = (n) => {
+      const v = L.find((l) => l.startsWith(n + " :"))?.replace(/^\d+ :\s*/, "") ?? "";
+      return v === "-" ? "" : v;
+    };
+    const l1 = t(1).split(" ");
+    const date = l1.pop() ?? "", numero = l1.pop() ?? "";
+    const titre = [l1.join(" "), t(2), t(3)];
+    const l4 = nums(t(4));
+    const poutres = l4.slice(0, l4.length - 14);
+    const a1 = after(/^LIGNE A1\b/);
+    const [SYMTAB, NVOIE, ETROTG, EGAU, ESURCH, EDROI, ETROTD, NPOUT, ENTRAPOUT, DPOUT1, PORTEE, ABOUT, NE, ENTINT, ENTAPP, NT, BIAIS] = a1;
+    const shape = (v) => {
+      const [PENTPOUT, ETAB, ETALON, HPOUT, HPIED, H1, H2, H3D, H3G, HTAB, E1, E2, D3D, D3G, GDA, LIN, EPAM, LONGOUS, PLA, HPLA] = v;
+      return { PENTPOUT, ETAB, ETALON, HPOUT, HPIED, H1, H2, H3D, H3G, HTAB, E1, E2, D3D, D3G, GDA, LIN, EPAM, LONGOUS, PLA, HPLA };
+    };
+    const beam = shape(after(/^LIGNE A2\b/));
+    const a3 = after(/^LIGNE A3\b/);
+    const cross = { AMEN: a3[4], H5D: a3[5], H5G: a3[6], H7D: a3[7], H7G: a3[8], H9D: a3[9], H9G: a3[10], AMORD: a3[11], AMORG: a3[12] };
+    const a4 = after(/^TYPOURI\b/);
+    const TYPOURI = [a4[0], a4[1]];
+    const beamRive = TYPOURI[0] === 0 || TYPOURI[1] === 0 ? shape(a4.slice(2)) : void 0;
+    const edge = (v, left) => {
+      const [HHOUR, HEXT, EEXT, PENTSUP, PENTINF, AMEN, H5D, H5G, H7D, H7G, H9, AMORD, AMORG] = v;
+      return { HHOUR, HEXT, EEXT, PENTSUP, PENTINF, cross: { AMEN, H5D, H5G, H7D, H7G, H9D: H9, H9G: H9, AMORD, AMORG } };
+    };
+    const slabG = edge(after(/^LIGNE A5\b/), true), slabD = edge(after(/^LIGNE A6\b/), false);
+    const b1 = after(/^LIGNE B1\b/);
+    const b2 = after(/^LIGNE B2\b/);
+    const qsup = [];
+    for (let i = 0; i + 3 < b2.length; i += 4) qsup.push({ de: b2[i], a: b2[i + 1], max: b2[i + 2], min: b2[i + 3] });
+    const b3 = after(/^LIGNE B3\b/);
+    const c1 = after(/^LIGNE C1\b/), c2 = after(/^LIGNE C2\b/);
+    const sys = (v) => {
+      const [ARMA, FPRG, FPEG, SIGP0, EP, SECAB, DGAINE, ENROB, DECAL, F, PHI, RECUL, R1000, NGA, TYPE, AV, AH] = v;
+      return { ARMA, FPRG, FPEG, SIGP0, EP, SECAB, DGAINE, ENROB, DECAL, F, PHI, RECUL, R1000, NGA, TYPE, AV, AH };
+    };
+    const systems = [sys(after(/^LIGNE C3\b/)), sys(after(/^LIGNE C4\b/))];
+    const c5 = after(/^LIGNE C5\b/);
+    let c6 = [];
+    try {
+      c6 = after(/^A CALCULER\b/);
+    } catch {
+      c6 = [];
+    }
+    const cablings = [];
+    const nCab = Math.floor(c6.length / 8);
+    const dStarts = L.map((l, i) => /TABLEAU D - DEFINITION DU TRACE/.test(l) ? i : -1).filter((i) => i >= 0);
+    for (let c = 0; c < nCab; c++) {
+      const v = c6.slice(8 * c, 8 * c + 8);
+      const from = dStarts[c], to = c + 1 < dStarts.length ? dStarts[c + 1] : L.length;
+      let abscisses = [];
+      const ordonnees = [];
+      const cables = [];
+      for (let i = from; i < to; i++) {
+        const l = L[i];
+        if (/^LIGNE D' /.test(l)) {
+          const w = nums(l.slice(8));
+          const [, num2, ARMA, SECAB, SIGP0, ANPA, SYM, ABDECO, ORFICO, ABFICO, ABSOR, ANGSOR, EXTRAN, ABDEHO, ABFIHO, YENCO, DENCO] = w;
+          cables.push({ num: num2, ARMA, SECAB, SIGP0, ANPA, SYM, ABDECO, ORFICO, ABFICO, ABSOR, ANGSOR, EXTRAN, ABDEHO, ABFIHO, YENCO, DENCO });
+        } else if (/^LIGNE D /.test(l)) {
+          const w = nums(l.slice(7));
+          if (w[0] === 0 && !abscisses.length) abscisses = w.slice(1);
+          else ordonnees.push(w.slice(1));
+        }
+      }
+      cablings.push({ poutres: v.slice(0, 5).filter((p) => p > 0), NCAB11: v[5], NCAB12: v[6], NCAB2: v[7], abscisses, ordonnees, cables });
+    }
+    return {
+      titre,
+      numero,
+      date: date.replace(/^(\d\d)(\d\d)(\d\d)$/, "$1.$2.$3"),
+      poutresACalculer: poutres,
+      SYMTAB,
+      NVOIE,
+      ETROTG,
+      EGAU,
+      ESURCH,
+      EDROI,
+      ETROTD,
+      NPOUT,
+      ENTRAPOUT,
+      DPOUT1,
+      PORTEE,
+      ABOUT,
+      NE,
+      ENTINT,
+      ENTAPP,
+      NT,
+      BIAIS,
+      beam,
+      slab: { HHOUR: a3[0], HAXE: a3[1], PENTSUP: a3[2], PENTINF: a3[3] },
+      cross,
+      HENTA: a3[13],
+      HENTI: a3[14],
+      TYPOURI,
+      beamRive,
+      slabG,
+      slabD,
+      MASVOL: b1[0],
+      OSSAMAXP: b1[1],
+      OSSAMINP: b1[2],
+      OSSAMAXH: b1[3],
+      OSSAMINH: b1[4],
+      DBAG: b1[5],
+      PBAGMAX: b1[6],
+      PBAGMIN: b1[7],
+      DBAD: b1[8],
+      PBADMAX: b1[9],
+      PBADMIN: b1[10],
+      PDALMAX: b1[11],
+      PDALMIN: b1[12],
+      qsup,
+      CLASSE: b3[0] >= 100 ? Math.round(b3[0] / 100) : b3[0],
+      A: b3[1],
+      B: b3[2],
+      CM: b3[3],
+      CE: b3[4],
+      PSTROT: b3[5],
+      A1: b3[6],
+      A2: b3[7],
+      A3: b3[8],
+      CLASSEBP: c1[0] >= 100 ? Math.round(c1[0] / 100) : c1[0],
+      POISSON: c1[1],
+      FC11: c1[2],
+      FC12: c1[3],
+      FC28: c1[4],
+      FC4H: c1[5],
+      FC5H: c1[6],
+      FC28H: c1[7],
+      EPSR: c1[8],
+      FE1: c2[0],
+      SIGS: c2[1],
+      TYPEAP: c2[2],
+      DAP: c2[3],
+      ES: c2[4],
+      FE2: c2[5],
+      NH: c2[6],
+      NS3: c2[7],
+      NP3: c2[8],
+      NP0: c2[9],
+      RO: c2[10],
+      SPSI1: c2[11],
+      DFPRG: c2[12],
+      KTABF: c2[13],
+      systems,
+      J: { J1: c5[0], J2: c5[1], J3: c5[2], J4: c5[3], J5: c5[4], J6: c5[5], J999: c5[6], JSUP: c5[7] },
+      cablings
+    };
+  }
+  function checkBordereau(b) {
+    const out = [];
+    b.cablings.forEach((c, ic) => c.cables.forEach((d) => {
+      if (d.ABSOR < 1 || !d.ANGSOR) return;
+      const t0 = Math.tan(d.ANGSOR * Math.PI / 200);
+      const y0 = b.beam.HPOUT - t0 * (d.ABDECO - d.ABSOR);
+      const drop = y0 - d.ORFICO, para = t0 * (d.ABFICO - d.ABDECO) / 2;
+      const r = drop / para;
+      if (Math.abs(r - 1) > 0.03) out.push({
+        cablage: ic + 1,
+        cable: d.num,
+        message: `trac\xE9 vertical non parabolique : chute ${drop.toFixed(3)} m pour ${para.toFixed(3)} m attendus (rapport ${r.toFixed(2)}) \u2014 r\xE9sultats de tension pouvant diff\xE9rer de VIPP-EL de quelques MPa`
+      });
+    }));
+    return out;
+  }
+
+  // src/engine/bordereau_write.ts
+  var f = (v, d = 3) => {
+    if (!isFinite(v)) v = 0;
+    for (let k = d; k <= 6; k++) {
+      const s = v.toFixed(k);
+      if (Math.abs(Number(s) - v) < 1e-9) return s;
+    }
+    return String(+v.toFixed(8));
+  };
+  var i0 = (v) => String(Math.round(v || 0));
+  var fd = (v) => Number.isInteger(v) ? v + "." : f(v);
+  var row = (vals, w = 8) => "           " + vals.map((s) => s.padStart(w)).join(" ");
+  var shapeVals = (s) => [
+    f(s.PENTPOUT),
+    f(s.ETAB),
+    f(s.ETALON),
+    f(s.HPOUT),
+    f(s.HPIED),
+    f(s.H1),
+    f(s.H2),
+    f(s.H3D),
+    f(s.H3G),
+    f(s.HTAB),
+    f(s.E1),
+    f(s.E2),
+    f(s.D3D),
+    f(s.D3G),
+    i0(s.GDA),
+    i0(s.LIN),
+    f(s.EPAM),
+    f(s.LONGOUS),
+    i0(s.PLA),
+    f(s.HPLA)
+  ];
+  var ZERO_SHAPE = { PENTPOUT: 0, ETAB: 0, ETALON: 0, HPOUT: 0, HPIED: 0, H1: 0, H2: 0, H3D: 0, H3G: 0, HTAB: 0, E1: 0, E2: 0, D3D: 0, D3G: 0, GDA: 0, LIN: 0, EPAM: 0, LONGOUS: 0, PLA: 0, HPLA: 0 };
+  var edgeVals = (e, left) => [
+    f(e.HHOUR),
+    f(e.HEXT),
+    f(e.EEXT),
+    f(e.PENTSUP),
+    f(e.PENTINF),
+    i0(e.cross.AMEN),
+    f(e.cross.H5D),
+    f(e.cross.H5G),
+    f(e.cross.H7D),
+    f(e.cross.H7G),
+    f(left ? e.cross.H9D : e.cross.H9G),
+    f(e.cross.AMORD),
+    f(e.cross.AMORG),
+    f(0),
+    f(0)
+  ];
+  var sysVals = (s) => [
+    i0(s.ARMA),
+    f(s.FPRG, 1),
+    f(s.FPEG, 1),
+    f(s.SIGP0, 1),
+    fd(s.EP),
+    fd(s.SECAB),
+    f(s.DGAINE),
+    f(s.ENROB),
+    f(s.DECAL),
+    f(s.F),
+    f(s.PHI, 4),
+    f(s.RECUL),
+    f(s.R1000, 2),
+    i0(s.NGA),
+    i0(s.TYPE),
+    f(s.AV),
+    f(s.AH)
+  ];
+  function formatBordereau(b) {
+    const L = [];
+    const P = (...s) => L.push(...s);
+    const dateRaw = (b.date || "").replace(/^(\d\d)\.(\d\d)\.(\d\d)$/, "$1$2$3") || "000000";
+    const titre = [...b.titre, "", "", ""].slice(0, 3).map((t) => (t || "").toUpperCase().replace(/\s+/g, " ").trim() || "-");
+    P(
+      "                                                        BORDEREAU DES DONNEES",
+      "                                                        =====================",
+      "",
+      "LIGNE NO                                 TITRE                                  NO    DATE",
+      "",
+      "  1 :   " + titre[0].padEnd(72) + " " + (b.numero || "0001").padStart(5) + " " + dateRaw,
+      "  2 :   " + titre[1],
+      "  3 :   " + titre[2],
+      "",
+      "                  POUTRES A CALCULER",
+      "             ----------------------------------------------------------",
+      "  4 :   " + b.poutresACalculer.map((p) => String(p).padStart(5)).join(" ") + "    1 0 0 0 0 0 2 1 1 0 1 1 0 0",
+      "  5 :                                      1 0 0 0 0 1 0 0 0 0 0 0 0 0",
+      "",
+      "                              TABLEAU A - CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE",
+      "                              ======================================================",
+      "",
+      "LIGNE A1   SYMTAB NVOIE ETROTG   EGAU ESURCH     EDROI ETROTD NPOUT ENTRAPOUT DPOUT1 PORTEE ABOUT NE ENTINT ENTAPP NT BIAIS EDESS",
+      row([
+        i0(b.SYMTAB),
+        i0(b.NVOIE),
+        f(b.ETROTG),
+        f(b.EGAU),
+        f(b.ESURCH),
+        f(b.EDROI),
+        f(b.ETROTD),
+        i0(b.NPOUT),
+        f(b.ENTRAPOUT),
+        f(b.DPOUT1),
+        f(b.PORTEE),
+        f(b.ABOUT),
+        i0(b.NE),
+        f(b.ENTINT),
+        f(b.ENTAPP),
+        i0(b.NT),
+        f(b.BIAIS, 2),
+        f(0),
+        "0"
+      ], 6),
+      "",
+      "           POUTRES INTERMEDIAIRES",
+      "LIGNE A2   PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G GOUDAM LIN EPAM LONGOUS PLAB HPLA",
+      row(shapeVals(b.beam), 6),
+      "",
+      "LIGNE A3   HHOUR H AXE   PENT SUP PENT INF   AMEN H5D    H5G   H7D   H7G   H9D   H9G     AMORD     AMORG    HENTA   HENTI   EABOUT DEXTR",
+      row([
+        f(b.slab.HHOUR),
+        f(b.slab.HAXE),
+        f(b.slab.PENTSUP),
+        f(b.slab.PENTINF),
+        i0(b.cross.AMEN),
+        f(b.cross.H5D),
+        f(b.cross.H5G),
+        f(b.cross.H7D),
+        f(b.cross.H7G),
+        f(b.cross.H9D),
+        f(b.cross.H9G),
+        f(b.cross.AMORD),
+        f(b.cross.AMORG),
+        f(b.HENTA),
+        f(b.HENTI),
+        f(0),
+        f(0)
+      ], 6),
+      "",
+      "          POUTRES DE RIVE",
+      "LIGNE A4",
+      "  TYPOURI PENTPOUT ETAB ETALON HPOUT HPIED  H1    H2   H3D   H3G H TAB    E1    E2   D3D   D3G GOUDAM LIN EPAM LONGOUS PLAB HPLA",
+      "    " + i0(b.TYPOURI[0]) + " " + i0(b.TYPOURI[1]) + " " + shapeVals(b.beamRive ?? ZERO_SHAPE).map((s) => s.padStart(6)).join(" "),
+      "",
+      "           ENCORBELLEMENT DE GAUCHE",
+      "LIGNE A5   HHOUR H GAU E GAUH PENTSUPG PENTINFG     AMEN H5D    H5G   H7D   H7G   H9D     AMORD     AMORG   EABOUT DEXTR",
+      row(edgeVals(b.slabG, true), 6),
+      "",
+      "           ENCORBELLEMENT DE DROITE",
+      "LIGNE A6   HHOUR HDROI EDROIH PENTSUPD PENTINFD     AMEN H5D    H5G   H7D   H7G   H9G     AMORD     AMORG   EABOUT DEXTR",
+      row(edgeVals(b.slabD, false), 6),
+      "",
+      "                                     TABLEAU B - DEFINITION DES ACTIONS ET SOLLICITATIONS",
+      "                                     ====================================================",
+      "",
+      "                       POUTRE            HOURDIS",
+      "LIGNE B1   MASVOL OSSAMAX OSSAMIN OSSAMAX OSSAMIN                      DBAG PBAGMAX PBAGMIN       DBAD PBADMAX PBADMIN PREDALMAX PREDALMIN",
+      row([f(b.MASVOL), f(b.OSSAMAXP), f(b.OSSAMINP), f(b.OSSAMAXH), f(b.OSSAMINH), f(b.DBAG), f(b.PBAGMAX), f(b.PBAGMIN), f(b.DBAD), f(b.PBADMAX), f(b.PBADMIN), f(b.PDALMAX), f(b.PDALMIN)], 7),
+      "",
+      "           NUM QSUP QSUP                NUM QSUP QSUP              NUM QSUP QSUP          NUM QSUP QSUP",
+      "LIGNE B2   POUT MAX    MIN              POUT MAX    MIN            POUT MAX    MIN        POUT MAX    MIN",
+      "           " + (b.qsup.length ? b.qsup : [{ de: 1, a: b.NPOUT, max: 0, min: 0 }]).map((q) => `${i0(q.de)} ${i0(q.a)} ${f(q.max)} ${f(q.min)}`).join("        "),
+      "",
+      "LIGNE B3   CLASSE     A             B           CM          CE         PSTROT     A1     A2       A3",
+      row([i0(b.CLASSE * 100), i0(b.A), i0(b.B), i0(b.CM), i0(b.CE), f(b.PSTROT), f(b.A1), f(b.A2), f(b.A3)], 9),
+      ""
+    );
+    for (const k of [4, 5, 6, 7]) P(
+      `LIGNE B${k}   IEL G PREC        G GMAX      G GMIN      PSI A       PSI BC    PSI BT   PSI ME   PSI MC      PSI EX   PSI BG   PSI TR`,
+      row(["1", ...Array(11).fill(f(0))], 7),
+      ""
+    );
+    P(
+      "                                     TABLEAU C - DEFINITION DES MATERIAUX",
+      "                                     ====================================",
+      "",
+      "LIGNE C1   CL BP POIS          FC1        FC2        FC28     FC4H       FC5H   FC28H    EPS R",
+      row([i0(b.CLASSEBP * 100), f(b.POISSON), f(b.FC11, 1), f(b.FC12, 1), f(b.FC28, 1), f(b.FC4H, 1), f(b.FC5H, 1), f(b.FC28H, 1), f(b.EPSR)], 9),
+      "",
+      "LIGNE C2     FE1      SIGS         TYPE        D          ES             FE2   NH    NS3 NP3      NP0     RO    S.PSI1   D.FPRG   KF",
+      row([f(b.FE1, 1), f(b.SIGS, 1), i0(b.TYPEAP), f(b.DAP), fd(b.ES), f(b.FE2, 1), f(b.NH, 1), f(b.NS3, 1), f(b.NP3, 1), f(b.NP0, 1), f(b.RO, 2), f(b.SPSI1, 1), f(b.DFPRG, 1), i0(b.KTABF)], 8),
+      ""
+    );
+    b.systems.slice(0, 2).forEach((s, k) => P(
+      `LIGNE C${3 + k}   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH`,
+      row(sysVals(s), 7),
+      ""
+    ));
+    if (b.systems.length < 2) P("LIGNE C4   ARMA    FPRG         FPEG         SIGPO        EP    SECAB DGAINE ENROB DECAL  F     PHI                 RECUL R1000 NG TYPE  AV    AH", row(sysVals(b.systems[0]), 7), "");
+    const J = b.J;
+    P(
+      "LIGNE C5    J1      J2        J3        J4      J5      J6        J7     JSUP",
+      row([J.J1, J.J2, J.J3, J.J4, J.J5, J.J6, J.J999, J.JSUP].map(i0), 7),
+      ""
+    );
+    P(
+      "LIGNE C6   " + b.cablings.map((_, i) => `            CABLAGE ${i + 1}          `).join(""),
+      "           " + b.cablings.map(() => "   POUTRES         NCAB          ").join(""),
+      "A CALCULER " + b.cablings.map(() => "                11 12   2        ").join(""),
+      "           " + b.cablings.map((c) => [...c.poutres, 0, 0, 0, 0, 0].slice(0, 5).map(i0).join(" ") + "   " + [c.NCAB11, c.NCAB12, c.NCAB2].map(i0).join(" ")).join("     "),
+      ""
+    );
+    b.cablings.forEach((c, ic) => {
+      P(
+        `                              TABLEAU D - DEFINITION DU TRACE DU CABLAGE ${ic + 1}`,
+        "                              ============================================",
+        "",
+        "                                    ABSCISSES DE DEFINITION DES CABLES",
+        "",
+        "LIGNE D   0  " + c.abscisses.map((x) => f(x).padStart(8)).join(" "),
+        "",
+        "                                  ORDONNEES DES AXES DES GAINES EN CES ABSCISSES",
+        ""
+      );
+      c.ordonnees.forEach((o, k) => P(`LIGNE D   ${k + 1}  ` + o.map((y) => f(y).padStart(8)).join(" "), ""));
+      P(
+        "",
+        `                              TABLEAU D' - CARACTERISTIQUES COMPLEMENTAIRES DES CABLES DANS LE CABLAGE ${ic + 1}`,
+        "                               ==========================================================================",
+        "",
+        "              NUM ARMA SECAB     SIGPO    MODE NCASY ABDECO ORFICO ABFICO ABSOR ANGSOR EXTRAN ABDEHO ABFIHO YENCO DENCO",
+        ""
+      );
+      c.cables.forEach((d, k) => P(`LIGNE D' ${k + 1}  ` + [
+        i0(d.num),
+        i0(d.ARMA),
+        fd(d.SECAB),
+        fd(d.SIGP0),
+        i0(d.ANPA),
+        i0(d.SYM),
+        f(d.ABDECO),
+        f(d.ORFICO),
+        f(d.ABFICO),
+        f(d.ABSOR),
+        f(d.ANGSOR, 2),
+        f(d.EXTRAN, 2),
+        f(d.ABDEHO),
+        f(d.ABFIHO),
+        f(d.YENCO),
+        f(d.DENCO)
+      ].map((s) => s.padStart(8)).join(" "), ""));
+    });
+    return L.join("\n");
+  }
+
+  // src/engine/gm.ts
+  function matMul(a, b) {
+    const n = a.length, r = Array.from({ length: n }, () => new Array(n).fill(0));
+    for (let i = 0; i < n; i++) for (let k = 0; k < n; k++) {
+      const v = a[i][k];
+      if (v !== 0) for (let j = 0; j < n; j++) r[i][j] += v * b[k][j];
+    }
+    return r;
+  }
+  function matVec(a, v) {
+    return a.map((row2) => row2.reduce((s, x, j) => s + x * v[j], 0));
+  }
+  function expm(a) {
+    const n = a.length;
+    let norm = 0;
+    for (const row2 of a) norm = Math.max(norm, row2.reduce((s2, x) => s2 + Math.abs(x), 0));
+    let sq = 0;
+    while (norm > 0.25) {
+      norm /= 2;
+      sq++;
+    }
+    const s = Math.pow(2, sq);
+    const as = a.map((r) => r.map((x) => x / s));
+    let term = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_2, j) => i === j ? 1 : 0));
+    let sum = term.map((r) => r.slice());
+    for (let k = 1; k < 24; k++) {
+      term = matMul(term, as).map((r) => r.map((x) => x / k));
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) sum[i][j] += term[i][j];
+    }
+    for (let k = 0; k < sq; k++) sum = matMul(sum, sum);
+    return sum;
+  }
+  function solve(A, b) {
+    const n = b.length;
+    const M = A.map((r, i) => [...r, b[i]]);
+    for (let c = 0; c < n; c++) {
+      let p = c;
+      for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      [M[c], M[p]] = [M[p], M[c]];
+      for (let r = 0; r < n; r++) if (r !== c) {
+        const f2 = M[r][c] / M[c][c];
+        for (let k = c; k <= n; k++) M[r][k] -= f2 * M[c][k];
+      }
+    }
+    return M.map((r, i) => r[n] / r[i]);
+  }
+  function kExact(theta, alpha, y, e) {
+    const S = Math.PI * theta;
+    const c = 2 * alpha;
+    const A = [[0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1], [-1, 0, 2 * alpha, 0]];
+    const se = e * S;
+    const E1 = expm(A.map((r) => r.map((x) => x * (se + S))));
+    const E2 = expm(A.map((r) => r.map((x) => x * (S - se))));
+    const j = [0, 0, 0, S];
+    const B = [[0, 0, 1, 0], [0, -c, 0, 1]];
+    const E21 = matMul(E2, E1);
+    const rowTimes = (bb, M) => [0, 1, 2, 3].map((k) => bb.reduce((s, x, i) => s + x * M[i][k], 0));
+    const rows = [B[0], B[1], rowTimes(B[0], E21), rowTimes(B[1], E21)];
+    const E2j = matVec(E2, j);
+    const rhs = [0, 0, -B[0].reduce((s, x, i) => s + x * E2j[i], 0), -B[1].reduce((s, x, i) => s + x * E2j[i], 0)];
+    const X0 = solve(rows, rhs);
+    const sy = y * S;
+    let Xy;
+    if (sy <= se) Xy = matVec(expm(A.map((r) => r.map((x) => x * (sy + S)))), X0);
+    else {
+      const Xe = matVec(E1, X0).map((v, i) => v + j[i]);
+      Xy = matVec(expm(A.map((r) => r.map((x) => x * (sy - se)))), Xe);
+    }
+    return 2 * Xy[0];
+  }
+  var _GuyonMassonnet = class _GuyonMassonnet {
+    // points par côté du point anguleux (écart < 1e-6 sur K)
+    constructor(theta, alpha) {
+      this.theta = theta;
+      this.alpha = alpha;
+      this.cache = /* @__PURE__ */ new Map();
+      this.grids = /* @__PURE__ */ new Map();
+    }
+    exact(y, e) {
+      const k0 = kExact(this.theta, 0, y, e);
+      const k1 = kExact(this.theta, 1 - 1e-9, y, e);
+      return k0 + (k1 - k0) * Math.sqrt(this.alpha);
+    }
+    /** K(y, e) : tabulé en e pour chaque y (positions de poutres), de part et d'autre du point anguleux e = y,
+     *  interpolation de Catmull-Rom sur chaque côté */
+    K(y, e) {
+      const ee = Math.max(-1, Math.min(1, e));
+      const ky = y.toFixed(9), n = _GuyonMassonnet.N;
+      let g = this.grids.get(ky);
+      if (!g) {
+        g = new Float64Array(2 * (n + 1));
+        for (let i2 = 0; i2 <= n; i2++) {
+          g[i2] = this.exact(y, -1 + (y + 1) * i2 / n);
+          g[n + 1 + i2] = this.exact(y, y + (1 - y) * i2 / n);
+        }
+        this.grids.set(ky, g);
+      }
+      const left = ee <= y, a = left ? -1 : y, w = left ? y + 1 : 1 - y, off = left ? 0 : n + 1;
+      if (w < 1e-12) return g[off];
+      const u = (ee - a) / w * n, i = Math.min(n - 1, Math.floor(u)), t = u - i;
+      const p1 = g[off + i], p2 = g[off + i + 1];
+      const p0 = i > 0 ? g[off + i - 1] : 2 * p1 - p2, p3 = i + 2 <= n ? g[off + i + 2] : 2 * p2 - p1;
+      return p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
+    }
+    /** valeur exacte (contrôle) */
+    Kexact(y, e) {
+      const k = y.toFixed(9) + "|" + e.toFixed(9);
+      let v = this.cache.get(k);
+      if (v === void 0) {
+        v = this.exact(y, Math.max(-1, Math.min(1, e)));
+        this.cache.set(k, v);
+      }
+      return v;
+    }
+  };
+  _GuyonMassonnet.N = 400;
+  var GuyonMassonnet = _GuyonMassonnet;
+
+  // src/engine/geometry.ts
+  function inter(p1, p2, p3, p4) {
+    const d = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0]);
+    const a = p1[0] * p2[1] - p1[1] * p2[0];
+    const b = p3[0] * p4[1] - p3[1] * p4[0];
+    return [(a * (p3[0] - p4[0]) - (p1[0] - p2[0]) * b) / d, (a * (p3[1] - p4[1]) - (p1[1] - p2[1]) * b) / d];
+  }
+  function beamOutline(s, dE) {
+    const yT = s.HPIED + s.H1;
+    const yW = yT + s.H2;
+    const side = (sg) => {
+      const H3 = sg > 0 ? s.H3D : s.H3G, D3 = sg > 0 ? s.D3D : s.D3G;
+      const xt = s.ETALON / 2, xa = s.E1 / 2, xb = s.E2 / 2, xe = s.ETAB / 2;
+      const xg = xe - D3, yg = yW + H3;
+      const yTopEdge = s.HPOUT + sg * s.PENTPOUT * xe;
+      const d = dE / 2;
+      const w0 = [xa + d, yT], w1 = [xb + d, yW];
+      let pT, pG;
+      if (d <= 1e-12) {
+        pT = [xa, yT];
+        pG = [xb, yW];
+      } else {
+        pT = inter([xt, s.HPIED], [xa, yT], w0, w1);
+        if (s.GDA === 2) {
+          pG = [xb + d, yW];
+        } else {
+          pG = inter([xb, yW], [xg, yg], w0, w1);
+        }
+      }
+      const pts = [[xt, 0], [xt, s.HPIED], pT, pG];
+      if (s.GDA === 2 && d > 0) pts.push([Math.min(xg + d, xe), yg]);
+      else pts.push([xg, yg]);
+      pts.push([xe, yTopEdge - s.HTAB], [xe, yTopEdge]);
+      return pts.map(([x, y]) => [sg * x, y]);
+    };
+    const R = side(1), L = side(-1);
+    return [...R, ...L.reverse()];
+  }
+  function webExtra(b, s, x) {
+    const L = b.PORTEE + 2 * b.ABOUT;
+    const xx = x <= L / 2 ? x : L - x;
+    if (s.GDA === 0 || s.EPAM <= 0) return 0;
+    const xa = b.ABOUT + s.EPAM / 2;
+    const xb = b.ABOUT + s.LONGOUS;
+    if (s.LIN === 0) return xx <= xb ? s.EPAM : 0;
+    if (xx <= xa) return s.EPAM;
+    if (xx >= xb) return 0;
+    return s.EPAM * (xb - xx) / (xb - xa);
+  }
+  function slabFor(b, ip) {
+    const n = b.NPOUT, b0 = b.ENTRAPOUT;
+    const isG = ip === 1, isD = ip === n;
+    const xl = isG ? -b.slabG.EEXT : -b0 / 2;
+    const xr = isD ? b.slabD.EEXT : b0 / 2;
+    const HH = isG ? b.slabG.HHOUR : isD ? b.slabD.HHOUR : b.slab.HHOUR;
+    return {
+      xl,
+      xr,
+      HHOUR: HH,
+      psL: isG ? b.slabG.PENTSUP : b.slab.PENTSUP,
+      psR: isD ? b.slabD.PENTSUP : b.slab.PENTSUP,
+      piL: isG ? b.slabG.PENTINF : b.slab.PENTINF,
+      piR: isD ? b.slabD.PENTINF : b.slab.PENTINF,
+      hMidL: isG ? b.slabG.HEXT : b.slab.HAXE,
+      hMidR: isD ? b.slabD.HEXT : b.slab.HAXE,
+      cantL: isG,
+      cantR: isD
+    };
+  }
+  function slabPolygon(s, g) {
+    const top = s.HPOUT;
+    const e2 = s.ETAB / 2;
+    const yTop = (x) => top + g.HHOUR + (x >= 0 ? g.psR : g.psL) * x;
+    const yTab = (x) => top + s.PENTPOUT * x;
+    const yLine = (x) => {
+      const right = x > 0, xm = right ? g.xr : g.xl;
+      return yTop(xm) - (right ? g.hMidR : g.hMidL) + (right ? g.piR : g.piL) * (x - xm);
+    };
+    const bot = [];
+    if (g.xl < -e2 - 1e-9) {
+      bot.push([g.xl, yLine(g.xl)]);
+      bot.push([-e2, yLine(-e2 - 1e-12)]);
+    }
+    bot.push([Math.max(g.xl, -e2), yTab(Math.max(g.xl, -e2))]);
+    bot.push([0, yTab(0)]);
+    bot.push([Math.min(g.xr, e2), yTab(Math.min(g.xr, e2))]);
+    if (g.xr > e2 + 1e-9) {
+      bot.push([e2, yLine(e2 + 1e-12)]);
+      bot.push([g.xr, yLine(g.xr)]);
+    }
+    return [...bot, [g.xr, yTop(g.xr)], [0, yTop(0)], [g.xl, yTop(g.xl)]];
+  }
+
+  // src/engine/env.ts
+  var envVar = (k) => typeof globalThis !== "undefined" && globalThis.process?.env ? globalThis.process.env[k] : void 0;
+
+  // src/engine/transverse.ts
+  function layout(bd) {
+    const X3 = bd.ETROTG + bd.EGAU, X6 = X3 + bd.ESURCH;
+    const width = X6 + bd.EDROI + bd.ETROTD;
+    const x1 = X3 + bd.ESURCH / 2 - bd.DPOUT1;
+    const xBeam = Array.from({ length: bd.NPOUT }, (_, i) => x1 + i * bd.ENTRAPOUT);
+    const xc = x1 + (bd.NPOUT - 1) * bd.ENTRAPOUT / 2;
+    const b = bd.NPOUT * bd.ENTRAPOUT / 2;
+    let NV = bd.NVOIE;
+    if (!NV) {
+      NV = Math.floor(bd.ESURCH / 3 + 1e-9);
+      if (bd.ESURCH >= 5 && bd.ESURCH < 6) NV = 2;
+      if (NV < 1) NV = 1;
+    }
+    NV = Math.min(NV, 10);
+    return { width, X3, X6, xBeam, xc, b, NV, v: bd.ESURCH / NV };
+  }
+  var ALPHA_CAL = envVar("ACAL") ? +envVar("ACAL") : 0.99065;
+
+  // src/engine/cables.ts
+  var GR = Math.PI / 200;
+  var SIGMODE = "exp";
+  function hermite(x0, y0, s0, x1, y1, s1, x) {
+    const h = x1 - x0, t = (x - x0) / h;
+    const h00 = 2 * t ** 3 - 3 * t ** 2 + 1, h10 = t ** 3 - 2 * t ** 2 + t, h01 = -2 * t ** 3 + 3 * t ** 2, h11 = t ** 3 - t ** 2;
+    const d00 = 6 * t * t - 6 * t, d10 = 3 * t * t - 4 * t + 1, d01 = -6 * t * t + 6 * t, d11 = 3 * t * t - 2 * t;
+    return { y: h00 * y0 + h10 * h * s0 + h01 * y1 + h11 * h * s1, d: (d00 * y0 + d10 * h * s0 + d01 * y1 + d11 * h * s1) / h };
+  }
+  function buildCable(bd, cab, def, idx) {
+    const sys = bd.systems.find((s) => s.ARMA === def.ARMA) ?? bd.systems[0];
+    const nFam1 = cab.NCAB11 + cab.NCAB12;
+    const family = idx < nFam1 ? 1 : 2;
+    const stage = idx < cab.NCAB11 ? 1 : idx < nFam1 ? 2 : 3;
+    const ords = cab.ordonnees[idx];
+    const Dx = cab.abscisses;
+    const t0 = Math.tan(def.ANGSOR * GR);
+    const xmid = bd.ABOUT + bd.PORTEE / 2;
+    const pts = Dx.map((x, i) => ({ x, y: ords[i] })).filter((p) => p.y > 0 && p.x >= def.ABSOR - 1e-9);
+    const first = pts[0];
+    const yAt = (x) => first.y + t0 * (first.x - x);
+    const xExit = def.ABSOR, yExit = yAt(def.ABSOR);
+    const yDeco = yAt(def.ABDECO);
+    const inner = pts.filter((p) => p.x > def.ABDECO + 1e-9 && p.x < def.ABFICO - 1e-9);
+    const nodes = [{ x: def.ABDECO, y: yDeco, s: -t0 }, ...inner.map((p) => ({ x: p.x, y: p.y, s: 0 })), { x: def.ABFICO, y: def.ORFICO, s: 0 }];
+    const n = nodes.length;
+    const ch = (i) => (nodes[i + 1].y - nodes[i].y) / (nodes[i + 1].x - nodes[i].x);
+    for (let i = 1; i < n - 1; i++) {
+      if (i === 1) nodes[i].s = 2 * ch(0) - nodes[0].s;
+      else {
+        const h0 = nodes[i].x - nodes[i - 1].x, h1 = nodes[i + 1].x - nodes[i].x;
+        nodes[i].s = (ch(i - 1) * h1 + ch(i) * h0) / (h0 + h1);
+      }
+    }
+    const evalV = (x) => {
+      const xx = Math.min(x, 2 * xmid - x);
+      if (xx <= def.ABDECO) return { y: yAt(xx), d: -t0 };
+      if (xx >= def.ABFICO) return { y: def.ORFICO, d: 0 };
+      for (let i = 0; i < n - 1; i++) if (xx <= nodes[i + 1].x + 1e-12) return hermite(nodes[i].x, nodes[i].y, nodes[i].s, nodes[i + 1].x, nodes[i + 1].y, nodes[i + 1].s, xx);
+      return { y: def.ORFICO, d: 0 };
+    };
+    const H = def.EXTRAN, x0h = def.ABDEHO, x1h = def.ABFIHO, Dh = x1h - x0h, xmh = (x0h + x1h) / 2;
+    const zpOf = (x) => {
+      const xx = Math.min(x, 2 * xmid - x);
+      if (H === 0 || xx <= x0h || xx >= x1h) return 0;
+      const c = 2 * H / (Dh * Dh);
+      return xx <= xmh ? 2 * c * (xx - x0h) : 2 * c * (x1h - xx);
+    };
+    const angH = (x) => Math.atan(zpOf(x)) / GR;
+    const hTot = H === 0 ? 0 : 2 * Math.atan(2 * H / Dh);
+    const hLeft = (x) => H === 0 || x <= x0h ? 0 : x >= x1h ? hTot : hTot * (x - x0h) / Dh;
+    const hCum = (x) => x <= xmid ? hLeft(x) : 2 * hLeft(xmid) - hLeft(2 * xmid - x);
+    const keyL = [xExit, def.ABDECO, ...inner.map((p) => p.x), def.ABFICO].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    const angleAt = (x) => Math.atan(Math.abs(evalV(x).d));
+    const vCum = (x) => {
+      const a0 = Math.atan(t0);
+      if (x <= xmid) return a0 - angleAt(x);
+      return a0 + angleAt(x);
+    };
+    const chordNodes = [xExit, ...keyL.filter((x) => x > xExit), xmid].filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b);
+    const sLen = (x) => {
+      let s = 0, px = xExit, py = evalV(xExit).y;
+      for (const nx of chordNodes) {
+        if (nx <= xExit) continue;
+        const xx = Math.min(nx, x);
+        const yy = evalV(xx).y;
+        s += Math.hypot(xx - px, yy - py);
+        px = xx;
+        py = yy;
+        if (nx >= x) break;
+      }
+      return s;
+    };
+    const sig0 = def.SIGP0 || sys.SIGP0 || Math.min(0.8 * sys.FPRG, 0.9 * sys.FPEG);
+    const area = def.SECAB || sys.SECAB;
+    const nodesX = [...keyL, xmid];
+    const nodeData = nodesX.map((x) => ({ x, s: sLen(x), alpha: vCum(x) + hCum(x) }));
+    const allNodes = [...nodeData, ...nodeData.slice(0, -1).reverse().map((nd) => ({ x: 2 * xmid - nd.x, s: 2 * nodeData[nodeData.length - 1].s - nd.s, alpha: 2 * nodeData[nodeData.length - 1].alpha - nd.alpha }))];
+    const vInterp = (x) => {
+      for (let i = 0; i + 1 < nodeData.length; i++) {
+        const a = nodeData[i], b = nodeData[i + 1];
+        if (x <= b.x + 1e-12) {
+          const t = (x - a.x) / (b.x - a.x || 1);
+          return vCum(a.x) + t * (vCum(b.x) - vCum(a.x));
+        }
+      }
+      return vCum(xmid);
+    };
+    const interp = (x) => {
+      for (let i = 0; i + 1 < allNodes.length; i++) {
+        const a = allNodes[i], b = allNodes[i + 1];
+        if (x >= a.x - 1e-12 && x <= b.x + 1e-12) {
+          const t = (x - a.x) / (b.x - a.x || 1);
+          return { s: a.s + t * (b.s - a.s), alpha: a.alpha + t * (b.alpha - a.alpha) };
+        }
+      }
+      return { s: allNodes[allNodes.length - 1].s, alpha: allNodes[allNodes.length - 1].alpha };
+    };
+    const sigE = (x) => {
+      const { s, alpha } = interp(x);
+      return sig0 * Math.exp(-(sys.F * alpha + sys.PHI * s));
+    };
+    const sigNode = allNodes.map((nd) => sig0 * Math.exp(-(sys.F * nd.alpha + sys.PHI * nd.s)));
+    const sigL = (x) => {
+      for (let i = 0; i + 1 < allNodes.length; i++) {
+        const a = allNodes[i], b = allNodes[i + 1];
+        if (x >= a.x - 1e-12 && x <= b.x + 1e-12) {
+          const s = interp(x).s;
+          const t = (s - a.s) / (b.s - a.s || 1);
+          return sigNode[i] + t * (sigNode[i + 1] - sigNode[i]);
+        }
+      }
+      return sigNode[sigNode.length - 1];
+    };
+    const sigF = SIGMODE === "exp" ? sigE : sigL;
+    const gEp = sys.RECUL * sys.EP;
+    const areaTo = (xl) => {
+      const xs = [...allNodes.map((a) => a.x).filter((v) => v > xExit + 1e-9 && v < xl - 1e-9), xl];
+      let r = 0, px = xExit;
+      const sfl = sigL(xl);
+      for (const nx of xs) {
+        r += 2 * ((sigL(px) + sigL(nx)) / 2 - sfl) * (interp(nx).s - interp(px).s);
+        px = nx;
+      }
+      return r;
+    };
+    let lambda;
+    let dTM = 0;
+    if (areaTo(xmid) < gEp) {
+      lambda = xmid;
+      dTM = (gEp - areaTo(xmid)) / (interp(xmid).s - interp(xExit).s);
+    } else {
+      let lo = xExit, hi = xmid;
+      for (let it = 0; it < 60; it++) {
+        const m = (lo + hi) / 2;
+        if (areaTo(m) < gEp) lo = m;
+        else hi = m;
+      }
+      lambda = (lo + hi) / 2;
+    }
+    const sigLam = sigE(lambda);
+    const sigAfter = (x) => {
+      const xx = Math.min(x, 2 * xmid - x);
+      const sf = xx <= xExit ? sig0 : sig0 * Math.exp(-(sys.F * (vCum(xx) + interp(xx).alpha - vInterp(xx)) + sys.PHI * interp(xx).s));
+      const sb = xx < lambda || dTM > 0 ? 2 * sigLam - sf - dTM : sf;
+      return { f: sf - sig0, c: sb - sf, sig: sb };
+    };
+    const diagX = [...keyL, lambda, xmid].filter((v, i, a) => a.findIndex((w) => Math.abs(w - v) < 1e-6) === i).sort((a, b) => a - b);
+    const diag = diagX.map((x) => {
+      const { s, alpha } = interp(x);
+      const sf = sigF(x);
+      return { x, s, alpha, sig0: sf, sigBlock: x < lambda ? 2 * sigLam - sf : sf };
+    });
+    let allong = 0;
+    {
+      const N = 400;
+      for (let i = 0; i < N; i++) {
+        const x1 = xExit + (xmid - xExit) * i / N, x2 = xExit + (xmid - xExit) * (i + 1) / N;
+        allong += (sigF(x1) + sigF(x2)) / 2 * (interp(x2).s - interp(x1).s);
+      }
+      allong /= sys.EP;
+    }
+    return {
+      def,
+      sys,
+      family,
+      stage,
+      nodes,
+      xExit,
+      yExit,
+      slope0: t0,
+      y: (x) => evalV(x).y,
+      yp: (x) => evalV(x).d,
+      zp: zpOf,
+      angleV: (x) => Math.atan(Math.abs(evalV(x).d)) / GR,
+      angleH: angH,
+      exists: (x) => {
+        const xx = Math.min(x, 2 * xmid - x);
+        return xx >= xExit - 1e-9;
+      },
+      diag,
+      lambda,
+      allongement: allong,
+      sigAfter,
+      sigP0: sig0,
+      area,
+      _dbg: (x) => ({ s: interp(x).s, alpha: interp(x).alpha, h: interp(x).alpha - vInterp(x) })
+    };
+  }
+
+  // src/web/sketches.ts
+  var r1 = (v) => Math.round(v * 10) / 10;
+  var SW = 460;
+  var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  var num = (v, d = 3) => Number.isInteger(v) && d <= 2 ? String(v) : (+v).toFixed(d);
+  var CLIP = 0;
+  var SCHEMA = false;
+  var VALS = null;
+  var VONLY = false;
+  function asValues(fn) {
+    VONLY = true;
+    try {
+      return fn();
+    } finally {
+      VONLY = false;
+    }
+  }
+  var DW = 860;
+  var KS = 1;
+  function setDrawScale(k) {
+    KS = Math.max(0.3, Math.min(1, k));
+  }
+  function setDrawWidth(w) {
+    DW = Math.max(360, Math.min(1e3, Math.round(w)));
+  }
+  function asSchema(fn, vals) {
+    SCHEMA = true;
+    VALS = vals ?? null;
+    try {
+      return fn();
+    } finally {
+      SCHEMA = false;
+      VALS = null;
+    }
+  }
+  var KEYNAME = { W: "largeur totale", Lt: "longueur des poutres" };
+  var Sk = class {
+    constructor(x0, x1, y0, y1, sx, sy, pad = { l: 30, r: 30, t: 30, b: 30 }, hl = "") {
+      this.x0 = x0;
+      this.x1 = x1;
+      this.y0 = y0;
+      this.y1 = y1;
+      this.sx = sx;
+      this.sy = sy;
+      this.pad = pad;
+      this.hl = hl;
+      this.parts = [];
+      this.top = [];
+      this.schema = SCHEMA;
+      this.vals = VALS;
+      this.vonly = VONLY;
+      this.X = (x) => this.pad.l + (x - this.x0) * this.sx;
+      this.Y = (y) => this.pad.t + (this.y1 - y) * this.sy;
+      this.pts = (p) => p.map(([x, y]) => `${r1(this.X(x))},${r1(this.Y(y))}`).join(" ");
+      this.sx = sx * KS;
+      this.sy = sy * KS;
+    }
+    // vonly : cotes chiffrées seules, sans nom
+    /** libellé de cote : en schéma, le code du paramètre seul */
+    lab(label, key = "") {
+      if (label === "") return "";
+      if (this.vonly) {
+        const m = label.match(/(?:^|\s)(-?\d[\d.,]*(?:\s*(?:m|%))?)/);
+        return m ? m[1] : "";
+      }
+      if (!this.schema) return label;
+      const k = key.split("|")[0];
+      const code = k ? KEYNAME[k] ?? k.split(".").pop() : "";
+      if (code) {
+        const v = this.vals?.(key);
+        return v !== void 0 ? `${code} = ${v}` : code;
+      }
+      return label.replace(/\s*[-+]?\d[\d.,]*\s*(m|gr|%|MPa)?\s*$/, "").trim();
+    }
+    get W() {
+      return Math.ceil(this.pad.l + (this.x1 - this.x0) * this.sx + this.pad.r);
+    }
+    get H() {
+      return Math.ceil(this.pad.t + (this.y1 - this.y0) * this.sy + this.pad.b);
+    }
+    poly(p, cls) {
+      this.parts.push(`<polygon class="${cls}" points="${this.pts(p)}"/>`);
+    }
+    pline(p, cls) {
+      this.parts.push(`<polyline class="${cls}" points="${this.pts(p)}"/>`);
+    }
+    line(xa, ya, xb, yb, cls) {
+      this.lineP(this.X(xa), this.Y(ya), this.X(xb), this.Y(yb), cls);
+    }
+    lineP(xa, ya, xb, yb, cls, front = false) {
+      (front ? this.top : this.parts).push(`<line class="${cls}" x1="${r1(xa)}" y1="${r1(ya)}" x2="${r1(xb)}" y2="${r1(yb)}"/>`);
+    }
+    text(px, py, s, cls = "tx", anchor = "middle", front = true) {
+      if (this.schema && !/\bbnt\b/.test(cls)) {
+        const m = s.match(/^([A-Z][A-Z0-9]+(?: [A-Z][A-Z0-9]+)?)\s+[-+]?\d/);
+        if (m) s = m[1];
+        else if (/^[-+]?\d[\d.,]*(\s*(m|gr|%))?$/.test(s)) s = "";
+      }
+      if (this.vonly && !/\bbnt\b/.test(cls)) {
+        const cv = s.match(/^[A-Z][A-Z0-9]*(?: [A-Z][A-Z0-9]*)?\s+([+-]?\d[\d.,]*(?:\s*(?:m|%|gr))?)\s*$/);
+        s = cv ? cv[1] : /^[+-]?\d[\d.,]*(\s*(m|%|gr))?$/.test(s.trim()) ? s.trim() : "";
+      }
+      if (!s) return;
+      if (this.schema && this.vals && !/\bbnt\b/.test(cls)) s = s.replace(/(^|[\s(·,/])([A-Z][A-Z0-9]*)(?=$|[),·/]|\s(?!=))/g, (m, pre, c) => {
+        const v = this.vals(c);
+        return v !== void 0 ? `${pre}${c} = ${v}` : m;
+      });
+      (front ? this.top : this.parts).push(`<text class="${cls}" x="${r1(px)}" y="${r1(py)}" text-anchor="${anchor}">${esc(s)}</text>`);
+    }
+    circleP(px, py, rad, cls) {
+      this.parts.push(`<circle class="${cls}" cx="${r1(px)}" cy="${r1(py)}" r="${r1(rad)}"/>`);
+    }
+    isHl(key) {
+      if (!key || !this.hl) return false;
+      const last = this.hl.split(".").pop();
+      return key.split("|").some((k) => k === this.hl || k === last);
+    }
+    /** cote horizontale entre xa et xb, tracée dy px sous (dy>0) ou sur (dy<0) le point d'attache yA (modèle) */
+    dimH(xa, xb, yA, dy, label, key = "", yB = yA, prefer) {
+      if (Math.abs(xb - xa) < 1e-6) return;
+      label = this.lab(label, key);
+      const h = this.isHl(key), c = h ? "dim hl" : "dim";
+      const pa = this.X(xa), pb = this.X(xb), py = Math.max(this.Y(yA), this.Y(yB)) * (dy > 0 ? 1 : 0) + Math.min(this.Y(yA), this.Y(yB)) * (dy > 0 ? 0 : 1) + dy;
+      this.lineP(pa, this.Y(yA) + Math.sign(dy) * 3, pa, py + Math.sign(dy) * 4, "ext", true);
+      this.lineP(pb, this.Y(yB) + Math.sign(dy) * 3, pb, py + Math.sign(dy) * 4, "ext", true);
+      this.lineP(pa, py, pb, py, c, true);
+      for (const p of [pa, pb]) this.lineP(p - 3, py + 3, p + 3, py - 3, c, true);
+      const w = label.length * 6.9, fits = Math.abs(pb - pa) > w + 6;
+      const mx = (pa + pb) / 2;
+      const right = prefer ? prefer === "r" : Math.max(pa, pb) + 4 + w < this.W - 2;
+      this.text(fits ? mx : right ? Math.max(pa, pb) + 4 : Math.min(pa, pb) - 4, py - 4, label, h ? "tx dl cote hl" : "tx dl cote", fits ? "middle" : right ? "start" : "end");
+    }
+    /** cote verticale entre ya et yb, à dx px à droite (dx>0) ou à gauche du point d'attache x */
+    dimV(ya, yb, x, dx, label, key = "", side = dx > 0 ? "r" : "l") {
+      if (Math.abs(yb - ya) < 1e-6) return;
+      label = this.lab(label, key);
+      const h = this.isHl(key), c = h ? "dim hl" : "dim";
+      const px = this.X(x) + dx, pa = this.Y(ya), pb = this.Y(yb);
+      this.lineP(this.X(x) + Math.sign(dx) * 3, pa, px + Math.sign(dx) * 4, pa, "ext", true);
+      this.lineP(this.X(x) + Math.sign(dx) * 3, pb, px + Math.sign(dx) * 4, pb, "ext", true);
+      this.lineP(px, pa, px, pb, c, true);
+      for (const p of [pa, pb]) this.lineP(px - 3, p + 3, px + 3, p - 3, c, true);
+      const my = (pa + pb) / 2 + 4;
+      this.text(side === "r" ? px + 5 : px - 5, my, label, h ? "tx dl cote hl" : "tx dl cote", side === "r" ? "start" : "end");
+    }
+    svg(title, aria = title) {
+      return `<figure class="skf${this.schema ? " sch" : ""}"><figcaption>${this.schema ? "Sch\xE9ma de principe \u2014 " : ""}${esc(title)}</figcaption><svg viewBox="0 0 ${this.W} ${this.H}" style="max-width:${this.W}px;margin:0 auto" role="img" aria-label="${esc(aria)}"><defs><pattern id="hx" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="hxb" width="6" height="6"/><line class="hxl" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>${this.parts.join("")}${this.top.join("")}</svg></figure>`;
+    }
+  };
+  var shapeOf = (bd, ip) => ip === 1 && bd.TYPOURI[0] === 0 || ip === bd.NPOUT && bd.TYPOURI[1] === 0 ? bd.beamRive ?? bd.beam : bd.beam;
+  var crossOf = (bd, ip) => ip === 1 ? bd.slabG.cross : ip === bd.NPOUT ? bd.slabD.cross : bd.cross;
+  var tr = (p, dx, dy = 0) => p.map(([x, y]) => [x + dx, y + dy]);
+  var shiftY = (bd, s) => bd.beam.HPOUT - s.HPOUT;
+  function deck(bd) {
+    const L = layout(bd);
+    const ready = bd.NPOUT >= 1 && bd.beam.HPOUT > 0 && bd.beam.ETAB > 0 && (bd.NPOUT === 1 || bd.ENTRAPOUT > 0);
+    if (!ready) L.xBeam = [];
+    const raw = L.xBeam.map((x, i) => {
+      const ip = i + 1, s = shapeOf(bd, ip);
+      return { ip, x, s, g: slabFor(bd, ip), dy: shiftY(bd, s) };
+    });
+    const top = (r, xr) => r.s.HPOUT + r.dy + r.g.HHOUR + (xr >= 0 ? r.g.psR : r.g.psL) * xr;
+    for (let i = 1; i < raw.length; i++) {
+      const a = raw[i - 1], b = raw[i], xm = (b.x - a.x) / 2;
+      b.dy += top(a, xm) - top(b, -xm);
+    }
+    const m = Math.min(...raw.map((r) => r.dy));
+    raw.forEach((r) => r.dy -= m);
+    const beams = raw.map(({ ip, x, s, g, dy }) => ({ ip, x, dy, s, outline: tr(beamOutline(s, 0), x, dy), slab: tr(slabPolygon(s, g), x, dy), xl: x + g.xl, xr: x + g.xr }));
+    const topAt = (x) => {
+      if (!beams.length) return bd.slab.PENTSUP * (x - L.X3 - bd.ESURCH / 2);
+      const b = beams.find((b2) => x >= b2.xl - 1e-9 && x <= b2.xr + 1e-9) ?? (x < beams[0].xl ? beams[0] : beams[beams.length - 1]);
+      const g = slabFor(bd, b.ip), xx = Math.max(g.xl, Math.min(g.xr, x - b.x));
+      return b.s.HPOUT + b.dy + g.HHOUR + (xx >= 0 ? g.psR : g.psL) * xx;
+    };
+    return { L, beams, topAt };
+  }
+  function drawSlab(sk, slabs) {
+    for (const p of slabs) sk.poly(p, "slabf");
+    const topLine = [];
+    slabs.forEach((p, i) => {
+      const bot = p.slice(0, -3), tp = p.slice(-3).reverse();
+      sk.pline(bot, "slabl");
+      topLine.push(...i ? tp.slice(1) : tp);
+      if (i === 0) sk.line(bot[0][0], bot[0][1], tp[0][0], tp[0][1], "slabl");
+      if (i === slabs.length - 1) sk.line(bot[bot.length - 1][0], bot[bot.length - 1][1], tp[tp.length - 1][0], tp[tp.length - 1][1], "slabl");
+    });
+    sk.pline(topLine, "slabl");
+  }
+  function crossSection(bd, hl, mode = "geo") {
+    const D = deck(bd), { L } = D;
+    const xmin = Math.min(0, D.beams[0].xl), xmax = Math.max(L.width, D.beams[D.beams.length - 1].xr);
+    const ymax = Math.max(...D.beams.map((b) => b.s.HPOUT + b.dy)) + 0.6, ymin = Math.min(...D.beams.map((b) => b.dy));
+    const sx = SW / Math.max(1, xmax - xmin);
+    const sk = new Sk(xmin, xmax, ymin, ymax, sx, sx, { l: 24, r: 86, t: mode === "charges" ? 58 : 50, b: 84 }, hl);
+    for (const b of D.beams) sk.poly(b.outline, "beam");
+    drawSlab(sk, D.beams.map((b) => b.slab));
+    const pv = 0.18;
+    const strip = (a, c, cls) => {
+      if (c - a < 1e-6) return;
+      const n = 12, p = [];
+      for (let i = 0; i <= n; i++) {
+        const x2 = a + (c - a) * i / n;
+        p.push([x2, D.topAt(x2)]);
+      }
+      for (let i = n; i >= 0; i--) {
+        const x2 = a + (c - a) * i / n;
+        p.push([x2, D.topAt(x2) + pv]);
+      }
+      sk.poly(p, cls);
+    };
+    strip(0, bd.ETROTG, "trot");
+    strip(L.width - bd.ETROTD, L.width, "trot");
+    const yc = (x2) => D.topAt(x2) + 0.08;
+    sk.pline([[L.X3, yc(L.X3)], [L.X6, yc(L.X6)]].map(([x2]) => [x2, yc(x2)]), "road");
+    for (let i = 1; i < L.NV; i++) {
+      const x2 = L.X3 + i * L.v;
+      sk.line(x2, yc(x2), x2, yc(x2) + 0.25, "lane");
+    }
+    for (let i = 0; i < L.NV; i++) {
+      const x2 = L.X3 + (i + 0.5) * L.v;
+      sk.text(sk.X(x2), sk.Y(yc(x2)) - 6, `voie ${i + 1}`, "tx sm mute");
+    }
+    const barrier = (x2, key, lbl) => {
+      const y = D.topAt(x2), h = 0.55, w = 0.16;
+      const c = sk.isHl(key) ? "bar hl" : "bar";
+      sk.poly([[x2 - w, y], [x2 + w, y], [x2 + w * 0.45, y + h], [x2 - w * 0.45, y + h]], c);
+    };
+    if (bd.PBAGMAX > 0 || bd.DBAG > 0) barrier(L.X3 - bd.DBAG, "DBAG|PBAGMAX|PBAGMIN", `${num(bd.PBAGMAX)} t/m`);
+    if (bd.PBADMAX > 0 || bd.DBAD > 0) barrier(L.X6 + bd.DBAD, "DBAD|PBADMAX|PBADMIN", `${num(bd.PBADMAX)} t/m`);
+    const xa = L.X3 + bd.ESURCH / 2;
+    sk.line(xa, ymin - 0.15, xa, D.topAt(xa) + 0.5, "axis");
+    const yT = Math.max(...[0, L.X3, L.X6, L.width].map((x2) => D.topAt(x2))) + pv;
+    const geoDims = !(sk.schema && mode === "charges");
+    let x = 0;
+    if (geoDims) {
+      for (const [k, w] of [["ETROTG", bd.ETROTG], ["EGAU", bd.EGAU], ["ESURCH", bd.ESURCH], ["EDROI", bd.EDROI], ["ETROTD", bd.ETROTD]]) {
+        const narrow = (sk.schema ? 1.6 : 1.2) > w;
+        sk.dimH(x, x + w, yT, -(mode === "charges" ? 26 : 18), w < 1.2 ? num(w, 2) : `${k} ${num(w, 2)}`, k, yT, narrow ? k === "EGAU" ? "r" : k === "EDROI" ? "l" : void 0 : void 0);
+        x += w;
+      }
+      sk.dimH(0, L.width, yT, -(mode === "charges" ? 44 : 36), `largeur ${num(L.width, 2)} m`, "W");
+    }
+    if (mode === "charges") {
+      if (bd.DBAG > 0) sk.dimH(L.X3 - bd.DBAG, L.X3, D.topAt(L.X3), 22 + 0, `DBAG ${num(bd.DBAG, 2)}`, "DBAG");
+      if (bd.DBAD > 0) sk.dimH(L.X6, L.X6 + bd.DBAD, D.topAt(L.X6), 22, `DBAD ${num(bd.DBAD, 2)}`, "DBAD");
+    }
+    for (const b of D.beams) {
+      const on = mode === "calc" && bd.poutresACalculer.includes(b.ip);
+      sk.circleP(sk.X(b.x), sk.Y(ymin) + 15, 9, on ? "bn on" : "bn");
+      sk.text(sk.X(b.x), sk.Y(ymin) + 19, String(b.ip), on ? "tx bnt on" : "tx bnt");
+    }
+    const b0 = D.beams[0], bn = D.beams[D.beams.length - 1];
+    if (geoDims) {
+      sk.dimH(b0.xl, b0.x, ymin, 42, `EEXT ${num(bd.slabG.EEXT, 2)}`, "slabG.EEXT|EEXT");
+      for (let i = 0; i + 1 < D.beams.length; i++) sk.dimH(D.beams[i].x, D.beams[i + 1].x, ymin, 42, i === 0 ? `ENTRAPOUT ${num(bd.ENTRAPOUT, 2)}` : num(bd.ENTRAPOUT, 2), "ENTRAPOUT");
+      sk.dimH(bn.x, bn.xr, ymin, 42, `EEXT ${num(bd.slabD.EEXT, 2)}`, "slabD.EEXT|EEXT");
+      sk.dimH(b0.x, xa, ymin, 64, `DPOUT1 ${num(bd.DPOUT1, 3)}`, "DPOUT1");
+      sk.dimV(bn.dy, bn.s.HPOUT + bn.dy, bn.xr, 14, `HPOUT ${num(bd.beam.HPOUT, 2)}`, "beam.HPOUT|HPOUT");
+    }
+    const hT = D.topAt(bn.xr);
+    void hT;
+    if (mode === "charges") {
+      const T = (px, py, t, key, a = "middle") => sk.text(px, py, t, sk.isHl(key) ? "tx dl hl" : "tx dl", a);
+      const lead = (x1, y1, x2, y2) => sk.lineP(x1, y1, x2, y2, "lead", true);
+      const arrows = (a, c, key) => {
+        if (c - a < 1e-6) return;
+        const n = Math.max(2, Math.round((c - a) / 0.5));
+        for (let i = 0; i <= n; i++) {
+          const xx = a + (c - a) * i / n, py = sk.Y(D.topAt(xx) + pv), cl = sk.isHl(key) ? "dim hl" : "dim";
+          sk.lineP(sk.X(xx), py - 14, sk.X(xx), py - 2, cl, true);
+          sk.lineP(sk.X(xx) - 2.5, py - 6, sk.X(xx), py - 2, cl, true);
+          sk.lineP(sk.X(xx) + 2.5, py - 6, sk.X(xx), py - 2, cl, true);
+        }
+      };
+      arrows(0, bd.ETROTG, "PSTROT");
+      arrows(L.width - bd.ETROTD, L.width, "PSTROT");
+      const top0 = 16, top1 = 32;
+      const sch = sk.schema;
+      if (sch && bd.ETROTG > 0) {
+        const px = sk.X(bd.ETROTG * 0.3);
+        lead(px, sk.Y(D.topAt(bd.ETROTG * 0.3) + pv) - 15, px, top1 + 3);
+        T(px - 2, top1, sch ? "PSTROT" : `${num(bd.PSTROT)} t/m\xB2`, "PSTROT", "start");
+      }
+      if (sch && (bd.PBAGMAX > 0 || bd.DBAG > 0)) {
+        const px = sk.X(L.X3 - bd.DBAG), py = sk.Y(D.topAt(L.X3) + 0.55);
+        lead(px, py, px, top0 + 3);
+        T(px - 2, top0, sch ? "PBAGMAX / PBAGMIN" : `${num(bd.PBAGMAX)} / ${num(bd.PBAGMIN)} t/m`, "PBAGMAX|PBAGMIN|DBAG", "start");
+      }
+      if (sch && (bd.PBADMAX > 0 || bd.DBAD > 0)) {
+        const px = sk.X(L.X6 + bd.DBAD), py = sk.Y(D.topAt(L.X6) + 0.55);
+        lead(px, py, px, top1 + 3);
+        T(px + 2, top1, sch ? "PBADMAX / PBADMIN" : `${num(bd.PBADMAX)} / ${num(bd.PBADMIN)} t/m`, "PBADMAX|PBADMIN|DBAD", "end");
+      }
+      if (sch) T(sk.X(xa), sk.Y(D.topAt(xa) + 0.08) - 20, "CLASSE \xB7 A (A1, A2, A3) \xB7 B \xB7 CM \xB7 CE", "CLASSE|A|B|CM|CE|A1|A2|A3");
+      if (sch) {
+        const yb = sk.H - 26, bm = D.beams[Math.min(D.beams.length - 1, 2)];
+        const pxm = sk.X(bm.x) + 4, pym = sk.Y(bm.dy + bm.s.HPOUT * 0.5);
+        lead(pxm, pym, pxm + 14, yb - 4);
+        T(pxm + 16, yb, "MASVOL \xB7 OSSAMAX P/H \xB7 OSSAMIN P/H", "MASVOL|OSSAMAX|OSSAMIN", "start");
+        if (D.beams.length > 1) {
+          const xm = (D.beams[0].x + D.beams[1].x) / 2, px = sk.X(xm), py = sk.Y(D.topAt(xm) - bd.slab.HHOUR) + 2;
+          lead(px, py, px, sk.H - 10 - 10);
+          T(px - 4, sk.H - 10, "PREDALMAX / PREDALMIN (pr\xE9dalles)", "PREDALMAX|PREDALMIN", "start");
+        }
+      }
+      if (sk.schema) return sk.svg("Coupe transversale \u2014 charges", "Coupe transversale avec charges");
+      const it = (k, t) => `<span${sk.isHl(k) ? ' class="hl"' : ""}>${esc(t)}</span>`;
+      return sk.svg("Coupe transversale \u2014 charges", "Coupe transversale avec barri\xE8res et trottoirs") + `<div class="sk-leg">${[
+        it("PBAGMAX|PBAGMIN|DBAG", `Barri\xE8re G : ${num(bd.PBAGMAX)} / ${num(bd.PBAGMIN)} t/m`),
+        it("PBADMAX|PBADMIN|DBAD", `Barri\xE8re D : ${num(bd.PBADMAX)} / ${num(bd.PBADMIN)} t/m`),
+        it("PSTROT", `Trottoirs : ${num(bd.PSTROT)} t/m\xB2`),
+        `<span>${L.NV} voie(s) de ${num(L.v, 2)} m</span>`
+      ].join("")}</div>`;
+    }
+    return sk.svg("Coupe transversale", "Coupe transversale du tablier cot\xE9e");
+  }
+  function spanViews(bd, hl, opt = {}) {
+    const Lt = bd.PORTEE + 2 * bd.ABOUT, b = bd.beam, H = b.HPOUT, hs = bd.slab.HHOUR, mid = Lt / 2;
+    const TW = DW - 20, sx = TW / (Lt + 1.4), sy = Math.min((opt.h ?? 150) / (H + hs), sx * 8), ex = sy / sx;
+    const sk = new Sk(-0.7, Lt + 0.7, -1, H + hs + 0.12, sx, sy, { l: 84, r: 96, t: 46, b: 72 }, hl);
+    const yT = b.HPIED + b.H1, yW = yT + b.H2;
+    for (const xs of [bd.ABOUT, Lt - bd.ABOUT]) {
+      const outside = xs < mid ? -1 : 1;
+      sk.poly([[xs - 0.9 * (outside < 0 ? 1.4 : 1), -1], [xs + 0.9 * (outside > 0 ? 1.4 : 1), -1], [xs + 0.9 * (outside > 0 ? 1.4 : 1), -0.1], [xs - 0.9 * (outside < 0 ? 1.4 : 1), -0.1]].map(([x, y]) => [Math.max(-0.7, Math.min(Lt + 0.7, x)), y]), "pier");
+      sk.poly([[xs - 0.2, -0.1], [xs + 0.2, -0.1], [xs + 0.2, 0], [xs - 0.2, 0]], "pad");
+      sk.line(xs, -1, xs, H + hs + 0.12, "axis");
+    }
+    sk.poly([[0, 0], [Lt, 0], [Lt, H], [0, H]], "beam");
+    sk.line(0, yT, Lt, yT, "hid");
+    sk.line(0, yW, Lt, yW, "hid");
+    if (b.GDA > 0 && b.EPAM > 0) {
+      const xg = bd.ABOUT + b.LONGOUS, key = "beam.EPAM|beam.LONGOUS|EPAM|LONGOUS";
+      for (const [a, c] of [[0, Math.min(xg, mid)], [Math.max(Lt - xg, mid), Lt]]) sk.poly([[a, yT], [c, yT], [c, yW], [a, yW]], sk.isHl(key) ? "gous hl" : "gous");
+      sk.text(sk.X((bd.ABOUT + Math.min(xg, mid)) / 2 + 1), sk.Y((yT + yW) / 2) + 4, `\xE2me \xE9paissie sur ${num(b.LONGOUS, 2)} m`, sk.isHl(key) ? "tx sm hl" : "tx sm");
+    }
+    sk.poly([[0, H], [Lt, H], [Lt, H + hs], [0, H + hs]], "slab");
+    sk.poly([[0, H + hs], [Lt, H + hs], [Lt, H + hs + 0.08], [0, H + hs + 0.08]], "rev");
+    const ent = (xc, w, depth, key) => {
+      if (depth <= 0) return;
+      const ww = Math.max(w, 0.3);
+      sk.poly([[xc - ww / 2, Math.max(0.05, H - depth)], [xc + ww / 2, Math.max(0.05, H - depth)], [xc + ww / 2, H], [xc - ww / 2, H]], sk.isHl(key) ? "ent hl" : "ent");
+    };
+    ent(bd.ABOUT, bd.ENTAPP, bd.HENTA, "ENTAPP|HENTA");
+    ent(Lt - bd.ABOUT, bd.ENTAPP, bd.HENTA, "ENTAPP|HENTA");
+    const ni = Math.max(0, bd.NE - 2);
+    for (let i = 1; i <= ni; i++) ent(bd.ABOUT + bd.PORTEE * i / (ni + 1), bd.ENTINT, bd.HENTI, "ENTINT|HENTI|NE");
+    for (const xj of [0, Lt]) sk.lineP(sk.X(xj), sk.Y(H + hs + 0.08) - 2, sk.X(xj), sk.Y(H + hs + 0.08) + 8, "joint", true);
+    sk.line(mid, -0.3, mid, H + hs + 0.12, "axis");
+    sk.text(sk.X(mid) + 4, sk.Y(-0.3) - 4, "mi-trav\xE9e", "tx sm mute", "start");
+    sk.text(sk.X(bd.ABOUT) + 4, sk.Y(-1) - 6, "axe d'appui", "tx sm mute", "start");
+    sk.dimH(0, bd.ABOUT, -1, 22, `ABOUT ${num(bd.ABOUT, 2)}`, "ABOUT", -1, "l");
+    sk.dimH(bd.ABOUT, Lt - bd.ABOUT, -1, 22, `PORTEE ${num(bd.PORTEE, 2)} m`, "PORTEE");
+    sk.dimH(Lt - bd.ABOUT, Lt, -1, 22, `ABOUT ${num(bd.ABOUT, 2)}`, "ABOUT", -1, "r");
+    sk.dimH(0, Lt, -1, 46, `longueur des poutres ${num(Lt, 2)} m`, "Lt");
+    if (bd.ENTAPP > 0) sk.dimH(bd.ABOUT - Math.max(bd.ENTAPP, 0.3) / 2, bd.ABOUT + Math.max(bd.ENTAPP, 0.3) / 2, H + hs + 0.08, -12, `ENTAPP ${num(bd.ENTAPP, 2)}`, "ENTAPP", H + hs + 0.08, "r");
+    if (ni > 0 && bd.ENTINT > 0) {
+      const xi = bd.ABOUT + bd.PORTEE / (ni + 1);
+      sk.dimH(xi - Math.max(bd.ENTINT, 0.3) / 2, xi + Math.max(bd.ENTINT, 0.3) / 2, H + hs + 0.08, -12, `ENTINT ${num(bd.ENTINT, 2)}`, "ENTINT", H + hs + 0.08, "r");
+    }
+    sk.text(sk.X(bd.ABOUT + bd.PORTEE * 0.3), sk.Y(H + hs + 0.08) - 28, sk.schema ? "NE entretoises (abouts compris)" : `NE = ${bd.NE} entretoises (abouts compris)`, sk.isHl("NE") ? "tx dl hl" : "tx sm mute");
+    sk.dimV(0, H, Lt, 18, `HPOUT ${num(H, 2)}`, "beam.HPOUT|HPOUT");
+    sk.dimV(H, H + hs, Lt, 18, `HHOUR ${num(hs, 2)}`, "slab.HHOUR|HHOUR");
+    if (bd.HENTA > 0) sk.dimV(Math.max(0.05, H - bd.HENTA), H, 0, -10, `HENTA ${num(bd.HENTA, 2)}`, "HENTA", "l");
+    if (ni > 0 && bd.HENTI > 0) {
+      const xi = bd.ABOUT + bd.PORTEE / (ni + 1);
+      sk.dimV(Math.max(0.05, H - bd.HENTI), H, xi + Math.max(bd.ENTINT, 0.3) / 2, 8, `HENTI ${num(bd.HENTI, 2)}`, "HENTI");
+    }
+    sk.text(sk.W - 8, 14, `\xE9chelle des hauteurs \xD7${num(ex, 1)}`, "tx sm mute", "end");
+    const elev = sk.svg("\xC9l\xE9vation d'une poutre", "\xC9l\xE9vation d'une poutre avec appuis, entretoises et \xE2me \xE9paissie");
+    if (opt.plan === false) return elev;
+    const Ld = layout(bd), W = Ld.width, phi = (bd.BIAIS || 100) * Math.PI / 200, off = Math.abs(phi - Math.PI / 2) < 1e-9 ? 0 : W / Math.tan(phi);
+    const xs0 = Math.min(0, off) - 0.6, xs1 = Math.max(Lt, Lt + off) + 0.6;
+    const sp = Math.min(TW / (xs1 - xs0), 240 / W);
+    const pl = new Sk(xs0, xs1, 0, W, sp, sp, { l: 110, r: 30, t: 20, b: 46 }, hl);
+    const sh = (y) => off * (W - y) / W;
+    pl.poly([[sh(0), 0], [Lt + sh(0), 0], [Lt + sh(W), W], [sh(W), W]], "slab");
+    for (const xc of [Ld.X3, Ld.X6]) {
+      const y = W - xc;
+      pl.line(sh(y), y, Lt + sh(y), y, "edge");
+    }
+    pl.text(pl.X(Lt / 2 + sh(W - Ld.X3)), pl.Y(W - Ld.X3) - 4, "bord de chauss\xE9e", "tx sm mute");
+    const entL = (x0, w, key) => {
+      const ww = Math.max(w, 0.3);
+      pl.poly([[x0 - ww / 2 + sh(0), 0], [x0 + ww / 2 + sh(0), 0], [x0 + ww / 2 + sh(W), W], [x0 - ww / 2 + sh(W), W]], pl.isHl(key) ? "ent hl" : "ent");
+    };
+    entL(bd.ABOUT, bd.ENTAPP, "ENTAPP|HENTA");
+    entL(Lt - bd.ABOUT, bd.ENTAPP, "ENTAPP|HENTA");
+    for (let i = 1; i <= ni; i++) entL(bd.ABOUT + bd.PORTEE * i / (ni + 1), bd.ENTINT, "ENTINT|HENTI|NE");
+    Ld.xBeam.forEach((xb, k) => {
+      const y = W - xb;
+      pl.line(sh(y), y, Lt + sh(y), y, "beamline");
+      pl.circleP(pl.X(sh(y)) - 16, pl.Y(y), 8, "bn");
+      pl.text(pl.X(sh(y)) - 16, pl.Y(y) + 3.5, String(k + 1), "tx bnt");
+    });
+    for (const xs of [bd.ABOUT, Lt - bd.ABOUT]) pl.line(xs + sh(0), 0, xs + sh(W), W, pl.isHl("BIAIS") ? "supl hl" : "supl");
+    const ang = (bd.BIAIS || 100).toFixed(2).replace(".", ",");
+    pl.text(pl.X(bd.ABOUT + sh(W / 2)) + 10, pl.Y(W * 0.75), `BIAIS ${ang} gr`, pl.isHl("BIAIS") ? "tx dl hl" : "tx dl", "start");
+    pl.dimV(0, W, xs0 + 0.6, -40, `${num(W, 2)} m`, "W");
+    pl.dimH(bd.ABOUT + sh(0), Lt - bd.ABOUT + sh(0), 0, 22, `PORTEE ${num(bd.PORTEE, 2)} m`, "PORTEE");
+    pl.text(pl.X(xs1) - 4, pl.H - 8, bd.BIAIS && Math.abs(bd.BIAIS - 100) > 1e-6 ? "ouvrage biais : angle entre l'axe et la ligne d'appui" : "ouvrage droit (100 gr)", "tx sm mute", "end");
+    return elev + pl.svg("Vue en plan", "Vue en plan du tablier, des poutres et du biais");
+  }
+  function beamSection(bd, hl, rive = false) {
+    const s = rive ? bd.beamRive ?? bd.beam : bd.beam, pre = rive ? "beamRive." : "beam.";
+    const k = (c) => `${pre}${c}|${c}`;
+    if (!(s.HPOUT > 0 && s.ETAB > 0)) return '<div class="sk-empty">G\xE9om\xE9trie de poutre de rive identique aux poutres interm\xE9diaires.</div>';
+    const xe = s.ETAB / 2, sy = 260 / s.HPOUT;
+    const sk = new Sk(-xe, xe, 0, s.HPOUT + Math.abs(s.PENTPOUT) * xe, sy, sy, { l: 140, r: 110, t: 38, b: 40 }, hl);
+    if (s.GDA > 0 && s.EPAM > 0) sk.poly(beamOutline(s, s.EPAM), sk.isHl(k("EPAM")) || sk.isHl(k("GDA")) ? "thick hl" : "thick");
+    sk.poly(beamOutline(s, 0), "beam");
+    sk.line(0, -0.05, 0, s.HPOUT + 0.05, "axis");
+    const yT = s.HPIED + s.H1, yW = yT + s.H2;
+    const xr = xe;
+    sk.dimV(0, s.HPIED, xr, 14, `HPIED ${num(s.HPIED, 2)}`, k("HPIED"));
+    sk.dimV(s.HPIED, yT, xr, 14, `H1 ${num(s.H1, 2)}`, k("H1"));
+    sk.dimV(yT, yW, xr, 14, `H2 ${num(s.H2, 2)}`, k("H2"));
+    sk.dimV(yW, yW + s.H3D, xr, 14, `H3D ${num(s.H3D, 2)}`, k("H3D"));
+    const yTopR = s.HPOUT + s.PENTPOUT * xe;
+    sk.dimV(yTopR - s.HTAB, yTopR, xr, 14, `HTAB ${num(s.HTAB, 2)}`, k("HTAB"));
+    sk.dimV(0, s.HPOUT, -xe, -54, `HPOUT ${num(s.HPOUT, 2)}`, k("HPOUT"));
+    sk.dimV(yW, yW + s.H3G, -xe, -14, `H3G`, k("H3G"));
+    sk.dimH(-xe, xe, s.HPOUT + Math.abs(s.PENTPOUT) * xe, -14, `ETAB ${num(s.ETAB, 2)}`, k("ETAB"));
+    sk.dimH(-s.ETALON / 2, s.ETALON / 2, 0, 18, `ETALON ${num(s.ETALON, 2)}`, k("ETALON"));
+    const lab = (x, y, t, key) => sk.text(sk.X(x), sk.Y(y), t, sk.isHl(key) ? "tx dl hl" : "tx dl", "start");
+    sk.lineP(sk.X(-s.E1 / 2), sk.Y(yT + 0.06), sk.X(s.E1 / 2), sk.Y(yT + 0.06), sk.isHl(k("E1")) ? "dim hl" : "dim", true);
+    sk.text(sk.X(s.E1 / 2 + 0.02), sk.Y(yT + 0.08), sk.lab(`E1 ${num(s.E1, 2)}`, k("E1")), sk.isHl(k("E1")) ? "tx dl cote hl" : "tx dl cote", "start");
+    sk.lineP(sk.X(-s.E2 / 2), sk.Y(yW - 0.06), sk.X(s.E2 / 2), sk.Y(yW - 0.06), sk.isHl(k("E2")) ? "dim hl" : "dim", true);
+    sk.text(sk.X(s.E2 / 2 + 0.02), sk.Y(yW - 0.04), sk.lab(`E2 ${num(s.E2, 2)}`, k("E2")), sk.isHl(k("E2")) ? "tx dl cote hl" : "tx dl cote", "start");
+    sk.dimH(xe - s.D3D, xe, yW + s.H3D, 16, `D3D`, k("D3D"), yW + s.H3D, "l");
+    sk.dimH(-xe, -xe + s.D3G, yW + s.H3G, 16, `D3G`, k("D3G"), yW + s.H3G, "r");
+    if (s.GDA > 0 && s.EPAM > 0) lab(s.E1 / 2 + s.EPAM / 2 + 0.03, (yT + yW) / 2, `EPAM +${num(s.EPAM, 2)}`, k("EPAM"));
+    if (s.PENTPOUT) sk.text(sk.X(xe * 0.5), sk.Y(s.HPOUT + s.PENTPOUT * xe * 0.5) - 6, `PENTPOUT ${num(s.PENTPOUT * 100, 1)} %`, sk.isHl(k("PENTPOUT")) ? "tx dl hl" : "tx dl");
+    let out = sk.svg(rive ? "Poutre de rive \u2014 coupe" : "Poutre pr\xE9fabriqu\xE9e \u2014 coupe courante", "Coupe de la poutre pr\xE9fabriqu\xE9e");
+    if (s.GDA > 0 && s.EPAM > 0) {
+      const Lh = bd.ABOUT + bd.PORTEE / 2, sxx = SW / Lh, syy = 46 / s.EPAM;
+      const g = new Sk(0, Lh, 0, s.EPAM, sxx * (SW - 50) / SW, syy, { l: 74, r: 24, t: 16, b: 48 }, hl);
+      const p = [[0, 0]];
+      for (let i = 0; i <= 120; i++) {
+        const x = Lh * i / 120;
+        p.push([x, webExtra(bd, s, x)]);
+      }
+      p.push([Lh, 0]);
+      g.poly(p, sk.isHl(k("EPAM")) || sk.isHl(k("LONGOUS")) || sk.isHl(k("LIN")) ? "thick hl" : "thick");
+      g.line(0, 0, Lh, 0, "beamline");
+      g.parts.push(`<polygon class="sup" points="${g.X(bd.ABOUT)},${g.Y(0)} ${g.X(bd.ABOUT) - 6},${g.Y(0) + 10} ${g.X(bd.ABOUT) + 6},${g.Y(0) + 10}"/>`);
+      g.dimH(bd.ABOUT, bd.ABOUT + s.LONGOUS, 0, 30, `LONGOUS ${num(s.LONGOUS, 2)}`, k("LONGOUS"));
+      g.dimV(0, s.EPAM, 0, -6, `EPAM ${num(s.EPAM, 2)}`, k("EPAM"));
+      g.text(g.X(bd.ABOUT + s.LONGOUS * 0.6), g.Y(s.EPAM * 0.55), sk.schema ? "GOUDAM = 1 : \xE2me \xE9paissie aux abouts" : "\xE2me \xE9paissie aux abouts (GOUDAM = 1)", sk.isHl(k("GDA")) || sk.isHl("GOUDAM") ? "tx sm hl" : "tx sm", "start");
+      g.text(g.X(Lh), 12, s.LIN ? "variation lin\xE9aire (LIN = 1)" : "variation discontinue (LIN = 0)", "tx sm mute", "end");
+      out += g.svg("Sur\xE9paisseur d'\xE2me sur appui (demi-poutre)", "Sur\xE9paisseur d'\xE2me le long de la demi-poutre");
+    }
+    if (s.PLA > 0 && s.HPLA > 0) {
+      const se = 130 / s.HPOUT, Le = Math.max(bd.ABOUT + 1.5, (SW - 136) / se - 0.2), ep = 0.2;
+      const e = new Sk(-0.2, Le, -0.15, s.HPOUT + 0.1, se, se, { l: 112, r: 24, t: 18, b: 30 }, hl);
+      e.poly([[0, 0], [Le, 0], [Le, s.HPOUT], [0, s.HPOUT]], "beam");
+      e.poly([[0, 0], [ep, 0], [ep, Math.min(s.HPLA, s.HPOUT)], [0, Math.min(s.HPLA, s.HPOUT)]], e.isHl(k("HPLA")) || e.isHl(k("PLA")) ? "ent hl" : "ent");
+      e.parts.push(`<polygon class="sup" points="${e.X(bd.ABOUT)},${e.Y(0)} ${e.X(bd.ABOUT) - 6},${e.Y(0) + 10} ${e.X(bd.ABOUT) + 6},${e.Y(0) + 10}"/>`);
+      e.line(bd.ABOUT, -0.15, bd.ABOUT, s.HPOUT + 0.1, "axis");
+      e.dimV(0, Math.min(s.HPLA, s.HPOUT), 0, -12, `HPLA ${num(s.HPLA, 2)}`, k("HPLA"));
+      e.dimV(0, s.HPOUT, 0, -50, `HPOUT ${num(s.HPOUT, 2)}`, k("HPOUT"));
+      e.text(e.X(bd.ABOUT) + 8, e.Y(Math.min(s.HPLA, s.HPOUT) * 0.5), e.schema ? "PLAB = 1 : plaque d'about pr\xE9fabriqu\xE9e" : "plaque d'about pr\xE9fabriqu\xE9e", e.isHl(k("PLA")) || e.isHl("PLAB") ? "tx sm hl" : "tx sm", "start");
+      out += e.svg("Extr\xE9mit\xE9 de poutre \u2014 plaque d'about", "\xC9l\xE9vation de l'extr\xE9mit\xE9 de poutre avec la plaque d'about pr\xE9fabriqu\xE9e");
+    }
+    return out;
+  }
+  function slabZoom(bd, hl, hlPath = "") {
+    const D = deck(bd), n = D.beams.length;
+    const right = /^slabD\./.test(hlPath);
+    const bs = right ? D.beams.slice(Math.max(0, n - 2)) : D.beams.slice(0, Math.min(2, n));
+    const edge = right ? D.beams[n - 1].xr : D.beams[0].xl;
+    const inner = right ? bs[0].x - bd.ENTRAPOUT / 2 : bs[bs.length - 1].x + (n > 2 ? bd.ENTRAPOUT / 2 : bs[bs.length - 1].xr - bs[bs.length - 1].x);
+    const x0 = Math.min(edge, inner) - 0.05, x1 = Math.max(edge, inner) + 0.05;
+    const ymax = Math.max(...bs.map((b) => b.s.HPOUT + b.dy)) + 0.45, ymin = ymax - 1.5;
+    const sx = SW / (x1 - x0);
+    const sk = new Sk(x0, x1, ymin, ymax, sx, sx, { l: 84, r: 84, t: 58, b: 40 }, hl);
+    const cid = "cz" + ++CLIP;
+    sk.parts.push(`<clipPath id="${cid}"><rect x="${r1(sk.X(x0))}" y="0" width="${r1(sk.X(x1) - sk.X(x0))}" height="${r1(sk.Y(ymin))}"/></clipPath><g clip-path="url(#${cid})">`);
+    for (const b of bs) sk.poly(b.outline, "beam");
+    drawSlab(sk, D.beams.map((b) => b.slab));
+    sk.parts.push("</g>");
+    const side = right ? "slabD" : "slabG", E = right ? bd.slabD : bd.slabG;
+    const be = right ? bs[bs.length - 1] : bs[0], bi = right ? bs[0] : bs[bs.length - 1];
+    const H = be.s.HPOUT + be.dy;
+    const yTop = (x) => D.topAt(x);
+    sk.dimV(yTop(edge) - E.HEXT, yTop(edge), edge, right ? 14 : -14, right ? `HEXT ${num(E.HEXT, 2)}` : `HEXT ${num(E.HEXT, 2)}`, `${side}.HEXT`);
+    sk.dimV(H, H + E.HHOUR, be.x, right ? -10 : 10, `HHOUR ${num(E.HHOUR, 2)}`, `${side}.HHOUR`, right ? "l" : "r");
+    if (n > 2 || bs.length > 1) {
+      const xm = (bs[0].x + bs[bs.length - 1].x) / 2;
+      sk.dimV(yTop(xm) - bd.slab.HAXE, yTop(xm), xm, 10, `HAXE ${num(bd.slab.HAXE, 2)}`, "slab.HAXE");
+      if (n > 2) sk.dimV(bi.s.HPOUT + bi.dy, bi.s.HPOUT + bi.dy + bd.slab.HHOUR, bi.x, right ? -10 : 10, `HHOUR ${num(bd.slab.HHOUR, 2)}`, "slab.HHOUR", right ? "l" : "r");
+    }
+    sk.dimH(Math.min(edge, be.x), Math.max(edge, be.x), H, -(yTop(be.x) - H) * sk.sx - 34, `EEXT ${num(E.EEXT, 2)}`, `${side}.EEXT`);
+    if (bs.length > 1) sk.dimH(bs[0].x, bs[1].x, H, -(yTop(bs[0].x) - H) * sk.sx - 34, `ENTRAPOUT ${num(bd.ENTRAPOUT, 2)}`, "ENTRAPOUT");
+    const slope = (x, v, key, below, label) => {
+      sk.text(sk.X(x), sk.Y(yTop(x) - (below ? 0.35 : 0)) + (below ? 14 : -6), `${label} ${num(v * 100, 1)} %`, sk.isHl(key) ? "tx dl hl" : "tx sm");
+    };
+    const xc = (edge + be.x) / 2, xi = (bs[0].x + bs[bs.length - 1].x) / 2;
+    slope(xc, E.PENTSUP, `${side}.PENTSUP`, false, "PENTSUP");
+    slope(xc, E.PENTINF, `${side}.PENTINF`, true, "PENTINF");
+    if (bs.length > 1) {
+      slope(xi + 0.4 * (right ? -1 : 1) * bd.ENTRAPOUT / 4, bd.slab.PENTSUP, "slab.PENTSUP", false, "PENTSUP");
+      slope(xi, bd.slab.PENTINF, "slab.PENTINF", true, "PENTINF");
+    }
+    return sk.svg(right ? "Hourdis \u2014 encorbellement droit" : "Hourdis \u2014 encorbellement gauche", "D\xE9tail du hourdis et de l'encorbellement");
+  }
+  function crossBeamView(bd, hl, hlPath = "") {
+    const n = bd.NPOUT;
+    if (n < 2) return "";
+    let A = n >= 4 ? 2 : 1;
+    if (/^slabG\./.test(hlPath)) A = 1;
+    else if (/^slabD\./.test(hlPath)) A = n - 1;
+    else if (/^cross\./.test(hlPath) && n >= 3) A = Math.min(2, n - 1);
+    const B = A + 1, D = deck(bd);
+    const bA = D.beams[A - 1], bB = D.beams[B - 1];
+    const crA = crossOf(bd, A), crB = crossOf(bd, B);
+    const pA = A === 1 ? "slabG.cross" : A === n ? "slabD.cross" : "cross", pB = B === 1 ? "slabG.cross" : B === n ? "slabD.cross" : "cross";
+    const x0 = bA.x - bA.s.ETAB / 2 - 0.1, x1 = bB.x + bB.s.ETAB / 2 + 0.1;
+    const ymax = Math.max(bA.s.HPOUT + bA.dy, bB.s.HPOUT + bB.dy) + 0.45;
+    const sx = Math.min(SW / (x1 - x0), 240 / ymax);
+    const sk = new Sk(x0, x1, 0, ymax, sx, sx, { l: 70, r: 70, t: 22, b: 40 }, hl);
+    const gA = slabFor(bd, A), gB = slabFor(bd, B);
+    const under = (b, g, xr) => {
+      const yTop = (x) => b.s.HPOUT + b.dy + g.HHOUR + (x >= 0 ? g.psR : g.psL) * x;
+      const r = xr > 0, xm = r ? g.xr : g.xl;
+      return yTop(xm) - (r ? g.hMidR : g.hMidL) + (r ? g.piR : g.piL) * (xr - xm);
+    };
+    const xmid = (bA.x + bB.x) / 2;
+    const side = (b, cr, sg, g) => {
+      const lim = sg > 0 ? cr.AMORD : cr.AMORG, h5 = (sg > 0 ? cr.H5D : cr.H5G) + b.dy, h7 = sg > 0 ? cr.H7D : cr.H7G, h9 = (sg > 0 ? cr.H9D : cr.H9G) + b.dy;
+      const xm = Math.abs(xmid - b.x);
+      if (cr.AMEN && lim > 0) {
+        const xf = b.s.E2 / 2, endY = h7 > 0 && lim > xf ? h5 + h7 : h9;
+        sk.poly([[b.x, h5], [b.x + sg * xf, h5], [b.x + sg * lim, endY], [b.x + sg * lim, b.s.HPOUT + b.dy + 0.02], [b.x, b.s.HPOUT + b.dy + 0.02]], "amorce");
+      }
+      const xs = cr.AMEN ? lim : b.s.ETAB / 2;
+      if (xm > xs && bd.HENTA > 0) {
+        const yb = under(b, g, sg * xm) - bd.HENTA;
+        sk.poly([[b.x + sg * xs, cr.AMEN ? h9 : yb], [b.x + sg * xm, yb], [b.x + sg * xm, under(b, g, sg * xm) + 0.05], [b.x + sg * xs, under(b, g, sg * xs) + 0.05]], "ent");
+      }
+    };
+    side(bA, crA, 1, gA);
+    side(bB, crB, -1, gB);
+    sk.poly(bA.outline, "beam");
+    sk.poly(bB.outline, "beam");
+    drawSlab(sk, [bA.slab, bB.slab]);
+    sk.line(xmid, 0, xmid, ymax, "axis");
+    if (crA.AMEN) {
+      sk.dimH(bA.x, bA.x + crA.AMORD, bA.dy, 18, `AMORD ${num(crA.AMORD, 2)}`, `${pA}.AMORD`);
+      sk.dimV(bA.dy, crA.H5D + bA.dy, bA.x + bA.s.E2 / 2, -bA.s.E2 * sk.sx - 30, `H5D ${num(crA.H5D, 2)}`, `${pA}.H5D`);
+      sk.dimV(bA.dy, crA.H9D + bA.dy, bA.x + crA.AMORD, -8, `H9D ${num(crA.H9D, 2)}`, `${pA}.H9D`);
+      if (crA.H7D > 0) sk.dimV(crA.H5D + bA.dy, crA.H5D + crA.H7D + bA.dy, bA.x + crA.AMORD, 8, `H7D ${num(crA.H7D, 2)}`, `${pA}.H7D`);
+    }
+    if (crB.AMEN) {
+      sk.dimH(bB.x - crB.AMORG, bB.x, bB.dy, 18, `AMORG ${num(crB.AMORG, 2)}`, `${pB}.AMORG`);
+      sk.dimV(bB.dy, crB.H9G + bB.dy, bB.x - crB.AMORG, 8, `H9G ${num(crB.H9G, 2)}`, `${pB}.H9G`);
+      if (crB.H7G > 0) sk.dimV(crB.H5G + bB.dy, crB.H5G + crB.H7G + bB.dy, bB.x - crB.AMORG, -8, `H7G ${num(crB.H7G, 2)}`, `${pB}.H7G`);
+      sk.dimV(bB.dy, crB.H5G + bB.dy, bB.x - bB.s.E2 / 2, bB.s.E2 * sk.sx + 30, `H5G ${num(crB.H5G, 2)}`, `${pB}.H5G`);
+    }
+    const ym = under(bA, gA, xmid - bA.x);
+    if (bd.HENTA > 0) sk.dimV(ym - bd.HENTA, ym, xmid, 8, `HENTA ${num(bd.HENTA, 2)}`, "HENTA");
+    sk.text(sk.X(bA.x), sk.Y(0) + 34, `poutre ${A}`, "tx sm mute");
+    sk.text(sk.X(bB.x), sk.Y(0) + 34, `poutre ${B}`, "tx sm mute");
+    return sk.svg(`Entretoise d'about entre les poutres ${A} et ${B}`, "Vue de l'entretoise d'about avec amorces");
+  }
+  function materialsView(bd, hl) {
+    const s = bd.beam, n = bd.NPOUT, ip = n >= 3 ? 2 : 1, g = slabFor(bd, ip);
+    const x0 = Math.min(g.xl, -s.ETAB / 2), x1 = Math.max(g.xr, s.ETAB / 2), ymax = s.HPOUT + g.HHOUR + 0.05;
+    const sx = Math.min(250 / (x1 - x0), 290 / ymax);
+    const sk = new Sk(x0, x1, 0, ymax, sx, sx, { l: 20, r: 190, t: 30, b: 16 }, hl);
+    sk.poly(beamOutline(s, 0), "beam");
+    sk.poly(slabPolygon(s, g), "slab");
+    const d = bd.DAP, H = s.HPOUT, Hh = H + g.HHOUR, hd = sk.isHl("DAP");
+    const rows = [[Hh - d, g.xr - d, "aciers sup\xE9rieurs du hourdis"], [H + d, g.xr - d, "aciers inf\xE9rieurs du hourdis"], [H - d, s.ETAB / 2 - d, "aciers sup\xE9rieurs de la poutre"], [d, s.ETALON / 2 - d, "aciers inf\xE9rieurs de la poutre"]];
+    let ly = -Infinity;
+    const xl = sk.X(x1) + 34;
+    for (const [y, hw, t] of rows) {
+      for (let i = 0; i <= 6; i++) {
+        const x = -hw + 2 * hw * i / 6;
+        sk.circleP(sk.X(x), sk.Y(y), 2.2, hd ? "rb hl" : "rb");
+      }
+      const py = Math.max(sk.Y(y), ly + 15);
+      ly = py;
+      sk.lineP(sk.X(hw) + 4, sk.Y(y), xl - 4, py, "ext", true);
+      sk.text(xl, py + 4, t, "tx sm", "start");
+    }
+    sk.dimV(0, d, s.ETALON / 2, 14, `D ${num(d, 3)}`, "D|DAP");
+    sk.text(sk.X(x0), 14, sk.schema ? "Hourdis : FC28H (FC4H, FC5H)" : `Hourdis : fc28 = ${num(bd.FC28H, 1)} MPa`, sk.isHl("FC28H") || sk.isHl("FC4H") || sk.isHl("FC5H") ? "tx sm hl" : "tx sm", "start");
+    sk.text(sk.X(-s.E1 / 2) - 8, sk.Y(H * 0.55), `Poutre`, "tx sm mute", "end");
+    sk.text(sk.X(-s.E1 / 2) - 8, sk.Y(H * 0.55) + 14, sk.schema ? "FC28 (FC1, FC2)" : `fc28 = ${num(bd.FC28, 1)} MPa`, sk.isHl("FC28") || sk.isHl("FC11") || sk.isHl("FC12") ? "tx sm hl" : "tx sm", "end");
+    return sk.svg("Section composite et aciers passifs", "Section composite avec les lits d'aciers passifs");
+  }
+  function phasingView(bd, hl) {
+    const J = bd.J;
+    const ev = [
+      ["J.J1", J.J1, "tension de la 1re famille"],
+      ["J.J2", J.J2, "2e partie de la 1re famille"],
+      ["J.J3", J.J3, "b\xE9tonnage du hourdis"],
+      ["J.J4", J.J4, "tension de la 2e famille"],
+      ["J.J5", J.J5, "superstructures"],
+      ["J.J6", J.J6, "mise en service"]
+    ];
+    const tmax = Math.max(10, ...ev.map((e2) => e2[1])) * 1.1;
+    const L = 190, R = SW + 60, W = R + 30, rowH = 22, top = 14, H = top + ev.length * rowH + 26;
+    const X = (t) => L + (R - L) * t / tmax;
+    const step = tmax > 150 ? 50 : tmax > 60 ? 20 : 10;
+    const p = [];
+    for (let t = 0; t <= tmax; t += step) p.push(`<line class="ext" x1="${r1(X(t))}" y1="${top - 4}" x2="${r1(X(t))}" y2="${H - 22}"/><text class="tx sm mute" x="${r1(X(t))}" y="${H - 8}" text-anchor="middle">${t}</text>`);
+    ev.forEach(([k, t, lbl], i) => {
+      const y = top + i * rowH + 10, h = hl === k || hl === k.slice(2);
+      p.push(`<text class="tx dl${h ? " hl" : ""}" x="6" y="${y + 4}">${k.slice(2)}</text><text class="tx sm${h ? " hl" : " mute"}" x="30" y="${y + 4}">${esc(lbl)}</text>`);
+      p.push(`<line class="${h ? "dim hl" : "tl"}" x1="${L}" y1="${y}" x2="${r1(X(t))}" y2="${y}"/><circle class="dot${h ? " hl" : ""}" cx="${r1(X(t))}" cy="${y}" r="${h ? 5 : 3.5}"/><text class="tx sm${h ? " hl" : ""}" x="${r1(X(t)) + 8}" y="${y + 4}">j${t}</text>`);
+    });
+    const svgT = `<figure class="skf"><figcaption>Phasage (\xE2ge du b\xE9ton de la poutre, en jours)</figcaption><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Phasage de construction">${p.join("")}</svg></figure>`;
+    const sys = bd.systems[0];
+    const Rg = sys.DGAINE / 2, e = sys.ENROB, dc = sys.DECAL;
+    const sc = 1500;
+    const g = new Sk(-0.1, 0.1, 0, e + 2 * Rg + 0.02, sc, sc, { l: 150, r: 150, t: 34, b: 12 }, hl);
+    g.poly([[-0.1, 0], [0.1, 0], [0.1, e + 2 * Rg + 0.02], [-0.1, e + 2 * Rg + 0.02]], "beam");
+    g.circleP(g.X(0), g.Y(e + Rg), Rg * g.sx, g.isHl("systems.0.DGAINE") ? "duct hl" : "duct");
+    const rc = Rg * 0.75;
+    g.circleP(g.X(0), g.Y(e + Rg - dc), rc * g.sx, "strand");
+    g.dimV(0, e, 0.1, 12, `ENROB ${num(e, 3)}`, "systems.0.ENROB");
+    g.dimH(-Rg, Rg, e + 2 * Rg, -14, `DGAINE ${num(2 * Rg, 3)}`, "systems.0.DGAINE");
+    g.dimV(e + Rg - dc, e + Rg, -0.1, -12, `DECAL ${num(dc, 3)}`, "systems.0.DECAL");
+    g.text(g.X(0.1) + 12, g.Y(e + 2 * Rg + 0.02) + 14, "talon de la poutre", "tx sm mute", "start");
+    const av = sys.AV || 0.22, ah = sys.AH || 0.22, sa = Math.min(260 / Math.max(av, ah), 600);
+    const pa = new Sk(-ah, ah, -av, av, sa, sa, { l: 120, r: 120, t: 16, b: 24 }, hl);
+    pa.poly([[-ah / 2, -av / 2], [ah / 2, -av / 2], [ah / 2, av / 2], [-ah / 2, av / 2]], pa.isHl("systems.0.AV") || pa.isHl("systems.0.AH") ? "steel hl" : "steel");
+    pa.circleP(pa.X(0), pa.Y(0), R * pa.sx, "duct");
+    pa.dimH(-ah / 2, ah / 2, av / 2, -10, `AH ${num(ah, 3)}`, "systems.0.AH");
+    pa.dimV(-av / 2, av / 2, ah / 2, 12, `AV ${num(av, 3)}`, "systems.0.AV");
+    return svgT + g.svg("Gaine en partie basse (syst\xE8me 1)", "Coupe d'une gaine avec enrobage et d\xE9calage du c\xE2ble") + pa.svg("Plaque d'ancrage (syst\xE8me 1)", "Encombrement de la plaque d'ancrage");
+  }
+  function cablesView(bd, ic, hl, hlPath = "") {
+    const cab = bd.cablings[ic];
+    if (!cab) return "";
+    const Lh = bd.ABOUT + bd.PORTEE / 2, H = bd.beam.HPOUT, hs = bd.slab.HHOUR;
+    const sx = (DW + 100) / Lh, sy = Math.min(240 / (H + hs), sx * 8);
+    const sk = new Sk(0, Lh, -0, H + hs, sx, sy, { l: 36, r: 20, t: 46, b: 64 }, hl);
+    sk.poly([[0, 0], [Lh, 0], [Lh, H], [0, H]], "beam");
+    sk.poly([[0, H], [Lh, H], [Lh, H + hs], [0, H + hs]], "slab");
+    sk.parts.push(`<polygon class="sup" points="${sk.X(bd.ABOUT)},${sk.Y(0)} ${sk.X(bd.ABOUT) - 7},${sk.Y(0) + 11} ${sk.X(bd.ABOUT) + 7},${sk.Y(0) + 11}"/>`);
+    sk.line(Lh, -0.05, Lh, H + hs + 0.05, "axis");
+    sk.text(sk.X(Lh) - 4, sk.Y(H + hs) - 6, "mi-trav\xE9e", "tx sm mute", "end");
+    const m = hlPath.match(/^cablings\.\d+\.(?:ordonnees|cables)\.(\d+)(?:\.(\w+))?/);
+    const selK = m ? +m[1] : -1, col = m ? m[2] ?? "" : "";
+    const ma = hlPath.match(/^cablings\.\d+\.(?:abscisses|ordonnees\.\d+)\.(\d+)$/), selX = ma ? +ma[1] : -1;
+    cab.abscisses.forEach((x, i) => {
+      const h = i === selX;
+      sk.lineP(sk.X(x), sk.Y(0) + 2, sk.X(x), sk.Y(0) + 8, h ? "dim hl" : "ext", true);
+      sk.text(sk.X(x), sk.Y(0) + (i % 2 ? 32 : 20), num(x, 2), h ? "tx sm hl" : "tx sm mute");
+    });
+    sk.text(sk.X(0), sk.Y(0) + 48, "abscisses depuis l'about (m)", "tx sm mute", "start");
+    const n1 = cab.NCAB11 + cab.NCAB12;
+    let geoms = [];
+    geoms = cab.cables.map((d, k) => {
+      try {
+        return buildCable(bd, cab, d, k);
+      } catch {
+        return null;
+      }
+    });
+    geoms.forEach((g, k) => {
+      const d = cab.cables[k];
+      const fam = k < n1 ? 1 : 2;
+      const sel = k === selK;
+      if (g) {
+        const p = [];
+        const xs = Math.max(0, d.ABSOR);
+        for (let i = 0; i <= 160; i++) {
+          const x = xs + (Lh - xs) * i / 160;
+          p.push([x, g.y(x)]);
+        }
+        sk.pline(p, `cab f${fam}${sel ? " sel" : ""}`);
+        sk.text(sk.X(xs) + (xs > 0.3 ? -3 : 3), sk.Y(g.y(xs)) - 3, String(d.num || k + 1), sel ? "tx sm hl" : "tx sm", xs > 0.3 ? "end" : "start");
+      }
+      const o = cab.ordonnees[k] ?? [];
+      o.forEach((y, i) => {
+        if (y > 0 && cab.abscisses[i] !== void 0) sk.circleP(sk.X(cab.abscisses[i]), sk.Y(y), sel || i === selX ? 3.6 : 2.4, `pt f${fam}${sel && (i === selX || selX < 0) ? " hl" : ""}`);
+      });
+    });
+    if (selK >= 0 && cab.cables[selK]) {
+      const d = cab.cables[selK], g = geoms[selK];
+      let row2 = 0;
+      const mark = (x, code, lbl) => {
+        const h = col === code;
+        sk.lineP(sk.X(x), sk.Y(0), sk.X(x), sk.Y(H + hs) - 4 - 12 * row2, h ? "mk hl" : "mk", true);
+        sk.text(sk.X(x) + 3, sk.Y(H + hs) - 7 - 12 * row2, `${lbl} ${num(x, 3)}`, h ? "tx sm hl" : "tx sm", "start");
+        row2++;
+      };
+      mark(d.ABSOR, "ABSOR", "ABSOR");
+      mark(d.ABDECO, "ABDECO", "ABDECO");
+      mark(d.ABFICO, "ABFICO", "ABFICO");
+      if (col === "ABDEHO" || col === "ABFIHO" || col === "EXTRAN") {
+        mark(d.ABDEHO, "ABDEHO", "ABDEHO");
+        mark(d.ABFIHO, "ABFIHO", "ABFIHO");
+      }
+      if (g && col === "ORFICO") sk.dimV(0, d.ORFICO, Math.min(Lh, d.ABFICO + 0.4), 8, `ORFICO ${num(d.ORFICO, 3)}`, "ORFICO");
+      if (col === "ANGSOR" && g) sk.text(sk.X(d.ABSOR) + 6, sk.Y(g.y(d.ABSOR)) + 14, `ANGSOR ${num(d.ANGSOR, 2)} gr`, "tx dl hl", "start");
+    }
+    const leg = `<div class="sk-leg"><span><i class="lf1"></i>1re famille (${n1})</span><span><i class="lf2"></i>2e famille (${cab.NCAB2})</span><span>\xE9chelle verticale \xD7${num(sy / sx, 1)}</span></div>`;
+    return sk.svg(`C\xE2blage ${ic + 1} \u2014 trac\xE9 des c\xE2bles (demi-poutre)`, "\xC9l\xE9vation de la demi-poutre avec le trac\xE9 des c\xE2bles") + leg;
+  }
+  var EQUIP_LABEL = { BN4: "Barri\xE8re BN4", GBA: "GBA (glissi\xE8re b\xE9ton)", GC: "Garde-corps", AUCUN: "Aucun" };
+  function defaultEquip(bd) {
+    const L = bd.ETROTG > 0 ? "BN4" : "GBA", R = bd.ETROTD > 0 ? "BN4" : "GBA";
+    return { L, R, corL: L !== "GBA", corR: R !== "GBA" };
+  }
+  var hasCorniche = (eq, side) => side === "L" ? eq.corL ?? eq.L !== "GBA" : eq.corR ?? eq.R !== "GBA";
+  var hasTrottoir = (eq, side) => (side === "L" ? eq.trL : eq.trR) ?? true;
+  function edgeIcon(kind, side) {
+    const deck2 = '<path class="i-slab" d="M4 30 H70 V38 H22 L14 44 H4 Z"/>';
+    const body = kind === "BN4" ? '<rect class="i-lon" x="4" y="25" width="18" height="5"/><path class="i-steel" d="M7 25 H15 V4 H12 Z"/><path class="i-steel" d="M15 25 H17 L15 21 Z"/><rect class="i-rail" x="16" y="17.5" width="5" height="3.2" rx=".8"/><rect class="i-rail" x="16" y="10.5" width="5" height="3.2" rx=".8"/><rect class="i-rail" x="16" y="3.4" width="5" height="3.2" rx=".8"/>' : kind === "TR" ? '<path class="i-tro" d="M4 30 V24 H44 L46 25 V30 Z"/><rect class="i-bord" x="40" y="24" width="6" height="6"/><path class="i-rev" d="M46 30 H70 V28.6 H46 Z"/>' : '<path class="i-gba" d="M4 30 V8 H11 L13 21 L22 28 V30 Z"/><path class="i-rev" d="M22 30 H70 V28.6 H22 Z"/>';
+    return `<svg viewBox="0 0 74 48" aria-hidden="true"${side === "R" ? ' style="transform:scaleX(-1)"' : ""}>${deck2}${body}</svg>`;
+  }
+  function generalSection(bd, hl, eq = defaultEquip(bd), mode = "geo", win, opt = {}) {
+    const D = deck(bd), { L } = D, W = L.width;
+    const ys = (x2) => D.topAt(Math.max(0, Math.min(W, x2)));
+    const wd = 2.6, edgeY = win ? ys(win === "L" ? 0 : W) : 0;
+    if (!(W > 0)) return '<div class="sk-empty">La coupe se dessine au fur et \xE0 mesure : commencez par les largeurs (trottoirs, bandes, chauss\xE9e).</div>';
+    const nb = D.beams.length;
+    if (win && !nb) return "";
+    const xmin = win === "L" ? -0.3 : win === "R" ? W - wd : Math.min(-0.2, nb ? D.beams[0].xl - 0.2 : -0.2);
+    const xmax = win === "L" ? wd : win === "R" ? W + 0.3 : Math.max(W + 0.2, nb ? D.beams[nb - 1].xr + 0.2 : W + 0.2);
+    const ymin = win ? edgeY - 0.75 : nb ? Math.min(...D.beams.map((b) => b.dy)) : -0.6, ymax = win ? edgeY + 1.45 : Math.max(ys(0), ys(W)) + (opt.bare ? 0.35 : 1.95);
+    const TW = win ? Math.min(420, DW) : DW, sx = TW / (xmax - xmin);
+    const sk = new Sk(xmin, xmax, ymin, ymax, sx, sx, win ? { l: 16, r: 16, t: 14, b: 40 } : opt.bare ? { l: 84, r: 100, t: 68, b: 116 } : { l: 84, r: 96, t: 66, b: opt.clean && mode !== "calc" ? 82 : SCHEMA ? 116 : 100 }, hl);
+    if (opt.clean) sk.vonly = true;
+    const cwid = "cw" + ++CLIP;
+    if (win) sk.parts.push(`<clipPath id="${cwid}"><rect x="${r1(sk.X(xmin))}" y="0" width="${r1(sk.X(xmax) - sk.X(xmin))}" height="${r1(sk.Y(ymin))}"/></clipPath><g clip-path="url(#${cwid})">`);
+    const RV = 0.08;
+    const at = (side, s) => side === "L" ? s : W - s;
+    const P = (side, pts, yb) => pts.map(([s, v]) => {
+      const x2 = at(side, s);
+      return [x2, yb(x2) + v];
+    });
+    for (const b of D.beams) sk.poly(b.outline, "beam");
+    drawSlab(sk, D.beams.map((b) => b.slab));
+    const labels = [];
+    const zone = { L: { inner: 0 }, R: { inner: 0 } };
+    for (const side of opt.bare ? [] : ["L", "R"]) {
+      const wT = side === "L" ? bd.ETROTG : bd.ETROTD, type = side === "L" ? eq.L : eq.R;
+      const yE = ys(at(side, 0));
+      const sgn = side === "L" ? -1 : 1;
+      const yTop = wT > 0 ? 0.25 : RV + 0.04;
+      const cor = hasCorniche(eq, side);
+      if (cor) {
+        sk.poly(P(side, [[-0.12, yTop + 0.02], [0.18, yTop + 0.02], [0.18, 0], [0, 0], [0, -0.38], [-0.04, -0.46], [-0.12, -0.46]], () => yE), "cor");
+        labels.push({ x: at(side, -0.06), y: yE - 0.42, t: "Corniche", dx: sgn * 14, dy: side === "R" ? 84 : 36 });
+      }
+      let s0 = cor ? 0.18 : 0;
+      if (type === "BN4" || type === "GC") {
+        const lw = type === "BN4" ? 0.5 : 0.3;
+        const yL = Math.max(yTop, 0.25);
+        sk.poly(P(side, [[s0, 0], [s0 + lw, 0], [s0 + lw, yL - 0.03], [s0 + lw - 0.03, yL], [s0, yL]], ys), "lon");
+        const sp = s0 + (type === "BN4" ? 0.2 : lw / 2), yb = yL;
+        const Q = (pts, cls) => sk.poly(P(side, pts, () => yE), cls);
+        Q(type === "BN4" ? [[sp - 0.19, yb], [sp + 0.14, yb], [sp + 0.14, yb + 0.025], [sp - 0.19, yb + 0.025]] : [[sp - 0.11, yb], [sp + 0.11, yb], [sp + 0.11, yb + 0.025], [sp - 0.11, yb + 0.025]], "steel");
+        for (const dx of type === "BN4" ? [-0.13, 0.1] : [-0.07, 0.07]) {
+          const [a0, a1] = P(side, [[sp + dx, yb - 0.16], [sp + dx, yb]], () => yE);
+          sk.line(a0[0], a0[1], a1[0], a1[1], "bolt");
+        }
+        if (type === "BN4") {
+          const f2 = sp + 0.06;
+          Q([[sp - 0.17, yb + 0.025], [f2, yb + 0.025], [f2, yb + 1], [f2 - 0.09, yb + 1]], "steel post");
+          Q([[f2, yb + 0.025], [f2 + 0.06, yb + 0.025], [f2, yb + 0.13]], "steel");
+          for (const h of [0.385, 0.7, 1]) {
+            const y0 = yb + h - 0.075, y1 = yb + h + 0.01;
+            Q([[f2, y0 + 0.012], [f2 + 0.035, y0 + 0.012], [f2 + 0.035, y1 - 0.012], [f2, y1 - 0.012]], "steel");
+            Q([[f2 + 0.035, y0], [f2 + 0.11, y0], [f2 + 0.12, y0 + 0.012], [f2 + 0.12, y1 - 0.012], [f2 + 0.11, y1], [f2 + 0.035, y1]], "rail");
+            Q([[f2 + 0.05, y0 + 0.02], [f2 + 0.1, y0 + 0.02], [f2 + 0.1, y1 - 0.02], [f2 + 0.05, y1 - 0.02]], "railin");
+            sk.pline(P(side, [[f2 + 0.02, y0 - 0.012], [f2 + 0.125, y0 - 0.012], [f2 + 0.14, y0 + 4e-3], [f2 + 0.14, y1 - 4e-3], [f2 + 0.125, y1 + 0.012], [f2 + 0.02, y1 + 0.012]], () => yE), "clamp");
+          }
+        } else {
+          sk.poly(P(side, [[sp - 0.07, yb + 0.98], [sp + 0.07, yb + 0.98], [sp + 0.07, yb + 1.03], [sp - 0.07, yb + 1.03]], () => yE), "steel");
+          sk.poly(P(side, [[sp - 0.02, yb + 0.5], [sp + 0.02, yb + 0.5], [sp + 0.02, yb + 0.54], [sp - 0.02, yb + 0.54]], () => yE), "steel");
+          labels.push({ x: at(side, sp), y: yE + yb + 1.03, t: "Garde-corps", dx: -sgn * 46, dy: -6, key: side === "L" ? "DBAG|PBAGMAX|PBAGMIN" : "DBAD|PBADMAX|PBADMIN" });
+        }
+        s0 = s0 + lw;
+      }
+      if (wT > 0 && hasTrottoir(eq, side)) {
+        const sT = Math.max(s0, wT);
+        sk.poly(P(side, [[s0, 0], [sT, 0], [sT, yTop], [s0, yTop]], ys), "trotb");
+        sk.poly(P(side, [[sT - 0.15, 0], [sT, 0], [sT, yTop - 0.02], [sT - 0.03, yTop], [sT - 0.15, yTop]], ys), "bord");
+        labels.push({ x: at(side, (s0 + sT) / 2), y: ys(at(side, (s0 + sT) / 2)) + yTop, t: "Trottoir", dx: -sgn * 30, dy: -40, key: side === "L" ? "ETROTG" : "ETROTD" });
+        s0 = sT;
+      }
+      if (type === "GBA") {
+        const b02 = s0, wG = 0.42;
+        const prof = [[b02, 0], [b02, RV + 0.8], [b02 + 0.19, RV + 0.8], [b02 + 0.24, RV + 0.33], [b02 + 0.42 - 0, RV + 0.075], [b02 + wG, 0]];
+        sk.poly(P(side, prof, ys), "gba");
+        labels.push({ x: at(side, b02 + 0.1), y: ys(at(side, b02)) + RV + 0.8, t: "GBA", dx: -sgn * 46, dy: -4, key: side === "L" ? "DBAG|PBAGMAX|PBAGMIN" : "DBAD|PBADMAX|PBADMIN" });
+        s0 = b02 + wG;
+      }
+      zone[side].inner = s0;
+    }
+    const xa = zone.L.inner, xb = W - zone.R.inner;
+    if (xb > xa && !opt.bare) {
+      const n = 24, p = [];
+      for (let i = 0; i <= n; i++) {
+        const x2 = xa + (xb - xa) * i / n;
+        p.push([x2, ys(x2)]);
+      }
+      for (let i = n; i >= 0; i--) {
+        const x2 = xa + (xb - xa) * i / n;
+        p.push([x2, ys(x2) + RV]);
+      }
+      sk.poly(p, "rev");
+      const xm = xa + (xb - xa) * 0.58;
+      labels.push({ x: xm, y: ys(xm) + RV, t: "Enrob\xE9 + \xE9tanch\xE9it\xE9", dx: -10, dy: -30 });
+    }
+    const xa2 = L.X3 + bd.ESURCH / 2;
+    if (!win) {
+      if (!opt.bare) for (let i = 1; i < L.NV; i++) {
+        const x2 = L.X3 + i * L.v;
+        sk.line(x2, ys(x2) + RV, x2, ys(x2) + RV + 0.12, "lane");
+      }
+      if (!opt.bare && !opt.clean) for (let i = 0; i < L.NV; i++) {
+        const x2 = L.X3 + (i + 0.5) * L.v;
+        sk.text(sk.X(x2), sk.Y(ys(x2) + RV) - 7, sk.schema ? i === 0 ? "NVOIE voies" : "" : `voie ${i + 1}`, sk.isHl("NVOIE") ? "tx sm hl" : "tx sm mute");
+      }
+      sk.line(xa2, ymin - 0.2, xa2, ys(xa2) + (opt.bare ? 0.15 : 1), "axis");
+      if (!opt.bare && !opt.clean) sk.text(sk.X(xa2) + 4, sk.Y(ys(xa2) + 1) + 10, "axe", "tx sm mute", "start");
+      const ps = bd.slab.PENTSUP;
+      if (Math.abs(ps) > 1e-6 && !opt.bare && !opt.clean) {
+        const x1 = L.X3 + L.v * 0.15, x2 = x1 + 1.6, y1 = ys(x1) + RV + 0.35, y2 = ys(x2) + RV + 0.35;
+        const [ax, ay, bx, by] = ps > 0 ? [x2, y2, x1, y1] : [x1, y1, x2, y2];
+        sk.lineP(sk.X(ax), sk.Y(ay), sk.X(bx), sk.Y(by), sk.isHl("slab.PENTSUP") ? "arrow hl" : "arrow", true);
+        const ang = Math.atan2(sk.Y(by) - sk.Y(ay), sk.X(bx) - sk.X(ax));
+        sk.top.push(`<polygon class="arrowh" points="${r1(sk.X(bx))},${r1(sk.Y(by))} ${r1(sk.X(bx) - 8 * Math.cos(ang) + 3.5 * Math.sin(ang))},${r1(sk.Y(by) - 8 * Math.sin(ang) - 3.5 * Math.cos(ang))} ${r1(sk.X(bx) - 8 * Math.cos(ang) - 3.5 * Math.sin(ang))},${r1(sk.Y(by) - 8 * Math.sin(ang) + 3.5 * Math.cos(ang))}"/>`);
+        sk.text((sk.X(x1) + sk.X(x2)) / 2, Math.min(sk.Y(y1), sk.Y(y2)) - 6, sk.schema ? "PENTSUP" : `${num(Math.abs(ps) * 100, 1)} %`, sk.isHl("slab.PENTSUP") ? "tx dl hl" : "tx dl");
+      }
+    }
+    if (win) {
+      sk.parts.push("</g>");
+      const side = win, wT = side === "L" ? bd.ETROTG : bd.ETROTD, E = side === "L" ? bd.slabG : bd.slabD, pre = side === "L" ? "slabG." : "slabD.";
+      const xe = at(side, 0), yE = ys(xe), inn = (d) => at(side, d);
+      if (wT > 0) sk.dimH(Math.min(xe, inn(wT)), Math.max(xe, inn(wT)), yE + 0.25, -16, `${side === "L" ? "ETROTG" : "ETROTD"} ${num(wT, 2)}`, side === "L" ? "ETROTG" : "ETROTD");
+      sk.dimV(yE - E.HEXT, yE, xe, side === "L" ? 34 : -34, `HEXT ${num(E.HEXT, 2)}`, pre + "HEXT", side === "L" ? "r" : "l");
+      const typ = side === "L" ? eq.L : eq.R;
+      void typ;
+      if (wT > 0) {
+        const xc = inn(wT);
+        sk.dimV(ys(xc) + RV, ys(xc) + 0.25, xc, side === "L" ? 10 : -10, "bordure 0.17", "", side === "L" ? "r" : "l");
+      }
+      for (const l of labels.filter((l2) => l2.x > xmin && l2.x < xmax)) {
+        const dx = l.t === "Corniche" ? -l.dx * 1.6 : l.dx;
+        const px = sk.X(l.x), py = sk.Y(l.y), tx = px + dx * 0.8, ty = py + l.dy * 0.8, h = !!l.key && sk.isHl(l.key);
+        sk.lineP(px, py, tx, ty + (l.dy < 0 ? 3 : -10), h ? "lead hl" : "lead", true);
+        sk.text(tx, ty, l.t, h ? "tx lb hl" : "tx lb", dx < 0 ? "end" : dx > 0 ? "start" : "middle");
+      }
+      return sk.svg(side === "L" ? "D\xE9tail rive gauche" : "D\xE9tail rive droite", "D\xE9tail de la rive avec \xE9quipements");
+    }
+    for (const l of opt.clean ? [] : labels) {
+      const px = sk.X(l.x), py = sk.Y(l.y), tx = px + l.dx, ty = py + l.dy;
+      const h = !!l.key && sk.isHl(l.key);
+      sk.lineP(px, py, tx, ty + (l.dy < 0 ? 3 : -10), h ? "lead hl" : "lead", true);
+      sk.text(tx, ty, l.t, h ? "tx lb hl" : "tx lb", l.dx < 0 ? "end" : l.dx > 0 ? "start" : "middle");
+    }
+    const yT = Math.max(ys(0), ys(W)) + (opt.bare ? 0.3 : 1.62);
+    let x = 0;
+    let lifted = false;
+    for (const [k, w] of [["ETROTG", bd.ETROTG], ["EGAU", bd.EGAU], ["ESURCH", bd.ESURCH], ["EDROI", bd.EDROI], ["ETROTD", bd.ETROTD]]) {
+      const lbl = w < 1 ? num(w, 2) : `${k} ${num(w, 2)}`, shown = sk.lab(lbl, k), fits = Math.abs(sk.X(x + w) - sk.X(x)) > shown.length * 6.9 + 6;
+      const up = (k === "EGAU" || k === "EDROI") && !fits && w > 0;
+      if (up) lifted = true;
+      sk.dimH(x, x + w, yT, up ? -28 : -10, lbl, k, yT, k === "EGAU" ? "r" : k === "EDROI" ? "l" : k === "ETROTG" ? "l" : k === "ETROTD" ? "r" : void 0);
+      x += w;
+    }
+    sk.dimH(0, W, yT, lifted ? -48 : -30, `largeur totale ${num(W, 2)} m`, "W");
+    for (const b of D.beams) {
+      const on = mode === "calc" && bd.poutresACalculer.includes(b.ip);
+      sk.circleP(sk.X(b.x), sk.Y(ymin) + 16, 10, on ? "bn on" : "bn");
+      sk.text(sk.X(b.x), sk.Y(ymin) + 20, String(b.ip), on ? "tx bnt on" : "tx bnt");
+    }
+    if (!nb) {
+      sk.text(sk.X(W / 2), sk.Y(ymin) + 30, "Les poutres appara\xEEtront avec NPOUT, ENTRAPOUT, DPOUT1 et la hauteur de poutre (\xE9tape Poutre).", "tx sm mute");
+      return sk.svg("Coupe transversale g\xE9n\xE9rale", "Coupe transversale du tablier en cours de saisie");
+    }
+    if (sk.schema) {
+      const xm = sk.X((D.beams[0].x + D.beams[D.beams.length - 1].x) / 2), c = sk.isHl("DPOUT1") ? "tx def hl" : "tx def";
+      sk.text(xm, sk.Y(ymin) + 90, "DPOUT1 : distance, en valeur absolue, de l'axe de la poutre de gauche", c, "middle");
+      sk.text(xm, sk.Y(ymin) + 107, "num\xE9rot\xE9e 1 \xE0 l'axe de la chauss\xE9e proprement dite", c, "middle");
+    }
+    const b0 = D.beams[0], bn = D.beams[D.beams.length - 1];
+    if (opt.clean && D.beams.length) for (const [b, sg] of [[b0, -1], [bn, 1]]) {
+      const xt = b.x + sg * b.s.ETAB / 2, xe = sg < 0 ? b.xl : b.xr, d = Math.abs(xe - xt);
+      if (d > 0.01) {
+        const yS = b.dy + b.s.HPOUT;
+        sk.dimH(Math.min(xe, xt), Math.max(xe, xt), yS, 12, `d\xE9bord ${num(d, 2)}`, sg < 0 ? "slabG.EEXT" : "slabD.EEXT", yS, sg < 0 ? "l" : "r");
+      }
+    }
+    sk.dimH(b0.xl, b0.x, ymin, 46, `EEXT ${num(bd.slabG.EEXT, 2)}`, "slabG.EEXT|EEXT", ymin, "l");
+    {
+      const full = `ENTRAPOUT ${num(bd.ENTRAPOUT, 2)}`, shown = sk.lab(full, "ENTRAPOUT"), nb2 = D.beams.length;
+      const fits = nb2 > 1 && Math.abs(sk.X(D.beams[1].x) - sk.X(D.beams[0].x)) > shown.length * 6.9 + 6;
+      for (let i = 0; i + 1 < nb2; i++) sk.dimH(D.beams[i].x, D.beams[i + 1].x, ymin, 46, fits ? i === 0 || sk.schema ? full : num(bd.ENTRAPOUT, 2) : "", "ENTRAPOUT");
+      if (!fits && nb2 > 1) sk.text((sk.X(D.beams[0].x) + sk.X(D.beams[nb2 - 1].x)) / 2, sk.Y(ymin) + 42, nb2 > 2 ? `${shown} (\xD7${nb2 - 1})` : shown, sk.isHl("ENTRAPOUT") ? "tx dl hl" : "tx dl");
+    }
+    sk.dimH(bn.x, bn.xr, ymin, 46, `EEXT ${num(bd.slabD.EEXT, 2)}`, "slabD.EEXT|EEXT", ymin, "r");
+    sk.dimH(b0.x, xa2, ymin, 70, `DPOUT1 ${num(bd.DPOUT1, 3)}`, "DPOUT1");
+    sk.dimV(bn.dy, bn.s.HPOUT + bn.dy, bn.xr + 0.2, opt.clean ? 46 : 16, `HPOUT ${num(bn.s.HPOUT, 2)}`, "beam.HPOUT|HPOUT");
+    sk.dimV(bn.s.HPOUT + bn.dy, bn.s.HPOUT + bn.dy + bd.slabD.HHOUR, bn.xr + 0.2, opt.clean ? 46 : 16, `HHOUR ${num(bd.slabD.HHOUR, 2)}`, "slabD.HHOUR|HHOUR");
+    return sk.svg("Coupe transversale g\xE9n\xE9rale", "Coupe transversale du tablier avec \xE9quipements, cot\xE9e");
+  }
+  function generalWithDetails(bd, hl, eq, mode = "geo") {
+    return generalSection(bd, hl, eq, mode) + `<div class="sk-pair">${generalSection(bd, hl, eq, mode, "L")}${generalSection(bd, hl, eq, mode, "R")}</div>`;
+  }
+  function schemaBd(bd) {
+    const b = JSON.parse(JSON.stringify(bd));
+    Object.assign(b, {
+      NPOUT: 4,
+      NVOIE: 2,
+      ETROTG: 1.5,
+      EGAU: 0.5,
+      ESURCH: 7,
+      EDROI: 0.5,
+      ETROTD: 1,
+      ENTRAPOUT: 2.667,
+      DPOUT1: 4.25,
+      PORTEE: 30,
+      ABOUT: 0.5,
+      NE: 3,
+      ENTINT: 0.25,
+      ENTAPP: 0.3,
+      HENTA: 1.25,
+      HENTI: 1,
+      BIAIS: 80,
+      TYPOURI: [1, 1],
+      DBAG: 0.9,
+      PBAGMAX: 1,
+      PBAGMIN: 0.9,
+      DBAD: 0.6,
+      PBADMAX: 1,
+      PBADMIN: 0.9,
+      PSTROT: 0.15
+    });
+    b.beam = { ...b.beam, HPOUT: 1.7, HPIED: 0.25, H1: 0.3, H2: 0.8, H3D: 0.15, H3G: 0.15, HTAB: 0.12, ETAB: 1.4, ETALON: 0.7, E1: 0.2, E2: 0.2, D3D: 0.45, D3G: 0.45, PENTPOUT: 0.02, GDA: 1, LIN: 1, EPAM: 0.16, LONGOUS: 7, PLA: 1, HPLA: 1 };
+    b.slab = { HHOUR: 0.22, HAXE: 0.2, PENTSUP: 0.025, PENTINF: 0.06 };
+    const cr = { AMEN: 1, H5D: 0.25, H5G: 0.25, H7D: 0.2, H7G: 0.2, H9D: 0.45, H9G: 0.45, AMORD: 0.9, AMORG: 0.9 };
+    b.cross = { ...cr };
+    b.slabG = { HHOUR: 0.22, HEXT: 0.18, EEXT: 1.25, PENTSUP: 0.025, PENTINF: 0, cross: { ...cr } };
+    b.slabD = { HHOUR: 0.22, HEXT: 0.18, EEXT: 1.25, PENTSUP: 0.025, PENTINF: 0, cross: { ...cr } };
+    return b;
+  }
+  function cableSchema(hl, hlPath = "") {
+    const col = (hlPath.match(/cables\.\d+\.(\w+)$/) ?? [])[1] ?? "";
+    const on = (c) => col === c;
+    const L = 12, H = 3;
+    const cs = Math.max(34, Math.min(62, (DW + 100) / (L + 1))), sk = new Sk(-0.6, L + 0.4, -0.2, H + 0.9, cs, cs, { l: 20, r: 70, t: 34, b: 74 }, "");
+    sk.schema = true;
+    sk.poly([[0, 0], [L, 0], [L, H], [0, H]], "beam");
+    sk.poly([[0, H], [L, H], [L, H + 0.35], [0, H + 0.35]], "slab");
+    sk.line(L, -0.2, L, H + 0.6, "axis");
+    sk.text(sk.X(L) - 4, sk.Y(H + 0.6) - 4, "mi-trav\xE9e", "tx sm mute", "end");
+    const a = { absor: 0.4, abdeco: 1.6, abfico: 7, orf: 0.35, t: 0.3 };
+    const yEx = a.orf + a.t * (a.abdeco - a.absor + (a.abfico - a.abdeco) / 2);
+    const yA = (x) => x <= a.abdeco ? yEx - a.t * (x - a.absor) : x >= a.abfico ? a.orf : a.orf + a.t * (a.abfico - x) ** 2 / (2 * (a.abfico - a.abdeco));
+    const pA = [];
+    for (let i = 0; i <= 80; i++) {
+      const x = a.absor + (L - a.absor) * i / 80;
+      pA.push([x, yA(x)]);
+    }
+    sk.pline(pA, "cab f1 sel");
+    const xsD = [0.9, 3.4, 5.9, L];
+    xsD.forEach((x, i) => {
+      sk.circleP(sk.X(x), sk.Y(yA(x)), 3.5, "pt f1 hl");
+      sk.lineP(sk.X(x), sk.Y(0) + 2, sk.X(x), sk.Y(yA(x)), "ext", true);
+      if (i === 1) sk.text(sk.X(x) + 5, sk.Y(yA(x)) - 8, "points du tableau D : abscisse x, ordonn\xE9e y", on("D") ? "tx sm hl" : "tx sm", "start");
+    });
+    const r = { absor: 4.2, abdeco: 4.9, orf: 0.65, t: 0.42 };
+    const rAbfico = r.abdeco + 2 * (H - r.t * (r.abdeco - r.absor) - r.orf) / r.t;
+    const yR = (x) => x <= r.abdeco ? H - r.t * (x - r.absor) : x >= rAbfico ? r.orf : r.orf + r.t * (rAbfico - x) ** 2 / (2 * (rAbfico - r.abdeco));
+    const pR = [];
+    for (let i = 0; i <= 80; i++) {
+      const x = r.absor + (L - r.absor) * i / 80;
+      pR.push([x, yR(x)]);
+    }
+    sk.pline(pR, "cab f2");
+    sk.poly([[r.absor - 0.35, H + 0.35], [r.absor + 0.25, H + 0.35], [r.absor + 0.25, H - 0.25], [r.absor - 0.05, H - 0.25]], on("YENCO") || on("DENCO") ? "enc hl" : "enc");
+    const mk = (x, code, row2) => {
+      sk.lineP(sk.X(x), sk.Y(0) + 2, sk.X(x), sk.Y(H + 0.35), on(code) ? "mk hl" : "mk", true);
+      sk.dimH(0, x, 0, 16 + row2 * 18, code, on(code) ? code : "", 0, "r");
+    };
+    mk(a.absor, "ABSOR", 0);
+    mk(a.abdeco, "ABDECO", 1);
+    mk(a.abfico, "ABFICO", 2);
+    sk.dimV(0, a.orf, a.abfico + 1.5, 10, "ORFICO", on("ORFICO") ? "ORFICO" : "");
+    const px = sk.X(a.absor), py = sk.Y(yEx), R = 34, th = Math.atan(a.t);
+    sk.top.push(`<path class="${on("ANGSOR") ? "dim hl" : "dim"}" fill="none" d="M ${r1(px + R)} ${r1(py)} A ${R} ${R} 0 0 1 ${r1(px + R * Math.cos(th))} ${r1(py + R * Math.sin(th))}"/>`);
+    sk.lineP(px, py, px + R + 10, py, "ext", true);
+    sk.text(px + R + 12, py + 14, "ANGSOR", on("ANGSOR") ? "tx dl hl" : "tx dl", "start");
+    sk.dimH(r.absor - 0.35, r.absor + 0.25, H + 0.35, -10, "DENCO", on("DENCO") ? "DENCO" : "", H + 0.35, "l");
+    sk.dimV(H - 0.25, H + 0.35, r.absor - 0.35, -8, "YENCO", on("YENCO") ? "YENCO" : "");
+    sk.text(sk.X(r.absor + 0.25) + 60, sk.Y(H + 0.35) - 6, "c\xE2ble relev\xE9, ancr\xE9 dans une encoche", "tx sm", "start");
+    sk.text(sk.X(a.absor), sk.Y(yEx) - 8, "c\xE2ble d'about", "tx sm", "start");
+    let out = sk.svg("C\xE2ble \u2014 trac\xE9 vertical (tableau D')", "Sch\xE9ma de principe du trac\xE9 vertical d'un c\xE2ble");
+    const pl = new Sk(-0.6, L + 0.4, -0.9, 0.9, cs, cs, { l: 20, r: 70, t: 14, b: 56 }, "");
+    pl.schema = true;
+    pl.poly([[0, -0.6], [L, -0.6], [L, 0.6], [0, 0.6]], "beam");
+    pl.line(0, 0, L, 0, "axis");
+    const h0 = 3, h1 = 8, E = 0.42;
+    const z = (x) => x <= h0 ? 0 : x >= h1 ? E : (() => {
+      const u = (x - h0) / (h1 - h0);
+      return E * (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u));
+    })();
+    const pp = [];
+    for (let i = 0; i <= 80; i++) {
+      const x = a.absor + (L - a.absor) * i / 80;
+      pp.push([x, z(x)]);
+    }
+    pl.pline(pp, "cab f1 sel");
+    for (const [x, c] of [[h0, "ABDEHO"], [h1, "ABFIHO"]]) {
+      pl.lineP(pl.X(x), pl.Y(-0.6), pl.X(x), pl.Y(0.6), on(c) ? "mk hl" : "mk", true);
+      pl.dimH(0, x, -0.6, c === "ABDEHO" ? 14 : 32, c, on(c) ? c : "", -0.6, "r");
+    }
+    pl.dimV(0, E, L - 0.6, 8, "EXTRAN", on("EXTRAN") ? "EXTRAN" : "");
+    pl.text(pl.X(0.2), pl.Y(0.6) - 4, "axe de l'\xE2me", "tx sm mute", "start");
+    out += pl.svg("C\xE2ble \u2014 d\xE9viation en plan dans le talon", "Sch\xE9ma de principe de la d\xE9viation horizontale d'un c\xE2ble");
+    return out;
+  }
+
+  // src/web/saisie.ts
+  var EQ = {
+    v: null,
+    get(b) {
+      if (!this.v) {
+        try {
+          const s = localStorage.getItem("vipp-equip");
+          if (s) this.v = JSON.parse(s);
+        } catch {
+        }
+      }
+      return this.v ?? defaultEquip(b);
+    },
+    set(k, e, b) {
+      this.v = { ...this.get(b), [k]: e };
+      try {
+        localStorage.setItem("vipp-equip", JSON.stringify(this.v));
+      } catch {
+      }
+    }
+  };
+  var YN = [[0, "non"], [1, "oui"]];
+  var shapeFields = (pre) => [
+    { g: "Contour", f: [
+      { p: pre + "HPOUT", c: "HPOUT", l: "Hauteur de la poutre (dans l'axe)", u: "m" },
+      { p: pre + "ETAB", c: "ETAB", l: "Largeur de la table de compression", u: "m" },
+      { p: pre + "ETALON", c: "ETALON", l: "Largeur du talon", u: "m" },
+      { p: pre + "HPIED", c: "HPIED", l: "Hauteur du pied de talon (partie verticale)", u: "m" },
+      { p: pre + "H1", c: "H1", l: "Hauteur du chanfrein du talon", u: "m" },
+      { p: pre + "H2", c: "H2", l: "Hauteur de l'\xE2me", u: "m" },
+      { p: pre + "E1", c: "E1", l: "\xC9paisseur d'\xE2me en bas (jonction talon)", u: "m" },
+      { p: pre + "E2", c: "E2", l: "\xC9paisseur d'\xE2me en haut (sous goussets)", u: "m" },
+      { p: pre + "HTAB", c: "HTAB", l: "\xC9paisseur de la table \xE0 son extr\xE9mit\xE9", u: "m" },
+      { p: pre + "PENTPOUT", c: "PENTPOUT", l: "Pente du dessus de la table", u: "m/m", h: "Positive vers la droite (0,025 = 2,5 %)." }
+    ] },
+    { g: "Goussets sup\xE9rieurs", m: { cols: [["gauche", "G"], ["droit", "D"]], rows: [
+      [pre + "H3", "H3", "Hauteur du gousset", "m"],
+      [pre + "D3", "D3", "D\xE9bord de table au-del\xE0 du gousset", "m"]
+    ] } },
+    { g: "Sur\xE9paisseur d'\xE2me sur appui", f: [
+      { p: pre + "GDA", c: "GOUDAM", l: "\xC9paississement de l'\xE2me", t: "sel", o: [[0, "0 \u2014 aucun"], [1, "1 \u2014 goussets non renforc\xE9s"], [2, "2 \u2014 goussets renforc\xE9s"]], re: true },
+      { p: pre + "LIN", c: "LIN", l: "Loi de variation", t: "sel", o: [[0, "0 \u2014 discontinue"], [1, "1 \u2014 lin\xE9aire"]] },
+      { p: pre + "EPAM", c: "EPAM", l: "Sur\xE9paisseur totale de l'\xE2me sur appui", u: "m" },
+      { p: pre + "LONGOUS", c: "LONGOUS", l: "Longueur de variation, depuis l'axe d'appui", u: "m" }
+    ] },
+    { g: "Plaque d'about", f: [
+      { p: pre + "PLA", c: "PLAB", l: "Plaque d'about pr\xE9fabriqu\xE9e", t: "sel", o: YN },
+      { p: pre + "HPLA", c: "HPLA", l: "Hauteur de la plaque d'about", u: "m" }
+    ] }
+  ];
+  var crossRows = (pfx) => [
+    [pfx + "AMEN", "AMEN", "Amorces d'entretoises sur la poutre", "", "sel", YN]
+  ];
+  function deriveGeometry(b, debord = 0.5, fill = false) {
+    const r = (x, d = 5e-3) => Math.round(x / d) * d, r3 = (x) => Math.round(x * 1e3) / 1e3;
+    const put = (o, k, v) => {
+      if (!fill || !(o[k] > 0)) o[k] = v;
+    };
+    const n = b.NPOUT, H = b.beam.HPOUT, T = b.beam.ETAB, L = b.PORTEE, hh = b.slab.HHOUR;
+    if (H > 0) {
+      const s = b.beam, small = H < 1.5;
+      if (!fill) s.PENTPOUT = 0;
+      put(s, "ETALON", small ? 0.6 : 0.8);
+      put(s, "E1", small ? 0.2 : 0.22);
+      put(s, "E2", small ? 0.2 : 0.22);
+      put(s, "HPIED", r(Math.min(0.25, Math.max(0.15, 0.1 * H)), 0.01));
+      put(s, "H1", r3(r((s.ETALON - s.E1) / 2 * 1.2, 0.01)));
+      put(s, "H3D", 0.12);
+      put(s, "H3G", 0.12);
+      put(s, "HTAB", 0.12);
+      if (T > 0) {
+        put(s, "D3D", r3(Math.max(0.1, (T - s.E2) / 2 - 0.13)));
+        put(s, "D3G", r3(Math.max(0.1, (T - s.E2) / 2 - 0.13)));
+      }
+      put(s, "H2", r3(H - s.HPIED - s.H1 - Math.max(s.H3D, s.H3G) - s.HTAB));
+      if (!fill || !(s.GDA > 0)) {
+        s.GDA = 1;
+        s.LIN = 1;
+      }
+      put(s, "EPAM", 0.16);
+      if (L > 0) put(s, "LONGOUS", r(L / 4, 0.25));
+      if (!fill) {
+        s.PLA = 0;
+        s.HPLA = 0;
+      }
+      b.beamRive = JSON.parse(JSON.stringify(s));
+      b.TYPOURI = [1, 1];
+      put(b, "HENTA", r3(Math.max(0.5, H - 0.4)));
+      if (!fill) {
+        b.HENTI = 0;
+        b.NE = 2;
+        b.ENTINT = 0;
+      }
+      put(b, "ENTAPP", 0.4);
+      const cr = { AMEN: 1, H5D: 0.2, H5G: 0.2, H7D: 0, H7G: 0, H9D: r3(Math.max(0.3, 0.2 * H)), H9G: r3(Math.max(0.3, 0.2 * H)), AMORD: 0.75, AMORG: 0.75 };
+      for (const c of [b.cross, b.slabG.cross, b.slabD.cross]) for (const [k, v] of Object.entries(cr)) put(c, k, v);
+    }
+    if (hh > 0) {
+      put(b.slab, "HAXE", hh);
+      if (!fill) {
+        b.slab.PENTSUP = 0.025;
+        b.slab.PENTINF = 0.025;
+      } else {
+        put(b.slab, "PENTSUP", 0.025);
+      }
+      for (const e of [b.slabG, b.slabD]) {
+        put(e, "HHOUR", hh);
+        put(e, "HEXT", r3(Math.max(0.16, hh - 0.04)));
+        if (!fill) {
+          e.PENTSUP = 0.025;
+          e.PENTINF = 0;
+        } else put(e, "PENTSUP", 0.025);
+      }
+    }
+    if (n >= 2 && T > 0) {
+      const W = b.ETROTG + b.EGAU + b.ESURCH + b.EDROI + b.ETROTD, e = r3(T / 2 + Math.max(0, debord));
+      put(b.slabG, "EEXT", e);
+      put(b.slabD, "EEXT", e);
+      const eg = b.slabG.EEXT, ed = b.slabD.EEXT;
+      if (W - eg - ed > 0) {
+        b.ENTRAPOUT = r3((W - eg - ed) / (n - 1));
+        b.DPOUT1 = r3(b.ETROTG + b.EGAU + b.ESURCH / 2 - eg);
+      }
+    }
+    if (!(b.PORTEE > 0) && !fill) {
+    }
+  }
+  var hConseil = (L) => L > 0 ? Math.round(L / 17.5 / 0.05) * 0.05 : 0;
+  var STEPS = [
+    {
+      id: "principal",
+      t: "Dimensions principales",
+      lines: "travers \xB7 poutre \xB7 hourdis",
+      custom: "principal",
+      intro: "Profil en travers, poutre et hourdis de l'ouvrage. Les dimensions non saisies (position des poutres, entretoises, sur\xE9paisseur d'\xE2me\u2026) sont compl\xE9t\xE9es dans les proportions courantes des VIPP et restent modifiables aux \xE9tapes suivantes.",
+      sk: (b, hl) => generalSection(b, hl, EQ.get(b), "geo"),
+      gs: [
+        { g: "Profil en travers (de gauche \xE0 droite)", f: [
+          { p: "ETROTG", c: "ETROTG", l: "Trottoir G", u: "m", h: "Largeur du trottoir gauche." },
+          { p: "EGAU", c: "EGAU", l: "Bande G", u: "m", h: "Bande d\xE9ras\xE9e gauche." },
+          { p: "ESURCH", c: "ESURCH", l: "Chargeable", u: "m", h: "Largeur chargeable de la chauss\xE9e." },
+          { p: "EDROI", c: "EDROI", l: "Bande D", u: "m", h: "Bande d\xE9ras\xE9e droite." },
+          { p: "ETROTD", c: "ETROTD", l: "Trottoir D", u: "m", h: "Largeur du trottoir droit." },
+          { p: "NPOUT", c: "NPOUT", l: "Nb poutres", t: "i", min: 2, h: "Nombre de poutres." }
+        ] },
+        { g: "Poutre", f: [
+          ...(shapeFields("beam.")[0].f ?? []).map((f2) => ({ ...f2, l: { HPOUT: "Hauteur", ETAB: "Table", ETALON: "Talon", HPIED: "Pied talon", H1: "Chanfrein", H2: "\xC2me", E1: "\xC2me bas", E2: "\xC2me haut", HTAB: "Bout table", PENTPOUT: "Pente table" }[f2.c] ?? f2.l, h: f2.l + (f2.h ? ". " + f2.h : "") })),
+          { p: "beam.H3G", c: "H3G", l: "Gousset G", u: "m", h: "Hauteur du gousset gauche." },
+          { p: "beam.D3G", c: "D3G", l: "D\xE9bord G", u: "m", h: "D\xE9bord de table au-del\xE0 du gousset gauche." },
+          { p: "beam.H3D", c: "H3D", l: "Gousset D", u: "m", h: "Hauteur du gousset droit." },
+          { p: "beam.D3D", c: "D3D", l: "D\xE9bord D", u: "m", h: "D\xE9bord de table au-del\xE0 du gousset droit." }
+        ] },
+        { g: "Hourdis", m: { cols: [["enc. gauche", "slabG."], ["courant", "slab."], ["enc. droit", "slabD."]], rows: [
+          ["HHOUR", "HHOUR", "\xC9paisseur dans l'axe de la poutre", "m"],
+          ["", "HAXE / HEXT", "\xC9paisseur \xE0 mi-distance (courant) ou en bout d'encorbellement", "m"],
+          ["EEXT", "EEXT", "Largeur de l'encorbellement depuis l'axe de la poutre de rive", "m"],
+          ["PENTSUP", "PENTSUP", "Pente du dessus", "m/m"],
+          ["PENTINF", "PENTINF", "Pente du dessous", "m/m"]
+        ] } }
+      ]
+    },
+    {
+      id: "ouvrage",
+      t: "Ouvrage",
+      lines: "Titre \xB7 ligne 4",
+      top: true,
+      intro: "Identification du calcul et choix des poutres \xE0 justifier. Les poutres retenues sont rep\xE9r\xE9es en or sur la coupe.",
+      sk: (b) => generalSection(b, "", EQ.get(b), "calc"),
+      gs: [{ g: "Identification", f: [
+        { p: "titre.0", c: "TITRE 1", l: "Ma\xEEtre d'ouvrage / bureau d'\xE9tudes", t: "s" },
+        { p: "titre.1", c: "TITRE 2", l: "Ouvrage", t: "s" },
+        { p: "titre.2", c: "TITRE 3", l: "Pr\xE9cision (trav\xE9e, variante\u2026)", t: "s" },
+        { p: "numero", c: "NO", l: "Num\xE9ro du calcul", t: "s" },
+        { p: "date", c: "DATE", l: "Date (jj.mm.aa)", t: "s" },
+        { p: "poutresACalculer", c: "POUTRES", l: "Poutres \xE0 calculer (ex. 1 2 3)", t: "list", h: "Num\xE9rot\xE9es de gauche \xE0 droite, de 1 \xE0 NPOUT. Chaque poutre doit appartenir \xE0 un c\xE2blage (\xE9tape C\xE2blages)." },
+        { p: "SYMTAB", c: "SYMTAB", l: "Tablier sym\xE9trique", t: "sel", o: [[0, "0 \u2014 non"], [1, "1 \u2014 oui"]] }
+      ] }]
+    },
+    {
+      id: "travers",
+      t: "Profil en travers",
+      lines: "A1",
+      top: true,
+      custom: "equip",
+      intro: "R\xE9partition de la largeur et position des poutres. L'axe de la chauss\xE9e (tiret\xE9) sert d'origine \xE0 DPOUT1. La coupe g\xE9n\xE9rale se met \xE0 jour \xE0 chaque saisie ; les dispositifs de retenue dessin\xE9s se choisissent plus bas.",
+      sk: (b, hl) => generalWithDetails(b, hl, EQ.get(b), "geo"),
+      gs: [
+        { g: "Largeurs (de gauche \xE0 droite)", f: [
+          { p: "ETROTG", c: "ETROTG", l: "Trottoir gauche", u: "m" },
+          { p: "EGAU", c: "EGAU", l: "Bande d\xE9ras\xE9e gauche", u: "m" },
+          { p: "ESURCH", c: "ESURCH", l: "Largeur chargeable", u: "m" },
+          { p: "EDROI", c: "EDROI", l: "Bande d\xE9ras\xE9e droite", u: "m" },
+          { p: "ETROTD", c: "ETROTD", l: "Trottoir droit", u: "m" },
+          { p: "NVOIE", c: "NVOIE", l: "Nombre de voies (0 = r\xE8gle du fascicule 61)", t: "i" }
+        ] },
+        { g: "Poutres", f: [
+          { p: "NPOUT", c: "NPOUT", l: "Nombre de poutres", t: "i", min: 2, re: true },
+          { p: "ENTRAPOUT", c: "ENTRAPOUT", l: "Entraxe des poutres", u: "m" },
+          { p: "DPOUT1", c: "DPOUT1", l: "Distance de l'axe de la chauss\xE9e \xE0 l'axe de la poutre 1", u: "m", h: "Distance, en valeur absolue, de l'axe de la poutre de gauche num\xE9rot\xE9e 1 \xE0 l'axe de la chauss\xE9e proprement dite." }
+        ] }
+      ]
+    },
+    {
+      id: "travee",
+      t: "Trav\xE9e",
+      lines: "A1 \xB7 A3",
+      top: true,
+      intro: "Port\xE9e, about, biais et entretoises. L'\xE9l\xE9vation est dessin\xE9e avec une \xE9chelle verticale dilat\xE9e.",
+      sk: (b, hl) => spanViews(b, hl),
+      gs: [
+        { g: "Trav\xE9e", f: [
+          { p: "PORTEE", c: "PORTEE", l: "Port\xE9e entre axes d'appui", u: "m" },
+          { p: "ABOUT", c: "ABOUT", l: "About (extr\xE9mit\xE9 de poutre \u2014 axe d'appui)", u: "m" },
+          { p: "BIAIS", c: "BIAIS", l: "Biais (100 = ouvrage droit)", u: "gr" },
+          { p: "NT", c: "NT", l: "NT", t: "i" }
+        ] },
+        { g: "Entretoises", f: [
+          { p: "NE", c: "NE", l: "Nombre d'entretoises (2 = abouts seuls)", t: "i" },
+          { p: "ENTAPP", c: "ENTAPP", l: "\xC9paisseur des entretoises d'about", u: "m" },
+          { p: "HENTA", c: "HENTA", l: "Retomb\xE9e des entretoises d'about sous le hourdis", u: "m" },
+          { p: "ENTINT", c: "ENTINT", l: "\xC9paisseur des entretoises interm\xE9diaires", u: "m" },
+          { p: "HENTI", c: "HENTI", l: "Retomb\xE9e des entretoises interm\xE9diaires", u: "m" }
+        ] }
+      ]
+    },
+    {
+      id: "poutre",
+      t: "Poutre",
+      lines: "A2 \xB7 A4",
+      intro: "Contour de la poutre pr\xE9fabriqu\xE9e courante. La sur\xE9paisseur d'\xE2me sur appui est trac\xE9e en tiret\xE9.",
+      sk: (b, hl, path) => beamSection(b, hl, /^beamRive\./.test(path)),
+      gs: [
+        ...shapeFields("beam."),
+        { g: "Poutres de rive", f: [
+          { p: "TYPOURI.0", c: "TYPOURI G", l: "Poutre de rive gauche", t: "sel", o: [[1, "1 \u2014 identique"], [0, "0 \u2014 g\xE9om\xE9trie propre"]], re: true },
+          { p: "TYPOURI.1", c: "TYPOURI D", l: "Poutre de rive droite", t: "sel", o: [[1, "1 \u2014 identique"], [0, "0 \u2014 g\xE9om\xE9trie propre"]], re: true }
+        ] },
+        ...shapeFields("beamRive.").map((g) => ({ ...g, g: "Rive \xB7 " + g.g, when: (b) => b.TYPOURI[0] === 0 || b.TYPOURI[1] === 0 }))
+      ]
+    },
+    {
+      id: "hourdis",
+      t: "Hourdis",
+      lines: "A3 \xB7 A5 \xB7 A6",
+      intro: "Hourdis coul\xE9 en place et encorbellements. Le croquis montre le c\xF4t\xE9 de la donn\xE9e en cours de saisie.",
+      sk: (b, hl, path) => slabZoom(b, hl, path),
+      gs: [
+        { g: "\xC9paisseurs et pentes", m: { cols: [["enc. gauche", "slabG."], ["courant", "slab."], ["enc. droit", "slabD."]], rows: [
+          ["HHOUR", "HHOUR", "\xC9paisseur dans l'axe de la poutre", "m"],
+          ["", "HAXE / HEXT", "\xC9paisseur \xE0 mi-distance (courant) ou en bout d'encorbellement", "m"],
+          ["EEXT", "EEXT", "Largeur de l'encorbellement depuis l'axe de la poutre de rive", "m"],
+          ["PENTSUP", "PENTSUP", "Pente du dessus", "m/m"],
+          ["PENTINF", "PENTINF", "Pente du dessous", "m/m"]
+        ] } }
+      ]
+    },
+    {
+      id: "entretoises",
+      t: "Amorces",
+      lines: "A3 \xB7 A5 \xB7 A6",
+      intro: "Amorces d'entretoises d'about port\xE9es par les poutres pr\xE9fabriqu\xE9es, et partie coul\xE9e en place.",
+      sk: (b, hl, path) => crossBeamView(b, hl, path),
+      gs: [
+        { g: "Amorces d'entretoises d'about", m: { cols: [["poutre de rive G", "slabG.cross."], ["poutres courantes", "cross."], ["poutre de rive D", "slabD.cross."]], rows: [
+          ...crossRows(""),
+          ["AMORG", "AMORG", "Longueur de l'amorce c\xF4t\xE9 gauche (depuis l'axe)", "m"],
+          ["AMORD", "AMORD", "Longueur de l'amorce c\xF4t\xE9 droit (depuis l'axe)", "m"],
+          ["H5G", "H5G", "Cote de la sous-face au nu de l'\xE2me, c\xF4t\xE9 gauche", "m"],
+          ["H5D", "H5D", "Cote de la sous-face au nu de l'\xE2me, c\xF4t\xE9 droit", "m"],
+          ["H7G", "H7G", "Remont\xE9e de la sous-face jusqu'au bout de l'amorce, gauche", "m"],
+          ["H7D", "H7D", "Remont\xE9e de la sous-face jusqu'au bout de l'amorce, droite", "m"],
+          ["H9G", "H9G", "Cote de la sous-face en bout d'amorce, gauche", "m"],
+          ["H9D", "H9D", "Cote de la sous-face en bout d'amorce, droite", "m"]
+        ] }, note: "Cotes mesur\xE9es depuis la sous-face de la poutre. La retomb\xE9e HENTA de la partie coul\xE9e en place se saisit \xE0 l'\xE9tape Trav\xE9e." }
+      ]
+    },
+    {
+      id: "charges",
+      t: "Charges",
+      lines: "B1 \xB7 B2 \xB7 B3",
+      intro: "Poids propres, \xE9quipements et charges d'exploitation du fascicule 61 titre II.",
+      sk: (b, hl) => crossSection(b, hl, "charges"),
+      custom: "qsup",
+      gs: [
+        { g: "Poids propres", f: [
+          { p: "MASVOL", c: "MASVOL", l: "Masse volumique du b\xE9ton", u: "t/m\xB3" },
+          { p: "OSSAMAXP", c: "OSSAMAX P", l: "Coefficient max. sur le poids des poutres", t: "n" },
+          { p: "OSSAMINP", c: "OSSAMIN P", l: "Coefficient min. sur le poids des poutres", t: "n" },
+          { p: "OSSAMAXH", c: "OSSAMAX H", l: "Coefficient max. sur le poids du hourdis", t: "n" },
+          { p: "OSSAMINH", c: "OSSAMIN H", l: "Coefficient min. sur le poids du hourdis", t: "n" },
+          { p: "PDALMAX", c: "PREDALMAX", l: "Pr\xE9dalles, valeur max. par intervalle", u: "t/m" },
+          { p: "PDALMIN", c: "PREDALMIN", l: "Pr\xE9dalles, valeur min. par intervalle", u: "t/m" }
+        ] },
+        { g: "Barri\xE8res et corniches", m: { cols: [["gauche", "G"], ["droite", "D"]], rows: [
+          ["DBA", "DBAG / DBAD", "Distance au bord de la largeur chargeable", "m"],
+          ["PBA\xB7MAX", "PBAMAX", "Poids lin\xE9ique max.", "t/m"],
+          ["PBA\xB7MIN", "PBAMIN", "Poids lin\xE9ique min.", "t/m"]
+        ] } },
+        { g: "Charges d'exploitation", f: [
+          { p: "CLASSE", c: "CLASSE", l: "Classe du pont", t: "sel", o: [[1, "1re classe"], [2, "2e classe"], [3, "3e classe"]] },
+          { p: "A", c: "A", l: "Charge A(l)", t: "sel", o: YN },
+          { p: "B", c: "B", l: "Syst\xE8me B (Bc, Bt)", t: "sel", o: YN },
+          { p: "CM", c: "CM", l: "Charges militaires", t: "sel", o: [[0, "0 \u2014 aucune"], [4, "4 \u2014 Mc 120 / Me 120"]] },
+          { p: "CE", c: "CE", l: "Convoi exceptionnel", t: "sel", o: [[0, "0 \u2014 aucun"], [1, "1 \u2014 convoi D"], [2, "2 \u2014 convoi E"]] },
+          { p: "PSTROT", c: "PSTROT", l: "Charge des trottoirs", u: "t/m\xB2" },
+          { p: "A1", c: "A1", l: "A(l) = A1 + A2 / (A3 + L) \u2014 A1 (0 = 0,23)", u: "t/m\xB2" },
+          { p: "A2", c: "A2", l: "A2 (0 = 36)", t: "n" },
+          { p: "A3", c: "A3", l: "A3 (0 = 12)", u: "m" }
+        ] }
+      ]
+    },
+    {
+      id: "materiaux",
+      t: "Mat\xE9riaux",
+      lines: "C1 \xB7 C2",
+      intro: "B\xE9tons de la poutre et du hourdis, aciers passifs et coefficients d'\xE9quivalence.",
+      sk: (b, hl) => materialsView(b, hl),
+      gs: [
+        { g: "B\xE9tons", f: [
+          { p: "CLASSEBP", c: "CL BP", l: "Classe de v\xE9rification BPEL", t: "sel", o: [[1, "classe I"], [2, "classe II"], [3, "classe III"]] },
+          { p: "POISSON", c: "POIS", l: "Coefficient de Poisson", t: "n" },
+          { p: "FC11", c: "FC1", l: "Poutre : fcj \xE0 la 1re mise en tension", u: "MPa" },
+          { p: "FC12", c: "FC2", l: "Poutre : fcj \xE0 la 2e partie de la 1re famille", u: "MPa" },
+          { p: "FC28", c: "FC28", l: "Poutre : fc28", u: "MPa" },
+          { p: "FC4H", c: "FC4H", l: "Hourdis : fcj \xE0 la tension de la 2e famille", u: "MPa" },
+          { p: "FC5H", c: "FC5H", l: "Hourdis : fcj \xE0 la pose des superstructures", u: "MPa" },
+          { p: "FC28H", c: "FC28H", l: "Hourdis : fc28", u: "MPa" },
+          { p: "EPSR", c: "EPS R", l: "Retrait final \u03B5r", u: "\xD710\u207B\u2074" }
+        ] },
+        { g: "Aciers passifs", f: [
+          { p: "FE1", c: "FE1", l: "Limite \xE9lastique des aciers longitudinaux", u: "MPa" },
+          { p: "SIGS", c: "SIGS", l: "Contrainte limite en service", u: "MPa" },
+          { p: "TYPEAP", c: "TYPE", l: "Type d'aciers (1 = haute adh\xE9rence)", t: "i" },
+          { p: "DAP", c: "D", l: "Distance de l'axe des aciers au parement", u: "m" },
+          { p: "ES", c: "ES", l: "Module d'\xE9lasticit\xE9", u: "MPa" },
+          { p: "FE2", c: "FE2", l: "Limite \xE9lastique des armatures d'effort tranchant", u: "MPa" }
+        ] },
+        { g: "Coefficients d'\xE9quivalence et relaxation", f: [
+          { p: "NH", c: "NH", l: "NH", t: "n" },
+          { p: "NS3", c: "NS3", l: "NS3", t: "n" },
+          { p: "NP3", c: "NP3", l: "NP3", t: "n" },
+          { p: "NP0", c: "NP0", l: "Coefficient d'\xE9quivalence acier de pr\xE9contrainte / b\xE9ton (instantan\xE9)", t: "n" },
+          { p: "RO", c: "RO", l: "RO (0 = relaxation par \u03C11000)", t: "n" },
+          { p: "SPSI1", c: "S.PSI1", l: "S.PSI1", t: "n" },
+          { p: "DFPRG", c: "D.FPRG", l: "D.FPRG", t: "n" },
+          { p: "KTABF", c: "KF", l: "KF", t: "i" }
+        ] }
+      ]
+    },
+    {
+      id: "precontrainte",
+      t: "Pr\xE9contrainte",
+      lines: "C3 \xB7 C4 \xB7 C5",
+      intro: "Syst\xE8mes de pr\xE9contrainte (deux au plus) et dates du phasage, compt\xE9es en \xE2ge du b\xE9ton de la poutre.",
+      sk: (b, hl) => phasingView(b, hl),
+      gs: [
+        { g: "Syst\xE8mes", m: { cols: [["syst\xE8me 1", "systems.0."], ["syst\xE8me 2", "systems.1."]], rows: [
+          ["ARMA", "ARMA", "R\xE9f\xE9rence de l'armature (rappel\xE9e en D')", "", "i"],
+          ["FPRG", "FPRG", "Contrainte de rupture garantie", "MPa"],
+          ["FPEG", "FPEG", "Limite \xE9lastique garantie", "MPa"],
+          ["SIGP0", "SIGPO", "Tension \xE0 l'origine", "MPa"],
+          ["EP", "EP", "Module d'\xE9lasticit\xE9", "MPa"],
+          ["SECAB", "SECAB", "Section d'un c\xE2ble", "mm\xB2"],
+          ["DGAINE", "DGAINE", "Diam\xE8tre ext\xE9rieur de la gaine", "m"],
+          ["ENROB", "ENROB", "Enrobage de la gaine", "m"],
+          ["DECAL", "DECAL", "D\xE9calage du c\xE2ble dans la gaine", "m"],
+          ["F", "F", "Coefficient de frottement en courbe f", "/rad"],
+          ["PHI", "PHI", "Coefficient de perte en ligne \u03C6", "/m"],
+          ["RECUL", "RECUL", "Recul \xE0 l'ancrage", "m"],
+          ["R1000", "R1000", "Relaxation \xE0 1000 h \u03C11000", "%"],
+          ["NGA", "NG", "Nombre de gaines par lit", "", "i"],
+          ["TYPE", "TYPE", "Loi de l'acier (1 \xE9lasto-plastique, 2 BPEL)", "", "i"],
+          ["AV", "AV", "AV", "m"],
+          ["AH", "AH", "AH", "m"]
+        ] } },
+        { g: "Phasage (jours)", f: [
+          { p: "J.J1", c: "J1", l: "Mise en tension de la 1re famille", t: "i" },
+          { p: "J.J2", c: "J2", l: "Tension de la 2e partie de la 1re famille", t: "i" },
+          { p: "J.J3", c: "J3", l: "B\xE9tonnage du hourdis", t: "i" },
+          { p: "J.J4", c: "J4", l: "Mise en tension de la 2e famille", t: "i" },
+          { p: "J.J5", c: "J5", l: "Mise en place des superstructures", t: "i" },
+          { p: "J.J6", c: "J6", l: "Mise en service", t: "i" },
+          { p: "J.J999", c: "J7", l: "J7", t: "i" },
+          { p: "J.JSUP", c: "JSUP", l: "JSUP", t: "i" }
+        ] }
+      ]
+    },
+    {
+      id: "cables",
+      t: "C\xE2blages",
+      lines: "C6 \xB7 D \xB7 D'",
+      intro: "Trac\xE9 des c\xE2bles par c\xE2blage : abscisses de d\xE9finition, ordonn\xE9es des axes de gaine (tableau D) et caract\xE9ristiques compl\xE9mentaires (tableau D').",
+      sk: () => "",
+      custom: "cables",
+      gs: []
+    }
+  ];
+  var DCOLS = [
+    ["num", "NUM", "Num\xE9ro du c\xE2ble", "i"],
+    ["ARMA", "ARMA", "R\xE9f\xE9rence de l'armature (syst\xE8me C3/C4)", "i"],
+    ["SECAB", "SECAB", "Section du c\xE2ble (mm\xB2)", "n"],
+    ["SIGP0", "SIGPO", "Tension \xE0 l'origine (MPa)", "n"],
+    ["ANPA", "MODE", "Mise en tension : 1 par une extr\xE9mit\xE9, 2 par les deux", "i"],
+    ["SYM", "NCASY", "Num\xE9ro du c\xE2ble sym\xE9trique", "i"],
+    ["ABDECO", "ABDECO", "Abscisse du d\xE9but de la courbe verticale (m)", "n"],
+    ["ORFICO", "ORFICO", "Ordonn\xE9e de l'axe de gaine en fin de courbe (m)", "n"],
+    ["ABFICO", "ABFICO", "Abscisse de fin de la courbe verticale (m)", "n"],
+    ["ABSOR", "ABSOR", "Abscisse de sortie du c\xE2ble (m)", "n"],
+    ["ANGSOR", "ANGSOR", "Angle vertical de sortie (gr)", "n"],
+    ["EXTRAN", "EXTRAN", "D\xE9placement transversal du c\xE2ble (m)", "n"],
+    ["ABDEHO", "ABDEHO", "Abscisse du d\xE9but de la courbe horizontale (m)", "n"],
+    ["ABFIHO", "ABFIHO", "Abscisse de fin de la courbe horizontale (m)", "n"],
+    ["YENCO", "YENCO", "Profondeur de l'encoche d'ancrage (m)", "n"],
+    ["DENCO", "DENCO", "Largeur de l'encoche d'ancrage (m)", "n"]
+  ];
+  var get = (o, p) => p.split(".").reduce((a, k) => a == null ? a : a[k], o);
+  function set(o, p, v) {
+    const ks = p.split(".");
+    const last = ks.pop();
+    const t = ks.reduce((a, k) => a[k], o);
+    t[last] = v;
+  }
+  var fmt = (v, t = "n") => t === "list" ? (v ?? []).join(" ") : t === "s" ? v ?? "" : v == null || !isFinite(v) ? "" : String(+(+v).toFixed(6));
+  var esc2 = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  function matrixCell(col, row2, code) {
+    if (col === "G" || col === "D") {
+      if (row2 === "DBA") return { p: "DBA" + col, c: "DBA" + col };
+      if (row2.startsWith("PBA\xB7")) return { p: "PBA" + col + row2.slice(4), c: "PBA" + col + row2.slice(4) };
+      return { p: row2 + col, c: code + col };
+    }
+    if (code === "HAXE / HEXT") return col === "slab." ? { p: "slab.HAXE", c: "HAXE" } : { p: col + "HEXT", c: "HEXT" };
+    if (row2 === "EEXT" && col === "slab.") return null;
+    if (col.startsWith("systems.")) return { p: col + row2, c: code };
+    return { p: col + row2, c: code };
+  }
+  var CODEMAP = null;
+  function codeMap() {
+    if (CODEMAP) return CODEMAP;
+    const m = /* @__PURE__ */ new Map(), add2 = (c, p) => {
+      if (!/^[A-Z][A-Z0-9.]*$/.test(c)) return;
+      const l = m.get(c) ?? [];
+      if (!l.includes(p)) l.push(p);
+      m.set(c, l);
+    };
+    for (const st of STEPS) for (const g of st.gs) {
+      g.f?.forEach((f2) => add2(f2.c, f2.p));
+      if (g.m) for (const [row2, code] of g.m.rows) for (const [, col] of g.m.cols) {
+        const cell = matrixCell(col, row2, code);
+        if (cell) add2(cell.c, cell.p);
+      }
+    }
+    return CODEMAP = m;
+  }
+  var fv = (v) => {
+    if (typeof v === "number" && isFinite(v)) return String(Math.round(v * 1e3) / 1e3).replace(".", ",");
+    if (Array.isArray(v) && v.every((x) => typeof x === "number")) return v.join(" ");
+    return void 0;
+  };
+  function checks(b) {
+    const out = [];
+    const E = (step, msg, p) => out.push({ step, level: "err", msg, p });
+    const W = (step, msg, p) => out.push({ step, level: "warn", msg, p });
+    const n = b.NPOUT;
+    if (b.PORTEE > 0 && b.beam.HPOUT > 0) {
+      const k = b.PORTEE / b.beam.HPOUT;
+      if (k > 22 || k < 14) W("principal", `\xC9lancement L/HPOUT = ${k.toFixed(1)} : inhabituel pour une VIPP (couramment 16 \xE0 19).`, "beam.HPOUT");
+    }
+    if (n >= 2 && b.ENTRAPOUT > 0 && b.beam.ETAB >= b.ENTRAPOUT) E("principal", `La table des poutres (ETAB = ${b.beam.ETAB}) est plus large que l'entraxe (${b.ENTRAPOUT.toFixed(3)} m) : r\xE9duire ETAB ou le nombre de poutres.`, "beam.ETAB");
+    if (n >= 2 && b.ENTRAPOUT > 0 && b.ENTRAPOUT - b.beam.ETAB < 0.3 && b.beam.ETAB < b.ENTRAPOUT) W("principal", `Espace entre tables ${(b.ENTRAPOUT - b.beam.ETAB).toFixed(2)} m : faible pour les pr\xE9dalles.`, "beam.ETAB");
+    if (b.PORTEE > 0 && !(n >= 2)) E("principal", "Il faut au moins 2 poutres.", "NPOUT");
+    if (!(n >= 2)) E("travers", "Il faut au moins 2 poutres.", "NPOUT");
+    if (!(b.ESURCH > 0)) E("travers", "La largeur chargeable ESURCH doit \xEAtre positive.", "ESURCH");
+    try {
+      const L = layout(b);
+      const left = L.xBeam[0] - b.slabG.EEXT, right = L.xBeam[n - 1] + b.slabD.EEXT;
+      if (Math.abs(left) > 0.01) W("travers", `Le bord gauche du hourdis (poutre 1 \u2212 EEXT) tombe \xE0 ${left.toFixed(3)} m du bord du tablier : v\xE9rifier DPOUT1, ENTRAPOUT et EEXT gauche.`, "DPOUT1");
+      if (Math.abs(right - L.width) > 0.01) W("travers", `Le bord droit du hourdis tombe \xE0 ${(right - L.width).toFixed(3)} m du bord du tablier : v\xE9rifier ENTRAPOUT et EEXT droit.`, "ENTRAPOUT");
+    } catch {
+    }
+    if (!b.poutresACalculer.length) E("ouvrage", "Indiquer au moins une poutre \xE0 calculer.", "poutresACalculer");
+    for (const [sd, sl, lab] of [["G", b.slabG, "gauche"], ["D", b.slabD, "droite"]]) {
+      const tab = ((sd === "G" ? b.TYPOURI[0] : b.TYPOURI[1]) === 0 && b.beamRive ? b.beamRive : b.beam).ETAB / 2;
+      if (sl.EEXT - tab < 0.05) W("travers", `Poutre de rive ${lab} au nu du tablier : le hourdis n'a pas d'encorbellement (EEXT ${sl.EEXT.toFixed(2)} m \u2264 demi-table ${tab.toFixed(2)} m). Utiliser \xAB Mettre les poutres de rive en retrait \xBB pour cr\xE9er un d\xE9bord.`, `slab${sd}.EEXT`);
+    }
+    for (const p of b.poutresACalculer) if (p < 1 || p > n) E("ouvrage", `La poutre ${p} n'existe pas (1 \xE0 ${n}).`, "poutresACalculer");
+    if (!(b.PORTEE > 0)) E("travee", "La port\xE9e doit \xEAtre positive.", "PORTEE");
+    if (b.BIAIS <= 0 || b.BIAIS > 100) E("travee", "Le biais doit \xEAtre compris entre 0 et 100 gr (100 = droit).", "BIAIS");
+    if (b.NE < 2) W("travee", "NE < 2 : pas d'entretoise d'about.", "NE");
+    const shp = (s, pre, step) => {
+      const yT = s.HPIED + s.H1, yW = yT + s.H2;
+      if (!(s.HPOUT > 0)) {
+        E(step, "Hauteur de poutre nulle.", pre + "HPOUT");
+        return;
+      }
+      if (yW + Math.max(s.H3D, s.H3G) > s.HPOUT - s.HTAB + 1e-6) E(step, `HPIED + H1 + H2 + H3 = ${(yW + Math.max(s.H3D, s.H3G)).toFixed(3)} m d\xE9passe HPOUT \u2212 HTAB = ${(s.HPOUT - s.HTAB).toFixed(3)} m.`, pre + "H2");
+      if (s.E1 > s.ETALON) E(step, "L'\xE2me (E1) est plus large que le talon.", pre + "E1");
+      if (s.E2 / 2 > s.ETAB / 2 - Math.max(s.D3D, s.D3G)) E(step, "Le gousset est plus large que la table : r\xE9duire D3 ou E2.", pre + "D3D");
+      if (s.GDA > 0 && s.EPAM <= 0) W(step, "\xC9paississement d'\xE2me demand\xE9 (GOUDAM > 0) sans sur\xE9paisseur EPAM.", pre + "EPAM");
+    };
+    shp(b.beam, "beam.", "poutre");
+    if ((b.TYPOURI[0] === 0 || b.TYPOURI[1] === 0) && b.beamRive) shp(b.beamRive, "beamRive.", "poutre");
+    if (b.slab.HAXE <= 0 || b.slab.HHOUR <= 0) E("hourdis", "\xC9paisseurs du hourdis nulles.", "slab.HHOUR");
+    for (const [s, side] of [[b.slabG, "gauche"], [b.slabD, "droit"]]) if (s.EEXT < b.beam.ETAB / 2) W("hourdis", `Encorbellement ${side} plus court que la demi-table de la poutre.`, (side === "gauche" ? "slabG" : "slabD") + ".EEXT");
+    const Js = [b.J.J1, b.J.J3, b.J.J4, b.J.J5, b.J.J6];
+    for (let i = 1; i < Js.length; i++) if (Js[i] < Js[i - 1]) E("precontrainte", "Les dates du phasage doivent cro\xEEtre : J1 \u2264 J3 \u2264 J4 \u2264 J5 \u2264 J6.", "J.J1");
+    if (b.J.J2 < b.J.J1) W("precontrainte", "J2 est ant\xE9rieur \xE0 J1.", "J.J2");
+    const covered = /* @__PURE__ */ new Set();
+    const mid = b.ABOUT + b.PORTEE / 2;
+    b.cablings.forEach((c, ic) => {
+      const tag = `C\xE2blage ${ic + 1} : `, pc = `cablings.${ic}.`;
+      c.poutres.forEach((p) => covered.add(p));
+      const nc = c.NCAB11 + c.NCAB12 + c.NCAB2;
+      if (nc !== c.cables.length) E("cables", tag + `NCAB11 + NCAB12 + NCAB2 = ${nc} mais ${c.cables.length} c\xE2ble(s) d\xE9crit(s) en D'.`, pc + "NCAB11");
+      if (c.ordonnees.length !== c.cables.length) E("cables", tag + `le tableau D compte ${c.ordonnees.length} ligne(s) d'ordonn\xE9es pour ${c.cables.length} c\xE2ble(s).`);
+      for (let i = 1; i < c.abscisses.length; i++) if (!(c.abscisses[i] > c.abscisses[i - 1])) E("cables", tag + "les abscisses de d\xE9finition doivent \xEAtre croissantes.", pc + "abscisses." + i);
+      const last = c.abscisses[c.abscisses.length - 1];
+      if (last !== void 0 && Math.abs(last - mid) > 5e-3) W("cables", tag + `la derni\xE8re abscisse (${last}) devrait \xEAtre la mi-trav\xE9e (ABOUT + PORTEE/2 = ${mid.toFixed(3)}).`, pc + "abscisses." + (c.abscisses.length - 1));
+      c.cables.forEach((d, k) => {
+        const p = pc + "cables." + k + ".";
+        if (!b.systems.some((s) => s.ARMA === d.ARMA)) E("cables", tag + `c\xE2ble ${d.num} : ARMA ${d.ARMA} ne correspond \xE0 aucun syst\xE8me (C3/C4).`, p + "ARMA");
+        if (!(d.ABDECO < d.ABFICO)) E("cables", tag + `c\xE2ble ${d.num} : ABDECO doit pr\xE9c\xE9der ABFICO.`, p + "ABDECO");
+        if (d.ABSOR > d.ABDECO + 1e-9) E("cables", tag + `c\xE2ble ${d.num} : la sortie (ABSOR) doit pr\xE9c\xE9der le d\xE9but de courbe (ABDECO).`, p + "ABSOR");
+        if (d.ABFICO > mid + 1e-6) E("cables", tag + `c\xE2ble ${d.num} : la fin de courbe d\xE9passe la mi-trav\xE9e.`, p + "ABFICO");
+        if (d.ORFICO <= 0 || d.ORFICO >= b.beam.HPOUT) E("cables", tag + `c\xE2ble ${d.num} : ORFICO hors de la poutre.`, p + "ORFICO");
+        const o = c.ordonnees[k] ?? [];
+        if (!o.some((y, i) => y > 0 && c.abscisses[i] >= d.ABSOR - 1e-9)) E("cables", tag + `c\xE2ble ${d.num} : aucune ordonn\xE9e d\xE9finie au-del\xE0 de la sortie.`, `${pc}ordonnees.${k}.0`);
+      });
+    });
+    for (const p of b.poutresACalculer) if (!covered.has(p)) E("cables", `La poutre ${p} n'est rattach\xE9e \xE0 aucun c\xE2blage.`);
+    try {
+      for (const w of checkBordereau(b)) W("cables", `C\xE2blage ${w.cablage}, c\xE2ble ${w.cable} : ${w.message}.`);
+    } catch {
+    }
+    return out;
+  }
+  function mount(root, init, opts = {}) {
+    const dopt = { angleRel: 22, angleTop: 20, absorAbout: 0.15, debord: 0.5 };
+    let dstate = { running: false, msg: "", k: 0, n: 1 };
+    let bd = JSON.parse(JSON.stringify(init));
+    let cur = 0, ic = 0, hlPath = "", hlCode = "";
+    const isBlank = (b) => !(b.PORTEE > 0) && !(b.NPOUT > 0) && !(b.beam.HPOUT > 0);
+    let auto = isBlank(bd);
+    const ensure = () => {
+      if (!bd.beamRive) bd.beamRive = JSON.parse(JSON.stringify(bd.beam));
+      while (bd.systems.length < 2) bd.systems.push(JSON.parse(JSON.stringify(bd.systems[0])));
+    };
+    ensure();
+    root.innerHTML = `<div class="sg-top"><button class="sg-arw" data-nav="-1" title="\xC9tape pr\xE9c\xE9dente" aria-label="\xC9tape pr\xE9c\xE9dente">\u2039</button><div class="sg-steps" role="tablist"></div><button class="sg-arw" data-nav="1" title="\xC9tape suivante" aria-label="\xC9tape suivante">\u203A</button></div>
     <div class="sg-panels">
       <section class="sg-pan sg-schp" aria-label="Sch\xE9ma de principe"><div class="sg-pan-h"><b>Sch\xE9ma de principe</b><div class="sg-ftabs" data-pan="s"></div></div><div class="sg-pv sg-schc"></div></section>
       <aside class="sg-pan sg-win" aria-label="Vues de l'ouvrage"><div class="sg-pan-h"><b>Votre ouvrage</b><div class="sg-wtabs" role="tablist"></div></div><div class="sg-ftabs sub" data-pan="w"></div><div class="sg-pv sg-skc"></div></aside>
     </div>
-    <div class="sg-info"></div><div class="sg-leg"></div><div class="sg-form"></div><div class="sg-nav"><span class="sg-pos"></span></div>`;let N=f=>e.querySelector(f),v=N(".sg-steps"),O=N(".sg-form"),F=N(".sg-skc"),U=N(".sg-schc"),S=N(".sg-info"),p=N(".sg-wtabs"),$=N(".sg-leg"),I={s:0,w:0,focus:""},b=!1;$.addEventListener("click",()=>{b=!1,j()});let M="",G=new Map,B=f=>{G.set(f.p,{c:f.c,l:f.l,u:f.u,h:f.h});let g=Re(t,f.p),h=f.t??"n",c=h==="sel"?`<select data-p="${f.p}" data-t="sel"${f.re?' data-re="1"':""}>${(f.o??[]).map(([d,A])=>`<option value="${d}"${+g===d?" selected":""}>${ne(A)}</option>`).join("")}${(f.o??[]).some(([d])=>d===+g)?"":`<option value="${g}" selected>${g}</option>`}</select>`:`<input data-p="${f.p}" data-t="${h}"${f.re?' data-re="1"':""} value="${ne(et(g,h))}" ${h==="s"||h==="list"?"":'inputmode="decimal"'} spellcheck="false" autocomplete="off">`;return`<label class="sf${h==="s"?" wide":""}" title="${ne(f.l)}${f.u?` (${ne(f.u)})`:""}"><span class="sf-h"><code>${ne(f.c)}</code>${f.u?`<em>${ne(f.u)}</em>`:""}</span>${c}<span class="sf-l">${ne(f.l)}</span></label>`},R=(f,g,h="",c)=>{let d=Re(t,f);return g==="sel"&&c?`<select data-p="${f}" data-t="sel"${h}>${c.map(([A,D])=>`<option value="${A}"${+d===A?" selected":""}>${ne(D)}</option>`).join("")}</select>`:`<input data-p="${f}" data-t="${g}" value="${ne(et(d,g))}" inputmode="decimal" spellcheck="false" autocomplete="off"${h}>`},W=f=>{let g=`<thead><tr><th></th>${f.cols.map(([d])=>`<th>${ne(d)}</th>`).join("")}</tr></thead>`,h=[];for(let[d,A,D,L,Z,Y]of f.rows){let V=`<tr><th title="${ne(A)} \u2014 ${ne(D)}${L?` (${ne(L)})`:""}"><code>${ne(A)}</code><span>${ne(D)}${L?` <em>(${ne(L)})</em>`:""}</span></th>`;for(let[,oe]of f.cols){let me=wt(oe,d,A);if(!me||Re(t,me.p)===void 0){V+='<td class="na">\u2014</td>';continue}G.set(me.p,{c:me.c,l:D,u:L||void 0}),V+=`<td>${R(me.p,Z??"n","",Y)}</td>`}h.push(V+"</tr>")}let c=d=>`<div class="sg-mx"><table>${g}<tbody>${d.join("")}</tbody></table></div>`;if(h.length>6&&f.cols.length<=3){let d=h.length>8?3:2,A=Math.ceil(h.length/d);return`<div class="sg-mx2 n${d}">${Array.from({length:d},(D,L)=>c(h.slice(L*A,(L+1)*A))).join("")}</div>`}return c(h)};function _(){let f=t.qsup.map((g,h)=>`<tr><td>${R(`qsup.${h}.de`,"i")}</td><td>${R(`qsup.${h}.a`,"i")}</td><td>${R(`qsup.${h}.max`,"n")}</td><td>${R(`qsup.${h}.min`,"n")}</td><td><button class="sg-x" data-act="qdel" data-i="${h}" title="Supprimer">\xD7</button></td></tr>`).join("");return t.qsup.forEach((g,h)=>{G.set(`qsup.${h}.de`,{c:"NUM POUT",l:"Premi\xE8re poutre du groupe"}),G.set(`qsup.${h}.a`,{c:"NUM POUT",l:"Derni\xE8re poutre du groupe"}),G.set(`qsup.${h}.max`,{c:"QSUP MAX",l:"Superstructures, valeur max. par poutre",u:"t/m"}),G.set(`qsup.${h}.min`,{c:"QSUP MIN",l:"Superstructures, valeur min. par poutre",u:"t/m"})}),`<fieldset class="sg-g" style="grid-column:span 4"><legend>Superstructures par groupe de poutres <small>B2</small></legend><div class="sg-mx"><table class="sg-t"><thead><tr><th>de la poutre</th><th>\xE0 la poutre</th><th>QSUP max (t/m)</th><th>QSUP min (t/m)</th><th></th></tr></thead><tbody>${f}</tbody></table></div><button class="btn-secondary sm" data-act="qadd">+ groupe</button></fieldset>`}function P(){let f=(c,d,A,D,L)=>(G.set("@"+c,{c:d,l:A,u:D,h:L}),`<label class="sf"><span class="sf-h"><code>${d}</code><em>${D}</em></span><input data-p="@${c}" data-t="n" value="${s[c]}" inputmode="decimal"><span class="sf-l">${A}</span></label>`),g=n.log,h="";return n.running?h=`<div class="sg-prog"><div style="width:${Math.min(100,100*n.k/Math.max(1,n.n)).toFixed(0)}%"></div></div><p class="sg-note">${ne(n.msg)}</p>`:g&&(g.error?h=`<div class="sg-ck err">Erreur du projeteur \u2014 ${ne(g.error)}</div>`:h=`<div class="sg-ck ${g.ok?"ok":"warn"}">${g.ok?"C\xE2blage trouv\xE9 : toutes les justifications sont satisfaites.":"Le projeteur n'a pas trouv\xE9 de c\xE2blage satisfaisant."}${g.seconds?` (${g.seconds.toFixed(0)} s)`:""}</div>
-        <div class="sg-mx"><table class="sg-t log"><thead><tr><th>essai (poutre ${g.critical})</th><th>1re fam.</th><th>2e fam.</th><th>r\xE9sultat</th></tr></thead><tbody>${g.steps.map((c,d)=>`<tr><td>${d+1}</td><td>${c.n1}</td><td>${c.n2}</td><td class="${c.ok?"okc":"koc"}">${c.ok?"v\xE9rifi\xE9":ne(c.reasons.join(" ; ")||"non v\xE9rifi\xE9")}</td></tr>`).join("")}</tbody></table></div>
-        <p class="sg-note">C\xE2bles retenus par poutre : ${g.perBeam.map(c=>`poutre ${c.beam} : ${c.n1} + ${c.n2}`).join(" \xB7 ")}</p>
-        ${g.advice.length?`<ul class="sg-adv">${g.advice.map(c=>`<li>${ne(c)}</li>`).join("")}</ul>`:""}`),`<fieldset class="sg-g sg-proj"><legend>Projeteur \u2014 g\xE9n\xE9ration du c\xE2blage</legend>
-      <p class="sg-note" style="margin-top:0">Le projeteur cherche le nombre de c\xE2bles de chaque famille et leur trac\xE9 selon la m\xE9thode du programme VIPP du SETRA : 1re famille (syst\xE8me C3) ancr\xE9e \xE0 l'about, 2e famille (syst\xE8me C4) relev\xE9e en trav\xE9e. Chaque essai est justifi\xE9 par le calcul complet, en classe ${["I","II","III"][(t.CLASSEBP||2)-1]}. Le c\xE2blage obtenu remplace les tableaux ci-dessous et reste modifiable.</p>
-      <div class="sg-fs">${f("angleRel","ANGSOR","Angle de sortie des c\xE2bles relev\xE9s","gr","M\xEAme angle pour tous les c\xE2bles relev\xE9s ; voisin de 22 gr (20\xB0) selon le guide VIPP.")}${f("angleTop","ANG. HAUT","Angle du c\xE2ble d'about le plus haut","gr","Les autres c\xE2bles d'about ont la m\xEAme fin de parabole ; leur angle d\xE9cro\xEEt jusqu'\xE0 1 \xE0 2 gr pour le c\xE2ble le plus bas.")}${f("absorAbout","ABSOR","Sortie des c\xE2bles d'about depuis l'extr\xE9mit\xE9","m","Abscisse de la face d'ancrage des c\xE2bles de 1re famille.")}</div>
-      <div class="actions" style="margin-top:12px"><button class="btn-primary" data-act="design"${n.running||!o.onDesign?" disabled":""}>${n.running?"Calcul en cours\u2026":"G\xE9n\xE9rer le c\xE2blage"}</button></div>
-      <div class="sg-dlog">${h}</div></fieldset>`}function y(){let f=t.cablings[u],g=t.cablings.map((Y,V)=>`<button class="sg-tab${V===u?" active":""}" data-act="cab" data-i="${V}">C\xE2blage ${V+1} \xB7 poutres ${t.cablings[V].poutres.join(", ")||"\u2014"}</button>`).join("")+'<button class="sg-tab add" data-act="cabadd">+ c\xE2blage</button>';if(!f)return`<div class="sg-tabs">${g}</div>`;let h=`cablings.${u}.`;G.set(h+"poutres",{c:"POUTRES",l:"Poutres justifi\xE9es avec ce c\xE2blage"}),G.set(h+"NCAB11",{c:"NCAB11",l:"1re famille : c\xE2bles tendus \xE0 J1",h:"Les c\xE2bles sont pris dans l'ordre du tableau D' : d'abord NCAB11, puis NCAB12, puis NCAB2."}),G.set(h+"NCAB12",{c:"NCAB12",l:"1re famille : c\xE2bles tendus \xE0 J2"}),G.set(h+"NCAB2",{c:"NCAB2",l:"2e famille : c\xE2bles tendus \xE0 J4, apr\xE8s le b\xE9tonnage du hourdis"});let c=`<div class="sg-row">
-      <label class="sf"><span class="sf-h"><code>POUTRES</code></span><input data-p="${h}poutres" data-t="list" value="${ne(f.poutres.join(" "))}" spellcheck="false"><span class="sf-l">Poutres justifi\xE9es avec ce c\xE2blage</span></label>
-      <label class="sf"><span class="sf-h"><code>NCAB11</code></span>${R(h+"NCAB11","i")}<span class="sf-l">1re famille \xE0 J1</span></label>
-      <label class="sf"><span class="sf-h"><code>NCAB12</code></span>${R(h+"NCAB12","i")}<span class="sf-l">1re famille \xE0 J2</span></label>
-      <label class="sf"><span class="sf-h"><code>NCAB2</code></span>${R(h+"NCAB2","i")}<span class="sf-l">2e famille \xE0 J4</span></label></div>`,d=f.NCAB11+f.NCAB12;f.abscisses.forEach((Y,V)=>G.set(`${h}abscisses.${V}`,{c:"ABSCISSE",l:`Abscisse de d\xE9finition n\xB0 ${V+1}, depuis l'extr\xE9mit\xE9 de la poutre`,u:"m"}));let A=f.ordonnees.map((Y,V)=>(Y.forEach((oe,me)=>G.set(`${h}ordonnees.${V}.${me}`,{c:"ORDONNEE",l:`C\xE2ble ${f.cables[V]?.num??V+1} : ordonn\xE9e de l'axe de gaine \xE0 x = ${f.abscisses[me]} m (vide = non d\xE9fini)`,u:"m"})),`<tr><th class="${V<d?"f1":"f2"}">${f.cables[V]?.num??V+1}</th>${f.abscisses.map((oe,me)=>`<td><input data-p="${h}ordonnees.${V}.${me}" data-t="z" value="${Y[me]?et(Y[me]):""}" placeholder="\u2014" inputmode="decimal"></td>`).join("")}</tr>`)).join(""),D=`<fieldset class="sg-g"><legend>Tableau D \u2014 abscisses de d\xE9finition et ordonn\xE9es des axes de gaine <small>m</small></legend>
-      <div class="sg-mx"><table class="sg-t"><thead><tr><th>x</th>${f.abscisses.map((Y,V)=>`<th>${R(`${h}abscisses.${V}`,"n")}</th>`).join("")}</tr></thead><tbody>${A}</tbody></table></div>
-      <div class="actions"><button class="btn-secondary sm" data-act="xadd">+ abscisse</button><button class="btn-secondary sm" data-act="xdel">\u2212 abscisse</button></div></fieldset>`,L=f.cables.map((Y,V)=>(ze.forEach(([oe,me,Ne])=>G.set(`${h}cables.${V}.${oe}`,{c:me,l:`C\xE2ble ${Y.num} \u2014 ${Ne}`})),`<tr><th class="${V<d?"f1":"f2"}">${V<d?V<f.NCAB11?"F1":"F1\xB72":"F2"}</th>${ze.map(([oe,,,me])=>`<td>${R(`${h}cables.${V}.${oe}`,me)}</td>`).join("")}</tr>`)).join(""),Z=`<fieldset class="sg-g"><legend>Tableau D' \u2014 caract\xE9ristiques compl\xE9mentaires des c\xE2bles</legend>
-      <div class="sg-mx"><table class="sg-t dp"><thead><tr><th></th>${ze.map(([,Y,V])=>`<th title="${ne(V)}">${Y}</th>`).join("")}</tr></thead><tbody>${L}</tbody></table></div>
-      <div class="actions"><button class="btn-secondary sm" data-act="kadd">+ c\xE2ble</button><button class="btn-secondary sm" data-act="kdel">\u2212 dernier c\xE2ble</button>${t.cablings.length>1?'<button class="btn-secondary sm" data-act="cabdel">Supprimer ce c\xE2blage</button>':""}</div></fieldset>`;return`<div class="sg-tabs">${g}</div>${c}<!--blk-->${D}<!--blk-->${Z}`}function K(){let f=tt(t);v.innerHTML=he.map((g,h)=>{let c=f.filter(D=>D.step===g.id),d=c.some(D=>D.level==="err"),A=c.length>0;return`<button role="tab" aria-selected="${h===l}" class="sg-st${h===l?" on":""}" data-step="${h}"><b>${h+1}</b><span>${g.t}</span><small>${g.lines}</small>${d?'<i class="e"></i>':A?'<i class="w"></i>':""}</button>`}).join(""),N(".sg-pos").textContent=`${l+1} / ${he.length}`,e.querySelector('[data-nav="-1"]').disabled=l===0,e.querySelector('[data-nav="1"]').disabled=l===he.length-1}function re(){let f=e.querySelector(".sg-pinfo");if(!f)return;let g=t.ETROTG+t.EGAU+t.ESURCH+t.EDROI+t.ETROTD,h=ss(t.PORTEE),c=(d,A=2)=>d.toFixed(A).replace(".",",");f.innerHTML=`<p class="sg-note">Largeur totale : <b>${c(g)} m</b>${t.NPOUT>=2&&t.ENTRAPOUT>0?` \xB7 entraxe des poutres : <b>${c(t.ENTRAPOUT,3)} m</b> \xB7 encorbellements EEXT : <b>${c(t.slabG.EEXT,3)} m</b>`:""}${h>0?` \xB7 hauteur de poutre conseill\xE9e \u2248 <b>${c(h)} m</b> (L/17,5)`:""}</p>`}function q(){re();let f=tt(t).filter(h=>h.step===he[l].id).sort((h,c)=>h.level===c.level?0:h.level==="err"?-1:1),g=e.querySelector(".sg-checks");g&&(g.innerHTML=f.length?f.map(h=>`<div class="sg-ck ${h.level}">${h.level==="err"?"Erreur":"\xC0 v\xE9rifier"} \u2014 ${ne(h.msg)}</div>`).join(""):'<div class="sg-ck ok">Donn\xE9es coh\xE9rentes pour cette \xE9tape.</div>'),e.querySelectorAll("[data-p]").forEach(h=>h.classList.toggle("bad",f.some(c=>c.level==="err"&&c.p===h.dataset.p)))}function x(f){let g=new Set;for(let d of f.matchAll(/<text[^>]*>([^<]*)<\/text>/g))for(let A of d[1].split(/[\s/×,:()]+/))A&&g.add(A);let h=new Set,c=[];for(let[d,A]of G){let D=A.c.split(/\s*\/\s*|\s+/).filter(Boolean),L=A.c;if(h.has(L)||(h.add(L),d.startsWith("@")||/^cablings\.\d+\.(ordonnees|abscisses)/.test(d)||/^qsup\./.test(d))||D.some(V=>g.has(V)))continue;let Z=a===d||a&&G.get(a)?.c===A.c,Y=we(Re(t,d));c.push(`<span class="${Z?"on":""}"><code>${ne(A.c)}</code>${Y!==void 0?` <b>= ${ne(Y)}</b>`:""} ${ne(A.l)}${A.u?` <em>(${ne(A.u)})</em>`:""}</span>`)}{let d=new Set;for(let D of f.matchAll(/<text class="[^"]*\bcote\b[^"]*"[^>]*>([^<]*)<\/text>/g))for(let L of D[1].split(/[\s/×,:()]+/))L&&d.add(L);let A=[];for(let[D,L]of G){if(!(L.u==="m"||/\(m\)|Profondeur|Largeur de l'encoche/.test(L.l))||/^(A3|RECUL)$/.test(L.c)||D.startsWith("@")||/^cablings\.\d+\.(ordonnees|abscisses)/.test(D))continue;L.c.split(/\s*\/\s*|\s+/).filter(Boolean).some(Y=>d.has(Y))||A.push(L.c)}A.length&&console.warn("DIMMISS",he[l].id,A.join(", "))}return c.length?`<div class="sk-legend"><b>Autres donn\xE9es de l'\xE9tape (non repr\xE9sent\xE9es sur le sch\xE9ma)</b>${c.join("")}</div>`:""}function X(f){let g=a.split(".")[0],h=a.match(/^cablings\.(\d+)\.cables\.(\d+)\./);for(let c of f.split("|")){if(!c)continue;if(c.includes(".")&&!/^[A-Z]+\.[A-Z]/.test(c)){let Y=we(Re(t,c));if(Y!==void 0)return Y;continue}let d=ze.find(Y=>Y[1]===c);if(d){let Y=t.cablings[u];if(!Y?.cables.length)return;let V=h&&+h[1]===u?+h[2]:Math.max(0,Y.cables.findIndex(oe=>+oe[d[0]]!=0));return we(Y.cables[V]?.[d[0]])}let A=[...G].filter(([,Y])=>Y.c===c).map(([Y])=>Y),D=c.length===1?A:[...A,...as().get(c)??[]];if(!D.length)continue;let L=D.find(Y=>Y.split(".")[0]===g)??D[0],Z=we(Re(t,L));if(Z!==void 0)return Z}}function J(f){let g=Xt(t),h=m,c=a,d=void 0;switch(f){case"principal":return Pe(()=>Oe(g,h,{L:"AUCUN",R:"AUCUN"},"geo",void 0,{bare:!0})+Ue(g,h,!1).split(/(?=<figure)/).slice(0,1).join("")+Xe(g,h,c),d);case"travers":return Pe(()=>Oe(g,h,{L:"BN4",R:"BN4",corL:!0,corR:!0},"geo"),d);case"travee":return Pe(()=>Qe(g,h),d);case"poutre":return Pe(()=>Ue(g,h,!1),d);case"hourdis":return Pe(()=>Xe(g,h,c),d);case"entretoises":return Pe(()=>ht(g,h,c),d);case"charges":return Pe(()=>Et(g,h,"charges"),d);case"precontrainte":return Pe(()=>Tt(g,h),d);case"materiaux":return Pe(()=>At(g,h),d);case"cables":return Pe(()=>Ft(h,c),d);default:return""}}let se={principal:"Hourdis",travers:"Rives",hourdis:"Hourdis",entretoises:"Entretoises",charges:"Charges",materiaux:"Section composite",precontrainte:"Phasage"},z={principal:"coupe",ouvrage:"coupe",travers:"coupe",travee:"elev",poutre:"poutre",cables:"cables"};function ie(){if(he[l].id==="principal")return[["coupe","Coupe"]];let f=[["coupe","Coupe"],["elev","\xC9l\xE9vation et plan"],["poutre","Poutre"],["cables","C\xE2blage"]],g=se[he[l].id];return g&&f.push(["detail",g]),f}function Te(f){let g=he[l],h=m;switch(f){case"coupe":return g.id==="ouvrage"?Oe(t,"",be.get(t),"calc",void 0,{clean:!0}):Oe(t,h,be.get(t),"geo",void 0,{clean:!0});case"elev":return Qe(t,h);case"poutre":return Ue(t,h,!1)+(t.TYPOURI.some(c=>c===0)?Ue(t,h,!0):"");case"cables":return t.cablings.length?vt(t,Math.min(u,t.cablings.length-1),h,a):`<div class="sk-empty">Aucun c\xE2blage saisi pour l'instant.</div>`;default:return g.id==="principal"?Xe(t,h,a):g.sk(t,h,a)}}function Q(f){let g=f.split(/(?=<figure)/),h=[];for(let c of g){if(!c.startsWith("<figure")){h.length?h[h.length-1].h+=c:c.trim()&&h.push({t:"",h:c});continue}let d=(c.match(/<figcaption>([^<]*)<\/figcaption>/)?.[1]??"").replace(/^Schéma de principe — /,""),A=d.indexOf(" \u2014 ");A>0&&d.length>34&&(d=d.slice(A+3)),h.push({t:d.replace(/&#39;|&apos;/g,"'"),h:c})}return h}function w(f,g,h,c,d){let A=Q(h);if(d){let L=A.findIndex(Z=>/class="[^"]*\bhl\b/.test(Z.h));L>=0&&(I[c]=L)}I[c]>=A.length&&(I[c]=0),g.innerHTML=A.length>1?A.map((L,Z)=>`<button data-fig="${c}${Z}" class="${Z===I[c]?"on":""}" title="${ne(L.t)}">${ne(L.t||`vue ${Z+1}`)}</button>`).join(""):"",f.classList.toggle("multi",A.length>1);let D=A.length?A[I[c]].h:h;f.innerHTML=c==="s"&&he[l].id==="principal"&&I.s===0&&A.length?`<div class="sg-edgewrap">${ce("L")}<div class="sg-edgefig">${D}</div>${ce("R")}</div>`:D}function ce(f){let g=be.get(t),h=f==="L"?t.ETROTG:t.ETROTD,c={BN4:g[f]==="BN4"||g[f]==="GC",TR:h>0&&_e(g,f),GBA:g[f]==="GBA"},d=(A,D,L)=>`<button type="button" class="sg-tile${c[A]?" on":""}" data-edge="${f}:${A}" role="checkbox" aria-checked="${c[A]}" title="${L}">${yt(A,f)}<span><i aria-hidden="true"></i>${D}</span></button>`;return`<div class="sg-edge" role="group" aria-label="\xC9quipements de la rive ${f==="L"?"gauche":"droite"}"><b>Rive ${f==="L"?"G":"D"}</b>${d("BN4","GC / BN4","Garde-corps ou barri\xE8re BN4")}${d("TR","Trottoir","Trottoir sur\xE9lev\xE9 (largeur "+(f==="L"?"ETROTG":"ETROTD")+")")}${d("GBA","GBA","Glissi\xE8re en b\xE9ton adh\xE9rent")}</div>`}function k(f,g,h,c,d,A){let D=1,L="";for(let Z=0;Z<4;Z++){We(D);try{L=h()}catch{L=""}w(f,g,L||A,c,d&&Z===0);let Y=f.querySelector("svg");if(!Y)break;let V=Y.viewBox.baseVal,oe=Y.getBoundingClientRect().width;if(!V||!V.width||!oe)break;let me=oe/V.width;if(me>=.97)break;if(D=Math.max(.8,D*me*.99),D===.8){We(D);try{L=h()}catch{L=""}w(f,g,L||A,c,!1);break}}return We(1),L}function j(){let f=he[l],g=I.focus!==a;I.focus=a,e.classList.toggle("sg-wide-s",f.id==="principal");let h=(V,oe=0)=>Gt((V.clientWidth||640)-190-oe);h(U,f.id==="principal"&&I.s===0?130:0);let c=k(U,N('.sg-ftabs[data-pan="s"]'),()=>J(f.id),"s",g,'<div class="sk-empty">Pas de sch\xE9ma pour cette \xE9tape.</div>');$.innerHTML=c?x(c):"",$.classList.toggle("open",b);let d=z[f.id],A=ie(),D=A.some(([V])=>V===M)?M:d??"detail";p.innerHTML=A.map(([V,oe])=>`<button role="tab" data-win="${V}" class="${V===D?"on":""}" aria-selected="${V===D}">${ne(oe)}</button>`).join(""),h(F),k(F,N('.sg-ftabs[data-pan="w"]'),()=>It(()=>Te(D)),"w",g,'<div class="sk-empty">La vue appara\xEEtra d\xE8s que les donn\xE9es n\xE9cessaires seront saisies.</div>');let L=G.get(a),Z=L?we(Re(t,a)):void 0,Y=($.innerHTML.match(/<span/g)??[]).length;S.innerHTML='<div class="sg-info-t">'+(L?`<code>${ne(L.c)}</code>${Z!==void 0?` <b>= ${ne(Z)}</b>`:""} <span>${ne(L.l)}</span>${L.u?` <em>(${ne(L.u)})</em>`:""}${L.h?` <i>\u2014 ${ne(L.h)}</i>`:""}`:`<span class="mute">${ne(f.intro)}</span>`)+"</div>"+(Y?`<button type="button" class="sg-legbtn${b?" on":""}" data-leg="1" title="Donn\xE9es de l'\xE9tape qui ne sont pas cot\xE9es sur le sch\xE9ma">Autres donn\xE9es (${Y}) ${b?"\u25B4":"\u25BE"}</button>`:"")}let ae=0;function ee(f,g){let h='<div class="sg-checks"></div>',c=Y=>(O.innerHTML=Y.join("")+h,q(),O.scrollHeight),d=()=>window.innerHeight-(O.getBoundingClientRect().top+window.scrollY)-28,A=Math.round(Math.min(640,Math.max(250,window.innerHeight-394-(he[l].id==="principal"?50:0))));e.style.setProperty("--ph",A+"px");let D=[f];if(window.innerWidth>=1100&&window.innerHeight>=560){let Y=c(f);if(Y>d()&&(e.style.setProperty("--ph",Math.max(250,A-40)+"px"),Y=c(f),Y>d())){e.style.setProperty("--ph",A+"px");let V=d()-38;D=[];let oe=[];for(let me of f)oe.length&&c([...oe,me])>V?(D.push(oe),oe=[me]):oe.push(me);oe.length&&D.push(oe)}}if(g&&D.length>1){let Y=D.findIndex(V=>V.join("").includes(`data-p="${g}"`));Y>=0&&(ae=Y)}ae>=D.length&&(ae=0);let L=Y=>(Y.join("").match(/<legend>([^<]*)/)?.[1]??(Y.join("").includes("sg-tabs")?"C\xE2blage":"")).replace(/ — .*| \(.*/,""),Z=D.length>1?`<div class="sg-pages" role="tablist">${D.map((Y,V)=>`<button role="tab" data-fpage="${V}" class="${V===ae?"on":""}" aria-selected="${V===ae}"><b>${V+1}</b>${ne(L(Y))}</button>`).join("")}<span class="sg-pg-n">page ${ae+1} / ${D.length}</span></div>`:"";if(O.innerHTML=Z+D[ae].join("")+h,window.innerWidth>=1100){q();let Y=O.scrollHeight-d();if(Y>0){let V=parseFloat(e.style.getPropertyValue("--ph"))||A;e.style.setProperty("--ph",Math.max(190,V-Y)+"px")}}}function pe(){let f=document.activeElement?.dataset?.p;G.clear();let g=he[l],h=[];g.custom==="cables"&&h.push(P(),...y().split("<!--blk-->"));for(let c of g.gs){if(c.when&&!c.when(t))continue;let A=`<fieldset class="sg-g" style="grid-column:span ${c.m?c.m.rows.length>6&&c.m.cols.length<=3?6:c.m.cols.length<=2?3:4:Math.min(6,Math.max(2,Math.ceil((c.f?.length??2)/1.6)))}"><legend>${ne(c.g)}</legend>`;c.f&&(A+=`<div class="sg-fs">${c.f.map(B).join("")}</div>`),c.m&&(A+=W(c.m)),c.note&&(A+=`<p class="sg-note">${ne(c.note)}</p>`),h.push(A+"</fieldset>")}if(g.custom==="qsup"&&h.push(_()),g.custom==="principal"&&(h[0]+=`<fieldset class="sg-g sg-proj sg-pcomp" style="grid-column:span 6"><legend>Compl\xE9ter la g\xE9om\xE9trie</legend><div class="sg-pin">
-        <label class="sf" title="Encorbellement du hourdis au-del\xE0 de la table des poutres de rive (m)"><span class="sf-h"><code>D\xC9BORD</code><em>m</em></span><input data-p="@debord" data-t="n" value="${s.debord}" inputmode="decimal"><span class="sf-l">encorbellement</span></label>
-        <label class="sf" title="Compl\xE9ter automatiquement les autres dimensions \xE0 chaque saisie"><span class="sf-h"><code>AUTO</code></span><select data-auto="1"><option value="1"${E?" selected":""}>oui, \xE0 chaque saisie</option><option value="0"${E?"":" selected"}>non</option></select><span class="sf-l">compl\xE9ment</span></label>
+    <div class="sg-info"></div><div class="sg-leg"></div><div class="sg-form"></div><div class="sg-nav"><span class="sg-pos"></span></div>`;
+    const $ = (s) => root.querySelector(s);
+    const stepsEl = $(".sg-steps"), formEl = $(".sg-form"), skEl = $(".sg-skc"), schEl = $(".sg-schc"), infoEl = $(".sg-info"), tabsEl = $(".sg-wtabs"), legEl = $(".sg-leg");
+    const fig = { s: 0, w: 0, focus: "" };
+    let legOpen = false;
+    legEl.addEventListener("click", () => {
+      legOpen = false;
+      renderSketch();
+    });
+    let win = "";
+    const meta = /* @__PURE__ */ new Map();
+    const fieldHtml = (f2) => {
+      meta.set(f2.p, { c: f2.c, l: f2.l, u: f2.u, h: f2.h });
+      const v = get(bd, f2.p), t = f2.t ?? "n";
+      const input = t === "sel" ? `<select data-p="${f2.p}" data-t="sel"${f2.re ? ' data-re="1"' : ""}>${(f2.o ?? []).map(([k, l]) => `<option value="${k}"${+v === k ? " selected" : ""}>${esc2(l)}</option>`).join("")}${(f2.o ?? []).some(([k]) => k === +v) ? "" : `<option value="${v}" selected>${v}</option>`}</select>` : `<input data-p="${f2.p}" data-t="${t}"${f2.re ? ' data-re="1"' : ""} value="${esc2(fmt(v, t))}" ${t === "s" || t === "list" ? "" : 'inputmode="decimal"'} spellcheck="false" autocomplete="off">`;
+      return `<label class="sf${t === "s" ? " wide" : ""}" title="${esc2(f2.l)}${f2.u ? ` (${esc2(f2.u)})` : ""}"><span class="sf-h"><code>${esc2(f2.c)}</code>${f2.u ? `<em>${esc2(f2.u)}</em>` : ""}</span>${input}<span class="sf-l">${esc2(f2.l)}</span></label>`;
+    };
+    const cellInput = (p, t, extra = "", o) => {
+      const v = get(bd, p);
+      if (t === "sel" && o) return `<select data-p="${p}" data-t="sel"${extra}>${o.map(([k, l]) => `<option value="${k}"${+v === k ? " selected" : ""}>${esc2(l)}</option>`).join("")}</select>`;
+      return `<input data-p="${p}" data-t="${t}" value="${esc2(fmt(v, t))}" inputmode="decimal" spellcheck="false" autocomplete="off"${extra}>`;
+    };
+    const matrixHtml = (m) => {
+      const head = `<thead><tr><th></th>${m.cols.map(([l]) => `<th>${esc2(l)}</th>`).join("")}</tr></thead>`;
+      const rows = [];
+      for (const [row2, code, lbl, unit, t, o] of m.rows) {
+        let h = `<tr><th title="${esc2(code)} \u2014 ${esc2(lbl)}${unit ? ` (${esc2(unit)})` : ""}"><code>${esc2(code)}</code><span>${esc2(lbl)}${unit ? ` <em>(${esc2(unit)})</em>` : ""}</span></th>`;
+        for (const [, col] of m.cols) {
+          const cell = matrixCell(col, row2, code);
+          if (!cell || get(bd, cell.p) === void 0) {
+            h += '<td class="na">\u2014</td>';
+            continue;
+          }
+          meta.set(cell.p, { c: cell.c, l: lbl, u: unit || void 0 });
+          h += `<td>${cellInput(cell.p, t ?? "n", "", o)}</td>`;
+        }
+        rows.push(h + "</tr>");
+      }
+      const table = (rs) => `<div class="sg-mx"><table>${head}<tbody>${rs.join("")}</tbody></table></div>`;
+      if (rows.length > 6 && m.cols.length <= 3) {
+        const n = rows.length > 8 ? 3 : 2, k = Math.ceil(rows.length / n);
+        return `<div class="sg-mx2 n${n}">${Array.from({ length: n }, (_, i) => table(rows.slice(i * k, (i + 1) * k))).join("")}</div>`;
+      }
+      return table(rows);
+    };
+    function qsupHtml() {
+      const rows = bd.qsup.map((q, i) => `<tr><td>${cellInput(`qsup.${i}.de`, "i")}</td><td>${cellInput(`qsup.${i}.a`, "i")}</td><td>${cellInput(`qsup.${i}.max`, "n")}</td><td>${cellInput(`qsup.${i}.min`, "n")}</td><td><button class="sg-x" data-act="qdel" data-i="${i}" title="Supprimer">\xD7</button></td></tr>`).join("");
+      bd.qsup.forEach((_, i) => {
+        meta.set(`qsup.${i}.de`, { c: "NUM POUT", l: "Premi\xE8re poutre du groupe" });
+        meta.set(`qsup.${i}.a`, { c: "NUM POUT", l: "Derni\xE8re poutre du groupe" });
+        meta.set(`qsup.${i}.max`, { c: "QSUP MAX", l: "Superstructures, valeur max. par poutre", u: "t/m" });
+        meta.set(`qsup.${i}.min`, { c: "QSUP MIN", l: "Superstructures, valeur min. par poutre", u: "t/m" });
+      });
+      return `<fieldset class="sg-g" style="grid-column:span 4"><legend>Superstructures par groupe de poutres <small>B2</small></legend><div class="sg-mx"><table class="sg-t"><thead><tr><th>de la poutre</th><th>\xE0 la poutre</th><th>QSUP max (t/m)</th><th>QSUP min (t/m)</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><button class="btn-secondary sm" data-act="qadd">+ groupe</button></fieldset>`;
+    }
+    function designHtml() {
+      const inp = (k, code, l, u, h) => {
+        meta.set("@" + k, { c: code, l, u, h });
+        return `<label class="sf"><span class="sf-h"><code>${code}</code><em>${u}</em></span><input data-p="@${k}" data-t="n" value="${dopt[k]}" inputmode="decimal"><span class="sf-l">${l}</span></label>`;
+      };
+      const L = dstate.log;
+      let log = "";
+      if (dstate.running) log = `<div class="sg-prog"><div style="width:${Math.min(100, 100 * dstate.k / Math.max(1, dstate.n)).toFixed(0)}%"></div></div><p class="sg-note">${esc2(dstate.msg)}</p>`;
+      else if (L) {
+        if (L.error) log = `<div class="sg-ck err">Erreur du projeteur \u2014 ${esc2(L.error)}</div>`;
+        else log = `<div class="sg-ck ${L.ok ? "ok" : "warn"}">${L.ok ? "C\xE2blage trouv\xE9 : toutes les justifications sont satisfaites." : "Le projeteur n'a pas trouv\xE9 de c\xE2blage satisfaisant."}${L.seconds ? ` (${L.seconds.toFixed(0)} s)` : ""}</div>
+        <div class="sg-mx"><table class="sg-t log"><thead><tr><th>essai (poutre ${L.critical})</th><th>1re fam.</th><th>2e fam.</th><th>r\xE9sultat</th></tr></thead><tbody>${L.steps.map((st, i) => `<tr><td>${i + 1}</td><td>${st.n1}</td><td>${st.n2}</td><td class="${st.ok ? "okc" : "koc"}">${st.ok ? "v\xE9rifi\xE9" : esc2(st.reasons.join(" ; ") || "non v\xE9rifi\xE9")}</td></tr>`).join("")}</tbody></table></div>
+        <p class="sg-note">C\xE2bles retenus par poutre : ${L.perBeam.map((p) => `poutre ${p.beam} : ${p.n1} + ${p.n2}`).join(" \xB7 ")}</p>
+        ${L.advice.length ? `<ul class="sg-adv">${L.advice.map((a) => `<li>${esc2(a)}</li>`).join("")}</ul>` : ""}`;
+      }
+      return `<fieldset class="sg-g sg-proj"><legend>Projeteur \u2014 g\xE9n\xE9ration du c\xE2blage</legend>
+      <p class="sg-note" style="margin-top:0">Le projeteur cherche le nombre de c\xE2bles de chaque famille et leur trac\xE9 selon la m\xE9thode du programme VIPP du SETRA : 1re famille (syst\xE8me C3) ancr\xE9e \xE0 l'about, 2e famille (syst\xE8me C4) relev\xE9e en trav\xE9e. Chaque essai est justifi\xE9 par le calcul complet, en classe ${["I", "II", "III"][(bd.CLASSEBP || 2) - 1]}. Le c\xE2blage obtenu remplace les tableaux ci-dessous et reste modifiable.</p>
+      <div class="sg-fs">${inp("angleRel", "ANGSOR", "Angle de sortie des c\xE2bles relev\xE9s", "gr", "M\xEAme angle pour tous les c\xE2bles relev\xE9s ; voisin de 22 gr (20\xB0) selon le guide VIPP.")}${inp("angleTop", "ANG. HAUT", "Angle du c\xE2ble d'about le plus haut", "gr", "Les autres c\xE2bles d'about ont la m\xEAme fin de parabole ; leur angle d\xE9cro\xEEt jusqu'\xE0 1 \xE0 2 gr pour le c\xE2ble le plus bas.")}${inp("absorAbout", "ABSOR", "Sortie des c\xE2bles d'about depuis l'extr\xE9mit\xE9", "m", "Abscisse de la face d'ancrage des c\xE2bles de 1re famille.")}</div>
+      <div class="actions" style="margin-top:12px"><button class="btn-primary" data-act="design"${dstate.running || !opts.onDesign ? " disabled" : ""}>${dstate.running ? "Calcul en cours\u2026" : "G\xE9n\xE9rer le c\xE2blage"}</button></div>
+      <div class="sg-dlog">${log}</div></fieldset>`;
+    }
+    function cablesHtml() {
+      const c = bd.cablings[ic];
+      const tabs = bd.cablings.map((_, i) => `<button class="sg-tab${i === ic ? " active" : ""}" data-act="cab" data-i="${i}">C\xE2blage ${i + 1} \xB7 poutres ${bd.cablings[i].poutres.join(", ") || "\u2014"}</button>`).join("") + `<button class="sg-tab add" data-act="cabadd">+ c\xE2blage</button>`;
+      if (!c) return `<div class="sg-tabs">${tabs}</div>`;
+      const pc = `cablings.${ic}.`;
+      meta.set(pc + "poutres", { c: "POUTRES", l: "Poutres justifi\xE9es avec ce c\xE2blage" });
+      meta.set(pc + "NCAB11", { c: "NCAB11", l: "1re famille : c\xE2bles tendus \xE0 J1", h: "Les c\xE2bles sont pris dans l'ordre du tableau D' : d'abord NCAB11, puis NCAB12, puis NCAB2." });
+      meta.set(pc + "NCAB12", { c: "NCAB12", l: "1re famille : c\xE2bles tendus \xE0 J2" });
+      meta.set(pc + "NCAB2", { c: "NCAB2", l: "2e famille : c\xE2bles tendus \xE0 J4, apr\xE8s le b\xE9tonnage du hourdis" });
+      const top = `<div class="sg-row">
+      <label class="sf"><span class="sf-h"><code>POUTRES</code></span><input data-p="${pc}poutres" data-t="list" value="${esc2(c.poutres.join(" "))}" spellcheck="false"><span class="sf-l">Poutres justifi\xE9es avec ce c\xE2blage</span></label>
+      <label class="sf"><span class="sf-h"><code>NCAB11</code></span>${cellInput(pc + "NCAB11", "i")}<span class="sf-l">1re famille \xE0 J1</span></label>
+      <label class="sf"><span class="sf-h"><code>NCAB12</code></span>${cellInput(pc + "NCAB12", "i")}<span class="sf-l">1re famille \xE0 J2</span></label>
+      <label class="sf"><span class="sf-h"><code>NCAB2</code></span>${cellInput(pc + "NCAB2", "i")}<span class="sf-l">2e famille \xE0 J4</span></label></div>`;
+      const n1 = c.NCAB11 + c.NCAB12;
+      c.abscisses.forEach((_, i) => meta.set(`${pc}abscisses.${i}`, { c: "ABSCISSE", l: `Abscisse de d\xE9finition n\xB0 ${i + 1}, depuis l'extr\xE9mit\xE9 de la poutre`, u: "m" }));
+      const dRows = c.ordonnees.map((o, k) => {
+        o.forEach((_, i) => meta.set(`${pc}ordonnees.${k}.${i}`, { c: `ORDONNEE`, l: `C\xE2ble ${c.cables[k]?.num ?? k + 1} : ordonn\xE9e de l'axe de gaine \xE0 x = ${c.abscisses[i]} m (vide = non d\xE9fini)`, u: "m" }));
+        return `<tr><th class="${k < n1 ? "f1" : "f2"}">${c.cables[k]?.num ?? k + 1}</th>${c.abscisses.map((_, i) => `<td><input data-p="${pc}ordonnees.${k}.${i}" data-t="z" value="${o[i] ? fmt(o[i]) : ""}" placeholder="\u2014" inputmode="decimal"></td>`).join("")}</tr>`;
+      }).join("");
+      const tD = `<fieldset class="sg-g"><legend>Tableau D \u2014 abscisses de d\xE9finition et ordonn\xE9es des axes de gaine <small>m</small></legend>
+      <div class="sg-mx"><table class="sg-t"><thead><tr><th>x</th>${c.abscisses.map((_, i) => `<th>${cellInput(`${pc}abscisses.${i}`, "n")}</th>`).join("")}</tr></thead><tbody>${dRows}</tbody></table></div>
+      <div class="actions"><button class="btn-secondary sm" data-act="xadd">+ abscisse</button><button class="btn-secondary sm" data-act="xdel">\u2212 abscisse</button></div></fieldset>`;
+      const dpRows = c.cables.map((d, k) => {
+        DCOLS.forEach(([key, code, lbl]) => meta.set(`${pc}cables.${k}.${key}`, { c: code, l: `C\xE2ble ${d.num} \u2014 ${lbl}` }));
+        return `<tr><th class="${k < n1 ? "f1" : "f2"}">${k < n1 ? k < c.NCAB11 ? "F1" : "F1\xB72" : "F2"}</th>${DCOLS.map(([key, , , t]) => `<td>${cellInput(`${pc}cables.${k}.${key}`, t)}</td>`).join("")}</tr>`;
+      }).join("");
+      const tDp = `<fieldset class="sg-g"><legend>Tableau D' \u2014 caract\xE9ristiques compl\xE9mentaires des c\xE2bles</legend>
+      <div class="sg-mx"><table class="sg-t dp"><thead><tr><th></th>${DCOLS.map(([, code, lbl]) => `<th title="${esc2(lbl)}">${code}</th>`).join("")}</tr></thead><tbody>${dpRows}</tbody></table></div>
+      <div class="actions"><button class="btn-secondary sm" data-act="kadd">+ c\xE2ble</button><button class="btn-secondary sm" data-act="kdel">\u2212 dernier c\xE2ble</button>${bd.cablings.length > 1 ? '<button class="btn-secondary sm" data-act="cabdel">Supprimer ce c\xE2blage</button>' : ""}</div></fieldset>`;
+      return `<div class="sg-tabs">${tabs}</div>${top}<!--blk-->${tD}<!--blk-->${tDp}`;
+    }
+    function renderSteps() {
+      const ch = checks(bd);
+      stepsEl.innerHTML = STEPS.map((s, i) => {
+        const e = ch.filter((c) => c.step === s.id), err = e.some((c) => c.level === "err"), warn = e.length > 0;
+        return `<button role="tab" aria-selected="${i === cur}" class="sg-st${i === cur ? " on" : ""}" data-step="${i}"><b>${i + 1}</b><span>${s.t}</span><small>${s.lines}</small>${err ? '<i class="e"></i>' : warn ? '<i class="w"></i>' : ""}</button>`;
+      }).join("");
+      $(".sg-pos").textContent = `${cur + 1} / ${STEPS.length}`;
+      root.querySelector('[data-nav="-1"]').disabled = cur === 0;
+      root.querySelector('[data-nav="1"]').disabled = cur === STEPS.length - 1;
+    }
+    function renderPInfo() {
+      const el = root.querySelector(".sg-pinfo");
+      if (!el) return;
+      const W = bd.ETROTG + bd.EGAU + bd.ESURCH + bd.EDROI + bd.ETROTD, hc = hConseil(bd.PORTEE), f2 = (x, d = 2) => x.toFixed(d).replace(".", ",");
+      el.innerHTML = `<p class="sg-note">Largeur totale : <b>${f2(W)} m</b>${bd.NPOUT >= 2 && bd.ENTRAPOUT > 0 ? ` \xB7 entraxe des poutres : <b>${f2(bd.ENTRAPOUT, 3)} m</b> \xB7 encorbellements EEXT : <b>${f2(bd.slabG.EEXT, 3)} m</b>` : ""}${hc > 0 ? ` \xB7 hauteur de poutre conseill\xE9e \u2248 <b>${f2(hc)} m</b> (L/17,5)` : ""}</p>`;
+    }
+    function renderChecks() {
+      renderPInfo();
+      const ch = checks(bd).filter((c) => c.step === STEPS[cur].id).sort((a, b) => a.level === b.level ? 0 : a.level === "err" ? -1 : 1);
+      const el = root.querySelector(".sg-checks");
+      if (el) el.innerHTML = ch.length ? ch.map((c) => `<div class="sg-ck ${c.level}">${c.level === "err" ? "Erreur" : "\xC0 v\xE9rifier"} \u2014 ${esc2(c.msg)}</div>`).join("") : '<div class="sg-ck ok">Donn\xE9es coh\xE9rentes pour cette \xE9tape.</div>';
+      root.querySelectorAll("[data-p]").forEach((e) => e.classList.toggle("bad", ch.some((c) => c.level === "err" && c.p === e.dataset.p)));
+    }
+    function legendFor(svg) {
+      const words = /* @__PURE__ */ new Set();
+      for (const m of svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)) for (const w of m[1].split(/[\s/×,:()]+/)) if (w) words.add(w);
+      const seen = /* @__PURE__ */ new Set(), items = [];
+      for (const [p, m] of meta) {
+        const codes = m.c.split(/\s*\/\s*|\s+/).filter(Boolean);
+        const key = m.c;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (p.startsWith("@") || /^cablings\.\d+\.(ordonnees|abscisses)/.test(p) || /^qsup\./.test(p)) continue;
+        if (codes.some((c) => words.has(c))) continue;
+        const on = hlPath === p || hlPath && meta.get(hlPath)?.c === m.c;
+        const v = fv(get(bd, p));
+        items.push(`<span class="${on ? "on" : ""}"><code>${esc2(m.c)}</code>${v !== void 0 ? ` <b>= ${esc2(v)}</b>` : ""} ${esc2(m.l)}${m.u ? ` <em>(${esc2(m.u)})</em>` : ""}</span>`);
+      }
+      {
+        const cw = /* @__PURE__ */ new Set();
+        for (const m of svg.matchAll(/<text class="[^"]*\bcote\b[^"]*"[^>]*>([^<]*)<\/text>/g)) for (const w of m[1].split(/[\s/×,:()]+/)) if (w) cw.add(w);
+        const miss = [];
+        for (const [p, m] of meta) {
+          if (!(m.u === "m" || /\(m\)|Profondeur|Largeur de l'encoche/.test(m.l)) || /^(A3|RECUL)$/.test(m.c) || p.startsWith("@") || /^cablings\.\d+\.(ordonnees|abscisses)/.test(p)) continue;
+          const codes = m.c.split(/\s*\/\s*|\s+/).filter(Boolean);
+          if (!codes.some((c) => cw.has(c))) miss.push(m.c);
+        }
+        if (miss.length) console.warn("DIMMISS", STEPS[cur].id, miss.join(", "));
+      }
+      return items.length ? `<div class="sk-legend"><b>Autres donn\xE9es de l'\xE9tape (non repr\xE9sent\xE9es sur le sch\xE9ma)</b>${items.join("")}</div>` : "";
+    }
+    function valOf(key) {
+      const hp = hlPath.split(".")[0];
+      const cm = hlPath.match(/^cablings\.(\d+)\.cables\.(\d+)\./);
+      for (const seg of key.split("|")) {
+        if (!seg) continue;
+        if (seg.includes(".") && !/^[A-Z]+\.[A-Z]/.test(seg)) {
+          const v2 = fv(get(bd, seg));
+          if (v2 !== void 0) return v2;
+          continue;
+        }
+        const dc = DCOLS.find((d) => d[1] === seg);
+        if (dc) {
+          const c = bd.cablings[ic];
+          if (!c?.cables.length) return void 0;
+          const k = cm && +cm[1] === ic ? +cm[2] : Math.max(0, c.cables.findIndex((x) => +x[dc[0]] !== 0));
+          return fv(c.cables[k]?.[dc[0]]);
+        }
+        const local = [...meta].filter(([, m]) => m.c === seg).map(([p2]) => p2);
+        const ps = seg.length === 1 ? local : [...local, ...codeMap().get(seg) ?? []];
+        if (!ps.length) continue;
+        const p = ps.find((x) => x.split(".")[0] === hp) ?? ps[0];
+        const v = fv(get(bd, p));
+        if (v !== void 0) return v;
+      }
+      return void 0;
+    }
+    function schemaFor(id) {
+      const sb = schemaBd(bd), hc = hlCode, hp = hlPath, V = void 0;
+      switch (id) {
+        case "principal":
+          return asSchema(() => generalSection(sb, hc, { L: "AUCUN", R: "AUCUN" }, "geo", void 0, { bare: true }) + beamSection(sb, hc, false).split(/(?=<figure)/).slice(0, 1).join("") + slabZoom(sb, hc, hp), V);
+        case "travers":
+          return asSchema(() => generalSection(sb, hc, { L: "BN4", R: "BN4", corL: true, corR: true }, "geo"), V);
+        case "travee":
+          return asSchema(() => spanViews(sb, hc), V);
+        case "poutre":
+          return asSchema(() => beamSection(sb, hc, false), V);
+        case "hourdis":
+          return asSchema(() => slabZoom(sb, hc, hp), V);
+        case "entretoises":
+          return asSchema(() => crossBeamView(sb, hc, hp), V);
+        case "charges":
+          return asSchema(() => crossSection(sb, hc, "charges"), V);
+        case "precontrainte":
+          return asSchema(() => phasingView(sb, hc), V);
+        case "materiaux":
+          return asSchema(() => materialsView(sb, hc), V);
+        case "cables":
+          return asSchema(() => cableSchema(hc, hp), V);
+        default:
+          return "";
+      }
+    }
+    const DETAIL = { principal: "Hourdis", travers: "Rives", hourdis: "Hourdis", entretoises: "Entretoises", charges: "Charges", materiaux: "Section composite", precontrainte: "Phasage" };
+    const DEFAULT_VIEW = { principal: "coupe", ouvrage: "coupe", travers: "coupe", travee: "elev", poutre: "poutre", cables: "cables" };
+    function winTabs() {
+      if (STEPS[cur].id === "principal") return [["coupe", "Coupe"]];
+      const t = [["coupe", "Coupe"], ["elev", "\xC9l\xE9vation et plan"], ["poutre", "Poutre"], ["cables", "C\xE2blage"]];
+      const d = DETAIL[STEPS[cur].id];
+      if (d) t.push(["detail", d]);
+      return t;
+    }
+    function winView(v) {
+      const s = STEPS[cur], hl = hlCode;
+      switch (v) {
+        case "coupe":
+          return s.id === "ouvrage" ? generalSection(bd, "", EQ.get(bd), "calc", void 0, { clean: true }) : generalSection(bd, hl, EQ.get(bd), "geo", void 0, { clean: true });
+        case "elev":
+          return spanViews(bd, hl);
+        case "poutre":
+          return beamSection(bd, hl, false) + (bd.TYPOURI.some((t) => t === 0) ? beamSection(bd, hl, true) : "");
+        case "cables":
+          return bd.cablings.length ? cablesView(bd, Math.min(ic, bd.cablings.length - 1), hl, hlPath) : `<div class="sk-empty">Aucun c\xE2blage saisi pour l'instant.</div>`;
+        default:
+          return s.id === "principal" ? slabZoom(bd, hl, hlPath) : s.sk(bd, hl, hlPath);
+      }
+    }
+    function splitFigs(html) {
+      const parts = html.split(/(?=<figure)/), out = [];
+      for (const p of parts) {
+        if (!p.startsWith("<figure")) {
+          if (out.length) out[out.length - 1].h += p;
+          else if (p.trim()) out.push({ t: "", h: p });
+          continue;
+        }
+        let t = (p.match(/<figcaption>([^<]*)<\/figcaption>/)?.[1] ?? "").replace(/^Schéma de principe — /, "");
+        const k = t.indexOf(" \u2014 ");
+        if (k > 0 && t.length > 34) t = t.slice(k + 3);
+        out.push({ t: t.replace(/&#39;|&apos;/g, "'"), h: p });
+      }
+      return out;
+    }
+    function showFigs(el, tabs, html, key, newFocus) {
+      const figs = splitFigs(html);
+      if (newFocus) {
+        const k = figs.findIndex((f2) => /class="[^"]*\bhl\b/.test(f2.h));
+        if (k >= 0) fig[key] = k;
+      }
+      if (fig[key] >= figs.length) fig[key] = 0;
+      tabs.innerHTML = figs.length > 1 ? figs.map((f2, i) => `<button data-fig="${key}${i}" class="${i === fig[key] ? "on" : ""}" title="${esc2(f2.t)}">${esc2(f2.t || `vue ${i + 1}`)}</button>`).join("") : "";
+      el.classList.toggle("multi", figs.length > 1);
+      const h = figs.length ? figs[fig[key]].h : html;
+      el.innerHTML = key === "s" && STEPS[cur].id === "principal" && fig.s === 0 && figs.length ? `<div class="sg-edgewrap">${edgeTiles("L")}<div class="sg-edgefig">${h}</div>${edgeTiles("R")}</div>` : h;
+    }
+    function edgeTiles(side) {
+      const e = EQ.get(bd), w = side === "L" ? bd.ETROTG : bd.ETROTD;
+      const on = { BN4: e[side] === "BN4" || e[side] === "GC", TR: w > 0 && hasTrottoir(e, side), GBA: e[side] === "GBA" };
+      const t = (k, l, tip) => `<button type="button" class="sg-tile${on[k] ? " on" : ""}" data-edge="${side}:${k}" role="checkbox" aria-checked="${on[k]}" title="${tip}">${edgeIcon(k, side)}<span><i aria-hidden="true"></i>${l}</span></button>`;
+      return `<div class="sg-edge" role="group" aria-label="\xC9quipements de la rive ${side === "L" ? "gauche" : "droite"}"><b>Rive ${side === "L" ? "G" : "D"}</b>${t("BN4", "GC / BN4", "Garde-corps ou barri\xE8re BN4")}${t("TR", "Trottoir", "Trottoir sur\xE9lev\xE9 (largeur " + (side === "L" ? "ETROTG" : "ETROTD") + ")")}${t("GBA", "GBA", "Glissi\xE8re en b\xE9ton adh\xE9rent")}</div>`;
+    }
+    function fitFigs(el, tabs, gen, key, newFocus, empty) {
+      let k = 1, html = "";
+      for (let it = 0; it < 4; it++) {
+        setDrawScale(k);
+        try {
+          html = gen();
+        } catch {
+          html = "";
+        }
+        showFigs(el, tabs, html || empty, key, newFocus && it === 0);
+        const svg = el.querySelector("svg");
+        if (!svg) break;
+        const vb = svg.viewBox.baseVal, w = svg.getBoundingClientRect().width;
+        if (!vb || !vb.width || !w) break;
+        const r = w / vb.width;
+        if (r >= 0.97) break;
+        k = Math.max(0.8, k * r * 0.99);
+        if (k === 0.8) {
+          setDrawScale(k);
+          try {
+            html = gen();
+          } catch {
+            html = "";
+          }
+          showFigs(el, tabs, html || empty, key, false);
+          break;
+        }
+      }
+      setDrawScale(1);
+      return html;
+    }
+    function renderInline() {
+      root.querySelectorAll(".sg-figcell[data-inl]").forEach((el) => {
+        const sb = schemaBd(bd), kind = el.dataset.inl;
+        setDrawWidth(Math.max(260, el.clientWidth - 150));
+        let k = 1;
+        for (let it = 0; it < 4; it++) {
+          setDrawScale(k);
+          const h = asSchema(() => kind === "poutre" ? beamSection(sb, hlCode, false) : slabZoom(sb, hlCode, hlPath));
+          el.innerHTML = h.split(/(?=<figure)/).filter((x) => x.startsWith("<figure"))[0] ?? "";
+          const svg = el.querySelector("svg");
+          const vb = svg?.viewBox.baseVal;
+          if (!svg || !vb?.width) break;
+          const r = svg.getBoundingClientRect().width / vb.width;
+          if (r >= 0.97) break;
+          k = Math.max(0.3, k * r * 0.99);
+        }
+        setDrawScale(1);
+      });
+    }
+    function renderSketch() {
+      renderInline();
+      const s = STEPS[cur], newFocus = fig.focus !== hlPath;
+      fig.focus = hlPath;
+      root.classList.toggle("sg-wide-s", s.id === "principal");
+      const fit = (el, extra = 0) => setDrawWidth((el.clientWidth || 640) - 190 - extra);
+      fit(schEl, s.id === "principal" && fig.s === 0 ? 130 : 0);
+      const sch = fitFigs(schEl, $('.sg-ftabs[data-pan="s"]'), () => schemaFor(s.id), "s", newFocus, '<div class="sk-empty">Pas de sch\xE9ma pour cette \xE9tape.</div>');
+      legEl.innerHTML = sch ? legendFor(sch) : "";
+      legEl.classList.toggle("open", legOpen);
+      const auto0 = DEFAULT_VIEW[s.id];
+      const tabs = winTabs(), v = tabs.some(([k]) => k === win) ? win : auto0 ?? "detail";
+      tabsEl.innerHTML = tabs.map(([k, l]) => `<button role="tab" data-win="${k}" class="${k === v ? "on" : ""}" aria-selected="${k === v}">${esc2(l)}</button>`).join("");
+      fit(skEl);
+      fitFigs(skEl, $('.sg-ftabs[data-pan="w"]'), () => asValues(() => winView(v)), "w", newFocus, '<div class="sk-empty">La vue appara\xEEtra d\xE8s que les donn\xE9es n\xE9cessaires seront saisies.</div>');
+      const m = meta.get(hlPath), val = m ? fv(get(bd, hlPath)) : void 0;
+      const nLeg = (legEl.innerHTML.match(/<span/g) ?? []).length;
+      infoEl.innerHTML = `<div class="sg-info-t">` + (m ? `<code>${esc2(m.c)}</code>${val !== void 0 ? ` <b>= ${esc2(val)}</b>` : ""} <span>${esc2(m.l)}</span>${m.u ? ` <em>(${esc2(m.u)})</em>` : ""}${m.h ? ` <i>\u2014 ${esc2(m.h)}</i>` : ""}` : `<span class="mute">${esc2(s.intro)}</span>`) + `</div>` + (nLeg ? `<button type="button" class="sg-legbtn${legOpen ? " on" : ""}" data-leg="1" title="Donn\xE9es de l'\xE9tape qui ne sont pas cot\xE9es sur le sch\xE9ma">Autres donn\xE9es (${nLeg}) ${legOpen ? "\u25B4" : "\u25BE"}</button>` : "");
+    }
+    let fpage = 0;
+    function layoutForm(blocks, act) {
+      const CK = '<div class="sg-checks"></div>';
+      const put = (bs) => {
+        formEl.innerHTML = bs.join("") + CK;
+        renderChecks();
+        return formEl.scrollHeight;
+      };
+      const avail = () => window.innerHeight - (formEl.getBoundingClientRect().top + window.scrollY) - 28;
+      const ph0 = Math.round(Math.min(640, Math.max(250, window.innerHeight - 394 - (STEPS[cur].id === "principal" ? 50 : 0))));
+      root.style.setProperty("--ph", ph0 + "px");
+      let pages = [blocks];
+      if (window.innerWidth >= 1100 && window.innerHeight >= 560) {
+        let need = put(blocks);
+        if (need > avail()) {
+          root.style.setProperty("--ph", Math.max(250, ph0 - 40) + "px");
+          need = put(blocks);
+          if (need > avail()) {
+            root.style.setProperty("--ph", ph0 + "px");
+            const lim = avail() - 38;
+            pages = [];
+            let pg = [];
+            for (const b of blocks) {
+              if (pg.length && put([...pg, b]) > lim) {
+                pages.push(pg);
+                pg = [b];
+              } else pg.push(b);
+            }
+            if (pg.length) pages.push(pg);
+          }
+        }
+      }
+      if (act && pages.length > 1) {
+        const k = pages.findIndex((p) => p.join("").includes(`data-p="${act}"`));
+        if (k >= 0) fpage = k;
+      }
+      if (fpage >= pages.length) fpage = 0;
+      const title = (p) => {
+        const t = p.join("").match(/<legend>([^<]*)/)?.[1] ?? (p.join("").includes("sg-tabs") ? "C\xE2blage" : "");
+        return t.replace(/ — .*| \(.*/, "");
+      };
+      const tabs = pages.length > 1 ? `<div class="sg-pages" role="tablist">${pages.map((p, i) => `<button role="tab" data-fpage="${i}" class="${i === fpage ? "on" : ""}" aria-selected="${i === fpage}"><b>${i + 1}</b>${esc2(title(p))}</button>`).join("")}<span class="sg-pg-n">page ${fpage + 1} / ${pages.length}</span></div>` : "";
+      formEl.innerHTML = tabs + pages[fpage].join("") + CK;
+      if (window.innerWidth >= 1100) {
+        renderChecks();
+        const over = formEl.scrollHeight - avail();
+        if (over > 0) {
+          const ph = parseFloat(root.style.getPropertyValue("--ph")) || ph0;
+          root.style.setProperty("--ph", Math.max(190, ph - over) + "px");
+        }
+      }
+    }
+    function renderForm() {
+      const act = document.activeElement?.dataset?.p;
+      meta.clear();
+      const s = STEPS[cur];
+      const blocks = [];
+      if (s.custom === "cables") blocks.push(designHtml(), ...cablesHtml().split("<!--blk-->"));
+      for (const g of s.gs) {
+        if (g.when && !g.when(bd)) continue;
+        const sp = g.m ? g.m.rows.length > 6 && g.m.cols.length <= 3 ? 6 : g.m.cols.length <= 2 ? 3 : 4 : Math.min(6, Math.max(2, Math.ceil((g.f?.length ?? 2) / 1.6)));
+        const inl = s.id === "principal" && (g.g === "Poutre" || g.g === "Hourdis") ? g.g === "Poutre" ? "poutre" : "hourdis" : "";
+        let h = (inl ? `<div class="sg-figcell" data-inl="${inl}" style="grid-column:span 2"></div>` : "") + `<fieldset class="sg-g" style="grid-column:span ${inl ? 4 : sp}"><legend>${esc2(g.g)}</legend>`;
+        if (g.f) h += `<div class="sg-fs">${g.f.map(fieldHtml).join("")}</div>`;
+        if (g.m) h += matrixHtml(g.m);
+        if (g.note) h += `<p class="sg-note">${esc2(g.note)}</p>`;
+        blocks.push(h + "</fieldset>");
+      }
+      if (s.custom === "qsup") blocks.push(qsupHtml());
+      if (s.custom === "principal") blocks[0] += `<fieldset class="sg-g sg-proj sg-pcomp" style="grid-column:span 6"><legend>Compl\xE9ter la g\xE9om\xE9trie</legend><div class="sg-pin">
+        <label class="sf" title="Encorbellement du hourdis au-del\xE0 de la table des poutres de rive (m)"><span class="sf-h"><code>D\xC9BORD</code><em>m</em></span><input data-p="@debord" data-t="n" value="${dopt.debord}" inputmode="decimal"><span class="sf-l">encorbellement</span></label>
+        <label class="sf" title="Compl\xE9ter automatiquement les autres dimensions \xE0 chaque saisie"><span class="sf-h"><code>AUTO</code></span><select data-auto="1"><option value="1"${auto ? " selected" : ""}>oui, \xE0 chaque saisie</option><option value="0"${auto ? "" : " selected"}>non</option></select><span class="sf-l">compl\xE9ment</span></label>
         <button class="btn-secondary sm" data-act="derive" title="Remplace la g\xE9om\xE9trie d\xE9taill\xE9e (poutre, hourdis, amorces d'entretoises, entraxe, DPOUT1) par des valeurs courantes calcul\xE9es \xE0 partir des dimensions principales.">Compl\xE9ter maintenant</button>
-        <div class="sg-pinfo"></div></div></fieldset>`),g.custom==="equip"){let c=be.get(t),d=A=>Object.keys(ft).map(D=>`<option value="${D}"${c[A]===D?" selected":""}>${ne(ft[D])}</option>`).join("");h.push(`<fieldset class="sg-g" style="grid-column:span 3"><legend>\xC9quipements dessin\xE9s sur la coupe</legend><div class="sg-fs">
-        <label class="sf"><span class="sf-h"><code>GAUCHE</code></span><select data-eq="L">${d("L")}</select><span class="sf-l">Dispositif de retenue en rive gauche</span></label>
-        <label class="sf"><span class="sf-h"><code>DROITE</code></span><select data-eq="R">${d("R")}</select><span class="sf-l">Dispositif de retenue en rive droite</span></label>
-        <label class="sf"><span class="sf-h"><code>CORNICHE G</code></span><select data-eq="corL"><option value="1"${Ce(c,"L")?" selected":""}>oui</option><option value="0"${Ce(c,"L")?"":" selected"}>non</option></select><span class="sf-l">Corniche en rive gauche</span></label>
-        <label class="sf"><span class="sf-h"><code>CORNICHE D</code></span><select data-eq="corR"><option value="1"${Ce(c,"R")?" selected":""}>oui</option><option value="0"${Ce(c,"R")?"":" selected"}>non</option></select><span class="sf-l">Corniche en rive droite</span></label></div>
-        <p class="sg-note">Choix de dessin uniquement : les charges correspondantes se saisissent \xE0 l'\xE9tape Charges (DBAG, PBAG, DBAD, PBAD).</p></fieldset>`,`<fieldset class="sg-g" style="grid-column:span 3"><legend>Poutres de rive en retrait</legend><div class="sg-fs">
-        <label class="sf"><span class="sf-h"><code>D\xC9BORD</code><em>m</em></span><input data-p="@debord" data-t="n" value="${s.debord}" inputmode="decimal"><span class="sf-l">Encorbellement du hourdis au-del\xE0 de la table des poutres de rive</span></label></div>
+        <div class="sg-pinfo"></div></div></fieldset>`;
+      if (s.custom === "equip") {
+        const e = EQ.get(bd), opt = (side) => Object.keys(EQUIP_LABEL).map((k) => `<option value="${k}"${e[side] === k ? " selected" : ""}>${esc2(EQUIP_LABEL[k])}</option>`).join("");
+        blocks.push(`<fieldset class="sg-g" style="grid-column:span 3"><legend>\xC9quipements dessin\xE9s sur la coupe</legend><div class="sg-fs">
+        <label class="sf"><span class="sf-h"><code>GAUCHE</code></span><select data-eq="L">${opt("L")}</select><span class="sf-l">Dispositif de retenue en rive gauche</span></label>
+        <label class="sf"><span class="sf-h"><code>DROITE</code></span><select data-eq="R">${opt("R")}</select><span class="sf-l">Dispositif de retenue en rive droite</span></label>
+        <label class="sf"><span class="sf-h"><code>CORNICHE G</code></span><select data-eq="corL"><option value="1"${hasCorniche(e, "L") ? " selected" : ""}>oui</option><option value="0"${hasCorniche(e, "L") ? "" : " selected"}>non</option></select><span class="sf-l">Corniche en rive gauche</span></label>
+        <label class="sf"><span class="sf-h"><code>CORNICHE D</code></span><select data-eq="corR"><option value="1"${hasCorniche(e, "R") ? " selected" : ""}>oui</option><option value="0"${hasCorniche(e, "R") ? "" : " selected"}>non</option></select><span class="sf-l">Corniche en rive droite</span></label></div>
+        <p class="sg-note">Choix de dessin uniquement : les charges correspondantes se saisissent \xE0 l'\xE9tape Charges (DBAG, PBAG, DBAD, PBAD).</p></fieldset>`, `<fieldset class="sg-g" style="grid-column:span 3"><legend>Poutres de rive en retrait</legend><div class="sg-fs">
+        <label class="sf"><span class="sf-h"><code>D\xC9BORD</code><em>m</em></span><input data-p="@debord" data-t="n" value="${dopt.debord}" inputmode="decimal"><span class="sf-l">Encorbellement du hourdis au-del\xE0 de la table des poutres de rive</span></label></div>
         <p class="sg-note">Recalcule EEXT (gauche et droite), l'entraxe ENTRAPOUT et DPOUT1 en conservant la largeur totale du tablier et la sym\xE9trie.</p>
-        <div class="actions" style="margin-top:10px"><button class="btn-secondary" data-act="retrait">Mettre les poutres de rive en retrait</button></div></fieldset>`)}K(),j(),ee(h,f),q(),f&&O.querySelector(`[data-p="${f}"]`)?.focus({preventScroll:!0})}function de(f){e.querySelectorAll("input[data-p]").forEach(g=>{if(g===f||(g.dataset.p??"").startsWith("@"))return;let h=Re(t,g.dataset.p);typeof h=="number"&&(g.value=et(h,g.dataset.t||"n"))})}let Ee,fe=(f=!1)=>{if(clearTimeout(Ee),f){pe(),o.onChange?.(t);return}Ee=setTimeout(()=>{j(),q(),K(),o.onChange?.(t)},90)};e.addEventListener("input",f=>{let g=f.target,h=g.dataset.p;if(!h)return;let c=g.dataset.t,d;if(c==="s")d=g.value;else if(c==="list")d=(g.value.match(/\d+/g)??[]).map(Number);else{let A=g.value.trim().replace(",",".");if(c==="z"&&A==="")d=0;else if(d=Number(A),A===""||!isFinite(d)||(c==="i"||c==="sel")&&!Number.isInteger(d)){g.classList.add("bad");return}}if(g.classList.remove("bad"),h.startsWith("@")){if(s[h.slice(1)]=d,h==="@debord"&&he[l].custom==="principal"&&t.beam.ETAB>0){let A=Math.round((t.beam.ETAB/2+Math.max(0,d))*1e3)/1e3;t.slabG.EEXT=A,t.slabD.EEXT=A,Fe(t,s.debord,!0),pe(),o.onChange?.(t)}return}ns(t,h,d),E&&he[l].custom==="principal"&&(Fe(t,s.debord,!0),de(g)),fe(!!g.dataset.re&&f.type==="change")}),e.addEventListener("change",f=>{let g=f.target;if(g.dataset.auto){E=g.value==="1",E&&(Fe(t,s.debord,!0),fe());return}if(g.dataset.eq){let h=g.dataset.eq,c=g.value;be.set(h,h.startsWith("cor")?c==="1":c,t),j();return}(g.dataset.re||/\.(NCAB11|NCAB12|NCAB2|poutres)$/.test(g.dataset.p??""))&&setTimeout(pe,0)}),e.addEventListener("focusin",f=>{let h=f.target.dataset?.p;h&&(a=h,m=h,he[l].id==="principal"&&(M=""),j())}),e.addEventListener("click",f=>{let g=f.target.closest("button");if(!g||!e.contains(g))return;if(g.dataset.win){M=g.dataset.win,I.w=0,j();return}if(g.dataset.edge){let[d,A]=g.dataset.edge.split(":"),D=be.get(t);if(A==="TR"){let L=d==="L"?"ETROTG":"ETROTD",Z=t[L]>0&&_e(D,d);if(be.set(d==="L"?"trL":"trR",!Z,t),!Z&&!(t[L]>0)){t[L]=1,E&&Fe(t,s.debord,!0),pe(),o.onChange?.(t);return}}else{let L=A==="GBA"?D[d]==="GBA":D[d]==="BN4"||D[d]==="GC";be.set(d,L?"AUCUN":A,t),L||be.set(d==="L"?"corL":"corR",A!=="GBA",t)}j();return}if(g.dataset.leg){b=!b,j();return}if(g.dataset.fpage){ae=+g.dataset.fpage,pe();return}if(g.dataset.fig){let d=g.dataset.fig[0];I[d]=+g.dataset.fig.slice(1),j();return}if(g.dataset.step){He(+g.dataset.step);return}if(g.dataset.nav){He(l+ +g.dataset.nav);return}let h=t.cablings[u],c=g.dataset.act;if(c){if(c==="design"){o.onDesign&&!n.running&&(n={running:!0,msg:"Pr\xE9-dimensionnement\u2026",k:0,n:1},pe(),o.onDesign(JSON.parse(JSON.stringify(t)),{...s}));return}if(c==="derive"){Fe(t,s.debord),pe(),o.onChange?.(t);return}if(c==="retrait"){let d=Se(t),A=t.NPOUT,D=t.beam.ETAB/2,L=Math.round((D+Math.max(0,s.debord))*1e3)/1e3;A>=2&&d.width-2*L>0&&(t.slabG.EEXT=L,t.slabD.EEXT=L,t.ENTRAPOUT=Math.round((d.width-2*L)/(A-1)*1e3)/1e3,t.DPOUT1=Math.round((d.X3+t.ESURCH/2-L)*1e3)/1e3)}if(c==="cab"&&(u=+g.dataset.i),c==="cabadd"){let d=h??t.cablings[0];t.cablings.push(d?JSON.parse(JSON.stringify(d)):{poutres:[...t.poutresACalculer],NCAB11:0,NCAB12:0,NCAB2:0,abscisses:[t.ABOUT,t.ABOUT+t.PORTEE/2],ordonnees:[],cables:[]}),d&&(t.cablings[t.cablings.length-1].poutres=[]),u=t.cablings.length-1}if(c==="cabdel"&&t.cablings.length>1&&(t.cablings.splice(u,1),u=0),c==="qadd"&&t.qsup.push({de:1,a:t.NPOUT,max:0,min:0}),c==="qdel"&&t.qsup.splice(+g.dataset.i,1),h&&c==="xadd"&&(h.abscisses.push(+((h.abscisses[h.abscisses.length-1]??0)+1).toFixed(3)),h.ordonnees.forEach(d=>d.push(0))),h&&c==="xdel"&&h.abscisses.length>1&&(h.abscisses.pop(),h.ordonnees.forEach(d=>d.pop())),h&&c==="kadd"){let d=h.cables[h.cables.length-1];h.cables.push({...d,num:(d?.num??0)+1,SYM:(d?.num??0)+1}),h.ordonnees.push([...h.ordonnees[h.ordonnees.length-1]??h.abscisses.map(()=>0)]),h.NCAB2+=1}h&&c==="kdel"&&h.cables.length>1&&(h.cables.pop(),h.ordonnees.pop(),h.NCAB2>0?h.NCAB2--:h.NCAB12>0?h.NCAB12--:h.NCAB11>0&&h.NCAB11--),pe(),o.onChange?.(t)}});function He(f){l=Math.max(0,Math.min(he.length-1,f)),a="",m="",M="",I.s=0,I.w=0,ae=0,b=!1,pe(),e.getBoundingClientRect().top<0&&e.scrollIntoView({block:"start",behavior:"smooth"})}pe();let xe,te=window.innerWidth;return window.addEventListener("resize",()=>{window.innerWidth!==te&&(te=window.innerWidth,clearTimeout(xe),xe=setTimeout(pe,150))}),{get:()=>t,set:f=>{t=JSON.parse(JSON.stringify(f)),T(),u=0,E=r(t),E&&(l=0,M=""),pe()},designProgress:(f,g,h)=>{if(n={...n,running:!0,msg:f,k:g,n:h},he[l].custom==="cables"){let c=e.querySelector(".sg-dlog");c&&(c.innerHTML=`<div class="sg-prog"><div style="width:${Math.min(100,100*g/Math.max(1,h)).toFixed(0)}%"></div></div><p class="sg-note">${ne(f)}</p>`)}},designDone:(f,g)=>{n={running:!1,msg:"",k:0,n:1,log:f},g&&(t=JSON.parse(JSON.stringify(g)),T(),u=0,o.onChange?.(t)),pe()},text:()=>it(t),errors:()=>tt(t),go:f=>He(he.findIndex(g=>g.id===f))}}function is(e){let i=JSON.parse(JSON.stringify(e)),o=t=>{for(let l of Object.keys(t))typeof t[l]=="number"&&(t[l]=0);return t},s=new Date,n=t=>String(t).padStart(2,"0");Object.assign(i,{titre:["","",""],numero:"0001",date:`${n(s.getDate())}.${n(s.getMonth()+1)}.${String(s.getFullYear()).slice(2)}`,poutresACalculer:[],SYMTAB:0,NVOIE:0,ETROTG:0,EGAU:0,ESURCH:0,EDROI:0,ETROTD:0,NPOUT:0,ENTRAPOUT:0,DPOUT1:0,PORTEE:0,ABOUT:0,NE:2,ENTINT:0,ENTAPP:0,NT:1,BIAIS:100,HENTA:0,HENTI:0,TYPOURI:[1,1],DBAG:0,PBAGMAX:0,PBAGMIN:0,DBAD:0,PBADMAX:0,PBADMIN:0,PDALMAX:0,PDALMIN:0,qsup:[],cablings:[]}),o(i.beam),o(i.slab),o(i.cross),i.beamRive&&o(i.beamRive);for(let t of[i.slabG,i.slabD])o(t),o(t.cross);return i}globalThis.VIPPSaisie={mount:rs,parseBordereau:Ot,formatBordereau:it,checks:tt,blankBordereau:is};})();
+        <div class="actions" style="margin-top:10px"><button class="btn-secondary" data-act="retrait">Mettre les poutres de rive en retrait</button></div></fieldset>`);
+      }
+      renderSteps();
+      renderSketch();
+      layoutForm(blocks, act);
+      renderInline();
+      renderChecks();
+      if (act) formEl.querySelector(`[data-p="${act}"]`)?.focus({ preventScroll: true });
+    }
+    function syncInputs(except) {
+      root.querySelectorAll("input[data-p]").forEach((i) => {
+        if (i === except || (i.dataset.p ?? "").startsWith("@")) return;
+        const v = get(bd, i.dataset.p);
+        if (typeof v === "number") i.value = fmt(v, i.dataset.t || "n");
+      });
+    }
+    let tmr;
+    const changed = (structural = false) => {
+      clearTimeout(tmr);
+      if (structural) {
+        renderForm();
+        opts.onChange?.(bd);
+        return;
+      }
+      tmr = setTimeout(() => {
+        renderSketch();
+        renderChecks();
+        renderSteps();
+        opts.onChange?.(bd);
+      }, 90);
+    };
+    root.addEventListener("input", (ev) => {
+      const el = ev.target;
+      const p = el.dataset.p;
+      if (!p) return;
+      const t = el.dataset.t;
+      let v;
+      if (t === "s") v = el.value;
+      else if (t === "list") v = (el.value.match(/\d+/g) ?? []).map(Number);
+      else {
+        const s = el.value.trim().replace(",", ".");
+        if (t === "z" && s === "") v = 0;
+        else {
+          v = Number(s);
+          if (s === "" || !isFinite(v) || (t === "i" || t === "sel") && !Number.isInteger(v)) {
+            el.classList.add("bad");
+            return;
+          }
+        }
+      }
+      el.classList.remove("bad");
+      if (p.startsWith("@")) {
+        dopt[p.slice(1)] = v;
+        if (p === "@debord" && STEPS[cur].custom === "principal" && bd.beam.ETAB > 0) {
+          const e = Math.round((bd.beam.ETAB / 2 + Math.max(0, v)) * 1e3) / 1e3;
+          bd.slabG.EEXT = e;
+          bd.slabD.EEXT = e;
+          deriveGeometry(bd, dopt.debord, true);
+          renderForm();
+          opts.onChange?.(bd);
+        }
+        return;
+      }
+      set(bd, p, v);
+      if (auto && STEPS[cur].custom === "principal") {
+        deriveGeometry(bd, dopt.debord, true);
+        syncInputs(el);
+      }
+      changed(!!el.dataset.re && ev.type === "change");
+    });
+    root.addEventListener("change", (ev) => {
+      const el = ev.target;
+      if (el.dataset.auto) {
+        auto = el.value === "1";
+        if (auto) {
+          deriveGeometry(bd, dopt.debord, true);
+          changed();
+        }
+        return;
+      }
+      if (el.dataset.eq) {
+        const k = el.dataset.eq, v = el.value;
+        EQ.set(k, k.startsWith("cor") ? v === "1" : v, bd);
+        renderSketch();
+        return;
+      }
+      if (el.dataset.re || /\.(NCAB11|NCAB12|NCAB2|poutres)$/.test(el.dataset.p ?? "")) setTimeout(renderForm, 0);
+    });
+    root.addEventListener("focusin", (ev) => {
+      const el = ev.target;
+      const p = el.dataset?.p;
+      if (!p) return;
+      hlPath = p;
+      hlCode = p;
+      if (STEPS[cur].id === "principal") win = "";
+      renderSketch();
+    });
+    root.addEventListener("click", (ev) => {
+      const b = ev.target.closest("button");
+      if (!b || !root.contains(b)) return;
+      if (b.dataset.win) {
+        win = b.dataset.win;
+        fig.w = 0;
+        renderSketch();
+        return;
+      }
+      if (b.dataset.edge) {
+        const [side, k] = b.dataset.edge.split(":"), e = EQ.get(bd);
+        if (k === "TR") {
+          const wk = side === "L" ? "ETROTG" : "ETROTD", now = bd[wk] > 0 && hasTrottoir(e, side);
+          EQ.set(side === "L" ? "trL" : "trR", !now, bd);
+          if (!now && !(bd[wk] > 0)) {
+            bd[wk] = 1;
+            if (auto) deriveGeometry(bd, dopt.debord, true);
+            renderForm();
+            opts.onChange?.(bd);
+            return;
+          }
+        } else {
+          const isOn = k === "GBA" ? e[side] === "GBA" : e[side] === "BN4" || e[side] === "GC";
+          EQ.set(side, isOn ? "AUCUN" : k, bd);
+          if (!isOn) EQ.set(side === "L" ? "corL" : "corR", k !== "GBA", bd);
+        }
+        renderSketch();
+        return;
+      }
+      if (b.dataset.leg) {
+        legOpen = !legOpen;
+        renderSketch();
+        return;
+      }
+      if (b.dataset.fpage) {
+        fpage = +b.dataset.fpage;
+        renderForm();
+        return;
+      }
+      if (b.dataset.fig) {
+        const k = b.dataset.fig[0];
+        fig[k] = +b.dataset.fig.slice(1);
+        renderSketch();
+        return;
+      }
+      if (b.dataset.step) {
+        go(+b.dataset.step);
+        return;
+      }
+      if (b.dataset.nav) {
+        go(cur + +b.dataset.nav);
+        return;
+      }
+      const c = bd.cablings[ic], a = b.dataset.act;
+      if (!a) return;
+      if (a === "design") {
+        if (opts.onDesign && !dstate.running) {
+          dstate = { running: true, msg: "Pr\xE9-dimensionnement\u2026", k: 0, n: 1 };
+          renderForm();
+          opts.onDesign(JSON.parse(JSON.stringify(bd)), { ...dopt });
+        }
+        return;
+      }
+      if (a === "derive") {
+        deriveGeometry(bd, dopt.debord);
+        renderForm();
+        opts.onChange?.(bd);
+        return;
+      }
+      if (a === "retrait") {
+        const L = layout(bd), n = bd.NPOUT, tab = bd.beam.ETAB / 2, e = Math.round((tab + Math.max(0, dopt.debord)) * 1e3) / 1e3;
+        if (n >= 2 && L.width - 2 * e > 0) {
+          bd.slabG.EEXT = e;
+          bd.slabD.EEXT = e;
+          bd.ENTRAPOUT = Math.round((L.width - 2 * e) / (n - 1) * 1e3) / 1e3;
+          bd.DPOUT1 = Math.round((L.X3 + bd.ESURCH / 2 - e) * 1e3) / 1e3;
+        }
+      }
+      if (a === "cab") ic = +b.dataset.i;
+      if (a === "cabadd") {
+        const src = c ?? bd.cablings[0];
+        bd.cablings.push(src ? JSON.parse(JSON.stringify(src)) : { poutres: [...bd.poutresACalculer], NCAB11: 0, NCAB12: 0, NCAB2: 0, abscisses: [bd.ABOUT, bd.ABOUT + bd.PORTEE / 2], ordonnees: [], cables: [] });
+        if (src) bd.cablings[bd.cablings.length - 1].poutres = [];
+        ic = bd.cablings.length - 1;
+      }
+      if (a === "cabdel" && bd.cablings.length > 1) {
+        bd.cablings.splice(ic, 1);
+        ic = 0;
+      }
+      if (a === "qadd") bd.qsup.push({ de: 1, a: bd.NPOUT, max: 0, min: 0 });
+      if (a === "qdel") bd.qsup.splice(+b.dataset.i, 1);
+      if (c && a === "xadd") {
+        c.abscisses.push(+((c.abscisses[c.abscisses.length - 1] ?? 0) + 1).toFixed(3));
+        c.ordonnees.forEach((o) => o.push(0));
+      }
+      if (c && a === "xdel" && c.abscisses.length > 1) {
+        c.abscisses.pop();
+        c.ordonnees.forEach((o) => o.pop());
+      }
+      if (c && a === "kadd") {
+        const last = c.cables[c.cables.length - 1];
+        c.cables.push({ ...last, num: (last?.num ?? 0) + 1, SYM: (last?.num ?? 0) + 1 });
+        c.ordonnees.push([...c.ordonnees[c.ordonnees.length - 1] ?? c.abscisses.map(() => 0)]);
+        c.NCAB2 += 1;
+      }
+      if (c && a === "kdel" && c.cables.length > 1) {
+        c.cables.pop();
+        c.ordonnees.pop();
+        if (c.NCAB2 > 0) c.NCAB2--;
+        else if (c.NCAB12 > 0) c.NCAB12--;
+        else if (c.NCAB11 > 0) c.NCAB11--;
+      }
+      renderForm();
+      opts.onChange?.(bd);
+    });
+    function go(i) {
+      cur = Math.max(0, Math.min(STEPS.length - 1, i));
+      hlPath = "";
+      hlCode = "";
+      win = "";
+      fig.s = 0;
+      fig.w = 0;
+      fpage = 0;
+      legOpen = false;
+      renderForm();
+      if (root.getBoundingClientRect().top < 0) root.scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+    renderForm();
+    let rz;
+    let lastW = window.innerWidth;
+    window.addEventListener("resize", () => {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      clearTimeout(rz);
+      rz = setTimeout(renderForm, 150);
+    });
+    return {
+      get: () => bd,
+      set: (b) => {
+        bd = JSON.parse(JSON.stringify(b));
+        ensure();
+        ic = 0;
+        auto = isBlank(bd);
+        if (auto) {
+          cur = 0;
+          win = "";
+        }
+        renderForm();
+      },
+      designProgress: (msg, k, n) => {
+        dstate = { ...dstate, running: true, msg, k, n };
+        if (STEPS[cur].custom === "cables") {
+          const el = root.querySelector(".sg-dlog");
+          if (el) el.innerHTML = `<div class="sg-prog"><div style="width:${Math.min(100, 100 * k / Math.max(1, n)).toFixed(0)}%"></div></div><p class="sg-note">${esc2(msg)}</p>`;
+        }
+      },
+      designDone: (log, b) => {
+        dstate = { running: false, msg: "", k: 0, n: 1, log };
+        if (b) {
+          bd = JSON.parse(JSON.stringify(b));
+          ensure();
+          ic = 0;
+          opts.onChange?.(bd);
+        }
+        renderForm();
+      },
+      text: () => formatBordereau(bd),
+      errors: () => checks(bd),
+      go: (id) => go(STEPS.findIndex((s) => s.id === id))
+    };
+  }
+  function blankBordereau(ref) {
+    const b = JSON.parse(JSON.stringify(ref));
+    const z = (o) => {
+      for (const k of Object.keys(o)) if (typeof o[k] === "number") o[k] = 0;
+      return o;
+    };
+    const d = /* @__PURE__ */ new Date(), p2 = (n) => String(n).padStart(2, "0");
+    Object.assign(b, {
+      titre: ["", "", ""],
+      numero: "0001",
+      date: `${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${String(d.getFullYear()).slice(2)}`,
+      poutresACalculer: [],
+      SYMTAB: 0,
+      NVOIE: 0,
+      ETROTG: 0,
+      EGAU: 0,
+      ESURCH: 0,
+      EDROI: 0,
+      ETROTD: 0,
+      NPOUT: 0,
+      ENTRAPOUT: 0,
+      DPOUT1: 0,
+      PORTEE: 0,
+      ABOUT: 0,
+      NE: 2,
+      ENTINT: 0,
+      ENTAPP: 0,
+      NT: 1,
+      BIAIS: 100,
+      HENTA: 0,
+      HENTI: 0,
+      TYPOURI: [1, 1],
+      DBAG: 0,
+      PBAGMAX: 0,
+      PBAGMIN: 0,
+      DBAD: 0,
+      PBADMAX: 0,
+      PBADMIN: 0,
+      PDALMAX: 0,
+      PDALMIN: 0,
+      qsup: [],
+      cablings: []
+    });
+    z(b.beam);
+    z(b.slab);
+    z(b.cross);
+    if (b.beamRive) z(b.beamRive);
+    for (const e of [b.slabG, b.slabD]) {
+      z(e);
+      z(e.cross);
+    }
+    return b;
+  }
+  globalThis.VIPPSaisie = { mount, parseBordereau, formatBordereau, checks, blankBordereau };
+})();

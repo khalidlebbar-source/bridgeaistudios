@@ -559,6 +559,13 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .skf .tx.def.hl{fill:var(--gold)}
 /* ligne d'information supprimée (définitions au survol des champs) */
 #sg .sg-info,#sg .sg-leg{display:none}
+
+/* croquis de principe dans le formulaire (étape 1 : poutre, hourdis) */
+.sg-figcell{height:210px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--border);border-radius:10px;background:#fcfbf8;padding:4px;margin-bottom:8px;min-width:0}
+.sg-figcell .skf{margin:0;width:100%}
+.sg-figcell figcaption{display:none}
+.sg-figcell .skf svg{max-height:200px;width:auto;max-width:100%;margin:0 auto;border:none;background:transparent}
+.sg-figcell .skf .tx{font-size:12px;fill:var(--ink)}
 </style>
 </head>
 <body>
