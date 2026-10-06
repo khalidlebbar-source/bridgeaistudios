@@ -581,6 +581,15 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 #sg .sf.lk input:focus,#sg input.lk:focus{outline:none;box-shadow:none}
 #sg .sf.lk .sf-h code::after{content:" \1F512";font-size:.8em;opacity:.55}
 #sg td:has(> input.lk){background:color-mix(in srgb,var(--gold) 8%,transparent)}
+
+/* étape 0 / hourdis : matrice compacte à côté des croquis */
+#sg .sg-mxc .sg-mx th span{display:none}
+#sg .sg-mxc .sg-mx table{width:100%;table-layout:fixed}
+#sg .sg-mxc .sg-mx thead th{font-size:10.5px;letter-spacing:.04em;padding:2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sg .sg-mxc .sg-mx tbody th{width:74px;padding:2px 4px}
+#sg .sg-mxc .sg-mx td{padding:2px 3px}
+#sg .sg-mxc .sg-mx td input{width:100%;min-width:0;padding:5px 6px}
+#sg .sg-hrow{grid-column:span 6;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.65fr) minmax(0,1.1fr);gap:inherit;align-items:start}
 </style>
 </head>
 <body>
