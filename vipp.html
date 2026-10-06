@@ -459,6 +459,30 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .bord-card{margin-bottom:0}
 .sg-pcomp{padding-top:6px;padding-bottom:6px}
 .sg-pcomp legend{padding-top:7px}
+
+/* ── cases à cocher illustrées : équipements de rive ── */
+.sg-edgewrap{display:flex;align-items:center;gap:8px;min-height:0;height:100%}
+.sg-edgefig{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;height:100%}
+.sg-edge{flex:0 0 66px;display:flex;flex-direction:column;gap:5px}
+.sg-edge>b{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:500;text-align:center}
+.sg-tile{display:flex;flex-direction:column;align-items:stretch;gap:2px;padding:4px 4px 5px;border:1px solid var(--border);border-radius:8px;background:var(--white);cursor:pointer;font-family:'Outfit',sans-serif;transition:border-color .15s,background .15s}
+.sg-tile:hover{border-color:var(--gold-border)}
+.sg-tile svg{width:100%;height:auto;display:block}
+.sg-tile span{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink2);justify-content:center;white-space:nowrap}
+.sg-tile i{width:11px;height:11px;border:1.3px solid var(--ink3);border-radius:3px;flex:0 0 auto;display:inline-grid;place-items:center;font-style:normal}
+.sg-tile.on{border-color:var(--gold);background:var(--gold-bg)}
+.sg-tile.on i{background:var(--gold);border-color:var(--gold)}
+.sg-tile.on i::after{content:'';width:5px;height:3px;border:solid var(--white);border-width:0 0 1.6px 1.6px;transform:translateY(-1px) rotate(-45deg)}
+.sg-tile:not(.on) svg{opacity:.55}
+.sg-tile .i-slab{fill:#f3eee4;stroke:var(--ink2);stroke-width:.8}
+.sg-tile .i-lon{fill:#e4ddd0;stroke:var(--ink2);stroke-width:.6}
+.sg-tile .i-steel{fill:#5d6474}
+.sg-tile .i-rail{fill:#8a91a0}
+.sg-tile .i-tro{fill:#ebe5d8;stroke:var(--ink2);stroke-width:.6}
+.sg-tile .i-bord{fill:#d9d2c3;stroke:var(--ink2);stroke-width:.6}
+.sg-tile .i-gba{fill:#dcd5c7;stroke:var(--ink2);stroke-width:.7;stroke-linejoin:round}
+.sg-tile .i-rev{fill:#4a4e5a}
+.sg-pv .sg-edgewrap .skf svg{max-height:calc(var(--ph) - 62px)}
 </style>
 </head>
 <body>
