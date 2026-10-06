@@ -542,7 +542,18 @@ textarea.bord:focus{border-color:var(--gold2);background:var(--white)}
 .sg-form{grid-template-columns:repeat(6,minmax(0,1fr))}
 .sg-form>.sg-proj:not(.sg-pcomp),.sg-form>.sg-pages,.sg-form>.sg-checks,.sg-form>.sg-tabs,.sg-form>.sg-row{grid-column:1/-1}
 .sg-pcomp .sg-pin{gap:6px 10px}.sg-pcomp legend{float:none;padding:0 6px}.sg-pcomp .sg-pinfo{flex-basis:100%}
-#sg.sg-wide-s .sg-panels{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
+#sg.sg-wide-s .sg-panels{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+
+/* panneaux : figures sans titre interne, traits et cotes plus nets */
+.sg-pv figcaption{display:none}
+.sg-pv .skf svg{max-height:calc(var(--ph) - 46px)}
+.sg-win .sg-pv .skf svg{max-height:calc(var(--ph) - 50px)}
+.sg-win .sg-pv.multi .skf svg{max-height:calc(var(--ph) - 82px)}
+.sg-pv .skf .tx{fill:var(--ink)}
+.sg-pv .skf .tx.dl{font-size:12.5px;fill:var(--ink)}
+.sg-pv .skf .dim{stroke:var(--ink2);stroke-width:1}
+.sg-pv .skf .ext{stroke:var(--ink2);opacity:.6;stroke-width:.7}
+.sg-pv .skf .beam,.sg-pv .skf .slab{stroke:var(--ink);stroke-width:1.1}
 </style>
 </head>
 <body>
