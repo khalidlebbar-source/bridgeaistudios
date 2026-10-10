@@ -16,7 +16,7 @@ const S = (k, s, f, v, u = "", d = 3, r = false) => ({ k, s, f, v, u, d, r });
 const R = (k, s, f, v, u = "", d = 3) => S(k, s, f, v, u, d, true);
 const C = (l, ok, txt = "") => ({ l, ok, txt });
 const N = (k, l, u, v, s, extra = {}) => Object.assign({ k, l, u, v, s: s || k, t: "num" }, extra);
-const SEL = (k, l, o, v, s) => ({ k, l, o, v, s: s || k, t: "sel" });
+const SEL = (k, l, o, v, s) => ({ k, l, o, v, s: s === undefined ? k : s, t: "sel" });
 const H = (h) => ({ h });
 
 /* — Section rectangulaire BA à l'ELS (flexion simple, n = 15) — */

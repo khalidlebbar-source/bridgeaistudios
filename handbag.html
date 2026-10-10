@@ -72,7 +72,28 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 .btn.ghost{background:var(--white);color:var(--ink2);border-color:var(--border);font-weight:400}
 .btn.ghost:hover{border-color:var(--gold2);color:var(--gold)}
 
-.grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(290px,340px) minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start}
+.grid{display:grid;grid-template-columns:minmax(290px,330px) minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto auto;gap:12px;align-items:stretch;align-content:start}
+#c1{grid-row:1/3}
+.kpi{grid-column:2/4;display:flex;align-items:stretch;gap:12px;background:linear-gradient(135deg,#fffaf0,#fbf0d6);border:1px solid var(--gold-border);border-radius:11px;padding:10px 14px;box-shadow:var(--shadow)}
+.kpi:empty{display:none}
+.kpi .cl{flex:1 1 260px;min-width:0;font-size:13px;line-height:1.5;color:var(--ink);display:flex;flex-direction:column;justify-content:center}
+.kpi .cl b{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
+.kpi .tiles{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.tile{background:#fff;border:1px solid var(--gold-border);border-radius:9px;padding:5px 12px 6px;min-width:92px;text-align:center}
+.tile .ts{font-size:11px;color:var(--ink3);line-height:1.3}
+.tile .tv{font-size:17px;font-weight:600;color:var(--out);font-variant-numeric:tabular-nums;line-height:1.25;white-space:nowrap}
+.tile .tv small{font-size:10.5px;font-weight:400;color:var(--ink3);margin-left:3px}
+.tile.ko{border-color:#e9b3ac;background:#fff6f5}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+.col > *{flex:0 0 auto}
+.grid.stretch .col > :last-child{flex:1 1 auto}
+.col .card + .card{margin-top:0}
+.card.figc{display:flex;flex-direction:column}
+.card.figc .fig{flex:1;align-items:center;min-height:0}
+.card.figc .fig svg{width:100%;height:auto;max-height:330px}
+#inputs{display:flex;flex-direction:column}
+.in-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--border);font-size:11px;color:var(--ink3);line-height:1.5}
+.in-foot .legend{margin:4px 0 0}
 .card{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:10px 14px;box-shadow:var(--shadow)}
 .card + .card{margin-top:10px}
 .card-t{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
@@ -186,14 +207,15 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
   #print.dense2 .p-h{margin:5pt 0 2pt}#print.dense2 .p-fig svg{height:28mm}
 }
 
-@media(max-width:1200px){.grid{grid-template-columns:minmax(260px,300px) 1fr}.col3{grid-column:1/-1}}
+@media(max-width:1200px){.grid{grid-template-columns:minmax(260px,300px) 1fr}#c1{grid-row:auto}.kpi{grid-column:1/-1;order:-1}#c3{grid-column:1/-1}}
 @media(max-width:820px){
   body{height:auto;display:block}
   .layout{display:block}
   .sidebar{border-right:none;border-bottom:1px solid var(--border)}
   .side-list{max-height:180px}
   main{overflow:visible;padding:14px 16px}
-  .grid{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr;display:flex;flex-direction:column}
+  .kpi{flex-direction:column}.kpi .tiles{justify-content:flex-start}
   .head{flex-direction:column}
   .nav-app{display:none}
   nav{padding:0 16px}
@@ -228,15 +250,15 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
         <div class="desc"><span id="desc"></span> <span class="ref" id="ref"></span></div>
       </div>
       <div class="actions">
-        <div class="legend"><span><i style="background:var(--in)"></i>données</span><span><i style="background:var(--out)"></i>résultats</span></div>
         <button class="btn ghost" id="reset">Valeurs par défaut</button>
         <button class="btn" id="pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15h6M9 18h4"/></svg>Page PDF</button>
       </div>
     </div>
-    <div class="grid">
-      <section class="card" id="inputs" aria-label="Données"></section>
-      <section id="col2"></section>
-      <section class="col3" id="col3"></section>
+    <div class="grid" id="grid">
+      <div class="col" id="c1"><section class="card" id="inputs" aria-label="Données"></section></div>
+      <div class="kpi" id="kpi"></div>
+      <div class="col" id="c2"></div>
+      <div class="col" id="c3"></div>
     </div>
   </main>
 </div>
@@ -333,6 +355,7 @@ function open(id, push = true) {
     if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
     else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
   });
+  h += `<div class="in-foot"><div class="legend"><span><i style="background:var(--in)"></i>valeurs saisies</span><span><i style="background:var(--out)"></i>résultats</span></div></div>`;
   $("#inputs").innerHTML = h;
   renderList($("#find").value);
   compute();
@@ -354,26 +377,49 @@ function inputValues() {
 
 function compute() {
   const I = inputValues();
-  if (!I) { $("#col2").innerHTML = `<div class="card"><div class="card-t">Calcul</div><p class="notes">Une valeur saisie n'est pas un nombre.</p></div>`; return; }
-  let r; try { r = cur.calc(I); } catch (e) { $("#col2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
+  if (!I) { $("#c2").innerHTML = `<div class="card"><div class="card-t">Calcul</div><p class="notes">Une valeur saisie n'est pas un nombre.</p></div>`; return; }
+  let r; try { r = cur.calc(I); } catch (e) { $("#c2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
   const g = k => { const st = (r.steps || []).find(x => x.k === k); if (st) return st.v; if (r.vals && k in r.vals) return r.vals[k];
     for (const t of r.tables || []) if (t.key && t.key[k]) { const [a, b] = t.key[k]; return t.rows[a][b]; } return NaN; };
   try { r.fig = (FIGS[cur.id] && FIGS[cur.id](I, g, r)) || r.fig; } catch (e) {}
   try { r.clair = CLAIR[cur.id] ? CLAIR[cur.id](I, g) : ""; } catch (e) { r.clair = ""; }
   last = { I, r };
-  const steps = (r.steps || []).length ? `<div class="card"><div class="card-t">Calcul</div><table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table></div>` : "";
-  const tables = (r.tables || []).map(t => tableHTML(t)).join("");
-  const checks = (r.checks || []).length ? `<div class="card"><div class="card-t">Vérifications</div><div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div></div>` : "";
-  const fig = (r.clair ? `<div class="clair"><b>En clair</b>${r.clair}</div>` : "") + (r.fig ? `<div class="card"><div class="card-t">Schéma</div><div class="fig">${r.fig}</div></div>` : "");
-  const notes = (r.notes || []).filter(Boolean).length ? `<div class="card"><div class="card-t">Remarques</div><div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div></div>` : "";
-  const tblCard = tables ? `<div class="card"><div class="card-t">Tableaux</div>${tables}</div>` : "";
-  // répartition : colonne 2 = calcul (+ tableaux si pas d'étapes), colonne 3 = vérifications, schéma, tableaux, remarques
-  if (steps) { $("#col2").innerHTML = steps + (r.tables && r.tables.length > 1 ? tblCard : ""); $("#col3").innerHTML = fig + checks + (r.tables && r.tables.length <= 1 ? tblCard : "") + notes; }
-  else {
-    const T = r.tables || [], split = T.length > 2 ? T.length - 1 : T.length;
-    const card = (ts, title) => ts.length ? `<div class="card"><div class="card-t">${title}</div>${ts.map(t => tableHTML(t)).join("")}</div>` : "";
-    $("#col2").innerHTML = card(T.slice(0, split), "Calcul"); $("#col3").innerHTML = fig + checks + card(T.slice(split), "Résultat") + notes;
+  const card = (title, body, cls = "") => `<div class="card ${cls}"><div class="card-t">${title}</div>${body}</div>`;
+  const stepsC = (r.steps || []).length ? card("Calcul", `<table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table>`) : "";
+  const checksC = (r.checks || []).length ? card("Vérifications", `<div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div>`) : "";
+  const figC = r.fig ? card("Schéma", `<div class="fig">${r.fig}</div>`, "figc") : "";
+  const notesC = (r.notes || []).filter(Boolean).length ? card("Remarques", `<div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div>`) : "";
+  const T = r.tables || [];
+  const tblC = T.map((t, i) => card(i === 0 && !stepsC ? "Calcul" : "Tableau", tableHTML(t)));
+  // bandeau : synthèse + résultats clés
+  const main = (r.steps || []).filter(s => s.r && typeof s.v === "number").slice(0, 5);
+  const ko = (r.checks || []).some(c => !c.ok);
+  $("#kpi").innerHTML = (r.clair || main.length) ? `<div class="cl"><b>En clair</b>${tx(r.clair || "")}</div>${main.length ? `<div class="tiles">${main.map(s => `<div class="tile ${ko ? "ko" : ""}"><div class="ts">${M(s.s)}</div><div class="tv">${show(s.v, s.d)}<small>${s.u}</small></div></div>`).join("")}</div>` : ""}` : "";
+  // répartition équilibrée des cartes dans les colonnes
+  const grid = $("#grid"), c1 = $("#c1"), c2 = $("#c2"), c3 = $("#c3");
+  grid.classList.remove("stretch");
+  [...c1.children].forEach(el => { if (el.id !== "inputs") el.remove(); });
+  c2.innerHTML = ""; c3.innerHTML = "";
+  const add = (col, html) => { if (html) col.insertAdjacentHTML("beforeend", html); };
+  const wide = matchMedia("(min-width:1201px)").matches;
+  if (stepsC) add(c2, stepsC); else if (tblC.length) add(c2, tblC.shift());
+  const h = col => [...col.children].reduce((t, el) => t + el.getBoundingClientRect().height + 10, 0);   // hauteur du contenu (hors étirement)
+  const nIn = cur.inputs.filter(x => x.k).length;
+  // éléments à placer : [html, colonnes admissibles]
+  add(c3, figC);
+  const pool = [...tblC.map((x, i) => [x, (T[i + (stepsC ? 0 : 1)] || {}).head?.length <= 4 && wide ? [c2, c3, c1] : [c2, c3]]),
+    [checksC, wide ? [c3, c2, c1] : [c3, c2]], [notesC, wide ? [c1, c3, c2] : [c3, c2]]].filter(x => x[0]);
+  pool.forEach(([html, cols]) => { const tgt = cols.reduce((a, b) => (h(b) < h(a) - 1 ? b : a)); add(tgt, html); });
+  // le croquis sert d'élément élastique : il grandit pour égaliser la hauteur des colonnes
+  const fsvg = grid.querySelector(".figc .fig svg");
+  if (wide && fsvg) {
+    const colF = fsvg.closest(".col"), others = [c1, c2, c3].filter(c => c !== colF);
+    const main = $("main"), avail = main.clientHeight - (c2.getBoundingClientRect().top - main.getBoundingClientRect().top) - 16;
+    const target = Math.min(Math.max(...others.map(h)), Math.max(avail, h(colF))), delta = target - h(colF), hs = fsvg.getBoundingClientRect().height;
+    // (si une autre colonne reste beaucoup plus courte, on accepte un croquis plus grand plutôt qu'un vide)
+    if (delta > 8) { fsvg.style.height = Math.min(hs + delta, 440) + "px"; fsvg.style.maxHeight = "none"; }
   }
+  if (wide) grid.classList.add("stretch");
 }
 function cell(v, d, pct) { if (typeof v !== "number") return v; return pct ? fmt(v * 100, 1) + " %" : show(v, d ?? 3); }
 function tableHTML(t, cls = "t") {
