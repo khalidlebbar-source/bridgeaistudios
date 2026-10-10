@@ -276,7 +276,7 @@ HB.add("Géotechnique et fondations", [
       checks: [C("ELS : semelle entièrement comprimée ($e \\le B/6$)", !tri, `e = ${f2(e, 3)} m ; B/6 = ${f2(I.B / 6, 3)} m`), C("ELU : surface comprimée $\\ge$ 10 % de B (soulèvement limité, $e \\le 0{,}45\\,B$)", e <= 0.45 * I.B, `${f2(e, 3)} m`)],
       notes: ["Le Fascicule 62 prend la contrainte au trois quarts de la largeur comprimée ; Meyerhof la répartit uniformément sur la largeur réduite $B' = B - 2e$ (EC7 et NF P94-261). Les deux valeurs se comparent à la contrainte admissible ou à la portance de calcul."] };
   },
-  fig(I, g) { return KIT.footingFig({ B: I.B, e: g("e"), q1: g("qM"), q2: g("qm"), Beff: g("bc"), N: `V = ${f2(I.V, 0)}`, l1: `qmax = ${f2(g("qM"), 0)}`, l2: g("qm") > 0 ? `qmin = ${f2(g("qm"), 0)}` : "" }); },
+  fig(I, g) { return KIT.footingFig({ B: I.B, e: -g("e"), q1: g("qM"), q2: g("qm"), Beff: g("bc"), N: `V = ${f2(I.V, 0)}`, l1: `qmax = ${f2(g("qM"), 0)}`, l2: g("qm") > 0 ? `qmin = ${f2(g("qm"), 0)}` : "" }); },
   clair: (I, g) => `L'excentricité de ${f2(g("e") * 100, 0)} cm fait passer la contrainte de ${f2(I.V / I.B, 0)} kPa (centrée) à ${f2(g("qM"), 0)} kPa sous le bord le plus chargé ; contrainte de référence ${f2(g("q62"), 0)} kPa.` },
 ]);
 })(typeof window !== "undefined" ? window : globalThis);
