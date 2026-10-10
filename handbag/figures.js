@@ -6,7 +6,7 @@
 (function (root) {
 "use strict";
 const HB = root.HANDBAG || (typeof require !== "undefined" ? require("./calcs.js") : {});
-const fmt = (v, d = 2) => typeof v === "number" && isFinite(v) ? v.toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }) : (v === Infinity ? "∞" : String(v));
+const fmt = (v, d = 2) => typeof v === "number" && isFinite(v) ? (abs(v) < 1e-9 ? 0 : v).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }) : (v === Infinity ? "∞" : String(v));
 const { min, max, PI, exp, sqrt, log10, pow, abs } = Math;
 
 /* ─── palette ─── */
@@ -40,34 +40,56 @@ function udl(x1, x2, y, n, c = K.red, h = 14) { let s = P(`M${x1} ${y - h}H${x2}
 function gauge(x, y, w, ratio, label, okLabel) {
   const r = max(0, ratio), ok = r <= 1, fillW = min(r, 1.5) / 1.5 * w, c = ok ? K.teal : K.red;
   return T(x, y - 6, label, { s: 9.5 }) + Rc(x, y, w, 10, { f: "#f1eee8", c: "#ddd7cb", r: 4 }) + Rc(x, y, fillW, 10, { f: c, c, r: 4, op: .85 }) +
-    P(`M${x + w / 1.5} ${y - 2}v14`, { c: K.ink, w: 1, dash: "2 2" }) + T(x + w / 1.5, y + 21, "limite", { a: "middle", s: 8, c: K.mute }) +
+    P(`M${x + w / 1.5} ${y - 2}v14`, { c: K.ink, w: 1, dash: "2 2" }) + (w >= 130 ? T(x + w / 1.5, y + 21, "limite", { a: "middle", s: 8, c: K.mute }) : "") +
     T(x + w, y + 21, `${fmt(r * 100, 0)} % ${okLabel !== undefined ? okLabel : ok ? "✓" : "✗"}`, { a: "end", s: 9.5, c, w: 500 });
 }
 
 /* ─── graphique XY ─── */
 function nice(v) { const e = pow(10, Math.floor(log10(v || 1))), m = v / e; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * e; }
 function plot(o) {
-  const W = o.w || 330, H = o.h || 170, L = o.left ?? 40, Rr = 12, Tt = o.top ?? 14, B = 28, pw = W - L - Rr, ph = H - Tt - B;
-  const xs = o.series.flatMap(s => s.pts.map(p => p[0])), ys = o.series.flatMap(s => s.pts.map(p => p[1])).concat(o.extraY || []);
-  const x0 = o.xmin ?? min(...xs), x1 = o.xmax ?? max(...xs), y0 = o.ymin ?? min(0, ...ys), y1 = o.ymax ?? max(...ys) * 1.12;
+  const W = o.w || 330, L = o.left ?? 42, Rr = 12;
+  /* légende (séries + lignes de repère) dans un bandeau au-dessus du graphique : jamais sur les courbes */
+  const items = o.series.filter(s => s.l).map(s => ({ l: s.l, c: s.c || K.gold, w: s.w || 2, dash: s.dash }))
+    .concat((o.hlines || []).filter(h => h.l).map(h => ({ l: h.l, c: h.c || K.mute, w: 1, dash: "4 3" })));
+  const tw = t => t.length * 4.75 + 26, rows = []; let cur = [], cw = 0;
+  items.forEach(it => { const w = tw(it.l); if (cw + w > W - L - Rr + 30 && cur.length) { rows.push(cur); cur = []; cw = 0; } cur.push([it, w]); cw += w + 8; });
+  if (cur.length) rows.push(cur);
+  const legH = rows.length * 13, Tt = 8 + legH + (legH ? 4 : 0);
+  const hasVl = (o.vlines || []).some(v => v.l), B = 26 + (hasVl ? 12 : 0) + (o.xl ? 10 : 0);
+  const ph = max(70, (o.h || 170) - Tt - B), H = Tt + ph + B, pw = W - L - Rr;
+  const xs = o.series.flatMap(s => s.pts.map(p => p[0])), ys = o.series.flatMap(s => s.pts.map(p => p[1])).concat(o.extraY || [], (o.hlines || []).map(h => h.y));
+  const x0 = o.xmin ?? min(...xs), x1 = o.xmax ?? max(...xs), y0 = o.ymin ?? min(0, ...ys), y1 = o.ymax ?? max(...ys) * 1.1;
   const lx = o.logx, fx = x => lx ? (log10(x) - log10(x0)) / (log10(x1) - log10(x0)) : (x - x0) / (x1 - x0);
   const X = x => L + fx(x) * pw, Y = y => Tt + ph - (y - y0) / (y1 - y0) * ph;
   let g = "";
-  const yst = nice((y1 - y0) / 4); for (let v = Math.ceil(y0 / yst) * yst; v <= y1 + 1e-9; v += yst) g += P(`M${L} ${Y(v)}H${L + pw}`, { c: K.grid, w: .8 }) + T(L - 5, Y(v) + 3, fmt(v, yst < 0.01 ? 3 : yst < 0.1 ? 2 : yst < 1 ? 1 : 0), { a: "end", s: 8.5, c: K.mute });
-  if (lx) { for (let e = Math.ceil(log10(x0)); e <= log10(x1) + 1e-9; e++) { const v = pow(10, e); g += P(`M${X(v)} ${Tt}V${Tt + ph}`, { c: K.grid, w: .8 }) + T(X(v), Tt + ph + 12, fmt(v, 0), { a: "middle", s: 8.5, c: K.mute }); } }
-  else { const xst = o.xstep || nice((x1 - x0) / 5); for (let v = Math.ceil(x0 / xst) * xst; v <= x1 + 1e-9; v += xst) g += P(`M${X(v)} ${Tt}V${Tt + ph}`, { c: K.grid, w: .8 }) + T(X(v), Tt + ph + 12, fmt(v, xst < 1 ? 1 : 0), { a: "middle", s: 8.5, c: K.mute }); }
+  const yst = nice((y1 - y0) / 4); for (let v = Math.ceil(y0 / yst - 1e-9) * yst; v <= y1 + 1e-9; v += yst) g += P(`M${L} ${Y(v)}H${L + pw}`, { c: K.grid, w: .8 }) + T(L - 5, Y(v) + 3, fmt(v, yst < 0.01 ? 3 : yst < 0.1 ? 2 : yst < 1 ? 1 : 0), { a: "end", s: 8.5, c: K.mute });
+  const xt = []; if (lx) { for (let e = Math.ceil(log10(x0)); e <= log10(x1) + 1e-9; e++) xt.push(pow(10, e)); } else { const xst = o.xstep || nice((x1 - x0) / 5); for (let v = Math.ceil(x0 / xst - 1e-9) * xst; v <= x1 + 1e-9; v += xst) xt.push(v); }
+  const xd = !lx && (o.xstep || nice((x1 - x0) / 5)) < 1 ? 1 : 0;
+  xt.forEach(v => g += P(`M${X(v)} ${Tt}V${Tt + ph}`, { c: K.grid, w: .8 }) + T(X(v), Tt + ph + 12, fmt(v, xd), { a: "middle", s: 8.5, c: K.mute }));
   g += P(`M${L} ${Tt}V${Tt + ph}H${L + pw}`, { c: K.ink, w: 1 });
-  (o.areas || []).forEach(a => { g += P(a.pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join("") + `L${X(a.pts.at(-1)[0])} ${Y(y0)}L${X(a.pts[0][0])} ${Y(y0)}Z`, { c: "none", f: a.c, op: a.op || .25 }); });
-  (o.hlines || []).forEach(h => { g += P(`M${L} ${Y(h.y)}H${L + pw}`, { c: h.c || K.mute, w: 1, dash: "4 3" }) + T(L + pw - 2, Y(h.y) - 3, h.l || "", { a: "end", s: 8.5, c: h.c || K.mute }); });
-  (o.vlines || []).forEach(v => { g += P(`M${X(v.x)} ${Tt}V${Tt + ph}`, { c: v.c || K.mute, w: 1, dash: "4 3" }) + (v.l ? T(X(v.x) + 3, Tt + 9, v.l, { s: 8.5, c: v.c || K.mute }) : ""); });
+  (o.areas || []).forEach(a => { if (!a.pts.length) return; g += P(a.pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join("") + `L${X(a.pts.at(-1)[0])} ${Y(y0)}L${X(a.pts[0][0])} ${Y(y0)}Z`, { c: "none", f: a.c, op: a.op || .25 }); });
+  (o.hlines || []).forEach(h => { g += P(`M${L} ${Y(h.y)}H${L + pw}`, { c: h.c || K.mute, w: 1, dash: "4 3" }); });
+  (o.vlines || []).forEach(v => { g += P(`M${X(v.x)} ${Tt}V${Tt + ph}`, { c: v.c || K.mute, w: 1, dash: "4 3" }) + (v.l ? T(X(v.x), Tt + ph + 24, v.l, { a: "middle", s: 8.5, c: v.c || K.mute, w: 500 }) : ""); });
   o.series.forEach(s => { g += P(s.pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join(""), { c: s.c || K.gold, w: s.w || 2, dash: s.dash }); });
-  (o.marks || []).forEach(m => { g += P(`M${X(m.x)} ${Y(y0)}V${Y(m.y)}H${L}`, { c: m.c || K.red, w: .8, dash: "2 2" }) + Ci(X(m.x), Y(m.y), 4, { f: m.c || K.red, c: "#fff", w: 1.2 }) +
-    T(X(m.x) + (m.left ? -7 : 7), Y(m.y) + (m.dy || -6), m.l, { s: 9.5, w: 500, c: K.ink, a: m.left ? "end" : "start" }); });
-  const ls = o.series.filter(s => s.l), lw = max(0, ...ls.map(s => s.l.length)) * 4.9 + 30;
-  let leg = ""; if (ls.length) { const lx_ = o.legRight ? L + pw - lw - 4 : L + 6, ly0 = o.legBottom ? Tt + ph - ls.length * 13 - 6 : Tt + 3;
-    leg += `<rect x="${lx_}" y="${ly0}" width="${lw}" height="${ls.length * 13 + 5}" rx="4" fill="#fff" fill-opacity=".88" stroke="${K.grid}"/>`;
-    ls.forEach((s, i) => { const ly = ly0 + 9 + i * 13; leg += P(`M${lx_ + 6} ${ly}h14`, { c: s.c || K.gold, w: s.w || 2, dash: s.dash }) + T(lx_ + 24, ly + 3, s.l, { s: 9 }); }); }
-  g += leg + (o.xl ? T(L + pw, H - 4, o.xl, { a: "end", s: 9, c: K.mute }) : "") + (o.yl ? T(4, Tt - 4, o.yl, { s: 9, c: K.mute }) : "");
+  /* étiquettes des points : position choisie pour éviter courbes, autres étiquettes et bords */
+  const obst = o.series.flatMap(s => { const out = []; for (let k = 0; k < s.pts.length - 1; k++) for (let t = 0; t <= 1; t += .25) out.push([X(s.pts[k][0] + (s.pts[k + 1][0] - s.pts[k][0]) * t), Y(s.pts[k][1] + (s.pts[k + 1][1] - s.pts[k][1]) * t)]); return out; });
+  const boxes = [];
+  (o.marks || []).forEach(m => {
+    const px = X(m.x), py = Y(m.y), w = m.l.length * 5.3 + 6, h = 12;
+    const cands = [[8, -16], [-8 - w, -16], [8, 6], [-8 - w, 6], [-w / 2, -22], [-w / 2, 10], [14, -5], [-14 - w, -5]];
+    let best = null, bs = 1e9;
+    cands.forEach(([dx, dy]) => { const bx = px + dx, by = py + dy; let sc = 0;
+      if (bx < L + 2 || bx + w > L + pw || by < Tt || by + h > Tt + ph - 2) sc += 1000;
+      obst.forEach(([ox, oy]) => { if (ox > bx - 2 && ox < bx + w + 2 && oy > by - 2 && oy < by + h + 2) sc += 10; });
+      boxes.forEach(b => { if (bx < b[0] + b[2] && bx + w > b[0] && by < b[1] + b[3] && by + h > b[1]) sc += 500; });
+      sc += abs(dx) * .02 + abs(dy) * .02; if (sc < bs) { bs = sc; best = [bx, by]; } });
+    boxes.push([best[0], best[1], w, h]);
+    g += P(`M${px} ${Y(y0)}V${py}H${L}`, { c: m.c || K.red, w: .8, dash: "2 2" }) + Ci(px, py, 4, { f: m.c || K.red, c: "#fff", w: 1.2 }) +
+      `<rect x="${best[0].toFixed(1)}" y="${best[1].toFixed(1)}" width="${w.toFixed(1)}" height="${h}" rx="3" fill="#fff" fill-opacity=".9"/>` + T(best[0] + 3, best[1] + 9.5, m.l, { s: 9.5, w: 500, c: K.ink });
+  });
+  rows.forEach((r, ri) => { let x = L; r.forEach(([it, w]) => { const y = 8 + ri * 13 + 5; g += P(`M${x} ${y}h16`, { c: it.c, w: it.w, dash: it.dash }) + T(x + 21, y + 3, it.l, { s: 9 }); x += w + 8; }); });
+  if (o.yl) g += `<text transform="translate(10 ${(Tt + ph / 2).toFixed(1)}) rotate(-90)" fill="${K.mute}" font-size="9" text-anchor="middle">${esc(o.yl)}</text>`;
+  if (o.xl) g += T(L + pw, H - 3, o.xl, { a: "end", s: 9, c: K.mute });
   return svg(W, H, g);
 }
 const range = (a, b, n) => Array.from({ length: n + 1 }, (_, i) => a + (b - a) * i / n);
@@ -115,10 +137,10 @@ const FIGS = {
 },
 "acier-precontrainte"(I, g) {
   const bars = [["fprg", I.fprg, K.mute], ["0,8 fprg", 0.8 * I.fprg, K.blueL], ["fpeg", I.fpeg, K.mute], ["0,9 fpeg", 0.9 * I.fpeg, K.blueL]], W = 330, H = 160, mx = I.fprg * 1.1, X0 = 70, bw = 36;
-  let s = ""; bars.forEach(([l, v, c], i) => { const h = v / mx * 110, x = X0 + i * 62; s += Rc(x, 130 - h, bw, h, { f: c, c: "none" }) + T(x + bw / 2, 126 - h, fmt(v, 0), { a: "middle", s: 9.5 }) + T(x + bw / 2, 144, l, { a: "middle", s: 9.5 }); });
-  const y = 130 - g("sp0") / mx * 110;
-  s += P(`M50 ${y}H${W - 10}`, { c: K.gold, w: 2 }) + T(52, y - 4, `σp0 = ${fmt(g("sp0"), 0)} MPa (le plus petit)`, { c: K.gold, s: 10, w: 500 }) + P(`M50 130H${W - 10}`, { c: K.ink, w: 1 });
-  return svg(W, H, s);
+  let s = ""; bars.forEach(([l, v, c], i) => { const h = v / mx * 110, x = X0 + i * 62; s += Rc(x, 140 - h, bw, h, { f: c, c: "none" }) + T(x + bw / 2, 134, fmt(v, 0), { a: "middle", s: 9, c: "#fff", w: 500 }) + T(x + bw / 2, 153, l, { a: "middle", s: 9.5 }); });
+  const y = 140 - g("sp0") / mx * 110;
+  s += P(`M50 ${y}H${W - 10}`, { c: K.gold, w: 2 }) + P("M60 12h16", { c: K.gold, w: 2 }) + T(82, 15, `σp0 = ${fmt(g("sp0"), 0)} MPa : la plus petite des deux limites`, { c: K.gold, s: 10, w: 500 }) + P(`M50 140H${W - 10}`, { c: K.ink, w: 1 });
+  return svg(W, 160, s);
 },
 "section-mixte"(I, g) {
   const Ht = I.H + I.hr + I.hh, Wm = max(I.bh, I.bs, I.bi), sc = min(250 / Wm, 150 / Ht), cx = 150, y0 = 165, hw = I.H - I.ts - I.ti;
@@ -149,8 +171,8 @@ const FIGS = {
   return svg(330, 165, s);
 },
 "fleche-tablier"(I, g) {
-  const b = beam({ y: 72, h: 150 }), sc = 40 / max(g("Fv"), I.CF, 1);
-  let s = udl(b.x1, b.x2, b.y - 8, 12) + T(165, b.y - 26, `p = ${fmt(g("p"), 0)} kN/ml`, { a: "middle", c: K.red, s: 10 }) + b.s;
+  const b = beam({ y: 76, h: 150 }), sc = 34 / max(g("Fv"), I.CF, 1);
+  let s = udl(b.x1, b.x2, b.y - 8, 12) + T(165, b.y - 27, `p = ${fmt(g("p"), 0)} kN/ml`, { a: "middle", c: K.red, s: 10, w: 500 }) + b.s;
   s += P(curve(b.x1, b.x2, b.y + 4, t => sin_(t) * g("Fv") * sc), { c: K.red, w: 1.8, dash: "5 3" }) + T(165, b.y + 14 + g("Fv") * sc, `flèche différée ${fmt(g("Fv"), 1)} mm`, { a: "middle", c: K.red, s: 10 });
   s += P(curve(b.x1, b.x2, b.y - 6, t => -sin_(t) * I.CF * sc * 0.4), { c: K.gold, w: 1.6, op: .8 }) + T(165, 140, `contre-flèche à donner : ${fmt(I.CF, 0)} mm`, { a: "middle", c: K.gold, s: 10, w: 500 });
   return svg(330, 150, s);
@@ -166,7 +188,7 @@ const FIGS = {
 "fleche-mur"(I, g) {
   const y0 = 150, yt = 18, hW = y0 - yt, x = 90;
   let s = ground(30, 300, y0) + Rc(x - 14, yt, 14, hW) + P(`M${x - 40} ${y0}H${x + 30}`, { c: K.ink, w: 1 });
-  s += P(`M${x} ${yt}L${x} ${y0}L${x + 110} ${y0}Z`, { c: K.red, w: 1, f: K.redL }) + T(x + 60, y0 - 18, `poussée des terres`, { s: 9.5, c: K.red });
+  s += P(`M${x} ${yt}L${x} ${y0}L${x + 110} ${y0}Z`, { c: K.red, w: 1, f: K.redL }) + T(x + 116, y0 - 5, `poussée des terres`, { s: 9.5, c: K.red });
   for (let i = 1; i <= 5; i++) { const yy = yt + hW * i / 5.5, len = 110 * (yy - yt) / hW; s += arrow(x + len, yy, x + 2, yy, K.red, 1); }
   s += Rc(x, yt, 26, hW, { f: "#c9d7f744", c: K.blue }) + T(x + 30, yt + 12, "surcharge q", { s: 9.5, c: K.blue });
   s += P(`M${x - 7} ${y0} Q${x - 9} ${yt + 60} ${x - 7 - 30} ${yt}`, { c: K.gold, w: 2, dash: "5 3" }) + T(x - 40, yt - 4, `f = ${fmt(g("f"), 1)} mm`, { a: "middle", c: K.gold, s: 10, w: 500 });
@@ -175,8 +197,8 @@ const FIGS = {
 },
 "fleche-pile"(I, g) {
   let s = ground(40, 170, 150) + Rc(95, 30, 24, 120) + arrow(190, 32, 125, 32) + T(194, 35, `F = ${fmt(I.F, 0)} kN`, { c: K.red, s: 10, w: 500 });
-  s += P(`M107 150 Q110 85 ${107 + 34} 30`, { c: K.gold, w: 1.8, dash: "5 3" }) + T(145, 22, `u = ${fmt(g("uv"), 2)} mm (long terme)`, { c: K.gold, s: 10, w: 500 }) + dimV(70, 30, 150, `H = ${fmt(I.H, 1)} m`);
-  const cx = 270, cy = 110; s += T(cx, 62, "section", { a: "middle", s: 9, c: K.mute });
+  s += P(`M107 150 Q110 85 ${107 + 34} 30`, { c: K.gold, w: 1.8, dash: "5 3" }) + T(146, 56, `u = ${fmt(g("uv"), 2)} mm`, { c: K.gold, s: 10, w: 500 }) + T(146, 68, "à long terme", { c: K.gold, s: 8.5 }) + dimV(70, 30, 150, `H = ${fmt(I.H, 1)} m`);
+  const cx = 272, cy = 112; s += T(cx, 88, "section", { a: "middle", s: 9, c: K.mute });
   if (I.sec === "P") { const n = max(1, min(6, Math.round(I.n))); for (let i = 0; i < n; i++) s += Ci(cx - (n - 1) * 9 + i * 18, cy, 7); }
   else if (I.sec === "B") { const n = max(1, min(6, Math.round(I.n))); for (let i = 0; i < n; i++) s += Rc(cx - (n - 1) * 8 + i * 16 - 5, cy - 14, 10, 28); }
   else s += Rc(cx - 22, cy - 14, 44, 28);
@@ -204,7 +226,8 @@ const FIGS = {
   let s = Rc(x0 - 20, 40, w + 40, 8, { f: K.conc }) ;
   for (let i = 0; i < n; i++) { const x = x0 + i * dx, h = et[i] / mx * 70; s += Rc(x - 6, 48, 12, 18) + Rc(x - 11, 140 - h, 22, h, { f: i === 0 ? K.gold : K.goldL, c: "none" }) + T(x, 136 - h, fmt(et[i] * 100, 0) + " %", { a: "middle", s: 9.5, w: i === 0 ? 500 : 400 }) + T(x, 152, "poutre " + (i + 1), { a: "middle", s: 8.5, c: K.mute }); }
   const xc = x0 + w / 2 - I.e / (I.bp * (n - 1)) * w;
-  s += arrow(xc, 6, xc, 38) + T(xc - 6, 14, "charge", { a: "end", c: K.red, s: 9.5 }) + P(`M${x0 + w / 2} 30v14`, { c: K.mute, dash: "2 2" }) + (I.e ? dim(min(xc, x0 + w / 2), max(xc, x0 + w / 2), 24, `e = ${fmt(I.e, 2)} m`) : "");
+  s += arrow(xc, 6, xc, 38) + T(xc - 6, 14, "charge", { a: "end", c: K.red, s: 9.5 }) + P(`M${x0 + w / 2} 26v14`, { c: K.mute, dash: "2 2" }) +
+    (I.e ? P(`M${min(xc, x0 + w / 2)} 30H${max(xc, x0 + w / 2)}`, { c: K.mute, w: .8 }) + T(max(xc, x0 + w / 2) + 5, 33, `e = ${fmt(I.e, 2)} m`, { s: 9.5 }) : "");
   s += P(`M${x0 - 20} 140H${x0 + w + 20}`, { c: K.ink, w: 1 }) + T(x0 + w + 18, 76, "part de la charge", { a: "end", s: 9, c: K.mute }) + T(x0 + w + 18, 87, "reprise par poutre", { a: "end", s: 9, c: K.mute });
   return svg(W, 160, s);
 },
@@ -236,9 +259,9 @@ const FIGS = {
   const R = 58, r = R * (I.D - 2 * I.e) / I.D, cx = 90, cy = 75;
   let s = Ci(cx, cy, R) + `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="#fff" stroke="${K.concD}" stroke-width=".8"/>` + P(`M${cx - R - 10} ${cy}H${cx + R + 10}`, { c: K.mute, dash: "4 3" }) + T(cx + R + 12, cy + 3, "axe neutre", { s: 8.5, c: K.mute });
   s += arrow(cx, cy - R - 16, cx, cy - R + 2) + T(cx + 6, cy - R - 8, `V = ${fmt(I.V, 0)} kN`, { c: K.red, s: 9.5 });
-  const x0 = 205; s += P(`M${x0} ${cy - R}V${cy + R}`, { c: K.ink, w: 1 });
-  s += P(range(-1, 1, 40).map((t, i) => (i ? "L" : "M") + (x0 + 70 * (1 - t * t)).toFixed(1) + " " + (cy + t * R).toFixed(1)).join("") , { c: K.red, w: 1.8, f: K.redL });
-  s += T(x0 + 74, cy + 3, `τmax = ${fmt(g("tau"), 2)} MPa`, { s: 9.5, w: 500 }) + T(x0, cy + R + 14, "répartition de τ sur la hauteur", { s: 8.5, c: K.mute });
+  const x0 = 200; s += P(`M${x0} ${cy - R}V${cy + R}`, { c: K.ink, w: 1 });
+  s += P(range(-1, 1, 40).map((t, i) => (i ? "L" : "M") + (x0 + 60 * (1 - t * t)).toFixed(1) + " " + (cy + t * R).toFixed(1)).join("") , { c: K.red, w: 1.8, f: K.redL });
+  s += T(x0 + 64, cy - 6, "τmax", { s: 9.5, w: 500 }) + T(x0 + 64, cy + 7, `${fmt(g("tau"), 2)} MPa`, { s: 9.5, w: 500 }) + T(x0 - 6, cy + R + 14, "répartition de τ", { s: 8.5, c: K.mute });
   return svg(330, 150, s);
 },
 "frettage"(I, g) {
@@ -250,8 +273,8 @@ const FIGS = {
 "levage-trous"(I, g) {
   const x1 = 30, x2 = 300, y = 90; let s = Rc(x1, y, x2 - x1, 22);
   [x1 + 25, x2 - 25].forEach(x => { s += Ci(x, y + 11, 5, { f: "#fff", c: K.ink }) + P(`M${x} ${y + 6}L165 20`, { c: K.ink, w: 1, dash: "3 2" }) + arrow(x, y - 4, x, y - 30, K.blue) + T(x, y - 34, `${fmt(g("F"), 1)} t`, { a: "middle", c: K.blue, s: 10, w: 500 }); });
-  s += P("M150 20h30", { c: K.ink, w: 3 }) + arrow(165, y + 30, 165, y + 54) + T(171, y + 50, `poids ${fmt(g("P"), 1)} t`, { c: K.red, s: 10 }) + dim(x1, x2, y + 66, `L = ${fmt(g("Lp"), 2)} m`);
-  return svg(330, 165, s);
+  s += P("M150 20h30", { c: K.ink, w: 3 }) + arrow(165, y + 30, 165, y + 54) + T(171, y + 50, `poids ${fmt(g("P"), 1)} t`, { c: K.red, s: 10 }) + dim(x1, x2, y + 78, `L = ${fmt(g("Lp"), 2)} m`);
+  return svg(330, 176, s);
 },
 "levage-crochets"(I, g) {
   const x1 = 25, x2 = 305, Lp = g("Lp"), sx = (x2 - x1) / Lp, xa = x1 + I.a * sx, xb = x2 - I.a * sx, y = 40; let s = Rc(x1, y, x2 - x1, 14);
@@ -297,7 +320,7 @@ const FIGS = {
 "groupe-v"(I, g) {
   const m = max(1, min(4, Math.round(I.m))), n = max(1, min(8, Math.round(I.n))), d = min(30, 200 / n), r = min(d * 0.4 * I.B / I.d * 2.6, d * 0.45); let s = "";
   for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) s += Ci(30 + i * d, 40 + j * d, r);
-  s += dim(30, 30 + d, 40 + (m - 1) * d + 24, `d = ${fmt(I.d, 2)} m`) + T(30, 20, `${m} × ${n} pieux Ø ${fmt(I.B, 2)} m`, { s: 9.5 });
+  s += dim(30, 30 + d, 40 + (m - 1) * d + r + 22, `d = ${fmt(I.d, 2)} m`) + T(30, 20, `${m} × ${n} pieux Ø ${fmt(I.B, 2)} m`, { s: 9.5 });
   s += gauge(30, 128, 270, g("Ce"), "efficacité du groupe (Converse-Labarre)", "");
   return svg(330, 160, s.replace(/limite/, "100 %"));
 },
@@ -337,7 +360,12 @@ const FIGS = {
   s += gauge(175, 40, 145, g("s1") / g("s2"), "béton : σ1 / 0,3 fc") + gauge(175, 105, 145, g("F1") / g("F2"), "portance : F1 / (Qu/Fs)");
   return svg(330, 155, s);
 },
-"spectre-ec8"(I, g, r) { return r && r.fig; },
+"spectre-ec8"(I, g, r) {
+  const pts = r.curve || [];
+  return plot({ series: [{ pts: pts.map(p => [p[0], p[1]]), l: "horizontal Se" }, { pts: pts.map(p => [p[0], p[2]]), l: "vertical Sve", c: K.blue, w: 1.6, dash: "5 3" }],
+    marks: [{ x: 0.55, y: pts.find(p => p[0] >= 0.55)?.[1] ?? 0, l: `${fmt(g("plH"), 2)} m/s² au palier`, c: K.gold }].filter(() => false),
+    hlines: [{ y: g("plH"), l: `palier ${fmt(g("plH"), 2)} m/s²` }], xl: "période T (s)", yl: "m/s²", xmin: 0, xmax: 4 });
+},
 };
 
 /* ════════════════════════ EN CLAIR ════════════════════════ */

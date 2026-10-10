@@ -673,7 +673,7 @@ const CALCS = [
       R("plH", L`S_{e,max}`, L`2{,}5\,a_g\,S\,\eta`, ag * Sx * eta * 2.5, "m/s²", 3), R("plV", L`S_{ve,max}`, L`3\,a_{vg}\,\eta`, avg * eta * 3, "m/s²", 3),
       S("plELS", L`S_{e,max}^{ELS}`, L`\gamma_{ELS}\,S_{e,max}`, ag * Sx * eta * 2.5 * I.yt, "m/s²", 3)],
       tables: [{ title: "Valeurs remarquables", head: ["T (s)", "$S_e/a_g$", "$S_e$ (m/s²)", "$S_{ve}$ (m/s²)"], rows: tab, d: [3, 3, 3] }],
-      fig: figSpectre(pts), vals: { r055: seH(0.55, Sx, TB, TC, TD, eta), r2: seH(2, Sx, TB, TC, TD, eta) } };
+      fig: figSpectre(pts), curve: pts, vals: { r055: seH(0.55, Sx, TB, TC, TD, eta), r2: seH(2, Sx, TB, TC, TD, eta) } };
   } },
 ];
 
