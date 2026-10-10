@@ -102,18 +102,18 @@ function beamDiag(o) {
 
 /* ─── mur / écran avec diagramme de pression des terres ─── */
 function wallFig(o) {
-  const W = 330, H = o.H || 180, hw = H - 40, top = 18, k = hw / o.h, xw = 120, tw = 16; let s = "";
-  s += Rc(xw - tw, top, tw, hw) + P(`M${xw} ${top}H${W - 12}`, { c: K.soilD, w: 1 }) + Rc(xw, top, W - 12 - xw, hw, { f: K.soil, c: "none", op: .35 });
-  if (o.semelle) s += Rc(xw - tw - 40, top + hw, tw + 110, 12);
-  if (o.q) s += udl(xw + 14, W - 18, top - 1, 7, K.red, 12) + T(W - 16, top - 15, o.q, { a: "end", s: 9.5, c: K.red });
-  const pmax = max(...o.p.map(p => p[1]), 1e-9), sc = 82 / pmax, X = p => xw - tw - p * sc;
+  const W = 330, Hh = o.H || 180, hw = Hh - 40, top = 18, k = hw / o.h, xw = 214, tw = 16; let s = "";
+  s += Rc(xw - tw, top, tw, hw) + P(`M${xw} ${top}H${W - 8}`, { c: K.soilD, w: 1 }) + Rc(xw, top, W - 8 - xw, hw, { f: K.soil, c: "none", op: .35 });
+  if (o.semelle) s += Rc(xw - tw - 50, top + hw, tw + 90, 12);
+  if (o.q) s += udl(xw + 8, W - 12, top - 1, 5, K.red, 12) + T(W - 8, top - 15, o.q, { a: "end", s: 9.5, c: K.red });
+  const pmax = max(...o.p.map(p => p[1]), 1e-9), sc = 86 / pmax, X = p => xw - tw - p * sc;
   const pts = o.p.map(([z, p]) => `${X(p).toFixed(1)} ${(top + z * k).toFixed(1)}`);
   s += P(`M${xw - tw} ${top}L${pts.join("L")}L${xw - tw} ${top + o.h * k}Z`, { c: K.red, f: K.redL, op: .6, w: 1 });
   (o.labels || []).forEach(l => { s += T(X(l.p) - 4, top + l.z * k + 3, l.t, { a: "end", s: 9, c: K.red }); });
-  if (o.R) s += arrow(xw - tw - 50, top + o.R.z * k, xw - tw - 2, top + o.R.z * k, K.ink, 2) + T(xw - tw - 52, top + o.R.z * k - 5, o.R.l, { a: "end", s: 9.5, w: 500 });
-  if (o.water) s += P(`M${xw + 2} ${top + o.water * k}H${W - 12}`, { c: K.blue, w: 1.2, dash: "5 3" }) + T(W - 14, top + o.water * k - 3, "nappe", { a: "end", s: 8.5, c: K.blue });
-  s += dimV(W - 8, top, top + hw, `H = ${fmt(o.h, 2)} m`, K.mute, -1);
-  return svg(W, H, s);
+  if (o.R) { const y = top + o.R.z * k; s += arrow(xw - tw - 96, y, xw - tw - 2, y, K.ink, 2) + T(xw - tw - 96, y - 6, o.R.l, { s: 9.5, w: 500 }); }
+  if (o.water) s += P(`M${xw + 2} ${top + o.water * k}H${W - 8}`, { c: K.blue, w: 1.2, dash: "5 3" }) + T(W - 10, top + o.water * k - 3, "nappe", { a: "end", s: 8.5, c: K.blue });
+  s += dimV(W - 6, top, top + hw, `H = ${fmt(o.h, 2)} m`, K.mute, -1);
+  return svg(W, Hh, s);
 }
 
 /* ─── semelle sur sol avec diagramme des contraintes ─── */

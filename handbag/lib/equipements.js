@@ -71,14 +71,14 @@ HB.add("Appareils d'appui et équipements", [
     return { steps: [S("smin", L`\sigma_{m,min}`, L`\dfrac{F_{z,d,min}}{A_r}`, r.smin, "MPa", 2), S("mue", L`\mu_e`, L`0{,}1 + \dfrac{1{,}5\,K_f}{\sigma_{m}}`, mue, "", 3), R("Fr", L`\mu_e\,F_{z,d}`, "", Fr, "kN", 1)],
       checks: [C("Non-glissement : $F_{xy,d} \\le \\mu_e\\,F_{z,d}$", I.Fxy <= Fr, `${f2(I.Fxy, 0)} ≤ ${f2(Fr, 0)} kN`, I.Fxy / Fr), C("$\\sigma_{m,min} \\ge 3$ MPa (charges permanentes)", r.smin >= 3, `${f2(r.smin, 2)} MPa`)],
       notes: ["Si l'une des conditions n'est pas satisfaite, l'appareil doit être fixé (taquets, plaques de glissement ancrées, goujons). L'effort horizontal $F_{xy,d}$ est celui dû à la distorsion (feuille « Effort horizontal ») et aux efforts extérieurs."] };
-  }, fig(I, g) { return aaFig(I, aa(I), T(40, 160, `µe = ${f2(g("mue"), 3)} · σm,min = ${f2(g("smin"), 2)} MPa`, { s: 9.5, w: 500 })); },
+  }, fig(I, g) { return aaFig(I, aa(I), T(10, 14, `µe = ${f2(g("mue"), 3)} · σm,min = ${f2(g("smin"), 2)} MPa`, { s: 9.5, w: 500 })); },
   clair: (I, g) => `Le frottement retient l'appareil jusqu'à ${f2(g("Fr"), 0)} kN d'effort horizontal ; l'effort appliqué est de ${f2(I.Fxy, 0)} kN.` },
 
 { id: "aa-frettes", t: "Élastomère fretté : épaisseur des frettes", ref: "NF EN 1337-3 — §5.3.3.5 (5.9)",
   desc: "Épaisseur minimale des frettes d'acier pour reprendre la traction induite par le confinement de l'élastomère.",
-  inputs: [...AA, N("fy", "Limite d'élasticité des frettes", "MPa", 235, L`f_y`), SEL("Kh", "Trous dans les frettes", [["1", "Sans trous (Kh = 1)"], ["2", "Avec trous (Kh = 2)"]], "1", L`K_h`), N("gm", "Coefficient", "", 1.0, L`\gamma_m`)],
-  calc(I) { const r = aa(I), ts = 1.3 * I.Fz * 1000 * (I.ti + I.ti) * +I.Kh * I.gm / (r.Ar * I.fy), tsr = max(ts, 2);
-    return { steps: [S("Ar", L`A_r`, "", r.Ar / 100, "cm²", 0), S("ts1", L`t_s`, L`\dfrac{K_p\,F_{z,d}\,(t_1 + t_2)\,K_h\,\gamma_m}{A_r\,f_y}\ \ (K_p = 1{,}3)`, ts, "mm", 2), R("tsr", L`t_{s,min}`, L`\max(t_s\ ;\ 2\ \text{mm})`, tsr, "mm", 2)],
+  inputs: [...AA, N("fy", "Limite d'élasticité des frettes", "MPa", 235, L`f_y`), SEL("Kh", "Trous dans les frettes", [["1", "Sans trous (Kh = 1)"], ["2", "Avec trous (Kh = 2)"]], "1", L`K_h`)],
+  calc(I) { const r = aa(I), ts = 1.3 * I.Fz * 1000 * (I.ti + I.ti) * +I.Kh / (r.Ar * I.fy), tsr = max(ts, 2);
+    return { steps: [S("Ar", L`A_r`, "", r.Ar / 100, "cm²", 0), S("ts1", L`t_s`, L`\dfrac{K_p\,F_{z,d}\,(t_1 + t_2)\,K_h\,\gamma_m}{A_r\,f_y}\ \ (K_p = 1{,}3 ;\ \gamma_m = 1)`, ts, "mm", 2), R("tsr", L`t_{s,min}`, L`\max(t_s\ ;\ 2\ \text{mm})`, tsr, "mm", 2)],
       checks: [C("$t_s^{prévu} \\ge t_{s,min}$", I.ts >= tsr, `${f2(I.ts, 1)} ≥ ${f2(tsr, 2)} mm`, tsr / I.ts)],
       notes: ["$t_1$, $t_2$ : épaisseurs des feuillets de part et d'autre de la frette (ici $t_i$). Les frettes usuelles des appareils de catalogue (2 à 5 mm, S235) satisfont en général cette condition."] };
   }, fig(I, g) { return aaFig(I, aa(I)); },
