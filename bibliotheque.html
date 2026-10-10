@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bibliothèque — BridgeAI Studios</title>
+<meta name="description" content="Fonds documentaire privé BridgeAI Studios / KLE Ingénierie — guides, règlements, Eurocodes et études d'ouvrages d'art.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0c0e14;--ink2:#1a1e2e;--ink3:#252a3d;--ink4:#30364d;
+  --gold:#c9a84c;--gold2:#e8c97a;--gold3:#f5e4b0;
+  --blue:#2d6be4;--teal:#1ab8a0;--silver:#8892a4;--mist:#f4f5f7;--white:#fff;
+  --border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.2);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.6;overflow-x:hidden;font-weight:300}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--ink)}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+button,input,select{font-family:inherit}
+:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+
+/* NAV (identique au site) */
+nav.top{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(--border);background:rgba(12,14,20,.92);backdrop-filter:blur(16px)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1280px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);text-decoration:none;letter-spacing:.02em;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:13px;color:var(--silver);text-decoration:none;letter-spacing:.04em;transition:color .2s}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--gold);font-weight:400}
+.nav-search{display:none;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--silver);font-size:12px;cursor:pointer}
+.nav-search kbd,.kbd{font-family:inherit;font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.12);color:var(--silver)}
+body.scrolled .nav-search{display:inline-flex}
+
+/* COUVERTURE */
+.cover{position:relative;padding:96px 5% 72px;overflow:hidden;border-bottom:1px solid var(--border)}
+.cover-bg{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 60% at 50% 0%,rgba(45,107,228,.13),transparent 70%),radial-gradient(ellipse 40% 40% at 85% 90%,rgba(201,168,76,.07),transparent 60%)}
+.cover-arch{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);width:min(1400px,140%);opacity:.18;pointer-events:none}
+.cover-inner{position:relative;max-width:900px;margin:0 auto;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:24px}
+.eyebrow i{width:32px;height:1px;background:var(--gold)}
+.eyebrow span{font-size:11px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;font-weight:400}
+h1{font-family:'Cormorant Garamond',serif;font-size:clamp(46px,8vw,92px);font-weight:300;line-height:1.02;letter-spacing:-.01em;margin-bottom:18px}
+h1 em{font-style:italic;color:var(--gold)}
+.cover-sub{font-size:16px;color:var(--silver);max-width:580px;margin:0 auto 40px;line-height:1.75}
+.searchbox{position:relative;max-width:680px;margin:0 auto}
+.searchbox svg{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--gold);pointer-events:none}
+.searchbox input{width:100%;padding:19px 120px 19px 54px;border-radius:14px;border:1px solid var(--border2);background:rgba(12,14,20,.75);color:var(--white);font-size:16px;font-weight:300;letter-spacing:.01em;transition:border-color .2s,box-shadow .2s}
+.searchbox input::placeholder{color:rgba(136,146,164,.75)}
+.searchbox input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(201,168,76,.08)}
+.searchbox .hint{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;gap:6px;align-items:center;font-size:11px;color:var(--silver)}
+.searchbox .clear{display:none;background:none;border:none;color:var(--silver);cursor:pointer;font-size:12px;padding:4px 8px}
+.searchbox.has-q .clear{display:inline}.searchbox.has-q .kbd{display:none}
+.suggest{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.chip{padding:5px 13px;border-radius:99px;border:1px solid var(--border);background:rgba(255,255,255,.025);color:var(--silver);font-size:12px;cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+.stats{display:flex;justify-content:center;margin:56px auto 0;max-width:820px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.stat{flex:1;padding:20px 12px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat b{display:block;font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;color:var(--gold);line-height:1.2}
+.stat small{font-size:10px;color:var(--silver);letter-spacing:.1em;text-transform:uppercase}
+
+/* RAYONNAGES (thèmes) */
+.sec{padding:64px 5%}
+.sec-inner{max-width:1280px;margin:0 auto}
+.sec-eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;font-weight:400}
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,3.6vw,40px);font-weight:300;line-height:1.15}
+.shelves{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:32px}
+.shelf{background:var(--ink);padding:22px 22px 20px;cursor:pointer;transition:background .2s;display:flex;flex-direction:column;gap:10px;text-align:left;border:none;color:inherit}
+.shelf:hover{background:var(--ink2)}
+.shelf-top{display:flex;align-items:center;justify-content:space-between}
+.shelf-dot{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-family:'Cormorant Garamond',serif;font-size:18px}
+.shelf-n{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--white)}
+.shelf-name{font-size:14px;font-weight:400}
+.shelf-desc{font-size:11.5px;color:var(--silver);line-height:1.55}
+
+/* CATALOGUE */
+.catalog{background:var(--ink2);border-top:1px solid var(--border)}
+.layout{display:grid;grid-template-columns:250px 1fr;gap:40px;margin-top:28px}
+aside{position:sticky;top:88px;align-self:start;max-height:calc(100vh - 110px);overflow:auto;padding-right:6px}
+.facet{margin-bottom:26px}
+.facet h4{font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;font-weight:400;margin-bottom:10px;display:flex;justify-content:space-between}
+.facet h4 button{background:none;border:none;color:var(--silver);font-size:10px;cursor:pointer;letter-spacing:.06em;text-transform:none}
+.opt{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;margin:0 -8px;border-radius:6px;border:none;background:none;color:var(--silver);font-size:13px;cursor:pointer;text-align:left;transition:background .15s,color .15s}
+.opt:hover{background:rgba(255,255,255,.04);color:var(--white)}
+.opt .box{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.18);flex-shrink:0;display:grid;place-items:center}
+.opt.on{color:var(--white)}.opt.on .box{background:var(--gold);border-color:var(--gold)}
+.opt.on .box::after{content:'';width:6px;height:3px;border-left:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);transform:rotate(-45deg) translate(1px,-1px)}
+.opt .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt .n{font-size:11px;color:rgba(136,146,164,.7)}
+.opt.zero{opacity:.35}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.count{font-size:13px;color:var(--silver)}.count b{color:var(--white);font-weight:400}
+.actives{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.active-chip{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:99px;background:rgba(201,168,76,.1);border:1px solid var(--border2);color:var(--gold2);font-size:11px;cursor:pointer}
+.tools{display:flex;gap:10px;align-items:center}
+select{background:var(--ink);border:1px solid var(--border);color:var(--silver);border-radius:8px;padding:7px 10px;font-size:12px}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{background:none;border:none;color:var(--silver);padding:6px 10px;cursor:pointer;display:grid;place-items:center}
+.seg button.on{background:var(--gold);color:var(--ink)}
+.btn-filters{display:none;background:none;border:1px solid var(--border);color:var(--silver);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:28px 22px}
+.card{cursor:pointer;background:none;border:none;color:inherit;text-align:left;display:flex;flex-direction:column;gap:12px}
+.book{position:relative;aspect-ratio:3/4.15;border-radius:4px 8px 8px 4px;overflow:hidden;background:var(--ink3);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 14px 30px -12px rgba(0,0,0,.7);transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s}
+.book::before{content:'';position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.07) 60%,transparent);z-index:2}
+.book img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#fff;opacity:0;transition:opacity .4s;z-index:1}
+.book img.on{opacity:1}
+.book.stack{overflow:visible}
+.book.stack::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--ink4);transform:translate(5px,-5px);z-index:-1;box-shadow:0 0 0 1px rgba(255,255,255,.05)}
+.book.stack{margin:5px 5px 0 0}
+.toc.parts a{color:rgba(255,255,255,.82);text-decoration:none}
+.toc.parts a:hover{color:var(--gold2)}
+.kinds{display:inline-flex;border:1px solid var(--border);border-radius:99px;padding:3px;margin-top:18px;background:rgba(255,255,255,.02)}
+.kinds button{background:none;border:none;color:var(--silver);padding:6px 16px;border-radius:99px;font-size:12.5px;cursor:pointer;letter-spacing:.02em}
+.kinds button.on{background:var(--gold);color:var(--ink);font-weight:500}
+.kinds button span{opacity:.7;margin-left:4px;font-size:11px}
+.btn-out{background:none;border:1px solid var(--border);color:var(--silver);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer}
+.btn-out:hover{color:var(--gold);border-color:var(--gold)}
+/* ÉCRAN D'ACCÈS */
+#lock{display:none;position:fixed;inset:0;z-index:500;background:var(--ink);place-items:center;padding:24px;overflow:auto}
+body.locked #lock{display:grid}
+body.locked{overflow:hidden}
+.lock-card{position:relative;width:min(420px,100%);text-align:center}
+.lock-card h2{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:44px;line-height:1.05;margin:18px 0 10px}
+.lock-card h2 em{color:var(--gold);font-style:italic}
+.lock-card p{color:var(--silver);font-size:14px;margin-bottom:28px}
+.lock-card input[type=password]{width:100%;padding:15px 18px;border-radius:12px;border:1px solid var(--border2);background:rgba(255,255,255,.03);color:var(--white);font-size:15px;text-align:center;letter-spacing:.08em}
+.lock-card input[type=password]:focus{outline:none;border-color:var(--gold)}
+.lock-card .btn{width:100%;justify-content:center;margin-top:12px;padding:13px}
+.lock-card label{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:16px;font-size:12px;color:var(--silver);cursor:pointer}
+.lock-card label input{accent-color:var(--gold)}
+#lockMsg{min-height:20px;margin-top:14px;font-size:12px;color:var(--gold2)}
+.lock-foot{margin-top:40px;font-size:11px;color:rgba(255,255,255,.25)}
+.card:hover .book{transform:translateY(-6px) rotate(-.4deg);box-shadow:0 24px 40px -14px rgba(0,0,0,.85),0 0 0 1px var(--border2)}
+.badge{position:absolute;right:8px;top:8px;z-index:3;font-size:9.5px;letter-spacing:.06em;padding:2px 7px;border-radius:99px;background:rgba(12,14,20,.82);color:var(--gold2);border:1px solid var(--border2);backdrop-filter:blur(4px)}
+.card-t{font-size:13.5px;font-weight:400;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card-m{font-size:11px;color:var(--silver);margin-top:3px;letter-spacing:.02em}
+mark{background:rgba(201,168,76,.28);color:var(--gold3);border-radius:2px;padding:0 1px}
+
+/* couverture générée */
+.gen{position:absolute;inset:0;padding:16% 13% 12% 16%;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.gen .g-cat{font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;opacity:.85}
+.gen .g-t{font-family:'Cormorant Garamond',serif;font-size:clamp(15px,1.5vw,21px);line-height:1.12;font-weight:400}
+.gen .g-rule{width:28px;height:1px;background:currentColor;opacity:.6;margin:10px 0}
+.gen .g-by{font-size:9px;letter-spacing:.08em;opacity:.8}
+.gen svg{position:absolute;left:0;right:0;bottom:22%;width:100%;opacity:.35}
+
+.list .card{flex-direction:row;align-items:center;gap:18px;padding:12px;border-radius:10px;border:1px solid transparent}
+.list .card:hover{background:rgba(255,255,255,.025);border-color:var(--border)}
+.list{grid-template-columns:1fr;gap:4px}
+.list .book{width:54px;flex-shrink:0;border-radius:2px 4px 4px 2px}
+.list .card:hover .book{transform:none}
+.list .badge,.list .gen .g-by,.list .gen .g-cat,.list .gen svg{display:none}
+.list .gen .g-t{font-size:7px}
+.list .card-x{flex:1;min-width:0}
+.list .card-t{-webkit-line-clamp:1}
+.snip{display:none;font-size:12px;color:var(--silver);margin-top:4px;line-height:1.5}
+.list .snip,.grid.searching .snip{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.grid:not(.list) .snip{font-size:11px}
+
+.empty{text-align:center;padding:80px 20px;color:var(--silver)}
+.empty h3{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--white);margin-bottom:8px}
+
+/* FICHE */
+.modal{position:fixed;inset:0;z-index:200;display:none}
+.modal.open{display:block}
+.scrim{position:absolute;inset:0;background:rgba(6,7,11,.78);backdrop-filter:blur(6px);animation:fade .2s}
+.sheet{position:absolute;right:0;top:0;bottom:0;width:min(980px,100%);background:var(--ink2);border-left:1px solid var(--border);overflow:auto;animation:slide .35s cubic-bezier(.2,.7,.2,1)}
+@keyframes fade{from{opacity:0}}@keyframes slide{from{transform:translateX(40px);opacity:0}}
+.sheet-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:rgba(26,30,46,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.crumb{font-size:11px;color:var(--silver);letter-spacing:.06em}
+.crumb b{color:var(--gold);font-weight:400}
+.x{background:none;border:1px solid var(--border);color:var(--silver);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px}
+.x:hover{color:var(--white);border-color:var(--gold)}
+.sheet-body{display:grid;grid-template-columns:260px 1fr;gap:36px;padding:32px 28px}
+.sheet .book{width:100%}
+.sheet h2{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,3vw,38px);font-weight:300;line-height:1.12;margin-bottom:6px}
+.sheet .sub{color:var(--silver);font-size:14px;margin-bottom:20px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 26px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;letter-spacing:.02em}
+.btn.ghost{background:transparent;color:var(--gold);font-weight:400}
+.btn.ghost:hover{background:rgba(201,168,76,.08)}
+.btn[aria-disabled=true]{opacity:.4;pointer-events:none}
+dl{display:grid;grid-template-columns:130px 1fr;gap:9px 16px;font-size:13px;padding:18px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+dt{color:var(--silver);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+dd{color:var(--white)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;padding:2px 9px;border-radius:99px;border:1px solid var(--border);color:var(--silver);cursor:pointer;background:none}
+.tag:hover{color:var(--gold);border-color:var(--gold)}
+.blk{margin-top:24px}
+.blk h5{font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;font-weight:400;margin-bottom:10px}
+.blk p{font-size:14px;color:rgba(255,255,255,.78);line-height:1.75}
+.toc{list-style:none;font-size:13px;columns:2;column-gap:28px}
+.toc li{break-inside:avoid;padding:4px 0;color:rgba(255,255,255,.78);display:flex;gap:10px;justify-content:space-between;border-bottom:1px dotted rgba(255,255,255,.06)}
+.toc li.l2{padding-left:14px;color:var(--silver);font-size:12px}
+.toc span{color:var(--silver);font-size:11px}
+.related{padding:0 28px 40px}
+.related .grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:18px}
+.related .card-t{font-size:12px}
+.related .badge,.related .gen .g-by{display:none}
+.ref{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--silver);background:var(--ink);border:1px solid var(--border);border-radius:8px;padding:12px 14px;line-height:1.6}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink3);border:1px solid var(--border2);color:var(--gold2);padding:9px 18px;border-radius:99px;font-size:12px;z-index:300;transition:all .25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+footer{padding:36px 5%;border-top:1px solid var(--border);text-align:center;font-size:11px;color:rgba(255,255,255,.25);letter-spacing:.04em}
+
+@media(max-width:900px){
+  .nav-links{display:none}
+  .layout{grid-template-columns:1fr}
+  aside{display:none;position:static;max-height:none}
+  aside.open{display:block;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--ink)}
+  .btn-filters{display:inline-block}
+  .sheet-body{grid-template-columns:1fr}
+  .sheet .book{max-width:200px}
+  .toc{columns:1}
+  .stats{flex-wrap:wrap}.stat{flex:1 1 45%;border-bottom:1px solid var(--border)}
+}
+@media(max-width:520px){
+  body.scrolled .nav-search{display:none}.nav-logo{font-size:18px}
+  .cover{padding:64px 16px 48px}.sec{padding:48px 16px}
+  .searchbox input{padding:16px 16px 16px 48px;font-size:15px}.searchbox .hint{display:none}
+  .grid{grid-template-columns:repeat(2,1fr);gap:22px 14px}
+  dl{grid-template-columns:1fr;gap:2px 0}dd{margin-bottom:8px}
+  .sheet-body,.sheet-head{padding-left:16px;padding-right:16px}.related{margin-left:16px;margin-right:16px;padding-left:0;padding-right:0}
+}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <svg class="cover-arch" viewBox="0 0 1400 260" fill="none" stroke="#c9a84c" stroke-width="1" aria-hidden="true" style="position:fixed;bottom:0;opacity:.12"><path d="M0 120 H1400"/><path d="M60 260 Q 250 120 440 260"/><path d="M500 260 Q 700 105 900 260"/><path d="M960 260 Q 1150 120 1340 260"/></svg>
+  <form class="lock-card" id="lockForm" autocomplete="on">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <h2>La <em>Bibliothèque</em></h2>
+    <p>Fonds documentaire privé — réservé à l'équipe KLE Ingénierie.</p>
+    <input type="text" name="username" value="equipe-kle" autocomplete="username" hidden>
+    <input type="password" id="pw" autocomplete="current-password" placeholder="Mot de passe de l'équipe" aria-label="Mot de passe">
+    <button class="btn" id="lockBtn" type="submit">Entrer</button>
+    <label><input type="checkbox" id="remember" checked> Rester connecté sur cet appareil</label>
+    <div id="lockMsg" role="status"></div>
+    <div class="lock-foot">Le catalogue et les vignettes sont chiffrés (AES-256) — rien n'est lisible sans le mot de passe.</div>
+  </form>
+</div>
+
+<nav class="top">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <ul class="nav-links">
+      <li><a href="index.html#composer">Bridge Composer</a></li>
+      <li><a href="beton.html">Calculs Béton</a></li>
+      <li><a href="vipp.html">VIPP-EL</a></li>
+      <li><a href="bibliotheque.html" class="active">Bibliothèque</a></li>
+    </ul>
+    <button class="nav-search" id="navSearch">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Rechercher <kbd>/</kbd>
+    </button>
+    <button class="btn-out" id="logout" title="Verrouiller la bibliothèque sur cet appareil">Verrouiller</button>
+  </div>
+</nav>
+
+<!-- PAGE DE COUVERTURE -->
+<header class="cover" id="top">
+  <div class="cover-bg"></div>
+  <svg class="cover-arch" viewBox="0 0 1400 260" fill="none" stroke="#c9a84c" stroke-width="1" aria-hidden="true">
+    <path d="M0 120 H1400"/><path d="M0 128 H1400" opacity=".5"/>
+    <path d="M60 260 Q 250 120 440 260"/><path d="M500 260 Q 700 105 900 260"/><path d="M960 260 Q 1150 120 1340 260"/>
+    <g opacity=".6"><path d="M440 128 V260"/><path d="M500 128 V260"/><path d="M900 128 V260"/><path d="M960 128 V260"/></g>
+    <g opacity=".35"><path d="M130 128 V202"/><path d="M200 128 V170"/><path d="M270 128 V158"/><path d="M340 128 V170"/><path d="M580 128 V196"/><path d="M650 128 V164"/><path d="M750 128 V164"/><path d="M820 128 V196"/><path d="M1030 128 V202"/><path d="M1100 128 V170"/><path d="M1200 128 V170"/><path d="M1270 128 V202"/></g>
+  </svg>
+  <div class="cover-inner">
+    <div class="eyebrow"><i></i><span>Fonds documentaire · KLE Ingénierie</span><i></i></div>
+    <h1>La <em>Bibliothèque</em><br>des ouvrages d'art</h1>
+    <p class="cover-sub">Guides SETRA, règlements, Eurocodes, notes de calcul et études de référence — indexés, classés et consultables en un instant.</p>
+    <div class="searchbox" id="searchbox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Titre, auteur, norme, type d'ouvrage, mot-clé…" aria-label="Rechercher dans la bibliothèque">
+      <div class="hint"><span class="kbd">/</span><button class="clear" id="clear">Effacer</button></div>
+    </div>
+    <div class="kinds" id="kindSeg"><button data-kind="doc" class="on">Bibliothèque<span id="nDoc"></span></button><button data-kind="archive">Archives projets<span id="nArc"></span></button><button data-kind="all">Tout</button></div>
+    <div class="suggest" id="suggest"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<!-- RAYONNAGES -->
+<section class="sec" id="rayons">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">Rayonnages</div>
+    <h2 class="sec-title">Parcourir par thème</h2>
+    <div class="shelves" id="shelves"></div>
+  </div>
+</section>
+
+<!-- CATALOGUE -->
+<section class="sec catalog" id="catalogue">
+  <div class="sec-inner">
+    <div class="sec-eyebrow">Catalogue</div>
+    <h2 class="sec-title" id="catTitle">Tous les documents</h2>
+    <div class="layout">
+      <aside id="facets"></aside>
+      <div>
+        <div class="toolbar">
+          <div>
+            <div class="count" id="count"></div>
+            <div class="actives" id="actives"></div>
+          </div>
+          <div class="tools">
+            <button class="btn-filters" id="btnFilters">Filtres</button>
+            <select id="sort" aria-label="Trier">
+              <option value="rel">Pertinence</option>
+              <option value="title">Titre A→Z</option>
+              <option value="year-desc">Plus récents</option>
+              <option value="year-asc">Plus anciens</option>
+              <option value="added">Derniers ajouts</option>
+            </select>
+            <div class="seg">
+              <button id="vGrid" class="on" title="Vue couvertures" aria-label="Vue couvertures"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+              <button id="vList" title="Vue liste" aria-label="Vue liste"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>Bridge<span style="color:var(--gold)">AI</span> Studios · Bibliothèque privée — usage interne KLE Ingénierie · <span id="genDate"></span></footer>
+
+<!-- FICHE DOCUMENT -->
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="scrim" data-close></div>
+  <article class="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+    <div class="sheet-head"><div class="crumb" id="dCrumb"></div><button class="x" data-close aria-label="Fermer">×</button></div>
+    <div class="sheet-body">
+      <div id="dCover"></div>
+      <div>
+        <h2 id="dTitle"></h2>
+        <div class="sub" id="dSub"></div>
+        <div class="actions" id="dActions"></div>
+        <dl id="dMeta"></dl>
+        <div id="dBlocks"></div>
+      </div>
+    </div>
+    <div class="related" id="related"></div>
+  </article>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Bibliothèque BridgeAI Studios
+   Données : library/catalog.json (généré par tools/indexer.py)
+   ════════════════════════════════════════════════════════════ */
+
+// Thèmes (rayonnages). L'indexeur utilise les mêmes clés.
+const THEMES = {
+  "eurocodes":   {name:"Eurocodes & normes",        color:"#2d6be4", glyph:"EN", desc:"EN 1990 à 1998, annexes nationales, normes produits"},
+  "reglements":  {name:"Règlements français",        color:"#7a5cc9", glyph:"§",  desc:"BAEL, BPEL, Fascicules 61 & 62, CCTG"},
+  "setra":       {name:"Guides SETRA / Cerema",      color:"#c9a84c", glyph:"S",  desc:"Guides de conception, dossiers pilotes, bulletins"},
+  "ouvrages":    {name:"Ouvrages types",             color:"#d4774a", glyph:"Ω",  desc:"VIPP, PRAD, PSIDN, PIPO, PICF, ponts-dalles…"},
+  "ferroviaire": {name:"Ponts ferroviaires",         color:"#1ab8a0", glyph:"⟂",  desc:"UIC, référentiels IN SNCF, ONCF, LGV"},
+  "metal":       {name:"Métal & mixte",              color:"#8aa4c8", glyph:"I",  desc:"Charpente métallique, bipoutres, connecteurs"},
+  "geotech":     {name:"Fondations & géotechnique",  color:"#a7865a", glyph:"⊥",  desc:"Pieux, appuis, culées, soutènements"},
+  "precontrainte":{name:"Précontrainte",             color:"#c95c7a", glyph:"P",  desc:"Câblage, pertes, phasage, encorbellements"},
+  "dynamique":   {name:"Dynamique & séisme",         color:"#5ca7c9", glyph:"~",  desc:"Sismique, dynamique ferroviaire, vibrations"},
+  "calcul":      {name:"Notes de calcul & exemples", color:"#6fb36b", glyph:"∑",  desc:"Exemples d'application, notes types, feuilles"},
+  "cours":       {name:"Cours & ouvrages de référence", color:"#b39a6b", glyph:"¶", desc:"Livres, cours d'école, thèses"},
+  "chantier":    {name:"Exécution & pathologie",     color:"#8b8f9c", glyph:"⚒",  desc:"Méthodes, contrôle, auscultation, réparation"},
+  "beton":       {name:"Béton armé & matériaux",     color:"#9aa0a8", glyph:"B",  desc:"Béton, armatures, ciments, durabilité"},
+  "hydro":       {name:"Hydraulique & maritime",     color:"#3f8fd1", glyph:"≈",  desc:"Hydrologie, ouvrages hydrauliques, ports"},
+  "routes":      {name:"Routes & équipements",       color:"#b0a14a", glyph:"⌁",  desc:"Tracé, chaussées, dispositifs de retenue"},
+  "tunnels":     {name:"Tunnels & souterrains",      color:"#7d6e5d", glyph:"∩",  desc:"AFTES, CETU, méthodes de creusement"},
+  "autres":      {name:"Divers",                     color:"#5f677a", glyph:"·",  desc:"Documents non classés"},
+  "archives":    {name:"Archives projets & plans",   color:"#4a5068", glyph:"▤",  desc:"Plans confrères, DCE, livrables et dossiers d'AO"}
+};
+
+// Exemple affiché tant que catalog.json n'est pas présent (ouverture en local, etc.)
+const DEMO = {generated:null, demo:true, documents:[
+  {id:"prad-guide-conception",title:"PRAD — Guide de conception",subtitle:"Ponts à poutres précontraintes par adhérence",publisher:"SETRA",theme:"setra",structures:["PRAD"],standards:[],language:"fr",keywords:["poutres préfabriquées","précontrainte par adhérence","fils adhérents","dalle de couverture"],summary:"Guide de conception des tabliers à poutres préfabriquées précontraintes par fils adhérents.",file:"PRAD-GUIDE CONCEPTION.pdf",folder:"VIPP-PPBA-PRAD"},
+  {id:"vipp-guide-conception",title:"VIPP — Guide de conception",subtitle:"Viaducs à travées indépendantes à poutres précontraintes",publisher:"SETRA",theme:"setra",structures:["VIPP"],standards:[],language:"fr",keywords:["poutres précontraintes","post-tension","entretoises","hourdis"],summary:"Guide de conception des viaducs à travées indépendantes à poutres précontraintes par post-tension.",file:"VIPP-GUIDE CONCEPTION.pdf",folder:"VIPP-PPBA-PRAD"},
+  {id:"vipp67",title:"VIPP 67 — Dossier pilote",subtitle:"Pièces pilotes, calcul automatique, exemple d'application",publisher:"SETRA",theme:"ouvrages",structures:["VIPP"],standards:[],language:"fr",keywords:["dossier pilote","calcul automatique","exemple d'application"],file:"VIPP67.pdf",folder:"VIPP-PPBA-PRAD/VIPP67"},
+  {id:"calcul-hourdis-pont",title:"Calcul du hourdis de pont",subtitle:"Ponts à poutres — dalle de couverture",theme:"calcul",structures:["PPBA"],standards:[],language:"fr",keywords:["hourdis","flexion locale","charges concentrées"],file:"CALCUL HOURDIS PONT.pdf",folder:"VIPP-PPBA-PRAD/Hourdis PPBA"},
+  {id:"complement-bt1",title:"Complément BT1",subtitle:"Annexe au calcul du hourdis",theme:"calcul",structures:["PPBA"],standards:[],language:"fr",keywords:["hourdis","Bt","système B"],file:"Complement BT1.pdf",folder:"VIPP-PPBA-PRAD/Hourdis PPBA"}
+]};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const fmtSize = b => !b ? "" : b > 1048576 ? (b/1048576).toFixed(1).replace(".",",")+" Mo" : Math.round(b/1024)+" Ko";
+const LANG = {fr:"Français",en:"Anglais",ar:"Arabe",es:"Espagnol",de:"Allemand",it:"Italien"};
+
+let DOCS = [], BASE = "library/", STATE = {q:"", kind:"doc", theme:new Set(), structures:new Set(), publisher:new Set(), language:new Set(), decade:new Set(), sort:"rel", view:"grid"};
+let KEY = null, LOCK = null, ROOT = "";
+const LOCAL_ROOT = "C:\\Users\\DELL\\Dropbox\\";
+
+/* ── Chiffrement (AES-256-GCM, clé PBKDF2) ──────────────── */
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const b64e = u => btoa(String.fromCharCode(...new Uint8Array(u)));
+async function deriveKey(pw){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt:b64d(LOCK.salt), iterations:LOCK.iter, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, true, ["decrypt"]);
+}
+async function dec(buf, key = KEY){ const u = new Uint8Array(buf); return crypto.subtle.decrypt({name:"AES-GCM", iv:u.slice(0,12)}, key, u.slice(12)); }
+async function tryKey(key){ try{ const t = new TextDecoder().decode(await dec(b64d(LOCK.check), key)); return t === "bridgeai-bibliotheque"; }catch(e){ return false; } }
+const ssGet = k => { try{ return localStorage.getItem(k) || sessionStorage.getItem(k); }catch(e){ return null; } };
+function ssSet(k, v, persist){ try{ (persist ? localStorage : sessionStorage).setItem(k, v); }catch(e){} }
+function ssDel(k){ try{ localStorage.removeItem(k); sessionStorage.removeItem(k); }catch(e){} }
+
+/* vignettes : paquets chiffrés chargés à la demande */
+const PACKS = {};
+function pack(i){ return PACKS[i] ||= fetch(BASE + "p/" + String(i).padStart(3,"0") + ".bin").then(r => r.arrayBuffer()).then(b => dec(b)); }
+const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ io.unobserve(e.target); paint(e.target); } }), {rootMargin:"600px"}) : null;
+async function paint(img){
+  const [p, o, n] = img.dataset.c.split(",").map(Number);
+  try{ const buf = await pack(p); img.src = URL.createObjectURL(new Blob([buf.slice(o, o + n)], {type:"image/jpeg"})); img.onload = () => img.classList.add("on"); }catch(e){}
+}
+function hydrate(scope = document){ scope.querySelectorAll("img[data-c]:not([src])").forEach(i => io ? io.observe(i) : paint(i)); }
+
+/* ── Accès ──────────────────────────────────────────────── */
+async function start(){
+  try{ const r = await fetch(BASE + "lock.json", {cache:"no-cache"}); if(!r.ok) throw 0; LOCK = await r.json(); }
+  catch(e){ load(DEMO); return; }                          // pas d'index publié : aperçu
+  const saved = ssGet("bib-key");
+  if(saved){
+    try{ const [salt, raw] = saved.split("."); if(salt === LOCK.salt){ const k = await crypto.subtle.importKey("raw", b64d(raw), "AES-GCM", true, ["decrypt"]); if(await tryKey(k)){ KEY = k; return unlock(); } } }catch(e){}
+    ssDel("bib-key");
+  }
+  document.body.classList.add("locked"); $("#pw").focus();
+}
+$("#lockForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const pw = $("#pw").value; if(!pw) return;
+  $("#lockBtn").disabled = true; $("#lockMsg").textContent = "Vérification…";
+  const k = await deriveKey(pw);
+  if(!(await tryKey(k))){ $("#lockMsg").textContent = "Mot de passe incorrect."; $("#lockBtn").disabled = false; $("#pw").select(); return; }
+  KEY = k;
+  ssSet("bib-key", LOCK.salt + "." + b64e(await crypto.subtle.exportKey("raw", k)), $("#remember").checked);
+  unlock();
+});
+async function unlock(){
+  $("#lockMsg").textContent = "Ouverture du catalogue…";
+  try{
+    const buf = await dec(await (await fetch(BASE + "catalog.bin", {cache:"no-cache"})).arrayBuffer());
+    const data = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).json();
+    document.body.classList.remove("locked");
+    load(data);
+  }catch(e){ $("#lockMsg").textContent = "Impossible d'ouvrir le catalogue."; $("#lockBtn").disabled = false; }
+}
+function logout(){ ssDel("bib-key"); location.reload(); }
+
+/* ── Chargement ─────────────────────────────────────────── */
+function load(data){
+  ROOT = data.dropbox_root || "";
+  DOCS = (data.documents || []).map((d,i) => {
+    d.theme = THEMES[d.theme] ? d.theme : "autres";
+    d.structures = d.structures || []; d.standards = d.standards || []; d.keywords = d.keywords || []; d.authors = d.authors || [];
+    d.decade = d.year ? Math.floor(d.year/10)*10 + "s" : null;
+    d.kind = d.kind || (d.theme === "archives" ? "archive" : "doc");
+    d.parts = d.parts || [];
+    d._order = i;
+    // index de recherche par champ (poids)
+    d._f = [
+      [norm(d.title + " " + (d.subtitle||"")), 10],
+      [norm(d.structures.join(" ") + " " + d.standards.join(" ")), 8],
+      [norm(d.authors.join(" ") + " " + (d.publisher||"")), 6],
+      [norm(d.keywords.join(" ") + " " + THEMES[d.theme].name), 5],
+      [norm((d.summary||"") + " " + (d.toc||[]).map(t=>t.title).join(" ")), 3],
+      [norm((d.file||"") + " " + (d.folder||"") + " " + d.parts.map(p=>p.n+" "+(p.t||"")).join(" ")), 2],
+      [norm(d.text||""), 1]
+    ];
+    return d;
+  });
+  $("#genDate").textContent = data.demo ? "aperçu de démonstration" : data.generated ? "index du " + new Date(data.generated).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}) : "";
+  readURL(); renderStatic(); render();
+  const m = location.hash.match(/^#doc=(.+)$/); if(m) openDoc(decodeURIComponent(m[1]), false);
+}
+
+/* ── Recherche ──────────────────────────────────────────── */
+function terms(q){ return norm(q).split(/[\s,;]+/).filter(t => t.length > 1); }
+function score(d, ts){
+  if(!ts.length) return 1;
+  let total = 0;
+  for(const t of ts){
+    let best = 0;
+    for(const [txt, w] of d._f){
+      if(!txt) continue;
+      const i = txt.indexOf(t);
+      if(i < 0) continue;
+      const wordStart = i === 0 || /[^a-z0-9]/.test(txt[i-1]);
+      best = Math.max(best, w * (wordStart ? 1.5 : 1));
+    }
+    if(!best) return 0;            // tous les termes doivent être trouvés
+    total += best;
+  }
+  return total;
+}
+function hl(text, ts){
+  if(!ts.length || !text) return esc(text);
+  const src = String(text), n = norm(src);
+  const marks = [];
+  for(const t of ts){ let i = 0; while((i = n.indexOf(t, i)) >= 0){ marks.push([i, i + t.length]); i += t.length; } }
+  if(!marks.length) return esc(src);
+  marks.sort((a,b)=>a[0]-b[0]);
+  let out = "", p = 0;
+  for(const [a,b] of marks){ if(a < p) continue; out += esc(src.slice(p,a)) + "<mark>" + esc(src.slice(a,b)) + "</mark>"; p = b; }
+  return out + esc(src.slice(p));
+}
+function snippet(d, ts){
+  const pool = [d.summary, d.text].filter(Boolean);
+  if(!ts.length) return d.summary ? hl(d.summary.slice(0,180), []) : "";
+  for(const s of pool){
+    const n = norm(s); let i = -1;
+    for(const t of ts){ i = n.indexOf(t); if(i >= 0) break; }
+    if(i >= 0){ const a = Math.max(0, i - 70); return (a ? "… " : "") + hl(s.slice(a, a + 200), ts) + " …"; }
+  }
+  return "";
+}
+
+/* ── Filtres ────────────────────────────────────────────── */
+const FACETS = [
+  {key:"theme", label:"Thème", get:d=>[d.theme], name:k=>THEMES[k].name},
+  {key:"structures", label:"Type d'ouvrage", get:d=>d.structures},
+  {key:"publisher", label:"Éditeur / source", get:d=>d.publisher?[d.publisher]:[]},
+  {key:"decade", label:"Période", get:d=>d.decade?[d.decade]:[], name:k=>"Années " + k.replace("s",""), sortKey:k=>-parseInt(k)},
+  {key:"language", label:"Langue", get:d=>d.language?[d.language]:[], name:k=>LANG[k]||k}
+];
+function passes(d, except){
+  if(STATE.kind !== "all" && d.kind !== STATE.kind) return false;
+  for(const f of FACETS){
+    if(f.key === except) continue;
+    const sel = STATE[f.key]; if(!sel.size) continue;
+    if(!f.get(d).some(v => sel.has(v))) return false;
+  }
+  return true;
+}
+function results(){
+  const ts = terms(STATE.q);
+  let r = DOCS.filter(d => passes(d)).map(d => ({d, s:score(d, ts)})).filter(x => x.s > 0);
+  const s = STATE.sort === "rel" && !ts.length ? "added" : STATE.sort;
+  const by = {
+    rel:(a,b)=>b.s-a.s || a.d.title.localeCompare(b.d.title,"fr"),
+    title:(a,b)=>a.d.title.localeCompare(b.d.title,"fr"),
+    "year-desc":(a,b)=>(b.d.year||0)-(a.d.year||0),
+    "year-asc":(a,b)=>(a.d.year||9999)-(b.d.year||9999),
+    added:(a,b)=>String(b.d.added||"").localeCompare(String(a.d.added||"")) || a.d._order-b.d._order
+  };
+  return r.sort(by[s]).map(x => x.d);
+}
+
+/* ── Couvertures ────────────────────────────────────────── */
+function cover(d){
+  const th = THEMES[d.theme];
+  const badge = d.collection ? `<span class="badge">${d.nparts} fichiers</span>` : d.pages ? `<span class="badge">${d.pages} p.</span>` : "";
+  const img = Array.isArray(d.cover) ? `<img data-c="${d.cover.join(",")}" alt="">` : "";
+  return `<div class="book ${d.collection ? "stack" : ""}">${badge}${genHTML(d)}${img}</div>`;
+}
+function genHTML(d){
+  const th = THEMES[d.theme];
+  const c = th.color;
+  return `<div class="gen" style="background:linear-gradient(160deg,${c} 0%,${shade(c,-.45)} 100%)">
+    <div class="g-cat">${esc(d.publisher || th.name)}</div>
+    <svg viewBox="0 0 200 40" fill="none" stroke="#fff" stroke-width=".8"><path d="M0 12H200"/><path d="M10 40Q55 8 100 40Q145 8 190 40"/></svg>
+    <div><div class="g-rule"></div><div class="g-t">${esc(d.title)}</div></div>
+    <div class="g-by">${esc(d.year || (d.structures[0] || ""))}</div></div>`;
+}
+function shade(hex, p){ const n = parseInt(hex.slice(1),16); const f = c => Math.round(Math.min(255, Math.max(0, c + c*p))); return `rgb(${f(n>>16)},${f(n>>8&255)},${f(n&255)})`; }
+
+/* ── Rendu ──────────────────────────────────────────────── */
+function renderStatic(){
+  const pages = DOCS.reduce((s,d)=>s+(d.pages||0),0), size = DOCS.reduce((s,d)=>s+(d.size||0),0);
+  const themes = new Set(DOCS.map(d=>d.theme)).size;
+  $("#stats").innerHTML = [
+    [DOCS.length.toLocaleString("fr-FR"), "documents"],
+    [themes, "thèmes"],
+    [pages ? pages.toLocaleString("fr-FR") : "—", "pages"],
+    [size ? (size/1073741824 >= 1 ? (size/1073741824).toFixed(1).replace(".",",")+" Go" : Math.round(size/1048576)+" Mo") : "—", "de documentation"]
+  ].map(([b,s]) => `<div class="stat"><b>${b}</b><small>${s}</small></div>`).join("");
+
+  const nd = DOCS.filter(d => d.kind === "doc").length;
+  $("#nDoc").textContent = nd.toLocaleString("fr-FR"); $("#nArc").textContent = (DOCS.length - nd).toLocaleString("fr-FR");
+  if(DOCS.length === nd) $("#kindSeg").style.display = "none";
+  const counts = {}; DOCS.forEach(d => counts[d.theme] = (counts[d.theme]||0) + 1);
+  $("#shelves").innerHTML = Object.entries(THEMES).filter(([k]) => counts[k]).map(([k,t]) =>
+    `<button class="shelf" data-theme="${k}"><div class="shelf-top"><div class="shelf-dot" style="background:${t.color}22;color:${t.color}">${t.glyph}</div><div class="shelf-n">${counts[k]}</div></div><div class="shelf-name">${t.name}</div><div class="shelf-desc">${t.desc}</div></button>`).join("");
+
+  // suggestions : types d'ouvrage et normes les plus fréquents
+  const f = {}; DOCS.filter(d => d.kind === "doc").forEach(d => [...d.structures, ...d.standards].forEach(v => f[v] = (f[v]||0) + 1));
+  const top = Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,7).map(x=>x[0]);
+  $("#suggest").innerHTML = (top.length ? top : ["VIPP","PRAD","Hourdis","Précontrainte"]).map(s => `<button class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("");
+}
+function render(){
+  const ts = terms(STATE.q), list = results();
+  // facettes avec comptes « si je coche aussi celle-ci »
+  $("#facets").innerHTML = FACETS.map(f => {
+    const all = {}, live = {};
+    DOCS.forEach(d => f.get(d).forEach(v => all[v] = 1));
+    DOCS.filter(d => passes(d, f.key) && score(d, ts) > 0).forEach(d => f.get(d).forEach(v => live[v] = (live[v]||0) + 1));
+    let keys = Object.keys(all); if(!keys.length) return "";
+    if(f.key === "theme" && STATE.kind !== "all") keys = keys.filter(k => (k === "archives") === (STATE.kind === "archive"));
+    keys.sort(f.sortKey ? (a,b)=>f.sortKey(a)-f.sortKey(b) : (a,b)=>(live[b]||0)-(live[a]||0) || a.localeCompare(b));
+    const sel = STATE[f.key];
+    return `<div class="facet"><h4>${f.label}${sel.size ? `<button data-reset="${f.key}">Tout</button>` : ""}</h4>${keys.map(k =>
+      `<button class="opt ${sel.has(k)?"on":""} ${!live[k]&&!sel.has(k)?"zero":""}" data-f="${f.key}" data-v="${esc(k)}"><span class="box"></span><span class="lbl">${esc(f.name ? f.name(k) : k)}</span><span class="n">${live[k]||0}</span></button>`).join("")}</div>`;
+  }).join("");
+
+  const act = [];
+  if(STATE.q) act.push(`<span class="active-chip" data-clear="q">« ${esc(STATE.q)} » ×</span>`);
+  FACETS.forEach(f => STATE[f.key].forEach(v => act.push(`<span class="active-chip" data-f="${f.key}" data-v="${esc(v)}">${esc(f.name ? f.name(v) : v)} ×</span>`)));
+  $("#actives").innerHTML = act.join("");
+  const pool = STATE.kind === "all" ? DOCS.length : DOCS.filter(d => d.kind === STATE.kind).length;
+  $("#count").innerHTML = `<b>${list.length.toLocaleString("fr-FR")}</b> document${list.length>1?"s":""}${list.length !== pool ? ` sur ${pool.toLocaleString("fr-FR")}` : ""}`;
+  $("#catTitle").textContent = STATE.theme.size === 1 ? THEMES[[...STATE.theme][0]].name : STATE.q ? "Résultats de recherche" : STATE.kind === "archive" ? "Archives projets & plans" : STATE.kind === "all" ? "Tout le fonds" : "Bibliothèque technique";
+
+  const g = $("#grid");
+  g.classList.toggle("list", STATE.view === "list");
+  g.classList.toggle("searching", !!ts.length);
+  g.innerHTML = list.length ? list.map(d => card(d, ts)).join("") :
+    `<div class="empty" style="grid-column:1/-1"><h3>Aucun document trouvé</h3><p>Essayez un autre mot-clé ou retirez un filtre.</p></div>`;
+  $("#searchbox").classList.toggle("has-q", !!STATE.q);
+  document.querySelectorAll("#kindSeg button").forEach(b => b.classList.toggle("on", b.dataset.kind === STATE.kind));
+  hydrate(g);
+  writeURL();
+}
+function card(d, ts){
+  const meta = [d.publisher, d.year, d.structures.slice(0,2).join(", ")].filter(Boolean).join(" · ");
+  return `<button class="card" data-id="${esc(d.id)}">${cover(d)}<div class="card-x"><div class="card-t">${hl(d.title, ts)}</div><div class="card-m">${hl(meta || THEMES[d.theme].name, ts)}</div><div class="snip">${snippet(d, ts)}</div></div></button>`;
+}
+
+/* ── Fiche document ─────────────────────────────────────── */
+function openDoc(id, push = true){
+  const d = DOCS.find(x => x.id === id); if(!d) return;
+  const th = THEMES[d.theme], ts = terms(STATE.q);
+  const url = d.url || null;
+  const folderUrl = ROOT ? "https://www.dropbox.com/home/" + encodeURIComponent(ROOT + "/" + (d.folder || "")).replace(/%2F/g, "/") : null;
+  const local = ROOT ? LOCAL_ROOT + (ROOT + "/" + (d.folder ? d.folder + "/" : "") + (d.file || "")).replace(/\//g, "\\") : "";
+  $("#dCrumb").innerHTML = `${d.kind === "archive" ? "Archives" : "Bibliothèque"} › <b>${th.name}</b>`;
+  $("#dCover").innerHTML = cover(d);
+  $("#dTitle").innerHTML = hl(d.title, ts);
+  $("#dSub").innerHTML = hl(d.subtitle || "", ts);
+  const dis = url ? "" : 'aria-disabled="true"';
+  $("#dActions").innerHTML = `
+    <a class="btn" href="${esc(url || "#")}" target="_blank" rel="noopener" ${dis}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg>${d.collection ? "Ouvrir la collection" : "Lire le document"} ↗</a>
+    ${!d.collection && folderUrl ? `<a class="btn ghost" href="${esc(folderUrl)}" target="_blank" rel="noopener">Dossier Dropbox ↗</a>` : ""}
+    ${local ? `<button class="btn ghost" id="aPath" title="${esc(local)}">Copier le chemin local</button>` : ""}
+    <button class="btn ghost" id="aLink">Copier le lien de la fiche</button>`;
+  const row = (k,v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : "";
+  const tags = arr => arr.length ? `<div class="tags">${arr.map(v=>`<button class="tag" data-q="${esc(v)}">${esc(v)}</button>`).join("")}</div>` : "";
+  $("#dMeta").innerHTML =
+    row("Auteur(s)", esc(d.authors.join(", "))) + row("Éditeur", d.publisher ? `<button class="tag" data-f="publisher" data-v="${esc(d.publisher)}">${esc(d.publisher)}</button>` : "") + row("Année", esc(d.year)) +
+    row("Thème", `<button class="tag" data-theme="${d.theme}">${th.name}</button>`) +
+    row("Ouvrages", tags(d.structures)) + row("Normes", tags(d.standards)) +
+    row("Langue", esc(LANG[d.language] || d.language)) +
+    row("Format", [d.collection && d.nparts + " fichiers", d.pages && d.pages.toLocaleString("fr-FR") + (d.pages > 1 ? " pages" : " page"), fmtSize(d.size)].filter(Boolean).join(" · ")) +
+    row("Emplacement", `<span style="color:var(--silver);font-size:12px;word-break:break-word">${esc((d.folder || "").split("/").join(" › ") + (d.file ? " › " + d.file : ""))}</span>`);
+  let b = "";
+  if(d.summary) b += `<div class="blk"><h5>${d.collection ? "Collection" : "Résumé"}</h5><p>${hl(d.summary, ts)}</p></div>`;
+  if(d.keywords.length) b += `<div class="blk"><h5>Mots-clés</h5>${tags(d.keywords)}</div>`;
+  if(d.parts.length) b += `<div class="blk"><h5>Contenu de la collection</h5><ul class="toc parts">${d.parts.map(p => `<li><a href="${esc(p.url)}" target="_blank" rel="noopener">${hl(p.n + (p.t ? " — " + p.t : ""), ts)}</a>${p.p ? `<span>${p.p} p.</span>` : ""}</li>`).join("")}</ul></div>`;
+  if(d.toc && d.toc.length) b += `<div class="blk"><h5>Sommaire</h5><ul class="toc">${d.toc.slice(0,40).map(t => `<li class="l${t.level||1}">${hl(t.title, ts)}${t.page ? `<span>p. ${t.page}</span>` : ""}</li>`).join("")}</ul></div>`;
+  if(ts.length && d.text){ const s = snippet({summary:null, text:d.text}, ts); if(s) b += `<div class="blk"><h5>Extrait correspondant</h5><p>${s}</p></div>`; }
+  if(!d.collection) b += `<div class="blk"><h5>Référence</h5><div class="ref">${esc(citation(d))}</div></div>`;
+  $("#dBlocks").innerHTML = b;
+  $("#aLink").onclick = () => copy(location.origin + location.pathname + "#doc=" + encodeURIComponent(d.id), "Lien de la fiche copié");
+  if($("#aPath")) $("#aPath").onclick = () => copy(local, "Chemin copié — à coller dans l'Explorateur Windows");
+
+  const rel = DOCS.filter(x => x.id !== d.id && x.kind === d.kind).map(x => ({x, s:(x.theme===d.theme?2:0) + (x.folder===d.folder?3:0) + x.structures.filter(s=>d.structures.includes(s)).length*3 + x.standards.filter(s=>d.standards.includes(s)).length*2 + x.keywords.filter(k=>d.keywords.includes(k)).length}))
+    .filter(r => r.s > 2).sort((a,b)=>b.s-a.s).slice(0,6).map(r=>r.x);
+  $("#related").innerHTML = rel.length ? `<div class="blk" style="margin-top:0"><h5>Sur le même sujet</h5></div><div class="grid">${rel.map(x=>card(x,[])).join("")}</div>` : "";
+
+  const m = $("#modal"); m.classList.add("open"); m.setAttribute("aria-hidden","false");
+  m.querySelector(".sheet").scrollTop = 0; document.body.style.overflow = "hidden";
+  hydrate(m);
+  if(push) history.pushState(null, "", location.search + "#doc=" + encodeURIComponent(d.id));
+}
+function copy(t, msg){ (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(msg), () => toast(t)); }
+function closeDoc(push = true){
+  const m = $("#modal"); if(!m.classList.contains("open")) return;
+  m.classList.remove("open"); m.setAttribute("aria-hidden","true"); document.body.style.overflow = "";
+  if(push) history.pushState(null, "", location.pathname + location.search);
+}
+function citation(d){
+  return [d.authors.join(", ") || d.publisher, d.title + (d.subtitle ? " — " + d.subtitle : ""), d.authors.length && d.publisher, d.year, d.pages && d.pages + " p."].filter(Boolean).join(". ") + ".";
+}
+function toast(t){ const e = $("#toast"); e.textContent = t; e.classList.add("on"); clearTimeout(e._t); e._t = setTimeout(()=>e.classList.remove("on"), 1600); }
+
+/* ── URL (partage d'une recherche) ──────────────────────── */
+function writeURL(){
+  const p = new URLSearchParams();
+  if(STATE.q) p.set("q", STATE.q);
+  FACETS.forEach(f => STATE[f.key].size && p.set(f.key, [...STATE[f.key]].join("|")));
+  if(STATE.sort !== "rel") p.set("tri", STATE.sort);
+  if(STATE.kind !== "doc") p.set("fonds", STATE.kind);
+  if(STATE.view !== "grid") p.set("vue", STATE.view);
+  const s = p.toString();
+  history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash);
+}
+function readURL(){
+  const p = new URLSearchParams(location.search);
+  STATE.q = p.get("q") || ""; $("#q").value = STATE.q;
+  FACETS.forEach(f => STATE[f.key] = new Set((p.get(f.key) || "").split("|").filter(Boolean)));
+  STATE.sort = p.get("tri") || "rel"; $("#sort").value = STATE.sort;
+  STATE.kind = p.get("fonds") || "doc";
+  STATE.view = p.get("vue") || localStorageGet("bib-view") || "grid"; setView(STATE.view, false);
+}
+function localStorageGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function setView(v, rerender = true){
+  STATE.view = v; $("#vGrid").classList.toggle("on", v==="grid"); $("#vList").classList.toggle("on", v==="list");
+  try{ localStorage.setItem("bib-view", v); }catch(e){}
+  if(rerender) render();
+}
+
+/* ── Évènements ─────────────────────────────────────────── */
+let tmr;
+$("#q").addEventListener("input", e => { clearTimeout(tmr); tmr = setTimeout(() => { STATE.q = e.target.value.trim(); render(); }, 120); });
+$("#q").addEventListener("keydown", e => { if(e.key === "Enter") document.getElementById("catalogue").scrollIntoView({behavior:"smooth"}); });
+$("#clear").onclick = () => { $("#q").value = ""; STATE.q = ""; render(); $("#q").focus(); };
+$("#sort").onchange = e => { STATE.sort = e.target.value; render(); };
+$("#vGrid").onclick = () => setView("grid"); $("#vList").onclick = () => setView("list");
+$("#btnFilters").onclick = () => $("#facets").classList.toggle("open");
+$("#logout").onclick = logout;
+$("#navSearch").onclick = () => { scrollTo({top:0, behavior:"smooth"}); setTimeout(()=>$("#q").focus(), 300); };
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-id],[data-f],[data-reset],[data-clear],[data-q],[data-theme],[data-kind],[data-close]");
+  if(!t) return;
+  if(t.dataset.close !== undefined){ closeDoc(); return; }
+  if(t.dataset.id){ openDoc(t.dataset.id); return; }
+  const inModal = !!t.closest("#modal");
+  if(t.dataset.f){ const s = STATE[t.dataset.f]; s.has(t.dataset.v) ? s.delete(t.dataset.v) : s.add(t.dataset.v); }
+  else if(t.dataset.reset){ STATE[t.dataset.reset].clear(); }
+  else if(t.dataset.clear){ STATE.q = ""; $("#q").value = ""; }
+  else if(t.dataset.q){ STATE.q = t.dataset.q; $("#q").value = t.dataset.q; }
+  else if(t.dataset.theme){ STATE.theme = new Set([t.dataset.theme]); STATE.kind = t.dataset.theme === "archives" ? "archive" : "doc"; }
+  else if(t.dataset.kind){ STATE.kind = t.dataset.kind; STATE.theme.clear(); }
+  render();
+  if(inModal) closeDoc();
+  if(inModal || t.classList.contains("shelf") || t.classList.contains("chip")) $("#catalogue").scrollIntoView({behavior:"smooth"});
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") closeDoc();
+  if(e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName)){ e.preventDefault(); scrollTo({top:0, behavior:"smooth"}); $("#q").focus(); }
+});
+addEventListener("popstate", () => { const m = location.hash.match(/^#doc=(.+)$/); m ? openDoc(decodeURIComponent(m[1]), false) : closeDoc(false); });
+addEventListener("scroll", () => document.body.classList.toggle("scrolled", scrollY > 420), {passive:true});
+
+start();
+</script>
+</body>
+</html>
