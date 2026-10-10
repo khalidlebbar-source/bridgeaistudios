@@ -108,10 +108,11 @@ const sin_ = t => 16 / 5 * (t - 2 * t ** 3 + t ** 4);   // déformée normalisé
 /* ════════════════════════ FIGURES ════════════════════════ */
 const FIGS = {
 "beton-bael"(I, g) {
-  const f = j => j >= 28 ? I.fc28 : (I.fc28 <= 40 ? j / (4.76 + 0.83 * j) : j / (1.40 + 0.95 * j)) * I.fc28;
-  const pts = range(0.5, 90, 120).map(j => [j, f(j)]);
-  return plot({ series: [{ pts, l: "fcj : résistance à j jours" }], hlines: [{ y: I.fc28, l: `fc28 = ${fmt(I.fc28, 0)} MPa` }], vlines: [{ x: 28, l: "28 j" }],
-    marks: [{ x: min(I.j, 90), y: g("fcj"), l: `${fmt(g("fcj"), 1)} MPa à ${fmt(I.j, 0)} j`, left: I.j > 55 }], xl: "âge du béton (jours)", yl: "MPa", xmax: 90 });
+  const law = j => HB.fcjLaw(I.fc28, j, I.tt === "o").v;
+  const pts = range(0.5, 120, 160).map(j => [j, law(j)]);
+  return plot({ series: [{ pts, l: "fcj réel (déformations)" }, { pts: pts.map(p => [p[0], min(p[1], I.fc28)]), l: "fcj borné (justification)", c: K.blue, w: 1.4, dash: "5 3" }],
+    hlines: [{ y: I.fc28, l: `fc28 = ${fmt(I.fc28, 0)} MPa` }], vlines: [{ x: 28, l: "28 j" }, { x: 60, l: "60 j" }],
+    marks: [{ x: min(I.j, 120), y: g("fcj"), l: `${fmt(g("fcj"), 1)} MPa à ${fmt(I.j, 0)} j` }], xl: "âge du béton (jours)", yl: "MPa", xmax: 120, ymax: I.fc28 * 1.2 });
 },
 "beton-ec2"(I, g) {
   const fck = +I.fck, fcd = fck / 1.5, e2 = 2, eu = 3.5, n = 2;
@@ -371,7 +372,7 @@ const FIGS = {
 
 /* ════════════════════════ EN CLAIR ════════════════════════ */
 const CLAIR = {
-  "beton-bael": (I, g) => `À ${fmt(I.j, 0)} jours, le béton n'a atteint que ${fmt(g("fcj") / I.fc28 * 100, 0)} % de sa résistance finale (${fmt(g("fcj"), 1)} MPa sur ${fmt(I.fc28, 0)} MPa).`,
+  "beton-bael": (I, g) => g("fcj") < I.fc28 ? `À ${fmt(I.j, 0)} jours, le béton n'a atteint que ${fmt(g("fcj") / I.fc28 * 100, 0)} % de sa résistance à 28 jours (${fmt(g("fcj"), 1)} MPa sur ${fmt(I.fc28, 0)} MPa).` : `À ${fmt(I.j, 0)} jours, le béton atteint ${fmt(g("fcj"), 1)} MPa (${fmt(g("fcj") / I.fc28 * 100, 0)} % de fc28) ; pour justifier les sections on reste à ${fmt(I.fc28, 0)} MPa.`,
   "beton-ec2": (I, g) => `Un béton C${I.fck} résiste à ${I.fck} MPa en compression (sur cylindre) mais seulement à ${fmt(g("fctm"), 1)} MPa en traction : c'est pour cela qu'on l'arme.`,
   "retrait-ec2": (I, g) => `Le béton se raccourcit en séchant : ${fmt(g("ecs") * 1000, 2)} mm par mètre${isFinite(I.t) ? ` à ${fmt(I.t, 0)} jours` : " à long terme"}, soit ${fmt(g("ecs") * 1e5, 1)} mm pour 100 m de tablier.`,
   "retrait-fluage": (I, g) => `À ${fmt(I.t, 0)} jours, il reste encore ${fmt(g("ratio") * 100, 0)} % du retrait et du fluage à venir : c'est ce qui déplacera encore les appareils d'appui.`,

@@ -53,42 +53,55 @@ function seV(T, TB, TC, TD, eta) {              // Sve/avg
 const BOULONS = { M12: 84.3, M14: 115, M16: 157, M18: 192, M20: 245, M22: 303, M24: 353, M27: 459, M30: 561, M33: 694, M36: 817 };
 const ACIER_HA = Object.fromEntries([6, 8, 10, 12, 14, 16, 20, 25, 32, 40].map(d => [d, PI * (d / 10) ** 2 / 4]));   // cm²
 const EC2_CUBE = { 12: 15, 16: 20, 20: 25, 25: 30, 30: 37, 35: 45, 40: 50, 45: 55, 50: 60, 55: 67, 60: 75, 70: 85, 80: 95, 90: 105 };
+/* — BAEL 91 mod. 99, A.2.1.11 : évolution de fcj avec l'âge — */
+function fcjLaw(fc28, j, tt = false) {
+  const low = fc28 <= 40;
+  const f1 = L`\dfrac{j}{4{,}76 + 0{,}83\,j}\,f_{c28}`, f2 = L`\dfrac{j}{1{,}40 + 0{,}95\,j}\,f_{c28}`;
+  if (j <= 28) return { v: (low ? j / (4.76 + 0.83 * j) : j / (1.40 + 0.95 * j)) * fc28, f: low ? f1 : f2,
+    note: `Loi d'évolution A.2.1.11 pour j ≤ 28 jours (${low ? "$f_{c28} \\le 40$ MPa" : "$f_{c28} > 40$ MPa"}), bétons non traités thermiquement.` };
+  if (tt || !low) return { v: fc28, f: L`f_{c28}` + (tt ? "\\quad\\text{(béton traité thermiquement)}" : "\\quad (f_{c28} > 40\\ \\text{MPa})"),
+    note: "Au-delà de 28 jours, la majoration jusqu'à 1,10 $f_{c28}$ n'est admise que pour un béton non traité thermiquement avec $f_{c28} \\le 40$ MPa : on retient $f_{cj} = f_{c28}$." };
+  if (j < 60) return { v: j / (4.76 + 0.83 * j) * fc28, f: f1 + "\\quad (28 < j < 60)", note: "Pour 28 < j < 60 jours, la première loi d'évolution reste applicable (A.2.1.11, commentaire) ; $f_{cj} \\le 1{,}10\\,f_{c28}$." };
+  return { v: 1.1 * fc28, f: L`1{,}10\,f_{c28}` + "\\quad (j \\ge 60)", note: "Pour j ≥ 60 jours : $f_{cj} = 1{,}10\\,f_{c28}$ (béton non traité thermiquement, $f_{c28} \\le 40$ MPa)." };
+}
 const Ei_ = L`11\,000\,f_{c28}^{1/3}`, Ev_ = L`3\,700\,f_{c28}^{1/3}`;
 
 const CALCS = [
 
 /* ══════════════ MATÉRIAUX ══════════════ */
-{ id: "beton-bael", cat: "Matériaux", t: "Béton : caractéristiques à j jours", ref: "BAEL 91 mod. 99 — A.2.1, A.4.3.4, A.4.5.2, A.5.2.2",
-  desc: "Résistances, modules et contraintes limites du béton à 28 jours et à l'âge j.",
+{ id: "beton-bael", cat: "Matériaux", t: "Béton : caractéristiques à j jours", ref: "BAEL 91 mod. 99 — A.2.1.11, A.2.1.12, A.2.1.2, A.4.3.4, A.4.5.2, A.5.2.2",
+  desc: "Résistance à l'âge j (évolution réelle et valeur bornée pour la justification des sections), modules et contraintes limites.",
   inputs: [N("fc28", "Résistance à 28 jours", "MPa", 35, L`f_{c28}`), N("j", "Âge du béton", "jours", 3, "j"),
-    SEL("sit", "Situation", [["d", "Durable ou transitoire (γb = 1,5)"], ["a", "Accidentelle (γb = 1,15)"]], "d", ""),
+    SEL("tt", "Traitement thermique", [["n", "Non"], ["o", "Oui (étuvage)"]], "n", ""),
+    SEL("sit", "Situation", [["d", "Durable (γb = 1,5)"], ["a", "Accidentelle (γb = 1,15)"]], "d", ""),
     SEL("th", "Durée d'application des charges", [["1", "> 24 h (θ = 1)"], ["0.9", "1 h à 24 h (θ = 0,9)"], ["0.85", "< 1 h (θ = 0,85)"]], "1", L`\theta`)],
   calc(I) {
-    const { fc28, j } = I, gb = I.sit === "a" ? 1.15 : 1.5, th = +I.th;
-    const fcj = j >= 28 ? fc28 : (fc28 <= 40 ? j / (4.76 + 0.83 * j) : j / (1.40 + 0.95 * j)) * fc28;
-    const f28 = { ft: 0.6 + 0.06 * fc28, tu: 0.07 * fc28 / 1.5, Ei: 11000 * Math.cbrt(fc28), Ev: 3700 * Math.cbrt(fc28) };
-    const fj = { ft: 0.6 + 0.06 * fcj, tu: 0.07 * fcj / gb, Ei: 11000 * Math.cbrt(fcj), Ev: 3700 * Math.cbrt(fcj) };
-    const fbu = 0.85 * fcj / (th * gb);
+    const { fc28, j } = I, gb = I.sit === "a" ? 1.15 : 1.5, th = +I.th, tt = I.tt === "o";
+    const law = fcjLaw(fc28, j, tt);
+    const fcj = law.v, fcjR = min(fcj, fc28);
+    const f28 = { ft: 0.6 + 0.06 * fc28, Ei: 11000 * Math.cbrt(fc28), Ev: 3700 * Math.cbrt(fc28) };
+    const ftj = 0.6 + 0.06 * fcjR, Eij = 11000 * Math.cbrt(fcj), Evj = 3700 * Math.cbrt(fcj);
+    const fbu = 0.85 * fcjR / (th * gb);
     return {
       steps: [
-        R("fcj", L`f_{cj}`, j >= 28 ? L`f_{c28} \quad (j \geq 28)` : (fc28 <= 40 ? L`\dfrac{j}{4{,}76 + 0{,}83\,j}\,f_{c28}` : L`\dfrac{j}{1{,}40 + 0{,}95\,j}\,f_{c28}`), fcj, "MPa", 2),
-        S("ftj", L`f_{tj}`, L`0{,}6 + 0{,}06\,f_{cj}`, fj.ft, "MPa", 3),
-        S("Eij", L`E_{ij}`, L`11\,000\,f_{cj}^{1/3}`, fj.Ei, "MPa", 0),
-        S("Evj", L`E_{vj}`, L`3\,700\,f_{cj}^{1/3}`, fj.Ev, "MPa", 0),
-        R("fbu", L`f_{bu}`, L`\dfrac{0{,}85\,f_{cj}}{\theta\,\gamma_b}`, fbu, "MPa", 2),
-        S("sbc", L`\bar\sigma_{bc}`, L`0{,}6\,f_{cj}`, 0.6 * fcj, "MPa", 2),
-        S("tuj", L`\tau_{u,lim}`, L`\dfrac{0{,}07\,f_{cj}}{\gamma_b}`, fj.tu, "MPa", 3),
+        R("fcj", L`f_{cj}`, law.f, fcj, "MPa", 2),
+        R("fcjR", L`f_{cj}^{\,just}`, L`\min\left(f_{cj}\ ;\ f_{c28}\right)` + "\\quad\\text{(justification des sections)}", fcjR, "MPa", 2),
+        S("ftj", L`f_{tj}`, L`0{,}6 + 0{,}06\,f_{cj}^{\,just}`, ftj, "MPa", 3),
+        S("Eij", L`E_{ij}`, L`11\,000\,f_{cj}^{1/3}`, Eij, "MPa", 0),
+        S("Evj", L`E_{vj}`, L`3\,700\,f_{cj}^{1/3}`, Evj, "MPa", 0),
+        R("fbu", L`f_{bu}`, L`\dfrac{0{,}85\,f_{cj}^{\,just}}{\theta\,\gamma_b}`, fbu, "MPa", 2),
+        S("sbc", L`\bar\sigma_{bc}`, L`0{,}6\,f_{cj}^{\,just}`, 0.6 * fcjR, "MPa", 2),
+        S("tuj", L`\tau_{u,lim}`, L`\dfrac{0{,}07\,f_{cj}^{\,just}}{\gamma_b}`, 0.07 * fcjR / gb, "MPa", 3),
       ],
       tables: [{ title: "Comparaison 28 jours / j jours", head: ["", "28 jours", `j = ${j} j`, "Rapport"], rows: [
-        ["$f_c$ (MPa)", fc28, fcj, fcj / fc28], ["$f_t$ (MPa)", f28.ft, fj.ft, fj.ft / f28.ft],
-        ["$0{,}07 f_c/1{,}5$ (MPa)", f28.tu, 0.07 * fcj / 1.5, fcj / fc28], ["$E_i$ (MPa)", f28.Ei, fj.Ei, fj.Ei / f28.Ei], ["$E_v$ (MPa)", f28.Ev, fj.Ev, fj.Ev / f28.Ev]],
+        ["$f_c$ (MPa)", fc28, fcj, fcj / fc28], ["$f_t$ (MPa)", f28.ft, ftj, ftj / f28.ft],
+        ["$0{,}07 f_c/1{,}5$ (MPa)", 0.07 * fc28 / 1.5, 0.07 * fcjR / 1.5, fcjR / fc28], ["$E_i$ (MPa)", f28.Ei, Eij, Eij / f28.Ei], ["$E_v$ (MPa)", f28.Ev, Evj, Evj / f28.Ev]],
         d: [2, 2, 3], pct: 3, key: { ft28: [1, 1], tu28: [2, 1], Ei28: [3, 1], Ev28: [4, 1] } }],
-      vals: { ft28: f28.ft, tu28: f28.tu, Ei28: f28.Ei, Ev28: f28.Ev },
-      notes: [j >= 28 ? "Pour j ≥ 28 jours, on retient conventionnellement $f_{cj} = f_{c28}$ (A.2.1.11)." : "Loi d'évolution A.2.1.11, valable pour $j \\le 28$ jours.",
-        "$\\tau_{u,lim}$ : contrainte tangente limite des dalles sans armatures d'effort tranchant (A.5.2.2). $\\bar\\sigma_{bc}$ : contrainte limite de compression à l'ELS (A.4.5.2). $f_{ij}$ valable pour $f_{cj} \\le 60$ MPa."],
+      vals: { ft28: f28.ft, tu28: 0.07 * fc28 / 1.5, Ei28: f28.Ei, Ev28: f28.Ev },
+      notes: [law.note,
+        "Pour justifier la résistance des sections, $f_{cj}$ est conventionnellement borné à $f_{c28}$ (A.2.1.11) ; la valeur non bornée sert à l'évaluation des déformations ($E_{ij}$, $E_{vj}$). $f_{tj}$ : valable pour $f_{cj} \\le 60$ MPa (A.2.1.12)."],
     };
   } },
-
 { id: "beton-ec2", cat: "Matériaux", t: "Béton : propriétés selon l'Eurocode 2", ref: "NF EN 1992-1-1 — §3.1, tableau 3.1, §2.4.2.4, §7.2",
   desc: "Résistances caractéristiques, modules et contraintes de calcul d'une classe de béton.",
   inputs: [SEL("fck", "Classe de résistance", Object.keys(EC2_CUBE).map(k => [k, `C${k}/${EC2_CUBE[k]}`]), "35", ""),
@@ -785,6 +798,6 @@ function figSpectre(pts) {
    <text x="${W - 34}" y="${Hh - 6}" fill="${INK}" stroke="none" font-size="9">T (s)</text>`);
 }
 
-const api = { CALCS, fmt, elsRect, seH, seV, SPECTRES, BOULONS };
+const api = { CALCS, fmt, elsRect, seH, seV, SPECTRES, BOULONS, fcjLaw };
 if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HANDBAG = api;
 })(typeof window !== "undefined" ? window : globalThis);
