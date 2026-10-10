@@ -7,6 +7,7 @@
 <meta name="description" content="HandBag : calculs usuels d'ouvrages d'art (BAEL, BPEL, Eurocodes, Fascicules 61 et 62, AFPS) avec page de note de calcul prête à imprimer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="handbag/katex/katex.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -15,7 +16,10 @@
   --gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;
   --blue:#1a4fd6;--teal:#0a8a78;--red:#c0392b;--ok-bg:#e8f5f1;--ko-bg:#fbeceA;
   --border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);
+  --in:#c0392b;--out:#18191f;
 }
+.katex{font-size:1.08em}
+.katex-display{margin:0}
 html,body{height:100%}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-weight:300;display:flex;flex-direction:column}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px}
@@ -42,8 +46,13 @@ nav{flex:0 0 56px;background:rgba(249,248,245,.96);border-bottom:1px solid var(-
 .side-search input{width:100%;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--white);padding:0 10px;font-size:12px;outline:none}
 .side-search input:focus{border-color:var(--gold2)}
 .side-list{flex:1;overflow:auto;padding:4px 10px 20px}
-.side-cat{font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:12px 8px 4px}
-.side-item{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink2);cursor:pointer;line-height:1.35}
+.side-cat{display:flex;align-items:center;gap:8px;font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:13px 8px 5px}
+.side-cat .ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c)}
+.side-cat .ic svg{width:12px;height:12px}
+.side-item{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink2);cursor:pointer;line-height:1.35}
+.side-item .dot{flex:0 0 7px;height:7px;border-radius:50%;margin-top:5px;border:1.5px solid var(--c);background:transparent;transition:all .2s}
+.side-item:hover .dot,.side-item.active .dot{background:var(--c)}
+.side-item.active .dot{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 22%,transparent)}
 .side-item:hover{background:var(--white);border-color:var(--border)}
 .side-item.active{background:var(--white);border-color:var(--gold-border);color:var(--ink);font-weight:400;box-shadow:var(--shadow)}
 .side-count{padding:10px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--ink3);letter-spacing:.04em}
@@ -54,7 +63,10 @@ main{min-height:0;overflow:auto;padding:14px 24px 14px;display:flex;flex-directi
 h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-height:1.15}
 .ref{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:99px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:10.5px;color:var(--gold)}
 .desc{font-size:12.5px;color:var(--ink3);margin-top:4px}
-.actions{display:flex;gap:8px;flex-shrink:0}
+.actions{display:flex;gap:8px;flex-shrink:0;align-items:center}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--ink3);margin-right:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
 .btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .btn:hover{background:#8a6620}
 .btn.ghost{background:var(--white);color:var(--ink2);border-color:var(--border);font-weight:400}
@@ -70,8 +82,9 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 .in-h:first-child{margin-top:0}
 .in{display:grid;grid-template-columns:1fr 88px 42px;align-items:center;gap:6px;padding:1.5px 0}
 .in label{font-size:12px;color:var(--ink2);line-height:1.25}
-.in label i{font-style:normal;color:var(--ink3);font-size:11px;margin-left:3px}
-.in input,.in select{height:25px;border-radius:6px;border:1px solid var(--border);background:var(--bg);padding:0 7px;font-size:12.5px;color:var(--ink);outline:none;width:100%;text-align:right;font-variant-numeric:tabular-nums}
+.in label i{font-style:normal;color:var(--ink3);font-size:11px;margin-left:4px}
+.in label i .katex{font-size:1em;color:var(--in)}
+.in input,.in select{height:25px;border-radius:6px;border:1px solid var(--border);background:var(--bg);padding:0 7px;font-size:12.5px;color:var(--in);font-weight:500;outline:none;width:100%;text-align:right;font-variant-numeric:tabular-nums}
 .in select{text-align:left;padding:0 4px;font-size:11.5px}
 .in.sel{grid-template-columns:1fr 150px 0}
 .in input:focus,.in select:focus{border-color:var(--gold2);background:#fff}
@@ -80,14 +93,17 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 
 /* steps */
 .steps{width:100%;border-collapse:collapse;font-size:12px}
-.steps td{padding:3px 4px;border-bottom:1px solid #f0ece6;vertical-align:baseline}
+.steps td{padding:3px 4px;border-bottom:1px solid #f0ece6;vertical-align:middle}
 .steps tr:last-child td{border-bottom:none}
 .steps .s{white-space:nowrap;color:var(--ink);font-weight:400;width:1%;padding-right:10px}
-.steps .f{color:var(--ink3);font-size:11.5px}
-.steps .v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);width:1%;padding-left:10px}
+.steps .f{color:var(--ink2);font-size:11.5px}
+.steps .f .txt{color:var(--ink3);font-style:italic}
+.steps .f .eq{color:var(--ink3);margin-right:3px}
+.steps .v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--out);width:1%;padding-left:10px}
 .steps .u{white-space:nowrap;color:var(--ink3);font-size:11px;width:1%;padding-left:4px}
-.steps tr.main .v{color:var(--teal);font-weight:500;font-size:13px}
-.steps tr.main .s{color:var(--teal)}
+.steps tr.main .v{color:var(--out);font-weight:600;font-size:13px}
+.steps tr.main td:first-child{box-shadow:inset 3px 0 0 var(--gold2);padding-left:9px}
+.steps tr.main{background:linear-gradient(90deg,var(--gold-bg),transparent 60%)}
 
 .fig{display:flex;justify-content:center;align-items:center;color:var(--ink2)}
 .fig svg{height:160px;width:auto;max-width:100%}
@@ -140,12 +156,17 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
   .p-ref{font-size:8.5pt;color:#444}
   .p-cols{display:grid;grid-template-columns:1fr 1fr;gap:10pt;align-items:start}
   table.p-t{width:100%;border-collapse:collapse;font-size:8.6pt}
-  table.p-t td,table.p-t th{border-bottom:.5pt solid #d6d0c4;padding:1.6pt 3pt;text-align:right;vertical-align:baseline}
+  table.p-t td,table.p-t th{border-bottom:.5pt solid #d6d0c4;padding:1.6pt 3pt;text-align:right;vertical-align:middle}
   table.p-t th{font-weight:500;color:#555;border-bottom:.8pt solid #888}
   table.p-t td:first-child,table.p-t th:first-child{text-align:left}
   table.p-t td.f{text-align:left;color:#444}
   table.p-t tr.main td{font-weight:500}
-  table.p-t tr.main td.vv{color:#06624f}
+  table.p-t td.pin{color:#c0392b;font-weight:500;font-size:.95em;text-align:right}
+  table.p-in{table-layout:fixed}
+  table.p-in td:nth-child(3){padding-left:4pt}
+  table.p-t tr.main td.vv{color:#000;font-weight:600}
+  table.p-t td.f .txt{font-style:italic;color:#666}
+  .katex{font-size:1em}
   .p-fig{display:flex;justify-content:center;color:#333;max-height:46mm}
   .p-fig svg{height:42mm;width:auto;max-width:100%}
   .p-chk{display:flex;justify-content:space-between;border:.6pt solid #888;padding:3pt 6pt;margin-bottom:3pt;font-size:9pt}
@@ -204,6 +225,7 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
         <div class="desc"><span id="desc"></span> <span class="ref" id="ref"></span></div>
       </div>
       <div class="actions">
+        <div class="legend"><span><i style="background:var(--in)"></i>données</span><span><i style="background:var(--out)"></i>résultats</span></div>
         <button class="btn ghost" id="reset">Valeurs par défaut</button>
         <button class="btn" id="pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15h6M9 18h4"/></svg>Page PDF</button>
       </div>
@@ -236,12 +258,31 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 
 <div id="print"></div>
 
+<script src="handbag/katex/katex.min.js"></script>
 <script src="handbag/calcs.js"></script>
 <script>
 const { CALCS, fmt } = window.HANDBAG;
 const $ = s => document.querySelector(s);
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 const strip = h => String(h).replace(/<[^>]+>/g, "");
+/* ── mathématiques (KaTeX) ── */
+const M = (t, disp) => { try { return katex.renderToString(String(t), { throwOnError: false, strict: "ignore", displayMode: !!disp }); } catch (e) { return t; } };
+const tx = str => String(str ?? "").replace(/\$([^$]+)\$/g, (_, t) => M(t));          // texte avec $…$
+const fx = f => !f ? "" : f.startsWith("~") ? `<span class="txt">${tx(f.slice(1))}</span>` : M(f);   // expression d'une étape
+const CAT = {
+  "Matériaux": ["#a07828", '<path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/>'],
+  "Sections": ["#1a4fd6", '<path d="M4 4h16M4 20h16M12 4v16"/>'],
+  "Flèches & rotations": ["#0a8a78", '<path d="M3 8q9 12 18 0"/><path d="M3 8h18" stroke-dasharray="2 2"/>'],
+  "Charges & répartition": ["#7a5cc9", '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'],
+  "Précontrainte": ["#c95c7a", '<path d="M3 12h18M3 12q9 7 18 0"/><circle cx="3" cy="12" r="1.5"/><circle cx="21" cy="12" r="1.5"/>'],
+  "Béton armé": ["#5f677a", '<rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="7" cy="15" r="1.2"/><circle cx="12" cy="15" r="1.2"/><circle cx="17" cy="15" r="1.2"/>'],
+  "Charpente métallique": ["#5a86c2", '<path d="M8 3v18M16 3v18M8 7h8M8 12h8M8 17h8"/>'],
+  "Appareils d'appui": ["#d4774a", '<rect x="4" y="6" width="16" height="12" rx="1"/><path d="M4 10h16M4 14h16"/>'],
+  "Fondations": ["#8a6d47", '<path d="M3 6h18M7 6v14M12 6v14M17 6v14"/>'],
+  "Séisme": ["#c0392b", '<path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/>'],
+};
+const catColor = c => (CAT[c] || ["#7a7e8e"])[0];
+const catIcon = c => `<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${(CAT[c] || ["", ""])[1]}</svg></span>`;
 const norm = s => strip(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 let cur = null, vals = {}, last = null;
@@ -265,8 +306,8 @@ function renderList(q = "") {
   const t = norm(q); let html = "", last = "", n = 0;
   CALCS.forEach(c => {
     if (t && !norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t)) return;
-    if (c.cat !== last) { html += `<div class="side-cat">${c.cat}</div>`; last = c.cat; }
-    html += `<button class="side-item ${cur && cur.id === c.id ? "active" : ""}" data-id="${c.id}">${c.t}</button>`; n++;
+    if (c.cat !== last) { html += `<div class="side-cat" style="--c:${catColor(c.cat)}">${catIcon(c.cat)}${c.cat}</div>`; last = c.cat; }
+    html += `<button class="side-item ${cur && cur.id === c.id ? "active" : ""}" data-id="${c.id}" style="--c:${catColor(c.cat)}"><span class="dot"></span><span>${c.t}</span></button>`; n++;
   });
   $("#list").innerHTML = html || `<div class="side-cat">Aucun calcul</div>`;
   $("#count").textContent = `${CALCS.length} calculs · validés contre les classeurs Excel`;
@@ -279,12 +320,12 @@ function open(id, push = true) {
   cur = CALCS.find(c => c.id === id) || CALCS[0];
   const saved = ls.get("hb:" + cur.id, {});
   vals = {}; cur.inputs.forEach(i => { if (i.k) vals[i.k] = saved[i.k] ?? String(i.v); });
-  $("#cat").textContent = cur.cat; $("#title").innerHTML = cur.t; $("#desc").innerHTML = cur.desc; $("#ref").innerHTML = cur.ref;
+  $("#cat").innerHTML = cur.cat; $("#cat").style.color = catColor(cur.cat); $("#title").innerHTML = tx(cur.t); $("#desc").innerHTML = tx(cur.desc); $("#ref").innerHTML = tx(cur.ref);
   document.title = "HandBag — " + strip(cur.t);
   let h = `<div class="card-t">Données</div>`;
   cur.inputs.forEach(i => {
-    if (i.h) { h += `<div class="in-h">${i.h}</div>`; return; }
-    const lab = `<label for="i-${i.k}">${i.l}${i.s && i.s !== i.k ? ` <i>${i.s}</i>` : ""}</label>`;
+    if (i.h) { h += `<div class="in-h">${tx(i.h)}</div>`; return; }
+    const lab = `<label for="i-${i.k}">${tx(i.l)}${i.s ? ` <i>${M(i.s)}</i>` : ""}</label>`;
     if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
     else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
   });
@@ -312,11 +353,11 @@ function compute() {
   if (!I) { $("#col2").innerHTML = `<div class="card"><div class="card-t">Calcul</div><p class="notes">Une valeur saisie n'est pas un nombre.</p></div>`; return; }
   let r; try { r = cur.calc(I); } catch (e) { $("#col2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
   last = { I, r };
-  const steps = (r.steps || []).length ? `<div class="card"><div class="card-t">Calcul</div><table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s}</td><td class="f">${s.f ? (s.s ? "= " : "") + s.f : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table></div>` : "";
+  const steps = (r.steps || []).length ? `<div class="card"><div class="card-t">Calcul</div><table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table></div>` : "";
   const tables = (r.tables || []).map(t => tableHTML(t)).join("");
-  const checks = (r.checks || []).length ? `<div class="card"><div class="card-t">Vérifications</div><div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${c.l}${c.txt ? " — " + c.txt : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div></div>` : "";
+  const checks = (r.checks || []).length ? `<div class="card"><div class="card-t">Vérifications</div><div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div></div>` : "";
   const fig = r.fig ? `<div class="card"><div class="card-t">Schéma</div><div class="fig">${r.fig}</div></div>` : "";
-  const notes = (r.notes || []).filter(Boolean).length ? `<div class="card"><div class="card-t">Remarques</div><div class="notes">${r.notes.filter(Boolean).map(n => `<p>${n}</p>`).join("")}</div></div>` : "";
+  const notes = (r.notes || []).filter(Boolean).length ? `<div class="card"><div class="card-t">Remarques</div><div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div></div>` : "";
   const tblCard = tables ? `<div class="card"><div class="card-t">Tableaux</div>${tables}</div>` : "";
   // répartition : colonne 2 = calcul (+ tableaux si pas d'étapes), colonne 3 = vérifications, schéma, tableaux, remarques
   if (steps) { $("#col2").innerHTML = steps + (r.tables && r.tables.length > 1 ? tblCard : ""); $("#col3").innerHTML = checks + fig + (r.tables && r.tables.length <= 1 ? tblCard : "") + notes; }
@@ -328,8 +369,8 @@ function compute() {
 }
 function cell(v, d, pct) { if (typeof v !== "number") return v; return pct ? fmt(v * 100, 1) + " %" : show(v, d ?? 3); }
 function tableHTML(t, cls = "t") {
-  return `<div class="tbl">${t.title ? `<div class="tbl-t">${t.title}</div>` : ""}<table class="${cls}"><thead><tr>${t.head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${
-    t.rows.map(row => `<tr>${row.map((v, j) => j === 0 ? `<td>${typeof v === "number" ? show(v, Number.isInteger(v) ? 0 : 2) : v}</td>` : `<td>${cell(v, t.d ? t.d[j - 1] : 3, t.pct === true || t.pct === j)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  return `<div class="tbl">${t.title ? `<div class="tbl-t">${tx(t.title)}</div>` : ""}<table class="${cls}"><thead><tr>${t.head.map(h => `<th>${tx(h)}</th>`).join("")}</tr></thead><tbody>${
+    t.rows.map(row => `<tr>${row.map((v, j) => j === 0 ? `<td>${typeof v === "number" ? show(v, Number.isInteger(v) ? 0 : 2) : tx(v)}</td>` : `<td>${tx(cell(v, t.d ? t.d[j - 1] : 3, t.pct === true || t.pct === j))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 
 /* ── en-tête & PDF ── */
@@ -347,28 +388,31 @@ function printPage() {
   if (!last) return;
   const { I, r } = last, h = head(), d = h.date ? new Date(h.date + "T12:00").toLocaleDateString("fr-FR") : "";
   const e = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const inputs = cur.inputs.map(i => i.h ? `<tr><td colspan="3" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${i.h}</td></tr>` :
-    `<tr><td>${i.l}${i.s && i.s !== i.k ? ` (${i.s})` : ""}</td><td>${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`).join("");
-  const steps = (r.steps || []).map(s => `<tr class="${s.r ? "main" : ""}"><td>${s.s}</td><td class="f">${s.f || ""}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
+  const inRows = cur.inputs.map(i => i.h ? `<tr><td colspan="3" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${tx(i.h)}</td></tr>` :
+    `<tr><td>${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}</td><td class="pin">${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`);
+  const inputs = inRows.join(""), long = inRows.length > 11, half = Math.ceil(inRows.length / 2);
+  const steps = (r.steps || []).map(s => `<tr class="${s.r ? "main" : ""}"><td>${s.s ? M(s.s) : ""}</td><td class="f">${fx(s.f)}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
   const tables = (r.tables || []).map(t => tableHTML(t, "p-t")).join("");
-  const checks = (r.checks || []).map(c => `<div class="p-chk ${c.ok ? "ok" : "ko"}"><span>${c.l}${c.txt ? " : " + c.txt : ""}</span><b>${c.ok ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}</b></div>`).join("");
-  const notes = (r.notes || []).filter(Boolean).map(n => `<p>${n}</p>`).join("");
+  const checks = (r.checks || []).map(c => `<div class="p-chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " : " + tx(c.txt) : ""}</span><b>${c.ok ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}</b></div>`).join("");
+  const notes = (r.notes || []).filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("");
   $("#print").innerHTML = `
     <div class="p-cart">
       <div class="p-bet">${e(h.bet)}<small>Bureau d'études techniques<br>Note de calcul ${e(h.note)}</small></div>
-      <div class="p-title"><div class="p-k">${e(cur.cat)}</div><div class="p-n">${cur.t}</div></div>
+      <div class="p-title"><div class="p-k">${e(cur.cat)}</div><div class="p-n">${tx(cur.t)}</div></div>
       <div class="p-meta"><b>Projet :</b> ${e(h.projet)}<br><b>Ouvrage :</b> ${e(h.ouvrage)}<br><b>Rédacteur :</b> ${e(h.redac)} · <b>Vérif. :</b> ${e(h.verif)}<br><b>Indice :</b> ${e(h.indice)} · <b>Date :</b> ${d}</div>
     </div>
-    <div class="p-ref"><b style="font-weight:500">Objet :</b> ${cur.desc} — <b style="font-weight:500">Référence :</b> ${cur.ref}</div>
-    <div class="p-cols" style="margin-top:4pt">
-      <div><div class="p-h">1. Données</div><table class="p-t"><tbody>${inputs}</tbody></table></div>
+    <div class="p-ref"><b style="font-weight:500">Objet :</b> ${tx(cur.desc)} — <b style="font-weight:500">Référence :</b> ${tx(cur.ref)}</div>
+    ${long ? `<div class="p-h">1. Données</div><div class="p-cols"><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inRows.slice(0, half).join("")}</tbody></table><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inRows.slice(half).join("")}</tbody></table></div>
+      ${r.fig || checks ? `<div class="p-cols"><div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}</div><div>${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}</div></div>` : ""}` :
+    `<div class="p-cols" style="margin-top:4pt">
+      <div><div class="p-h">1. Données</div><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inputs}</tbody></table></div>
       <div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}</div>
-    </div>
+    </div>`}
     ${steps ? `<div class="p-h">2. Calcul</div><table class="p-t"><thead><tr><th>Grandeur</th><th style="text-align:left">Expression</th><th>Valeur</th><th style="text-align:left">Unité</th></tr></thead><tbody>${steps}</tbody></table>` : ""}
     ${tables ? `<div class="p-h">${steps ? "3. Résultats détaillés" : "2. Calcul"}</div>${tables}` : ""}
     ${notes ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}
     <div class="p-foot"><span>${e(h.bet)} — ${e(h.projet)} ${h.ouvrage ? "· " + e(h.ouvrage) : ""}</span><span>HandBag · BridgeAI Studios — calcul automatique, à vérifier par l'ingénieur</span></div>`;
-  const nrows = cur.inputs.length + (r.steps || []).length + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
+  const nrows = cur.inputs.length + (r.steps || []).reduce((n, st) => n + (/\\dfrac|\\sum|\\displaystyle/.test(st.f || "") ? 1.8 : 1), 0) + (r.fig ? 4 : 0) + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
   $("#print").className = nrows > 46 ? "dense2" : nrows > 34 ? "dense" : "";
   setTimeout(() => window.print(), 60);
 }
