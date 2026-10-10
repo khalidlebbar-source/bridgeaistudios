@@ -295,6 +295,22 @@ footer{padding:24px 5%}
 .visits-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 h1{font-size:clamp(52px,9vw,104px)}
+/* tout sur un écran, sans défilement (ordinateur) */
+@media(min-width:861px){
+  html,body{height:100%}
+  body{display:flex;flex-direction:column;min-height:100vh}
+  .hero{flex:1;min-height:0;padding:clamp(16px,4vh,56px) 5%;border-bottom:none}
+  .hero-line{height:clamp(20px,6vh,80px)}
+  .hero-eyebrow{margin-bottom:clamp(8px,2vh,24px)}
+  h1{font-size:clamp(44px,9.5vh,96px);margin-bottom:clamp(6px,1.6vh,18px)}
+  .hero-sub{margin-bottom:clamp(16px,4.5vh,48px)}
+  .tool{padding:clamp(16px,2.6vh,28px) 24px clamp(14px,2.2vh,24px);gap:clamp(4px,.9vh,10px)}
+  .tool-icon{width:clamp(40px,5.6vh,52px);height:clamp(40px,5.6vh,52px);margin-bottom:clamp(0px,.6vh,8px)}
+  .tool-title{font-size:clamp(22px,3.4vh,30px)}
+  .tool-desc{line-height:1.6}
+  .tool-go{margin-top:clamp(0px,.6vh,8px)}
+  footer{padding:14px 5%}
+}
 @media(max-width:860px){.tools{grid-template-columns:1fr}.hero{padding:72px 16px 64px;min-height:0}}
 @media(max-width:768px){.nav-logo{white-space:nowrap}}
 </style>
