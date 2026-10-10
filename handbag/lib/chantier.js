@@ -35,7 +35,7 @@ HB.add("Chantier et méthodes", [
       checks: [C("Pas de glissement spontané en descente : $\\mu \\ge |i|$", I.i >= 0 || I.mu >= -I.i, `µ = ${f2(I.mu, 1)} % ; i = ${f2(I.i, 1)} %`)],
       notes: ["Frottement des plaques PTFE lubrifiées : 2 à 5 % en mouvement, davantage au décollement et par temps froid. En descente, prévoir un dispositif de retenue dimensionné pour $W(|i| - \\mu_{min})$ avec un coefficient de sécurité ; en montée, la culée de réaction des vérins reprend $F_{démarrage}$."] };
   },
-  fig(I, g) { return KIT.barsH([{ l: "démarrage", v: g("Fp"), u: "kN", d: 0, c: K.red }, { l: "poussage", v: g("Fg"), u: "kN", d: 0, c: K.gold }, { l: "poids lancé", v: I.W / 10, u: "kN ×10", d: 0, c: K.mute }], { title: `Pente ${f2(I.i, 1)} % · µ = ${f2(I.mu, 1)} %`, left: 80 }); },
+  fig(I, g) { return KIT.barsH([{ l: "démarrage", v: g("Fp"), u: "kN", d: 0, c: K.red }, { l: "poussage", v: g("Fg"), u: "kN", d: 0, c: K.gold }, { l: "retenue", v: g("Fret"), u: "kN", d: 0, c: K.blue }], { title: `Pente ${f2(I.i, 1)} % · µ = ${f2(I.mu, 1)} %`, left: 80 }); },
   clair: (I, g) => `Pour faire avancer ${f2(I.W / 1000, 0)} MN de tablier, les vérins doivent pousser avec ${f2(g("Fp"), 0)} kN au démarrage puis ${f2(g("Fg"), 0)} kN en continu.` },
 
 { id: "ch-encorbellement", t: "Encorbellement : moment de déséquilibre du fléau", ref: "NF EN 1991-1-6 — §4.11.2, annexe A2 (ponts) ; guide Sétra « Ponts construits par encorbellement »",
