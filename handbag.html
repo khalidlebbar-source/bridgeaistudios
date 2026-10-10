@@ -106,7 +106,9 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 .steps tr.main{background:linear-gradient(90deg,var(--gold-bg),transparent 60%)}
 
 .fig{display:flex;justify-content:center;align-items:center;color:var(--ink2)}
-.fig svg{height:160px;width:auto;max-width:100%}
+.fig svg{height:clamp(120px,22vh,180px);width:auto;max-width:100%}
+.clair{background:linear-gradient(135deg,#fffaf0,#fdf3dd);border:1px solid var(--gold-border);border-radius:11px;padding:10px 14px 10px 14px;font-size:13px;line-height:1.5;color:var(--ink);margin-bottom:10px}
+.clair b{display:block;font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:3px}
 table.t{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
 table.t th{font-weight:500;color:var(--ink3);font-size:10.5px;text-align:right;padding:3px 6px;border-bottom:1px solid var(--border)}
 table.t th:first-child,table.t td:first-child{text-align:left}
@@ -173,6 +175,7 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
   .p-chk b{font-weight:500}
   .p-chk.ok b{color:#06624f}.p-chk.ko b{color:#9b2a1f}
   .p-notes{font-size:8.2pt;color:#444}
+  .p-clair{border-left:2pt solid #b9a26b;background:#fbf6ea;padding:4pt 7pt;font-size:9pt}
   .p-foot{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;font-size:7pt;color:#777;border-top:.5pt solid #aaa;padding-top:2pt}
   sub,sup{font-size:.7em}
   #print.dense{font-size:8.8pt;line-height:1.3}
@@ -260,8 +263,9 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 
 <script src="handbag/katex/katex.min.js"></script>
 <script src="handbag/calcs.js"></script>
+<script src="handbag/figures.js"></script>
 <script>
-const { CALCS, fmt } = window.HANDBAG;
+const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
 const $ = s => document.querySelector(s);
 const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 const strip = h => String(h).replace(/<[^>]+>/g, "");
@@ -352,19 +356,23 @@ function compute() {
   const I = inputValues();
   if (!I) { $("#col2").innerHTML = `<div class="card"><div class="card-t">Calcul</div><p class="notes">Une valeur saisie n'est pas un nombre.</p></div>`; return; }
   let r; try { r = cur.calc(I); } catch (e) { $("#col2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
+  const g = k => { const st = (r.steps || []).find(x => x.k === k); if (st) return st.v; if (r.vals && k in r.vals) return r.vals[k];
+    for (const t of r.tables || []) if (t.key && t.key[k]) { const [a, b] = t.key[k]; return t.rows[a][b]; } return NaN; };
+  try { r.fig = (FIGS[cur.id] && FIGS[cur.id](I, g, r)) || r.fig; } catch (e) {}
+  try { r.clair = CLAIR[cur.id] ? CLAIR[cur.id](I, g) : ""; } catch (e) { r.clair = ""; }
   last = { I, r };
   const steps = (r.steps || []).length ? `<div class="card"><div class="card-t">Calcul</div><table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table></div>` : "";
   const tables = (r.tables || []).map(t => tableHTML(t)).join("");
   const checks = (r.checks || []).length ? `<div class="card"><div class="card-t">Vérifications</div><div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div></div>` : "";
-  const fig = r.fig ? `<div class="card"><div class="card-t">Schéma</div><div class="fig">${r.fig}</div></div>` : "";
+  const fig = (r.clair ? `<div class="clair"><b>En clair</b>${r.clair}</div>` : "") + (r.fig ? `<div class="card"><div class="card-t">Schéma</div><div class="fig">${r.fig}</div></div>` : "");
   const notes = (r.notes || []).filter(Boolean).length ? `<div class="card"><div class="card-t">Remarques</div><div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div></div>` : "";
   const tblCard = tables ? `<div class="card"><div class="card-t">Tableaux</div>${tables}</div>` : "";
   // répartition : colonne 2 = calcul (+ tableaux si pas d'étapes), colonne 3 = vérifications, schéma, tableaux, remarques
-  if (steps) { $("#col2").innerHTML = steps + (r.tables && r.tables.length > 1 ? tblCard : ""); $("#col3").innerHTML = checks + fig + (r.tables && r.tables.length <= 1 ? tblCard : "") + notes; }
+  if (steps) { $("#col2").innerHTML = steps + (r.tables && r.tables.length > 1 ? tblCard : ""); $("#col3").innerHTML = fig + checks + (r.tables && r.tables.length <= 1 ? tblCard : "") + notes; }
   else {
     const T = r.tables || [], split = T.length > 2 ? T.length - 1 : T.length;
     const card = (ts, title) => ts.length ? `<div class="card"><div class="card-t">${title}</div>${ts.map(t => tableHTML(t)).join("")}</div>` : "";
-    $("#col2").innerHTML = card(T.slice(0, split), "Calcul"); $("#col3").innerHTML = checks + card(T.slice(split), "Résultat") + fig + notes;
+    $("#col2").innerHTML = card(T.slice(0, split), "Calcul"); $("#col3").innerHTML = fig + checks + card(T.slice(split), "Résultat") + notes;
   }
 }
 function cell(v, d, pct) { if (typeof v !== "number") return v; return pct ? fmt(v * 100, 1) + " %" : show(v, d ?? 3); }
@@ -403,16 +411,17 @@ function printPage() {
     </div>
     <div class="p-ref"><b style="font-weight:500">Objet :</b> ${tx(cur.desc)} — <b style="font-weight:500">Référence :</b> ${tx(cur.ref)}</div>
     ${long ? `<div class="p-h">1. Données</div><div class="p-cols"><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inRows.slice(0, half).join("")}</tbody></table><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inRows.slice(half).join("")}</tbody></table></div>
-      ${r.fig || checks ? `<div class="p-cols"><div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}</div><div>${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}</div></div>` : ""}` :
+      ${r.fig || checks || notes ? `<div class="p-cols"><div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}</div><div>${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}${notes ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}</div></div>` : ""}` :
     `<div class="p-cols" style="margin-top:4pt">
       <div><div class="p-h">1. Données</div><table class="p-t p-in"><colgroup><col style="width:58%"><col style="width:27%"><col style="width:15%"></colgroup><tbody>${inputs}</tbody></table></div>
       <div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}</div>
     </div>`}
     ${steps ? `<div class="p-h">2. Calcul</div><table class="p-t"><thead><tr><th>Grandeur</th><th style="text-align:left">Expression</th><th>Valeur</th><th style="text-align:left">Unité</th></tr></thead><tbody>${steps}</tbody></table>` : ""}
     ${tables ? `<div class="p-h">${steps ? "3. Résultats détaillés" : "2. Calcul"}</div>${tables}` : ""}
-    ${notes ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}
+    ${r.clair ? `<div class="p-h">Conclusion</div><div class="p-clair">${e(r.clair)}</div>` : ""}
+    ${notes && !long ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}
     <div class="p-foot"><span>${e(h.bet)} — ${e(h.projet)} ${h.ouvrage ? "· " + e(h.ouvrage) : ""}</span><span>HandBag · BridgeAI Studios — calcul automatique, à vérifier par l'ingénieur</span></div>`;
-  const nrows = cur.inputs.length + (r.steps || []).reduce((n, st) => n + (/\\dfrac|\\sum|\\displaystyle/.test(st.f || "") ? 1.8 : 1), 0) + (r.fig ? 4 : 0) + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
+  const nrows = cur.inputs.length + (r.steps || []).reduce((n, st) => n + (/\\dfrac|\\sum|\\displaystyle/.test(st.f || "") ? 1.8 : 1), 0) + (r.fig ? 4 : 0) + (r.clair ? 3 : 0) + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
   $("#print").className = nrows > 46 ? "dense2" : nrows > 34 ? "dense" : "";
   setTimeout(() => window.print(), 60);
 }
