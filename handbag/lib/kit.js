@@ -74,7 +74,7 @@ function section(o) {
 function circle(o) {
   const W = 330, H = o.H || 175, R = 66, cx = 100, cy = H / 2 - 4; let s = Ci(cx, cy, R);
   if (o.Di) s += Ci(cx, cy, R * o.Di / o.D, { f: "#fff" });
-  const n = o.nb || 12, rb = R * (o.D / 2 - (o.c || 0.06)) / (o.D / 2);
+  const n = o.nb ?? 12, rb = R * (o.D / 2 - (o.c || 0.06)) / (o.D / 2);
   for (let i = 0; i < n; i++) { const a = 2 * PI * i / n; s += Ci(cx + rb * Math.cos(a), cy + rb * Math.sin(a), 3, { f: K.red, c: "#fff" }); }
   if (o.x !== undefined) { const yN = cy - R + o.x / o.D * 2 * R; s += P(`M${cx - R - 8} ${yN}H${cx + R + 8}`, { c: K.blue, dash: "4 3" }) + T(cx + R + 10, yN + 3, "axe neutre", { s: 8.5, c: K.blue }); }
   s += dim(cx - R, cx + R, H - 8, `D = ${fmt(o.D, 2)} m`);
@@ -87,8 +87,8 @@ function circle(o) {
 function beamDiag(o) {
   const W = 330, H = o.H || 180, x1 = 26, x2 = W - 18, yb = 38, X = x => x1 + (x2 - x1) * x / o.L;
   let s = "";
-  if (o.q) s += udl(x1, x2, yb - 4, 14, K.red, 14) + T((x1 + x2) / 2, yb - 22, o.q, { a: "middle", s: 9.5, c: K.red });
-  (o.loads || []).forEach(p => { s += arrow(X(p.x), yb - 30, X(p.x), yb - 4, K.red, 1.8) + T(X(p.x) + 4, yb - 22, p.l, { s: 9.5, c: K.red }); });
+  if (o.q) s += udl(x1, x2, yb - 4, 14, K.red, 14) + T(x1, yb - 22, o.q, { s: 9.5, c: K.red });
+  (o.loads || []).forEach(p => { s += arrow(X(p.x), yb - 34, X(p.x), yb - 4, K.red, 1.8) + T(X(p.x) + 4, yb - 30, p.l, { s: 9.5, c: K.red, w: 500 }); });
   s += P(`M${x1} ${yb}H${x2}`, { c: K.ink, w: 3 });
   (o.sup || [0, o.L]).forEach((x, i) => { s += (o.fix && o.fix.includes(x)) ? P(`M${X(x)} ${yb - 12}V${yb + 12}`, { c: K.ink, w: 3 }) + P(`M${X(x)} ${yb - 12}l${x ? 6 : -6} 6M${X(x)} ${yb - 4}l${x ? 6 : -6} 6M${X(x)} ${yb + 4}l${x ? 6 : -6} 6`, { c: K.ink, w: 1 }) : i === 0 ? pin(X(x), yb + 1) : roller(X(x), yb + 1); });
   const n = 120, xs = range(0, o.L, n), vs = xs.map(o.f), vm = max(...vs.map(abs), 1e-9), y0 = yb + 30 + (H - yb - 44) * (o.y0 ?? 0.45), sc = (H - yb - 44) * 0.52 / vm;
