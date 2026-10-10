@@ -70,7 +70,8 @@ function plot(o) {
   const yst = nice((y1 - y0) / 4); for (let v = Math.ceil(y0 / yst - 1e-9) * yst; v <= y1 + 1e-9; v += yst) g += P(`M${L} ${Y(v)}H${L + pw}`, { c: K.grid, w: .8 }) + T(L - 5, Y(v) + 3, fmt(v, yst < 0.01 ? 3 : yst < 0.1 ? 2 : yst < 1 ? 1 : 0), { a: "end", s: 8.5, c: K.mute });
   const xt = []; if (lx) { for (let e = Math.ceil(log10(x0)); e <= log10(x1) + 1e-9; e++) xt.push(pow(10, e)); } else { const xst = o.xstep || nice((x1 - x0) / 5); for (let v = Math.ceil(x0 / xst - 1e-9) * xst; v <= x1 + 1e-9; v += xst) xt.push(v); }
   const xd = !lx && (o.xstep || nice((x1 - x0) / 5)) < 1 ? 1 : 0;
-  xt.forEach(v => g += P(`M${X(v)} ${Tt}V${Tt + ph}`, { c: K.grid, w: .8 }) + T(X(v), Tt + ph + 12, fmt(v, xd), { a: "middle", s: 8.5, c: K.mute }));
+  const SUP = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" }, xlab = v => lx && (v >= 1e5 || v < 1e-2) ? "10" + String(Math.round(log10(v))).split("").map(c => SUP[c]).join("") : fmt(v, xd);
+  xt.forEach(v => g += P(`M${X(v)} ${Tt}V${Tt + ph}`, { c: K.grid, w: .8 }) + T(X(v), Tt + ph + 12, xlab(v), { a: "middle", s: 8.5, c: K.mute }));
   g += P(`M${L} ${Tt}V${Tt + ph}H${L + pw}`, { c: K.ink, w: 1 });
   (o.areas || []).forEach(a => { if (!a.pts.length) return; g += P(a.pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join("") + `L${X(a.pts.at(-1)[0])} ${Y(y0)}L${X(a.pts[0][0])} ${Y(y0)}Z`, { c: "none", f: a.c, op: a.op || .25 }); });
   (o.hlines || []).forEach(h => { g += P(`M${L} ${Y(h.y)}H${L + pw}`, { c: h.c || K.mute, w: 1, dash: "4 3" }); });
