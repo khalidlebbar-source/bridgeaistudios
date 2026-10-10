@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BridgeAI Studios — HandBag</title>
+<meta name="description" content="HandBag : calculs usuels d'ouvrages d'art (BAEL, BPEL, Eurocodes, Fascicules 61 et 62, AFPS) avec page de note de calcul prête à imprimer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f9f8f5;--bg2:#f0ede8;--white:#fff;
+  --ink:#18191f;--ink2:#3c3f4d;--ink3:#7a7e8e;
+  --gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;
+  --blue:#1a4fd6;--teal:#0a8a78;--red:#c0392b;--ok-bg:#e8f5f1;--ko-bg:#fbeceA;
+  --border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);
+}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-weight:300;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold2);border-radius:2px}
+button,input,select{font-family:inherit}
+sub,sup{font-size:.72em;line-height:0}
+
+/* NAV */
+nav{flex:0 0 56px;background:rgba(249,248,245,.96);border-bottom:1px solid var(--border);padding:0 28px}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px;gap:20px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.nav-app{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase}
+.nav-app b{font-weight:500;color:var(--teal);letter-spacing:.14em}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-back{font-size:12px;color:var(--ink3);text-decoration:none}
+.nav-back:hover{color:var(--ink)}
+.btn-head{font-size:12px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:var(--white);color:var(--ink2);cursor:pointer}
+.btn-head:hover{border-color:var(--gold2);color:var(--gold)}
+
+/* LAYOUT */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:236px 1fr}
+.sidebar{border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.side-search{padding:14px 14px 8px}
+.side-search input{width:100%;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--white);padding:0 10px;font-size:12px;outline:none}
+.side-search input:focus{border-color:var(--gold2)}
+.side-list{flex:1;overflow:auto;padding:4px 10px 20px}
+.side-cat{font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:12px 8px 4px}
+.side-item{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink2);cursor:pointer;line-height:1.35}
+.side-item:hover{background:var(--white);border-color:var(--border)}
+.side-item.active{background:var(--white);border-color:var(--gold-border);color:var(--ink);font-weight:400;box-shadow:var(--shadow)}
+.side-count{padding:10px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--ink3);letter-spacing:.04em}
+
+main{min-height:0;overflow:auto;padding:14px 24px 14px;display:flex;flex-direction:column;gap:10px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.eyebrow{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:2px}
+h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-height:1.15}
+.ref{display:inline-block;margin-left:6px;padding:2px 10px;border-radius:99px;background:var(--gold-bg);border:1px solid var(--gold-border);font-size:10.5px;color:var(--gold)}
+.desc{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.actions{display:flex;gap:8px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#8a6620}
+.btn.ghost{background:var(--white);color:var(--ink2);border-color:var(--border);font-weight:400}
+.btn.ghost:hover{border-color:var(--gold2);color:var(--gold)}
+
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:minmax(290px,340px) minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:start}
+.card{background:var(--white);border:1px solid var(--border);border-radius:11px;padding:10px 14px;box-shadow:var(--shadow)}
+.card + .card{margin-top:10px}
+.card-t{font-size:9px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+
+/* inputs */
+.in-h{font-size:10px;font-weight:500;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin:7px 0 2px}
+.in-h:first-child{margin-top:0}
+.in{display:grid;grid-template-columns:1fr 88px 42px;align-items:center;gap:6px;padding:1.5px 0}
+.in label{font-size:12px;color:var(--ink2);line-height:1.25}
+.in label i{font-style:normal;color:var(--ink3);font-size:11px;margin-left:3px}
+.in input,.in select{height:25px;border-radius:6px;border:1px solid var(--border);background:var(--bg);padding:0 7px;font-size:12.5px;color:var(--ink);outline:none;width:100%;text-align:right;font-variant-numeric:tabular-nums}
+.in select{text-align:left;padding:0 4px;font-size:11.5px}
+.in.sel{grid-template-columns:1fr 150px 0}
+.in input:focus,.in select:focus{border-color:var(--gold2);background:#fff}
+.in input.bad{border-color:var(--red);background:#fff5f4}
+.in .u{font-size:11px;color:var(--ink3)}
+
+/* steps */
+.steps{width:100%;border-collapse:collapse;font-size:12px}
+.steps td{padding:3px 4px;border-bottom:1px solid #f0ece6;vertical-align:baseline}
+.steps tr:last-child td{border-bottom:none}
+.steps .s{white-space:nowrap;color:var(--ink);font-weight:400;width:1%;padding-right:10px}
+.steps .f{color:var(--ink3);font-size:11.5px}
+.steps .v{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink);width:1%;padding-left:10px}
+.steps .u{white-space:nowrap;color:var(--ink3);font-size:11px;width:1%;padding-left:4px}
+.steps tr.main .v{color:var(--teal);font-weight:500;font-size:13px}
+.steps tr.main .s{color:var(--teal)}
+
+.fig{display:flex;justify-content:center;align-items:center;color:var(--ink2)}
+.fig svg{height:160px;width:auto;max-width:100%}
+table.t{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
+table.t th{font-weight:500;color:var(--ink3);font-size:10.5px;text-align:right;padding:3px 6px;border-bottom:1px solid var(--border)}
+table.t th:first-child,table.t td:first-child{text-align:left}
+table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
+.tbl-t{font-size:10px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;margin:4px 0 4px}
+.tbl + .tbl{margin-top:10px}
+.checks{display:flex;flex-direction:column;gap:6px}
+.chk{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:8px;font-size:12px}
+.chk.ok{background:var(--ok-bg);color:#06624f}
+.chk.ko{background:#fbeceb;color:#9b2a1f}
+.chk b{font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.chk span{color:inherit;opacity:.85}
+.notes{font-size:11.5px;color:var(--ink3);line-height:1.55}
+.notes p + p{margin-top:4px}
+
+/* modal en-tête */
+.modal{position:fixed;inset:0;background:rgba(24,25,31,.35);display:none;place-items:center;z-index:300;padding:16px}
+.modal.on{display:grid}
+.mbox{background:#fff;border-radius:14px;padding:22px 24px;width:min(520px,100%);box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mbox h3{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:24px;margin-bottom:4px}
+.mbox p{font-size:12px;color:var(--ink3);margin-bottom:14px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mgrid label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--ink3)}
+.mgrid label.w{grid-column:1/-1}
+.mgrid input{height:32px;border-radius:7px;border:1px solid var(--border);background:var(--bg);padding:0 9px;font-size:13px;outline:none}
+.mgrid input:focus{border-color:var(--gold2)}
+.mact{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+/* page imprimée (note de calcul) */
+#print{display:none}
+@media print{
+  @page{size:A4 portrait;margin:11mm 12mm 12mm}
+  html,body{height:auto;background:#fff;display:block}
+  body > *:not(#print){display:none !important}
+  #print{display:block;color:#111;font-family:'Outfit',Arial,sans-serif;font-size:9.6pt;line-height:1.38;font-weight:300}
+  .p-cart{display:grid;grid-template-columns:1.1fr 2fr 1.25fr;border:1px solid #333;margin-bottom:9pt}
+  .p-cart > div{padding:5pt 7pt;border-right:1px solid #333}
+  .p-cart > div:last-child{border-right:none}
+  .p-bet{font-family:'Cormorant Garamond',serif;font-size:13pt;font-weight:600;line-height:1.1}
+  .p-bet small{display:block;font-family:'Outfit',Arial,sans-serif;font-size:7.5pt;font-weight:300;color:#555;margin-top:3pt;letter-spacing:.03em}
+  .p-title{text-align:center;display:flex;flex-direction:column;justify-content:center}
+  .p-title .p-k{font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:#7a5c1c}
+  .p-title .p-n{font-family:'Cormorant Garamond',serif;font-size:15pt;font-weight:600;line-height:1.15;margin-top:2pt}
+  .p-meta{font-size:7.8pt;line-height:1.45}
+  .p-meta b{font-weight:500}
+  .p-h{font-size:9pt;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#7a5c1c;border-bottom:1px solid #b9a26b;padding-bottom:1.5pt;margin:8pt 0 4pt}
+  .p-ref{font-size:8.5pt;color:#444}
+  .p-cols{display:grid;grid-template-columns:1fr 1fr;gap:10pt;align-items:start}
+  table.p-t{width:100%;border-collapse:collapse;font-size:8.6pt}
+  table.p-t td,table.p-t th{border-bottom:.5pt solid #d6d0c4;padding:1.6pt 3pt;text-align:right;vertical-align:baseline}
+  table.p-t th{font-weight:500;color:#555;border-bottom:.8pt solid #888}
+  table.p-t td:first-child,table.p-t th:first-child{text-align:left}
+  table.p-t td.f{text-align:left;color:#444}
+  table.p-t tr.main td{font-weight:500}
+  table.p-t tr.main td.vv{color:#06624f}
+  .p-fig{display:flex;justify-content:center;color:#333;max-height:46mm}
+  .p-fig svg{height:42mm;width:auto;max-width:100%}
+  .p-chk{display:flex;justify-content:space-between;border:.6pt solid #888;padding:3pt 6pt;margin-bottom:3pt;font-size:9pt}
+  .p-chk b{font-weight:500}
+  .p-chk.ok b{color:#06624f}.p-chk.ko b{color:#9b2a1f}
+  .p-notes{font-size:8.2pt;color:#444}
+  .p-foot{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;font-size:7pt;color:#777;border-top:.5pt solid #aaa;padding-top:2pt}
+  sub,sup{font-size:.7em}
+  #print.dense{font-size:8.8pt;line-height:1.3}
+  #print.dense table.p-t{font-size:8pt}#print.dense table.p-t td,#print.dense table.p-t th{padding:1.1pt 3pt}
+  #print.dense .p-h{margin:6pt 0 3pt}#print.dense .p-fig svg{height:34mm}
+  #print.dense2{font-size:8.4pt;line-height:1.25}
+  #print.dense2 table.p-t{font-size:7.6pt}#print.dense2 table.p-t td,#print.dense2 table.p-t th{padding:.8pt 3pt}
+  #print.dense2 .p-h{margin:5pt 0 2pt}#print.dense2 .p-fig svg{height:28mm}
+}
+
+@media(max-width:1200px){.grid{grid-template-columns:minmax(260px,300px) 1fr}.col3{grid-column:1/-1}}
+@media(max-width:820px){
+  body{height:auto;display:block}
+  .layout{display:block}
+  .sidebar{border-right:none;border-bottom:1px solid var(--border)}
+  .side-list{max-height:180px}
+  main{overflow:visible;padding:14px 16px}
+  .grid{grid-template-columns:1fr}
+  .head{flex-direction:column}
+  .nav-app{display:none}
+  nav{padding:0 16px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <div class="nav-app"><b>HandBag</b> · calculs usuels d'ouvrages d'art</div>
+    <div class="nav-right">
+      <button class="btn-head" id="btnHead" title="Projet, ouvrage, rédacteur… repris sur chaque page PDF">En-tête de note</button>
+      <a class="nav-back" href="index.html">← Accueil</a>
+    </div>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-search"><input id="find" type="search" placeholder="Rechercher un calcul…" aria-label="Rechercher un calcul"></div>
+    <div class="side-list" id="list"></div>
+    <div class="side-count" id="count"></div>
+  </aside>
+
+  <main>
+    <div class="head">
+      <div>
+        <div class="eyebrow" id="cat"></div>
+        <h1 id="title"></h1>
+        <div class="desc"><span id="desc"></span> <span class="ref" id="ref"></span></div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="reset">Valeurs par défaut</button>
+        <button class="btn" id="pdf"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 15h6M9 18h4"/></svg>Page PDF</button>
+      </div>
+    </div>
+    <div class="grid">
+      <section class="card" id="inputs" aria-label="Données"></section>
+      <section id="col2"></section>
+      <section class="col3" id="col3"></section>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <h3>En-tête de la note de calcul</h3>
+    <p>Repris sur chaque page PDF générée. Conservé sur cet appareil.</p>
+    <div class="mgrid">
+      <label class="w">Bureau d'études<input data-h="bet" placeholder="KLE Ingénierie"></label>
+      <label class="w">Projet<input data-h="projet" placeholder="Nom du projet"></label>
+      <label>Ouvrage<input data-h="ouvrage" placeholder="ex. PI 224"></label>
+      <label>Référence de la note<input data-h="note" placeholder="ex. NC-OA-012"></label>
+      <label>Rédacteur<input data-h="redac"></label>
+      <label>Vérificateur<input data-h="verif"></label>
+      <label>Indice<input data-h="indice" placeholder="A"></label>
+      <label>Date<input data-h="date" type="date"></label>
+    </div>
+    <div class="mact"><button class="btn ghost" id="mClose">Fermer</button><button class="btn" id="mPrint">Générer la page PDF</button></div>
+  </div>
+</div>
+
+<div id="print"></div>
+
+<script src="handbag/calcs.js"></script>
+<script>
+const { CALCS, fmt } = window.HANDBAG;
+const $ = s => document.querySelector(s);
+const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+const strip = h => String(h).replace(/<[^>]+>/g, "");
+const norm = s => strip(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+let cur = null, vals = {}, last = null;
+
+/* ── format ── */
+const SUPS = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+function show(v, d) {
+  if (typeof v !== "number") return v ?? "";
+  if (!isFinite(v)) return v > 0 ? "∞" : "—";
+  if (d === "e" || (v !== 0 && (Math.abs(v) < 1e-3 || Math.abs(v) >= 1e12))) {
+    if (v === 0) return "0";
+    const e = Math.floor(Math.log10(Math.abs(v))), m = v / 10 ** e;
+    return fmt(m, 3) + " × 10" + String(e).split("").map(c => SUPS[c]).join("");
+  }
+  return fmt(v, d);
+}
+const parse = s => { s = String(s).trim().replace(/\s/g, "").replace(",", "."); if (/^(∞|inf|infini)$/i.test(s)) return Infinity; return s === "" ? NaN : Number(s); };
+
+/* ── sidebar ── */
+function renderList(q = "") {
+  const t = norm(q); let html = "", last = "", n = 0;
+  CALCS.forEach(c => {
+    if (t && !norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t)) return;
+    if (c.cat !== last) { html += `<div class="side-cat">${c.cat}</div>`; last = c.cat; }
+    html += `<button class="side-item ${cur && cur.id === c.id ? "active" : ""}" data-id="${c.id}">${c.t}</button>`; n++;
+  });
+  $("#list").innerHTML = html || `<div class="side-cat">Aucun calcul</div>`;
+  $("#count").textContent = `${CALCS.length} calculs · validés contre les classeurs Excel`;
+}
+$("#list").addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b) open(b.dataset.id); });
+$("#find").addEventListener("input", e => renderList(e.target.value));
+
+/* ── page de calcul ── */
+function open(id, push = true) {
+  cur = CALCS.find(c => c.id === id) || CALCS[0];
+  const saved = ls.get("hb:" + cur.id, {});
+  vals = {}; cur.inputs.forEach(i => { if (i.k) vals[i.k] = saved[i.k] ?? String(i.v); });
+  $("#cat").textContent = cur.cat; $("#title").innerHTML = cur.t; $("#desc").innerHTML = cur.desc; $("#ref").innerHTML = cur.ref;
+  document.title = "HandBag — " + strip(cur.t);
+  let h = `<div class="card-t">Données</div>`;
+  cur.inputs.forEach(i => {
+    if (i.h) { h += `<div class="in-h">${i.h}</div>`; return; }
+    const lab = `<label for="i-${i.k}">${i.l}${i.s && i.s !== i.k ? ` <i>${i.s}</i>` : ""}</label>`;
+    if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
+    else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
+  });
+  $("#inputs").innerHTML = h;
+  renderList($("#find").value);
+  compute();
+  if (push) history.replaceState(null, "", "#" + cur.id);
+  $("main").scrollTop = 0;
+}
+$("#inputs").addEventListener("input", e => {
+  const el = e.target.closest("[data-k]"); if (!el) return;
+  vals[el.dataset.k] = el.value; ls.set("hb:" + cur.id, vals); compute();
+});
+$("#reset").onclick = () => { try { localStorage.removeItem("hb:" + cur.id); } catch (e) {} open(cur.id, false); };
+
+function inputValues() {
+  const I = {}; let bad = false;
+  cur.inputs.forEach(i => { if (!i.k) return; if (i.t === "sel") { I[i.k] = vals[i.k]; return; }
+    const v = parse(vals[i.k]); const el = document.getElementById("i-" + i.k); const nok = isNaN(v); el && el.classList.toggle("bad", nok); bad = bad || nok; I[i.k] = v; });
+  return bad ? null : I;
+}
+
+function compute() {
+  const I = inputValues();
+  if (!I) { $("#col2").innerHTML = `<div class="card"><div class="card-t">Calcul</div><p class="notes">Une valeur saisie n'est pas un nombre.</p></div>`; return; }
+  let r; try { r = cur.calc(I); } catch (e) { $("#col2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
+  last = { I, r };
+  const steps = (r.steps || []).length ? `<div class="card"><div class="card-t">Calcul</div><table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s}</td><td class="f">${s.f ? (s.s ? "= " : "") + s.f : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table></div>` : "";
+  const tables = (r.tables || []).map(t => tableHTML(t)).join("");
+  const checks = (r.checks || []).length ? `<div class="card"><div class="card-t">Vérifications</div><div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${c.l}${c.txt ? " — " + c.txt : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div></div>` : "";
+  const fig = r.fig ? `<div class="card"><div class="card-t">Schéma</div><div class="fig">${r.fig}</div></div>` : "";
+  const notes = (r.notes || []).filter(Boolean).length ? `<div class="card"><div class="card-t">Remarques</div><div class="notes">${r.notes.filter(Boolean).map(n => `<p>${n}</p>`).join("")}</div></div>` : "";
+  const tblCard = tables ? `<div class="card"><div class="card-t">Tableaux</div>${tables}</div>` : "";
+  // répartition : colonne 2 = calcul (+ tableaux si pas d'étapes), colonne 3 = vérifications, schéma, tableaux, remarques
+  if (steps) { $("#col2").innerHTML = steps + (r.tables && r.tables.length > 1 ? tblCard : ""); $("#col3").innerHTML = checks + fig + (r.tables && r.tables.length <= 1 ? tblCard : "") + notes; }
+  else {
+    const T = r.tables || [], split = T.length > 2 ? T.length - 1 : T.length;
+    const card = (ts, title) => ts.length ? `<div class="card"><div class="card-t">${title}</div>${ts.map(t => tableHTML(t)).join("")}</div>` : "";
+    $("#col2").innerHTML = card(T.slice(0, split), "Calcul"); $("#col3").innerHTML = checks + card(T.slice(split), "Résultat") + fig + notes;
+  }
+}
+function cell(v, d, pct) { if (typeof v !== "number") return v; return pct ? fmt(v * 100, 1) + " %" : show(v, d ?? 3); }
+function tableHTML(t, cls = "t") {
+  return `<div class="tbl">${t.title ? `<div class="tbl-t">${t.title}</div>` : ""}<table class="${cls}"><thead><tr>${t.head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${
+    t.rows.map(row => `<tr>${row.map((v, j) => j === 0 ? `<td>${typeof v === "number" ? show(v, Number.isInteger(v) ? 0 : 2) : v}</td>` : `<td>${cell(v, t.d ? t.d[j - 1] : 3, t.pct === true || t.pct === j)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ── en-tête & PDF ── */
+const HEAD_KEYS = ["bet", "projet", "ouvrage", "note", "redac", "verif", "indice", "date"];
+function head() { const h = ls.get("hb:head", {}); if (!h.bet) h.bet = "KLE Ingénierie"; if (!h.date) h.date = new Date().toISOString().slice(0, 10); return h; }
+$("#btnHead").onclick = () => openModal();
+function openModal() { const h = head(); document.querySelectorAll("[data-h]").forEach(i => i.value = h[i.dataset.h] || ""); $("#modal").classList.add("on"); }
+$("#modal").addEventListener("input", e => { const i = e.target.closest("[data-h]"); if (!i) return; const h = head(); h[i.dataset.h] = i.value; ls.set("hb:head", h); });
+$("#mClose").onclick = () => $("#modal").classList.remove("on");
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") $("#modal").classList.remove("on"); });
+$("#mPrint").onclick = () => { $("#modal").classList.remove("on"); printPage(); };
+$("#pdf").onclick = () => { const h = ls.get("hb:head", null); if (!h || !h.projet) openModal(); else printPage(); };
+
+function printPage() {
+  if (!last) return;
+  const { I, r } = last, h = head(), d = h.date ? new Date(h.date + "T12:00").toLocaleDateString("fr-FR") : "";
+  const e = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const inputs = cur.inputs.map(i => i.h ? `<tr><td colspan="3" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${i.h}</td></tr>` :
+    `<tr><td>${i.l}${i.s && i.s !== i.k ? ` (${i.s})` : ""}</td><td>${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`).join("");
+  const steps = (r.steps || []).map(s => `<tr class="${s.r ? "main" : ""}"><td>${s.s}</td><td class="f">${s.f || ""}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
+  const tables = (r.tables || []).map(t => tableHTML(t, "p-t")).join("");
+  const checks = (r.checks || []).map(c => `<div class="p-chk ${c.ok ? "ok" : "ko"}"><span>${c.l}${c.txt ? " : " + c.txt : ""}</span><b>${c.ok ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}</b></div>`).join("");
+  const notes = (r.notes || []).filter(Boolean).map(n => `<p>${n}</p>`).join("");
+  $("#print").innerHTML = `
+    <div class="p-cart">
+      <div class="p-bet">${e(h.bet)}<small>Bureau d'études techniques<br>Note de calcul ${e(h.note)}</small></div>
+      <div class="p-title"><div class="p-k">${e(cur.cat)}</div><div class="p-n">${cur.t}</div></div>
+      <div class="p-meta"><b>Projet :</b> ${e(h.projet)}<br><b>Ouvrage :</b> ${e(h.ouvrage)}<br><b>Rédacteur :</b> ${e(h.redac)} · <b>Vérif. :</b> ${e(h.verif)}<br><b>Indice :</b> ${e(h.indice)} · <b>Date :</b> ${d}</div>
+    </div>
+    <div class="p-ref"><b style="font-weight:500">Objet :</b> ${cur.desc} — <b style="font-weight:500">Référence :</b> ${cur.ref}</div>
+    <div class="p-cols" style="margin-top:4pt">
+      <div><div class="p-h">1. Données</div><table class="p-t"><tbody>${inputs}</tbody></table></div>
+      <div>${r.fig ? `<div class="p-h">Schéma</div><div class="p-fig">${r.fig}</div>` : ""}${checks ? `<div class="p-h">Vérifications</div>${checks}` : ""}</div>
+    </div>
+    ${steps ? `<div class="p-h">2. Calcul</div><table class="p-t"><thead><tr><th>Grandeur</th><th style="text-align:left">Expression</th><th>Valeur</th><th style="text-align:left">Unité</th></tr></thead><tbody>${steps}</tbody></table>` : ""}
+    ${tables ? `<div class="p-h">${steps ? "3. Résultats détaillés" : "2. Calcul"}</div>${tables}` : ""}
+    ${notes ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}
+    <div class="p-foot"><span>${e(h.bet)} — ${e(h.projet)} ${h.ouvrage ? "· " + e(h.ouvrage) : ""}</span><span>HandBag · BridgeAI Studios — calcul automatique, à vérifier par l'ingénieur</span></div>`;
+  const nrows = cur.inputs.length + (r.steps || []).length + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
+  $("#print").className = nrows > 46 ? "dense2" : nrows > 34 ? "dense" : "";
+  setTimeout(() => window.print(), 60);
+}
+function decimals(v) { if (typeof v !== "number" || !isFinite(v)) return 0; const s = String(v); return s.includes("e") ? "e" : Math.min((s.split(".")[1] || "").length, 6); }
+
+addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "p") { e.preventDefault(); printPage(); } if (e.key === "Escape") $("#modal").classList.remove("on"); });
+addEventListener("hashchange", () => { const id = location.hash.slice(1); if (id && (!cur || id !== cur.id)) open(id, false); });
+
+renderList();
+open(location.hash.slice(1) || CALCS[0].id, false);
+</script>
+</body>
+</html>
