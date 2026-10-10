@@ -38,7 +38,7 @@ function barsH(items, o = {}) {
 /* ─── section rectangulaire / en T armée, avec axe neutre et bloc de contraintes ─── */
 function section(o) {
   const W = 330, H = o.H || 175, top = 16, hh = H - 42;
-  const bf = o.beff || o.b, k = min(150 / bf, hh / o.h), x0 = 22 + (150 - bf * k) / 2, X = v => x0 + v * k, Y = v => top + v * k;
+  const bf = o.beff || o.b, k = min(132 / bf, hh / o.h), x0 = 60 + (132 - bf * k) / 2, X = v => x0 + v * k, Y = v => top + v * k;
   const bw = o.bw || o.b, hf = o.hf || 0, xw = X((bf - bw) / 2);
   let s = "";
   if (o.beff) s += Rc(X(0), Y(0), bf * k, hf * k) + Rc(xw, Y(hf) - .5, bw * k, (o.h - hf) * k + .5);
