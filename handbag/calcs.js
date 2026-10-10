@@ -58,36 +58,43 @@ const Ei_ = L`11\,000\,f_{c28}^{1/3}`, Ev_ = L`3\,700\,f_{c28}^{1/3}`;
 const CALCS = [
 
 /* ══════════════ MATÉRIAUX ══════════════ */
-{ id: "beton-bael", cat: "Matériaux", t: "Béton : caractéristiques à j jours", ref: "BAEL 91 mod. 99 — A.2.1 / A.2.1.2",
-  desc: "Résistances et modules du béton à 28 jours et à l'âge j.",
-  inputs: [N("fc28", "Résistance à 28 jours", "MPa", 35, L`f_{c28}`), N("j", "Âge du béton", "jours", 3, "j")],
+{ id: "beton-bael", cat: "Matériaux", t: "Béton : caractéristiques à j jours", ref: "BAEL 91 mod. 99 — A.2.1, A.4.3.4, A.4.5.2, A.5.2.2",
+  desc: "Résistances, modules et contraintes limites du béton à 28 jours et à l'âge j.",
+  inputs: [N("fc28", "Résistance à 28 jours", "MPa", 35, L`f_{c28}`), N("j", "Âge du béton", "jours", 3, "j"),
+    SEL("sit", "Situation", [["d", "Durable ou transitoire (γb = 1,5)"], ["a", "Accidentelle (γb = 1,15)"]], "d", ""),
+    SEL("th", "Durée d'application des charges", [["1", "> 24 h (θ = 1)"], ["0.9", "1 h à 24 h (θ = 0,9)"], ["0.85", "< 1 h (θ = 0,85)"]], "1", L`\theta`)],
   calc(I) {
-    const { fc28, j } = I;
+    const { fc28, j } = I, gb = I.sit === "a" ? 1.15 : 1.5, th = +I.th;
     const fcj = j >= 28 ? fc28 : (fc28 <= 40 ? j / (4.76 + 0.83 * j) : j / (1.40 + 0.95 * j)) * fc28;
     const f28 = { ft: 0.6 + 0.06 * fc28, tu: 0.07 * fc28 / 1.5, Ei: 11000 * Math.cbrt(fc28), Ev: 3700 * Math.cbrt(fc28) };
-    const fj = { ft: 0.6 + 0.06 * fcj, tu: 0.07 * fcj / 1.5, Ei: 11000 * Math.cbrt(fcj), Ev: 3700 * Math.cbrt(fcj) };
+    const fj = { ft: 0.6 + 0.06 * fcj, tu: 0.07 * fcj / gb, Ei: 11000 * Math.cbrt(fcj), Ev: 3700 * Math.cbrt(fcj) };
+    const fbu = 0.85 * fcj / (th * gb);
     return {
       steps: [
         R("fcj", L`f_{cj}`, j >= 28 ? L`f_{c28} \quad (j \geq 28)` : (fc28 <= 40 ? L`\dfrac{j}{4{,}76 + 0{,}83\,j}\,f_{c28}` : L`\dfrac{j}{1{,}40 + 0{,}95\,j}\,f_{c28}`), fcj, "MPa", 2),
         S("ftj", L`f_{tj}`, L`0{,}6 + 0{,}06\,f_{cj}`, fj.ft, "MPa", 3),
-        S("tuj", L`\tau_{lim}`, L`\dfrac{0{,}07\,f_{cj}}{\gamma_b}`, fj.tu, "MPa", 3),
         S("Eij", L`E_{ij}`, L`11\,000\,f_{cj}^{1/3}`, fj.Ei, "MPa", 0),
         S("Evj", L`E_{vj}`, L`3\,700\,f_{cj}^{1/3}`, fj.Ev, "MPa", 0),
+        R("fbu", L`f_{bu}`, L`\dfrac{0{,}85\,f_{cj}}{\theta\,\gamma_b}`, fbu, "MPa", 2),
+        S("sbc", L`\bar\sigma_{bc}`, L`0{,}6\,f_{cj}`, 0.6 * fcj, "MPa", 2),
+        S("tuj", L`\tau_{u,lim}`, L`\dfrac{0{,}07\,f_{cj}}{\gamma_b}`, fj.tu, "MPa", 3),
       ],
       tables: [{ title: "Comparaison 28 jours / j jours", head: ["", "28 jours", `j = ${j} j`, "Rapport"], rows: [
         ["$f_c$ (MPa)", fc28, fcj, fcj / fc28], ["$f_t$ (MPa)", f28.ft, fj.ft, fj.ft / f28.ft],
-        ["$0{,}07 f_c/1{,}5$ (MPa)", f28.tu, fj.tu, fj.tu / f28.tu], ["$E_i$ (MPa)", f28.Ei, fj.Ei, fj.Ei / f28.Ei], ["$E_v$ (MPa)", f28.Ev, fj.Ev, fj.Ev / f28.Ev]],
+        ["$0{,}07 f_c/1{,}5$ (MPa)", f28.tu, 0.07 * fcj / 1.5, fcj / fc28], ["$E_i$ (MPa)", f28.Ei, fj.Ei, fj.Ei / f28.Ei], ["$E_v$ (MPa)", f28.Ev, fj.Ev, fj.Ev / f28.Ev]],
         d: [2, 2, 3], pct: 3, key: { ft28: [1, 1], tu28: [2, 1], Ei28: [3, 1], Ev28: [4, 1] } }],
       vals: { ft28: f28.ft, tu28: f28.tu, Ei28: f28.Ei, Ev28: f28.Ev },
-      notes: [j >= 28 ? "Pour j ≥ 28 jours, on retient conventionnellement $f_{cj} = f_{c28}$." : ""],
+      notes: [j >= 28 ? "Pour j ≥ 28 jours, on retient conventionnellement $f_{cj} = f_{c28}$ (A.2.1.11)." : "Loi d'évolution A.2.1.11, valable pour $j \\le 28$ jours.",
+        "$\\tau_{u,lim}$ : contrainte tangente limite des dalles sans armatures d'effort tranchant (A.5.2.2). $\\bar\\sigma_{bc}$ : contrainte limite de compression à l'ELS (A.4.5.2). $f_{ij}$ valable pour $f_{cj} \\le 60$ MPa."],
     };
   } },
 
-{ id: "beton-ec2", cat: "Matériaux", t: "Béton : propriétés selon l'Eurocode 2", ref: "NF EN 1992-1-1 — §3.1, tableau 3.1",
+{ id: "beton-ec2", cat: "Matériaux", t: "Béton : propriétés selon l'Eurocode 2", ref: "NF EN 1992-1-1 — §3.1, tableau 3.1, §2.4.2.4, §7.2",
   desc: "Résistances caractéristiques, modules et contraintes de calcul d'une classe de béton.",
-  inputs: [SEL("fck", "Classe de résistance", Object.keys(EC2_CUBE).map(k => [k, `C${k}/${EC2_CUBE[k]}`]), "35", "")],
+  inputs: [SEL("fck", "Classe de résistance", Object.keys(EC2_CUBE).map(k => [k, `C${k}/${EC2_CUBE[k]}`]), "35", ""),
+    N("acc", "Coefficient αcc", "", 1, L`\alpha_{cc}`), N("phi", "Coefficient de fluage final", "", 2.3, L`\varphi(\infty,t_0)`), N("gS", "γc en situation sismique", "", 1.3, L`\gamma_{c,sis}`)],
   calc(I) {
-    const fck = +I.fck, fcm = fck + 8;
+    const fck = +I.fck, fcm = fck + 8, a = I.acc;
     const fctm = fck <= 50 ? 0.3 * pow(fck, 2 / 3) : 2.12 * Math.log(1 + fcm / 10);
     const f05 = 0.7 * fctm, f95 = 1.3 * fctm, Ecm = 22000 * pow(fcm / 10, 0.3);
     const ecu2 = fck <= 50 ? 3.5 : 2.6 + 35 * pow((90 - fck) / 100, 4);
@@ -101,16 +108,17 @@ const CALCS = [
         S("fctk05", L`f_{ctk;0,05}`, L`0{,}70\,f_{ctm}`, f05, "MPa", 2),
         S("fctk95", L`f_{ctk;0,95}`, L`1{,}30\,f_{ctm}`, f95, "MPa", 2),
         R("Ecm", L`E_{cm}`, L`22\,000\left(\dfrac{f_{cm}}{10}\right)^{0{,}3}`, Ecm, "MPa", 0),
-        S("Ecv", L`E_{c,\infty}`, L`\dfrac{E_{cm}}{3{,}3}`, Ecm / 3.3, "MPa", 0),
+        S("Ecv", L`E_{c,eff}`, L`\dfrac{E_{cm}}{1 + \varphi(\infty,t_0)}`, Ecm / (1 + I.phi), "MPa", 0),
+        R("fcd", L`f_{cd}`, L`\alpha_{cc}\,\dfrac{f_{ck}}{\gamma_c}`, a * fck / 1.5, "MPa", 2),
         S("ec2", L`\varepsilon_{c2}\;/\;\varepsilon_{cu2}`, "~déformations au pic et ultime", `${ec2.toFixed(2).replace(".", ",")} ‰ / ${ecu2.toFixed(2).replace(".", ",")} ‰`, "", 0),
       ],
       tables: [{ title: "Contraintes de calcul", head: ["Situation", "Compression (MPa)", "Traction $f_{ctd}$ (MPa)"], rows: [
-        ["ELS quasi permanent : $0{,}45\,f_{ck}$", 0.45 * fck, f05], ["ELS caractéristique : $0{,}60\,f_{ck}$", 0.6 * fck, f05],
-        ["ELU fondamental : $f_{ck}/1{,}5$", fck / 1.5, f05 / 1.5], ["ELU accidentel : $f_{ck}/1{,}2$", fck / 1.2, f05 / 1.2],
-        ["ELU sismique : $f_{ck}/1{,}3$", fck / 1.3, f05 / 1.3]], d: [2, 2],
+        ["ELS quasi permanent : $0{,}45\\,f_{ck}$ (fluage linéaire)", 0.45 * fck, f05], ["ELS caractéristique : $0{,}60\\,f_{ck}$ (XD, XF, XS)", 0.6 * fck, f05],
+        ["ELU durable : $\\alpha_{cc} f_{ck}/1{,}5$", a * fck / 1.5, f05 / 1.5], ["ELU accidentel : $\\alpha_{cc} f_{ck}/1{,}2$", a * fck / 1.2, f05 / 1.2],
+        [`ELU sismique : $\\alpha_{cc} f_{ck}/${String(I.gS).replace(".", "{,}")}$`, a * fck / I.gS, f05 / I.gS]], d: [2, 2],
         key: { sQP: [0, 1], sCar: [1, 1], fcdF: [2, 1], fcdA: [3, 1], fcdS: [4, 1], ftdF: [2, 2], ftdA: [3, 2], ftdS: [4, 2] } }],
       notes: ["Coefficient de Poisson : 0,2 (béton non fissuré), 0 (fissuré). Dilatation thermique : $\\alpha = 10^{-5}\\ /°C$.",
-              "Les contraintes de calcul sont données sans coefficient $\\alpha_{cc}$ (à appliquer selon l'annexe nationale)."],
+        "$\\alpha_{cc} = 1$ selon l'annexe nationale française (§3.1.6). $f_{ctd} = \\alpha_{ct} f_{ctk;0,05}/\\gamma_c$ avec $\\alpha_{ct} = 1$. Le $\\gamma_c$ sismique est à prendre selon l'annexe nationale de l'EN 1998."],
     };
   } },
 
@@ -127,7 +135,7 @@ const CALCS = [
     let kh = h0 <= 100 ? 1 : h0 >= 500 ? 0.7 : 0;
     for (let i = 0; i < 3; i++) if (h0 > tab[i][0] && h0 <= tab[i + 1][0]) kh = tab[i][1] + (tab[i + 1][1] - tab[i][1]) * (h0 - tab[i][0]) / (tab[i + 1][0] - tab[i][0]);
     const [a1, a2] = { S: [3, 0.13], N: [4, 0.12], R: [6, 0.11] }[I.cim];
-    const bRH = 1.55 * (1 - pow(RH / 100, 3));
+    const bRH = RH >= 99 ? 0.25 : 1.55 * (1 - pow(RH / 100, 3));
     const ecd0 = 0.85 * ((220 + 110 * a1) * exp(-a2 * fcm / 10)) * 1e-6 * bRH;
     const inf = !isFinite(t);
     const bds = inf ? 1 : (t - ts) / ((t - ts) + 0.04 * pow(h0, 1.5));
@@ -137,7 +145,7 @@ const CALCS = [
     return {
       steps: [
         S("h0", L`h_0`, L`\dfrac{2\,A_c}{u}`, h0, "mm", 0), S("kh", L`k_h`, "~tableau 3.3 (interpolé)", kh, "", 3),
-        S("bRH", L`\beta_{RH}`, L`1{,}55\left[1 - \left(\dfrac{RH}{100}\right)^{3}\right]`, bRH, "", 4),
+        S("bRH", L`\beta_{RH}`, RH >= 99 ? L`0{,}25 \quad (RH \ge 99\ \%)` : L`1{,}55\left[1 - \left(\dfrac{RH}{100}\right)^{3}\right]`, bRH, "", 4),
         S("ecd0", L`\varepsilon_{cd,0}`, L`0{,}85\left[(220 + 110\,\alpha_{ds1})\,e^{-\alpha_{ds2}\,f_{cm}/10}\right]10^{-6}\,\beta_{RH}`, ecd0, "", "e"),
         S("bds", L`\beta_{ds}(t,t_s)`, L`\dfrac{t - t_s}{(t - t_s) + 0{,}04\,h_0^{3/2}}`, bds, "", 4),
         S("ecd", L`\varepsilon_{cd}(t)`, L`\beta_{ds}\,k_h\,\varepsilon_{cd,0}`, ecd, "", "e"),
@@ -175,34 +183,40 @@ const CALCS = [
     };
   } },
 
-{ id: "acier-precontrainte", cat: "Matériaux", t: "Acier de précontrainte : tension initiale", ref: "BPEL 91 — art. 3.3",
-  desc: "Tension à l'origine et conversions d'unités usuelles.",
-  inputs: [N("fprg", "Contrainte de rupture garantie", "MPa", 1860, L`f_{prg}`), N("fpeg", "Limite élastique garantie", "MPa", 1660, L`f_{peg}`),
+{ id: "acier-precontrainte", cat: "Matériaux", t: "Acier de précontrainte : tension initiale", ref: "BPEL 91 — art. 3.3 ; NF EN 1992-1-1 — §5.10.2",
+  desc: "Tension maximale à l'origine selon le BPEL et l'Eurocode 2, et conversions d'unités.",
+  inputs: [SEL("mode", "Mode de précontrainte", [["post", "Post-tension"], ["pre", "Pré-tension"]], "post", ""),
+    N("fprg", "Contrainte de rupture garantie", "MPa", 1860, L`f_{prg} = f_{pk}`), N("fpeg", "Limite élastique garantie", "MPa", 1660, L`f_{peg} = f_{p0,1k}`),
     N("Ep", "Module d'élasticité", "MPa", 190000, L`E_p`), N("fe", "Acier passif", "MPa", 500, L`f_e`), N("fc28", "Béton", "MPa", 35, L`f_{c28}`)],
   calc(I) {
-    const c = v => 100 * 10 / 9.81 * v;
-    const s0 = min(0.8 * I.fprg, 0.9 * I.fpeg);
+    const c = v => 100 * 10 / 9.81 * v, post = I.mode === "post";
+    const s0 = post ? min(0.8 * I.fprg, 0.9 * I.fpeg) : min(0.85 * I.fprg, 0.95 * I.fpeg);
+    const smax = min(0.8 * I.fprg, 0.9 * I.fpeg), spm0 = min(0.75 * I.fprg, 0.85 * I.fpeg);
     return {
-      steps: [R("sp0", L`\sigma_{p0}`, L`\min\left(0{,}80\,f_{prg}\ ;\ 0{,}90\,f_{peg}\right)`, s0, "MPa", 0)],
+      steps: [R("sp0", L`\sigma_{p0}^{BPEL}`, post ? L`\min\left(0{,}80\,f_{prg}\ ;\ 0{,}90\,f_{peg}\right)` : L`\min\left(0{,}85\,f_{prg}\ ;\ 0{,}95\,f_{peg}\right)`, s0, "MPa", 0),
+        R("smax", L`\sigma_{p,max}^{EC2}`, L`\min\left(0{,}80\,f_{pk}\ ;\ 0{,}90\,f_{p0,1k}\right)`, smax, "MPa", 0),
+        S("spm0", L`\sigma_{pm0}^{EC2}`, L`\min\left(0{,}75\,f_{pk}\ ;\ 0{,}85\,f_{p0,1k}\right)`, spm0, "MPa", 0)],
       tables: [{ title: "Conversions (1 MPa = 101,94 t/m²)", head: ["Grandeur", "MPa", "t/m²"], rows: [
         ["$f_{prg}$", I.fprg, c(I.fprg)], ["$f_{peg}$", I.fpeg, c(I.fpeg)], ["$\\sigma_{p0}$", s0, c(s0)], ["$E_p$", I.Ep, c(I.Ep)],
         ["$f_e$", I.fe, c(I.fe)], ["$f_{c28}$", I.fc28, c(I.fc28)]], d: [0, 0], key: { fprgT: [0, 2], sp0T: [2, 2], EpT: [3, 2] } }],
+      notes: ["EC2 : $\\sigma_{p,max}$ est la tension maximale au vérin ; $\\sigma_{pm0}$ la tension maximale juste après la mise en tension (ou le transfert)."],
     };
   } },
 
 /* ══════════════ SECTIONS ══════════════ */
-{ id: "section-mixte", cat: "Sections", t: "Caractéristiques d'une section mixte acier-béton", ref: "Homogénéisation élastique — $n = E_a/E_b$",
-  desc: "Profilé seul et section mixte homogénéisée (hourdis + renformis).",
-  inputs: [H("Béton"), N("bh", "Hourdis : largeur", "mm", 4788, L`b_h`), N("hh", "Hourdis : épaisseur", "mm", 200, L`e_h`),
+{ id: "section-mixte", cat: "Sections", t: "Caractéristiques d'une section mixte acier-béton", ref: "Homogénéisation élastique — NF EN 1994-2 §5.4.2.2 ou modules BAEL",
+  desc: "Profilé seul et section mixte homogénéisée (hourdis + renformis) à court ou long terme.",
+  inputs: [H("Béton"), N("bh", "Hourdis : largeur participante", "mm", 4788, L`b_{eff}`), N("hh", "Hourdis : épaisseur", "mm", 200, L`e_h`),
     N("br", "Renformis : largeur", "mm", 600, L`b_r`), N("hr", "Renformis : hauteur", "mm", 100, L`e_r`),
     H("Profilé acier"), N("H", "Hauteur totale du profilé", "mm", 1450, "H"), N("bs", "Semelle sup. : largeur", "mm", 700, L`b_s`), N("ts", "Semelle sup. : épaisseur", "mm", 65, L`t_s`),
     N("tw", "Âme : épaisseur", "mm", 20, L`t_w`), N("bi", "Semelle inf. : largeur", "mm", 800, L`b_i`), N("ti", "Semelle inf. : épaisseur", "mm", 75, L`t_i`),
-    H("Équivalence"), N("Ea", "Module de l'acier", "GPa", 210, L`E_a`), N("fc", "Résistance du béton", "MPa", 30, L`f_{cj}`),
-    SEL("mod", "Module béton", [["i", "Instantané : 11 000 f^1/3"], ["v", "Différé : 3 700 f^1/3"]], "i", L`E_b`)],
+    H("Équivalence"), N("Ea", "Module de l'acier", "GPa", 210, L`E_a`), N("fc", "Résistance du béton", "MPa", 30, L`f_{c}`),
+    SEL("mod", "Module du béton", [["i", "BAEL instantané : 11 000 fcj^1/3"], ["v", "BAEL différé : 3 700 fcj^1/3"], ["e0", "EC4 court terme : Ecm"], ["eL", "EC4 long terme : Ecm/(1+ψL φt)"]], "i", L`E_b`),
+    N("phi", "Fluage φt (EC4 long terme)", "", 2, L`\varphi_t`), N("psi", "ψL (1,1 permanent, 0,55 retrait)", "", 1.1, L`\psi_L`)],
   calc(I) {
     const cm = v => v / 10;
-    const hw = I.H - I.ts - I.ti;
-    const Eb = (I.mod === "i" ? 11 : 3.7) * Math.cbrt(I.fc), n = I.Ea / Eb;
+    const hw = I.H - I.ts - I.ti, Ecm = 22 * pow((I.fc + 8) / 10, 0.3);
+    const Eb = I.mod === "i" ? 11 * Math.cbrt(I.fc) : I.mod === "v" ? 3.7 * Math.cbrt(I.fc) : I.mod === "e0" ? Ecm : Ecm / (1 + I.psi * I.phi), n = I.Ea / Eb;
     const parts = [
       ["Hourdis", "b", cm(I.bh), cm(I.hh), cm(I.hh / 2 + I.hr + I.H)],
       ["Renformis", "b", cm(I.br), cm(I.hr), cm(I.hr / 2 + I.H)],
@@ -217,18 +231,23 @@ const CALCS = [
       return { rows, A, v, I: rows.reduce((s, r) => s + r.I, 0) };
     };
     const a = props(parts.slice(2)), m = props(parts);
-    const htot = cm(I.H + I.hr + I.hh);
+    const htot = cm(I.H + I.hr + I.hh), hs = cm(I.H);
+    const Eexpr = { i: L`11\,f_{c}^{1/3}`, v: L`3{,}7\,f_{c}^{1/3}`, e0: L`E_{cm} = 22\left(\tfrac{f_{c}+8}{10}\right)^{0{,}3}`, eL: L`\dfrac{E_{cm}}{1 + \psi_L\,\varphi_t}` }[I.mod];
     return {
       steps: [
         S("hw", L`h_w`, L`H - t_s - t_i`, hw, "mm", 0),
-        S("Eb", L`E_b`, I.mod === "i" ? L`11\,f_{cj}^{1/3}` : L`3{,}7\,f_{cj}^{1/3}`, Eb, "GPa", 2),
+        S("Eb", L`E_b`, Eexpr, Eb, "GPa", 2),
         S("n", "n", L`\dfrac{E_a}{E_b}`, n, "", 3),
         R("Aa", L`A_a`, L`\textstyle\sum A_{acier}`, a.A, "cm²", 1), R("va", L`v_{a,inf}`, L`\dfrac{\sum A_i\,z_i}{A_a}`, a.v, "cm", 2), R("Ia", L`I_a`, L`\textstyle\sum \left(I_{g,i} + A_i\,d_i^2\right)`, a.I, "cm⁴", 0),
         R("Am", L`A_m`, L`\textstyle\sum A_{acier} + \frac{1}{n}\sum A_{béton}`, m.A, "cm²", 1), R("vm", L`v_{m,inf}`, L`\dfrac{\sum A_i\,z_i}{A_m}`, m.v, "cm", 2), R("Im", L`I_m`, L`\textstyle\sum \left(I_{g,i} + A_i\,d_i^2\right)`, m.I, "cm⁴", 0),
         S("vms", L`v_{m,sup}`, L`h_{tot} - v_{m,inf}`, htot - m.v, "cm", 2),
+        S("Wai", L`W_{a,inf}`, L`\dfrac{I_m}{v_{m,inf}}`, m.I / m.v, "cm³", 0), S("Was", L`W_{a,sup}`, L`\dfrac{I_m}{h_a - v_{m,inf}}` + "\\quad\\text{(semelle sup.)}", m.I / abs(hs - m.v), "cm³", 0),
+        S("Wbs", L`W_{b,sup}`, L`\dfrac{n\,I_m}{v_{m,sup}}` + "\\quad\\text{(fibre sup. béton)}", n * m.I / (htot - m.v), "cm³", 0),
       ],
       tables: [{ title: "Section mixte homogénéisée", head: ["Élément", "$A_{éq}$ (cm²)", "$z$ (cm)", "$d$ (cm)", "$I_{/G}$ (cm⁴)"],
         rows: m.rows.map(r => [r.nm, r.A, r.z, r.dz, r.I]), d: [1, 2, 2, 0] }],
+      notes: ["Contraintes : $\\sigma_a = M / W_a$ dans l'acier, $\\sigma_b = M / W_b$ dans le béton (le facteur $n$ est inclus dans $W_b$). Largeur participante $b_{eff}$ selon EN 1994-2 §5.4.1.2.",
+        "EC4 : $n_0 = E_a/E_{cm}$ à court terme ; $n_L = n_0(1 + \\psi_L\\,\\varphi_t)$ à long terme (ψL = 1,1 charges permanentes, 0,55 retrait)."],
       fig: figSectionMixte(I, m.v, a.v),
     };
   } },
@@ -244,27 +263,28 @@ const CALCS = [
       steps: [R("Ieq", L`I_{éq}`, L`\dfrac{F\,H^3}{3\,E_b\,u}`, Ieq, "m⁴", 4), R("K", L`K_{appui}`, L`\dfrac{F}{u}`, K, "kN/m", 0),
         S("A", "A", L`a\,b`, A, "m²", 4), R("Kaa", L`K_{AA}`, L`\dfrac{n\,G\,A}{T}`, Ka, "kN/m", 0), S("Ks", L`K_{série}`, L`\dfrac{1}{1/K_{appui} + 1/K_{AA}}`, 1 / (1 / K + 1 / Ka), "kN/m", 0)],
       fig: figConsole(),
+      notes: ["Élastomère fretté : G = 0,9 MPa pour les actions lentes et G = 1,8 MPa (≈ 2G) pour les actions rapides et sismiques (guide SETRA 2007). T : épaisseur totale d'élastomère."],
     };
   } },
 
 /* ══════════════ FLÈCHES & ROTATIONS ══════════════ */
 { id: "fleche-prefa", cat: "Flèches & rotations", t: "Poutres préfabriquées : flèches et contre-flèche", ref: "RDM — $f = 5pL^4/384EI$ ; phasage $F_1 + \\tfrac{2}{3}F_2 + F_3$ ; limites PRA",
   desc: "Flèche à la pose, après durcissement du tablier et sous superstructures ; contre-flèche à donner aux poutres.",
-  inputs: [N("fc28", "Résistance du béton", "MPa", 35, L`f_{c28}`), N("L", "Portée de calcul", "m", 26.5, "L"), N("g", "Poids volumique", "kN/m³", 25, L`\gamma`),
+  inputs: [N("fc28", "Résistance du béton à 28 jours", "MPa", 35, L`f_{c28}`), N("fcp", "Résistance à la date de pose", "MPa", 35, L`f_{cj}`), N("L", "Portée de calcul", "m", 26.5, "L"), N("g", "Poids volumique", "kN/m³", 25, L`\gamma`),
     H("À la pose"), N("Ip", "Inertie de la poutre seule", "m⁴", 0.1807, L`I_p`), N("Ap", "Aire de la poutre", "m²", 0.8085, L`A_p`),
     N("bh", "Hourdis porté : largeur", "m", 2.17, L`b_h`), N("eh", "Hourdis porté : épaisseur", "m", 0.23, L`e_h`),
     H("Tablier durci"), N("It", "Inertie du tablier", "m⁴", 1.7305, L`I_t`), N("At", "Aire résistante du tablier", "m²", 5.8749, L`A_t`),
     N("qs", "Superstructures (max)", "kN/ml", 45.5, L`q_{sup}`), N("CF", "Contre-flèche retenue", "mm", 100, "CF")],
   calc(I) {
-    const Ei = 11000 * Math.cbrt(I.fc28), Ev = 3700 * Math.cbrt(I.fc28), L4 = I.L ** 4;
+    const Ei = 11000 * Math.cbrt(I.fcp), Ev = 3700 * Math.cbrt(I.fc28), L4 = I.L ** 4;
     const p1 = I.g * I.Ap + I.g * I.bh * I.eh, p2 = I.g * I.At;
     const f = (p, E, In) => 1000 * 5 * (p / 1000) * L4 / (384 * E * In);
     const F1 = f(p1, Ei, I.Ip), F2 = f(p2, Ev, I.It), F3 = f(I.qs, Ev, I.It), Fg = F1 + 2 / 3 * F2 + F3;
     const sup = 0.564 * pow(I.L, 1.184), inf = 0.035 * pow(I.L, 1.5);
     return {
-      steps: [S("Ei", L`E_i`, Ei_, Ei, "MPa", 0), S("Ev", L`E_v`, Ev_, Ev, "MPa", 0),
+      steps: [S("Ei", L`E_{ij}`, L`11\,000\,f_{cj}^{1/3}` + "\\quad\\text{(à la pose)}", Ei, "MPa", 0), S("Ev", L`E_v`, Ev_, Ev, "MPa", 0),
         S("p1", L`p_1`, L`\gamma\,(A_p + b_h\,e_h)`, p1, "kN/ml", 3),
-        R("F1", L`F_1`, L`\dfrac{5\,p_1\,L^4}{384\,E_i\,I_p}`, F1, "mm", 2),
+        R("F1", L`F_1`, L`\dfrac{5\,p_1\,L^4}{384\,E_{ij}\,I_p}`, F1, "mm", 2),
         S("p2", L`p_2`, L`\gamma\,A_t`, p2, "kN/ml", 3),
         R("F2", L`F_2`, L`\dfrac{5\,p_2\,L^4}{384\,E_v\,I_t}`, F2, "mm", 2),
         R("F3", L`F_3`, L`\dfrac{5\,q_{sup}\,L^4}{384\,E_v\,I_t}`, F3, "mm", 2),
@@ -272,7 +292,8 @@ const CALCS = [
         S("sup", L`CF_{max}^{PRA}`, L`0{,}564\,L^{1{,}184}`, sup, "mm", 2), S("inf", L`CF_{min}^{PRA}`, L`0{,}035\,L^{1{,}5}`, inf, "mm", 2)],
       checks: [C("Contre-flèche retenue ≥ flèche globale", I.CF >= Fg, `${fmt(I.CF, 0)} mm ≥ ${fmt(Fg, 1)} mm`)],
       tables: [cfTable(I.L, I.CF)], fig: figParabole(I.L, I.CF),
-      notes: ["$F_1$ : poutre seule sous poids propre et hourdis frais. $F_2$ : flèche qu'aurait le tablier sans phasage ; du fait du phasage, les poutres fléchissent à long terme de $F_1 + \\tfrac{2}{3}F_2$. $F_3$ : superstructures."],
+      notes: ["$F_1$ : poutre seule sous poids propre et hourdis frais, avec le module instantané à la date de pose. $F_2$ : flèche qu'aurait le tablier sans phasage ; du fait du phasage, les poutres fléchissent à long terme de $F_1 + \\tfrac{2}{3}F_2$. $F_3$ : superstructures.",
+        "Pour des poutres précontraintes, déduire la contre-flèche due à la précontrainte (non comptée ici)."],
     };
   } },
 
@@ -300,21 +321,23 @@ const CALCS = [
       tables: [cfTable(I.L, I.f, true)], fig: figParabole(I.L, I.f) };
   } },
 
-{ id: "fleche-mur", cat: "Flèches & rotations", t: "Flèche d'un mur en console sous poussée", ref: "RDM — charge triangulaire $pl^4/30EI$, uniforme $pl^4/8EI$",
+{ id: "fleche-mur", cat: "Flèches & rotations", t: "Flèche d'un mur en console sous poussée", ref: "RDM — charge triangulaire $pl^4/30EI$, uniforme $pl^4/8EI$ ; poussée de Rankine",
   desc: "Déplacement en tête d'un voile ou mur de culée sous poussée des terres et de la surcharge.",
-  inputs: [N("l", "Hauteur du mur", "m", 9.7, "l"), N("Ka", "Coefficient de poussée", "", 0.33, L`K_a`), N("g", "Poids volumique du remblai", "kN/m³", 20, L`\gamma`),
+  inputs: [N("l", "Hauteur du mur", "m", 9.7, "l"), N("phi", "Angle de frottement du remblai (0 = Ka saisi)", "°", 0, L`\varphi'`), N("Ka", "Coefficient de poussée", "", 0.33, L`K_a`), N("g", "Poids volumique du remblai", "kN/m³", 20, L`\gamma`),
     N("q", "Surcharge sur remblai", "kN/m²", 20, "q"), N("fc28", "Résistance du béton", "MPa", 30, L`f_{c28}`),
     N("b", "Largeur de calcul", "m", 1, "b"), N("h", "Épaisseur du mur", "m", 1.03, "h")],
   calc(I) {
+    const Ka = I.phi > 0 ? Math.tan((45 - I.phi / 2) * PI / 180) ** 2 : I.Ka;
     const Ev = 3700 * Math.cbrt(I.fc28), Ei = 3 * Ev, In = I.b * I.h ** 3 / 12;
-    const pt = I.Ka * I.g * I.l, pq = I.Ka * I.q;
+    const pt = Ka * I.g * I.l * I.b, pq = Ka * I.q * I.b;
     const ft = pt / 1000 * I.l ** 4 / (30 * Ev * In) * 1000, fq = pq / 1000 * I.l ** 4 / (8 * Ei * In) * 1000;
     return {
-      steps: [S("Ev", L`E_v`, Ev_, Ev, "MPa", 0), S("Ei", L`E_i`, L`3\,E_v`, Ei, "MPa", 0),
-        S("I", "I", L`\dfrac{b\,h^3}{12}`, In, "m⁴", 5), S("pt", L`p_{terres}`, L`K_a\,\gamma\,l`, pt, "kN/m", 2), S("pq", L`p_q`, L`K_a\,q`, pq, "kN/m", 2),
+      steps: [S("Ka", L`K_a`, I.phi > 0 ? L`\tan^2\!\left(45° - \dfrac{\varphi'}{2}\right)` : "~valeur saisie", Ka, "", 3),
+        S("Ev", L`E_v`, Ev_, Ev, "MPa", 0), S("Ei", L`E_i`, L`3\,E_v`, Ei, "MPa", 0),
+        S("I", "I", L`\dfrac{b\,h^3}{12}`, In, "m⁴", 5), S("pt", L`p_{terres}`, L`K_a\,\gamma\,l\,b`, pt, "kN/m", 2), S("pq", L`p_q`, L`K_a\,q\,b`, pq, "kN/m", 2),
         R("ft", L`f_{terres}`, L`\dfrac{p_{terres}\,l^4}{30\,E_v\,I}`, ft, "mm", 2), R("fq", L`f_q`, L`\dfrac{p_q\,l^4}{8\,E_i\,I}`, fq, "mm", 2),
         R("f", L`f_{totale}`, L`f_{terres} + f_q`, ft + fq, "mm", 2)],
-      notes: ["Poussée des terres (charge lente) avec $E_v$ ; surcharge (charge rapide) avec $E_i$."], fig: figMur(),
+      notes: ["Poussée des terres (charge lente) avec $E_v$ ; surcharge (charge rapide) avec $E_i$. Mur supposé encastré en pied (rotation de la semelle non comptée) et section non fissurée."], fig: figMur(),
     };
   } },
 
@@ -330,7 +353,8 @@ const CALCS = [
     const fI = I.sec === "I" ? "~valeur donnée" : I.sec === "P" ? L`n\,\dfrac{\pi\,\varnothing^4}{64}` : L`n\,\dfrac{b\,h^3}{12}`;
     const u = E => 1000 * (I.F / 1000) * I.H ** 3 / (3 * E * In);
     return { steps: [S("Ei", L`E_i`, Ei_, Ei, "MPa", 0), S("Ev", L`E_v`, Ev_, Ev, "MPa", 0),
-      S("In", "I", fI, In, "m⁴", 4), R("ui", L`u_i`, L`\dfrac{F\,H^3}{3\,E_i\,I}`, u(Ei), "mm", 3), R("uv", L`u_v`, L`\dfrac{F\,H^3}{3\,E_v\,I}`, u(Ev), "mm", 3)], fig: figConsole() };
+      S("In", "I", fI, In, "m⁴", 4), R("ui", L`u_i`, L`\dfrac{F\,H^3}{3\,E_i\,I}`, u(Ei), "mm", 3), R("uv", L`u_v`, L`\dfrac{F\,H^3}{3\,E_v\,I}`, u(Ev), "mm", 3)], fig: figConsole(),
+      notes: ["Hypothèse d'encastrement parfait en pied : pour des pieux ou barrettes dans le sol, la souplesse du sol (loi de réaction latérale, page Barrettes) augmente le déplacement."] };
   } },
 
 { id: "rotation", cat: "Flèches & rotations", t: "Rotation sur appui d'une poutre isostatique", ref: "RDM — $\\alpha = pL^3/24EI$ ; $\\alpha = PL^2/16EI$",
@@ -359,18 +383,27 @@ const CALCS = [
         "L : inf(entraxe des poutres de rive, portée) ; G : poids de l'hourdis et des éléments qu'il porte sur L ; S : surcharge B maximale sur L."] };
   } },
 
-{ id: "charge-al", cat: "Charges & répartition", t: "Charge A(L) et freinage", ref: "Fascicule 61 titre II — art. 4.2 et 4.4",
-  desc: "Densité de charge A(L), charge par mètre linéaire et effort de freinage associé.",
-  inputs: [N("L", "Longueur chargée", "m", 9.45, "L"), N("a1", "Coefficient a1", "", 1, L`a_1`), N("V0", "Largeur de référence", "m", 3.5, L`V_0`),
-    N("Lch", "Largeur chargeable", "m", 15, L`L_{ch}`), N("Nv", "Nombre de voies", "U", 5, L`N_v`)],
+{ id: "charge-al", cat: "Charges & répartition", t: "Charge A(L) et freinage", ref: "Fascicule 61 titre II — art. 2, 4.2 et 4.4",
+  desc: "Densité de charge A(L) selon la classe du pont et le nombre de voies chargées, et effort de freinage associé.",
+  inputs: [N("L", "Longueur chargée", "m", 9.45, "L"), N("Lch", "Largeur chargeable", "m", 15, L`L_{ch}`),
+    SEL("cl", "Classe du pont", [["1", "1re classe"], ["2", "2e classe"], ["3", "3e classe"]], "1", ""),
+    N("nc", "Nombre de voies chargées (0 = toutes)", "U", 0, L`n_{ch}`), N("a1f", "a1 imposé (0 = tableau)", "", 0, L`a_1`)],
   calc(I) {
-    const V = I.Lch / I.Nv, a2 = I.V0 / V, AL = 0.23 + 36 / (I.L + 12), Aeff = a2 * max(I.a1 * AL, 0.4 - 0.0002 * I.L);
-    const Sf = I.L * I.Lch, F = Sf * Aeff / (20 + 0.0035 * Sf);
-    return { steps: [S("V", "V", L`\dfrac{L_{ch}}{N_v}`, V, "m", 3), S("a2", L`a_2`, L`\dfrac{V_0}{V}`, a2, "", 4),
+    const Nv = I.Lch < 5 ? 1 : I.Lch < 6 ? 2 : Math.floor(I.Lch / 3 + 1e-9), nc = I.nc > 0 ? min(Math.round(I.nc), Nv) : Nv;
+    const T1 = [1, 1, 0.9, 0.75, 0.7], T2 = [1, 0.9], T3 = [0.9, 0.8];
+    const a1t = I.cl === "1" ? T1[min(nc, 5) - 1] : I.cl === "2" ? T2[min(nc, 2) - 1] : T3[min(nc, 2) - 1];
+    const a1 = I.a1f > 0 ? I.a1f : a1t, V0 = { 1: 3.5, 2: 3.0, 3: 2.75 }[I.cl], V = I.Lch / Nv, a2 = V0 / V;
+    const AL = 0.23 + 36 / (I.L + 12), A1 = max(a1 * AL, 0.4 - 0.0002 * I.L), Aeff = a2 * A1;
+    const larg = nc * V, Sf = I.L * larg, F = Sf * Aeff / (20 + 0.0035 * Sf);
+    return { steps: [S("Nv", L`N_v`, I.Lch < 5 ? "~une seule voie" : I.Lch < 6 ? "~chaussée de 5 à 6 m : deux voies" : L`E\!\left(\dfrac{L_{ch}}{3}\right)`, Nv, "U", 0),
+      S("V", "V", L`\dfrac{L_{ch}}{N_v}`, V, "m", 3), S("a1", L`a_1`, I.a1f > 0 ? "~valeur imposée" : `~tableau art. 4.2.2 (${I.cl === "1" ? "1re" : I.cl + "e"} classe, ${nc} voie${nc > 1 ? "s" : ""} chargée${nc > 1 ? "s" : ""})`, a1, "", 3),
+      S("a2", L`a_2`, L`\dfrac{V_0}{V}` + ` \\quad (V_0 = ${String(V0).replace(".", "{,}")}\\ \\text{m})`, a2, "", 4),
       S("AL", "A(L)", L`0{,}23 + \dfrac{36}{L + 12}`, AL, "t/m²", 4),
-      R("A", "A", L`a_2\,\max\left(a_1\,A(L)\ ;\ 0{,}4 - 0{,}0002\,L\right)`, Aeff, "t/m²", 4), R("Aml", L`A\,L_{ch}`, "~charge par mètre linéaire", Aeff * I.Lch, "t/ml", 3),
-      S("Sf", "S", L`L\,L_{ch}`, Sf, "m²", 2), S("fr", L`\phi`, L`\dfrac{1}{20 + 0{,}0035\,S}`, 1 / (20 + 0.0035 * Sf), "", 5),
-      R("F", L`F_{freinage}`, L`\dfrac{S\,A}{20 + 0{,}0035\,S}`, F, "t", 3), S("FkN", "", "~soit", F * 9.81, "kN", 1)] };
+      R("A", "A", L`a_2\,\max\left(a_1\,A(L)\ ;\ 0{,}4 - 0{,}0002\,L\right)`, Aeff, "t/m²", 4), R("Aml", L`A\cdot n_{ch}\,V`, "~charge par mètre linéaire sur les voies chargées", Aeff * larg, "t/ml", 3),
+      S("Sf", "S", L`L \cdot n_{ch}\,V`, Sf, "m²", 2), S("fr", L`\phi`, L`\dfrac{1}{20 + 0{,}0035\,S}`, 1 / (20 + 0.0035 * Sf), "", 5),
+      R("F", L`F_{freinage}`, L`\dfrac{S\,A}{20 + 0{,}0035\,S}`, F, "t", 3), S("FkN", "", "~soit", F * 9.81, "kN", 1)],
+      notes: ["Le coefficient $a_1$ dépend du nombre de voies effectivement chargées : on recherche le cas le plus défavorable en faisant varier $n_{ch}$.",
+        "Fascicule 61 titre II : $V_0$ = 3,50 m (1re classe), 3,00 m (2e), 2,75 m (3e)."] };
   } },
 
 { id: "courbon", cat: "Charges & répartition", t: "Répartition transversale — méthode de Courbon", ref: "Méthode de Courbon (tablier infiniment rigide en torsion)",
@@ -389,55 +422,72 @@ const CALCS = [
 
 { id: "freinage-lgv", cat: "Charges & répartition", t: "Démarrage et freinage ferroviaires", ref: "NF EN 1991-2 — §6.5.3",
   desc: "Forces longitudinales de démarrage et de freinage pour une voie.",
-  inputs: [SEL("mod", "Modèle de charge", [["71", "LM71, SW/0, HSLM"], ["SW2", "SW/2"]], "71", ""), N("L", "Longueur d'influence", "m", 24, L`L_{a,b}`), N("a", "Coefficient α", "", 1, L`\alpha`)],
+  inputs: [SEL("mod", "Modèle de charge", [["71", "LM71 / SW/0 / HSLM"], ["SW2", "SW/2"]], "71", ""), N("L", "Longueur d'influence", "m", 24, L`L_{a,b}`), N("a", "Coefficient de classification α (LM71, SW/0)", "", 1, L`\alpha`)],
   calc(I) {
-    const Qa = min(33 * I.L, 1000) * I.a, Qb = (I.mod === "SW2" ? 35 * I.L : min(20 * I.L, 6000)) * I.a;
+    const al = I.mod === "SW2" ? 1 : I.a;
+    const Qa = min(33 * I.L, 1000) * al, Qb = (I.mod === "SW2" ? 35 * I.L : min(20 * I.L, 6000)) * al;
     return { steps: [R("Qla", L`Q_{la,k}`, L`\alpha\,\min\left(33\,L_{a,b}\ ;\ 1\,000\right)`, Qa, "kN", 1),
-      R("Qlb", L`Q_{lb,k}`, I.mod === "SW2" ? L`\alpha\cdot 35\,L_{a,b}` : L`\alpha\,\min\left(20\,L_{a,b}\ ;\ 6\,000\right)`, Qb, "kN", 1)],
-      notes: ["Ces forces ne sont pas majorées dynamiquement et peuvent être minorées selon les tableaux 6.5 et 6.6.",
-        "Au maximum : démarrage sur une voie et freinage sur une deuxième voie."] };
+      R("Qlb", L`Q_{lb,k}`, I.mod === "SW2" ? L`35\,L_{a,b}` : L`\alpha\,\min\left(20\,L_{a,b}\ ;\ 6\,000\right)`, Qb, "kN", 1)],
+      notes: [I.mod === "SW2" ? "Le coefficient α ne s'applique pas au modèle SW/2." : "α s'applique aux modèles LM71 et SW/0 (§6.3.2).",
+        "Forces non majorées dynamiquement, à combiner avec les charges verticales correspondantes ; pour les voies multiples, voir §6.8.1 et le tableau 6.11."] };
   } },
 
 /* ══════════════ PRÉCONTRAINTE ══════════════ */
-{ id: "allongement", cat: "Précontrainte", t: "Allongement des câbles et coefficient de transmission", ref: "BPEL 91 — pertes par frottement",
+{ id: "allongement", cat: "Précontrainte", t: "Allongement des câbles et coefficient de transmission", ref: "BPEL 91 — art. 3.3.1 (pertes par frottement)",
   desc: "Allongement théorique d'un câble tendu des deux côtés et rapport de transmission théorique.",
   inputs: [N("s0", "Tension à l'origine", "MPa", 1378.88, L`\sigma_0`), N("Ap", "Section d'un toron", "mm²", 150, L`A_p`), N("nc", "Nombre de torons", "U", 12, "n"),
     N("L", "Longueur ancrage → milieu", "m", 34, "L"), N("E", "Module des câbles", "MPa", 190000, L`E_p`),
     N("f", "Coefficient de frottement en courbe", "rad⁻¹", 0.2, "f"), N("phi", "Coefficient de perte en ligne", "m⁻¹", 0.002, L`\varphi`), N("al", "Déviation angulaire cumulée", "rad", 0.387891, L`\alpha`)],
   calc(I) {
-    const sm = I.s0 * exp(-I.f * I.al - I.phi * I.L), dl = I.L / I.E * (I.s0 + sm) / 2 * 1000, ct = (sm / I.s0) ** 2, P = I.s0 * I.Ap * I.nc / 1e6;
+    const k = I.f * I.al + I.phi * I.L, sm = I.s0 * exp(-k), dl = I.L / I.E * I.s0 * (1 - exp(-k)) / k * 1000, dlm = I.L / I.E * (I.s0 + sm) / 2 * 1000;
+    const ct = (sm / I.s0) ** 2, P = I.s0 * I.Ap * I.nc / 1e6;
     return { steps: [S("P", L`P_0`, L`\sigma_0\,A_p\,n`, P, "MN", 4), S("Pt", "", "~soit", P * 102, "t", 2),
-      R("sm", L`\sigma_{mil}`, L`\sigma_0\,e^{-(f\,\alpha + \varphi\,L)}`, sm, "MPa", 2),
-      R("dl", L`\Delta L`, L`\dfrac{L}{E_p}\cdot\dfrac{\sigma_0 + \sigma_{mil}}{2}`, dl, "mm", 2), S("dl2", L`2\,\Delta L`, "~allongement total (deux côtés actifs)", 2 * dl, "mm", 2),
-      R("ct", L`\dfrac{T_p}{T_a}`, L`\left(\dfrac{\sigma_{mil}}{\sigma_0}\right)^2`, ct, "", 4), S("Tp", L`\sigma_{passif}`, L`\dfrac{T_p}{T_a}\,\sigma_0`, ct * I.s0, "MPa", 2)],
-      notes: ["Hypothèses : deux côtés actifs ; pertes par rentrée d'ancrage et raccourcissement élastique non comptées.",
-        "Le coefficient de transmission théorique (sans tarage) se compare au rapport $T_{passif}/T_{actif}$ mesuré lors de l'essai de transmission."] };
+      S("k", "k", L`f\,\alpha + \varphi\,L`, k, "", 4), R("sm", L`\sigma_{mil}`, L`\sigma_0\,e^{-k}`, sm, "MPa", 2),
+      R("dl", L`\Delta L`, L`\dfrac{1}{E_p}\int_0^L \sigma(x)\,dx = \dfrac{\sigma_0\,L}{E_p}\cdot\dfrac{1 - e^{-k}}{k}`, dl, "mm", 2),
+      S("dlm", L`\Delta L_{moy}`, L`\dfrac{L}{E_p}\cdot\dfrac{\sigma_0 + \sigma_{mil}}{2}` + ` \\quad (\\text{approché})`, dlm, "mm", 2), S("dl2", L`2\,\Delta L`, "~allongement total (deux côtés actifs)", 2 * dl, "mm", 2),
+      R("ct", L`\dfrac{T_p}{T_a}`, L`\left(\dfrac{\sigma_{mil}}{\sigma_0}\right)^2 = e^{-2k}`, ct, "", 4), S("Tp", L`\sigma_{passif}`, L`\dfrac{T_p}{T_a}\,\sigma_0`, ct * I.s0, "MPa", 2)],
+      notes: ["Intégrale exacte en supposant la déviation angulaire répartie uniformément le long du câble. Hypothèses : deux côtés actifs ; recul d'ancrage et raccourcissement élastique non comptés.",
+        "Valeurs courantes BPEL : f = 0,16 à 0,20 rad⁻¹ et φ = 0,002 m⁻¹ (gaines métalliques)."] };
   } },
 
 /* ══════════════ BÉTON ARMÉ ══════════════ */
-{ id: "cis-ec2", cat: "Béton armé", t: "Armatures d'effort tranchant (bielles)", ref: "NF EN 1992-1-1 — §6.2.3, expression (6.8)",
-  desc: "Section d'armatures transversales par mètre, à l'ELU et en situation accidentelle.",
+{ id: "cis-ec2", cat: "Béton armé", t: "Effort tranchant : armatures et bielles", ref: "NF EN 1992-1-1 — §6.2.3 (6.8), (6.9), §9.2.2",
+  desc: "Armatures transversales nécessaires, résistance des bielles et pourcentage minimal, à l'ELU et en situation accidentelle.",
   inputs: [H("ELU fondamental"), N("V1", "Effort tranchant", "MN", 6.067, L`V_{Ed}`), N("cot1", "Inclinaison des bielles", "", 1.5, L`\cot\theta`), N("g1", "Coefficient acier", "", 1.15, L`\gamma_s`),
     H("ELA / sismique"), N("V2", "Effort tranchant", "MN", 9.588, L`V_{Ed}`), N("cot2", "Inclinaison des bielles", "", 2.5, L`\cot\theta`), N("g2", "Coefficient acier", "", 1, L`\gamma_s`),
-    H("Section"), N("d", "Hauteur utile", "m", 1.928, "d"), N("fyk", "Limite élastique des cadres", "MPa", 500, L`f_{ywk}`)],
+    H("Section"), N("d", "Hauteur utile", "m", 1.928, "d"), N("bw", "Largeur d'âme", "m", 1, L`b_w`), N("fck", "Béton", "MPa", 35, L`f_{ck}`), N("fyk", "Limite élastique des cadres", "MPa", 500, L`f_{ywk}`)],
   calc(I) {
     const z = 0.9 * I.d, r = (V, c, g) => V / (z * I.fyk / g * c) * 1e4;
-    return { steps: [S("z", "z", L`0{,}9\,d`, z, "m", 3), S("fyd1", L`f_{ywd}^{ELU}`, L`\dfrac{f_{ywk}}{\gamma_s}`, I.fyk / I.g1, "MPa", 1),
-      R("A1", L`\left(\dfrac{A_{sw}}{s}\right)_{ELU}`, L`\dfrac{V_{Ed}}{z\,f_{ywd}\,\cot\theta}`, r(I.V1, I.cot1, I.g1), "cm²/ml", 2),
-      S("fyd2", L`f_{ywd}^{ELA}`, L`\dfrac{f_{ywk}}{\gamma_s}`, I.fyk / I.g2, "MPa", 1),
-      R("A2", L`\left(\dfrac{A_{sw}}{s}\right)_{ELA}`, L`\dfrac{V_{Ed}}{z\,f_{ywd}\,\cot\theta}`, r(I.V2, I.cot2, I.g2), "cm²/ml", 2),
-      R("Amax", L`\dfrac{A_{sw}}{s}`, "~valeur dimensionnante", max(r(I.V1, I.cot1, I.g1), r(I.V2, I.cot2, I.g2)), "cm²/ml", 2)],
-      notes: ["Vérifier par ailleurs la compression des bielles $V_{Rd,max}$ (6.9) et $1 \\le \\cot\\theta \\le 2{,}5$."] };
+    const nu1 = 0.6 * (1 - I.fck / 250), vrd = (c, gc) => I.bw * z * nu1 * (I.fck / gc) / (c + 1 / c);
+    const A1 = r(I.V1, I.cot1, I.g1), A2 = r(I.V2, I.cot2, I.g2), rmin = 0.08 * sqrt(I.fck) / I.fyk, Amin = rmin * I.bw * 1e4;
+    const VR1 = vrd(I.cot1, 1.5), VR2 = vrd(I.cot2, 1.2);
+    return { steps: [S("z", "z", L`0{,}9\,d`, z, "m", 3),
+      R("A1", L`\left(\dfrac{A_{sw}}{s}\right)_{ELU}`, L`\dfrac{V_{Ed}}{z\,f_{ywd}\,\cot\theta}`, A1, "cm²/ml", 2),
+      R("A2", L`\left(\dfrac{A_{sw}}{s}\right)_{ELA}`, L`\dfrac{V_{Ed}}{z\,f_{ywd}\,\cot\theta}`, A2, "cm²/ml", 2),
+      S("Amin", L`\left(\dfrac{A_{sw}}{s}\right)_{min}`, L`0{,}08\,\dfrac{\sqrt{f_{ck}}}{f_{yk}}\,b_w`, Amin, "cm²/ml", 2),
+      R("Amax", L`\dfrac{A_{sw}}{s}`, "~valeur à retenir (maximum)", max(A1, A2, Amin), "cm²/ml", 2),
+      S("nu1", L`\nu_1`, L`0{,}6\left(1 - \dfrac{f_{ck}}{250}\right)`, nu1, "", 3),
+      S("VR1", L`V_{Rd,max}^{ELU}`, L`\dfrac{b_w\,z\,\nu_1\,f_{cd}}{\cot\theta + \tan\theta}`, VR1, "MN", 3), S("VR2", L`V_{Rd,max}^{ELA}`, "~idem avec $\\gamma_c = 1{,}2$", VR2, "MN", 3)],
+      checks: [C("Bielles ELU : $V_{Ed} \\le V_{Rd,max}$", I.V1 <= VR1, `${fmt(I.V1, 2)} ≤ ${fmt(VR1, 2)} MN`), C("Bielles ELA : $V_{Ed} \\le V_{Rd,max}$", I.V2 <= VR2, `${fmt(I.V2, 2)} ≤ ${fmt(VR2, 2)} MN`),
+        C("$1 \\le \\cot\\theta \\le 2{,}5$", [I.cot1, I.cot2].every(c => c >= 1 && c <= 2.5), `${fmt(I.cot1, 2)} et ${fmt(I.cot2, 2)}`)],
+      notes: ["$\\alpha_{cw} = 1$ (pas de précontrainte), cadres verticaux. $f_{ywd} = f_{ywk}/\\gamma_s$, $f_{cd} = f_{ck}/\\gamma_c$ avec $\\alpha_{cc} = 1$."] };
   } },
 
-{ id: "cis-circulaire", cat: "Béton armé", t: "Cisaillement d'un fût circulaire creux", ref: "Résistance des matériaux — section tubulaire",
-  desc: "Contrainte de cisaillement maximale dans un fût de pile creux et densité d'armatures dans l'épaisseur.",
-  inputs: [N("D", "Diamètre extérieur", "m", 2.4, "D"), N("e", "Épaisseur", "m", 0.4, "e"), N("V", "Effort tranchant", "kN", 1161, "V"), N("fe", "Acier", "MPa", 500, L`f_e`), N("gs", "Coefficient acier", "", 1, L`\gamma_s`)],
+{ id: "cis-circulaire", cat: "Béton armé", t: "Cisaillement d'un fût circulaire creux", ref: "RDM (τ = V·S/I·b) ; BAEL 91 — A.5.1.2",
+  desc: "Contrainte de cisaillement maximale dans un fût de pile creux, contrainte limite et armatures dans l'épaisseur.",
+  inputs: [N("D", "Diamètre extérieur", "m", 2.4, "D"), N("e", "Épaisseur", "m", 0.4, "e"), N("V", "Effort tranchant", "kN", 1161, "V"),
+    N("fe", "Acier", "MPa", 500, L`f_e`), N("gs", "Coefficient acier", "", 1, L`\gamma_s`), N("fc", "Béton", "MPa", 35, L`f_{c28}`), N("gb", "Coefficient béton", "", 1.15, L`\gamma_b`),
+    SEL("fis", "Fissuration", [["pp", "Peu préjudiciable"], ["p", "Préjudiciable ou très préjudiciable"]], "p", "")],
   calc(I) {
-    const Di = I.D - 2 * I.e, In = PI * (I.D ** 4 - Di ** 4) / 64, t = (I.V / 1000) * (I.D / 2) ** 2 / In, A = I.gs * I.e * t / (0.9 * I.fe) * 1e4;
+    const R0 = I.D / 2, r0 = R0 - I.e, Di = I.D - 2 * I.e, In = PI * (I.D ** 4 - Di ** 4) / 64, Sm = 2 / 3 * (R0 ** 3 - r0 ** 3), b = 2 * I.e;
+    const t = (I.V / 1000) * Sm / (In * b), A = I.gs * I.e * t / (0.9 * I.fe) * 1e4;
+    const tl = I.fis === "pp" ? min(0.2 * I.fc / I.gb, 5) : min(0.15 * I.fc / I.gb, 4);
     return { steps: [S("Di", L`D_i`, L`D - 2\,e`, Di, "m", 3), S("I", "I", L`\dfrac{\pi\,(D^4 - D_i^4)}{64}`, In, "m⁴", 4),
-      R("tau", L`\tau_{max}`, L`\dfrac{V\,S}{I\,b} = \dfrac{V\,R^2}{I}`, t, "MPa", 3), R("A", L`\dfrac{A_t}{s_t}`, L`\dfrac{\gamma_s\,e\,\tau_{max}}{0{,}9\,f_e}`, A, "cm²/ml", 2)],
-      notes: ["k = 0 (reprise de bétonnage tolérée). La densité est à répartir sur les deux nappes de l'épaisseur."], fig: figTube(I.D, I.e) };
+      S("S", "S", L`\dfrac{2}{3}\left(R^3 - r^3\right)` + "\\quad\\text{(demi-section)}", Sm, "m³", 4), S("b", "b", L`2\,e`, b, "m", 3),
+      R("tau", L`\tau_{max}`, L`\dfrac{V\,S}{I\,b}`, t, "MPa", 3), S("tl", L`\bar\tau_u`, I.fis === "pp" ? L`\min\left(0{,}20\,\dfrac{f_{c28}}{\gamma_b}\ ;\ 5\ \text{MPa}\right)` : L`\min\left(0{,}15\,\dfrac{f_{c28}}{\gamma_b}\ ;\ 4\ \text{MPa}\right)`, tl, "MPa", 2),
+      R("A", L`\dfrac{A_t}{s_t}`, L`\dfrac{\gamma_s\,e\,\tau_{max}}{0{,}9\,f_e}` + "\\quad\\text{(par paroi)}", A, "cm²/ml", 2)],
+      checks: [C("$\\tau_{max} \\le \\bar\\tau_u$", t <= tl, `${fmt(t, 2)} ≤ ${fmt(tl, 2)} MPa`)],
+      notes: ["Section creuse épaisse : $S$ moment statique de la demi-couronne par rapport à l'axe neutre, $b = 2e$ largeur coupée par l'axe neutre. Armatures : BAEL A.5.1.23 avec k = 0 (reprise de bétonnage), cadres droits ; la densité vaut pour chacune des deux parois coupées."], fig: figTube(I.D, I.e) };
   } },
 
 { id: "frettage", cat: "Béton armé", t: "Frettes sous appareils d'appui", ref: "Règle des 4 % de la réaction",
@@ -450,61 +500,69 @@ const CALCS = [
       S("n", L`n_{min}`, L`\dfrac{A}{A_{\varnothing}}`, n, "U", 2), R("nr", "n", "~brins retenus par sens", Math.ceil(n), "U", 0)] };
   } },
 
-{ id: "levage-trous", cat: "Béton armé", t: "Levage des poutres : réservations", ref: "Règle des 4 % de l'effort concentré",
+{ id: "levage-trous", cat: "Béton armé", t: "Levage des poutres : réservations", ref: "Règle des 4 % de l'effort concentré (aciers à 2/3 de fe)",
   desc: "Ferraillage autour des trous de levage d'une poutre préfabriquée.",
   inputs: [N("fe", "Acier des réservations", "MPa", 235, L`f_e`),
     N("S1", "Aire sur appuis", "m²", 0.8085, L`S_{max}`), N("S3", "Aire à mi-travée", "m²", 0.8085, L`S_{min}`),
-    N("L1", "Longueur à Smax", "m", 27.5, L`L_1`), N("L2", "Longueur à Smoy", "m", 0, L`L_2`), N("L3", "Longueur à Smin", "m", 0, L`L_3`), N("g", "Masse volumique", "t/m³", 2.5, L`\rho`)],
+    N("L1", "Longueur à Smax", "m", 27.5, L`L_1`), N("L2", "Longueur à Smoy", "m", 0, L`L_2`), N("L3", "Longueur à Smin", "m", 0, L`L_3`), N("g", "Masse volumique", "t/m³", 2.5, L`\rho`),
+    N("kd", "Coefficient dynamique de levage", "", 1, L`k_d`)],
   calc(I) {
-    const Sm = (I.S1 + I.S3) / 2, V = I.S1 * I.L1 + Sm * I.L2 + I.S3 * I.L3, P = I.g * V, F = P / 2, A = 0.04 * (F / 100) / (2 / 3 * I.fe) * 1e4;
+    const Sm = (I.S1 + I.S3) / 2, V = I.S1 * I.L1 + Sm * I.L2 + I.S3 * I.L3, P = I.g * V, F = I.kd * P / 2, A = 0.04 * (F / 100) / (2 / 3 * I.fe) * 1e4;
     return { steps: [S("Sm", L`S_{moy}`, L`\dfrac{S_{max} + S_{min}}{2}`, Sm, "m²", 4), S("Lp", L`L_{poutre}`, L`L_1 + L_2 + L_3`, I.L1 + I.L2 + I.L3, "m", 2),
-      S("V", "V", L`\textstyle\sum S_i\,L_i`, V, "m³", 3), R("P", "P", L`\rho\,V`, P, "t", 3), R("F", "F", L`\dfrac{P}{2}`, F, "t", 3),
+      S("V", "V", L`\textstyle\sum S_i\,L_i`, V, "m³", 3), R("P", "P", L`\rho\,V`, P, "t", 3), R("F", "F", L`k_d\,\dfrac{P}{2}`, F, "t", 3),
       R("A", "A", L`\dfrac{0{,}04\,F}{\tfrac{2}{3}\,f_e}`, A, "cm²", 3)], fig: figLevage(false),
-      notes: ["A est à disposer dans les deux sens autour de chaque réservation."] };
+      notes: ["A est à disposer dans les deux directions autour de chaque réservation.", "Un coefficient dynamique de 1,15 à 1,30 est usuel pour la manutention (à préciser selon le mode de levage)."] };
   } },
 
-{ id: "levage-crochets", cat: "Béton armé", t: "Levage des poutres : consoles et crochets", ref: "ELS — section rectangulaire ($n = 15$) ; crochets en acier doux",
+{ id: "levage-crochets", cat: "Béton armé", t: "Levage des poutres : consoles et crochets", ref: "BAEL 91 — A.4.5 (ELS, n = 15) ; crochets en acier doux",
   desc: "Contraintes dans le béton et les aciers supérieurs au droit des crochets, et contrainte dans les crochets.",
-  inputs: [N("fc", "Béton au levage", "MPa", 35, L`f_c`), N("fe", "Aciers supérieurs", "MPa", 500, L`f_e`), N("As", "Section des aciers sup.", "cm²", 4.68, L`A_{sup}`),
+  inputs: [N("fc", "Béton au levage", "MPa", 35, L`f_{cj}`), N("fe", "Aciers supérieurs", "MPa", 500, L`f_e`), N("As", "Section des aciers sup.", "cm²", 4.68, L`A_{sup}`),
     SEL("fis", "Fissuration", [["PP", "Peu préjudiciable"], ["P", "Préjudiciable"], ["TP", "Très préjudiciable"]], "P", ""),
     N("A", "Aire de la poutre", "m²", 0.5, "A"), N("b", "Largeur d'âme", "m", 0.4, L`b_0`), N("h", "Hauteur totale", "m", 1, "h"), N("c", "Enrobage aux aciers", "m", 0.05, "c"),
-    N("a", "Porte-à-faux crochet → about", "m", 0.9, "a"), N("Lc", "Entraxe des crochets", "m", 17.75, L`L_c`),
+    N("a", "Porte-à-faux crochet → about", "m", 0.9, "a"), N("Lc", "Entraxe des crochets", "m", 17.75, L`L_c`), N("kd", "Coefficient dynamique de levage", "", 1, L`k_d`),
     N("nc", "Brins par crochet", "U", 2, L`n_b`), SEL("phi", "Diamètre des crochets", Object.keys(ACIER_HA).map(k => [k, "Ø" + k]), "25", L`\varnothing`), N("fec", "Acier des crochets", "MPa", 235, L`f_{e,c}`)],
   calc(I) {
-    const M = 25 * I.A * I.a ** 2 / 2, s = elsRect(M, I.b, I.h, I.c, I.As);
-    const ssl = I.fis === "PP" ? I.fe : I.fis === "P" ? I.fe / 2 : 200, sbl = 0.6 * I.fc;
-    const Lp = 2 * I.a + I.Lc, P = 2.5 * I.A * Lp, Ac = I.nc * ACIER_HA[I.phi], sc = (P / 2) / 100 / (Ac / 1e4);
-    return { steps: [R("M", "M", L`\dfrac{\gamma\,A\,a^2}{2}`, M, "kN·m", 3), S("y", L`y_1`, L`\tfrac{1}{2}\,b_0\,y_1^2 = 15\,A_{sup}\,(d - y_1)`, s.y, "m", 4),
+    const M = I.kd * 25 * I.A * I.a ** 2 / 2, s = elsRect(M, I.b, I.h, I.c, I.As);
+    const ftj = 0.6 + 0.06 * I.fc, fp = min(2 / 3 * I.fe, max(0.5 * I.fe, 110 * sqrt(1.6 * ftj)));
+    const ssl = I.fis === "PP" ? I.fe : I.fis === "P" ? fp : 0.8 * fp, sbl = 0.6 * I.fc;
+    const Lp = 2 * I.a + I.Lc, P = 2.5 * I.A * Lp, Ac = I.nc * ACIER_HA[I.phi], sc = I.kd * (P / 2) / 100 / (Ac / 1e4);
+    return { steps: [R("M", "M", L`k_d\,\dfrac{\gamma\,A\,a^2}{2}`, M, "kN·m", 3), S("y", L`y_1`, L`\tfrac{1}{2}\,b_0\,y_1^2 = 15\,A_{sup}\,(d - y_1)`, s.y, "m", 4),
       R("ss", L`\sigma_s`, L`\dfrac{15\,M\,(d - y_1)}{I}`, s.ss, "MPa", 1), R("sb", L`\sigma_b`, L`\dfrac{M\,y_1}{I}`, s.sb, "MPa", 2),
+      S("ssl", L`\bar\sigma_s`, I.fis === "PP" ? L`f_e` : (I.fis === "TP" ? L`0{,}8\,` : "") + L`\min\left(\tfrac{2}{3}f_e\ ;\ \max\left(0{,}5\,f_e\ ;\ 110\sqrt{\eta\,f_{tj}}\right)\right)`, ssl, "MPa", 1),
       S("Lp", L`L_{poutre}`, L`2\,a + L_c`, Lp, "m", 2), R("P", "P", L`\rho\,A\,L_{poutre}`, P, "t", 3), S("P2", L`P/2`, "~par crochet", P / 2, "t", 3),
-      S("Ac", L`A_{crochet}`, `~${I.nc} Ø${I.phi}`, Ac, "cm²", 2), R("sc", L`\sigma_{crochet}`, L`\dfrac{P/2}{A_{crochet}}`, sc, "MPa", 1)],
-      checks: [C("$\\sigma_s \\le \\bar\\sigma_s$", s.ss <= ssl, `${fmt(s.ss, 0)} ≤ ${fmt(ssl, 0)} MPa`), C("$\\sigma_b \\le 0{,}6\\,f_c$", s.sb <= sbl, `${fmt(s.sb, 1)} ≤ ${fmt(sbl, 1)} MPa`),
+      S("Ac", L`A_{crochet}`, `~${I.nc} Ø${I.phi}`, Ac, "cm²", 2), R("sc", L`\sigma_{crochet}`, L`k_d\,\dfrac{P/2}{A_{crochet}}`, sc, "MPa", 1)],
+      checks: [C("$\\sigma_s \\le \\bar\\sigma_s$", s.ss <= ssl, `${fmt(s.ss, 0)} ≤ ${fmt(ssl, 0)} MPa`), C("$\\sigma_b \\le 0{,}6\\,f_{cj}$", s.sb <= sbl, `${fmt(s.sb, 1)} ≤ ${fmt(sbl, 1)} MPa`),
         C("$\\sigma_{crochet} \\le f_{e,c}$", sc <= I.fec, `${fmt(sc, 0)} ≤ ${fmt(I.fec, 0)} MPa`)],
-      vals: { ssl, sbl }, fig: figLevage(true), notes: ["$d = h - c$ ; $I = \\tfrac{1}{3}\\,b_0\\,y_1^3 + 15\\,A_{sup}\\,(d - y_1)^2$. On ne compte que sur un seul crochet par extrémité."] };
+      vals: { ssl, sbl }, fig: figLevage(true), notes: ["$d = h - c$ ; $I = \\tfrac{1}{3}\\,b_0\\,y_1^3 + 15\\,A_{sup}\\,(d - y_1)^2$ ; η = 1,6 (barres HA). On ne compte que sur un seul crochet par extrémité ; pour des crochets en acier doux, une contrainte limitée à 2/3 de $f_e$ est souvent retenue par prudence."] };
   } },
 
-{ id: "predalles", cat: "Béton armé", t: "Prédalles non participantes", ref: "Flexion simple de la prédalle seule",
-  desc: "Vérification de la prédalle au coulage du béton de remplissage.",
+{ id: "predalles", cat: "Béton armé", t: "Prédalles non participantes", ref: "Flexion simple de la prédalle seule ; NF EN 1991-1-6 §4.11.2 (charges de chantier)",
+  desc: "Vérification de la prédalle (fibrociment, béton…) au coulage du béton de remplissage.",
   inputs: [N("L", "Portée de la prédalle", "m", 0.625, "L"), N("ep", "Épaisseur de la prédalle", "m", 0.012, L`e_p`), N("H", "Épaisseur de béton coulé", "m", 0.36, "H"),
-    N("gp", "Poids volumique prédalle", "kN/m³", 14, L`\gamma_p`), N("gb", "Poids volumique du remplissage", "kN/m³", 26, L`\gamma_b`), N("sl", "Contrainte limite", "MPa", 18, L`\bar\sigma`)],
+    N("gp", "Poids volumique prédalle", "kN/m³", 14, L`\gamma_p`), N("gb", "Poids volumique du remplissage", "kN/m³", 26, L`\gamma_b`),
+    N("qc", "Charge de chantier", "kN/m²", 0, L`q_c`), N("sl", "Contrainte limite du matériau", "MPa", 18, L`\bar\sigma`)],
   calc(I) {
-    const p = I.ep * I.gp + I.H * I.gb, M = p * I.L ** 2 / 8, In = I.ep ** 3 / 12, v = I.ep / 2, s = (M / 1000) * v / In, Fs = I.sl / s;
-    return { steps: [S("p", "p", L`e_p\,\gamma_p + H\,\gamma_b`, p, "kN/ml", 3), S("M", "M", L`\dfrac{p\,L^2}{8}`, M, "kN·m/ml", 4),
+    const p = I.ep * I.gp + I.H * I.gb + I.qc, M = p * I.L ** 2 / 8, In = I.ep ** 3 / 12, v = I.ep / 2, s = (M / 1000) * v / In, Fs = I.sl / s;
+    return { steps: [S("p", "p", L`e_p\,\gamma_p + H\,\gamma_b + q_c`, p, "kN/m²", 3), S("M", "M", L`\dfrac{p\,L^2}{8}`, M, "kN·m/ml", 4),
       S("I", "I", L`\dfrac{e_p^3}{12}`, In, "m⁴/ml", "e"), S("v", "v", L`\dfrac{e_p}{2}`, v, "m", 4), R("s", L`\sigma_{max}`, L`\dfrac{M\,v}{I}`, s, "MPa", 2), R("Fs", L`F_s`, L`\dfrac{\bar\sigma}{\sigma_{max}}`, Fs, "", 3)],
-      checks: [C("$\\sigma_{max} \\le \\bar\\sigma$ ($F_s \\ge 1$)", Fs >= 1, `$F_s$ = ${fmt(Fs, 2)}`)] };
+      checks: [C("$\\sigma_{max} \\le \\bar\\sigma$ ($F_s \\ge 1$)", Fs >= 1, `$F_s$ = ${fmt(Fs, 2)}`)],
+      notes: ["Charges de chantier (EN 1991-1-6 §4.11.2) : 0,75 kN/m² hors zone de travail, plus 10 % du poids du béton (≥ 0,75 et ≤ 1,5 kN/m²) sur la zone de travail de 3 m × 3 m.", "$\\bar\\sigma$ : contrainte admissible du matériau de la prédalle (donnée du fabricant)."] };
   } },
 
 /* ══════════════ ACIER ══════════════ */
-{ id: "serrage", cat: "Charpente métallique", t: "Couple de serrage des boulons précontraints", ref: "NF EN 1090-2 — §8.5",
-  desc: "Précontrainte nominale et couples des phases de serrage.",
+{ id: "serrage", cat: "Charpente métallique", t: "Couple de serrage des boulons précontraints", ref: "NF EN 1090-2 — §8.5.1, 8.5.3, 8.5.4 et tableau 21",
+  desc: "Précontrainte nominale, couple de serrage et phases de la méthode du couple et de la méthode combinée.",
   inputs: [SEL("cl", "Classe", [["800", "8.8 (fub 800 MPa)"], ["1000", "10.9 (fub 1 000 MPa)"]], "1000", ""),
-    SEL("M", "Diamètre", Object.keys(BOULONS).map(k => [k, k]), "M27", ""), N("km", "Coefficient de frottement moyen", "", 0.11, L`k_m`)],
+    SEL("M", "Diamètre", Object.keys(BOULONS).map(k => [k, k]), "M27", ""), N("km", "Coefficient de frottement moyen (classe K2)", "", 0.11, L`k_m`),
+    N("t", "Épaisseur totale serrée", "mm", 80, L`t`)],
   calc(I) {
     const fub = +I.cl, As = BOULONS[I.M], d = parseInt(I.M.slice(1), 10), Fp = 0.7 * fub * As / 1000, Mr = I.km * d * Fp;
-    return { steps: [S("fub", L`f_{ub}`, "~classe " + (fub === 800 ? "8.8" : "10.9"), fub, "MPa", 0), S("As", L`A_s`, "~aire résistante " + I.M, As, "mm²", 1),
-      R("Fp", L`F_{p,C}`, L`0{,}7\,f_{ub}\,A_s`, Fp, "kN", 1), R("Mr", L`M_r`, L`k_m\,d\,F_{p,C}`, Mr, "N·m", 0),
-      S("M75", L`0{,}75\,M_r`, "~phase 1 (méthodes combinée et du couple)", 0.75 * Mr, "N·m", 0), S("M110", L`1{,}10\,M_r`, "~phase 2 (méthode du couple)", 1.1 * Mr, "N·m", 0)],
-      notes: ["Méthode combinée : phase 2 par rotation complémentaire selon l'épaisseur des pièces serrées (NF EN 1090-2, tableau 21)."] };
+    const rot = I.t < 2 * d ? 60 : I.t < 6 * d ? 90 : I.t <= 10 * d ? 120 : NaN;
+    return { steps: [S("fub", L`f_{ub}`, "~classe " + (fub === 800 ? "8.8" : "10.9"), fub, "MPa", 0), S("As", L`A_s`, "~section résistante " + I.M, As, "mm²", 1),
+      R("Fp", L`F_{p,C}`, L`0{,}7\,f_{ub}\,A_s`, Fp, "kN", 1), R("Mr", L`M_{r,2}`, L`k_m\,d\,F_{p,C}`, Mr, "N·m", 0),
+      S("M75", L`0{,}75\,M_{r,2}`, "~1re phase (méthode du couple et méthode combinée)", 0.75 * Mr, "N·m", 0), S("M110", L`1{,}10\,M_{r,2}`, "~2e phase, méthode du couple", 1.1 * Mr, "N·m", 0),
+      R("rot", L`\Delta\theta`, isFinite(rot) ? `~2e phase, méthode combinée : t = ${fmt(I.t, 0)} mm (${I.t < 2 * d ? "t < 2d" : I.t < 6 * d ? "2d ≤ t < 6d" : "6d ≤ t ≤ 10d"})` : "~t > 10d : hors tableau 21", isFinite(rot) ? rot : "—", "°", 0)],
+      notes: ["Rotation complémentaire du tableau 21 valable pour les classes 8.8 et 10.9. Couples à appliquer sur l'écrou ; $k_m$ issu de l'étalonnage (classe K2) ou fourni par le fabricant."] };
   } },
 
 /* ══════════════ APPAREILS D'APPUI ══════════════ */
@@ -580,10 +638,11 @@ const CALCS = [
     N("nX", "Files ⊥ au déplacement X", "U", 3, L`n_X`), N("nY", "Files ⊥ au déplacement Y", "U", 2, L`n_Y`), N("B0", "Largeur de référence", "m", 0.6, L`B_0`)],
   calc(I) {
     const r0 = n => (I.a + 4 / 3 * pow(2.65, I.a)) / (n * I.a + 4 / 3 * pow(2.65 * n, I.a));
+    const KF = B => B >= I.B0 ? 12000 * I.EM / (4 / 3 * I.B0 / B * pow(2.65 * B / I.B0, I.a) + I.a) : 12000 * I.EM / (4 / 3 * pow(2.65, I.a) + I.a);
     const sens = (B, Lx, a, b, n) => {
-      const Ls = max(0, Lx - B), Kf = 12000 * I.EM / (4 / 3 * I.B0 / B * pow(2.65 * B / I.B0, I.a) + I.a), Rf = 1000 * B * I.pf, Rs = 1000 * 2 * Ls * I.qs, Ks = Rs === 0 ? 0 : Kf;
+      const Ls = max(0, Lx - B), Kf = KF(B), Rf = 1000 * B * I.pf, Rs = 1000 * 2 * Ls * I.qs, Ks = Rs === 0 ? 0 : Kf;
       const mx = max(B, Lx), SD = { Kf: 1, Rf: a >= 2 * mx ? 1 : a / (2 * mx), Ks: 1, Rs: 1 }, ro = r0(n);
-      const SPD = { Kf: b >= 2 * B ? 1 : b / (2 * B) + ro * (1 - b / (2 * B)), Rf: 1, Ks: b < 2 * B ? 0 : 1, Rs: b >= 2 * Lx ? 1 : (b - 2 * B) / (2 * (Lx - B)) };
+      const SPD = { Kf: b >= 2 * B ? 1 : b / (2 * B) + ro * (1 - b / (2 * B)), Rf: 1, Ks: b < 2 * B ? 0 : 1, Rs: b >= 2 * Lx ? 1 : max(0, (b - 2 * B) / (2 * (Lx - B))) };
       const g = { Kf: SD.Kf * SPD.Kf * Kf, Rf: SD.Rf * SPD.Rf * Rf, Ks: SD.Ks * SPD.Ks * Ks, Rs: SD.Rs * SPD.Rs * Rs };
       const law = (Kf, Rf, Ks, Rs) => ({ K1: Kf + Ks, K2: Kf, R1: 2 * min(Rf, Rs), R2: Rf + Rs });
       return { Kf, Rf, Rs, Ks, SD, SPD, ro, iso: law(Kf, Rf, Ks, Rs), grp: law(g.Kf, g.Rf, g.Ks, g.Rs), g, B };
@@ -594,7 +653,7 @@ const CALCS = [
         KfY: Y.Kf, RfY: Y.Rf, SDRfY: Y.SD.Rf, r0Y: Y.ro, SPDKfY: Y.SPD.Kf, gKfY: Y.g.Kf, gRfY: Y.g.Rf, gR2Y: Y.grp.R2, gK1Yb: Y.grp.K1 / Y.B },
       tables: [
         { title: "Élément isolé", head: ["", "Sens X", "Sens Y"], rows: [
-          row("$K_f = \\dfrac{12\\,000\\,E_M}{\\frac{4}{3}\\frac{B_0}{B}\\left(2{,}65\\frac{B}{B_0}\\right)^{\\alpha} + \\alpha}$ (kN/m/m)", s => s.Kf), row("$R_f = B\\,p_f$ (kN/m)", s => s.Rf),
+          row("$K_f = \\dfrac{12\\,E_M}{\\frac{4}{3}\\frac{B_0}{B}\\left(2{,}65\\frac{B}{B_0}\\right)^{\\alpha} + \\alpha}$ (kN/m/m)", s => s.Kf), row("$R_f = B\\,p_f$ (kN/m)", s => s.Rf),
           row("$R_s = 2\\,(L - B)\\,q_s$ (kN/m)", s => s.Rs), row("$K_1 = K_f + K_s$ (kN/m/m)", s => s.iso.K1),
           row("$R_1 = 2\\min(R_f, R_s)$ (kN/m)", s => s.iso.R1), row("$R_2 = R_f + R_s$ (kN/m)", s => s.iso.R2)], d: [0, 0] },
         { title: "Minorations de groupe", head: ["", "Sens X", "Sens Y"], rows: [
@@ -603,7 +662,7 @@ const CALCS = [
         { title: "Loi finale en groupe (instantané ; différé = K/2)", head: ["", "Sens X", "Sens Y"], rows: [
           row("$K_1$ (kN/m/m)", s => s.grp.K1), row("$K_2$ (kN/m/m)", s => s.grp.K2), row("$R_1$ (kN/m)", s => s.grp.R1), row("$R_2$ (kN/m)", s => s.grp.R2),
           row("$K_1/B$ (kN/m³)", s => s.grp.K1 / s.B), row("$R_2/B$ (kN/m²)", s => s.grp.R2 / s.B)], d: [0, 0] }],
-      notes: ["Sens X : B = épaisseur, L = longueur ; sens Y : rôles inversés. $a_x = E_x - L$, $a_y = E_y - B$."], fig: figBarrettes(I) };
+      notes: ["Sens X : B = épaisseur, L = longueur ; sens Y : rôles inversés. $a_x = E_x - L$, $a_y = E_y - B$. Pour $B < B_0$ : $K_f = 12\\,E_M / [\\frac{4}{3}(2{,}65)^{\\alpha} + \\alpha]$ (annexe C.5). Sollicitations de courte durée : K ; de longue durée : K/2."], fig: figBarrettes(I) };
   } },
 
 { id: "barrettes-sis", cat: "Fondations", t: "Barrettes : raideur sismique", ref: "AFPS 92 — module dynamique du sol",
@@ -652,28 +711,31 @@ const CALCS = [
   } },
 
 /* ══════════════ SÉISME ══════════════ */
-{ id: "spectre-ec8", cat: "Séisme", t: "Spectres de réponse élastiques", ref: "NF EN 1998-1 — §3.2.2.2 et §3.2.2.3",
-  desc: "Spectres horizontal et vertical, accélérations de calcul et valeurs de plateau.",
+{ id: "spectre-ec8", cat: "Séisme", t: "Spectres de réponse élastiques et de calcul", ref: "NF EN 1998-1 — §3.2.2.2, §3.2.2.3 et §3.2.2.5",
+  desc: "Spectres horizontal et vertical, spectre de calcul pour l'analyse élastique avec le coefficient de comportement q.",
   inputs: [SEL("ref", "Référentiel", Object.entries(SPECTRES).map(([k, v]) => [k, v.n]).concat([["perso", "Personnalisé (paramètres ci-dessous)"]]), "FR", ""),
     SEL("sol", "Classe de sol", [["A", "A"], ["B", "B"], ["C", "C"], ["D", "D"], ["E", "E"]], "E", ""),
     N("agr", "Accélération de référence", "m/s²", 0.981, L`a_{gR}`), N("gI", "Coefficient d'importance", "", 1, L`\gamma_I`), N("ST", "Amplification topographique", "", 1, L`S_T`),
-    N("xi", "Amortissement", "%", 5, L`\xi`), N("avr", "Rapport vertical / horizontal", "", 0.9, L`a_{vg}/a_g`), N("yt", "Coefficient ELS (séisme de service)", "", 0.585, L`\gamma_{ELS}`),
+    N("xi", "Amortissement", "%", 5, L`\xi`), N("q", "Coefficient de comportement", "", 1, "q"), N("avr", "Rapport vertical / horizontal", "", 0.9, L`a_{vg}/a_g`), N("yt", "Coefficient du séisme de service", "", 0.585, L`\gamma_{ELS}`),
     H("Personnalisé"), N("S", "Paramètre de sol", "", 1.8, "S"), N("TB", "Période TB", "s", 0.08, L`T_B`), N("TC", "Période TC", "s", 0.45, L`T_C`), N("TD", "Période TD", "s", 1.25, L`T_D`)],
   calc(I) {
     const P = I.ref === "perso" ? null : SPECTRES[I.ref];
     const [Sx, TB, TC, TD] = P ? P[I.sol] : [I.S, I.TB, I.TC, I.TD];
     const [vB, vC, vD] = P ? P.v : [0.03, 0.2, 2.5];
-    const ag = I.agr * I.gI * I.ST, eta = max(sqrt(10 / (5 + I.xi)), 0.55), avg = I.avr * ag;
-    const pts = []; for (let T = 0; T <= 4.0001; T += 0.02) pts.push([T, seH(T, Sx, TB, TC, TD, eta) * ag, seV(T, vB, vC, vD, eta) * avg]);
-    const tab = [0, TB, TC, 0.55, TD, 2, 3, 4].map(T => [T, seH(T, Sx, TB, TC, TD, eta), seH(T, Sx, TB, TC, TD, eta) * ag, seV(T, vB, vC, vD, eta) * avg]);
+    const ag = I.agr * I.gI * I.ST, eta = max(sqrt(10 / (5 + I.xi)), 0.55), avg = I.avr * ag, q = max(1, I.q);
+    const sd = T => { const b = 0.2 * ag; if (T < TB) return ag * Sx * (2 / 3 + T / TB * (2.5 / q - 2 / 3)); if (T < TC) return ag * Sx * 2.5 / q; if (T < TD) return max(ag * Sx * 2.5 / q * TC / T, b); return max(ag * Sx * 2.5 / q * TC * TD / (T * T), b); };
+    const pts = []; for (let T = 0; T <= 4.0001; T += 0.02) pts.push([T, seH(T, Sx, TB, TC, TD, eta) * ag, seV(T, vB, vC, vD, eta) * avg, sd(T)]);
+    const tab = [0, TB, TC, 0.55, TD, 2, 3, 4].map(T => [T, seH(T, Sx, TB, TC, TD, eta), seH(T, Sx, TB, TC, TD, eta) * ag, seV(T, vB, vC, vD, eta) * avg, sd(T)]);
     return { steps: [S("ag", L`a_g`, L`\gamma_I\,a_{gR}\,S_T`, ag, "m/s²", 3), S("agg", "", "~soit", ag / 9.81, "g", 4),
       S("par", L`S\,/\,T_B\,/\,T_C\,/\,T_D`, P ? `~${P.n}, sol ${I.sol}` : "~personnalisé", `${fmt(Sx, 2)} / ${fmt(TB, 2)} / ${fmt(TC, 2)} / ${fmt(TD, 2)} s`, "", 0),
       S("eta", L`\eta`, L`\sqrt{\dfrac{10}{5 + \xi}} \ge 0{,}55`, eta, "", 3),
       S("Se", L`S_e(T)`, L`a_g\,S\,\eta\,2{,}5\;\cdot\;\left\{1\,;\ \tfrac{T_C}{T}\,;\ \tfrac{T_C T_D}{T^2}\right\}`, "", "", 0),
       R("plH", L`S_{e,max}`, L`2{,}5\,a_g\,S\,\eta`, ag * Sx * eta * 2.5, "m/s²", 3), R("plV", L`S_{ve,max}`, L`3\,a_{vg}\,\eta`, avg * eta * 3, "m/s²", 3),
+      R("plD", L`S_{d,max}`, L`\dfrac{2{,}5\,a_g\,S}{q} \quad (\beta = 0{,}2)`, ag * Sx * 2.5 / q, "m/s²", 3),
       S("plELS", L`S_{e,max}^{ELS}`, L`\gamma_{ELS}\,S_{e,max}`, ag * Sx * eta * 2.5 * I.yt, "m/s²", 3)],
-      tables: [{ title: "Valeurs remarquables", head: ["T (s)", "$S_e/a_g$", "$S_e$ (m/s²)", "$S_{ve}$ (m/s²)"], rows: tab, d: [3, 3, 3] }],
-      fig: figSpectre(pts), curve: pts, vals: { r055: seH(0.55, Sx, TB, TC, TD, eta), r2: seH(2, Sx, TB, TC, TD, eta) } };
+      tables: [{ title: "Valeurs remarquables", head: ["T (s)", "$S_e/a_g$", "$S_e$ (m/s²)", "$S_{ve}$ (m/s²)", "$S_d$ (m/s²)"], rows: tab, d: [3, 3, 3, 3] }],
+      fig: figSpectre(pts), curve: pts, vals: { r055: seH(0.55, Sx, TB, TC, TD, eta), r2: seH(2, Sx, TB, TC, TD, eta) },
+      notes: ["France (arrêté du 26 octobre 2011 et NF EN 1998-1/NA) : $a_{vg}/a_g$ = 0,8 en zones 1 à 4 et 0,9 en zone 5 ; $T_B$ = 0,03 s, $T_C$ = 0,20 s, $T_D$ = 2,5 s pour le spectre vertical.", "Spectre de calcul (3.13 à 3.16) : la valeur minimale $\\beta\\,a_g$ avec β = 0,2."] };
   } },
 ];
 

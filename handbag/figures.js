@@ -362,7 +362,8 @@ const FIGS = {
 },
 "spectre-ec8"(I, g, r) {
   const pts = r.curve || [];
-  return plot({ series: [{ pts: pts.map(p => [p[0], p[1]]), l: "horizontal Se" }, { pts: pts.map(p => [p[0], p[2]]), l: "vertical Sve", c: K.blue, w: 1.6, dash: "5 3" }],
+  const q = I.q > 1 ? [{ pts: pts.map(p => [p[0], p[3]]), l: `calcul Sd (q = ${fmt(I.q, 2)})`, c: K.red, w: 1.6 }] : [];
+  return plot({ series: [{ pts: pts.map(p => [p[0], p[1]]), l: "horizontal Se" }, { pts: pts.map(p => [p[0], p[2]]), l: "vertical Sve", c: K.blue, w: 1.6, dash: "5 3" }, ...q],
     marks: [{ x: 0.55, y: pts.find(p => p[0] >= 0.55)?.[1] ?? 0, l: `${fmt(g("plH"), 2)} m/s² au palier`, c: K.gold }].filter(() => false),
     hlines: [{ y: g("plH"), l: `palier ${fmt(g("plH"), 2)} m/s²` }], xl: "période T (s)", yl: "m/s²", xmin: 0, xmax: 4 });
 },
