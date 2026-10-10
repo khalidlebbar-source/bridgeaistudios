@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BridgeAI Studios — Ponts routiers & ferroviaires | Plateforme IA</title>
+<title>BridgeAI Studios — Ponts routiers & ferroviaires</title>
 <meta name="description" content="BridgeAI Studios — Plateforme IA de conception des ponts routiers et ferroviaires. Calculs automatiques, plans de coffrage, ferraillage, métrés et notes de calcul. Conforme EC2 & réglements français. Export DXF AutoCAD.">
 <meta name="keywords" content="calcul pont, plan coffrage pont, ferraillage pont, pont routier, pont ferroviaire, bridge design software, calcul structure pont, EN 1991-2, EC2, BAEL, SETRA, DXF AutoCAD, bureau études ponts">
 <meta name="author" content="BridgeAI Studios">
@@ -269,29 +269,45 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
   .atout-flow{flex-direction:column;gap:8px}
   .flow-arrow{transform:rotate(90deg)}
 }
+
+/* ─── ACCUEIL SIMPLIFIÉ ─── */
+.hero{padding:110px 5% 96px;min-height:calc(100vh - 64px - 70px);display:flex;align-items:center}
+.hero-inner{max-width:1080px;width:100%}
+.hero-sub{margin-bottom:56px}
+.nav-soon{font-size:13px;font-weight:300;color:rgba(136,146,164,.45);letter-spacing:.04em;cursor:default}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;text-align:left;opacity:0;animation:fadeUp .8s ease .55s forwards}
+.tool{display:flex;flex-direction:column;gap:10px;padding:28px 26px 24px;border-radius:16px;border:1px solid var(--border);background:rgba(255,255,255,.02);text-decoration:none;color:inherit;transition:border-color .25s,background .25s,transform .25s}
+a.tool:hover{border-color:var(--border2);background:rgba(201,168,76,.04);transform:translateY(-3px)}
+.tool-icon{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;margin-bottom:8px}
+.tool-tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--silver)}
+.tool-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;line-height:1.1;color:var(--white)}
+.tool-desc{font-size:13px;color:var(--silver);line-height:1.7;flex:1}
+.tool-go{font-size:13px;color:var(--gold);margin-top:8px}
+.tool.soon{opacity:.45;filter:grayscale(1);cursor:default}
+.tool.soon .tool-go{color:var(--silver)}
+footer{padding:24px 5%}
+.footer-bottom{border-top:none;padding-top:0;align-items:center}
+.footer-bottom a{color:var(--silver);text-decoration:none}
+.footer-bottom a:hover{color:var(--gold)}
+@media(max-width:860px){.tools{grid-template-columns:1fr}.hero{padding:72px 16px 64px;min-height:0}}
+@media(max-width:768px){.nav-logo{white-space:nowrap}}
 </style>
 </head>
 <body>
 
 <nav>
   <div class="nav-inner">
-    <a href="#" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
     <ul class="nav-links">
-      <li><a href="#composer" class="gold" data-fr="★ Bridge Composer" data-en="★ Bridge Composer">★ Bridge Composer</a></li>
-      <li><a href="#independants" data-fr="Modules" data-en="Modules">Modules</a></li>
-      <li><a href="#pricing" data-fr="Tarifs" data-en="Pricing">Tarifs</a></li>
-      <li><a href="#abonnements" data-fr="Abonnements" data-en="Subscriptions">Abonnements</a></li>
-      <li><a href="beton.html" style="color:var(--teal)" data-fr="Calculs Béton ↗" data-en="Concrete Calc ↗">Calculs Béton ↗</a></li>
-      <li><a href="vipp.html" style="color:var(--teal)" data-fr="VIPP-EL ↗" data-en="VIPP-EL ↗">VIPP-EL ↗</a></li>
-      <li><a href="bibliotheque.html" style="color:var(--gold)" data-fr="Bibliothèque ↗" data-en="Library ↗">Bibliothèque ↗</a></li>
+      <li><a href="vipp.html" style="color:var(--teal)">VIPP-EL</a></li>
+      <li><a href="bibliotheque.html" class="gold" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a></li>
+      <li><span class="nav-soon" data-fr="Bridge Composer · bientôt" data-en="Bridge Composer · soon">Bridge Composer · bientôt</span></li>
     </ul>
     <div class="nav-actions">
       <div class="lang-toggle">
         <button class="lang-btn active" id="btn-fr" onclick="setLang('fr')">FR</button>
         <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
       </div>
-      <button class="btn-login" data-fr="Connexion" data-en="Log in">Connexion</button>
-      <button class="btn-start" data-fr="S'inscrire" data-en="Sign up">S'inscrire</button>
     </div>
   </div>
 </nav>
@@ -303,500 +319,40 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
   <div class="hero-inner">
     <div class="hero-eyebrow">
       <div class="hero-eyebrow-line"></div>
-      <span data-fr="Ponts routiers & ferroviaires — Plateforme IA" data-en="Road & railway bridges — AI Platform">Ponts routiers & ferroviaires — Plateforme IA</span>
+      <span data-fr="Ponts routiers & ferroviaires" data-en="Road & railway bridges">Ponts routiers & ferroviaires</span>
       <div class="hero-eyebrow-line"></div>
     </div>
-    <h1 data-fr="Du tablier aux appuis,<br>calculez votre pont avec le<br><em>Bridge Composer</em>" data-en="From deck to supports,<br>calculate your bridge with the<br><em>Bridge Composer</em>">Du tablier aux appuis,<br>calculez votre pont avec le<br><em>Bridge Composer</em></h1>
-    <p class="hero-sub" data-fr="La seule plateforme qui calcule votre pont de A à Z — tablier, descente de charges automatique, piles et culées — en une seule session. Conforme EC2 & règlements français antérieurs." data-en="The only platform that calculates your bridge from A to Z — deck, automatic load transfer, piers and abutments — in a single session. EC2 & previous French standards compliant.">La seule plateforme qui calcule votre pont de A à Z — tablier, descente de charges automatique, piles et culées — en une seule session. Conforme EC2 & règlements français antérieurs.</p>
+    <h1 data-fr="Calculer et documenter<br>vos <em>ouvrages d'art</em>" data-en="Design and document<br>your <em>bridges</em>">Calculer et documenter<br>vos <em>ouvrages d'art</em></h1>
+    <p class="hero-sub" data-fr="Des outils de calcul conformes aux règlements français et une bibliothèque technique complète, au même endroit." data-en="Calculation tools compliant with French standards and a complete technical library, in one place.">Des outils de calcul conformes aux règlements français et une bibliothèque technique complète, au même endroit.</p>
 
-    <div class="hero-families">
-      <div class="family-card">
-        <svg width="52" height="32" viewBox="0 0 52 32" fill="none">
-          <rect x="0" y="24" width="52" height="4" rx="1" fill="rgba(201,168,76,.2)"/>
-          <rect x="21" y="25" width="4" height="2" rx="0.5" fill="rgba(201,168,76,.4)"/>
-          <rect x="31" y="25" width="4" height="2" rx="0.5" fill="rgba(201,168,76,.4)"/>
-          <rect x="9" y="14" width="24" height="10" rx="4" fill="#c9a84c"/>
-          <path d="M14 14 Q16 8 22 7.5 Q28 7 30 14Z" fill="#e8c97a"/>
-          <path d="M15.5 14 Q17 9.5 21 9 Q25 8.5 26.5 14Z" fill="rgba(255,255,255,.25)"/>
-          <circle cx="14" cy="24" r="3.5" fill="#6b5000"/>
-          <circle cx="14" cy="24" r="1.5" fill="rgba(201,168,76,.5)"/>
-          <circle cx="27" cy="24" r="3.5" fill="#6b5000"/>
-          <circle cx="27" cy="24" r="1.5" fill="rgba(201,168,76,.5)"/>
-          <rect x="30" y="16" width="3" height="2" rx="0.5" fill="#f5e4b0" opacity="0.8"/>
-        </svg>
-        <div>
-          <div class="family-title" data-fr="Ponts routiers" data-en="Road bridges">Ponts routiers</div>
-          
+    <div class="tools">
+      <a class="tool" href="vipp.html">
+        <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 11h28"/><path d="M2 14h28"/><path d="M6 14v4l3 2h14l3-2v-4"/><path d="M8 20v9M24 20v9"/><path d="M4 29h24"/></svg>
         </div>
-      </div>
-      <div class="family-card">
-        <svg width="64" height="32" viewBox="0 0 64 32" fill="none">
-          <rect x="0" y="27" width="64" height="2" rx="0.5" fill="rgba(26,184,160,.3)"/>
-          <rect x="0" y="22" width="64" height="2" rx="0.5" fill="rgba(26,184,160,.3)"/>
-          <rect x="4" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="12" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="20" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="28" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="36" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="44" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="52" y="21" width="3" height="8" rx="0.5" fill="rgba(26,184,160,.2)"/>
-          <rect x="4" y="8" width="46" height="14" rx="5" fill="#1ab8a0"/>
-          <path d="M44 8 Q56 8 56 15 Q56 22 44 22" fill="#138a76"/>
-          <rect x="10" y="11" width="8" height="6" rx="1.5" fill="rgba(255,255,255,.25)"/>
-          <rect x="22" y="11" width="8" height="6" rx="1.5" fill="rgba(255,255,255,.25)"/>
-          <rect x="34" y="11" width="8" height="6" rx="1.5" fill="rgba(255,255,255,.25)"/>
-          <rect x="46" y="10" width="7" height="8" rx="1.5" fill="rgba(255,255,255,.3)"/>
-          <circle cx="54" cy="19" r="1.5" fill="#f5e4b0"/>
-          <rect x="4" y="19" width="46" height="1.5" rx="0.5" fill="#138a76"/>
-        </svg>
-        <div>
-          <div class="family-title" data-fr="Ponts ferroviaires" data-en="Railway bridges">Ponts ferroviaires</div>
-          
+        <div class="tool-tag" style="color:var(--teal)" data-fr="Disponible" data-en="Available">Disponible</div>
+        <div class="tool-title">VIPP-EL</div>
+        <p class="tool-desc" data-fr="Vérification des tabliers à poutres précontraintes selon le BPEL 91 et le fascicule 61 titre II — conforme au programme VIPP-EL du SETRA." data-en="Check of prestressed-beam decks to BPEL 91 and Fascicule 61 Title II — in line with SETRA's VIPP-EL program.">Vérification des tabliers à poutres précontraintes selon le BPEL 91 et le fascicule 61 titre II — conforme au programme VIPP-EL du SETRA.</p>
+        <span class="tool-go" data-fr="Ouvrir l'outil →" data-en="Open the tool →">Ouvrir l'outil →</span>
+      </a>
+      <a class="tool" href="bibliotheque.html">
+        <div class="tool-icon" style="background:rgba(201,168,76,.1);color:var(--gold)">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="5" width="5" height="22" rx="1"/><rect x="10" y="5" width="5" height="22" rx="1"/><path d="M17.5 7.5l4.8-1.3 5.7 20.4-4.8 1.3z"/><path d="M3 27h26"/></svg>
         </div>
-      </div>
-    </div>
-
-    <div class="hero-stats">
-      <div class="stat"><span class="stat-val">2</span><span class="stat-lbl" data-fr="Familles d'ouvrages" data-en="Bridge families">Familles d'ouvrages</span></div>
-      <div class="stat"><span class="stat-val">14</span><span class="stat-lbl" data-fr="Types d'ouvrages" data-en="Structure types">Types d'ouvrages</span></div>
-      <div class="stat"><span class="stat-val">3</span><span class="stat-lbl" data-fr="Modes d'utilisation" data-en="Usage modes">Modes d'utilisation</span></div>
-      <div class="stat"><span class="stat-val">DXF</span><span class="stat-lbl" data-fr="Export AutoCAD" data-en="AutoCAD export">Export AutoCAD</span></div>
-      <div class="stat"><span class="stat-val">EC2</span><span class="stat-lbl" data-fr="& réglements français" data-en="& French standards">& réglements français</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ARBORESCENCE -->
-<section class="arbo-section sec" id="arborescence">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="Architecture du produit" data-en="Product architecture">Architecture du produit</div>
-    <div class="sec-title" data-fr="Tout ce que vous pouvez faire" data-en="Everything you can do">Tout ce que vous pouvez faire</div>
-    <div class="divider"></div>
-    <div class="arbo-grid">
-
-      <!-- Branch 1 -->
-      <div class="arbo-card">
-        <div class="arbo-card-header">
-          <div class="arbo-icon" style="background:rgba(26,184,160,.15)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1ab8a0" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="8" width="20" height="8" rx="2"/><line x1="12" y1="3" x2="12" y2="8"/><line x1="8" y1="16" x2="8" y2="20"/><line x1="16" y1="16" x2="16" y2="20"/></svg>
-          </div>
-          <div>
-            <div class="arbo-card-title" style="color:var(--teal)" data-fr="★ Bridge Composer" data-en="★ Bridge Composer">★ Bridge Composer</div>
-            <div class="arbo-card-sub" data-fr="Pont complet · descente de charges auto" data-en="Full bridge · auto load transfer">Pont complet · descente de charges auto</div>
-          </div>
+        <div class="tool-tag" style="color:var(--gold)" data-fr="Accès équipe" data-en="Team access">Accès équipe</div>
+        <div class="tool-title" data-fr="Bibliothèque" data-en="Library">Bibliothèque</div>
+        <p class="tool-desc" data-fr="Plus de 6 000 documents indexés : guides SETRA, Eurocodes, règlements, cours et archives de projets, avec recherche et classement par thème." data-en="Over 6,000 indexed documents: SETRA guides, Eurocodes, standards, courses and project archives, searchable and sorted by theme.">Plus de 6 000 documents indexés : guides SETRA, Eurocodes, règlements, cours et archives de projets, avec recherche et classement par thème.</p>
+        <span class="tool-go" data-fr="Entrer →" data-en="Enter →">Entrer →</span>
+      </a>
+      <div class="tool soon" aria-disabled="true">
+        <div class="tool-icon" style="background:rgba(255,255,255,.04);color:var(--silver)">
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12h28"/><path d="M4 12v15M28 12v15M16 12v15"/><path d="M4 27Q10 17 16 27Q22 17 28 27"/><path d="M2 8l14-4 14 4"/></svg>
         </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--blue)"></div><span class="tree-parent-label" data-fr="Tablier" data-en="Deck">Tablier</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Dalle BA / BP" data-en="RC / PC Slab">Dalle BA / BP</div>
-            <div class="tree-child" data-fr="Poutre BA / BP" data-en="RC / PC Girder">Poutre BA / BP</div>
-            <div class="tree-child" data-fr="Poutrelles enrobées" data-en="Filler beam">Poutrelles enrobées</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--teal)"></div><span class="tree-parent-label" data-fr="Piles" data-en="Piers">Piles</span><span class="tree-badge" style="background:rgba(26,184,160,.12);color:var(--teal)" data-fr="auto" data-en="auto">auto</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Fûts · Sommier · Semelles" data-en="Shafts · Cap · Footings">Fûts · Sommier · Semelles</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--gold)"></div><span class="tree-parent-label" data-fr="Culées" data-en="Abutments">Culées</span><span class="tree-badge" style="background:rgba(201,168,76,.12);color:var(--gold)" data-fr="auto" data-en="auto">auto</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Mur garde-grève · Murs en retour · Semelle" data-en="Breast wall · Wing walls · Footing">Mur garde-grève · Murs en retour · Semelle</div>
-          </div>
-        </div>
+        <div class="tool-tag" data-fr="Bientôt" data-en="Coming soon">Bientôt</div>
+        <div class="tool-title">Bridge Composer</div>
+        <p class="tool-desc" data-fr="Le calcul complet d'un pont en une session : tablier, descente de charges, piles et culées." data-en="Full bridge design in one session: deck, load transfer, piers and abutments.">Le calcul complet d'un pont en une session : tablier, descente de charges, piles et culées.</p>
+        <span class="tool-go" data-fr="En développement" data-en="In development">En développement</span>
       </div>
-
-      <!-- Branch 2 -->
-      <div class="arbo-card">
-        <div class="arbo-card-header">
-          <div class="arbo-icon" style="background:rgba(45,107,228,.15)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6da5f5" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
-          </div>
-          <div>
-            <div class="arbo-card-title" style="color:#6da5f5" data-fr="Modules indépendants" data-en="Standalone modules">Modules indépendants</div>
-            <div class="arbo-card-sub" data-fr="Sans Bridge Composer" data-en="Without Bridge Composer">Sans Bridge Composer</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--blue)"></div><span class="tree-parent-label" data-fr="Tabliers" data-en="Bridge decks">Tabliers</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Dalle BA / BP" data-en="RC / PC Slab">Dalle BA / BP</div>
-            <div class="tree-child" data-fr="Poutre BA / BP" data-en="RC / PC Girder">Poutre BA / BP</div>
-            <div class="tree-child" data-fr="Poutrelles enrobées" data-en="Filler beam">Poutrelles enrobées</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:#a78bfa)"></div><span class="tree-parent-label" data-fr="Cadres & Portiques" data-en="Culverts & Frames">Cadres & Portiques</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Portique simple / double" data-en="Single / double frame">Portique simple / double</div>
-            <div class="tree-child" data-fr="Cadre simple / multiple" data-en="Single / multi culvert">Cadre simple / multiple</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:#fbbf24"></div><span class="tree-parent-label" data-fr="Murs de soutènement" data-en="Retaining walls">Murs de soutènement</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Mur poids · Cantilever · Contreforts" data-en="Gravity · Cantilever · Counterfort">Mur poids · Cantilever · Contreforts</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Branch 3 -->
-      <div class="arbo-card">
-        <div class="arbo-card-header">
-          <div class="arbo-icon" style="background:rgba(201,168,76,.12)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <div>
-            <div class="arbo-card-title" style="color:var(--gold)" data-fr="Calculs quotidiens" data-en="Daily calculations">Calculs quotidiens</div>
-            <div class="arbo-card-sub" data-fr="Abonnement mensuel" data-en="Monthly subscription">Abonnement mensuel</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--silver)"></div><span class="tree-parent-label" data-fr="Béton" data-en="Concrete">Béton</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Flexion · Cisaillement · ELU/ELS" data-en="Bending · Shear · ULS/SLS">Flexion · Cisaillement · ELU/ELS</div>
-            <div class="tree-child" data-fr="Sections · Poteaux · Dalles..." data-en="Sections · Columns · Slabs...">Sections · Poteaux · Dalles...</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:#6da5f5"></div><span class="tree-parent-label" data-fr="Ponts routiers" data-en="Road bridges">Ponts routiers</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="Charges LM1/LM2/LM3" data-en="LM1/LM2/LM3 loads">Charges LM1/LM2/LM3</div>
-            <div class="tree-child" data-fr="Convois · EN 1991-2 · SETRA..." data-en="Convoys · EN 1991-2 · SETRA...">Convois · EN 1991-2 · SETRA...</div>
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-parent"><div class="tree-parent-dot" style="background:var(--teal)"></div><span class="tree-parent-label" data-fr="Ponts ferroviaires" data-en="Railway bridges">Ponts ferroviaires</span></div>
-          <div class="tree-children">
-            <div class="tree-child" data-fr="SW/0 · SW/2 · HSLM" data-en="SW/0 · SW/2 · HSLM">SW/0 · SW/2 · HSLM</div>
-            <div class="tree-child" data-fr="Fatigue · EN 1991-2 · Gabarit..." data-en="Fatigue · EN 1991-2 · Clearance...">Fatigue · EN 1991-2 · Gabarit...</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
-<!-- NOTRE ATOUT -->
-<section class="atout-section sec">
-  <div class="sec-inner">
-    <div style="text-align:center;margin-bottom:40px">
-      <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:99px;border:1px solid var(--border2);background:rgba(201,168,76,.04);font-size:10px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:16px">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="var(--gold)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span data-fr="Notre atout exclusif" data-en="Our exclusive advantage">Notre atout exclusif</span>
-      </div>
-      <div class="sec-title" style="text-align:center" data-fr="Seule plateforme à faire la descente de charges automatique" data-en="The only platform with automatic load transfer">Seule plateforme à faire la descente de charges automatique</div>
-      <div class="divider" style="margin:16px auto"></div>
-      <p style="font-size:14px;font-weight:300;color:var(--silver);max-width:520px;margin:0 auto" data-fr="Définissez votre pont une seule fois. Le Bridge Composer calcule automatiquement les efforts du tablier vers les piles et culées." data-en="Define your bridge once. Bridge Composer automatically calculates forces from deck to piers and abutments.">Définissez votre pont une seule fois. Le Bridge Composer calcule automatiquement les efforts du tablier vers les piles et culées.</p>
-    </div>
-
-    <div class="atout-flow">
-      <div class="flow-node tablier">
-        <div class="flow-node-icon" style="background:rgba(45,107,228,.15)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6da5f5" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="8" width="20" height="8" rx="2"/></svg></div>
-        <div class="flow-node-title" data-fr="Tablier" data-en="Deck">Tablier</div>
-        <div class="flow-node-sub" data-fr="Dalle · Poutres<br>Poutrelles" data-en="Slab · Girders<br>Filler beam">Dalle · Poutres<br>Poutrelles</div>
-      </div>
-      <div class="flow-arrow">
-        <svg width="32" height="12" viewBox="0 0 32 12"><line x1="0" y1="6" x2="28" y2="6" stroke="rgba(201,168,76,.5)" stroke-width="1"/><polyline points="22,2 28,6 22,10" fill="none" stroke="rgba(201,168,76,.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <div class="flow-arrow-label" data-fr="descente charges" data-en="load transfer">descente charges</div>
-      </div>
-      <div class="flow-node piles">
-        <div class="flow-node-icon" style="background:rgba(26,184,160,.15)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1ab8a0" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="11"/><rect x="8" y="11" width="8" height="6" rx="1"/><line x1="6" y1="17" x2="18" y2="17"/></svg></div>
-        <div class="flow-node-title" data-fr="Piles" data-en="Piers">Piles</div>
-        <div class="flow-node-sub" data-fr="Fûts · Sommier<br>Semelles" data-en="Shafts · Cap<br>Footings">Fûts · Sommier<br>Semelles</div>
-      </div>
-      <div class="flow-arrow">
-        <svg width="32" height="12" viewBox="0 0 32 12"><line x1="0" y1="6" x2="28" y2="6" stroke="rgba(201,168,76,.5)" stroke-width="1"/><polyline points="22,2 28,6 22,10" fill="none" stroke="rgba(201,168,76,.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <div class="flow-arrow-label" data-fr="efforts transmis" data-en="forces transferred">efforts transmis</div>
-      </div>
-      <div class="flow-node culees">
-        <div class="flow-node-icon" style="background:rgba(201,168,76,.1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"><path d="M3 18V9l9-6 9 6v9"/><line x1="2" y1="18" x2="22" y2="18"/></svg></div>
-        <div class="flow-node-title" data-fr="Culées" data-en="Abutments">Culées</div>
-        <div class="flow-node-sub" data-fr="Mur · Remblai<br>Semelle" data-en="Wall · Backfill<br>Footing">Mur · Remblai<br>Semelle</div>
-      </div>
-    </div>
-
-    <div class="atout-benefits">
-      <div class="benefit">
-        <div class="benefit-icon" style="background:rgba(45,107,228,.1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6da5f5" stroke-width="1.5" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <div><div class="benefit-title" data-fr="Saisie unique" data-en="Single input">Saisie unique</div><div class="benefit-desc" data-fr="Définissez votre pont une seule fois, tous les modules en héritent." data-en="Define your bridge once, all modules inherit the data.">Définissez votre pont une seule fois, tous les modules en héritent.</div></div>
-      </div>
-      <div class="benefit">
-        <div class="benefit-icon" style="background:rgba(26,184,160,.1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ab8a0" stroke-width="1.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div><div class="benefit-title" data-fr="Descente de charges auto" data-en="Automatic load transfer">Descente de charges auto</div><div class="benefit-desc" data-fr="Les efforts du tablier sont transmis automatiquement aux appuis." data-en="Deck forces are automatically transferred to supports.">Les efforts du tablier sont transmis automatiquement aux appuis.</div></div>
-      </div>
-      <div class="benefit">
-        <div class="benefit-icon" style="background:rgba(201,168,76,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-        <div><div class="benefit-title" data-fr="Dossier complet en 1 clic" data-en="Complete file in 1 click">Dossier complet en 1 clic</div><div class="benefit-desc" data-fr="Notes de calcul + plans + métrés pour tout le pont générés simultanément." data-en="Reports + drawings + quantities for the whole bridge simultaneously.">Notes de calcul + plans + métrés pour tout le pont générés simultanément.</div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- BRIDGE COMPOSER -->
-<section class="composer-section sec" id="composer">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="★ Bridge Composer" data-en="★ Bridge Composer">★ Bridge Composer</div>
-    <div class="sec-title" data-fr="Assemblez votre pont, module par module" data-en="Assemble your bridge, module by module">Assemblez votre pont, module par module</div>
-    <div class="divider"></div>
-    <p class="sec-sub" data-fr="Composez votre pont complet. La descente de charges entre tablier et appuis est calculée automatiquement." data-en="Compose your complete bridge. Load transfer between deck and supports is automatically calculated.">Composez votre pont complet. La descente de charges entre tablier et appuis est calculée automatiquement.</p>
-
-    <div class="composer-box">
-      <div class="composer-label" data-fr="1 — Type de pont" data-en="1 — Bridge type">1 — Type de pont</div>
-      <div class="composer-type-row">
-        <button class="type-btn active" onclick="selType(this)" data-fr="Pont dalle BA" data-en="RC Slab bridge">Pont dalle BA</button>
-        <button class="type-btn" onclick="selType(this)" data-fr="Pont dalle BP" data-en="PC Slab bridge">Pont dalle BP</button>
-        <button class="type-btn" onclick="selType(this)" data-fr="Pont à poutres BA" data-en="RC Girder bridge">Pont à poutres BA</button>
-        <button class="type-btn" onclick="selType(this)" data-fr="Pont à poutres BP" data-en="PC Girder bridge">Pont à poutres BP</button>
-        <button class="type-btn" onclick="selType(this)" data-fr="Pont à poutrelles enrobées" data-en="Filler beam bridge">Pont à poutrelles enrobées</button>
-      </div>
-
-      <div class="composer-label" data-fr="2 — Modules à calculer" data-en="2 — Modules to calculate">2 — Modules à calculer</div>
-      <div class="composer-sections">
-
-        <div class="comp-section">
-          <div class="comp-section-header">
-            <div class="comp-section-letter" style="background:rgba(45,107,228,.2);color:#6da5f5">A</div>
-            <div class="comp-section-title" data-fr="Tablier — utilisable seul" data-en="Deck — standalone">Tablier — utilisable seul</div>
-          </div>
-          <div class="comp-blocks" id="blocks-tablier">
-            <div class="comp-block active" onclick="toggleBlock(this)" style="background:rgba(45,107,228,.04)">
-              <div class="comp-block-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
-              <div><div class="comp-block-text" data-fr="Coffrage" data-en="Formwork">Coffrage</div><div class="comp-block-sub" data-fr="Plans cotés" data-en="Dimensioned drawings">Plans cotés</div></div>
-            </div>
-            <div class="comp-block active" onclick="toggleBlock(this)" style="background:rgba(45,107,228,.04)">
-              <div class="comp-block-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
-              <div><div class="comp-block-text" data-fr="Ferraillage" data-en="Rebar">Ferraillage</div><div class="comp-block-sub" data-fr="+ Nomenclature" data-en="+ Bar schedule">+ Nomenclature</div></div>
-            </div>
-            <div class="comp-block active" onclick="toggleBlock(this)" style="background:rgba(45,107,228,.04)" id="cablage-block">
-              <div class="comp-block-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
-              <div><div class="comp-block-text" data-fr="Câblage BP" data-en="Prestressing">Câblage BP</div><div class="comp-block-sub" data-fr="Plan de câblage" data-en="Tendon layout">Plan de câblage</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="comp-section">
-          <div class="comp-section-header">
-            <div class="comp-section-letter" style="background:rgba(26,184,160,.2);color:var(--teal)">B</div>
-            <div class="comp-section-title" data-fr="Appuis — nécessite pont complet" data-en="Supports — requires full bridge">Appuis — nécessite pont complet</div>
-            <div class="comp-section-badge" style="background:rgba(26,184,160,.1);color:var(--teal)" data-fr="Descente de charges auto" data-en="Auto load transfer">Descente de charges auto</div>
-          </div>
-          <div class="comp-blocks">
-            <div class="comp-block active" onclick="toggleBlock(this)" style="background:rgba(26,184,160,.03)">
-              <div class="comp-block-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
-              <div><div class="comp-block-text" data-fr="Piles" data-en="Piers">Piles</div><div class="comp-block-sub" data-fr="Fûts + Sommier + Semelles" data-en="Shafts + Cap + Footings">Fûts + Sommier + Semelles</div></div>
-            </div>
-            <div class="comp-block active" onclick="toggleBlock(this)" style="background:rgba(26,184,160,.03)">
-              <div class="comp-block-check"><svg viewBox="0 0 12 12"><polyline points="2 6 5 9 10 3"/></svg></div>
-              <div><div class="comp-block-text" data-fr="Culées" data-en="Abutments">Culées</div><div class="comp-block-sub" data-fr="Mur + Remblai + Semelle" data-en="Wall + Backfill + Footing">Mur + Remblai + Semelle</div></div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="composer-footer">
-        <div>
-          <div class="comp-footer-info" data-fr="Modules actifs : <span id='mod-count' style='color:var(--gold)'>5</span>" data-en="Active modules: <span id='mod-count' style='color:var(--gold)'>5</span>">Modules actifs : <span id="mod-count" style="color:var(--gold)">5</span></div>
-          <div class="comp-footer-note" data-fr="Note de calcul + Plans + Métrés inclus dans chaque module" data-en="Calculation report + Drawings + BQ included in each module">Note de calcul + Plans + Métrés inclus dans chaque module</div>
-        </div>
-        <button class="btn-calc" data-fr="Lancer le calcul →" data-en="Run calculation →">Lancer le calcul →</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- INDEPENDENT MODULES -->
-<section class="indep-section sec" id="independants">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="Modules indépendants" data-en="Standalone modules">Modules indépendants</div>
-    <div class="sec-title" data-fr="Utilisables sans Bridge Composer" data-en="Usable without Bridge Composer">Utilisables sans Bridge Composer</div>
-    <div class="divider"></div>
-    <p class="sec-sub" data-fr="Ces modules fonctionnent seuls — pas besoin de définir le pont complet." data-en="These modules work standalone — no need to define the full bridge.">Ces modules fonctionnent seuls — pas besoin de définir le pont complet.</p>
-    <div class="indep-grid">
-      <div class="indep-card">
-        <div class="indep-card-header">
-          <div class="indep-card-icon" style="background:rgba(45,107,228,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6da5f5" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="8" width="20" height="8" rx="2"/></svg></div>
-          <div class="indep-card-title" data-fr="Tabliers" data-en="Bridge decks">Tabliers</div>
-        </div>
-        <ul class="indep-list">
-          <li class="indep-item"><span class="indep-item-name" data-fr="Dalle BA (≤ 20m)" data-en="RC Slab (≤ 20m)">Dalle BA (≤ 20m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Dalle BP (≤ 55m)" data-en="PC Slab (≤ 55m)">Dalle BP (≤ 55m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Poutre BA (≤ 30m)" data-en="RC Girder (≤ 30m)">Poutre BA (≤ 30m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Poutre BP (≤ 45m)" data-en="PC Girder (≤ 45m)">Poutre BP (≤ 45m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Poutrelles enrobées (≤ 40m)" data-en="Filler beam (≤ 40m)">Poutrelles enrobées (≤ 40m)</span><span class="indep-item-price">XXX MAD</span></li>
-        </ul>
-      </div>
-      <div class="indep-card">
-        <div class="indep-card-header">
-          <div class="indep-card-icon" style="background:rgba(167,139,250,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="1"/></svg></div>
-          <div class="indep-card-title" data-fr="Cadres & Portiques" data-en="Culverts & Frames">Cadres & Portiques</div>
-        </div>
-        <ul class="indep-list">
-          <li class="indep-item"><span class="indep-item-name" data-fr="Portique simple (≤ 20m)" data-en="Single frame (≤ 20m)">Portique simple (≤ 20m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Portique double (≤ 20m)" data-en="Double frame (≤ 20m)">Portique double (≤ 20m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Cadre simple (≤ 20m)" data-en="Single culvert (≤ 20m)">Cadre simple (≤ 20m)</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Cadre multiple (≤ 20m)" data-en="Multi-cell culvert (≤ 20m)">Cadre multiple (≤ 20m)</span><span class="indep-item-price">XXX MAD</span></li>
-        </ul>
-      </div>
-      <div class="indep-card">
-        <div class="indep-card-header">
-          <div class="indep-card-icon" style="background:rgba(251,191,36,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"><path d="M3 20h18M5 20V8l7-5 7 5v12"/></svg></div>
-          <div class="indep-card-title" data-fr="Murs de soutènement" data-en="Retaining walls">Murs de soutènement</div>
-        </div>
-        <ul class="indep-list">
-          <li class="indep-item"><span class="indep-item-name" data-fr="Mur poids" data-en="Gravity wall">Mur poids</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Mur cantilever" data-en="Cantilever wall">Mur cantilever</span><span class="indep-item-price">XXX MAD</span></li>
-          <li class="indep-item"><span class="indep-item-name" data-fr="Mur à contreforts" data-en="Counterfort wall">Mur à contreforts</span><span class="indep-item-price">XXX MAD</span></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 3 PILLARS -->
-<section class="pillars-section sec" id="piliers">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="Nos services" data-en="Our services">Nos services</div>
-    <div class="sec-title" data-fr="3 façons de travailler" data-en="3 ways to work">3 façons de travailler</div>
-    <div class="divider"></div>
-    <div class="pillars-grid">
-      <div class="pillar">
-        <div class="pillar-num">01</div>
-        <div class="pillar-title" data-fr="Calculs d'ouvrages" data-en="Structure calculations">Calculs d'ouvrages</div>
-        <div class="pillar-desc" data-fr="Vous définissez la géométrie et les charges. Le système calcule, vérifie et génère automatiquement tous les documents." data-en="You define the geometry and loads. The system calculates, checks and automatically generates all documents.">Vous définissez la géométrie et les charges. Le système calcule, vérifie et génère automatiquement tous les documents.</div>
-        <ul class="pillar-features">
-          <li class="pillar-feature"><span data-fr="Note de calcul complète (DDC + stabilité)" data-en="Full calculation report (load takedown + stability)">Note de calcul complète (DDC + stabilité)</span></li>
-          <li class="pillar-feature"><span data-fr="Plans coffrage + ferraillage + câblage" data-en="Formwork + rebar + prestressing drawings">Plans coffrage + ferraillage + câblage</span></li>
-          <li class="pillar-feature"><span data-fr="Métrés & estimation inclus" data-en="BQ & cost estimate included">Métrés & estimation inclus</span></li>
-          <li class="pillar-feature"><span data-fr="Conforme EC2 & règlements français antérieurs" data-en="EC2 & previous French standards compliant">Conforme EC2 & règlements français antérieurs</span></li>
-          <li class="pillar-feature"><span data-fr="OA non courants : prédimensionnement + plans de principe" data-en="Non-standard bridges: preliminary design + concept drawings">OA non courants : prédimensionnement + plans de principe</span></li>
-        </ul>
-        <a href="#pricing" class="pillar-link" data-fr="Voir les tarifs →" data-en="View pricing →">Voir les tarifs →</a>
-      </div>
-      <div class="pillar">
-        <div class="pillar-num">02</div>
-        <div class="pillar-title" data-fr="Plans uniquement" data-en="Drawings only">Plans uniquement</div>
-        <div class="pillar-desc" data-fr="Vous imposez vos dimensions et votre ferraillage. Le système dessine uniquement, sans vérification." data-en="You impose your dimensions and rebar. The system draws only, without verification.">Vous imposez vos dimensions et votre ferraillage. Le système dessine uniquement, sans vérification.</div>
-        <ul class="pillar-features">
-          <li class="pillar-feature"><span data-fr="Saisie libre des dimensions et ferraillage" data-en="Free input of dimensions and rebar">Saisie libre des dimensions et ferraillage</span></li>
-          <li class="pillar-feature"><span data-fr="Plans de coffrage cotés avec nomenclature" data-en="Dimensioned formwork drawings with schedule">Plans de coffrage cotés avec nomenclature</span></li>
-          <li class="pillar-feature"><span data-fr="Plans de ferraillage avec nomenclature des barres" data-en="Rebar drawings with bar schedule">Plans de ferraillage avec nomenclature des barres</span></li>
-          <li class="pillar-feature"><span data-fr="Export DXF AutoCAD + PDF haute résolution" data-en="AutoCAD DXF + high-res PDF export">Export DXF AutoCAD + PDF haute résolution</span></li>
-        </ul>
-        <a href="#pricing" class="pillar-link" data-fr="Voir les tarifs →" data-en="View pricing →">Voir les tarifs →</a>
-      </div>
-      <div class="pillar">
-        <div class="pillar-num">03</div>
-        <div class="pillar-title" data-fr="Calculs quotidiens" data-en="Daily calculations">Calculs quotidiens</div>
-        <div class="pillar-desc" data-fr="Abonnement mensuel pour accéder à des outils de calcul rapides. Béton, ponts routiers, ponts ferroviaires." data-en="Monthly subscription for quick calculation tools. Concrete, road bridges, railway bridges.">Abonnement mensuel pour accéder à des outils de calcul rapides. Béton, ponts routiers, ponts ferroviaires.</div>
-        <ul class="pillar-features">
-          <li class="pillar-feature"><span data-fr="Calculs béton courants (flexion, cisaillement...)" data-en="Standard concrete calcs (bending, shear...)">Calculs béton courants (flexion, cisaillement...)</span></li>
-          <li class="pillar-feature"><span data-fr="Ponts routiers : EN 1991-2, LM1/LM2/LM3..." data-en="Road bridges: EN 1991-2, LM1/LM2/LM3...">Ponts routiers : EN 1991-2, LM1/LM2/LM3...</span></li>
-          <li class="pillar-feature"><span data-fr="Ponts ferroviaires : SW/0, SW/2, HSLM..." data-en="Railway bridges: SW/0, SW/2, HSLM...">Ponts ferroviaires : SW/0, SW/2, HSLM...</span></li>
-          <li class="pillar-feature"><span data-fr="Accès illimité pendant la durée de l'abonnement" data-en="Unlimited access during subscription period">Accès illimité pendant la durée de l'abonnement</span></li>
-        </ul>
-        <a href="#abonnements" class="pillar-link" data-fr="Voir les abonnements →" data-en="View subscriptions →">Voir les abonnements →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PRICING TABLE -->
-<section class="pricing-section sec" id="pricing">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="Grille tarifaire" data-en="Pricing grid">Grille tarifaire</div>
-    <div class="sec-title" data-fr="Tarification par module et par prestation" data-en="Pricing per module and service">Tarification par module et par prestation</div>
-    <div class="divider"></div>
-    <p class="sec-sub" data-fr="Vous payez uniquement ce que vous utilisez. Applicable aux ponts routiers et ferroviaires." data-en="You pay only for what you use. Applicable to road and railway bridges.">Vous payez uniquement ce que vous utilisez. Applicable aux ponts routiers et ferroviaires.</p>
-    <div style="overflow-x:auto;margin-top:32px">
-    <table class="pricing-table">
-      <thead>
-        <tr>
-          <th data-fr="Module" data-en="Module">Module</th>
-          <th data-fr="Type" data-en="Type">Type</th>
-          <th class="road" data-fr="Calcul routier" data-en="Road calculation">
-            <span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 17h20M5 17V9l7-5 7 5v8"/></svg><span data-fr="Calcul routier" data-en="Road calculation">Calcul routier</span></span>
-          </th>
-          <th class="rail" data-fr="Calcul ferroviaire" data-en="Railway calculation">
-            <span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span data-fr="Calcul ferroviaire" data-en="Railway calculation">Calcul ferroviaire</span></span>
-          </th>
-          <th data-fr="Plans seuls" data-en="Drawings only">Plans seuls</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="group-header"><td colspan="5" data-fr="— Tabliers —" data-en="— Decks —">— Tabliers —</td></tr>
-        <tr><td data-fr="Dalle BA" data-en="RC Slab">Dalle BA</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Dalle BP" data-en="PC Slab">Dalle BP</td><td><span class="badge-bp">Courant · BP</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Poutre BA" data-en="RC Girder">Poutre BA</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Poutre BP" data-en="PC Girder">Poutre BP</td><td><span class="badge-bp">Courant · BP</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Poutrelles enrobées" data-en="Filler beam">Poutrelles enrobées</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr class="group-header"><td colspan="5" data-fr="— Appuis — Bridge Composer requis —" data-en="— Supports — Bridge Composer required —">— Appuis — Bridge Composer requis —</td></tr>
-        <tr><td data-fr="Pile" data-en="Pier">Pile</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Culée" data-en="Abutment">Culée</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr class="group-header"><td colspan="5" data-fr="— Modules indépendants —" data-en="— Standalone modules —">— Modules indépendants —</td></tr>
-        <tr><td data-fr="Portique simple" data-en="Single portal frame">Portique simple</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Portique double" data-en="Double portal frame">Portique double</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Cadre simple" data-en="Single box culvert">Cadre simple</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Cadre multiple" data-en="Multi-cell culvert">Cadre multiple</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Mur de soutènement" data-en="Retaining wall">Mur de soutènement</td><td><span class="badge-std">Courant</span></td><td class="price-val road">XXX MAD</td><td class="na">—</td><td class="price-val">XXX MAD</td></tr>
-        <tr class="group-header"><td colspan="5" data-fr="— Ouvrages non courants — prédimensionnement + plans de principe —" data-en="— Non-standard bridges — preliminary design + concept drawings —">— Ouvrages non courants —</td></tr>
-        <tr><td data-fr="Pont mixte" data-en="Composite bridge">Pont mixte</td><td><span class="badge-special">Non courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-        <tr><td data-fr="Caisson BP" data-en="PC box girder">Caisson BP</td><td><span class="badge-special">Non courant</span></td><td class="price-val road">XXX MAD</td><td class="price-val rail">XXX MAD</td><td class="price-val">XXX MAD</td></tr>
-      </tbody>
-    </table>
-    </div>
-    <p style="font-size:11px;color:var(--silver);margin-top:12px;font-weight:300" data-fr="* Chaque calcul inclut : note de calcul + plans (coffrage, ferraillage, câblage BP) + métrés + export DXF/PDF." data-en="* Each calculation includes: report + drawings (formwork, rebar, PC prestressing) + BQ + DXF/PDF export.">* Chaque calcul inclut : note de calcul + plans (coffrage, ferraillage, câblage BP) + métrés + export DXF/PDF.</p>
-  </div>
-</section>
-
-<!-- SUBSCRIPTIONS -->
-<section class="subs-section sec" id="abonnements">
-  <div class="sec-inner">
-    <div class="sec-eyebrow" data-fr="Calculs quotidiens" data-en="Daily calculations">Calculs quotidiens</div>
-    <div class="sec-title" data-fr="Abonnements mensuels" data-en="Monthly subscriptions">Abonnements mensuels</div>
-    <div class="divider"></div>
-    <div class="subs-grid">
-      <div class="sub-card">
-        <div class="sub-eyebrow" data-fr="Abonnement mensuel" data-en="Monthly subscription">Abonnement mensuel</div>
-        <div class="sub-icon" style="background:rgba(255,255,255,.04)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--silver)" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
-        <div class="sub-title" data-fr="Calculs quotidiens Béton" data-en="Daily Concrete Calculations">Calculs quotidiens Béton</div>
-        <div class="sub-desc" data-fr="Flexion, cisaillement, ELU/ELS, sections BA, poteaux, poutres, assemblages, dalles, fondations..." data-en="Bending, shear, ULS/SLS, RC sections, columns, beams, connections, slabs, foundations...">Flexion, cisaillement, ELU/ELS, sections BA, poteaux, poutres, assemblages, dalles, fondations...</div>
-        <div class="sub-price">XXX <sub data-fr="€ / mois" data-en="€ / month">€ / mois</sub></div>
-        <button class="btn-sub" data-fr="S'abonner" data-en="Subscribe">S'abonner</button>
-        <a href="beton.html" style="display:block;margin-top:10px;font-size:12px;color:var(--teal);text-decoration:none;letter-spacing:.04em;transition:opacity .2s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'" data-fr="→ Accéder aux calculs béton" data-en="→ Access concrete calculations">→ Accéder aux calculs béton</a>
-      </div>
-      <div class="sub-card featured">
-        <div class="sub-eyebrow" data-fr="★ Le plus populaire" data-en="★ Most popular">★ Le plus populaire</div>
-        <div class="sub-icon" style="background:rgba(201,168,76,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round"><path d="M2 17h20M5 17V9l7-5 7 5v8"/><rect x="9" y="12" width="6" height="5"/></svg></div>
-        <div class="sub-title" data-fr="Calculs quotidiens Ponts routiers" data-en="Daily Road Bridge Calculations">Calculs quotidiens Ponts routiers</div>
-        <div class="sub-desc" data-fr="Charges LM1/LM2/LM3, convois exceptionnels, fatigue, EN1991-2, descente de charges, prédimensionnement..." data-en="LM1/LM2/LM3 loads, abnormal convoys, fatigue, EN1991-2, load takedown, preliminary design...">Charges LM1/LM2/LM3, convois exceptionnels, fatigue, EN1991-2, descente de charges, prédimensionnement...</div>
-        <div class="sub-price" style="color:var(--gold)">XXX <sub data-fr="€ / mois" data-en="€ / month">€ / mois</sub></div>
-        <button class="btn-sub" style="background:var(--gold);color:var(--ink);border-color:var(--gold)" data-fr="S'abonner" data-en="Subscribe">S'abonner</button>
-      </div>
-      <div class="sub-card">
-        <div class="sub-eyebrow" data-fr="Abonnement mensuel" data-en="Monthly subscription">Abonnement mensuel</div>
-        <div class="sub-icon" style="background:rgba(26,184,160,.06)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
-        <div class="sub-title" data-fr="Calculs quotidiens Ponts ferroviaires" data-en="Daily Railway Bridge Calculations">Calculs quotidiens Ponts ferroviaires</div>
-        <div class="sub-desc" data-fr="Charges SW/0, SW/2, HSLM, fatigue ferroviaire, EN1991-2, gabarit ferroviaire, charges dynamiques..." data-en="SW/0, SW/2, HSLM loads, railway fatigue, EN1991-2, clearance gauge, dynamic loads...">Charges SW/0, SW/2, HSLM, fatigue ferroviaire, EN1991-2, gabarit ferroviaire, charges dynamiques...</div>
-        <div class="sub-price">XXX <sub data-fr="€ / mois" data-en="€ / month">€ / mois</sub></div>
-        <button class="btn-sub" data-fr="S'abonner" data-en="Subscribe">S'abonner</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CTA -->
-<section class="cta-section">
-  <div class="cta-bg"></div>
-  <div class="cta-inner">
-    <div class="cta-title" data-fr="Prêt à concevoir votre<br>premier <em>pont</em> ?" data-en="Ready to design your<br>first <em>bridge</em>?">Prêt à concevoir votre<br>premier <em>pont</em> ?</div>
-    <p class="cta-sub" data-fr="Rejoignez les ingénieurs qui font confiance à BridgeAI Studios." data-en="Join the engineers who trust BridgeAI Studios.">Rejoignez les ingénieurs qui font confiance à BridgeAI Studios.</p>
-    <div class="cta-form">
-      <input type="email" data-placeholder-fr="votre@email.com" data-placeholder-en="your@email.com" placeholder="votre@email.com">
-      <button data-fr="S'inscrire gratuitement" data-en="Sign up for free">S'inscrire gratuitement</button>
     </div>
   </div>
 </section>
@@ -804,50 +360,9 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-top">
-      <div>
-        <div class="footer-logo">Bridge<span>AI</span> Studios</div>
-        <p class="footer-desc" data-fr="La plateforme IA spécialisée dans la conception des ponts routiers & ferroviaires. Calculs, plans, métrés — tout en un." data-en="The AI platform specialized in road & railway bridge design. Calculations, drawings, quantities — all in one.">La plateforme IA spécialisée dans la conception des ponts routiers & ferroviaires.</p>
-      </div>
-      <div class="footer-col">
-        <h4 data-fr="Produit" data-en="Product">Produit</h4>
-        <ul>
-          <li><a href="#composer" data-fr="Bridge Composer" data-en="Bridge Composer">Bridge Composer</a></li>
-          <li><a href="#independants" data-fr="Modules indépendants" data-en="Standalone modules">Modules indépendants</a></li>
-          <li><a href="#pricing" data-fr="Grille tarifaire" data-en="Pricing grid">Grille tarifaire</a></li>
-          <li><a href="#abonnements" data-fr="Abonnements" data-en="Subscriptions">Abonnements</a></li>
-      <li><a href="beton.html" style="color:var(--teal)" data-fr="Calculs Béton ↗" data-en="Concrete Calc ↗">Calculs Béton ↗</a></li>
-      <li><a href="vipp.html" style="color:var(--teal)" data-fr="VIPP-EL ↗" data-en="VIPP-EL ↗">VIPP-EL ↗</a></li>
-      <li><a href="bibliotheque.html" style="color:var(--gold)" data-fr="Bibliothèque ↗" data-en="Library ↗">Bibliothèque ↗</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4 data-fr="Ressources" data-en="Resources">Ressources</h4>
-        <ul>
-          <li><a href="#" data-fr="Documentation" data-en="Documentation">Documentation</a></li>
-          <li><a href="#" data-fr="Tutoriels" data-en="Tutorials">Tutoriels</a></li>
-          <li><a href="#" data-fr="Blog technique" data-en="Technical blog">Blog technique</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Contact</h4>
-        <ul>
-          <li><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a></li>
-          <li><a href="#">LinkedIn</a></li>
-          <li><a href="#">bridgeaistudios.com</a></li>
-        </ul>
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;display:flex;justify-content:center">
-      <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 20px;border-radius:99px;border:1px solid rgba(201,168,76,.15);background:rgba(201,168,76,.03)">
-        <span style="width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite;display:inline-block"></span>
-        <span style="font-size:11px;color:var(--silver)" data-fr="Visiteurs" data-en="Visitors">Visiteurs</span>
-        <span style="font-size:13px;font-weight:400;color:var(--gold);font-family:'Cormorant Garamond',serif" id="visit-count">—</span>
-      </div>
-    </div>
     <div class="footer-bottom">
-      <p>&copy; 2025 BridgeAI Studios — <span data-fr="Tous droits réservés" data-en="All rights reserved">Tous droits réservés</span></p>
-      <p>bridgeaistudios.com</p>
+      <p><span class="footer-logo" style="font-size:16px;margin:0">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="vipp.html">VIPP-EL</a> &nbsp;·&nbsp; <a href="bibliotheque.html" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a></p>
+      <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
     </div>
   </div>
 </footer>
@@ -890,20 +405,6 @@ function updateCount() {
   const el = document.getElementById('mod-count');
   if(el) el.textContent = n;
 }
-</script>
-<script>
-async function loadVisitors() {
-  try {
-    const res = await fetch('https://api.countapi.xyz/hit/bridgeaistudios.com/visits');
-    const data = await res.json();
-    document.getElementById('visit-count').textContent = data.value.toLocaleString('fr-FR');
-  } catch(e) {
-    let c = parseInt(localStorage.getItem('vc') || '0') + 1;
-    localStorage.setItem('vc', c);
-    document.getElementById('visit-count').textContent = c.toLocaleString('fr-FR');
-  }
-}
-loadVisitors();
 </script>
 </body>
 </html>
