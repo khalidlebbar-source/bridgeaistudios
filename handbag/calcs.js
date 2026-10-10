@@ -14,7 +14,7 @@ const PI = Math.PI, sqrt = Math.sqrt, pow = Math.pow, exp = Math.exp, min = Math
 const L = String.raw;
 const S = (k, s, f, v, u = "", d = 3, r = false) => ({ k, s, f, v, u, d, r });
 const R = (k, s, f, v, u = "", d = 3) => S(k, s, f, v, u, d, true);
-const C = (l, ok, txt = "") => ({ l, ok, txt });
+const C = (l, ok, txt = "", ratio) => ({ l, ok, txt, ratio });   // ratio : taux de travail (demande / capacité), facultatif
 const N = (k, l, u, v, s, extra = {}) => Object.assign({ k, l, u, v, s: s || k, t: "num" }, extra);
 const SEL = (k, l, o, v, s) => ({ k, l, o, v, s: s === undefined ? k : s, t: "sel" });
 const H = (h) => ({ h });
@@ -196,7 +196,7 @@ const CALCS = [
     };
   } },
 
-{ id: "acier-precontrainte", cat: "Matériaux", t: "Acier de précontrainte : tension initiale", ref: "BPEL 91 — art. 3.3 ; NF EN 1992-1-1 — §5.10.2",
+{ id: "acier-precontrainte", cat: "Précontrainte", t: "Acier de précontrainte : tension initiale", ref: "BPEL 91 — art. 3.3 ; NF EN 1992-1-1 — §5.10.2",
   desc: "Tension maximale à l'origine selon le BPEL et l'Eurocode 2, et conversions d'unités.",
   inputs: [SEL("mode", "Mode de précontrainte", [["post", "Post-tension"], ["pre", "Pré-tension"]], "post", ""),
     N("fprg", "Contrainte de rupture garantie", "MPa", 1860, L`f_{prg} = f_{pk}`), N("fpeg", "Limite élastique garantie", "MPa", 1660, L`f_{peg} = f_{p0,1k}`),
@@ -217,7 +217,7 @@ const CALCS = [
   } },
 
 /* ══════════════ SECTIONS ══════════════ */
-{ id: "section-mixte", cat: "Sections", t: "Caractéristiques d'une section mixte acier-béton", ref: "Homogénéisation élastique — NF EN 1994-2 §5.4.2.2 ou modules BAEL",
+{ id: "section-mixte", cat: "Ouvrages mixtes", t: "Caractéristiques d'une section mixte acier-béton", ref: "Homogénéisation élastique — NF EN 1994-2 §5.4.2.2 ou modules BAEL",
   desc: "Profilé seul et section mixte homogénéisée (hourdis + renformis) à court ou long terme.",
   inputs: [H("Béton"), N("bh", "Hourdis : largeur participante", "mm", 4788, L`b_{eff}`), N("hh", "Hourdis : épaisseur", "mm", 200, L`e_h`),
     N("br", "Renformis : largeur", "mm", 600, L`b_r`), N("hr", "Renformis : hauteur", "mm", 100, L`e_r`),
@@ -265,7 +265,7 @@ const CALCS = [
     };
   } },
 
-{ id: "raideur-appui", cat: "Sections", t: "Inertie équivalente et raideur d'un appui", ref: "RDM — console encastrée $u = FH^3/3EI$ ; élastomère $K = nGA/T$",
+{ id: "raideur-appui", cat: "Appuis et soutènements", t: "Inertie équivalente et raideur d'un appui", ref: "RDM — console encastrée $u = FH^3/3EI$ ; élastomère $K = nGA/T$",
   desc: "Inertie équivalente déduite d'un déplacement en tête, et raideur horizontale des appareils d'appui.",
   inputs: [H("Fût / appui"), N("H", "Hauteur", "m", 9.5, "H"), N("F", "Force horizontale en tête", "kN", 1000, "F"), N("u", "Déplacement en tête", "mm", 6.5, "u"),
     N("E", "Module du béton", "MPa", 19620, L`E_b`),
@@ -281,7 +281,7 @@ const CALCS = [
   } },
 
 /* ══════════════ FLÈCHES & ROTATIONS ══════════════ */
-{ id: "fleche-prefa", cat: "Flèches & rotations", t: "Poutres préfabriquées : flèches et contre-flèche", ref: "RDM — $f = 5pL^4/384EI$ ; phasage $F_1 + \\tfrac{2}{3}F_2 + F_3$ ; limites PRA",
+{ id: "fleche-prefa", cat: "RDM et formulaire", t: "Poutres préfabriquées : flèches et contre-flèche", ref: "RDM — $f = 5pL^4/384EI$ ; phasage $F_1 + \\tfrac{2}{3}F_2 + F_3$ ; limites PRA",
   desc: "Flèche à la pose, après durcissement du tablier et sous superstructures ; contre-flèche à donner aux poutres.",
   inputs: [N("fc28", "Résistance du béton à 28 jours", "MPa", 35, L`f_{c28}`), N("fcp", "Résistance à la date de pose", "MPa", 35, L`f_{cj}`), N("L", "Portée de calcul", "m", 26.5, "L"), N("g", "Poids volumique", "kN/m³", 25, L`\gamma`),
     H("À la pose"), N("Ip", "Inertie de la poutre seule", "m⁴", 0.1807, L`I_p`), N("Ap", "Aire de la poutre", "m²", 0.8085, L`A_p`),
@@ -310,7 +310,7 @@ const CALCS = [
     };
   } },
 
-{ id: "fleche-tablier", cat: "Flèches & rotations", t: "Flèche différée d'un tablier isostatique", ref: "RDM — $f = 5pL^4/384E_vI$ ; limites PRA",
+{ id: "fleche-tablier", cat: "RDM et formulaire", t: "Flèche différée d'un tablier isostatique", ref: "RDM — $f = 5pL^4/384E_vI$ ; limites PRA",
   desc: "Flèche différée sous charges permanentes et contre-flèche à prévoir.",
   inputs: [N("fc28", "Résistance du béton", "MPa", 35, L`f_{c28}`), N("L", "Portée", "m", 25, "L"), N("I", "Inertie du tablier", "m⁴", 4.616, "I"),
     N("pb", "Poids du tablier (béton)", "kN/ml", 0, L`p_b`), N("ps", "Poids des superstructures", "kN/ml", 456, L`p_s`), N("CF", "Contre-flèche retenue", "mm", 50, "CF")],
@@ -325,7 +325,7 @@ const CALCS = [
     };
   } },
 
-{ id: "contre-fleche", cat: "Flèches & rotations", t: "Contre-flèche parabolique", ref: "Parabole $y = ax^2 + bx$",
+{ id: "contre-fleche", cat: "RDM et formulaire", t: "Contre-flèche parabolique", ref: "Parabole $y = ax^2 + bx$",
   desc: "Ordonnées de la contre-flèche à chaque dixième de portée.",
   inputs: [N("L", "Portée", "m", 38, "L"), N("f", "Contre-flèche à mi-travée", "mm", 40, "f")],
   calc(I) {
@@ -334,7 +334,7 @@ const CALCS = [
       tables: [cfTable(I.L, I.f, true)], fig: figParabole(I.L, I.f) };
   } },
 
-{ id: "fleche-mur", cat: "Flèches & rotations", t: "Flèche d'un mur en console sous poussée", ref: "RDM — charge triangulaire $pl^4/30EI$, uniforme $pl^4/8EI$ ; poussée de Rankine",
+{ id: "fleche-mur", cat: "Appuis et soutènements", t: "Flèche d'un mur en console sous poussée", ref: "RDM — charge triangulaire $pl^4/30EI$, uniforme $pl^4/8EI$ ; poussée de Rankine",
   desc: "Déplacement en tête d'un voile ou mur de culée sous poussée des terres et de la surcharge.",
   inputs: [N("l", "Hauteur du mur", "m", 9.7, "l"), N("phi", "Angle de frottement du remblai (0 = Ka saisi)", "°", 0, L`\varphi'`), N("Ka", "Coefficient de poussée", "", 0.33, L`K_a`), N("g", "Poids volumique du remblai", "kN/m³", 20, L`\gamma`),
     N("q", "Surcharge sur remblai", "kN/m²", 20, "q"), N("fc28", "Résistance du béton", "MPa", 30, L`f_{c28}`),
@@ -354,7 +354,7 @@ const CALCS = [
     };
   } },
 
-{ id: "fleche-pile", cat: "Flèches & rotations", t: "Déplacement en tête d'appui (console)", ref: "RDM — $u = FH^3/3EI$",
+{ id: "fleche-pile", cat: "Appuis et soutènements", t: "Déplacement en tête d'appui (console)", ref: "RDM — $u = FH^3/3EI$",
   desc: "Déplacement en tête d'une pile, d'un groupe de pieux ou de barrettes sous effort horizontal.",
   inputs: [N("fc28", "Résistance du béton", "MPa", 35, L`f_{c28}`), N("F", "Effort horizontal en tête", "kN", 3600, "F"), N("H", "Hauteur libre", "m", 8, "H"),
     SEL("sec", "Section", [["I", "Inertie donnée"], ["P", "Pieux circulaires"], ["B", "Barrettes rectangulaires"]], "I", ""),
@@ -370,7 +370,7 @@ const CALCS = [
       notes: ["Hypothèse d'encastrement parfait en pied : pour des pieux ou barrettes dans le sol, la souplesse du sol (loi de réaction latérale, page Barrettes) augmente le déplacement."] };
   } },
 
-{ id: "rotation", cat: "Flèches & rotations", t: "Rotation sur appui d'une poutre isostatique", ref: "RDM — $\\alpha = pL^3/24EI$ ; $\\alpha = PL^2/16EI$",
+{ id: "rotation", cat: "RDM et formulaire", t: "Rotation sur appui d'une poutre isostatique", ref: "RDM — $\\alpha = pL^3/24EI$ ; $\\alpha = PL^2/16EI$",
   desc: "Rotation instantanée et différée sur appui (dimensionnement des appareils d'appui).",
   inputs: [SEL("cas", "Chargement", [["q", "Charge uniforme p"], ["P", "Charge concentrée P à mi-travée"]], "q", ""),
     N("p", "Charge (kN/ml ou kN)", "kN/ml", 330, "p, P"), N("L", "Portée", "m", 26.05, "L"), N("I", "Inertie", "m⁴", 6.7205, "I"), N("fc28", "Résistance du béton", "MPa", 30, L`f_{c28}`)],
@@ -384,7 +384,7 @@ const CALCS = [
   } },
 
 /* ══════════════ CHARGES ══════════════ */
-{ id: "maj-dyn", cat: "Charges & répartition", t: "Coefficient de majoration dynamique", ref: "Fascicule 61 titre II — art. 5.5",
+{ id: "maj-dyn", cat: "Actions sur les ponts", t: "Coefficient de majoration dynamique", ref: "Fascicule 61 titre II — art. 5.5",
   desc: "Majoration dynamique des charges B pour une travée (poutres) ou un élément d'hourdis.",
   inputs: [SEL("el", "Élément", [["p", "Poutres / travée"], ["h", "Hourdis"]], "p", ""), N("L", "Longueur L", "m", 35.02, "L"),
     N("G", "Charge permanente sur L", "t", 924, "G"), N("S", "Surcharge B maximale sur L", "t", 110, "S")],
@@ -396,7 +396,7 @@ const CALCS = [
         "L : inf(entraxe des poutres de rive, portée) ; G : poids de l'hourdis et des éléments qu'il porte sur L ; S : surcharge B maximale sur L."] };
   } },
 
-{ id: "charge-al", cat: "Charges & répartition", t: "Charge A(L) et freinage", ref: "Fascicule 61 titre II — art. 2, 4.2 et 4.4",
+{ id: "charge-al", cat: "Actions sur les ponts", t: "Charge A(L) et freinage", ref: "Fascicule 61 titre II — art. 2, 4.2 et 4.4",
   desc: "Densité de charge A(L) selon la classe du pont et le nombre de voies chargées, et effort de freinage associé.",
   inputs: [N("L", "Longueur chargée", "m", 9.45, "L"), N("Lch", "Largeur chargeable", "m", 15, L`L_{ch}`),
     SEL("cl", "Classe du pont", [["1", "1re classe"], ["2", "2e classe"], ["3", "3e classe"]], "1", ""),
@@ -419,7 +419,7 @@ const CALCS = [
         "Fascicule 61 titre II : $V_0$ = 3,50 m (1re classe), 3,00 m (2e), 2,75 m (3e)."] };
   } },
 
-{ id: "courbon", cat: "Charges & répartition", t: "Répartition transversale — méthode de Courbon", ref: "Méthode de Courbon (tablier infiniment rigide en torsion)",
+{ id: "courbon", cat: "Actions sur les ponts", t: "Répartition transversale — méthode de Courbon", ref: "Méthode de Courbon (tablier infiniment rigide en torsion)",
   desc: "Coefficient de répartition transversale de chaque poutre pour une charge excentrée.",
   inputs: [N("n", "Nombre de poutres", "U", 4, "n"), N("bp", "Entraxe moyen des poutres", "m", 5.16667, L`b_p`), N("e", "Excentricité de la charge", "m", 2.25, "e")],
   calc(I) {
@@ -433,7 +433,7 @@ const CALCS = [
       fig: figCourbon(n, I.e, I.bp, et) };
   } },
 
-{ id: "freinage-lgv", cat: "Charges & répartition", t: "Démarrage et freinage ferroviaires", ref: "NF EN 1991-2 — §6.5.3",
+{ id: "freinage-lgv", cat: "Actions sur les ponts", t: "Démarrage et freinage ferroviaires", ref: "NF EN 1991-2 — §6.5.3",
   desc: "Forces longitudinales de démarrage et de freinage pour une voie.",
   inputs: [SEL("mod", "Modèle de charge", [["71", "LM71 / SW/0 / HSLM"], ["SW2", "SW/2"]], "71", ""), N("L", "Longueur d'influence", "m", 24, L`L_{a,b}`), N("a", "Coefficient de classification α (LM71, SW/0)", "", 1, L`\alpha`)],
   calc(I) {
@@ -464,7 +464,7 @@ const CALCS = [
   } },
 
 /* ══════════════ BÉTON ARMÉ ══════════════ */
-{ id: "cis-ec2", cat: "Béton armé", t: "Effort tranchant : armatures et bielles", ref: "NF EN 1992-1-1 — §6.2.3 (6.8), (6.9), §9.2.2",
+{ id: "cis-ec2", cat: "Béton armé — Eurocode 2", t: "Effort tranchant : armatures et bielles", ref: "NF EN 1992-1-1 — §6.2.3 (6.8), (6.9), §9.2.2",
   desc: "Armatures transversales nécessaires, résistance des bielles et pourcentage minimal, à l'ELU et en situation accidentelle.",
   inputs: [H("ELU fondamental"), N("V1", "Effort tranchant", "MN", 6.067, L`V_{Ed}`), N("cot1", "Inclinaison des bielles", "", 1.5, L`\cot\theta`), N("g1", "Coefficient acier", "", 1.15, L`\gamma_s`),
     H("ELA / sismique"), N("V2", "Effort tranchant", "MN", 9.588, L`V_{Ed}`), N("cot2", "Inclinaison des bielles", "", 2.5, L`\cot\theta`), N("g2", "Coefficient acier", "", 1, L`\gamma_s`),
@@ -486,7 +486,7 @@ const CALCS = [
       notes: ["$\\alpha_{cw} = 1$ (pas de précontrainte), cadres verticaux. $f_{ywd} = f_{ywk}/\\gamma_s$, $f_{cd} = f_{ck}/\\gamma_c$ avec $\\alpha_{cc} = 1$."] };
   } },
 
-{ id: "cis-circulaire", cat: "Béton armé", t: "Cisaillement d'un fût circulaire creux", ref: "RDM (τ = V·S/I·b) ; BAEL 91 — A.5.1.2",
+{ id: "cis-circulaire", cat: "Béton armé — BAEL", t: "Cisaillement d'un fût circulaire creux", ref: "RDM (τ = V·S/I·b) ; BAEL 91 — A.5.1.2",
   desc: "Contrainte de cisaillement maximale dans un fût de pile creux, contrainte limite et armatures dans l'épaisseur.",
   inputs: [N("D", "Diamètre extérieur", "m", 2.4, "D"), N("e", "Épaisseur", "m", 0.4, "e"), N("V", "Effort tranchant", "kN", 1161, "V"),
     N("fe", "Acier", "MPa", 500, L`f_e`), N("gs", "Coefficient acier", "", 1, L`\gamma_s`), N("fc", "Béton", "MPa", 35, L`f_{c28}`), N("gb", "Coefficient béton", "", 1.15, L`\gamma_b`),
@@ -503,7 +503,7 @@ const CALCS = [
       notes: ["Section creuse épaisse : $S$ moment statique de la demi-couronne par rapport à l'axe neutre, $b = 2e$ largeur coupée par l'axe neutre. Armatures : BAEL A.5.1.23 avec k = 0 (reprise de bétonnage), cadres droits ; la densité vaut pour chacune des deux parois coupées."], fig: figTube(I.D, I.e) };
   } },
 
-{ id: "frettage", cat: "Béton armé", t: "Frettes sous appareils d'appui", ref: "Règle des 4 % de la réaction",
+{ id: "frettage", cat: "Appareils d'appui et équipements", t: "Frettes sous appareils d'appui", ref: "Règle des 4 % de la réaction",
   desc: "Frette de surface directement sous l'appareil d'appui, dans chaque direction.",
   inputs: [N("R", "Réaction maximale ELS", "kN", 1101, L`R_{max}`), N("fe", "Nuance des frettes", "MPa", 235, L`f_e`),
     SEL("phi", "Diamètre retenu", Object.keys(ACIER_HA).map(k => [k, "Ø" + k]), "10", L`\varnothing`)],
@@ -513,7 +513,7 @@ const CALCS = [
       S("n", L`n_{min}`, L`\dfrac{A}{A_{\varnothing}}`, n, "U", 2), R("nr", "n", "~brins retenus par sens", Math.ceil(n), "U", 0)] };
   } },
 
-{ id: "levage-trous", cat: "Béton armé", t: "Levage des poutres : réservations", ref: "Règle des 4 % de l'effort concentré (aciers à 2/3 de fe)",
+{ id: "levage-trous", cat: "Chantier et méthodes", t: "Levage des poutres : réservations", ref: "Règle des 4 % de l'effort concentré (aciers à 2/3 de fe)",
   desc: "Ferraillage autour des trous de levage d'une poutre préfabriquée.",
   inputs: [N("fe", "Acier des réservations", "MPa", 235, L`f_e`),
     N("S1", "Aire sur appuis", "m²", 0.8085, L`S_{max}`), N("S3", "Aire à mi-travée", "m²", 0.8085, L`S_{min}`),
@@ -527,7 +527,7 @@ const CALCS = [
       notes: ["A est à disposer dans les deux directions autour de chaque réservation.", "Un coefficient dynamique de 1,15 à 1,30 est usuel pour la manutention (à préciser selon le mode de levage)."] };
   } },
 
-{ id: "levage-crochets", cat: "Béton armé", t: "Levage des poutres : consoles et crochets", ref: "BAEL 91 — A.4.5 (ELS, n = 15) ; crochets en acier doux",
+{ id: "levage-crochets", cat: "Chantier et méthodes", t: "Levage des poutres : consoles et crochets", ref: "BAEL 91 — A.4.5 (ELS, n = 15) ; crochets en acier doux",
   desc: "Contraintes dans le béton et les aciers supérieurs au droit des crochets, et contrainte dans les crochets.",
   inputs: [N("fc", "Béton au levage", "MPa", 35, L`f_{cj}`), N("fe", "Aciers supérieurs", "MPa", 500, L`f_e`), N("As", "Section des aciers sup.", "cm²", 4.68, L`A_{sup}`),
     SEL("fis", "Fissuration", [["PP", "Peu préjudiciable"], ["P", "Préjudiciable"], ["TP", "Très préjudiciable"]], "P", ""),
@@ -549,7 +549,7 @@ const CALCS = [
       vals: { ssl, sbl }, fig: figLevage(true), notes: ["$d = h - c$ ; $I = \\tfrac{1}{3}\\,b_0\\,y_1^3 + 15\\,A_{sup}\\,(d - y_1)^2$ ; η = 1,6 (barres HA). On ne compte que sur un seul crochet par extrémité ; pour des crochets en acier doux, une contrainte limitée à 2/3 de $f_e$ est souvent retenue par prudence."] };
   } },
 
-{ id: "predalles", cat: "Béton armé", t: "Prédalles non participantes", ref: "Flexion simple de la prédalle seule ; NF EN 1991-1-6 §4.11.2 (charges de chantier)",
+{ id: "predalles", cat: "Chantier et méthodes", t: "Prédalles non participantes", ref: "Flexion simple de la prédalle seule ; NF EN 1991-1-6 §4.11.2 (charges de chantier)",
   desc: "Vérification de la prédalle (fibrociment, béton…) au coulage du béton de remplissage.",
   inputs: [N("L", "Portée de la prédalle", "m", 0.625, "L"), N("ep", "Épaisseur de la prédalle", "m", 0.012, L`e_p`), N("H", "Épaisseur de béton coulé", "m", 0.36, "H"),
     N("gp", "Poids volumique prédalle", "kN/m³", 14, L`\gamma_p`), N("gb", "Poids volumique du remplissage", "kN/m³", 26, L`\gamma_b`),
@@ -579,7 +579,7 @@ const CALCS = [
   } },
 
 /* ══════════════ APPAREILS D'APPUI ══════════════ */
-{ id: "tassement-aa", cat: "Appareils d'appui", t: "Tassement d'un appareil d'appui en élastomère fretté", ref: "NF EN 1337-3 — §5.3.3.7",
+{ id: "tassement-aa", cat: "Appareils d'appui et équipements", t: "Tassement d'un appareil d'appui en élastomère fretté", ref: "NF EN 1337-3 — §5.3.3.7",
   desc: "Tassement sous charge verticale centrée, couche par couche.",
   inputs: [N("Fz", "Charge verticale", "kN", 591, L`F_z`), N("a", "Dimension a", "m", 0.3, "a"), N("b", "Dimension b", "m", 0.4, "b"), N("enr", "Enrobage latéral", "mm", 5, "c"),
     N("G", "Module de cisaillement", "MPa", 0.9, L`G_d`), N("Eb", "Module de compressibilité", "MPa", 2000, L`E_b`),
@@ -599,7 +599,7 @@ const CALCS = [
   } },
 
 /* ══════════════ FONDATIONS ══════════════ */
-{ id: "pieux-min-sis", cat: "Fondations", t: "Pieux : minimums sismiques", ref: "AFPS 92 — ferraillage minimal des pieux",
+{ id: "pieux-min-sis", cat: "Géotechnique et fondations", t: "Pieux : minimums sismiques", ref: "AFPS 92 — ferraillage minimal des pieux",
   desc: "Armatures longitudinales minimales et pourcentage volumique des cerces.",
   inputs: [N("D", "Diamètre du pieu", "m", 1, L`\varnothing`), SEL("sol", "Type de sol (AFPS 92)", [["a", "a"], ["b", "b"], ["c", "c"]], "c", ""),
     SEL("phi", "Barres longitudinales", Object.keys(ACIER_HA).map(k => [k, "HA" + k]), "32", L`\varnothing_L`),
@@ -617,7 +617,7 @@ const CALCS = [
       R("rc", L`\rho_{w,crit}`, `~zone critique, s = ${fmt(I.sc, 0)} cm`, rc * 100, "%", 3), R("rk", L`\rho_{w,cour}`, `~zone courante, s = ${fmt(I.sk, 0)} cm`, rk * 100, "%", 3)] };
   } },
 
-{ id: "groupe-v", cat: "Fondations", t: "Effet de groupe vertical : coefficient d'efficacité", ref: "Fascicule 62 titre V — annexe G.1, §2.2 et §2.5.1",
+{ id: "groupe-v", cat: "Géotechnique et fondations", t: "Effet de groupe vertical : coefficient d'efficacité", ref: "Fascicule 62 titre V — annexe G.1, §2.2 et §2.5.1",
   desc: "Coefficient d'efficacité d'un groupe de pieux flottants.",
   inputs: [N("B", "Diamètre des pieux", "m", 1, "B"), N("d", "Entraxe", "m", 2.6, "d"), N("m", "Nombre de rangées", "U", 1, "m"), N("n", "Pieux par rangée", "U", 5, "n")],
   calc(I) {
@@ -627,7 +627,7 @@ const CALCS = [
       notes: ["CL : méthode de Converse-Labarre (§2.2)."] };
   } },
 
-{ id: "groupe-h", cat: "Fondations", t: "Effet de groupe horizontal : minorations", ref: "Fascicule 62 titre V — annexe G.1",
+{ id: "groupe-h", cat: "Géotechnique et fondations", t: "Effet de groupe horizontal : minorations", ref: "Fascicule 62 titre V — annexe G.1",
   desc: "Coefficients de minoration de la loi de réaction latérale d'un pieu dans un groupe.",
   inputs: [N("B", "Diamètre (ou largeur)", "m", 1.2, "B"), N("Ex", "Entraxe selon X", "m", 2.68, L`E_x`), N("Ey", "Entraxe selon Y", "m", 3.6, L`E_y`),
     N("nx", "Nombre de files (sens X)", "U", 3, L`n_x`), N("ny", "Nombre de files (sens Y)", "U", 2, L`n_y`), N("a", "Coefficient rhéologique", "", 0.5, L`\alpha`)],
@@ -643,7 +643,7 @@ const CALCS = [
       notes: ["K : minoration perpendiculaire au déplacement (SPD) ; $R_f$ : dans le sens du déplacement (SD). Valeur 1 si l'espacement libre dépasse 2B. La sensibilité à α est très faible (α = 1 est le plus défavorable)."], fig: figGroupe(I.nx, I.ny) };
   } },
 
-{ id: "barrettes", cat: "Fondations", t: "Barrettes : loi de réaction latérale", ref: "Fascicule 62 titre V — annexes C.5, E.1 et G.1",
+{ id: "barrettes", cat: "Géotechnique et fondations", t: "Barrettes : loi de réaction latérale", ref: "Fascicule 62 titre V — annexes C.5, E.1 et G.1",
   desc: "Raideurs frontale et tangentielle, paliers, pour un élément isolé puis en groupe, dans les deux sens.",
   inputs: [H("Sol"), N("pf", "Pression de fluage", "MPa", 3.18, L`p_f`), N("EM", "Module pressiométrique", "MPa", 67.39, L`E_M`), N("pl", "Pression limite nette", "MPa", 4.35, L`p_l^*`),
     N("a", "Coefficient rhéologique", "", 0.67, L`\alpha`), N("qs", "Frottement latéral", "MPa", 0.04, L`q_s`),
@@ -678,7 +678,7 @@ const CALCS = [
       notes: ["Sens X : B = épaisseur, L = longueur ; sens Y : rôles inversés. $a_x = E_x - L$, $a_y = E_y - B$. Pour $B < B_0$ : $K_f = 12\\,E_M / [\\frac{4}{3}(2{,}65)^{\\alpha} + \\alpha]$ (annexe C.5). Sollicitations de courte durée : K ; de longue durée : K/2."], fig: figBarrettes(I) };
   } },
 
-{ id: "barrettes-sis", cat: "Fondations", t: "Barrettes : raideur sismique", ref: "AFPS 92 — module dynamique du sol",
+{ id: "barrettes-sis", cat: "Géotechnique et fondations", t: "Barrettes : raideur sismique", ref: "AFPS 92 — module dynamique du sol",
   desc: "Raideur latérale du sol en situation sismique.",
   inputs: [N("Vs", "Vitesse des ondes de cisaillement", "m/s", 400, L`V_s`), N("rho", "Masse volumique du sol", "kg/m³", 2200, L`\rho`),
     N("kG", "Coefficient de réduction de G", "", 0.436, L`G/G_{max}`), N("nu", "Coefficient de Poisson", "", 0.3, L`\nu`),
@@ -691,7 +691,7 @@ const CALCS = [
       notes: ["Le palier à retenir est celui issu du calcul statique (page Barrettes : loi de réaction latérale)."] };
   } },
 
-{ id: "barrettes-min-sis", cat: "Fondations", t: "Barrettes : minimums sismiques", ref: "Guide SNCF-SETRA (relatif à l'AFPS 92)",
+{ id: "barrettes-min-sis", cat: "Géotechnique et fondations", t: "Barrettes : minimums sismiques", ref: "Guide SNCF-SETRA (relatif à l'AFPS 92)",
   desc: "Sections minimales et maximales d'armatures longitudinales et transversales.",
   inputs: [N("e", "Épaisseur", "m", 1, "e"), N("B", "Longueur", "m", 2.7, "B"), H("Transversal Ft1 (sens e)"), N("A1", "Section posée (2 brins)", "cm²", 4.02, L`A_1`), N("s1", "Espacement", "m", 0.15, L`s_1`),
     H("Transversal Ft2 (sens B)"), N("A2", "Section posée", "cm²", 12.32, L`A_2`), N("s2", "Espacement", "m", 0.15, L`s_2`)],
@@ -706,7 +706,7 @@ const CALCS = [
       notes: ["$l_{crit}$ : zone critique haute. Espacement maximal des barres longitudinales et transversales : 30 cm."] };
   } },
 
-{ id: "inclusions", cat: "Fondations", t: "Inclusions rigides sous remblai", ref: "Vérification simplifiée (béton et portance)",
+{ id: "inclusions", cat: "Géotechnique et fondations", t: "Inclusions rigides sous remblai", ref: "Vérification simplifiée (béton et portance)",
   desc: "Effort en tête d'une inclusion, résistance du béton et capacité portante.",
   inputs: [H("Charges"), N("Hr", "Hauteur du remblai", "m", 7, "H"), N("g", "Poids volumique du remblai", "kN/m³", 20, L`\gamma`), N("q", "Surcharge d'exploitation", "kPa", 30, "q"),
     N("ma", "Maille a", "m", 2, "a"), N("mb", "Maille b", "m", 2, "b"), N("Fn", "Frottement négatif", "MN", 0.379, L`F_n`),
@@ -798,6 +798,10 @@ function figSpectre(pts) {
    <text x="${W - 34}" y="${Hh - 6}" fill="${INK}" stroke="none" font-size="9">T (s)</text>`);
 }
 
-const api = { CALCS, fmt, elsRect, seH, seV, SPECTRES, BOULONS, fcjLaw };
+/* rubriques (ordre d'affichage) et point d'entrée des modules complémentaires (handbag/lib/*.js) */
+const RUBRIQUES = ["Matériaux","Béton armé — Eurocode 2","Béton armé — BAEL","Précontrainte","Charpente métallique","Ouvrages mixtes","Actions sur les ponts","RDM et formulaire","Appareils d'appui et équipements","Appuis et soutènements","Géotechnique et fondations","Hydraulique","Séisme","Chantier et méthodes","Outils"];
+function add(cat, list) { list.forEach(c => { c.cat = cat; if (CALCS.some(x => x.id === c.id)) throw new Error("identifiant en double : " + c.id); CALCS.push(c); }); }
+const DSL = { PI, sqrt, pow, exp, min, max, abs, atan, L, S, R, C, N, SEL, H, fmt, elsRect, fcjLaw, ACIER_HA, EC2_CUBE, BOULONS, SPECTRES, seH, seV };
+const api = { CALCS, fmt, elsRect, seH, seV, SPECTRES, BOULONS, fcjLaw, RUBRIQUES, add, DSL };
 if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HANDBAG = api;
 })(typeof window !== "undefined" ? window : globalThis);

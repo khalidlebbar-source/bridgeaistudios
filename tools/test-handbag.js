@@ -1,6 +1,6 @@
 /* Validation de HandBag contre les valeurs calculées par les classeurs Excel d'origine.
    Usage : node tools/test-handbag.js                                                    */
-const { CALCS, seV } = require("../handbag/calcs.js");
+const { CALCS, seV } = require("./load-handbag.js");
 
 const DEF = id => { const c = CALCS.find(x => x.id === id); if (!c) throw new Error("calcul inconnu " + id); return c; };
 function run(id, over = {}) {
@@ -87,14 +87,17 @@ const CASES = [
   ["spectre-ec8", { q: 1.5 }, { plD: 0.981 * 1.8 * 2.5 / 1.5 }, "EC8 spectre de calcul (3.14)"],
   ["spectre-ec8", {}, { r055: 3.6818181818181817, r2: 0.6328125, plH: 0.981 * 1.8 * 2.5 }, "HAND-BAG-EC · Spectres Elas (horizontal)"],
 ];
+/* cas de validation des modules complémentaires : valeurs recalculées à la main (tools/cases/*.js) */
+for (const f of require("fs").readdirSync(__dirname + "/cases").sort()) CASES.push(...require("./cases/" + f));
 
 let ok = 0, ko = 0; const lines = [];
 for (const [id, over, exp, src] of CASES) {
   let r; try { r = run(id, over); } catch (e) { console.log("✗", id, "ERREUR", e.message); ko++; continue; }
-  for (const [k, ev] of Object.entries(exp)) {
+  for (let [k, ev] of Object.entries(exp)) {
     let v; try { v = get(r, k); } catch (e) { console.log("✗", id, k, e.message); ko++; continue; }
+    const [e0, tol] = Array.isArray(ev) ? ev : [ev, 1e-6]; ev = e0;
     const rel = Math.abs(v - ev) / Math.max(Math.abs(ev), 1e-12);
-    if (rel < 1e-6) ok++; else { ko++; console.log(`✗ ${id}.${k} = ${v} ≠ Excel ${ev} (écart ${(rel * 100).toFixed(4)} %)  [${src}]`); }
+    if (rel < tol) ok++; else { ko++; console.log(`✗ ${id}.${k} = ${v} ≠ Excel ${ev} (écart ${(rel * 100).toFixed(4)} %)  [${src}]`); }
   }
   lines.push(src);
 }
@@ -107,5 +110,5 @@ for (const [id, over, exp, src] of CASES) {
 
 const ids = new Set(CASES.map(c => c[0]));
 const missing = CALCS.filter(c => !ids.has(c.id)).map(c => c.id);
-console.log(`\n${ok} valeurs conformes, ${ko} écarts — ${CALCS.length} calculs, ${ids.size} validés contre Excel${missing.length ? " ; non couverts : " + missing.join(", ") : ""}`);
+console.log(`\n${ok} valeurs conformes, ${ko} écarts — ${CALCS.length} calculs, ${ids.size} validés (Excel ou calcul manuel)${missing.length ? " ; non couverts : " + missing.join(", ") : ""}`);
 process.exit(ko ? 1 : 0);

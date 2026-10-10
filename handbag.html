@@ -46,7 +46,14 @@ nav{flex:0 0 56px;background:rgba(249,248,245,.96);border-bottom:1px solid var(-
 .side-search input{width:100%;height:32px;border-radius:7px;border:1px solid var(--border);background:var(--white);padding:0 10px;font-size:12px;outline:none}
 .side-search input:focus{border-color:var(--gold2)}
 .side-list{flex:1;overflow:auto;padding:4px 10px 20px}
-.side-cat{display:flex;align-items:center;gap:8px;font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.16em;text-transform:uppercase;padding:13px 8px 5px}
+.side-cat{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;cursor:pointer;text-align:left;font-size:9px;font-weight:500;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;padding:9px 8px 5px;border-radius:6px}
+.side-cat:hover{color:var(--ink)}
+.side-cat .nm{flex:1;line-height:1.3}
+.side-cat .nb{font-size:9px;letter-spacing:0;color:var(--ink3);background:#f1eee8;border-radius:99px;padding:1px 7px}
+.side-cat .chev{width:10px;height:10px;transition:transform .2s;opacity:.6}
+.side-cat.open .chev{transform:rotate(90deg)}
+.side-grp{display:none;padding-bottom:4px}
+.side-grp.open{display:block}
 .side-cat .ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c)}
 .side-cat .ic svg{width:12px;height:12px}
 .side-item{display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;border:1px solid transparent;background:none;border-radius:6px;padding:5px 8px;font-size:12px;color:var(--ink2);cursor:pointer;line-height:1.35}
@@ -286,6 +293,9 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/katex/katex.min.js"></script>
 <script src="handbag/calcs.js"></script>
 <script src="handbag/figures.js"></script>
+<script src="handbag/lib/kit.js"></script>
+<script src="handbag/lib/ec2.js"></script>
+<!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
 const $ = s => document.querySelector(s);
@@ -297,15 +307,20 @@ const tx = str => String(str ?? "").replace(/\$([^$]+)\$/g, (_, t) => M(t));    
 const fx = f => !f ? "" : f.startsWith("~") ? `<span class="txt">${tx(f.slice(1))}</span>` : M(f);   // expression d'une étape
 const CAT = {
   "Matériaux": ["#a07828", '<path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6"/>'],
-  "Sections": ["#1a4fd6", '<path d="M4 4h16M4 20h16M12 4v16"/>'],
-  "Flèches & rotations": ["#0a8a78", '<path d="M3 8q9 12 18 0"/><path d="M3 8h18" stroke-dasharray="2 2"/>'],
-  "Charges & répartition": ["#7a5cc9", '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'],
+  "Béton armé — Eurocode 2": ["#5f677a", '<rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="7" cy="15" r="1.2"/><circle cx="12" cy="15" r="1.2"/><circle cx="17" cy="15" r="1.2"/>'],
+  "Béton armé — BAEL": ["#7d6f5a", '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M6 15h12"/><circle cx="7" cy="9" r="1.2"/><circle cx="17" cy="9" r="1.2"/>'],
   "Précontrainte": ["#c95c7a", '<path d="M3 12h18M3 12q9 7 18 0"/><circle cx="3" cy="12" r="1.5"/><circle cx="21" cy="12" r="1.5"/>'],
-  "Béton armé": ["#5f677a", '<rect x="3" y="5" width="18" height="14" rx="1"/><circle cx="7" cy="15" r="1.2"/><circle cx="12" cy="15" r="1.2"/><circle cx="17" cy="15" r="1.2"/>'],
-  "Charpente métallique": ["#5a86c2", '<path d="M8 3v18M16 3v18M8 7h8M8 12h8M8 17h8"/>'],
-  "Appareils d'appui": ["#d4774a", '<rect x="4" y="6" width="16" height="12" rx="1"/><path d="M4 10h16M4 14h16"/>'],
-  "Fondations": ["#8a6d47", '<path d="M3 6h18M7 6v14M12 6v14M17 6v14"/>'],
+  "Charpente métallique": ["#5a86c2", '<path d="M5 4h14M5 20h14M12 4v16"/>'],
+  "Ouvrages mixtes": ["#3f8fa6", '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M8 9v3M16 9v3M7 12h10M12 12v8M8 20h8"/>'],
+  "Actions sur les ponts": ["#7a5cc9", '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>'],
+  "RDM et formulaire": ["#0a8a78", '<path d="M3 8q9 12 18 0"/><path d="M3 8h18" stroke-dasharray="2 2"/>'],
+  "Appareils d'appui et équipements": ["#d4774a", '<rect x="4" y="6" width="16" height="12" rx="1"/><path d="M4 10h16M4 14h16"/>'],
+  "Appuis et soutènements": ["#996b3d", '<path d="M6 3v18M6 21h12M6 6l10 15"/>'],
+  "Géotechnique et fondations": ["#8a6d47", '<path d="M3 6h18M7 6v14M12 6v14M17 6v14"/>'],
+  "Hydraulique": ["#2a7fd4", '<path d="M3 15q3-3 6 0t6 0 6 0M3 19q3-3 6 0t6 0 6 0M12 3l4 6a4 4 0 1 1-8 0z"/>'],
   "Séisme": ["#c0392b", '<path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/>'],
+  "Chantier et méthodes": ["#c9932a", '<path d="M4 21V5h11l5 4M15 5v16M4 9h11M9 9v12"/>'],
+  "Outils": ["#6f7486", '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/>'],
 };
 const catColor = c => (CAT[c] || ["#7a7e8e"])[0];
 const catIcon = c => `<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${(CAT[c] || ["", ""])[1]}</svg></span>`;
@@ -328,16 +343,23 @@ function show(v, d) {
 const parse = s => { s = String(s).trim().replace(/\s/g, "").replace(",", "."); if (/^(∞|inf|infini)$/i.test(s)) return Infinity; return s === "" ? NaN : Number(s); };
 
 /* ── sidebar ── */
+const RUB = window.HANDBAG.RUBRIQUES, rk = c => { const i = RUB.indexOf(c.cat); return i < 0 ? 99 : i; };
+const ORDER = CALCS.map((c, i) => [c, i]).sort((a, b) => rk(a[0]) - rk(b[0]) || a[1] - b[1]).map(x => x[0]);
+let fold = new Set(ls.get("hb:open", []));
 function renderList(q = "") {
-  const t = norm(q); let html = "", last = "", n = 0;
-  CALCS.forEach(c => {
-    if (t && !norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t)) return;
-    if (c.cat !== last) { html += `<div class="side-cat" style="--c:${catColor(c.cat)}">${catIcon(c.cat)}${c.cat}</div>`; last = c.cat; }
-    html += `<button class="side-item ${cur && cur.id === c.id ? "active" : ""}" data-id="${c.id}" style="--c:${catColor(c.cat)}"><span class="dot"></span><span>${c.t}</span></button>`; n++;
+  const t = norm(q), groups = new Map();
+  ORDER.forEach(c => { if (t && !norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t)) return; if (!groups.has(c.cat)) groups.set(c.cat, []); groups.get(c.cat).push(c); });
+  let html = "", n = 0;
+  groups.forEach((list, cat) => {
+    const open = !!t || fold.has(cat) || (cur && cur.cat === cat);
+    html += `<button class="side-cat ${open ? "open" : ""}" data-cat="${cat}" style="--c:${catColor(cat)}">${catIcon(cat)}<span class="nm">${cat}</span><span class="nb">${list.length}</span><svg class="chev" viewBox="0 0 10 10"><path d="M3 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><div class="side-grp ${open ? "open" : ""}">`;
+    list.forEach(c => { html += `<button class="side-item ${cur && cur.id === c.id ? "active" : ""}" data-id="${c.id}" style="--c:${catColor(c.cat)}"><span class="dot"></span><span>${tx(c.t)}</span></button>`; n++; });
+    html += `</div>`;
   });
   $("#list").innerHTML = html || `<div class="side-cat">Aucun calcul</div>`;
-  $("#count").textContent = `${CALCS.length} calculs · vérifiés contre vos classeurs et les textes réglementaires`;
+  $("#count").textContent = t ? `${n} calcul${n > 1 ? "s" : ""} trouvé${n > 1 ? "s" : ""} sur ${CALCS.length}` : `${CALCS.length} calculs · ${RUB.length} rubriques · vérifiés contre les textes réglementaires`;
 }
+$("#list").addEventListener("click", e => { const h = e.target.closest("[data-cat]"); if (h && !$("#find").value) { const cat = h.dataset.cat; const op = h.classList.toggle("open"); h.nextElementSibling.classList.toggle("open", op); op ? fold.add(cat) : fold.delete(cat); ls.set("hb:open", [...fold]); } });
 $("#list").addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b) open(b.dataset.id); });
 $("#find").addEventListener("input", e => renderList(e.target.value));
 
@@ -381,8 +403,8 @@ function compute() {
   let r; try { r = cur.calc(I); } catch (e) { $("#c2").innerHTML = `<div class="card"><p class="notes">Calcul impossible : ${e.message}</p></div>`; return; }
   const g = k => { const st = (r.steps || []).find(x => x.k === k); if (st) return st.v; if (r.vals && k in r.vals) return r.vals[k];
     for (const t of r.tables || []) if (t.key && t.key[k]) { const [a, b] = t.key[k]; return t.rows[a][b]; } return NaN; };
-  try { r.fig = (FIGS[cur.id] && FIGS[cur.id](I, g, r)) || r.fig; } catch (e) {}
-  try { r.clair = CLAIR[cur.id] ? CLAIR[cur.id](I, g) : ""; } catch (e) { r.clair = ""; }
+  r.fig = window.HANDBAG.figFor(cur, I, g, r);
+  r.clair = window.HANDBAG.clairFor(cur, I, g, r);
   last = { I, r };
   const card = (title, body, cls = "") => `<div class="card ${cls}"><div class="card-t">${title}</div>${body}</div>`;
   const stepsC = (r.steps || []).length ? card("Calcul", `<table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table>`) : "";

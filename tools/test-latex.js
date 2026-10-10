@@ -1,7 +1,7 @@
 /* Vérifie que toutes les formules HandBag se composent sans erreur avec KaTeX.
    Usage : npm i katex && node tools/test-latex.js   (ou chemin du module katex en argument) */
 const katex = require(process.argv[2] || "katex");
-const { CALCS } = require("../handbag/calcs.js");
+const { CALCS } = require("./load-handbag.js");
 let n = 0, bad = 0;
 const chk = (tex, where) => { n++; try { katex.renderToString(tex, { throwOnError: true, strict: "ignore" }); } catch (e) { bad++; console.log("✗", where, "→", tex, "\n   ", e.message); } };
 const inline = (txt, where) => { if (typeof txt !== "string") return; const re = /\$([^$]+)\$/g; let m; while ((m = re.exec(txt))) chk(m[1], where); };

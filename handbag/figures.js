@@ -47,7 +47,12 @@ function gauge(x, y, w, ratio, label, okLabel) {
 /* ─── graphique XY ─── */
 function nice(v) { const e = pow(10, Math.floor(log10(v || 1))), m = v / e; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * e; }
 function plot(o) {
-  const W = o.w || 330, L = o.left ?? 42, Rr = 12;
+  const W = o.w || 330, Rr = 12;
+  /* marge gauche adaptée à la longueur des graduations */
+  const ysAll = o.series.flatMap(s => s.pts.map(p => p[1])).concat(o.extraY || [], (o.hlines || []).map(h => h.y));
+  const yA = o.ymin ?? Math.min(0, ...ysAll), yB = o.ymax ?? Math.max(...ysAll) * 1.1, yStep = nice((yB - yA) / 4);
+  const tickW = Math.max(...[yA, yB].map(v => fmt(Math.round(v / yStep) * yStep, yStep < 0.01 ? 3 : yStep < 0.1 ? 2 : yStep < 1 ? 1 : 0).length));
+  const L = o.left ?? Math.max(42, tickW * 5.2 + 22);
   /* légende (séries + lignes de repère) dans un bandeau au-dessus du graphique : jamais sur les courbes */
   const items = o.series.filter(s => s.l).map(s => ({ l: s.l, c: s.c || K.gold, w: s.w || 2, dash: s.dash }))
     .concat((o.hlines || []).filter(h => h.l).map(h => ({ l: h.l, c: h.c || K.mute, w: 1, dash: "4 3" })));
@@ -408,6 +413,7 @@ const CLAIR = {
   "spectre-ec8": (I, g) => `Un ouvrage de période courte (palier du spectre) subit jusqu'à ${fmt(g("plH"), 2)} m/s² horizontalement, soit ${fmt(g("plH") / 9.81, 2)} g ; verticalement ${fmt(g("plV"), 2)} m/s².`,
 };
 
-const api = { FIGS, CLAIR, plot, gauge };
+const FIG = { K, esc, svg, T, P, Rc, Ci, arrow, pin, roller, ground, dim, dimV, tag, udl, gauge, plot, nice, range, logRange, beam, curve, sin_, fmt };
+const api = { FIGS, CLAIR, plot, gauge, FIG };
 if (typeof module !== "undefined" && module.exports) module.exports = api; else Object.assign(root.HANDBAG, api);
 })(typeof window !== "undefined" ? window : globalThis);
