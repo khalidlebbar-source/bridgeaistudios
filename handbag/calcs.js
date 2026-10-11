@@ -30,7 +30,7 @@ function parseList(str, cols = 1) {
   if (cols === 0) return rows;                                           // lignes de longueur libre
   return rows.some(r => r.length < cols) ? null : rows;
 }
-function parseInput(i, str) { if (i.t === "sel") return str; if (i.t === "list") return typeof str === "string" ? parseList(str, i.cols) : str; return typeof str === "number" ? str : num1(String(str).replace(/\s/g, "")); }
+function parseInput(i, str) { if (i.t === "sel") return str; if (i.t === "text") return String(str ?? ""); if (i.t === "list") return typeof str === "string" ? parseList(str, i.cols) : str; return typeof str === "number" ? str : num1(String(str).replace(/\s/g, "")); }
 function defaults(c) { const I = {}; c.inputs.forEach(i => { if (i.k) I[i.k] = parseInput(i, i.v); }); return I; }
 
 /* — Section rectangulaire BA à l'ELS (flexion simple, n = 15) — */

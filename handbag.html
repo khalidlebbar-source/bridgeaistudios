@@ -323,6 +323,8 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/lib/ba4.js"></script>
 <script src="handbag/lib/geo2.js"></script>
 <script src="handbag/lib/geo3.js"></script>
+<script src="handbag/lib/geo4.js"></script>
+<script src="handbag/lib/outils2.js"></script>
 <!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
@@ -404,7 +406,7 @@ function open(id, push = true) {
     if (i.h) { h += `<div class="in-h">${tx(i.h)}</div>`; return; }
     const lab = `<label for="i-${i.k}">${tx(i.l)}${i.s ? ` <i>${M(i.s)}</i>` : ""}</label>`;
     if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
-    else if (i.t === "list") h += `<div class="in list">${lab}<input id="i-${i.k}" data-k="${i.k}" spellcheck="false" value="${String(vals[i.k]).replace(/"/g, "&quot;")}"><span class="u">${i.u || ""}</span></div>`;
+    else if (i.t === "list" || i.t === "text") h += `<div class="in list">${lab}<input id="i-${i.k}" data-k="${i.k}" spellcheck="false" value="${String(vals[i.k]).replace(/"/g, "&quot;")}"><span class="u">${i.u || ""}</span></div>`;
     else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
   });
   h += `<div class="in-foot"><div class="legend"><span><i style="background:var(--in)"></i>valeurs saisies</span><span><i style="background:var(--out)"></i>résultats</span></div></div>`;
@@ -422,7 +424,7 @@ $("#reset").onclick = () => { try { localStorage.removeItem("hb:" + cur.id); } c
 
 function inputValues() {
   const I = {}; let bad = false;
-  cur.inputs.forEach(i => { if (!i.k) return; if (i.t === "sel") { I[i.k] = vals[i.k]; return; }
+  cur.inputs.forEach(i => { if (!i.k) return; if (i.t === "sel" || i.t === "text") { I[i.k] = String(vals[i.k]); return; }
     const v = i.t === "list" ? window.HANDBAG.parseList(vals[i.k], i.cols) : parse(vals[i.k]); const el = document.getElementById("i-" + i.k); const nok = v === null || (typeof v === "number" && isNaN(v)); el && el.classList.toggle("bad", nok); bad = bad || nok; I[i.k] = v; });
   return bad ? null : I;
 }
@@ -525,7 +527,8 @@ function printPage() {
   const { I, r } = last, h = head(), d = h.date ? new Date(h.date + "T12:00").toLocaleDateString("fr-FR") : "";
   const e = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const inRows = cur.inputs.map(i => i.h ? `<tr><td colspan="3" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${tx(i.h)}</td></tr>` :
-    `<tr><td>${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}</td><td class="pin">${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : i.t === "list" ? tx(String(vals[i.k]).replace(/\./g, ",")) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`);
+    (i.t === "list" || i.t === "text") && String(vals[i.k]).length > 34 ? `<tr><td colspan="3">${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}${i.u ? ` (${i.u})` : ""}<div class="pin" style="text-align:left;font-size:.92em;line-height:1.3">${tx(i.t === "list" ? String(vals[i.k]).replace(/\./g, ",") : String(vals[i.k]))}</div></td></tr>` :
+    `<tr><td>${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}</td><td class="pin">${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : i.t === "text" ? tx(String(vals[i.k])) : i.t === "list" ? tx(String(vals[i.k]).replace(/\./g, ",")) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`);
   const inputs = inRows.join(""), long = inRows.length > 11, half = Math.ceil(inRows.length / 2);
   const steps = (r.steps || []).map(s => s.h ? `<tr><td colspan="4" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${tx(s.h)}</td></tr>` : `<tr class="${s.r ? "main" : ""}"><td>${s.s ? M(s.s) : ""}</td><td class="f">${fx(s.f)}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
   const tables = (r.tables || []).map(t => tableHTML(t, "p-t")).join("");

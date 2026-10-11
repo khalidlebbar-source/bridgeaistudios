@@ -15,3 +15,8 @@ module.exports.push(
   ["geo-kh-ecran", {}, t({ kh: 5561.74 }), "Biblio2004 · CALCULKF.XLS (rideau infini)"],
   ["geo-pieu-modele-barre", {}, t({ L1: 1.56435, L2: 3.1287, Lo: 2.34652, E0: 3144280, k2: 616388, k3: 391151 }), "Biblio2004 · Mod_pieu.xls"],
 );
+module.exports.push(
+  ["geo-tassement-couches", {}, t({ Ec: 22.3533260632497, E2: 76.3685012701101, lc: 1.31516245487365, ld: 1.83458483754513, Ed: [51.7895281355351 / 0.994117647058823, 2e-6] }, 1e-6), "Biblio2004 · Tassement semelle avec couches F62 (Ed : formule réglementaire = valeur de la feuille / 0,9941)"],
+  ["geo-tassement-couches", {}, { sc: [0.5 / (9 * 22.3533260632497) * 0.43 * 1.31516245487365 * 2.77 * 1000, 1e-6], sd: [2 / (9 * 51.7895281355351 / 0.994117647058823) * 0.43 * 0.6 * Math.pow(1.83458483754513 * 2.77 / 0.6, 0.5) * 1000, 1e-6] }, "Fascicule 62 V annexe F.3 (recalcul)"],
+  ["geo-tassement-radier", {}, t({ s: 85.8962666818065 }, 1e-9), "Biblio2004 · Tass_rad.xls"],
+);

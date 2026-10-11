@@ -6,7 +6,7 @@ const DEF = id => { const c = CALCS.find(x => x.id === id); if (!c) throw new Er
 function run(id, over = {}) {
   const c = DEF(id), I = {};
   Object.assign(I, HB.defaults(c));
-  for (const k in over) { const i = c.inputs.find(x => x.k === k); I[k] = i && i.t === "list" ? HB.parseInput(i, over[k]) : over[k]; }
+  for (const k in over) { const i = c.inputs.find(x => x.k === k); I[k] = i && (i.t === "list" || i.t === "text") ? HB.parseInput(i, over[k]) : over[k]; }
   return c.calc(I);
 }
 function get(r, k) {
