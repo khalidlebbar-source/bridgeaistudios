@@ -115,6 +115,7 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 .in input,.in select{height:25px;border-radius:6px;border:1px solid var(--border);background:var(--bg);padding:0 7px;font-size:12.5px;color:var(--in);font-weight:500;outline:none;width:100%;text-align:right;font-variant-numeric:tabular-nums}
 .in select{text-align:left;padding:0 4px;font-size:11.5px}
 .in.sel{grid-template-columns:1fr 150px 0}
+.in.list{grid-template-columns:1fr 42px;row-gap:2px}.in.list label{grid-column:1/3}.in.list input{text-align:left;font-size:12px}
 .in input:focus,.in select:focus{border-color:var(--gold2);background:#fff}
 .in input.bad{border-color:var(--red);background:#fff5f4}
 .in .u{font-size:11px;color:var(--ink3)}
@@ -122,6 +123,7 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 /* steps */
 .steps{width:100%;border-collapse:collapse;font-size:12px}
 .steps td{padding:3px 4px;border-bottom:1px solid #f0ece6;vertical-align:middle}
+.steps tr.sh td{font-size:11px;font-weight:500;color:#7a5c1c;padding-top:6px;border-bottom:1px solid #e8dfcf}
 .steps tr:last-child td{border-bottom:none}
 .steps .s{white-space:nowrap;color:var(--ink);font-weight:400;width:1%;padding-right:10px}
 .steps .f{color:var(--ink2);font-size:11.5px}
@@ -294,6 +296,7 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/calcs.js"></script>
 <script src="handbag/figures.js"></script>
 <script src="handbag/lib/kit.js"></script>
+<script src="handbag/lib/beam.js"></script>
 <script src="handbag/lib/ec2.js"></script>
 <script src="handbag/lib/bael.js"></script>
 <script src="handbag/lib/precontrainte.js"></script>
@@ -309,6 +312,8 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/lib/chantier.js"></script>
 <script src="handbag/lib/materiaux.js"></script>
 <script src="handbag/lib/outils.js"></script>
+<script src="handbag/lib/rdm2.js"></script>
+<script src="handbag/lib/rdm3.js"></script>
 <!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
@@ -334,6 +339,7 @@ const CAT = {
   "Hydraulique": ["#2a7fd4", '<path d="M3 15q3-3 6 0t6 0 6 0M3 19q3-3 6 0t6 0 6 0M12 3l4 6a4 4 0 1 1-8 0z"/>'],
   "Séisme": ["#c0392b", '<path d="M2 12h3l2-6 3 12 3-9 2 5 2-2h5"/>'],
   "Chantier et méthodes": ["#c9932a", '<path d="M4 21V5h11l5 4M15 5v16M4 9h11M9 9v12"/>'],
+  "Règlements anciens": ["#8c7b6b", '<path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/>'],
   "Outils": ["#6f7486", '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/>'],
 };
 const catColor = c => (CAT[c] || ["#7a7e8e"])[0];
@@ -371,7 +377,7 @@ function renderList(q = "") {
     html += `</div>`;
   });
   $("#list").innerHTML = html || `<div class="side-cat">Aucun calcul</div>`;
-  $("#count").textContent = t ? `${n} calcul${n > 1 ? "s" : ""} trouvé${n > 1 ? "s" : ""} sur ${CALCS.length}` : `${CALCS.length} calculs · ${RUB.length} rubriques · vérifiés contre les textes réglementaires`;
+  $("#count").textContent = t ? `${n} calcul${n > 1 ? "s" : ""} trouvé${n > 1 ? "s" : ""} sur ${CALCS.length}` : `${CALCS.length} calculs · ${RUB.filter(r => CALCS.some(c => c.cat === r)).length} rubriques · vérifiés contre les textes réglementaires`;
 }
 $("#list").addEventListener("click", e => { const h = e.target.closest("[data-cat]"); if (h && !$("#find").value) { const cat = h.dataset.cat; const op = h.classList.toggle("open"); h.nextElementSibling.classList.toggle("open", op); op ? fold.add(cat) : fold.delete(cat); ls.set("hb:open", [...fold]); } });
 $("#list").addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b) open(b.dataset.id); });
@@ -389,6 +395,7 @@ function open(id, push = true) {
     if (i.h) { h += `<div class="in-h">${tx(i.h)}</div>`; return; }
     const lab = `<label for="i-${i.k}">${tx(i.l)}${i.s ? ` <i>${M(i.s)}</i>` : ""}</label>`;
     if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
+    else if (i.t === "list") h += `<div class="in list">${lab}<input id="i-${i.k}" data-k="${i.k}" spellcheck="false" value="${String(vals[i.k]).replace(/"/g, "&quot;")}"><span class="u">${i.u || ""}</span></div>`;
     else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
   });
   h += `<div class="in-foot"><div class="legend"><span><i style="background:var(--in)"></i>valeurs saisies</span><span><i style="background:var(--out)"></i>résultats</span></div></div>`;
@@ -407,7 +414,7 @@ $("#reset").onclick = () => { try { localStorage.removeItem("hb:" + cur.id); } c
 function inputValues() {
   const I = {}; let bad = false;
   cur.inputs.forEach(i => { if (!i.k) return; if (i.t === "sel") { I[i.k] = vals[i.k]; return; }
-    const v = parse(vals[i.k]); const el = document.getElementById("i-" + i.k); const nok = isNaN(v); el && el.classList.toggle("bad", nok); bad = bad || nok; I[i.k] = v; });
+    const v = i.t === "list" ? window.HANDBAG.parseList(vals[i.k], i.cols) : parse(vals[i.k]); const el = document.getElementById("i-" + i.k); const nok = v === null || (typeof v === "number" && isNaN(v)); el && el.classList.toggle("bad", nok); bad = bad || nok; I[i.k] = v; });
   return bad ? null : I;
 }
 
@@ -421,7 +428,7 @@ function compute() {
   r.clair = window.HANDBAG.clairFor(cur, I, g, r);
   last = { I, r };
   const card = (title, body, cls = "") => `<div class="card ${cls}"><div class="card-t">${title}</div>${body}</div>`;
-  const stepsC = (r.steps || []).length ? card("Calcul", `<table class="steps">${r.steps.map(s => `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table>`) : "";
+  const stepsC = (r.steps || []).length ? card("Calcul", `<table class="steps">${r.steps.map(s => s.h ? `<tr class="sh"><td colspan="4">${tx(s.h)}</td></tr>` : `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table>`) : "";
   const checksC = (r.checks || []).length ? card("Vérifications", `<div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div>`) : "";
   const figC = r.fig ? card("Schéma", `<div class="fig">${r.fig}</div>`, "figc") : "";
   const notesC = (r.notes || []).filter(Boolean).length ? card("Remarques", `<div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div>`) : "";
@@ -479,9 +486,9 @@ function printPage() {
   const { I, r } = last, h = head(), d = h.date ? new Date(h.date + "T12:00").toLocaleDateString("fr-FR") : "";
   const e = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const inRows = cur.inputs.map(i => i.h ? `<tr><td colspan="3" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${tx(i.h)}</td></tr>` :
-    `<tr><td>${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}</td><td class="pin">${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`);
+    `<tr><td>${tx(i.l)}${i.s ? ` &nbsp;${M(i.s)}` : ""}</td><td class="pin">${i.t === "sel" ? strip((i.o.find(o => String(o[0]) === String(vals[i.k])) || [0, vals[i.k]])[1]) : i.t === "list" ? tx(String(vals[i.k]).replace(/\./g, ",")) : show(I[i.k], decimals(I[i.k]))}</td><td style="text-align:left">${i.u || ""}</td></tr>`);
   const inputs = inRows.join(""), long = inRows.length > 11, half = Math.ceil(inRows.length / 2);
-  const steps = (r.steps || []).map(s => `<tr class="${s.r ? "main" : ""}"><td>${s.s ? M(s.s) : ""}</td><td class="f">${fx(s.f)}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
+  const steps = (r.steps || []).map(s => s.h ? `<tr><td colspan="4" style="font-weight:500;color:#7a5c1c;padding-top:3pt">${tx(s.h)}</td></tr>` : `<tr class="${s.r ? "main" : ""}"><td>${s.s ? M(s.s) : ""}</td><td class="f">${fx(s.f)}</td><td class="vv">${show(s.v, s.d)}</td><td style="text-align:left">${s.u}</td></tr>`).join("");
   const tables = (r.tables || []).map(t => tableHTML(t, "p-t")).join("");
   const checks = (r.checks || []).map(c => `<div class="p-chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " : " + tx(c.txt) : ""}</span><b>${c.ok ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}</b></div>`).join("");
   const notes = (r.notes || []).filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("");

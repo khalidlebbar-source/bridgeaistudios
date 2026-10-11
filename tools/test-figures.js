@@ -2,7 +2,7 @@
 const HB = require("./load-handbag.js");
 let bad = 0, own = 0;
 for (const c of HB.CALCS) {
-  const I = {}; c.inputs.forEach(i => { if (i.k) I[i.k] = i.t === "sel" ? i.v : (i.v === "∞" ? Infinity : +i.v); });
+  const I = HB.defaults(c);
   try {
     const r = c.calc(I), g = HB.getter(r);
     const f = HB.figFor(c, I, g, r), t = HB.clairFor(c, I, g, r);

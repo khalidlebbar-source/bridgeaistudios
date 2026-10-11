@@ -1,12 +1,12 @@
 /* Validation de HandBag contre les valeurs calculées par les classeurs Excel d'origine.
    Usage : node tools/test-handbag.js                                                    */
-const { CALCS, seV } = require("./load-handbag.js");
+const HB = require("./load-handbag.js"), { CALCS, seV } = HB;
 
 const DEF = id => { const c = CALCS.find(x => x.id === id); if (!c) throw new Error("calcul inconnu " + id); return c; };
 function run(id, over = {}) {
   const c = DEF(id), I = {};
-  c.inputs.filter(i => i.k).forEach(i => { I[i.k] = i.t === "sel" ? i.v : (i.v === "∞" ? Infinity : +i.v); });
-  Object.assign(I, over);
+  Object.assign(I, HB.defaults(c));
+  for (const k in over) { const i = c.inputs.find(x => x.k === k); I[k] = i && i.t === "list" ? HB.parseInput(i, over[k]) : over[k]; }
   return c.calc(I);
 }
 function get(r, k) {

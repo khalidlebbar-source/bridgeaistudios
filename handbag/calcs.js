@@ -18,6 +18,20 @@ const C = (l, ok, txt = "", ratio) => ({ l, ok, txt, ratio });   // ratio : taux
 const N = (k, l, u, v, s, extra = {}) => Object.assign({ k, l, u, v, s: s || k, t: "num" }, extra);
 const SEL = (k, l, o, v, s) => ({ k, l, o, v, s: s === undefined ? k : s, t: "sel" });
 const H = (h) => ({ h });
+/* liste de valeurs saisie en texte : lignes séparées par « ; » (ou « / », retour à la ligne), valeurs d'une ligne par des espaces.
+   cols = 1 → tableau de nombres ; cols > 1 → tableau de lignes de cols nombres au moins */
+const LST = (k, l, u, v, s, extra = {}) => Object.assign({ k, l, u, v, s: s || k, t: "list", cols: 1 }, extra);
+const num1 = t => { t = String(t).trim().replace(",", "."); if (/^(∞|inf|infini)$/i.test(t)) return Infinity; return t === "" ? NaN : Number(t); };
+function parseList(str, cols = 1) {
+  const rows = String(str).split(/[;\/\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/\s+/).map(num1));
+  if (!rows.length) return [];
+  if (rows.some(r => r.some(isNaN))) return null;
+  if (cols === 1) return rows.flat();
+  if (cols === 0) return rows;                                           // lignes de longueur libre
+  return rows.some(r => r.length < cols) ? null : rows;
+}
+function parseInput(i, str) { if (i.t === "sel") return str; if (i.t === "list") return typeof str === "string" ? parseList(str, i.cols) : str; return typeof str === "number" ? str : num1(String(str).replace(/\s/g, "")); }
+function defaults(c) { const I = {}; c.inputs.forEach(i => { if (i.k) I[i.k] = parseInput(i, i.v); }); return I; }
 
 /* — Section rectangulaire BA à l'ELS (flexion simple, n = 15) — */
 function elsRect(M_kNm, b, h, c, As_cm2, n = 15) {
@@ -799,9 +813,9 @@ function figSpectre(pts) {
 }
 
 /* rubriques (ordre d'affichage) et point d'entrée des modules complémentaires (handbag/lib/*.js) */
-const RUBRIQUES = ["Matériaux","Béton armé — Eurocode 2","Béton armé — BAEL","Précontrainte","Charpente métallique","Ouvrages mixtes","Actions sur les ponts","RDM et formulaire","Appareils d'appui et équipements","Appuis et soutènements","Géotechnique et fondations","Hydraulique","Séisme","Chantier et méthodes","Outils"];
+const RUBRIQUES = ["Matériaux","Béton armé — Eurocode 2","Béton armé — BAEL","Précontrainte","Charpente métallique","Ouvrages mixtes","Actions sur les ponts","RDM et formulaire","Appareils d'appui et équipements","Appuis et soutènements","Géotechnique et fondations","Hydraulique","Séisme","Chantier et méthodes","Règlements anciens","Outils"];
 function add(cat, list) { list.forEach(c => { c.cat = cat; if (CALCS.some(x => x.id === c.id)) throw new Error("identifiant en double : " + c.id); CALCS.push(c); }); }
-const DSL = { PI, sqrt, pow, exp, min, max, abs, atan, L, S, R, C, N, SEL, H, fmt, elsRect, fcjLaw, ACIER_HA, EC2_CUBE, BOULONS, SPECTRES, seH, seV };
-const api = { CALCS, fmt, elsRect, seH, seV, SPECTRES, BOULONS, fcjLaw, RUBRIQUES, add, DSL };
+const DSL = { PI, sqrt, pow, exp, min, max, abs, atan, L, S, R, C, N, SEL, H, LST, fmt, elsRect, fcjLaw, ACIER_HA, EC2_CUBE, BOULONS, SPECTRES, seH, seV };
+const api = { CALCS, parseList, parseInput, defaults, fmt, elsRect, seH, seV, SPECTRES, BOULONS, fcjLaw, RUBRIQUES, add, DSL };
 if (typeof module !== "undefined" && module.exports) module.exports = api; else root.HANDBAG = api;
 })(typeof window !== "undefined" ? window : globalThis);
