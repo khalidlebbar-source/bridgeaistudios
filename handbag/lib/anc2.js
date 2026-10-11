@@ -146,4 +146,40 @@ HB.add("Règlements anciens", [
     return svg(W, Hh, s); },
   clair: (I, g) => `Sous ce moment, la semelle inférieure travaille à ${f2(abs(g("sI")), 0)} MPa et le béton à ${f2(g("cTop"), 1)} MPa en fibre supérieure ; l'axe neutre est à ${f2(g("y"), 2)} m de la base.` },
 ]);
+
+HB.add("Règlements anciens", [
+{ id: "anc-mixte-elu", t: "Poutre mixte : moment limite ELU positif ou négatif (circulaire 81-63)", ref: "Circulaire n° 81-63 du 28 juillet 1981 (ponts mixtes) — Biblio 2004 « Ver_mixt », feuilles Calcul ELU positif et négatif",
+  desc: "Moment résistant plastique d'une section mixte sous un effort normal donné : béton comprimé à 0,85 fc28/1,5, acier à σe/1,05, armatures à fe/1,15, recherche de l'axe neutre plastique.",
+  inputs: [SEL("sg", "Sens du moment", [["1", "positif (fibre inférieure tendue)"], ["-1", "négatif (fibre supérieure tendue)"]], "1", ""), N("N", "Effort normal (+ compression)", "kN", 0, "N"), N("yN", "Point d'application de N depuis la base", "m", 0, L`y_N`),
+    H("Poutre métallique (mm)"), LST("pm", "h, bs × ts (sup.), tw, bi × ti (inf.)", "", "1500 500 80 26 600 75", ""),
+    H("Dalle (cm)"), LST("dl", "Largeur, épaisseur ; gousset : largeur, hauteur", "", "300 27 80 5", ""), LST("as", "Armatures sup. et inf. : section (cm²), enrobage (cm)", "", "75 5 30 6", ""),
+    SEL("arT", "Armatures tendues", [["1", "prises en compte"], ["0", "négligées"]], "1", ""), SEL("arC", "Armatures comprimées", [["0", "négligées"], ["1", "prises en compte"]], "0", ""),
+    N("fc", "Résistance du béton", "MPa", 30, L`f_{c28}`), N("fe", "Limite élastique des armatures", "MPa", 500, L`f_e`)],
+  calc(I) {
+    const [hm, bs, ts, tw, bi, ti] = (I.pm || []).map(x => x / 1000), [bb, hb, br, hr] = (I.dl || []).map(x => x / 100), [A1, c1, A2, c2] = I.as || [0, 0, 0, 0]; if (!ti || !hb) throw new Error("dimensions incomplètes");
+    const sg = +I.sg, fb = 0.85 * I.fc / 1.5, fa = I.fe / 1.15, f = t => sgE(t * 1000) / 1.05;
+    const pl = [[bi, 0, ti, f(ti)], [tw, ti, hm - ts, f(tw)], [bs, hm - ts, hm, f(ts)]], cc = [[br, hm, hm + hr], [bb, hm + hr, hm + hr + hb]], bars = [[A1 / 1e4, hm + hr + hb - c1 / 100], [A2 / 1e4, hm + hr + c2 / 100]];
+    /* efforts (MN, compression +) et moment autour de yN pour un axe neutre plastique y */
+    const st = y => { let F = 0, M = 0, parts = { b: 0, a: 0, s: 0 }; const seg = (w, z1, z2, fy, comp) => { if (z2 <= z1) return; const Fi = w * (z2 - z1) * fy * comp; F += Fi; M += Fi * ((z1 + z2) / 2 - I.yN); return Fi; };
+      pl.forEach(([w, z1, z2, fy]) => { const up = seg(w, max(z1, y), z2, fy, sg) || 0, lo = seg(w, z1, min(z2, y), fy, -sg) || 0; parts.s += up + lo; });
+      cc.forEach(([w, z1, z2]) => { parts.b += (sg > 0 ? seg(w, max(z1, y), z2, fb, 1) : seg(w, z1, min(z2, y), fb, 1)) || 0; });
+      bars.forEach(([A, z]) => { if (!A) return; const comp = (z > y) === (sg > 0); if (comp ? I.arC === "1" : I.arT === "1") { const Fi = A * fa * (comp ? 1 : -1); F += Fi; M += Fi * (z - I.yN); parts.a += Fi; } });
+      return { F, M, parts }; };
+    const zt = hm + hr + hb, Nt = I.N / 1000; let a = 0, b = zt; const g0 = st(a).F - Nt, g1 = st(b).F - Nt; if (g0 * g1 > 0) throw new Error("effort normal hors du domaine plastique de la section");
+    for (let i = 0; i < 100; i++) { const m = (a + b) / 2; ((st(m).F - Nt) * g0 > 0) ? a = m : b = m; } const y = (a + b) / 2, r = st(y);
+    const Npl = pl.reduce((t, [w, z1, z2, fy]) => t + w * (z2 - z1) * fy, 0);
+    return { steps: [S("fb", L`f_{bu}`, L`\dfrac{0{,}85\,f_{c28}}{1{,}5}`, fb, "MPa", 2), S("fs", L`\sigma_e/1{,}05`, `~semelles ${fmt(f(ts), 1)} et ${fmt(f(ti), 1)} MPa, âme`, f(tw), "MPa", 1), S("fa", L`f_e/1{,}15`, "", fa, "MPa", 1),
+      S("Npl", L`N_{pl,a}`, "~résistance plastique de la poutre seule", Npl * 1000, "kN", 0), R("y", L`y_{pl}`, L`\textstyle\sum F_i = N` + "\\quad\\text{(axe neutre plastique depuis la base)}", y, "m", 4),
+      S("Fb", L`F_b`, "~béton comprimé", r.parts.b * 1000, "kN", 0), S("Fa", L`F_a`, "~armatures", r.parts.a * 1000, "kN", 0), S("Fs", L`F_s`, "~poutre (compression − traction)", r.parts.s * 1000, "kN", 0),
+      R("Mu", L`M_u`, L`\textstyle\sum F_i\,(z_i - y_N)`, r.M * 1000, "kN·m", 0)],
+      vals: { y, sg, hm, ts, tw, ti, bs, bi, bb, hb, br, hr, zt }, notes: ["Diagramme rectangulaire : béton comprimé à 0,85 fc28/1,5 sur toute sa hauteur au-dessus (moment positif) de l'axe neutre plastique, béton tendu négligé, acier à σe/1,05 selon l'épaisseur des tôles (355 MPa jusqu'à 16 mm…), armatures à fe/1,15. Les feuilles ELU du classeur d'origine ne se calculaient plus (noms de cellules perdus) ; les formules en ont été reprises."] };
+  },
+  fig(I, g, r) { const v = r.vals, W = 330, Hh = 200, k = 170 / v.zt, Y = z => 190 - z * k;
+    let s = Rc(40, Y(v.ti), 70, v.ti * k, { f: K.steel, c: "#5a6f8e" }) + Rc(72, Y(v.hm - v.ts), 6, (v.hm - v.ts - v.ti) * k, { f: K.steel, c: "#5a6f8e" }) + Rc(45, Y(v.hm), 60, v.ts * k, { f: K.steel, c: "#5a6f8e" }) + Rc(55, Y(v.hm + v.hr), 40, v.hr * k, { f: "#e8e2d5", c: "#9b8f78" }) + Rc(15, Y(v.zt), 120, v.hb * k, { f: "#e8e2d5", c: "#9b8f78" });
+    const yy = Y(v.y), x0 = 215; s += P(`M8 ${yy}H322`, { c: K.red, w: 1, dash: "5 3" }) + T(140, yy - 4, `axe plastique ${f2(v.y, 3)} m`, { s: 9, c: K.red });
+    const up = v.sg > 0; s += Rc(x0, Y(v.zt), 40, yy - Y(v.zt), { f: up ? K.blue : K.redL || "#f4d6d2", c: "none", op: .35 }) + Rc(x0 - 40, yy, 40, Y(0) - yy, { f: up ? K.redL || "#f4d6d2" : K.blue, c: "none", op: .35 });
+    s += P(`M${x0} ${Y(0)}V${Y(v.zt)}`, { c: K.ink, w: .8 }) + T(x0 + 44, Y(v.zt) + 12, up ? "compression" : "traction", { s: 9, c: K.mute }) + T(x0 - 44, Y(0) - 4, up ? "traction" : "compression", { a: "end", s: 9, c: K.mute });
+    return svg(W, Hh, s); },
+  clair: (I, g) => `Le moment limite ${+I.sg > 0 ? "positif" : "négatif"} vaut ${f2(abs(g("Mu")), 0)} kN·m, avec un axe neutre plastique à ${f2(g("y"), 3)} m de la base.` },
+]);
 })(typeof window !== "undefined" ? window : globalThis);
