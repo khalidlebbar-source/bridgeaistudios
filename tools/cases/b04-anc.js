@@ -9,4 +9,5 @@ module.exports = [
   ["anc-mixte-elu", { sg: "-1" }, { Fa: [-4565.217, 1e-6] }, "Calcul manuel : armatures tendues 105 cm² × fe/1,15"],
   ["anc-mixte-predim", {}, { ti: [27, 1e-9], ts: [27, 1e-9], si: [240.54813, 1e-6] }, "Calcul manuel : contraintes phasées (acier seul, n = 18, n = 6), semelles 800 × 27 (b/t = 30)"],
   ["anc-mixte-predim", { ty: "a", b: 4.75, Mpp: 0, Mcp: 0, Msc: 64.3 }, { ti: [112, 1e-9], ts: [96, 1e-9], si: [294.93355, 1e-6], sa: [346.69171, 1e-6] }, "Calcul manuel : section fissurée sur appui (DIM_MIXT, appui 2 : 64,3 MN·m)"],
+  ["anc-psidp-precontrainte", {}, { s1: [146.34, 1e-4], s2: [48.78, 1e-4], z: [0.8571, 1e-4], F1: [15505, 1e-4], F2: [16781, 1e-4], F3: [13651, 1e-4] }, "Biblio2004 · PRE_PREC.xls (1 550,5 / 1 678,1 / 1 365,1 t)"],
 ];

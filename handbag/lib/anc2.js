@@ -265,4 +265,27 @@ HB.add("Actions sur les ponts", [
     return svg(W, 195, s); },
   clair: (I, g) => `La poutre gauche reçoit de ${f2(g("gm"), 1)} à ${f2(g("gM"), 1)} kN/m de superstructures, la poutre droite de ${f2(g("dm"), 1)} à ${f2(g("dM"), 1)} kN/m.` },
 ]);
+
+HB.add("Règlements anciens", [
+{ id: "anc-psidp-precontrainte", t: "PSI-DP : estimation de la précontrainte d'une dalle continue", ref: "Sétra, dossier pilote PSI-DP, annexe 1 de la notice ; BPEL 91 classes 2 et 3 ; fascicule 61 titre II (A(l))",
+  desc: "Force de précontrainte minimale, toutes pertes déduites, d'un pont-dalle précontraint continu, d'après la méthode simplifiée de la notice Sétra (charges A(l) prépondérantes).",
+  inputs: [N("Lp", "Portée principale", "m", 20, "L"), N("Lr", "Portée de rive", "m", 12, L`L_r`), N("nt", "Nombre de travées", "", 4, "n"), SEL("cl", "Classe du pont", [["1", "1"], ["2", "2"], ["3", "3"]], "2", ""), N("nv", "Nombre de voies", "", 3, L`n_v`),
+    N("B", "Section de la dalle", "m²", 7.5, "B"), N("v", "Distance du centre de gravité à la fibre supérieure", "m", 0.37, "v"), N("vv", "Distance du centre de gravité à la fibre inférieure", "m", 0.5, "v'"), N("phi", "Diamètre des conduits", "cm", 10, L`\phi`),
+    N("g", "Charge permanente maximale", "kN/m", 234, "g"), N("ft", "Résistance à la traction du béton", "MPa", 3, L`f_{t28}`), N("eta", "Rendement géométrique de la section", "", 0.33, L`\rho`)],
+  calc(I) {
+    const cl = +I.cl, AL = (0.23 + 36 / (I.Lp + 12)) * 10, v0 = cl === 3 ? 2.75 : cl === 2 ? 3 : 3.5, a2 = cl === 3 ? 0.2 * 2.75 : cl === 2 ? 0.4 * 3 : 0.6 * 3.5;
+    const s1 = 1.2 * I.nv * v0 * AL, s2 = I.nv * a2 * AL, th = I.Lr / I.Lp, ze = I.nt <= 2 ? 1 : I.nt === 3 ? max(1, 5 / 8 * (th + 1)) : max(1.1, (3 * th + 7) / 8);
+    const y = I.nt === 1 ? I.v : I.v + I.vv, z = I.nt === 1 ? I.vv - 1.5 * I.phi / 100 : (1 + I.eta) * (I.v + I.vv) - 3 * I.phi / 100, M0 = I.Lp ** 2 / 8;
+    const F1 = (M0 * (I.g + ze * s1) - I.ft * 1000 * I.eta * I.B * y) / z, F2 = M0 * (I.g + ze * s2) / z, F3 = M0 * I.g / z;
+    return { steps: [S("AL", L`A(L)`, L`0{,}23 + \dfrac{36}{L + 12}`, AL, "kN/m²", 3), S("s1", L`s_1`, L`1{,}2\,n_v\,v_0\,A(L)` + `\\quad v_0 = ${fmt(v0, 2).replace(",", "{,}")}\\ \\text{m}`, s1, "kN/m", 2), S("s2", L`s_2`, L`n_v\,\psi\,v_0\,A(L)` + "\\quad\\text{(charges fréquentes)}", s2, "kN/m", 2),
+      S("ze", L`\zeta`, I.nt <= 2 ? "~1 pour une ou deux travées" : I.nt === 3 ? L`\max\left(1 ; \tfrac{5}{8}(\theta + 1)\right)` : L`\max\left(1{,}1 ; \tfrac{3\theta + 7}{8}\right)`, ze, "", 4), S("y", "y", I.nt === 1 ? "v" : L`v + v'`, y, "m", 3),
+      S("z", "z", I.nt === 1 ? L`v' - 1{,}5\,\phi` : L`(1 + \rho)(v + v') - 3\,\phi`, z, "m", 4), S("F1", L`F_1`, L`\dfrac{\tfrac{L^2}{8}(g + \zeta s_1) - f_{t28}\,\rho\,B\,y}{z}`, F1, "kN", 0), S("F2", L`F_2`, L`\dfrac{\tfrac{L^2}{8}(g + \zeta s_2)}{z}`, F2, "kN", 0),
+      R("Fc2", L`F_{min}^{(2)}`, L`\max(F_1 ; F_2)` + "\\quad\\text{(classe 2 du BPEL)}", max(F1, F2), "kN", 0), R("F3", L`F_{min}^{(3)}`, L`\dfrac{L^2\,g}{8\,z}` + "\\quad\\text{(classe 3)}", F3, "kN", 0)],
+      vals: { F1, F2, F3 }, notes: ["Force utile, toutes pertes déduites, au milieu de la portée principale. La méthode suppose les charges A(l) prépondérantes et ne dispense pas d'une vérification directe des contraintes. Charges du fascicule 61 converties à raison de 1 t = 10 kN ; ρ est le rendement géométrique i²/(v v') de la section."] };
+  },
+  fig(I, g) { const W = 330, Hh = 180, vals = [["F1 · classe 2, rares", g("F1"), K.gold], ["F2 · classe 2, fréquentes", g("F2"), K.blue], ["F3 · classe 3", g("F3"), K.red]], m = max(...vals.map(v => v[1]));
+    let s = ""; vals.forEach(([l, v, c], i) => { const y = 25 + i * 48, w = 200 * v / m; s += Rc(110, y, w, 26, { f: c, c: "none", op: .8 }) + T(104, y + 17, l, { a: "end", s: 9 }) + T(116 + w, y + 17, `${fmt(v, 0)} kN`, { s: 9.5, w: 600 }); });
+    return svg(W, Hh, s); },
+  clair: (I, g) => `Il faut au moins ${f2(g("Fc2"), 0)} kN de précontrainte utile en classe 2 et ${f2(g("F3"), 0)} kN en classe 3.` },
+]);
 })(typeof window !== "undefined" ? window : globalThis);
