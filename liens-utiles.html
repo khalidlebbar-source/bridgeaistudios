@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liens utiles — BridgeAI Studios</title>
+<meta name="description" content="Annuaire commenté des ressources en génie civil et ouvrages d'art : normes et Eurocodes, bibliothèques techniques, maîtres d'ouvrage au Maroc et à l'international, associations, grands ponts, logiciels et formation.">
+<meta name="keywords" content="liens utiles génie civil, ouvrages d'art, Eurocodes, SETRA, Cerema, bibliothèque ponts, ONCF, ADM, maîtres d'ouvrage Maroc, IABSE, fib, logiciels calcul pont">
+<meta name="author" content="BridgeAI Studios">
+<meta property="og:title" content="Liens utiles — BridgeAI Studios">
+<meta property="og:description" content="Les ressources qui comptent pour concevoir, vérifier et construire des ponts — sélectionnées par un bureau d'études.">
+<meta property="og:url" content="https://www.bridgeaistudios.com/liens-utiles.html">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.bridgeaistudios.com/liens-utiles.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0c0e14;--ink2:#1a1e2e;--ink3:#252a3d;
+  --gold:#c9a84c;--gold2:#e8c97a;--gold3:#f5e4b0;
+  --blue:#2d6be4;--teal:#1ab8a0;--silver:#8892a4;--white:#ffffff;
+  --border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.2);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.6;overflow-x:hidden;font-weight:300}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:var(--ink)}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+button,input,select{font-family:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+
+/* ─── NAV (identique au site) ─── */
+nav{position:sticky;top:0;z-index:100;padding:0 5%;border-bottom:1px solid var(--border);background:rgba(12,14,20,.92);backdrop-filter:blur(16px)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1200px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--white);letter-spacing:.02em;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{font-size:13px;font-weight:300;color:var(--silver);letter-spacing:.04em;transition:color .2s}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--gold);font-weight:400}
+.nav-back{font-size:13px;color:var(--silver);letter-spacing:.04em;transition:color .2s;white-space:nowrap}
+.nav-back:hover{color:var(--gold)}
+
+/* ─── COUVERTURE ─── */
+.hero{position:relative;padding:96px 5% 72px;text-align:center;overflow:hidden;border-bottom:1px solid var(--border)}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(45,107,228,.12) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 80% 80%,rgba(26,184,160,.06) 0%,transparent 60%);pointer-events:none}
+.hero-line{position:absolute;top:0;left:50%;transform:translateX(-50%);width:1px;height:90px;background:linear-gradient(to bottom,transparent,var(--gold),transparent);opacity:.4}
+.hero-arch{position:absolute;left:0;right:0;bottom:0;width:100%;height:auto;opacity:.12;pointer-events:none}
+.hero-inner{position:relative;max-width:860px;margin:0 auto}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:10px;margin-bottom:24px;opacity:0;animation:fadeUp .8s ease .1s forwards}
+.hero-eyebrow-line{width:32px;height:1px;background:var(--gold)}
+.hero-eyebrow span{font-size:11px;font-weight:400;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
+h1{font-family:'Cormorant Garamond',serif;font-size:clamp(46px,8vw,92px);font-weight:300;line-height:1.05;margin-bottom:20px;letter-spacing:-.01em;opacity:0;animation:fadeUp .8s ease .25s forwards}
+h1 em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:16px;font-weight:300;color:var(--silver);max-width:600px;margin:0 auto;line-height:1.75;opacity:0;animation:fadeUp .8s ease .4s forwards}
+.hero-stats{display:flex;justify-content:center;margin:48px auto 0;max-width:760px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);opacity:0;animation:fadeUp .8s ease .55s forwards}
+.stat{flex:1;padding:20px 12px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:400;color:var(--gold);display:block;line-height:1.1}
+.stat-lbl{font-size:10px;color:var(--silver);letter-spacing:.1em;text-transform:uppercase;margin-top:4px;display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── BARRE DE RECHERCHE ─── */
+.bar{position:sticky;top:64px;z-index:50;padding:14px 5%;background:rgba(12,14,20,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.bar-inner{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.bar-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search{flex:1 1 340px;display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);transition:border-color .2s}
+.search:focus-within{border-color:var(--gold)}
+.search svg{flex:none;color:var(--silver)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--white);font-size:14px;font-weight:300}
+.search input::placeholder{color:rgba(255,255,255,.28)}
+kbd{font-family:inherit;font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.12);color:var(--silver)}
+.ctl{height:44px;padding:0 16px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--silver);font-size:13px;cursor:pointer;letter-spacing:.02em;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.ctl:hover{border-color:var(--gold);color:var(--gold)}
+.ctl.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:500}
+select.ctl{appearance:none;padding-right:34px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%238892a4' stroke-width='1.4'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 14px center}
+select.ctl option{background:var(--ink2);color:var(--white)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{white-space:nowrap;padding:6px 15px;border-radius:99px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--silver);font-size:12px;cursor:pointer;letter-spacing:.02em;transition:all .2s}
+.chip:hover{border-color:var(--gold);color:var(--gold)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:500}
+.chip small{font-size:10px;opacity:.6;margin-left:6px}
+
+/* ─── SECTIONS ─── */
+main{padding:0 5%}
+.sec{max-width:1200px;margin:0 auto;padding:64px 0 8px}
+.sec-head{display:flex;align-items:flex-start;gap:18px;margin-bottom:28px}
+.sec-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;flex:none;margin-top:4px}
+.sec-eyebrow{font-size:10px;font-weight:400;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,3.6vw,40px);font-weight:300;line-height:1.15}
+.sec-title em{font-style:italic;color:var(--gold)}
+.sec-sub{font-size:13px;color:var(--silver);margin-top:6px;max-width:620px;line-height:1.7}
+
+/* Sélection KLE */
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border2);border:1px solid var(--border2);border-radius:16px;overflow:hidden}
+.pick{position:relative;display:flex;flex-direction:column;gap:12px;padding:26px 24px;background:#12141c;transition:background .25s}
+.pick:hover{background:#1a1a1f}
+.pick-num{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;line-height:1;color:rgba(201,168,76,.35)}
+.pick .lk-name{font-size:15px}
+.pick-why{font-size:12.5px;color:var(--silver);line-height:1.65;flex:1}
+.pick-go{font-size:12px;color:var(--gold);letter-spacing:.06em;transition:letter-spacing .2s}
+.pick:hover .pick-go{letter-spacing:.12em}
+
+/* Cartes */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{position:relative;display:flex;flex-direction:column;gap:12px;padding:22px 22px 18px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.015);transition:border-color .25s,background .25s,transform .25s}
+.card:hover{border-color:var(--border2);background:rgba(201,168,76,.03);transform:translateY(-2px)}
+.lk-top{display:flex;align-items:center;gap:14px;padding-right:26px}
+.ico{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.04);border:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold)}
+.ico img{width:20px;height:20px;filter:grayscale(1);opacity:.7;transition:filter .3s,opacity .3s}
+.card:hover .ico img,.pick:hover .ico img{filter:none;opacity:1}
+.lk-name{font-size:14.5px;font-weight:400;color:var(--white);line-height:1.3;display:block}
+.lk-dom{font-size:11px;color:var(--silver);letter-spacing:.04em;opacity:.8}
+.lk-desc{font-size:12.5px;color:var(--silver);line-height:1.7;flex:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap;padding-top:12px;border-top:1px solid rgba(255,255,255,.04)}
+.tag{padding:2px 9px;border-radius:99px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.05);color:var(--silver)}
+.tag.free{background:rgba(26,184,160,.1);color:#5ecfb8}
+.tag.ma{background:rgba(201,168,76,.12);color:var(--gold)}
+.stretch::after{content:"";position:absolute;inset:0;border-radius:14px}
+.star{position:absolute;top:18px;right:16px;z-index:2;background:none;border:0;cursor:pointer;color:rgba(255,255,255,.22);font-size:16px;line-height:1;transition:color .2s,transform .2s}
+.star:hover{color:var(--gold2);transform:scale(1.15)}
+.star.on{color:var(--gold)}
+.empty{text-align:center;padding:80px 0 20px;color:var(--silver);font-size:14px}
+.empty b{display:block;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--white);margin-bottom:6px}
+.empty a{color:var(--gold);border-bottom:1px solid var(--border2)}
+
+/* ─── CONTRIBUTION ─── */
+.contrib{position:relative;max-width:1200px;margin:72px auto 0;padding:56px 32px;text-align:center;border:1px solid var(--border2);border-radius:16px;overflow:hidden;background:rgba(201,168,76,.02)}
+.contrib::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 90% at 50% 100%,rgba(201,168,76,.08) 0%,transparent 70%);pointer-events:none}
+.contrib h3{position:relative;font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,40px);font-weight:300;margin-bottom:10px}
+.contrib h3 em{font-style:italic;color:var(--gold)}
+.contrib p{position:relative;font-size:14px;color:var(--silver);max-width:520px;margin:0 auto 28px}
+.btn-gold{position:relative;display:inline-block;padding:12px 28px;border-radius:8px;border:1px solid var(--gold);background:transparent;color:var(--gold);font-size:13px;letter-spacing:.06em;cursor:pointer;transition:all .2s}
+.btn-gold:hover{background:var(--gold);color:var(--ink)}
+.note{max-width:1200px;margin:28px auto 64px;font-size:11px;color:rgba(255,255,255,.25);text-align:center;letter-spacing:.03em}
+
+/* ─── DÉCOUVERTE ─── */
+dialog{margin:auto;width:calc(100% - 32px);max-width:440px;padding:34px 30px 28px;border-radius:16px;border:1px solid var(--border2);background:var(--ink2);color:var(--white)}
+dialog::backdrop{background:rgba(5,6,10,.7);backdrop-filter:blur(4px)}
+.dlg-eye{font-size:10px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px}
+.dlg-cat{font-size:11px;color:var(--silver);letter-spacing:.06em;margin:14px 0 6px}
+.dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.dlg-actions .ctl{height:40px}
+.dlg-actions .btn-gold{padding:9px 22px}
+
+/* ─── FOOTER (identique à l'accueil) ─── */
+footer{background:var(--ink2);padding:24px 5%;border-top:1px solid var(--border)}
+.footer-inner{max-width:1200px;margin:0 auto}
+.footer-bottom{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px 24px}
+.footer-bottom p{font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.04em}
+.footer-bottom a{color:var(--silver)}
+.footer-bottom a:hover{color:var(--gold)}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:var(--white)}
+.footer-logo span{color:var(--gold)}
+
+@media(max-width:900px){.nav-links{display:none}.picks{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .hero{padding:64px 16px 56px}
+  .hero-stats{flex-wrap:wrap}.stat{flex:1 1 50%;border-bottom:1px solid var(--border)}
+  .stat:nth-child(2){border-right:none}.stat:nth-child(n+3){border-bottom:none}
+  .bar{padding:12px 16px;position:static}main{padding:0 16px}
+  .search{flex-basis:100%}.ctl{flex:1 1 auto;justify-content:center;padding:0 10px;font-size:12px;white-space:nowrap;height:40px}
+  .grid,.picks{grid-template-columns:1fr}.sec{padding-top:48px}
+  .sec-icon{width:40px;height:40px}
+  .contrib{padding:40px 20px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <ul class="nav-links">
+      <li><a href="vipp.html" style="color:var(--teal)">VIPP-EL</a></li>
+      <li><a href="handbag.html" style="color:var(--teal)">HandBag</a></li>
+      <li><a href="bibliotheque.html">Bibliothèque</a></li>
+      <li><a href="liens-utiles.html" class="active">Liens utiles</a></li>
+    </ul>
+    <a href="index.html" class="nav-back">← Accueil</a>
+  </div>
+</nav>
+
+<!-- COUVERTURE -->
+<header class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-line"></div>
+  <svg class="hero-arch" viewBox="0 0 1400 200" fill="none" stroke="#c9a84c" stroke-width="1" aria-hidden="true" preserveAspectRatio="xMidYMax slice">
+    <path d="M0 96 H1400"/>
+    <path d="M300 96 V8 M1100 96 V8"/>
+    <path d="M300 14 L60 96 M300 30 L140 96 M300 46 L220 96 M300 14 L540 96 M300 30 L460 96 M300 46 L380 96"/>
+    <path d="M1100 14 L860 96 M1100 30 L940 96 M1100 46 L1020 96 M1100 14 L1340 96 M1100 30 L1260 96 M1100 46 L1180 96"/>
+    <path d="M560 200 Q 700 96 840 200"/>
+    <path d="M300 96 V200 M1100 96 V200"/>
+  </svg>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span>Ressources · Génie civil &amp; ouvrages d'art</span>
+      <div class="hero-eyebrow-line"></div>
+    </div>
+    <h1>Liens <em>utiles</em></h1>
+    <p class="hero-sub">Les références qui comptent pour concevoir, vérifier et construire des ponts — normes, bibliothèques techniques, maîtres d'ouvrage au Maroc et dans le monde, grands ouvrages, logiciels et formation. Sélectionnées et commentées par un bureau d'études.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-val" id="sTotal">—</span><span class="stat-lbl">Ressources</span></div>
+      <div class="stat"><span class="stat-val" id="sCat">—</span><span class="stat-lbl">Rubriques</span></div>
+      <div class="stat"><span class="stat-val" id="sFree">—</span><span class="stat-lbl">Accès libre</span></div>
+      <div class="stat"><span class="stat-val" id="sMa">—</span><span class="stat-lbl">Maroc</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- RECHERCHE & FILTRES -->
+<div class="bar">
+  <div class="bar-inner">
+    <div class="bar-row">
+      <label class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Eurocode, ONCF, haubans, géotechnique…" autocomplete="off" aria-label="Rechercher une ressource">
+        <kbd>/</kbd>
+      </label>
+      <select id="region" class="ctl" aria-label="Zone géographique">
+        <option value="">Toutes zones</option>
+        <option value="Maroc">Maroc</option>
+        <option value="Afrique">Afrique</option>
+        <option value="Europe">Europe</option>
+        <option value="Amérique">Amérique</option>
+        <option value="Asie">Asie</option>
+        <option value="Monde">International</option>
+      </select>
+      <button class="ctl" id="onlyFree" type="button">Accès libre</button>
+      <button class="ctl" id="onlyFav" type="button">★ Favoris</button>
+      <button class="ctl" id="rand" type="button" title="Découvrir une ressource au hasard">↻ Au hasard</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</div>
+
+<main>
+  <section class="sec" id="picksSec">
+    <div class="sec-head">
+      <div class="sec-icon" style="background:rgba(201,168,76,.1);color:var(--gold)">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M16 3l3.8 7.7 8.5 1.2-6.2 6 1.5 8.4L16 22.3l-7.6 4 1.5-8.4-6.2-6 8.5-1.2z"/></svg>
+      </div>
+      <div>
+        <div class="sec-eyebrow">Choix du bureau d'études</div>
+        <h2 class="sec-title">La <em>sélection</em></h2>
+        <p class="sec-sub">Les sources que nous ouvrons chaque semaine sur nos projets d'ouvrages d'art.</p>
+      </div>
+    </div>
+    <div class="picks" id="picks"></div>
+  </section>
+
+  <div id="cats"></div>
+
+  <div class="contrib">
+    <h3>Une ressource <em>manque</em> ?</h3>
+    <p>Proposez-nous un lien. Nous l'étudions et l'ajoutons s'il apporte une vraie valeur technique aux ingénieurs d'ouvrages d'art.</p>
+    <button class="btn-gold" id="suggest" type="button">Suggérer un lien →</button>
+  </div>
+  <p class="note">Liens externes vérifiés périodiquement. Les sites cités restent la propriété de leurs éditeurs ; leur mention ne vaut pas partenariat.</p>
+</main>
+
+<dialog id="dlg">
+  <div class="dlg-eye">Découverte</div>
+  <div id="dlgBody"></div>
+  <div class="dlg-actions">
+    <button class="ctl" id="dlgAgain" type="button">↻ Une autre</button>
+    <a class="btn-gold" id="dlgGo" target="_blank" rel="noopener">Ouvrir ↗</a>
+  </div>
+</dialog>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-bottom">
+      <p><span class="footer-logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="vipp.html">VIPP-EL</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html">Bibliothèque</a> &nbsp;·&nbsp; <a href="liens-utiles.html">Liens utiles</a></p>
+      <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   RUBRIQUES — icône en trait fin, teinte du site
+   ============================================================ */
+const IC = {
+  normes:'<path d="M8 3h12l5 5v21H8z"/><path d="M20 3v5h5"/><path d="M12 14h9M12 18h9M12 22h6"/>',
+  biblio:'<rect x="4" y="5" width="5" height="22" rx="1"/><rect x="10" y="5" width="5" height="22" rx="1"/><path d="M17.5 7.5l4.8-1.3 5.7 20.4-4.8 1.3z"/><path d="M3 27h26"/>',
+  maroc:'<path d="M16 5L23.05 26.71 4.59 13.29h22.82L8.95 26.71z" stroke-linejoin="round"/>',
+  mo:'<path d="M3 11l13-7 13 7z"/><path d="M6 11v13M11 11v13M16 11v13M21 11v13M26 11v13"/><path d="M3 24h26M2 28h28"/>',
+  assoc:'<circle cx="16" cy="8" r="3.5"/><circle cx="7" cy="23" r="3.5"/><circle cx="25" cy="23" r="3.5"/><path d="M14 11l-5 9M18 11l5 9M10.5 23h11"/>',
+  ponts:'<path d="M2 12h28"/><path d="M4 12v15M28 12v15M16 12v15"/><path d="M4 27Q10 17 16 27Q22 17 28 27"/><path d="M2 8l14-4 14 4"/>',
+  logi:'<rect x="3" y="5" width="26" height="17" rx="2"/><path d="M11 27h10M16 22v5"/><path d="M7 17Q12 8 16 13T25 10"/>',
+  form:'<path d="M2 12l14-6 14 6-14 6z"/><path d="M8 15v6c0 2 3.6 4 8 4s8-2 8-4v-6"/><path d="M28 13v8"/>'
+};
+const CATS = {
+  normes:{t:"Normes & réglementation",e:"Normes &amp; <em>réglementation</em>",s:"Eurocodes, normes nationales et internationales, recommandations ferroviaires.",c:"var(--gold)",b:"rgba(201,168,76,.1)"},
+  biblio:{t:"Bibliothèques & bases documentaires",e:"Bibliothèques &amp; <em>bases documentaires</em>",s:"Guides techniques, revues, articles scientifiques et bases de données.",c:"var(--gold)",b:"rgba(201,168,76,.1)"},
+  maroc:{t:"Maîtres d'ouvrage — Maroc",e:"Maîtres d'ouvrage <em>au Maroc</em>",s:"Administrations et établissements publics qui conçoivent, financent et construisent les infrastructures.",c:"var(--teal)",b:"rgba(26,184,160,.1)"},
+  mo:{t:"Maîtres d'ouvrage — International",e:"Maîtres d'ouvrage <em>à l'international</em>",s:"Gestionnaires de réseaux routiers et ferroviaires, bailleurs de fonds.",c:"var(--teal)",b:"rgba(26,184,160,.1)"},
+  assoc:{t:"Associations & sociétés savantes",e:"Associations &amp; <em>sociétés savantes</em>",s:"Communautés d'experts, congrès et groupes de travail qui font évoluer la discipline.",c:"#6da5f5",b:"rgba(45,107,228,.12)"},
+  ponts:{t:"Grands ponts & veille",e:"Grands ponts &amp; <em>veille</em>",s:"Bases d'ouvrages, sites de grands ponts et presse spécialisée.",c:"#6da5f5",b:"rgba(45,107,228,.12)"},
+  logi:{t:"Logiciels & outils de calcul",e:"Logiciels &amp; <em>outils de calcul</em>",s:"Éditeurs de logiciels de calcul de structures et outils en ligne.",c:"var(--silver)",b:"rgba(255,255,255,.05)"},
+  form:{t:"Formation & écoles",e:"Formation &amp; <em>écoles</em>",s:"Écoles d'ingénieurs et cours ouverts en ligne.",c:"var(--silver)",b:"rgba(255,255,255,.05)"}
+};
+
+/* ============================================================
+   DONNÉES — pour ajouter un lien, ajoutez une ligne ci-dessous.
+   cat : rubrique (voir CATS) · reg : Maroc | Afrique | Europe | Amérique | Asie | Monde
+   free : accès libre (au moins partiel) · lang : langue principale
+   top : true = « La sélection » (why = commentaire court)
+   ============================================================ */
+const L = [
+  // NORMES
+  {n:"Eurocodes — portail JRC",u:"https://eurocodes.jrc.ec.europa.eu",cat:"normes",reg:"Europe",free:true,lang:"EN",d:"Portail officiel de la Commission européenne : état des Eurocodes, 2e génération, exemples, documents de formation.",top:true,why:"Le point d'entrée de référence pour suivre la 2e génération des Eurocodes."},
+  {n:"CEN — Comité européen de normalisation",u:"https://www.cen.eu",cat:"normes",reg:"Europe",free:true,lang:"EN",d:"Organisme qui publie les normes EN, dont les Eurocodes (CEN/TC 250)."},
+  {n:"AFNOR — Boutique normes",u:"https://www.boutique.afnor.org",cat:"normes",reg:"Europe",free:false,lang:"FR",d:"Normes NF EN et annexes nationales françaises."},
+  {n:"IMANOR — Institut marocain de normalisation",u:"https://www.imanor.gov.ma",cat:"normes",reg:"Maroc",free:false,lang:"FR",d:"Normes marocaines NM, catalogue et homologations."},
+  {n:"ISO",u:"https://www.iso.org",cat:"normes",reg:"Monde",free:false,lang:"EN",d:"Normes internationales (matériaux, essais, management de la qualité)."},
+  {n:"AASHTO Store",u:"https://store.transportation.org",cat:"normes",reg:"Amérique",free:false,lang:"EN",d:"AASHTO LRFD Bridge Design Specifications et guides d'inspection américains."},
+  {n:"UIC — Fiches et normes ferroviaires",u:"https://shop.uic.org",cat:"normes",reg:"Monde",free:false,lang:"EN/FR",d:"Fiches UIC et IRS : interaction voie-ouvrage, dynamique, ponts ferroviaires."},
+
+  // BIBLIOTHÈQUES
+  {n:"Cerema Doc",u:"https://doc.cerema.fr",cat:"biblio",reg:"Europe",free:true,lang:"FR",d:"Fonds documentaire du Cerema (ex-Sétra) : guides d'ouvrages d'art, ITSEOA, guides de conception.",top:true,why:"Héritier des guides Sétra — incontournable pour PSIDP, PRAD, VIPP et la surveillance des ouvrages."},
+  {n:"Structurae",u:"https://structurae.net",cat:"biblio",reg:"Monde",free:true,lang:"FR/EN",d:"Base internationale de plus de 100 000 ouvrages, acteurs et publications.",top:true,why:"Pour retrouver en quelques secondes la fiche, les intervenants et la bibliographie d'un ouvrage."},
+  {n:"TRID — Transportation Research",u:"https://trid.trb.org",cat:"biblio",reg:"Amérique",free:true,lang:"EN",d:"Plus d'un million de références de recherche en transport et infrastructures.",top:true,why:"La plus grande base bibliographique en infrastructures de transport, gratuite."},
+  {n:"FHWA — Bridges & Structures",u:"https://www.fhwa.dot.gov/bridge/",cat:"biblio",reg:"Amérique",free:true,lang:"EN",d:"Manuels techniques gratuits : inspection, réparation, fondations profondes, sismique."},
+  {n:"Steel Construction Info",u:"https://www.steelconstruction.info",cat:"biblio",reg:"Europe",free:true,lang:"EN",d:"Encyclopédie de la construction métallique et mixte, ponts compris, alignée Eurocodes.",top:true,why:"La meilleure synthèse gratuite sur les ponts mixtes acier-béton."},
+  {n:"ASCE Library",u:"https://ascelibrary.org",cat:"biblio",reg:"Amérique",free:false,lang:"EN",d:"Journal of Bridge Engineering, Journal of Structural Engineering, normes ASCE."},
+  {n:"ICE Virtual Library",u:"https://www.icevirtuallibrary.com",cat:"biblio",reg:"Europe",free:false,lang:"EN",d:"Revues et ouvrages de l'Institution of Civil Engineers (Bridge Engineering, Géotechnique)."},
+  {n:"Techniques de l'Ingénieur",u:"https://www.techniques-ingenieur.fr",cat:"biblio",reg:"Europe",free:false,lang:"FR",d:"Articles de référence en français : béton précontraint, fondations, Eurocodes."},
+  {n:"HAL — Archive ouverte",u:"https://hal.science",cat:"biblio",reg:"Europe",free:true,lang:"FR/EN",d:"Thèses et articles scientifiques français en libre accès."},
+  {n:"Google Scholar",u:"https://scholar.google.com",cat:"biblio",reg:"Monde",free:true,lang:"Multi",d:"Moteur de recherche d'articles scientifiques et de thèses."},
+  {n:"Banque mondiale — Documents",u:"https://documents.worldbank.org",cat:"biblio",reg:"Monde",free:true,lang:"EN/FR",d:"Rapports de projets d'infrastructures, études d'impact, retours d'expérience."},
+
+  // MAROC
+  {n:"Ministère de l'Équipement et de l'Eau",u:"https://www.equipement.gov.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR/AR",d:"Direction des Routes, programmes routiers, appels d'offres, réglementation technique."},
+  {n:"ONCF",u:"https://www.oncf.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR/AR",d:"Office national des chemins de fer : LGV, doublements, ouvrages ferroviaires."},
+  {n:"ADM — Autoroutes du Maroc",u:"https://www.adm.co.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR/AR",d:"Concessionnaire du réseau autoroutier, projets et marchés."},
+  {n:"ANP — Agence nationale des ports",u:"https://www.anp.org.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR",d:"Régulation et développement des infrastructures portuaires."},
+  {n:"Tanger Med",u:"https://www.tangermed.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR/EN",d:"Complexe portuaire et zones industrielles, grands projets d'infrastructure."},
+  {n:"LPEE",u:"https://www.lpee.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR",d:"Laboratoire public d'essais et d'études : géotechnique, matériaux, contrôle des ouvrages."},
+  {n:"ONEE",u:"https://www.one.org.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR",d:"Office national de l'électricité et de l'eau potable : ouvrages hydrauliques et réseaux."},
+  {n:"Portail des marchés publics",u:"https://www.marchespublics.gov.ma",cat:"maroc",reg:"Maroc",free:true,lang:"FR",d:"Appels d'offres de l'État et des établissements publics."},
+
+  // INTERNATIONAL
+  {n:"SNCF Réseau",u:"https://www.sncf-reseau.com",cat:"mo",reg:"Europe",free:true,lang:"FR",d:"Gestionnaire du réseau ferré français ; référentiels techniques ouvrages d'art."},
+  {n:"Cerema",u:"https://www.cerema.fr",cat:"mo",reg:"Europe",free:true,lang:"FR",d:"Expertise publique française : ouvrages d'art, géotechnique, risques."},
+  {n:"National Highways",u:"https://nationalhighways.co.uk",cat:"mo",reg:"Europe",free:true,lang:"EN",d:"Réseau routier anglais ; Design Manual for Roads and Bridges (DMRB)."},
+  {n:"Network Rail",u:"https://www.networkrail.co.uk",cat:"mo",reg:"Europe",free:true,lang:"EN",d:"Réseau ferré britannique, gestion d'un très large patrimoine d'ouvrages anciens."},
+  {n:"ADIF",u:"https://www.adif.es",cat:"mo",reg:"Europe",free:true,lang:"ES",d:"Gestionnaire espagnol de la grande vitesse : une référence pour les viaducs LGV."},
+  {n:"Banque africaine de développement",u:"https://www.afdb.org",cat:"mo",reg:"Afrique",free:true,lang:"FR/EN",d:"Financement d'infrastructures en Afrique, documents de projets et appels d'offres."},
+
+  // ASSOCIATIONS
+  {n:"IABSE / AIPC",u:"https://iabse.org",cat:"assoc",reg:"Monde",free:false,lang:"EN",d:"Association internationale des ponts et charpentes : Structural Engineering International, congrès."},
+  {n:"fib — Fédération internationale du béton",u:"https://www.fib-international.org",cat:"assoc",reg:"Monde",free:false,lang:"EN",d:"Model Code, bulletins techniques sur le béton armé et précontraint."},
+  {n:"AFGC",u:"https://www.afgc.asso.fr",cat:"assoc",reg:"Europe",free:true,lang:"FR",d:"Association française de génie civil : recommandations (BFUP, durabilité, haubans)."},
+  {n:"PIARC — Association mondiale de la route",u:"https://www.piarc.org",cat:"assoc",reg:"Monde",free:true,lang:"FR/EN/ES",d:"Rapports techniques gratuits sur la gestion des ponts et des réseaux routiers.",top:true,why:"Des rapports internationaux gratuits en français sur la gestion patrimoniale des ouvrages."},
+  {n:"IABMAS",u:"https://www.iabmas.org",cat:"assoc",reg:"Monde",free:true,lang:"EN",d:"Maintenance, sécurité et gestion des ponts ; congrès bisannuel."},
+  {n:"ECCS — Construction métallique",u:"https://www.steelconstruct.com",cat:"assoc",reg:"Europe",free:false,lang:"EN",d:"Convention européenne de la construction métallique : guides de conception EC3/EC4."},
+  {n:"CFMS",u:"https://www.cfms-sols.org",cat:"assoc",reg:"Europe",free:true,lang:"FR",d:"Comité français de mécanique des sols : recommandations fondations et soutènements."},
+  {n:"ASCE",u:"https://www.asce.org",cat:"assoc",reg:"Amérique",free:false,lang:"EN",d:"American Society of Civil Engineers."},
+  {n:"ICE",u:"https://www.ice.org.uk",cat:"assoc",reg:"Europe",free:false,lang:"EN",d:"Institution of Civil Engineers (Royaume-Uni)."},
+  {n:"JSCE",u:"https://www.jsce-int.org",cat:"assoc",reg:"Asie",free:true,lang:"EN",d:"Société japonaise de génie civil : sismique, grands ponts suspendus."},
+  {n:"UIC",u:"https://uic.org",cat:"assoc",reg:"Monde",free:true,lang:"EN/FR",d:"Union internationale des chemins de fer."},
+
+  // GRANDS PONTS & VEILLE
+  {n:"HighestBridges.com",u:"https://www.highestbridges.com",cat:"ponts",reg:"Monde",free:true,lang:"EN",d:"Encyclopédie illustrée des ponts les plus hauts et les plus longues portées."},
+  {n:"Viaduc de Millau",u:"https://www.leviaducdemillau.com",cat:"ponts",reg:"Europe",free:true,lang:"FR",d:"Site officiel du viaduc à haubans multi-travées."},
+  {n:"Pont de l'Øresund",u:"https://www.oresundsbron.com",cat:"ponts",reg:"Europe",free:true,lang:"EN",d:"Liaison pont-tunnel Danemark–Suède."},
+  {n:"Bridge Design & Engineering",u:"https://www.bridgeweb.com",cat:"ponts",reg:"Monde",free:false,lang:"EN",d:"Magazine international dédié aux ponts : projets, techniques, appels d'offres."},
+  {n:"Le Moniteur",u:"https://www.lemoniteur.fr",cat:"ponts",reg:"Europe",free:false,lang:"FR",d:"Actualité BTP et marchés publics."},
+  {n:"ENR",u:"https://www.enr.com",cat:"ponts",reg:"Amérique",free:false,lang:"EN",d:"Engineering News-Record : actualité mondiale de la construction."},
+
+  // LOGICIELS
+  {n:"Midas Civil",u:"https://www.midasoft.com",cat:"logi",reg:"Asie",free:false,lang:"EN",d:"Calcul de ponts : phasage, précontrainte, fluage, charges mobiles, interaction voie-ouvrage."},
+  {n:"Graitec",u:"https://www.graitec.com",cat:"logi",reg:"Europe",free:false,lang:"FR",d:"Advance Design / Effel : calcul aux Eurocodes."},
+  {n:"SOFiSTiK",u:"https://www.sofistik.com",cat:"logi",reg:"Europe",free:false,lang:"EN/DE",d:"Calcul aux éléments finis et conception paramétrique de ponts."},
+  {n:"LUSAS",u:"https://www.lusas.com",cat:"logi",reg:"Europe",free:false,lang:"EN",d:"Analyse avancée de ponts : non-linéaire, dynamique, haubans."},
+  {n:"CSI — CSiBridge",u:"https://www.csiamerica.com",cat:"logi",reg:"Amérique",free:false,lang:"EN",d:"CSiBridge, SAP2000 : modélisation et dimensionnement de ponts."},
+  {n:"SCIA Engineer",u:"https://www.scia.net",cat:"logi",reg:"Europe",free:false,lang:"EN/FR",d:"Calcul de structures multi-matériaux aux Eurocodes."},
+  {n:"Eurocode Applied",u:"https://eurocodeapplied.com",cat:"logi",reg:"Europe",free:true,lang:"EN",d:"Calculatrices en ligne aux Eurocodes et rappels théoriques."},
+
+  // FORMATION
+  {n:"EHTP",u:"https://www.ehtp.ac.ma",cat:"form",reg:"Maroc",free:true,lang:"FR",d:"École Hassania des Travaux Publics, Casablanca."},
+  {n:"École des Ponts ParisTech",u:"https://ecoledesponts.fr",cat:"form",reg:"Europe",free:true,lang:"FR",d:"Formation initiale et continue en génie civil et ouvrages d'art."},
+  {n:"MIT OpenCourseWare",u:"https://ocw.mit.edu",cat:"form",reg:"Amérique",free:true,lang:"EN",d:"Cours gratuits du MIT : mécanique des structures, dynamique, éléments finis."},
+  {n:"NPTEL",u:"https://nptel.ac.in",cat:"form",reg:"Asie",free:true,lang:"EN",d:"Centaines de cours vidéo gratuits en génie civil (IIT, Inde)."}
+];
+
+/* ============================================================ */
+const $ = s => document.querySelector(s);
+const host = u => new URL(u).hostname.replace(/^www\./,'');
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const svg = (k,sz) => `<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4">${IC[k]}</svg>`;
+let favs = [];
+try { favs = JSON.parse(localStorage.getItem('bas-liens-favs') || '[]'); } catch(e) {}
+const saveFavs = () => { try { localStorage.setItem('bas-liens-favs', JSON.stringify(favs)); } catch(e) {} };
+const S = {q:'', cat:'', reg:'', free:false, fav:false};
+
+$('#sTotal').textContent = L.length;
+$('#sCat').textContent = Object.keys(CATS).length;
+$('#sFree').textContent = L.filter(x=>x.free).length;
+$('#sMa').textContent = L.filter(x=>x.reg==='Maroc').length;
+
+const ico = l => `<span class="ico"><img loading="lazy" alt="" src="https://www.google.com/s2/favicons?domain=${host(l.u)}&sz=64" onerror="this.replaceWith(document.createTextNode('${l.n.trim()[0]}'))"></span>`;
+const tags = l => `<div class="tags"><span class="tag ${l.free?'free':''}">${l.free?'Accès libre':'Abonnement'}</span><span class="tag ${l.reg==='Maroc'?'ma':''}">${l.reg==='Monde'?'International':l.reg}</span><span class="tag">${l.lang}</span></div>`;
+const card = l => { const on = favs.includes(l.u); return `<article class="card">
+  <button class="star ${on?'on':''}" data-u="${l.u}" aria-label="${on?'Retirer des':'Ajouter aux'} favoris" title="${on?'Retirer des':'Ajouter aux'} favoris">${on?'★':'☆'}</button>
+  <div class="lk-top">${ico(l)}<div><a class="lk-name stretch" href="${l.u}" target="_blank" rel="noopener">${l.n}</a><span class="lk-dom">${host(l.u)}</span></div></div>
+  <p class="lk-desc">${l.d}</p>${tags(l)}</article>`; };
+
+function match(l, ignoreCat){
+  if (!ignoreCat && S.cat && l.cat!==S.cat) return false;
+  if (S.reg && l.reg!==S.reg) return false;
+  if (S.free && !l.free) return false;
+  if (S.fav && !favs.includes(l.u)) return false;
+  if (S.q){ const h = norm([l.n,l.d,l.u,l.reg,l.lang,CATS[l.cat].t].join(' ')); return norm(S.q).split(/\s+/).every(w=>h.includes(w)); }
+  return true;
+}
+
+function render(){
+  const filtering = S.q||S.cat||S.reg||S.free||S.fav;
+  $('#picksSec').style.display = filtering ? 'none' : '';
+  $('#picks').innerHTML = L.filter(l=>l.top).map((l,i)=>`<a class="pick" href="${l.u}" target="_blank" rel="noopener">
+    <span class="pick-num">${String(i+1).padStart(2,'0')}</span>
+    <div class="lk-top">${ico(l)}<div><span class="lk-name">${l.n}</span><span class="lk-dom">${host(l.u)}</span></div></div>
+    <p class="pick-why">${l.why}</p><span class="pick-go">Consulter →</span></a>`).join('');
+
+  let html = '', n = 0;
+  Object.entries(CATS).forEach(([k,c])=>{
+    const items = L.filter(l=>l.cat===k && match(l));
+    n++; if (!items.length) return;
+    html += `<section class="sec" id="c-${k}"><div class="sec-head">
+      <div class="sec-icon" style="background:${c.b};color:${c.c}">${svg(k,26)}</div>
+      <div><div class="sec-eyebrow">${String(n).padStart(2,'0')} · ${items.length} ressource${items.length>1?'s':''}</div>
+      <h2 class="sec-title">${c.e}</h2><p class="sec-sub">${c.s}</p></div></div>
+      <div class="grid">${items.map(card).join('')}</div></section>`;
+  });
+  $('#cats').innerHTML = html || `<div class="empty"><b>Aucune ressource</b>ne correspond à ces critères — <a href="#" id="reset">réinitialiser les filtres</a></div>`;
+
+  const base = L.filter(l=>match(l,true));
+  $('#chips').innerHTML = `<button class="chip ${!S.cat?'on':''}" data-c="">Tout<small>${base.length}</small></button>` +
+    Object.entries(CATS).map(([k,c])=>`<button class="chip ${S.cat===k?'on':''}" data-c="${k}">${c.t}<small>${base.filter(l=>l.cat===k).length}</small></button>`).join('');
+}
+
+$('#q').addEventListener('input', e=>{S.q=e.target.value.trim(); render();});
+$('#region').addEventListener('change', e=>{S.reg=e.target.value; render();});
+$('#onlyFree').onclick = e=>{S.free=!S.free; e.currentTarget.classList.toggle('on',S.free); render();};
+$('#onlyFav').onclick = e=>{S.fav=!S.fav; e.currentTarget.classList.toggle('on',S.fav); render();};
+$('#chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; S.cat=b.dataset.c; render(); });
+document.addEventListener('click', e=>{
+  const s = e.target.closest('.star');
+  if (s){ e.preventDefault(); const u=s.dataset.u; favs = favs.includes(u)?favs.filter(x=>x!==u):[...favs,u]; saveFavs(); render(); }
+  if (e.target.id==='reset'){ e.preventDefault(); Object.assign(S,{q:'',cat:'',reg:'',free:false,fav:false});
+    $('#q').value=''; $('#region').value=''; $('#onlyFree').classList.remove('on'); $('#onlyFav').classList.remove('on'); render(); }
+});
+document.addEventListener('keydown', e=>{
+  if (e.key==='/' && !['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)){ e.preventDefault(); $('#q').focus(); }
+  if (e.key==='Escape' && document.activeElement===$('#q')){ $('#q').value=''; S.q=''; render(); }
+});
+
+function pick(){
+  const l = L[Math.floor(Math.random()*L.length)];
+  $('#dlgBody').innerHTML = `<div class="lk-top">${ico(l)}<div><span class="lk-name">${l.n}</span><span class="lk-dom">${host(l.u)}</span></div></div>
+    <div class="dlg-cat">${CATS[l.cat].t}</div><p class="lk-desc" style="margin-bottom:14px">${l.d}</p>${tags(l)}`;
+  $('#dlgGo').href = l.u;
+}
+$('#rand').onclick = ()=>{ pick(); $('#dlg').showModal(); };
+$('#dlgAgain').onclick = pick;
+$('#dlg').addEventListener('click', e=>{ if (e.target===$('#dlg')) $('#dlg').close(); });
+
+$('#suggest').onclick = ()=>{
+  location.href = 'mailto:contact@bridgeaistudios.com?subject=' + encodeURIComponent('Liens utiles — suggestion')
+    + '&body=' + encodeURIComponent('Nom du site :\nAdresse (URL) :\nPourquoi est-il utile :\n');
+};
+
+render();
+</script>
+</body>
+</html>
