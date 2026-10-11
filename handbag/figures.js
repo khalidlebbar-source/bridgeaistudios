@@ -81,6 +81,7 @@ function plot(o) {
   const obst = o.series.flatMap(s => { const out = []; for (let k = 0; k < s.pts.length - 1; k++) for (let t = 0; t <= 1; t += .25) out.push([X(s.pts[k][0] + (s.pts[k + 1][0] - s.pts[k][0]) * t), Y(s.pts[k][1] + (s.pts[k + 1][1] - s.pts[k][1]) * t)]); return out; });
   const boxes = [];
   (o.marks || []).forEach(m => {
+    if (m.dot) { g += Ci(X(m.x), Y(m.y), 3.2, { f: m.c || K.red, c: "#fff", w: 1 }); return; }   // simple point, sans lignes de rappel ni étiquette
     const px = X(m.x), py = Y(m.y), w = m.l.length * 5.3 + 6, h = 12;
     const cands = [[8, -16], [-8 - w, -16], [8, 6], [-8 - w, 6], [-w / 2, -22], [-w / 2, 10], [14, -5], [-14 - w, -5]];
     let best = null, bs = 1e9;

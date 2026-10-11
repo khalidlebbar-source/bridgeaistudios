@@ -5,3 +5,6 @@ module.exports = [
   ["act-bipoutre-superstructures", {}, { nomT: [173.2, 1e-9], maxT: [186.886, 1e-6], minT: [153.642, 1e-6] }, "Biblio2004 · Cp_mix.xls (17,32 / 18,689 / 15,364 t/m pour l'ensemble)"],
   ["act-bipoutre-superstructures", {}, { gN: [92.19455, 1e-6], Mg: [-109.47453, 1e-5] }, "Calcul manuel : levier ½ − e/lp et moment d'encorbellement gauche (charges maxi)"],
 ];
+module.exports.push(
+  ["pc-trace-cable", { pts: "0 0 1 ; 10 -0.3 – ; 20 0.5 -1 ; 24 -0.2 – ; 28 0.1 0 ; 33 0 0.1 ; 37 0.1 –", xe: 4 }, { ze: [2.352, 1e-6], pe: [0.176, 1e-6], ce: [-0.19679, 5e-5], Rmin: [2.2487, 5e-5] }, "Biblio2004 · CABLE.xls (point d'étude x = 4 m ; R min = 2,2487 m)"],
+);

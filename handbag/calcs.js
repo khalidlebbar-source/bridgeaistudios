@@ -23,9 +23,9 @@ const H = (h) => ({ h });
 const LST = (k, l, u, v, s, extra = {}) => Object.assign({ k, l, u, v, s: s || k, t: "list", cols: 1 }, extra);
 const num1 = t => { t = String(t).trim().replace(",", "."); if (/^(∞|inf|infini)$/i.test(t)) return Infinity; return t === "" ? NaN : Number(t); };
 function parseList(str, cols = 1) {
-  const rows = String(str).split(/[;\/\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/\s+/).map(num1));
+  const rows = String(str).split(/[;\/\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/\s+/).map(t => /^[–—*-]$/.test(t) ? null : num1(t)));   // « – » : valeur libre (null)
   if (!rows.length) return [];
-  if (rows.some(r => r.some(isNaN))) return null;
+  if (rows.some(r => r.some(v => v !== null && isNaN(v)))) return null;
   if (cols === 1) return rows.flat();
   if (cols === 0) return rows;                                           // lignes de longueur libre
   return rows.some(r => r.length < cols) ? null : rows;
