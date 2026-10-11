@@ -182,4 +182,47 @@ HB.add("Règlements anciens", [
     return svg(W, Hh, s); },
   clair: (I, g) => `Le moment limite ${+I.sg > 0 ? "positif" : "négatif"} vaut ${f2(abs(g("Mu")), 0)} kN·m, avec un axe neutre plastique à ${f2(g("y"), 3)} m de la base.` },
 ]);
+
+HB.add("Règlements anciens", [
+{ id: "anc-mixte-predim", t: "Pont mixte : prédimensionnement des semelles d'une section (circulaire 81-63)", ref: "Circulaire n° 81-63 (ponts mixtes) — Biblio 2004 « DIM_MIXT » (macro de calcul des épaisseurs)",
+  desc: "Épaisseurs minimales des semelles d'une poutre mixte, en travée (contraintes phasées acier seul, n = 18, n = 6) ou sur appui (section fissurée avec 1 % d'armatures), et poids de la charpente.",
+  inputs: [SEL("ty", "Section", [["t", "travée (ELS, moment positif)"], ["a", "appui (ELU, moment négatif)"]], "t", ""), N("H", "Hauteur de la poutre métallique", "m", 2.4, "H"), N("b", "Largeur de dalle participante", "m", 7.4, "b"), N("e", "Épaisseur de dalle", "m", 0.33, "e"),
+    N("a", "Épaisseur de l'âme", "m", 0.022, "a"), LST("lw", "Largeurs des semelles sup. et inf.", "m", "0.8 0.8", L`d\ w`),
+    H("Moments (valeurs absolues, MN·m)"), N("Mpp", "Poids propre (charpente et dalle coulée)", "MN·m", 6.5, L`M_{pp}`), N("Mcp", "Permanentes de longue durée (n = 18)", "MN·m", 2.71, L`M_{cp}`), N("Msc", "Surcharges de courte durée (n = 6)", "MN·m", 12, L`M_{sc}`),
+    N("el", "Élancement maximal des semelles b/t", "", 30, ""), N("fc", "Résistance du béton", "MPa", 30, L`f_{c28}`), N("fe", "Limite élastique des armatures", "MPa", 400, L`f_e`)],
+  calc(I) {
+    const [d, w] = I.lw || [], H0 = I.H, tr = I.ty === "t"; if (!w) throw new Error("largeurs des semelles à saisir");
+    const Ab = I.b * I.e, A1 = 2 * Ab / 300, A2 = Ab / 300, z1 = H0 + I.e - 0.04, z2 = H0 + 0.04, zb = H0 + I.e / 2;
+    /* caractéristiques (m, m², m⁴) depuis la base : semelle inf. r, semelle sup. t, âme, dalle/n, armatures */
+    const car = (r, t, n, slab, bars) => { const P = [[w * r, r / 2, w * r ** 3 / 12], [I.a * (H0 - r - t), r + (H0 - r - t) / 2, I.a * (H0 - r - t) ** 3 / 12], [d * t, H0 - t / 2, d * t ** 3 / 12]];
+      if (slab) P.push([Ab / n, zb, I.b * I.e ** 3 / 12 / n]); if (bars) P.push([A1, z1, 0], [A2, z2, 0]);
+      const A = P.reduce((s, p) => s + p[0], 0), y = P.reduce((s, p) => s + p[0] * p[1], 0) / A, In = P.reduce((s, p) => s + p[2] + p[0] * (p[1] - y) ** 2, 0); return { A, y, I: In }; };
+    const lim = t => sgE(t * 1000) / (tr ? 1.15 : 1);
+    const stress = (r, t) => { const a0 = car(r, t, 1, false, false); let inf, sup, bet = 0, ar = 0;
+      if (tr) { const a18 = car(r, t, 18, true, false), a6 = car(r, t, 6, true, false);
+        inf = I.Mpp * a0.y / a0.I + I.Mcp * a18.y / a18.I + I.Msc * a6.y / a6.I; sup = I.Mpp * (H0 - a0.y) / a0.I + I.Mcp * (H0 - a18.y) / a18.I + I.Msc * (H0 - a6.y) / a6.I;
+        bet = I.Mcp * (H0 + I.e - a18.y) / a18.I / 18 + I.Msc * (H0 + I.e - a6.y) / a6.I / 6; }
+      else { const af = car(r, t, 1, false, true), Mc = I.Mcp + I.Msc; sup = I.Mpp * (H0 - a0.y) / a0.I + Mc * (H0 - af.y) / af.I; inf = I.Mpp * a0.y / a0.I + Mc * af.y / af.I; ar = Mc * (z1 - af.y) / af.I; }
+      return { inf, sup, bet, ar, A: a0.A }; };
+    const ok = (r, t) => { const q = stress(r, t); return q.inf <= lim(r) && q.sup <= lim(t) && (!tr || q.bet <= 0.6 * I.fc) && (tr || q.ar <= I.fe / 1.15); };
+    let best = null; const r0 = Math.ceil(w / I.el * 1000 - 1e-9) / 1000, t0 = Math.ceil(d / I.el * 1000 - 1e-9) / 1000; for (let r = max(0.010, r0); r <= 0.1505; r += 0.001) for (let t = max(0.010, t0); t <= 0.1505; t += 0.001) { if (r + t >= H0) continue; if (ok(r, t)) { const A = stress(r, t).A; if (!best || A < best.A - 1e-12) best = { r, t, A }; break; } }
+    if (!best) throw new Error("aucune paire d'épaisseurs ≤ 150 mm ne convient : augmenter la hauteur ou les largeurs");
+    const q = stress(best.r, best.t), m = best.A * 7850;
+    return { steps: [S("A1", L`A_{s}`, L`\dfrac{2}{3}\cdot 1\,\%\ b\,e` + "\\quad\\text{(et 1/3 en nappe inférieure)}", A1 * 1e4, "cm²", 0),
+      R("ti", L`t_{inf}`, "~épaisseur minimale de la semelle inférieure", best.r * 1000, "mm", 0), R("ts", L`t_{sup}`, "~épaisseur minimale de la semelle supérieure", best.t * 1000, "mm", 0),
+      S("si", L`\sigma_{inf}`, tr ? L`\dfrac{M_{pp}\,v_i}{I_a} + \dfrac{M_{cp}\,v_i}{I_{18}} + \dfrac{M_{sc}\,v_i}{I_6}` : L`\dfrac{M_{pp}\,v_i}{I_a} + \dfrac{(M_{cp} + M_{sc})\,v_i}{I_{fiss}}`, q.inf, "MPa", 1),
+      S("ss", L`\sigma_{sup}`, "~même composition, fibre supérieure", q.sup, "MPa", 1), tr ? S("sb", L`\sigma_b`, L`\dfrac{M_{cp}\,v_b}{18\,I_{18}} + \dfrac{M_{sc}\,v_b}{6\,I_6}`, q.bet, "MPa", 2) : S("sa", L`\sigma_s`, "~armatures supérieures (section fissurée)", q.ar, "MPa", 1),
+      S("lim", L`\sigma_e${tr ? "/1{,}15" : ""}`, "~semelle inférieure (selon l'épaisseur)", lim(best.r), "MPa", 1), R("m", "m", "~masse de la poutre métallique", m, "kg/m", 0)],
+      checks: [C("Semelle inférieure", q.inf <= lim(best.r), `${f2(q.inf, 0)} ≤ ${f2(lim(best.r), 0)} MPa`, q.inf / lim(best.r)), C("Semelle supérieure", q.sup <= lim(best.t), `${f2(q.sup, 0)} ≤ ${f2(lim(best.t), 0)} MPa`, q.sup / lim(best.t)),
+        tr ? C("Béton : $\\sigma_b \\le 0{,}6 f_{c28}$", q.bet <= 0.6 * I.fc, `${f2(q.bet, 2)} ≤ ${f2(0.6 * I.fc, 1)} MPa`, q.bet / (0.6 * I.fc)) : C("Armatures : $\\sigma_s \\le f_e/1{,}15$", q.ar <= I.fe / 1.15, `${f2(q.ar, 0)} ≤ ${f2(I.fe / 1.15, 0)} MPa`, q.ar / (I.fe / 1.15))],
+      vals: { r: best.r, t: best.t, d, w, H0, b: I.b, e: I.e, a: I.a, q, ti: best.r * 1000, ts: best.t * 1000 },
+      notes: ["Recherche, par pas de 1 mm, du couple d'épaisseurs de semelles de plus faible section d'acier respectant les contraintes limites : en travée, contraintes phasées (poids propre sur l'acier seul, permanentes sur n = 18, surcharges sur n = 6) limitées à σe/1,15 ; sur appui, poids propre sur l'acier seul et autres charges sur la section fissurée (acier + 1 % d'armatures en deux lits à 4 cm des faces), limitées à σe. Les semelles respectent l'élancement b/t imposé (voilement local). Armatures : 2/3 en nappe supérieure, 1/3 en nappe inférieure. La macro du classeur d'origine ne s'exécute plus ; le principe en a été repris."] };
+  },
+  fig(I, g, r) { const v = r.vals, W = 330, Hh = 200, k = min(150 / (v.H0 + v.e), 300 / v.b), cx = 165, Y = z => 190 - z * k, X = x => cx + x * k, ex = 3;
+    let s = Rc(X(-v.w / 2), Y(v.r) , v.w * k, max(2, v.r * k * ex), { f: K.steel, c: "#5a6f8e" }) + Rc(X(-v.a / 2) - 1, Y(v.H0 - v.t), max(2, v.a * k), (v.H0 - v.t - v.r) * k, { f: K.steel, c: "#5a6f8e" }) + Rc(X(-v.d / 2), Y(v.H0), v.d * k, max(2, v.t * k * ex), { f: K.steel, c: "#5a6f8e" });
+    s += Rc(X(-v.b / 2), Y(v.H0 + v.e), v.b * k, v.e * k, { f: "#e8e2d5", c: "#9b8f78" });
+    s += T(X(v.w / 2) + 6, Y(0) - 2, `semelle inf. ${f2(v.ti, 0)} mm`, { s: 9.5, c: K.red, w: 600 }) + T(X(v.d / 2) + 6, Y(v.H0) + 10, `semelle sup. ${f2(v.ts, 0)} mm`, { s: 9.5, c: K.red, w: 600 }) + T(X(-v.b / 2), Y(v.H0 + v.e) - 6, "épaisseurs de semelles × 3 sur le croquis", { s: 8.5, c: K.mute });
+    return svg(W, Hh, s); },
+  clair: (I, g) => `Il faut au moins ${f2(g("ti"), 0)} mm de semelle inférieure et ${f2(g("ts"), 0)} mm de semelle supérieure, soit environ ${f2(g("m"), 0)} kg/m de poutre.` },
+]);
 })(typeof window !== "undefined" ? window : globalThis);

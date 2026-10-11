@@ -7,4 +7,6 @@ module.exports = [
   ["anc-mixte-els", { M: -6000 }, { s0: [6 * 0.83168 / 0.038715, 5e-5], y: [0.83168, 5e-5] }, "Biblio2004 · Ver_mixt.xls : section fissurée métal + armatures (v' = 0,83168 m, I = 0,038715 m⁴)"],
   ["anc-mixte-elu", {}, { y: [1.4245626, 1e-6], Mu: [31195.84, 1e-6], Fb: [14450, 1e-9] }, "Calcul manuel : axe plastique dans la semelle supérieure (Ver_mixt, feuilles ELU illisibles)"],
   ["anc-mixte-elu", { sg: "-1" }, { Fa: [-4565.217, 1e-6] }, "Calcul manuel : armatures tendues 105 cm² × fe/1,15"],
+  ["anc-mixte-predim", {}, { ti: [27, 1e-9], ts: [27, 1e-9], si: [240.54813, 1e-6] }, "Calcul manuel : contraintes phasées (acier seul, n = 18, n = 6), semelles 800 × 27 (b/t = 30)"],
+  ["anc-mixte-predim", { ty: "a", b: 4.75, Mpp: 0, Mcp: 0, Msc: 64.3 }, { ti: [112, 1e-9], ts: [96, 1e-9], si: [294.93355, 1e-6], sa: [346.69171, 1e-6] }, "Calcul manuel : section fissurée sur appui (DIM_MIXT, appui 2 : 64,3 MN·m)"],
 ];
