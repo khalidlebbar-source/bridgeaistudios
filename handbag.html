@@ -115,7 +115,7 @@ h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;line-he
 .in input,.in select{height:25px;border-radius:6px;border:1px solid var(--border);background:var(--bg);padding:0 7px;font-size:12.5px;color:var(--in);font-weight:500;outline:none;width:100%;text-align:right;font-variant-numeric:tabular-nums}
 .in select{text-align:left;padding:0 4px;font-size:11.5px}
 .in.sel{grid-template-columns:1fr 150px 0}
-.in.list{grid-template-columns:1fr 42px;row-gap:2px}.in.list label{grid-column:1/3}.in.list input{text-align:left;font-size:12px}
+.in.list.short input{text-align:right}.in.list:not(.short){grid-template-columns:1fr 42px;row-gap:2px}.in.list:not(.short) label{grid-column:1/3}.in.list input{text-align:left;font-size:12px}
 .in input:focus,.in select:focus{border-color:var(--gold2);background:#fff}
 .in input.bad{border-color:var(--red);background:#fff5f4}
 .in .u{font-size:11px;color:var(--ink3)}
@@ -325,6 +325,7 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/lib/geo3.js"></script>
 <script src="handbag/lib/geo4.js"></script>
 <script src="handbag/lib/outils2.js"></script>
+<script src="handbag/lib/met2.js"></script>
 <!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
@@ -406,7 +407,7 @@ function open(id, push = true) {
     if (i.h) { h += `<div class="in-h">${tx(i.h)}</div>`; return; }
     const lab = `<label for="i-${i.k}">${tx(i.l)}${i.s ? ` <i>${M(i.s)}</i>` : ""}</label>`;
     if (i.t === "sel") h += `<div class="in sel">${lab}<select id="i-${i.k}" data-k="${i.k}">${i.o.map(([v, l]) => `<option value="${v}" ${String(vals[i.k]) === String(v) ? "selected" : ""}>${strip(l)}</option>`).join("")}</select><span></span></div>`;
-    else if (i.t === "list" || i.t === "text") h += `<div class="in list">${lab}<input id="i-${i.k}" data-k="${i.k}" spellcheck="false" value="${String(vals[i.k]).replace(/"/g, "&quot;")}"><span class="u">${i.u || ""}</span></div>`;
+    else if (i.t === "list" || i.t === "text") h += `<div class="in list${String(vals[i.k]).length <= 13 && i.t === "list" && i.cols === 1 ? " short" : ""}">${lab}<input id="i-${i.k}" data-k="${i.k}" spellcheck="false" value="${String(vals[i.k]).replace(/"/g, "&quot;")}"><span class="u">${i.u || ""}</span></div>`;
     else h += `<div class="in">${lab}<input id="i-${i.k}" data-k="${i.k}" inputmode="decimal" value="${String(vals[i.k]).replace(".", ",")}"><span class="u">${i.u || ""}</span></div>`;
   });
   h += `<div class="in-foot"><div class="legend"><span><i style="background:var(--in)"></i>valeurs saisies</span><span><i style="background:var(--out)"></i>résultats</span></div></div>`;
