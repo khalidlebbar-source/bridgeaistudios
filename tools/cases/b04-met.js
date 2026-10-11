@@ -17,3 +17,7 @@ module.exports.push(
   ["app-palplanche-corrosion", {}, { Sc: [73.9579757111658, 1e-9], yGc: [64.9853855608838, 1e-9], Ic: [4961.42036056607, 1e-9], Wc: [442.983960764828, 1e-9] }, "Biblio2004 · CARAPAL.xls (PU6, corrosion 1 mm par face)"],
   ["app-palplanche-corrosion", { p: "AZ13" }, { Sc: [113.907209996745, 1e-9], Ic: [16489.2120593076, 1e-9], Wc: [1095.62870825964, 1e-9] }, "Biblio2004 · CARAPAL.xls (AZ13, corrosion 1 mm par face)"],
 );
+module.exports.push(
+  ["ec3-rhs-flexion-composee", { gM1: 1.1 }, { A: [14375, 1e-9], ly: [0.90955, 5e-5], lz: [0.78778, 5e-5], xy: [0.65504, 5e-5], xz: [0.73197, 5e-5] }, "Biblio2004 · EC3.xls (élancements et χ, courbe b)"],
+  ["ec3-rhs-flexion-composee", { gM1: 1.1 }, { Cmy: [0.4, 1e-9], Cmz: [0.52, 1e-9], e61: [0.462044, 1e-5], e62: [0.427850, 1e-5] }, "Calcul manuel : annexe B, Cm du tableau B.3 (αs = 0,2 et 0,4)"],
+);
