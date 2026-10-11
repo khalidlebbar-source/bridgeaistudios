@@ -18,14 +18,15 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#0c0e14;--ink2:#1a1e2e;--ink3:#252a3d;
-  --gold:#c9a84c;--gold2:#e8c97a;
-  --blue:#2d6be4;--teal:#1ab8a0;--silver:#8892a4;--white:#ffffff;
-  --border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.2);
+  --ink:#f6f4ee;--ink2:#ffffff;--ink3:#efece3;
+  --gold:#a8842a;--gold2:#8a6b1f;
+  --blue:#2d6be4;--teal:#0f8f7b;--silver:#5f6778;--white:#14171f;
+  --border:rgba(20,23,31,.09);--border2:rgba(168,132,42,.4);
 }
+nav,footer,dialog{--ink:#0c0e14;--ink2:#1a1e2e;--white:#ffffff;--silver:#8892a4;--teal:#1ab8a0;--gold:#c9a84c;--gold2:#e8c97a;--border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.2)}
 html{scroll-behavior:smooth}
 body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.5;font-weight:300}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:2px}
 button,input,select{font-family:inherit}
 a{color:inherit;text-decoration:none}
 :focus-visible{outline:1px solid var(--gold);outline-offset:2px}
@@ -44,8 +45,9 @@ nav{position:sticky;top:0;z-index:100;padding:0 3vw;border-bottom:1px solid var(
 
 /* ─── EN-TÊTE COMPACT ─── */
 .head{position:relative;flex:none;padding:22px 3vw 18px;border-bottom:1px solid var(--border);overflow:hidden}
-.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 140% at 20% 0%,rgba(45,107,228,.12) 0%,transparent 70%);pointer-events:none}
-.head-arch{position:absolute;right:0;bottom:0;height:100%;width:auto;opacity:.12;pointer-events:none}
+.head{background:linear-gradient(180deg,#fbfaf6,#f3f0e7)}
+.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 140% at 15% 0%,rgba(168,132,42,.10) 0%,transparent 70%);pointer-events:none}
+.head-arch{position:absolute;right:0;bottom:0;height:100%;width:auto;opacity:.22;pointer-events:none}
 .head-inner{position:relative;max-width:1360px;margin:0 auto;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
 .title-block{flex:none}
 .eyebrow{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px}
@@ -57,17 +59,17 @@ h1 em{font-style:italic;color:var(--gold)}
 .stat b{display:block;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--gold);line-height:1.1}
 .stat span{font-size:9.5px;color:var(--silver);letter-spacing:.1em;text-transform:uppercase}
 .tools{flex:1;display:flex;gap:8px;align-items:center;justify-content:flex-end;min-width:320px}
-.search{flex:1;max-width:380px;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);transition:border-color .2s}
+.search{flex:1;max-width:380px;display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;border-radius:8px;border:1px solid rgba(20,23,31,.12);background:#fff;transition:border-color .2s}
 .search:focus-within{border-color:var(--gold)}
 .search svg{flex:none;color:var(--silver)}
 .search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--white);font-size:13px;font-weight:300}
-.search input::placeholder{color:rgba(255,255,255,.28)}
-kbd{font-family:inherit;font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.12);color:var(--silver)}
-.ctl{height:40px;padding:0 13px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--silver);font-size:12.5px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.search input::placeholder{color:rgba(20,23,31,.28)}
+kbd{font-family:inherit;font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid rgba(20,23,31,.12);color:var(--silver)}
+.ctl{height:40px;padding:0 13px;border-radius:8px;border:1px solid rgba(20,23,31,.12);background:#fff;color:var(--silver);font-size:12.5px;cursor:pointer;transition:all .2s;white-space:nowrap}
 .ctl:hover{border-color:var(--gold);color:var(--gold)}
-.ctl.on{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:500}
-select.ctl{appearance:none;padding-right:30px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%238892a4' stroke-width='1.4'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center}
-select.ctl option{background:var(--ink2);color:var(--white)}
+.ctl.on{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
+select.ctl{appearance:none;padding-right:30px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%235f6778' stroke-width='1.4'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center}
+select.ctl option{background:#fff;color:#14171f}
 
 /* ─── TABLEAU DE BORD ─── */
 .board{flex:1;min-height:0;width:100%;padding:0 max(3vw,calc((100vw - 1360px)/2));display:grid;grid-template-columns:250px 1fr;gap:0}
@@ -76,8 +78,8 @@ select.ctl option{background:var(--ink2);color:var(--white)}
 /* Rubriques */
 .side{border-right:1px solid var(--border);padding:16px 16px 16px 0;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
 .tab{display:flex;align-items:center;gap:12px;width:100%;padding:9px 12px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--silver);font-size:13px;text-align:left;cursor:pointer;transition:all .2s}
-.tab:hover{color:var(--white);background:rgba(255,255,255,.03)}
-.tab.on{color:var(--white);background:rgba(201,168,76,.06);border-color:var(--border2)}
+.tab:hover{color:var(--white);background:rgba(20,23,31,.03)}
+.tab.on{color:var(--white);background:#fff;border-color:var(--border2);box-shadow:0 1px 3px rgba(20,23,31,.06)}
 .tab-ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none}
 .tab-t{flex:1;line-height:1.25}
 .tab-n{font-size:11px;color:var(--silver);opacity:.7}
@@ -94,26 +96,21 @@ select.ctl option{background:var(--ink2);color:var(--white)}
 .pane-title em{font-style:italic;color:var(--gold)}
 .pane-sub{font-size:12.5px;color:var(--silver)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px;align-content:start}
-.card{position:relative;display:flex;flex-direction:column;gap:7px;padding:13px 14px 11px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.015);transition:border-color .2s,background .2s,transform .2s}
-.card:hover{border-color:var(--border2);background:rgba(201,168,76,.03);transform:translateY(-2px)}
-.card.pick{border-color:var(--border2);background:rgba(201,168,76,.03)}
-.lk-top{display:flex;align-items:center;gap:11px;padding-right:20px}
-.ico{width:32px;height:32px;border-radius:8px;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.04);border:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold)}
-.ico img{width:18px;height:18px;filter:grayscale(1);opacity:.7;transition:filter .3s,opacity .3s}
+.card{position:relative;display:flex;flex-direction:column;gap:7px;padding:13px 14px 11px;border-radius:12px;border:1px solid var(--border);background:#fff;box-shadow:0 1px 2px rgba(20,23,31,.04);transition:border-color .2s,background .2s,transform .2s}
+.card:hover{border-color:var(--border2);background:#fff;box-shadow:0 8px 24px -10px rgba(20,23,31,.18);transform:translateY(-2px)}
+.lk-top{display:flex;align-items:center;gap:11px}
+.ico{width:32px;height:32px;border-radius:8px;flex:none;display:grid;place-items:center;background:#f6f4ee;border:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold)}
+.ico img{width:18px;height:18px;filter:grayscale(1);opacity:.6;transition:filter .3s,opacity .3s}
 .card:hover .ico img{filter:none;opacity:1}
 .lk-name{display:block;font-size:13.5px;font-weight:400;line-height:1.25}
 .lk-dom{font-size:10.5px;color:var(--silver);opacity:.8;letter-spacing:.03em}
 .lk-desc{font-size:12px;color:var(--silver);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1}
-.card.pick .lk-desc{-webkit-line-clamp:3}
 .tags{display:flex;gap:5px;flex-wrap:wrap}
-.tag{padding:1px 7px;border-radius:99px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.05);color:var(--silver)}
-.tag.free{background:rgba(26,184,160,.1);color:#5ecfb8}
-.tag.ma{background:rgba(201,168,76,.12);color:var(--gold)}
+.tag{padding:1px 7px;border-radius:99px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:rgba(20,23,31,.05);color:var(--silver)}
+.tag.free{background:rgba(15,143,123,.1);color:#0f7a69}
+.tag.ma{background:rgba(168,132,42,.12);color:#8a6b1f}
 .tag.cat{background:none;border:1px solid var(--border);}
 .stretch::after{content:"";position:absolute;inset:0;border-radius:12px}
-.star{position:absolute;top:12px;right:11px;z-index:2;background:none;border:0;cursor:pointer;color:rgba(255,255,255,.22);font-size:14px;line-height:1;transition:color .2s,transform .2s}
-.star:hover{color:var(--gold2);transform:scale(1.15)}
-.star.on{color:var(--gold)}
 .empty{padding:60px 0;text-align:center;color:var(--silver);font-size:13px}
 .empty b{display:block;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--white);margin-bottom:4px}
 .empty a{color:var(--gold);cursor:pointer}
@@ -164,9 +161,9 @@ footer{flex:none;background:var(--ink2);padding:14px 3%;border-top:1px solid var
   .search{max-width:none;flex-basis:100%}
   .ctl{flex:1;padding:0 8px;font-size:12px}
   .board{display:block;padding:0}
-  .side{position:sticky;top:64px;z-index:20;flex-direction:row;overflow-x:auto;gap:6px;padding:10px 16px;border-right:0;border-bottom:1px solid var(--border);background:rgba(12,14,20,.95);backdrop-filter:blur(12px);scrollbar-width:none}
+  .side{position:sticky;top:64px;z-index:20;flex-direction:row;overflow-x:auto;gap:6px;padding:10px 16px;border-right:0;border-bottom:1px solid var(--border);background:rgba(246,244,238,.96);backdrop-filter:blur(12px);scrollbar-width:none}
   .side::-webkit-scrollbar{display:none}
-  .tab{width:auto;flex:none;padding:6px 12px 6px 6px;border-radius:99px;border-color:rgba(255,255,255,.08);font-size:12px;white-space:nowrap}
+  .tab{width:auto;flex:none;padding:6px 12px 6px 6px;border-radius:99px;border-color:rgba(20,23,31,.08);font-size:12px;white-space:nowrap}
   .tab-ic{width:24px;height:24px;border-radius:99px}.tab-ic svg{width:15px;height:15px}
   .side-sep,.side-foot{display:none}
   .pane{padding:18px 16px 28px}
@@ -264,21 +261,20 @@ const IC = {
   form:'<path d="M2 12l14-6 14 6-14 6z"/><path d="M8 15v6c0 2 3.6 4 8 4s8-2 8-4v-6"/><path d="M28 13v8"/>'
 };
 const CATS = {
-  normes:{t:"Normes & réglementation",e:"Normes &amp; <em>réglementation</em>",s:"Eurocodes, normes nationales et internationales, recommandations ferroviaires.",c:"var(--gold)",b:"rgba(201,168,76,.1)"},
-  biblio:{t:"Bibliothèques & bases documentaires",e:"Bibliothèques &amp; <em>bases documentaires</em>",s:"Guides techniques, revues, articles scientifiques et bases de données.",c:"var(--gold)",b:"rgba(201,168,76,.1)"},
-  maroc:{t:"Maîtres d'ouvrage — Maroc",e:"Maîtres d'ouvrage <em>au Maroc</em>",s:"Administrations et établissements publics qui conçoivent, financent et construisent les infrastructures.",c:"var(--teal)",b:"rgba(26,184,160,.1)"},
-  mo:{t:"Maîtres d'ouvrage — International",e:"Maîtres d'ouvrage <em>à l'international</em>",s:"Gestionnaires de réseaux routiers et ferroviaires, bailleurs de fonds.",c:"var(--teal)",b:"rgba(26,184,160,.1)"},
-  assoc:{t:"Associations & sociétés savantes",e:"Associations &amp; <em>sociétés savantes</em>",s:"Communautés d'experts, congrès et groupes de travail qui font évoluer la discipline.",c:"#6da5f5",b:"rgba(45,107,228,.12)"},
-  ponts:{t:"Grands ponts & veille",e:"Grands ponts &amp; <em>veille</em>",s:"Bases d'ouvrages, sites de grands ponts et presse spécialisée.",c:"#6da5f5",b:"rgba(45,107,228,.12)"},
-  logi:{t:"Logiciels & outils de calcul",e:"Logiciels &amp; <em>outils de calcul</em>",s:"Éditeurs de logiciels de calcul de structures et outils en ligne.",c:"var(--silver)",b:"rgba(255,255,255,.05)"},
-  form:{t:"Formation & écoles",e:"Formation &amp; <em>écoles</em>",s:"Écoles d'ingénieurs et cours ouverts en ligne.",c:"var(--silver)",b:"rgba(255,255,255,.05)"}
+  normes:{t:"Normes & réglementation",e:"Normes &amp; <em>réglementation</em>",s:"Eurocodes, normes nationales et internationales, recommandations ferroviaires.",c:"var(--gold)",b:"rgba(168,132,42,.1)"},
+  biblio:{t:"Bibliothèques & bases documentaires",e:"Bibliothèques &amp; <em>bases documentaires</em>",s:"Guides techniques, revues, articles scientifiques et bases de données.",c:"var(--gold)",b:"rgba(168,132,42,.1)"},
+  maroc:{t:"Maîtres d'ouvrage — Maroc",e:"Maîtres d'ouvrage <em>au Maroc</em>",s:"Administrations et établissements publics qui conçoivent, financent et construisent les infrastructures.",c:"var(--teal)",b:"rgba(15,143,123,.1)"},
+  mo:{t:"Maîtres d'ouvrage — International",e:"Maîtres d'ouvrage <em>à l'international</em>",s:"Gestionnaires de réseaux routiers et ferroviaires, bailleurs de fonds.",c:"var(--teal)",b:"rgba(15,143,123,.1)"},
+  assoc:{t:"Associations & sociétés savantes",e:"Associations &amp; <em>sociétés savantes</em>",s:"Communautés d'experts, congrès et groupes de travail qui font évoluer la discipline.",c:"#2d6be4",b:"rgba(45,107,228,.1)"},
+  ponts:{t:"Grands ponts & veille",e:"Grands ponts &amp; <em>veille</em>",s:"Bases d'ouvrages, sites de grands ponts et presse spécialisée.",c:"#2d6be4",b:"rgba(45,107,228,.1)"},
+  logi:{t:"Logiciels & outils de calcul",e:"Logiciels &amp; <em>outils de calcul</em>",s:"Éditeurs de logiciels de calcul de structures et outils en ligne.",c:"var(--silver)",b:"rgba(20,23,31,.05)"},
+  form:{t:"Formation & écoles",e:"Formation &amp; <em>écoles</em>",s:"Écoles d'ingénieurs et cours ouverts en ligne.",c:"var(--silver)",b:"rgba(20,23,31,.05)"}
 };
 
 /* ============================================================
    DONNÉES — pour ajouter un lien, ajoutez une ligne ci-dessous.
    cat : rubrique (voir CATS) · reg : Maroc | Afrique | Europe | Amérique | Asie | Monde
    free : accès libre (au moins partiel) · lang : langue principale
-   top : true = « La sélection » (why = commentaire court)
    ============================================================ */
 const L = [
   // NORMES
@@ -363,13 +359,8 @@ const $ = s => document.querySelector(s);
 const host = u => new URL(u).hostname.replace(/^www\./,'');
 const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const svg = (k,sz) => `<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">${IC[k]}</svg>`;
-IC.top = '<path d="M16 3l3.8 7.7 8.5 1.2-6.2 6 1.5 8.4L16 22.3l-7.6 4 1.5-8.4-6.2-6 8.5-1.2z"/>';
-IC.fav = '<path d="M16 27s-11-6.6-11-14a6 6 0 0 1 11-3.3A6 6 0 0 1 27 13c0 7.4-11 14-11 14z"/>';
-let favs = [];
-try { favs = JSON.parse(localStorage.getItem('bas-liens-favs') || '[]'); } catch(e) {}
-const saveFavs = () => { try { localStorage.setItem('bas-liens-favs', JSON.stringify(favs)); } catch(e) {} };
-const S = {view:'top', q:'', reg:'', free:false};
-try { const h = location.hash.slice(1); if (h && (CATS[h] || h==='fav')) S.view = h; } catch(e) {}
+const S = {view:'normes', q:'', reg:'', free:false};
+try { const h = location.hash.slice(1); if (h && CATS[h]) S.view = h; } catch(e) {}
 
 $('#sTotal').textContent = L.length;
 $('#sFree').textContent = L.filter(x=>x.free).length;
@@ -377,19 +368,15 @@ $('#sMa').textContent = L.filter(x=>x.reg==='Maroc').length;
 
 const ico = l => `<span class="ico"><img loading="lazy" alt="" src="https://www.google.com/s2/favicons?domain=${host(l.u)}&sz=64" onerror="this.replaceWith(document.createTextNode('${l.n.trim()[0]}'))"></span>`;
 const tags = (l, withCat) => `<div class="tags"><span class="tag ${l.free?'free':''}">${l.free?'Libre':'Abonnement'}</span><span class="tag ${l.reg==='Maroc'?'ma':''}">${l.reg==='Monde'?'International':l.reg}</span><span class="tag">${l.lang}</span>${withCat?`<span class="tag cat">${CATS[l.cat].t}</span>`:''}</div>`;
-const card = (l, opt={}) => { const on = favs.includes(l.u); return `<article class="card ${opt.pick?'pick':''}">
-  <button class="star ${on?'on':''}" data-u="${l.u}" title="${on?'Retirer des':'Ajouter aux'} favoris" aria-label="${on?'Retirer des':'Ajouter aux'} favoris">${on?'★':'☆'}</button>
+const card = (l, opt={}) => { return `<article class="card">
   <div class="lk-top">${ico(l)}<div><a class="lk-name stretch" href="${l.u}" target="_blank" rel="noopener">${l.n}</a><span class="lk-dom">${host(l.u)}</span></div></div>
-  <p class="lk-desc" title="${(opt.pick?l.why:l.d).replace(/"/g,'&quot;')}">${opt.pick?l.why:l.d}</p>${tags(l, opt.withCat)}</article>`; };
+  <p class="lk-desc" title="${l.d.replace(/"/g,'&quot;')}">${l.d}</p>${tags(l, opt.withCat)}</article>`; };
 
 const pass = l => (!S.reg || l.reg===S.reg) && (!S.free || l.free);
-const inView = (l,v) => v==='top' ? l.top : v==='fav' ? favs.includes(l.u) : l.cat===v;
 
 function renderSide(){
   const item = (k,t,c,b,n) => `<button class="tab ${S.view===k&&!S.q?'on':''}" data-v="${k}"><span class="tab-ic" style="background:${b};color:${c}">${svg(k,17)}</span><span class="tab-t">${t}</span><span class="tab-n">${n}</span></button>`;
-  let h = item('top','La sélection','var(--gold)','rgba(201,168,76,.12)',L.filter(l=>l.top&&pass(l)).length);
-  h += item('fav','Mes favoris','var(--gold)','rgba(201,168,76,.12)',L.filter(l=>favs.includes(l.u)&&pass(l)).length);
-  h += '<div class="side-sep"></div>';
+  let h = '';
   for (const [k,c] of Object.entries(CATS)) h += item(k,c.t,c.c,c.b,L.filter(l=>l.cat===k&&pass(l)).length);
   h += `<div class="side-foot">Une ressource manque ?<br><button id="suggest" type="button">Suggérer un lien →</button></div>`;
   $('#side').innerHTML = h;
@@ -401,16 +388,12 @@ function renderPane(){
     const w = norm(S.q).split(/\s+/);
     items = L.filter(l => pass(l) && w.every(x => norm([l.n,l.d,l.u,l.reg,l.lang,CATS[l.cat].t].join(' ')).includes(x)));
     title = `Résultats <em>« ${S.q.replace(/</g,'&lt;')} »</em>`; sub = `${items.length} ressource${items.length>1?'s':''} dans toutes les rubriques`; opt.withCat = true;
-  } else if (S.view==='top'){
-    items = L.filter(l=>l.top && pass(l)); title = 'La <em>sélection</em>'; sub = "Les sources que nous ouvrons chaque semaine sur nos projets d'ouvrages d'art."; opt.pick = true;
-  } else if (S.view==='fav'){
-    items = L.filter(l=>favs.includes(l.u) && pass(l)); title = 'Mes <em>favoris</em>'; sub = 'Cliquez sur ☆ pour garder une ressource ici. Elle reste enregistrée sur cet appareil.'; opt.withCat = true;
   } else {
     const c = CATS[S.view]; items = L.filter(l=>l.cat===S.view && pass(l)); title = c.e; sub = c.s;
   }
   $('#pane').innerHTML = `<div class="pane-head"><h2 class="pane-title">${title}</h2><p class="pane-sub">${sub}</p></div>` +
     (items.length ? `<div class="grid">${items.map(l=>card(l,opt)).join('')}</div>`
-                  : `<div class="empty"><b>${S.view==='fav'&&!S.q?'Aucun favori pour l\'instant':'Aucune ressource'}</b>${S.view==='fav'&&!S.q?'Ajoutez-en depuis n\'importe quelle rubrique.':'ne correspond à ces critères — <a id="reset">réinitialiser</a>'}</div>`);
+                  : `<div class="empty"><b>Aucune ressource</b>ne correspond à ces critères — <a id="reset">réinitialiser</a></div>`);
   $('#pane').scrollTop = 0;
 }
 const render = () => { renderSide(); renderPane(); };
@@ -424,8 +407,6 @@ $('#q').addEventListener('input', e=>{ S.q = e.target.value.trim(); render(); })
 $('#region').addEventListener('change', e=>{ S.reg = e.target.value; render(); });
 $('#onlyFree').onclick = e=>{ S.free=!S.free; e.currentTarget.classList.toggle('on',S.free); render(); };
 document.addEventListener('click', e=>{
-  const s = e.target.closest('.star');
-  if (s){ e.preventDefault(); const u=s.dataset.u; favs = favs.includes(u)?favs.filter(x=>x!==u):[...favs,u]; saveFavs(); const st=$('#pane').scrollTop; render(); $('#pane').scrollTop=st; }
   if (e.target.id==='reset'){ e.preventDefault(); S.q=''; S.reg=''; S.free=false; $('#q').value=''; $('#region').value=''; $('#onlyFree').classList.remove('on'); render(); }
 });
 document.addEventListener('keydown', e=>{
