@@ -174,8 +174,7 @@ HB.add("Béton armé — BAEL", [
     return { steps: [S("Ab", "B", "~aire du béton", Ab, "m²", 4), S("rho", L`\rho`, L`A_s / B`, I.As / 1e4 / Ab * 100, "%", 2),
       ...(I.et === "u" ? [S("fbu", L`f_{bu}`, L`\dfrac{0{,}85\,f_{c28}}{1{,}5}`, 0.85 * I.fc / 1.5, "MPa", 2), S("fed", L`f_{ed}`, L`f_e / 1{,}15`, I.fe / 1.15, "MPa", 1)] : []),
       R("Nmax", L`N_{max}`, "~compression centrée", Nmax, "kN", 0), R("Nmin", L`N_{min}`, "~traction centrée", Nmin, "kN", 0), R("Mmax", L`M_{max}`, `~atteint pour N = ${fmt(atM, 0)} kN`, Mmax, "kN·m", 1)],
-      checks: rows.map(r => C(`N = ${fmt(r[0], 0)} kN, M = ${fmt(r[1], 0)} kN·m`, r[3] <= 1, r[2] > 0 ? `M limite ${fmt(r[2], 0)} kN·m` : "effort normal hors domaine", min(r[3], 9.99))),
-      tables: rows.length ? [{ title: "Vérification des efforts", head: ["N (kN)", "M (kN·m)", "M lim (kN·m)", "taux"], rows: rows.map(r => [r[0], r[1], r[2], r[3]]), d: [1, 1, 2] }] : [],
+      checks: rows.map((r, i) => C(`${i + 1}. N = ${fmt(r[0], 0)} kN, M = ${fmt(r[1], 0)} kN·m`, r[3] <= 1, r[2] > 0 ? `M lim = ${fmt(r[2], 0)} kN·m (taux ${fmt(r[3] * 100, 0)} %)` : "N hors domaine", min(r[3], 9.99))),
       vals: { pts, worst, rows: rows.map(r => r[3]) }, notes: [I.et === "s" ? "ELS : diagramme linéaire, béton tendu négligé, aciers homogénéisés ; la courbe est obtenue en saturant la première contrainte limite atteinte." : "ELU : diagramme parabole-rectangle ($\\varepsilon_{bc} = 3{,}5$ ‰), acier élasto-plastique sans écrouissage (10 ‰), pivots A, B et C du BAEL. Acier comprimé à $E_s\\,\\varepsilon$ plafonné à $f_{ed}$.",
         I.forme === "r" ? `Rectangle : ${fmt(I.rep / 2, 0)} % des aciers sur chaque face extrême, le reste réparti sur les côtés.` : "Aciers uniformément répartis sur un cercle."] };
   },

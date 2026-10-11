@@ -233,13 +233,13 @@ const CALCS = [
 /* ══════════════ SECTIONS ══════════════ */
 { id: "section-mixte", cat: "Ouvrages mixtes", t: "Caractéristiques d'une section mixte acier-béton", ref: "Homogénéisation élastique — NF EN 1994-2 §5.4.2.2 ou modules BAEL",
   desc: "Profilé seul et section mixte homogénéisée (hourdis + renformis) à court ou long terme.",
-  inputs: [H("Béton"), N("bh", "Hourdis : largeur participante", "mm", 4788, L`b_{eff}`), N("hh", "Hourdis : épaisseur", "mm", 200, L`e_h`),
+  inputs: [H("Béton"), N("bh", "Hourdis : largeur", "mm", 4788, L`b_{eff}`), N("hh", "Hourdis : épaisseur", "mm", 200, L`e_h`),
     N("br", "Renformis : largeur", "mm", 600, L`b_r`), N("hr", "Renformis : hauteur", "mm", 100, L`e_r`),
     H("Profilé acier"), N("H", "Hauteur totale du profilé", "mm", 1450, "H"), N("bs", "Semelle sup. : largeur", "mm", 700, L`b_s`), N("ts", "Semelle sup. : épaisseur", "mm", 65, L`t_s`),
     N("tw", "Âme : épaisseur", "mm", 20, L`t_w`), N("bi", "Semelle inf. : largeur", "mm", 800, L`b_i`), N("ti", "Semelle inf. : épaisseur", "mm", 75, L`t_i`),
     H("Équivalence"), N("Ea", "Module de l'acier", "GPa", 210, L`E_a`), N("fc", "Résistance du béton", "MPa", 30, L`f_{c}`),
     SEL("mod", "Module du béton", [["i", "BAEL instantané : 11 000 fcj^1/3"], ["v", "BAEL différé : 3 700 fcj^1/3"], ["e0", "EC4 court terme : Ecm"], ["eL", "EC4 long terme : Ecm/(1+ψL φt)"]], "i", L`E_b`),
-    N("phi", "Fluage φt (EC4 long terme)", "", 2, L`\varphi_t`), N("psi", "ψL (1,1 permanent, 0,55 retrait)", "", 1.1, L`\psi_L`)],
+    N("phi", "Coefficient de fluage", "", 2, L`\varphi_t`), N("psi", "ψL (1,1 perm., 0,55 retrait)", "", 1.1, L`\psi_L`)],
   calc(I) {
     const cm = v => v / 10;
     const hw = I.H - I.ts - I.ti, Ecm = 22 * pow((I.fc + 8) / 10, 0.3);

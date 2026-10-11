@@ -321,6 +321,8 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/lib/ba2.js"></script>
 <script src="handbag/lib/ba3.js"></script>
 <script src="handbag/lib/ba4.js"></script>
+<script src="handbag/lib/geo2.js"></script>
+<script src="handbag/lib/geo3.js"></script>
 <!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
@@ -439,9 +441,10 @@ function compute() {
   /* calcul long : coupé en deux cartes à un intertitre proche du milieu (la suite va dans une autre colonne) */
   let st1 = r.steps || [], st2 = [];
   if (matchMedia("(min-width:1201px)").matches && st1.length >= 15) { const hs = st1.map((s, i) => s.h ? i : -1).filter(i => i >= 5 && i <= st1.length - 4);
-    if (hs.length) { const cut = hs.reduce((a, b) => Math.abs(b - st1.length / 2) < Math.abs(a - st1.length / 2) ? b : a); st2 = st1.slice(cut); st1 = st1.slice(0, cut); } }
-  const steps2C = st2.length ? card("Calcul (suite)", `<table class="steps">${st2.map(stepRow).join("")}</table>`) : "";
-  const stepsC = st1.length ? card("Calcul", `<table class="steps">${st1.map(stepRow).join("")}</table>`) : "";
+    const cut = hs.length ? hs.reduce((a, b) => Math.abs(b - st1.length / 2) < Math.abs(a - st1.length / 2) ? b : a) : (st1.length >= 18 ? Math.ceil(st1.length / 2) : 0);
+    if (cut) { st2 = st1.slice(cut); st1 = st1.slice(0, cut); } }
+  let steps2C = st2.length ? card("Calcul (suite)", `<table class="steps">${st2.map(stepRow).join("")}</table>`) : "";
+  let stepsC = st1.length ? card("Calcul", `<table class="steps">${st1.map(stepRow).join("")}</table>`) : "";
   const checksC = (r.checks || []).length ? card("Vérifications", `<div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div>`) : "";
   const figC = r.fig ? card("Schéma", `<div class="fig">${r.fig}</div>`, "figc") : "";
   const notesC = (r.notes || []).filter(Boolean).length ? card("Remarques", `<div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div>`) : "";
@@ -459,13 +462,33 @@ function compute() {
   const add = (col, html) => { if (html) col.insertAdjacentHTML("beforeend", html); };
   const wide = matchMedia("(min-width:1201px)").matches;
   if (stepsC) add(c2, stepsC); else if (tblC.length) add(c2, tblC.shift());
+  /* carte de calcul encore plus haute que l'écran : on la coupe au milieu */
+  if (wide && stepsC && !steps2C && st1.length >= 8) {
+    const mn = $("main"), av = mn.clientHeight - (c2.getBoundingClientRect().top - mn.getBoundingClientRect().top) - 16;
+    if (c2.firstElementChild.getBoundingClientRect().height > av) {
+      const hs = st1.map((s, i) => s.h ? i : -1).filter(i => i >= 3 && i <= st1.length - 3), cut = hs.length ? hs.reduce((a, b) => Math.abs(b - st1.length / 2) < Math.abs(a - st1.length / 2) ? b : a) : Math.ceil(st1.length / 2);
+      steps2C = card("Calcul (suite)", `<table class="steps">${st1.slice(cut).map(stepRow).join("")}</table>`); stepsC = card("Calcul", `<table class="steps">${st1.slice(0, cut).map(stepRow).join("")}</table>`);
+      c2.innerHTML = ""; add(c2, stepsC);
+    }
+  }
   const h = col => [...col.children].reduce((t, el) => t + el.getBoundingClientRect().height + 10, 0);   // hauteur du contenu (hors étirement)
   const nIn = cur.inputs.filter(x => x.k).length;
   // éléments à placer : [html, colonnes admissibles]
   add(c3, figC);
   const pool = [...(steps2C ? [[steps2C, [c1, c3]]] : []), ...tblC.map((x, i) => [x, (T[i + (stepsC ? 0 : 1)] || {}).head?.length <= 4 && wide ? [c2, c3, c1] : [c2, c3]]),
     [checksC, wide ? [c3, c2, c1] : [c3, c2]], [notesC, wide ? [c1, c3, c2] : [c3, c2]]].filter(x => x[0]);
-  pool.forEach(([html, cols]) => { const tgt = cols.reduce((a, b) => (h(b) < h(a) - 1 ? b : a)); add(tgt, html); });
+  /* placement : hauteur de chaque carte mesurée dans chaque colonne admissible, puis répartition qui minimise la plus haute colonne
+     (le croquis compte pour sa hauteur minimale, puisqu'il s'adapte ensuite) */
+  if (wide && pool.length && pool.length <= 6) {
+    const meas = pool.map(([html, cols]) => cols.map(col => { col.insertAdjacentHTML("beforeend", html); const el = col.lastElementChild, hh = el.getBoundingClientRect().height + 10; el.remove(); return hh; }));
+    const fs0 = c3.querySelector(".figc .fig svg"), shrink = fs0 ? Math.max(0, fs0.getBoundingClientRect().height - 110) : 0;
+    const base = [c1, c2, c3].map(h), idx = c => [c1, c2, c3].indexOf(c); base[2] -= shrink; let best = null, bestV = 1e99;
+    const mn = $("main"), avail0 = mn.clientHeight - (c2.getBoundingClientRect().top - mn.getBoundingClientRect().top) - 16;
+    const rec = (i, tot, pick) => { if (i === pool.length) { const v = tot.reduce((a, t) => a + Math.max(0, t - avail0) * 100, 0) + Math.max(...tot) + 0.01 * tot.reduce((a, b) => a + b, 0); if (v < bestV) { bestV = v; best = pick.slice(); } return; }
+      pool[i][1].forEach((col, j) => { const t2 = tot.slice(); t2[idx(col)] += meas[i][j]; pick.push(col); rec(i + 1, t2, pick); pick.pop(); }); };
+    rec(0, base, []);
+    pool.forEach(([html], i) => add(best[i], html));
+  } else pool.forEach(([html, cols]) => { const tgt = cols.reduce((a, b) => (h(b) < h(a) - 1 ? b : a)); add(tgt, html); });
   // le croquis sert d'élément élastique : il grandit pour égaliser la hauteur des colonnes
   const fsvg = grid.querySelector(".figc .fig svg");
   if (wide && fsvg) {
