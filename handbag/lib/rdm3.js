@@ -252,5 +252,5 @@ HB.add("RDM et formulaire", [
 
 ]);
 
-HB.GM = { gmK, gmGrid };
+HB.GM = { gmK, gmGrid }; HB.GEO = { contour, polyProps };
 })(typeof window !== "undefined" ? window : globalThis);

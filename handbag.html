@@ -214,6 +214,10 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
   #print.dense2{font-size:8.4pt;line-height:1.25}
   #print.dense2 table.p-t{font-size:7.6pt}#print.dense2 table.p-t td,#print.dense2 table.p-t th{padding:.8pt 3pt}
   #print.dense2 .p-h{margin:5pt 0 2pt}#print.dense2 .p-fig svg{height:28mm}
+  #print.dense3{font-size:7.9pt;line-height:1.18}
+  #print.dense3 table.p-t{font-size:7.1pt}#print.dense3 table.p-t td,#print.dense3 table.p-t th{padding:.4pt 3pt}
+  #print.dense3 .p-h{margin:4pt 0 2pt}#print.dense3 .p-fig svg{height:24mm}#print.dense3 .p-notes{font-size:7.2pt}#print.dense3 .p-clair{font-size:8pt;padding:3pt 6pt}
+  #print.dense3 table.p-t .katex{font-size:.94em}#print.dense3 .p-chk{padding:2pt 6pt;font-size:8pt}
 }
 
 @media(max-width:1200px){.grid{grid-template-columns:minmax(260px,300px) 1fr}#c1{grid-row:auto}.kpi{grid-column:1/-1;order:-1}#c3{grid-column:1/-1}}
@@ -314,6 +318,9 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <script src="handbag/lib/outils.js"></script>
 <script src="handbag/lib/rdm2.js"></script>
 <script src="handbag/lib/rdm3.js"></script>
+<script src="handbag/lib/ba2.js"></script>
+<script src="handbag/lib/ba3.js"></script>
+<script src="handbag/lib/ba4.js"></script>
 <!--MODULES-->
 <script>
 const { CALCS, fmt, FIGS, CLAIR } = window.HANDBAG;
@@ -428,7 +435,13 @@ function compute() {
   r.clair = window.HANDBAG.clairFor(cur, I, g, r);
   last = { I, r };
   const card = (title, body, cls = "") => `<div class="card ${cls}"><div class="card-t">${title}</div>${body}</div>`;
-  const stepsC = (r.steps || []).length ? card("Calcul", `<table class="steps">${r.steps.map(s => s.h ? `<tr class="sh"><td colspan="4">${tx(s.h)}</td></tr>` : `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`).join("")}</table>`) : "";
+  const stepRow = s => s.h ? `<tr class="sh"><td colspan="4">${tx(s.h)}</td></tr>` : `<tr class="${s.r ? "main" : ""}"><td class="s">${s.s ? M(s.s) : ""}</td><td class="f">${s.f ? (s.s && !s.f.startsWith("~") ? '<span class="eq">=</span>' : "") + fx(s.f) : ""}</td><td class="v">${show(s.v, s.d)}</td><td class="u">${s.u}</td></tr>`;
+  /* calcul long : coupé en deux cartes à un intertitre proche du milieu (la suite va dans une autre colonne) */
+  let st1 = r.steps || [], st2 = [];
+  if (matchMedia("(min-width:1201px)").matches && st1.length >= 15) { const hs = st1.map((s, i) => s.h ? i : -1).filter(i => i >= 5 && i <= st1.length - 4);
+    if (hs.length) { const cut = hs.reduce((a, b) => Math.abs(b - st1.length / 2) < Math.abs(a - st1.length / 2) ? b : a); st2 = st1.slice(cut); st1 = st1.slice(0, cut); } }
+  const steps2C = st2.length ? card("Calcul (suite)", `<table class="steps">${st2.map(stepRow).join("")}</table>`) : "";
+  const stepsC = st1.length ? card("Calcul", `<table class="steps">${st1.map(stepRow).join("")}</table>`) : "";
   const checksC = (r.checks || []).length ? card("Vérifications", `<div class="checks">${r.checks.map(c => `<div class="chk ${c.ok ? "ok" : "ko"}"><span>${tx(c.l)}${c.txt ? " — " + tx(c.txt) : ""}</span><b>${c.ok ? "Vérifié" : "Non vérifié"}</b></div>`).join("")}</div>`) : "";
   const figC = r.fig ? card("Schéma", `<div class="fig">${r.fig}</div>`, "figc") : "";
   const notesC = (r.notes || []).filter(Boolean).length ? card("Remarques", `<div class="notes">${r.notes.filter(Boolean).map(n => `<p>${tx(n)}</p>`).join("")}</div>`) : "";
@@ -450,7 +463,7 @@ function compute() {
   const nIn = cur.inputs.filter(x => x.k).length;
   // éléments à placer : [html, colonnes admissibles]
   add(c3, figC);
-  const pool = [...tblC.map((x, i) => [x, (T[i + (stepsC ? 0 : 1)] || {}).head?.length <= 4 && wide ? [c2, c3, c1] : [c2, c3]]),
+  const pool = [...(steps2C ? [[steps2C, [c1, c3]]] : []), ...tblC.map((x, i) => [x, (T[i + (stepsC ? 0 : 1)] || {}).head?.length <= 4 && wide ? [c2, c3, c1] : [c2, c3]]),
     [checksC, wide ? [c3, c2, c1] : [c3, c2]], [notesC, wide ? [c1, c3, c2] : [c3, c2]]].filter(x => x[0]);
   pool.forEach(([html, cols]) => { const tgt = cols.reduce((a, b) => (h(b) < h(a) - 1 ? b : a)); add(tgt, html); });
   // le croquis sert d'élément élastique : il grandit pour égaliser la hauteur des colonnes
@@ -461,6 +474,9 @@ function compute() {
     const target = Math.min(Math.max(...others.map(h)), Math.max(avail, h(colF))), delta = target - h(colF), hs = fsvg.getBoundingClientRect().height;
     // (si une autre colonne reste beaucoup plus courte, on accepte un croquis plus grand plutôt qu'un vide)
     if (delta > 8) { fsvg.style.height = Math.min(hs + delta, 440) + "px"; fsvg.style.maxHeight = "none"; }
+    /* colonne du croquis trop haute pour l'écran : le croquis se resserre (sans descendre sous 110 px) */
+    const over = h(colF) - Math.max(avail, ...others.map(h));
+    if (delta <= 8 && over > 4) { fsvg.style.height = Math.max(hs - over, 110) + "px"; fsvg.style.maxHeight = "none"; }
   }
   if (wide) grid.classList.add("stretch");
 }
@@ -510,8 +526,8 @@ function printPage() {
     ${r.clair ? `<div class="p-h">Conclusion</div><div class="p-clair">${e(r.clair)}</div>` : ""}
     ${notes && !long ? `<div class="p-h">Remarques</div><div class="p-notes">${notes}</div>` : ""}
     <div class="p-foot"><span>${e(h.bet)} — ${e(h.projet)} ${h.ouvrage ? "· " + e(h.ouvrage) : ""}</span><span>HandBag · BridgeAI Studios — calcul automatique, à vérifier par l'ingénieur</span></div>`;
-  const nrows = cur.inputs.length + (r.steps || []).reduce((n, st) => n + (/\\dfrac|\\sum|\\displaystyle/.test(st.f || "") ? 1.8 : 1), 0) + (r.fig ? 4 : 0) + (r.clair ? 3 : 0) + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
-  $("#print").className = nrows > 46 ? "dense2" : nrows > 34 ? "dense" : "";
+  const nrows = cur.inputs.length + (r.steps || []).reduce((n, st) => n + (/\\dfrac|\\sum|\\displaystyle|\\sqrt/.test(st.f || "") ? 1.8 : 1), 0) + (r.checks || []).length * 1.2 + (r.fig ? 4 : 0) + (r.clair ? 3 : 0) + (r.tables || []).reduce((n, t) => n + t.rows.length + 2, 0) + (r.notes || []).length * 2;
+  $("#print").className = nrows > 54 ? "dense3" : nrows > 46 ? "dense2" : nrows > 34 ? "dense" : "";
   setTimeout(() => window.print(), 60);
 }
 function decimals(v) { if (typeof v !== "number" || !isFinite(v)) return 0; const s = String(v); return s.includes("e") ? "e" : Math.min((s.split(".")[1] || "").length, 6); }
