@@ -225,4 +225,44 @@ HB.add("Règlements anciens", [
     return svg(W, Hh, s); },
   clair: (I, g) => `Il faut au moins ${f2(g("ti"), 0)} mm de semelle inférieure et ${f2(g("ts"), 0)} mm de semelle supérieure, soit environ ${f2(g("m"), 0)} kg/m de poutre.` },
 ]);
+
+HB.add("Actions sur les ponts", [
+{ id: "act-bipoutre-superstructures", t: "Bipoutre : répartition transversale des superstructures (charges mini et maxi)", ref: "Règle du levier ; pondérations des superstructures (valeurs maxi et mini, par ex. NF EN 1991-1-1 AN : chaussée +40 % / −20 %) — Biblio 2004 « Cp_mix »",
+  desc: "Charges permanentes de superstructures reprises par chacune des deux poutres d'un tablier bipoutre, en valeurs nominale, maximale et minimale, et moments transversaux dans la dalle.",
+  inputs: [N("lp", "Entraxe des poutres", "m", 5.5, L`l_p`),
+    LST("pt", "Charges linéiques : q (kN/m), coef. maxi, coef. mini, excentricité (m, + à droite), facultative (1/0) ; …", "", "10 1.05 0.95 -5.4 0 ; 6 1.05 0.95 -4.7 0 ; 10 1.05 0.95 -4.7 0 ; 0.3 1.05 0.95 5.4 0 ; 6.25 1.05 0.95 4 0 ; 12.2 1.05 0.95 4.2 0 ; 18.15 1.05 0.95 3.6 0 ; 0.7 1.05 0.95 4.7 0 ; 10 1 1 -5.4 1", "", { cols: 5 }),
+    LST("rp", "Charges réparties : q (kN/m²), coef. maxi, coef. mini, abscisse début, abscisse fin (m) ; …", "", "0.44 1 1 -3 6 ; 1.92 1.4 0.8 -4 4 ; 0.66 1.4 0.8 -4 4 ; 7.5 1.03 0.97 -5 5", "", { cols: 5 })],
+  calc(I) {
+    const lp = I.lp, xg = -lp / 2, xd = lp / 2, loads = [];
+    (I.pt || []).forEach(([q, kM, km, e, opt]) => loads.push({ F: q, kM, km, x: e, opt: !!opt, w: 0 }));
+    (I.rp || []).forEach(([q, kM, km, a, b]) => loads.push({ F: q * abs(b - a), kM, km, x: (a + b) / 2, opt: false, w: abs(b - a), a: min(a, b), b: max(a, b), q }));
+    if (!loads.length) throw new Error("charges à saisir");
+    const cg = x => 0.5 - x / lp, sum = (f) => loads.reduce((t, l) => t + f(l), 0);
+    /* valeur défavorable pour un effet de coefficient c : maxi si c > 0, mini sinon ; charge facultative supprimée si favorable */
+    const pick = (l, c, worst) => { const up = (c >= 0) === worst; return l.opt ? (up ? l.F * l.kM : 0) : l.F * (up ? l.kM : l.km); };
+    const nomT = sum(l => l.F), maxT = sum(l => l.F * l.kM), minT = sum(l => l.opt ? 0 : l.F * l.km);
+    const gN = sum(l => l.F * cg(l.x)), gM = sum(l => pick(l, cg(l.x), true) * cg(l.x)), gm = sum(l => pick(l, cg(l.x), false) * cg(l.x));
+    const dN = sum(l => l.F * (1 - cg(l.x))), dM = sum(l => pick(l, 1 - cg(l.x), true) * (1 - cg(l.x))), dm = sum(l => pick(l, 1 - cg(l.x), false) * (1 - cg(l.x)));
+    /* moments transversaux (kN·m/m) : chaque charge répartie découpée en 400 éléments */
+    const pts = []; loads.forEach(l => { if (!l.w) pts.push([l.x, l]); else for (let i = 0; i < 400; i++) pts.push([l.a + (i + 0.5) * l.w / 400, l, 1 / 400]); });
+    const force = (p, mode) => { const [x, l, f = 1] = p; const v = mode === "max" ? (l.opt ? l.F * l.kM : l.F * l.kM) : mode === "min" ? (l.opt ? 0 : l.F * l.km) : l.F; return v * f; };
+    const Mcons = (mode, side) => -pts.filter(p => side < 0 ? p[0] < xg : p[0] > xd).reduce((t, p) => t + force(p, mode) * abs(p[0] - (side < 0 ? xg : xd)), 0);
+    const Mspan = () => { let best = -1e9, xb = 0; for (let k = 0; k <= 100; k++) { const x = xg + lp * k / 100, md = q => q[0] > xg && q[0] < xd ? "max" : "min";
+        const Rg = pts.reduce((t, q) => t + force(q, md(q)) * (xd - q[0]), 0) / lp, M = Rg * (x - xg) - pts.filter(q => q[0] < x).reduce((t, q) => t + force(q, md(q)) * (x - q[0]), 0); if (M > best) { best = M; xb = x; } } return [best, xb]; };
+    const [Ms, xs] = Mspan(), Mg = Mcons("max", -1), Md = Mcons("max", 1);
+    return { steps: [S("nomT", L`q_{tot}`, "~nominale (maxi ; mini dans le tableau)", nomT, "kN/m", 2), S("maxT", L`q_{tot,max}`, "", maxT, "kN/m", 2), S("minT", L`q_{tot,min}`, "", minT, "kN/m", 2),
+      R("gM", L`q_{g,max}`, L`\textstyle\sum q_i\,k_i\left(\tfrac{1}{2} - \tfrac{e_i}{l_p}\right)` + "\\quad\\text{(coefficients défavorables)}", gM, "kN/m", 2), S("gm", L`q_{g,min}`, "", gm, "kN/m", 2),
+      R("dM", L`q_{d,max}`, L`\textstyle\sum q_i\,k_i\left(\tfrac{1}{2} + \tfrac{e_i}{l_p}\right)`, dM, "kN/m", 2), S("dm", L`q_{d,min}`, "", dm, "kN/m", 2),
+      S("Mg", L`M_{cons,g}`, "~dalle au droit de la poutre gauche (charges maxi)", Mg, "kN·m/m", 2), S("Md", L`M_{cons,d}`, "~au droit de la poutre droite", Md, "kN·m/m", 2), S("Ms", L`M_{trav}`, `~maximum entre poutres (en x = ${fmt(xs, 2)} m)`, Ms, "kN·m/m", 2)],
+      tables: [{ title: "Charges par poutre (kN/m)", head: ["", "nominal", "maximal", "minimal"], rows: [["ensemble", nomT, maxT, minT], ["poutre gauche", gN, gM, gm], ["poutre droite", dN, dM, dm]], d: [2, 2, 2] }],
+      vals: { lp, loads, gN, dN, nomT, maxT, minT },
+      notes: ["Règle du levier entre les deux poutres (dalle articulée sur les poutres). Pour chaque poutre, chaque charge prend son coefficient maxi si elle charge la poutre et son coefficient mini sinon ; une charge facultative (caniveau rempli ou non…) n'est retenue que si elle est défavorable. Moment en travée : charges entre poutres au maxi, charges des encorbellements au mini. Le classeur d'origine ne se calculait plus (noms de cellules perdus)."] };
+  },
+  fig(I, g, r) { const v = r.vals, xs = v.loads.flatMap(l => l.w ? [l.a, l.b] : [l.x]), x0 = min(...xs, -v.lp / 2) - 0.3, x1 = max(...xs, v.lp / 2) + 0.3, W = 330, k = 300 / (x1 - x0), X = x => 15 + (x - x0) * k, yd = 120;
+    let s = Rc(X(x0), yd, (x1 - x0) * k, 8, { f: "#e8e2d5", c: "#9b8f78" }); [-v.lp / 2, v.lp / 2].forEach(x => s += Rc(X(x) - 4, yd + 8, 8, 40, { f: K.steel, c: "#5a6f8e" }));
+    const qm = max(...v.loads.map(l => l.w ? l.q : l.F / 2), 1); v.loads.forEach((l, i) => { if (l.w) s += Rc(X(l.a), yd - 6 - 40 * l.q / qm, l.w * k, 40 * l.q / qm, { f: K.gold, c: "none", op: .25 }); else s += P(`M${X(l.x)} ${yd - 4 - 50 * l.F / 2 / qm}V${yd - 2}`, { c: l.opt ? K.blue : K.red, w: 1.6 }) + P(`M${X(l.x) - 3} ${yd - 7}L${X(l.x)} ${yd - 2}L${X(l.x) + 3} ${yd - 7}`, { c: l.opt ? K.blue : K.red, w: 1.4 }); });
+    s += T(X(-v.lp / 2), yd + 62, `gauche : ${f2(v.gN, 1)} kN/m`, { a: "middle", s: 9.5, w: 600 }) + T(X(v.lp / 2), yd + 62, `droite : ${f2(v.dN, 1)} kN/m`, { a: "middle", s: 9.5, w: 600 }) + T(15, 18, "charges linéiques (rouge ; bleu : facultatives) et réparties (or)", { s: 8.5, c: K.mute });
+    return svg(W, 195, s); },
+  clair: (I, g) => `La poutre gauche reçoit de ${f2(g("gm"), 1)} à ${f2(g("gM"), 1)} kN/m de superstructures, la poutre droite de ${f2(g("dm"), 1)} à ${f2(g("dM"), 1)} kN/m.` },
+]);
 })(typeof window !== "undefined" ? window : globalThis);
