@@ -1,0 +1,394 @@
+/* BridgeAI Studios — Plans de coffrage & ferraillage : dessins.
+ *
+ * Chaque vue est d'abord construite comme une « scène » (primitives en mètres,
+ * y vers le haut), puis rendue en SVG (écran, impression) ou en DXF (dxf.js).
+ * Les tailles de texte et de symboles sont exprimées en pixels ; u = mètres par pixel.
+ */
+(function (root, factory) {
+  const calc = (typeof module === 'object' && module.exports) ? require('./calc.js') : root.FERR;
+  const api = factory(calc);
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.FERR = Object.assign(root.FERR || {}, api);
+})(typeof self !== 'undefined' ? self : this, function (F) {
+  'use strict';
+
+  const COLORS = ['#c0392b', '#2d6be4', '#0f8f7b', '#b07d12', '#8e44ad', '#d35400', '#1e8449', '#34495e', '#c2185b', '#5e35b1', '#00838f', '#6d4c41'];
+  const INK = '#14171f', DIM = '#6b7280', CONCRETE = '#efebe0';
+  const rad = (d) => d * Math.PI / 180;
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  /* ───────── Scène ───────── */
+  function Scene(u) { this.u = u; this.items = []; }
+  Scene.prototype.poly = function (pts, o) { this.items.push(Object.assign({ t: 'poly', pts, layer: 'KLE-Contour', color: INK, w: 1 }, o)); return this; };
+  Scene.prototype.line = function (a, b, o) { return this.poly([a, b], o); };
+  Scene.prototype.circle = function (c, r, o) { this.items.push(Object.assign({ t: 'circle', c, r, layer: 'KLE-Contour', color: INK, w: 1 }, o)); return this; };
+  Scene.prototype.text = function (p, s, o) { this.items.push(Object.assign({ t: 'text', p, s: String(s), h: 11, anchor: 'middle', rot: 0, layer: 'KLE-Cotation', color: INK }, o)); return this; };
+
+  function textBox(it, u) {
+    const w = it.s.length * it.h * 0.56 * u, h = it.h * u;
+    const ax = it.anchor === 'start' ? 0 : it.anchor === 'end' ? -w : -w / 2;
+    let x0 = ax, x1 = ax + w, y0 = -h / 2, y1 = h / 2;
+    if (Math.abs(it.rot) === 90) { [x0, x1, y0, y1] = [-h / 2, h / 2, ax, ax + w]; }
+    return [it.p[0] + x0, it.p[1] + y0, it.p[0] + x1, it.p[1] + y1];
+  }
+
+  function bounds(scene) {
+    let b = [Infinity, Infinity, -Infinity, -Infinity];
+    const add = (x, y) => { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); };
+    for (const it of scene.items) {
+      if (it.t === 'poly') { it.pts.forEach((p) => add(p[0], p[1])); (it.holes || []).forEach((h) => h.forEach((p) => add(p[0], p[1]))); }
+      else if (it.t === 'circle') { add(it.c[0] - it.r, it.c[1] - it.r); add(it.c[0] + it.r, it.c[1] + it.r); }
+      else if (it.t === 'text') { const tb = textBox(it, scene.u); add(tb[0], tb[1]); add(tb[2], tb[3]); }
+    }
+    return b;
+  }
+
+  /* Rendu SVG d'une scène à l'échelle s (px/m). */
+  function toSVG(scene, s, opts) {
+    opts = opts || {};
+    const pad = opts.pad == null ? 6 : opts.pad;
+    const b = bounds(scene);
+    const W = Math.ceil((b[2] - b[0]) * s + 2 * pad), H = Math.ceil((b[3] - b[1]) * s + 2 * pad);
+    const X = (x) => ((x - b[0]) * s + pad).toFixed(1), Y = (y) => ((b[3] - y) * s + pad).toFixed(1);
+    const pathOf = (pts, closed) => 'M' + pts.map((p) => X(p[0]) + ' ' + Y(p[1])).join('L') + (closed ? 'Z' : '');
+    let out = '';
+    for (const it of scene.items) {
+      if (it.t === 'poly') {
+        let d = pathOf(it.pts, it.closed);
+        (it.holes || []).forEach((h) => { d += pathOf(h, true); });
+        out += `<path d="${d}" fill="${it.fill || 'none'}"${it.holes ? ' fill-rule="evenodd"' : ''} stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linejoin="round" stroke-linecap="round"/>`;
+      } else if (it.t === 'circle') {
+        out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(it.minPx || 0, it.r * s).toFixed(2)}" fill="${it.fill || 'none'}" stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"/>`;
+      } else if (it.t === 'text') {
+        const tr = it.rot ? ` transform="rotate(${-it.rot} ${X(it.p[0])} ${Y(it.p[1])})"` : '';
+        out += `<text x="${X(it.p[0])}" y="${Y(it.p[1])}" font-size="${it.h}" text-anchor="${it.anchor}" dominant-baseline="central" fill="${it.color}"${it.halo ? ' stroke="#ffffff" stroke-width="3" paint-order="stroke"' : ''}${it.weight ? ` font-weight="${it.weight}"` : ''}${it.italic ? ' font-style="italic"' : ''}${tr}>${esc(it.s)}</text>`;
+      }
+    }
+    const label = opts.label ? ` role="img" aria-label="${esc(opts.label)}"` : '';
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Outfit, Arial, sans-serif"${label}>${out}</svg>`;
+  }
+
+  /* ───────── Cotation ───────── */
+  function dim(sc, p1, p2, orient, at, txt, o) {
+    o = o || {};
+    const u = sc.u, gap = 3 * u, tk = 4 * u, L = { layer: 'KLE-Cotation', color: DIM, w: 0.8 };
+    if (orient === 'h') {
+      const [x1, x2] = [Math.min(p1[0], p2[0]), Math.max(p1[0], p2[0])];
+      const sgn = at < p1[1] ? -1 : 1;
+      sc.line([p1[0], p1[1] + sgn * gap], [p1[0], at + sgn * 3 * u], L);
+      sc.line([p2[0], p2[1] + sgn * gap], [p2[0], at + sgn * 3 * u], L);
+      sc.line([x1, at], [x2, at], L);
+      [x1, x2].forEach((x) => sc.line([x - tk, at - tk], [x + tk, at + tk], Object.assign({}, L, { color: INK })));
+      const tw = txt.length * 11 * 0.56 * u;
+      if (x2 - x1 > tw + 8 * u) sc.text([(x1 + x2) / 2, at + 8 * u], txt, { color: INK });
+      else sc.text([o.flip ? x1 - 5 * u : x2 + 5 * u, at + 8 * u], txt, { color: INK, anchor: o.flip ? 'end' : 'start' });
+    } else {
+      const [y1, y2] = [Math.min(p1[1], p2[1]), Math.max(p1[1], p2[1])];
+      const sgn = at < p1[0] ? -1 : 1;
+      sc.line([p1[0] + sgn * gap, p1[1]], [at + sgn * 3 * u, p1[1]], L);
+      sc.line([p2[0] + sgn * gap, p2[1]], [at + sgn * 3 * u, p2[1]], L);
+      sc.line([at, y1], [at, y2], L);
+      [y1, y2].forEach((y) => sc.line([at - tk, y - tk], [at + tk, y + tk], Object.assign({}, L, { color: INK })));
+      const tw = txt.length * 11 * 0.56 * u;
+      if (y2 - y1 > tw + 8 * u) sc.text([at - 8 * u, (y1 + y2) / 2], txt, { color: INK, rot: 90 });
+      else { // cote trop courte : texte horizontal, à l'extérieur de la ligne de cote
+        const out = sgn < 0 ? -1 : 1;
+        sc.text([at + out * 5 * u, (y1 + y2) / 2], txt, { color: INK, anchor: out < 0 ? 'end' : 'start' });
+      }
+    }
+  }
+
+  function hatchRect(sc, x0, y0, x1, y1, step) {
+    const L = { layer: 'KLE-Contour', color: '#9aa0ac', w: 0.6 };
+    for (let k = x0 - (y1 - y0); k < x1; k += step) {
+      // segment de pente 1 : x = k + (y − y0)
+      let ya = y0, xa = k, yb = y1, xb = k + (y1 - y0);
+      if (xa < x0) { ya = y0 + (x0 - xa); xa = x0; }
+      if (xb > x1) { yb = y1 - (xb - x1); xb = x1; }
+      if (ya < yb) sc.line([xa, ya], [xb, yb], L);
+    }
+  }
+
+  /* ───────── Contours ───────── */
+  function outline(struct, g) {
+    if (struct === 'murT') {
+      const { B, hs, p, e, H } = g;
+      return { outer: [[0, 0], [B, 0], [B, hs], [p + e, hs], [p + e, hs + H], [p, hs + H], [p, hs], [0, hs]], holes: [] };
+    }
+    const { Bext, Hext, ep, er, et } = g, G = g.g;
+    const inner = G > 0.001
+      ? [[ep, er + G], [ep + G, er], [Bext - ep - G, er], [Bext - ep, er + G], [Bext - ep, Hext - et - G], [Bext - ep - G, Hext - et], [ep + G, Hext - et], [ep, Hext - et - G]]
+      : [[ep, er], [Bext - ep, er], [Bext - ep, Hext - et], [ep, Hext - et]];
+    return { outer: [[0, 0], [Bext, 0], [Bext, Hext], [0, Hext]], holes: [inner] };
+  }
+
+  function drawOutline(sc, struct, g, light) {
+    const o = outline(struct, g);
+    sc.poly(o.outer, { closed: true, holes: o.holes.length ? o.holes : undefined, fill: CONCRETE, w: light ? 1.1 : 1.6, layer: 'KLE-Contour' });
+    if (struct === 'murT' && g.bp > 0) {
+      const x0 = -0.05, x1 = g.B + 0.05;
+      sc.poly([[x0, -g.bp], [x1, -g.bp], [x1, 0], [x0, 0]], { closed: true, w: 1, layer: 'KLE-Contour' });
+      hatchRect(sc, x0, -g.bp, x1, 0, Math.max(0.04, 9 * sc.u));
+    }
+  }
+
+  /* Échelle (px/m) pour faire tenir une emprise dans une largeur donnée. */
+  function fitScale(extW, extH, width, marginX, maxH) {
+    let s = (width - marginX) / extW;
+    if (maxH) s = Math.min(s, maxH / extH);
+    return Math.max(40, Math.min(s, 900));
+  }
+
+  /* ───────── Vue 1 : coupe de coffrage cotée ───────── */
+  function coffrageScene(struct, g, u) {
+    const sc = new Scene(u), f = F.fmtCote;
+    drawOutline(sc, struct, g);
+    if (struct === 'murT') {
+      const { B, hs, p, e, H, bp } = g, t = B - p - e, yb = -(bp || 0);
+      dim(sc, [0, yb], [p, yb], 'h', yb - 20 * u, f(p), { flip: true });
+      dim(sc, [p, yb], [p + e, yb], 'h', yb - 20 * u, f(e));
+      dim(sc, [p + e, yb], [B, yb], 'h', yb - 20 * u, f(t));
+      dim(sc, [0, yb], [B, yb], 'h', yb - 44 * u, f(B));
+      const xl = -0.05;
+      dim(sc, [xl, 0], [xl, hs], 'v', xl - 20 * u, f(hs), { flip: true });
+      dim(sc, [p, hs], [p, hs + H], 'v', xl - 20 * u, f(H));
+      dim(sc, [xl, 0], [p, hs + H], 'v', xl - 44 * u, f(hs + H));
+      dim(sc, [p, hs + H], [p + e, hs + H], 'h', hs + H + 20 * u, f(e));
+      if (bp > 0) dim(sc, [B + 0.05, -bp], [B + 0.05, 0], 'v', B + 0.05 + 22 * u, f(bp), { flip: true });
+      sc.text([p + e + Math.max(0.05, t / 2), hs + Math.min(H * 0.55, 0.6)], 'Remblai', { h: 10.5, color: DIM, italic: true, anchor: 'middle' });
+      sc.text([p / 2, hs + 14 * u], 'Aval', { h: 10.5, color: DIM, italic: true });
+      if (bp > 0) sc.text([p + e + t / 2, -bp / 2], 'Béton de propreté', { h: 9.5, color: DIM, italic: true, halo: true });
+    } else {
+      const { Bext, Hext, ep, er, et, O, Hi } = g, G = g.g;
+      dim(sc, [0, Hext], [ep, Hext], 'h', Hext + 20 * u, f(ep), { flip: true });
+      dim(sc, [ep, Hext - et], [Bext - ep, Hext - et], 'h', Hext + 20 * u, f(O));
+      dim(sc, [Bext - ep, Hext], [Bext, Hext], 'h', Hext + 20 * u, f(ep));
+      dim(sc, [0, 0], [Bext, 0], 'h', -22 * u, f(Bext));
+      dim(sc, [0, 0], [0, er], 'v', -20 * u, f(er), { flip: true });
+      dim(sc, [ep, er], [ep, Hext - et], 'v', -20 * u, f(Hi));
+      dim(sc, [0, Hext - et], [0, Hext], 'v', -20 * u, f(et));
+      dim(sc, [Bext, 0], [Bext, Hext], 'v', Bext + 24 * u, f(Hext));
+      if (G > 0.001) {
+        const px = ep + G / 2, py = er + G / 2;
+        sc.line([px, py], [px + 0.18 * Math.min(1, O), py + 0.18 * Math.min(1, Hi)], { layer: 'KLE-Cotation', color: DIM, w: 0.8 });
+        sc.text([px + 0.18 * Math.min(1, O) + 4 * u, py + 0.18 * Math.min(1, Hi) + 2 * u], 'gousset ' + f(G) + ' × ' + f(G), { anchor: 'start', h: 10, color: INK });
+      }
+      sc.text([Bext / 2, er + Hi / 2], 'O = ' + f(O) + ' · Hi = ' + f(Hi), { h: 10.5, color: DIM, italic: true });
+    }
+    return sc;
+  }
+
+  /* ───────── Vue 2 : élévation (mur) ou vue en plan (dalot) ───────── */
+  function secondScene(struct, g, u) {
+    const sc = new Scene(u), f = F.fmtCote;
+    if (struct === 'murT') {
+      const { L, hs, H } = g;
+      sc.poly([[0, 0], [L, 0], [L, hs], [0, hs]], { closed: true, fill: CONCRETE, w: 1.4 });
+      sc.poly([[0, hs], [L, hs], [L, hs + H], [0, hs + H]], { closed: true, fill: '#f6f3ea', w: 1.4 });
+      dim(sc, [0, 0], [L, 0], 'h', -20 * u, f(L));
+      dim(sc, [0, 0], [0, hs + H], 'v', -20 * u, f(hs + H));
+      sc.text([L / 2, hs + H / 2], 'Parement aval du voile', { h: 10, color: DIM, italic: true });
+      sc.text([L / 2, hs + H + 12 * u], 'Élévation du bloc (joints aux extrémités)', { h: 10, color: DIM });
+    } else {
+      const { L, Bext, ep } = g;
+      sc.poly([[0, 0], [L, 0], [L, Bext], [0, Bext]], { closed: true, fill: CONCRETE, w: 1.4 });
+      sc.line([0, ep], [L, ep], { dash: '6 4', w: 1, color: '#7b8191' });
+      sc.line([0, Bext - ep], [L, Bext - ep], { dash: '6 4', w: 1, color: '#7b8191' });
+      sc.line([-0.3, Bext / 2], [L + 0.3, Bext / 2], { dash: '14 3 2 3', w: 0.7, color: DIM, layer: 'KLE-Cotation' });
+      const ax = L / 2, ay = Bext / 2;
+      sc.poly([[ax - 0.6, ay + 0.12], [ax + 0.6, ay + 0.12]], { w: 1, color: '#2d6be4', layer: 'KLE-Cotation' });
+      sc.poly([[ax + 0.45, ay + 0.2], [ax + 0.6, ay + 0.12], [ax + 0.45, ay + 0.04]], { w: 1, color: '#2d6be4', layer: 'KLE-Cotation' });
+      sc.text([ax, ay - 0.16], 'écoulement', { h: 10, color: '#2d6be4', italic: true });
+      dim(sc, [0, 0], [L, 0], 'h', -20 * u, f(L));
+      dim(sc, [L, 0], [L, ep], 'v', L + 20 * u, f(ep), { flip: true });
+      dim(sc, [L, ep], [L, Bext - ep], 'v', L + 20 * u, f(g.O));
+      dim(sc, [L, Bext - ep], [L, Bext], 'v', L + 20 * u, f(ep));
+      dim(sc, [0, 0], [0, Bext], 'v', -20 * u, f(Bext));
+      sc.text([L / 2, Bext + 12 * u], 'Vue en plan (piédroits en traits cachés)', { h: 10, color: DIM });
+    }
+    return sc;
+  }
+
+  /* ───────── Barres en coupe ───────── */
+  /* Trajet d'une barre (axe) à partir de son point de départ. */
+  function barPath(bar, item, params) {
+    const dm = bar.d / 1000, D = F.mandrin(bar.d, params.norme), R = D / 2 + dm / 2;
+    const segs = bar.segs, n = segs.length, hooks = bar.hooks || [0, 0], sides = bar.sides || [1, -1];
+    const tr = (a) => { if (item.mx) a = 180 - a; if (item.my) a = -a; return a; };
+    const sideF = (item.mx ? -1 : 1) * (item.my ? -1 : 1);
+    const lens = segs.map((s, i) => {
+      let l = s.l;
+      if (i > 0 && F.deviation(segs[i - 1].a, s.a) > 1e-6) l -= dm / 2;
+      if (i < n - 1 && F.deviation(s.a, segs[i + 1].a) > 1e-6) l -= dm / 2;
+      if (i === 0 && hooks[0]) l -= D / 2 + dm;
+      if (i === n - 1 && hooks[1]) l -= D / 2 + dm;
+      if (item.shrink && item.shrink.seg === i) l -= item.shrink.by;
+      return Math.max(l, 0.005);
+    });
+    let x = item.x0, y = item.y0;
+    if (hooks[0]) { const a0 = rad(tr(segs[0].a)); x += (D / 2 + dm) * Math.cos(a0); y += (D / 2 + dm) * Math.sin(a0); }
+    const main = [[x, y]];
+    segs.forEach((s, i) => { const a = rad(tr(s.a)); x += lens[i] * Math.cos(a); y += lens[i] * Math.sin(a); main.push([x, y]); });
+    const hookPts = (P, dirDeg, side, alpha) => {
+      if (!alpha) return [];
+      const ux = Math.cos(rad(dirDeg)), uy = Math.sin(rad(dirDeg));
+      const nx = side > 0 ? -uy : uy, ny = side > 0 ? ux : -ux;
+      const cx = P[0] + nx * R, cy = P[1] + ny * R;
+      const a0 = Math.atan2(P[1] - cy, P[0] - cx), sweep = side * rad(alpha), pts = [];
+      for (let k = 1; k <= 8; k++) { const t = a0 + sweep * k / 8; pts.push([cx + R * Math.cos(t), cy + R * Math.sin(t)]); }
+      // retour droit dessiné plafonné pour rester lisible sur les petites barres (épingles)
+      const fd = rad(dirDeg + side * alpha), last = pts[pts.length - 1];
+      const ext = Math.min(F.hookStraight(alpha, dm, params.norme), Math.max(0.03, 0.4 * lens.reduce((a, b) => a + b, 0)));
+      pts.push([last[0] + ext * Math.cos(fd), last[1] + ext * Math.sin(fd)]);
+      return pts;
+    };
+    const endH = hookPts(main[main.length - 1], tr(segs[n - 1].a), sides[1] * sideF, hooks[1]);
+    const startH = hookPts(main[0], tr(segs[0].a) + 180, sides[0] * sideF, hooks[0]).reverse();
+    return { pts: startH.concat(main, endH), main };
+  }
+
+  function dotPositions(bar) {
+    const n = F.barCount(bar), out = [];
+    (bar.place.dots || []).forEach((ln) => {
+      const pts = [];
+      if (ln.mode === 'step') {
+        for (let i = 0; i < n; i++) pts.push([ln.a[0] + ln.dir[0] * bar.esp * i, ln.a[1] + ln.dir[1] * bar.esp * i]);
+      } else {
+        for (let i = 0; i < n; i++) {
+          const t = n === 1 ? 0.5 : i / (n - 1);
+          pts.push([ln.a[0] + (ln.b[0] - ln.a[0]) * t, ln.a[1] + (ln.b[1] - ln.a[1]) * t]);
+        }
+      }
+      out.push(pts);
+    });
+    return out;
+  }
+
+  /* Répartit des bulles de repère sur deux colonnes, sans chevauchement. */
+  function placeBubbles(tags, bb, u, R) {
+    // côté le plus proche, puis rééquilibrage si un côté est trop chargé
+    const cx = (bb[0] + bb[2]) / 2;
+    const left = tags.filter((t) => t.p[0] < cx).sort((a, b) => b.p[0] - a.p[0]);
+    const right = tags.filter((t) => t.p[0] >= cx).sort((a, b) => a.p[0] - b.p[0]);
+    while (left.length > right.length + 2) right.push(left.shift());
+    while (right.length > left.length + 2) left.push(right.shift());
+    const sidesOut = [left, right];
+    const gapM = (2 * R + 6) * u;
+    sidesOut.forEach((list, k) => {
+      list.sort((a, b) => b.p[1] - a.p[1]);
+      const x = k === 0 ? bb[0] - 34 * u : bb[2] + 34 * u;
+      let y = Infinity;
+      list.forEach((t) => { y = Math.min(t.p[1], y - gapM); t.b = [x, y]; });
+      const lowest = list.length ? list[list.length - 1].b[1] : 0;
+      const floor = bb[1] - 4 * u;
+      if (lowest < floor) {
+        let shift = floor - lowest;
+        list.forEach((t) => { t.b[1] += shift; });
+      }
+    });
+    return tags;
+  }
+
+  /* ───────── Vue 3 : coupe ferraillée ───────── */
+  function ferraillageScene(struct, g, bars, params, u) {
+    const sc = new Scene(u);
+    drawOutline(sc, struct, g, true);
+    const tags = [];
+    bars.forEach((bar, i) => {
+      const col = COLORS[i % COLORS.length];
+      const w = Math.max(1.5, Math.min(3.2, bar.d / 1000 / u));
+      const pl = bar.place || {};
+      if (pl.items) {
+        pl.items.forEach((it, k) => {
+          const bp = barPath(bar, it, params);
+          sc.poly(bp.pts, { layer: 'ACIERS', color: col, w, barId: bar.id });
+          if (k === 0 && pl.tag) {
+            const s = Math.min(pl.tag.seg, bp.main.length - 2), a = bp.main[s], b = bp.main[s + 1];
+            tags.push({ id: bar.id, col, p: [a[0] + (b[0] - a[0]) * pl.tag.t, a[1] + (b[1] - a[1]) * pl.tag.t] });
+          }
+        });
+      }
+      if (pl.dots) {
+        const lines = dotPositions(bar);
+        lines.forEach((pts) => pts.forEach((p) => sc.circle(p, bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, w: 0.6, minPx: 2.6 })));
+        const first = lines[0] || [];
+        if (first.length) {
+          let idx = pl.tag == null ? 0 : pl.tag;
+          if (idx < 0) idx = first.length + idx;
+          idx = Math.max(0, Math.min(first.length - 1, idx));
+          tags.push({ id: bar.id, col, p: first[idx] });
+        }
+      }
+    });
+    const bb = bounds(sc), R = 10;
+    placeBubbles(tags, bb, u, R);
+    tags.forEach((t) => {
+      const dx = t.p[0] - t.b[0], dy = t.p[1] - t.b[1], dl = Math.hypot(dx, dy) || 1;
+      sc.line([t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p, { layer: 'REPERAGE', color: t.col, w: 0.8 });
+      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5 });
+      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2 });
+      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500 });
+    });
+    return sc;
+  }
+
+  /* ───────── Croquis de façonnage (nomenclature) ───────── */
+  /* Renvoie une géométrie en pixels (y vers le bas) tenant dans w × h. */
+  function croquisGeom(shape, w, h) {
+    let segs = shape.segs.map((s) => ({ l: s.l, a: s.a }));
+    const hooks = shape.hooks || [0, 0], sides = shape.sides || [1, -1];
+    if (segs.length === 1) segs[0].a = 0;
+    const lmax = Math.max.apply(null, segs.map((s) => s.l));
+    const dl = segs.map((s) => 0.32 + 0.68 * Math.sqrt(s.l / lmax));
+    let x = 0, y = 0;
+    const main = [[0, 0]];
+    segs.forEach((s, i) => { x += dl[i] * Math.cos(rad(s.a)); y += dl[i] * Math.sin(rad(s.a)); main.push([x, y]); });
+    const hk = 0.26;
+    const hookPts = (P, dir, side, alpha) => {
+      if (!alpha) return [];
+      if (alpha === 180) {
+        const ux = Math.cos(rad(dir)), uy = Math.sin(rad(dir)), nx = side > 0 ? -uy : uy, ny = side > 0 ? ux : -ux, r = 0.07, pts = [];
+        const cx = P[0] + nx * r, cy = P[1] + ny * r, a0 = Math.atan2(P[1] - cy, P[0] - cx);
+        for (let k = 1; k <= 8; k++) { const t = a0 + side * Math.PI * k / 8; pts.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]); }
+        const l = pts[pts.length - 1];
+        pts.push([l[0] - ux * hk * 0.7, l[1] - uy * hk * 0.7]);
+        return pts;
+      }
+      const fd = rad(dir + side * alpha);
+      return [[P[0] + hk * Math.cos(fd), P[1] + hk * Math.sin(fd)]];
+    };
+    const endH = hookPts(main[main.length - 1], segs[segs.length - 1].a, sides[1], hooks[1]);
+    const startH = hookPts(main[0], segs[0].a + 180, sides[0], hooks[0]).reverse();
+    const all = startH.concat(main, endH);
+    // centroïde (pour placer les cotes à l'extérieur)
+    const cx = all.reduce((s, p) => s + p[0], 0) / all.length, cy = all.reduce((s, p) => s + p[1], 0) / all.length;
+    const sideLabels = segs.some((s) => Math.abs(Math.sin(rad(s.a))) > 0.7);
+    const padX = sideLabels ? 30 : 10, padY = 13;
+    let b = [Infinity, Infinity, -Infinity, -Infinity];
+    all.forEach((p) => { b[0] = Math.min(b[0], p[0]); b[1] = Math.min(b[1], p[1]); b[2] = Math.max(b[2], p[0]); b[3] = Math.max(b[3], p[1]); });
+    const k = Math.min((w - 2 * padX) / Math.max(b[2] - b[0], 1e-6), (h - 2 * padY) / Math.max(b[3] - b[1], 1e-6));
+    const ox = (w - (b[2] - b[0]) * k) / 2, oy = (h - (b[3] - b[1]) * k) / 2;
+    const P = (p) => [ox + (p[0] - b[0]) * k, h - (oy + (p[1] - b[1]) * k)];
+    const texts = segs.map((s, i) => {
+      const a = main[i], c = main[i + 1], mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2;
+      let nx = -Math.sin(rad(s.a)), ny = Math.cos(rad(s.a));
+      const dot = nx * (mx - cx) + ny * (my - cy);
+      if (dot < -1e-9 || (Math.abs(dot) < 1e-9 && ny < 0)) { nx = -nx; ny = -ny; }
+      const q = P([mx, my]), off = 7;
+      const tx = q[0] + nx * off, ty = q[1] - ny * off;
+      const anchor = Math.abs(nx) > 0.7 ? (nx > 0 ? 'start' : 'end') : 'middle';
+      return { x: tx, y: ty + (Math.abs(nx) > 0.7 ? 0 : -ny * 2), s: F.fmtCote(shape.segs[i].l), anchor };
+    });
+    return { w, h, pts: all.map(P), texts };
+  }
+
+  function croquisSVG(shape, color, w, h) {
+    w = w || 150; h = h || 56;
+    const gm = croquisGeom(shape, w, h);
+    const d = 'M' + gm.pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+    const t = gm.texts.map((x) => `<text x="${x.x.toFixed(1)}" y="${x.y.toFixed(1)}" font-size="9.5" text-anchor="${x.anchor}" dominant-baseline="central" fill="#14171f">${x.s}</text>`).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Outfit, Arial, sans-serif" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || '#c0392b'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${t}</svg>`;
+  }
+
+  return { COLORS, Scene, bounds, toSVG, fitScale, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
+});
