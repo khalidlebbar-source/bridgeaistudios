@@ -498,6 +498,12 @@
         }
       }
     });
+    if (struct === 'murT' && g.xCut != null) {
+      const yb = -(g.bp || 0) - 0.08, yt = g.hCut + 0.12, L = { layer: 'KLE-Cotation', color: DIM, w: 0.9, dash: '10 3 2 3' };
+      sc.line([g.xCut, yb], [g.xCut, yt], L);
+      sc.text([g.xCut, yt + 7 * u], 'A', { h: 10.5, weight: 500 });
+      sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
+    }
     const bb = bounds(sc), R = 10;
     placeBubbles(tags, bb, u, R);
     tags.forEach((t) => {
@@ -584,5 +590,89 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Outfit, Arial, sans-serif" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || '#c0392b'}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="butt"/>${t}</svg>`;
   }
 
-  return { COLORS, Scene, bounds, toSVG, fitScale, fitRender, filletPath, samplePath, pathLength, arcPts, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
+
+  /* ───────── Coupe longitudinale A-A de la semelle (mur) ─────────
+     Plan vertical parallèle au mur, à l'abscisse g.xCut. Axe horizontal z le long du plot (0 → L),
+     dessiné compact : les deux extrémités sur Ls ≈ 1,5 m, ligne de coupure au milieu. */
+  function longiScene(struct, g, bars, params, u) {
+    if (struct !== 'murT') return null;
+    const sc = new Scene(u), L = g.L, hc = g.hCut, bp = g.bp || 0;
+    const Ls = Math.min(1.5, L / 2), brk = L > 2 * Ls + 0.05, gap = brk ? 0.3 : 0;
+    const wins = brk ? [[0, Ls], [L - Ls, L]] : [[0, L]];
+    const Z = (z) => (brk && z > Ls + 1e-9 ? z - (L - 2 * Ls) + gap : z);
+    const inWin = (z) => wins.some(([a, b]) => z >= a - 1e-9 && z <= b + 1e-9);
+    const P = (q) => [Z(q[0]), q[1]];
+    // béton (deux tronçons), coupure, propreté
+    wins.forEach(([a, b]) => {
+      sc.poly([[Z(a), 0], [Z(b), 0], [Z(b), hc], [Z(a), hc]], { closed: true, fill: CONCRETE, stroke: false, w: 0 });
+      sc.line([Z(a), 0], [Z(b), 0], { w: 1.1 }); sc.line([Z(a), hc], [Z(b), hc], { w: 1.1 });
+      if (bp > 0) { sc.poly([[Z(a), -bp], [Z(b), -bp]], { w: 0.8 }); hatchRect(sc, Z(a), -bp, Z(b), 0, Math.max(0.04, 9 * u)); }
+    });
+    sc.line([Z(0), 0], [Z(0), hc], { w: 1.1 }); sc.line([Z(L), 0], [Z(L), hc], { w: 1.1 });
+    if (brk) [Ls, Ls + gap].forEach((zd) => {
+      const y0 = -bp - 0.06, y1 = hc + 0.06, k = 0.04;
+      sc.poly([[zd, y0], [zd, (y0 + y1) / 2 - k], [zd + k * 0.8, (y0 + y1) / 2 - k / 3], [zd - k * 0.8, (y0 + y1) / 2 + k / 3], [zd, (y0 + y1) / 2 + k], [zd, y1]], { w: 0.8, color: DIM, layer: 'KLE-Cotation' });
+    });
+    // découpe d'une polyligne (en z réel) suivant les fenêtres visibles
+    const clip = (pts) => {
+      const pieces = [];
+      wins.forEach(([a, b]) => {
+        let cur = [];
+        for (let i = 0; i < pts.length; i++) {
+          const q = pts[i], inside = q[0] >= a - 1e-9 && q[0] <= b + 1e-9;
+          if (i > 0) {
+            const o = pts[i - 1];
+            [a, b].forEach((zb) => {
+              if ((o[0] - zb) * (q[0] - zb) < -1e-12) { const t = (zb - o[0]) / (q[0] - o[0]), m = [zb, o[1] + (q[1] - o[1]) * t]; cur.push(m); if (!inside) { pieces.push(cur); cur = []; } }
+            });
+          }
+          if (inside) cur.push(q.slice());
+        }
+        if (cur.length > 1) pieces.push(cur);
+      });
+      return pieces.filter((pc) => pc.length > 1);
+    };
+    const tags = [];
+    bars.forEach((bar, i) => {
+      const lg = bar.longi; if (!lg) return;
+      const col = COLORS[i % COLORS.length];
+      let tagged = false;
+      (lg.items || []).forEach((it) => {
+        clip(it.pts).forEach((pc) => {
+          const bp2 = barPath({ d: bar.d, hooks: [0, 0], segs: [{ l: 0, a: 0 }], sides: [1, -1] }, { pts: pc.map(P) }, params);
+          sc.bar(bp2.path, bar.d / 1000, { color: col, barId: bar.id, minPx: 1 });
+          if (!tagged) {
+            const sgi = Math.min((lg.tag && lg.tag.seg) || 0, bp2.main.length - 2), a = bp2.main[sgi], b = bp2.main[sgi + 1], t = (lg.tag && lg.tag.t) || 0.5;
+            tags.push({ id: bar.id, col, p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t] }); tagged = true;
+          }
+        });
+      });
+      const n = F.barCount(bar), dot = (q) => sc.circle(P(q), bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, stroke: false, w: 0, minPx: 1.2, barId: bar.id, hit: true });
+      (lg.dotsZ || []).forEach((ln, k) => {
+        const zs = []; for (let j = 0; j < n; j++) zs.push(n === 1 ? (ln.z0 + ln.z1) / 2 : ln.z0 + (ln.z1 - ln.z0) * j / (n - 1));
+        const vis = zs.filter(inWin);
+        vis.forEach((z) => dot([z, ln.y]));
+        if (!tagged && vis.length) { tags.push({ id: bar.id, col, p: P([vis[Math.min(vis.length - 1, 2 + k)], ln.y]) }); tagged = true; }
+      });
+      (lg.dotsY || []).forEach((ln) => {
+        for (let j = 0; j < n; j++) { const y = n === 1 ? (ln.y0 + ln.y1) / 2 : ln.y0 + (ln.y1 - ln.y0) * j / (n - 1); dot([ln.z, y]); if (!tagged) { tags.push({ id: bar.id, col, p: P([ln.z, y]) }); tagged = true; } }
+      });
+    });
+    // cotes : L du plot (au-dessus de la coupure), épaisseur à la coupe
+    dim(sc, [Z(0), hc], [Z(L), hc], 'h', hc + 22 * u, 'L = ' + F.fmtCote(L) + (brk ? ' (plot interrompu)' : ''));
+    dim(sc, [Z(0), 0], [Z(0), hc], 'v', Z(0) - 20 * u, F.fmtCote(hc), { flip: true });
+    sc.text([(Z(0) + Z(L)) / 2, -bp - 14 * u], 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin', { h: 10, color: DIM, italic: true });
+    const bb = bounds(sc), R = 10;
+    placeBubbles(tags, bb, u, R);
+    tags.forEach((t) => {
+      const dx = t.p[0] - t.b[0], dy = t.p[1] - t.b[1], dl = Math.hypot(dx, dy) || 1;
+      sc.poly([[t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p], { layer: 'REPERAGE', color: t.col, w: 0.8, barId: t.id });
+      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5, barId: t.id });
+      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2, barId: t.id, hit: true });
+      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500, barId: t.id });
+    });
+    return sc;
+  }
+
+  return { COLORS, Scene, bounds, longiScene, toSVG, fitScale, fitRender, filletPath, samplePath, pathLength, arcPts, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
 });

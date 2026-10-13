@@ -30,7 +30,7 @@
   /* ───── État ───── */
   const S = {
     struct: null, geom: {}, valid: null, validKey: '', params: Object.assign({}, F.DEFAULT_PARAMS),
-    designation: '', overrides: {}, res: null, step: 1, maxStep: 1, view: 'coupe', sel: null,
+    designation: '', overrides: {}, res: null, step: 1, maxStep: 1, view: 'coupe', sel: null, fview: 'trans',
   };
 
   /* ───── Navigation entre étapes ───── */
@@ -169,6 +169,7 @@
     { k: 'designation', label: 'Désignation de l’ouvrage', type: 'text' },
     { k: 'norme', label: 'Règlement', type: 'select', opts: [['EC2', 'Eurocode 2'], ['BAEL', 'BAEL 91']] },
     { k: 'blocs', label: 'Éléments identiques', unit: 'u', step: 1, min: 1 },
+    { k: 'fermeture', label: 'Fermeture de la semelle', type: 'select', opts: [['U', 'U de fermeture (5-8)'], ['retours', 'Nappes à retours']] },
     { k: 'maintien', label: 'Maintien des nappes', type: 'select', opts: [['epingle', 'Épingles (3001)'], ['etrier', 'Étriers (boucle fermée)']] },
     { k: 'cTerre', label: 'Enrobage terre / fond.', unit: 'cm', scale: 100, step: 0.5, min: 1 },
     { k: 'cAutre', label: 'Enrobage autres', unit: 'cm', scale: 100, step: 0.5, min: 1 },
@@ -197,7 +198,8 @@
         <li>Au-delà de ${p.lmax} m : découpe en barres indicées avec recouvrement ${p.recouv}Ø.</li>
         <li>Mur : H &lt; 3 m → HA12 (type M5) ; H ≥ 3 m → voile terres HA14 e15 + renfort de pied HA20 e15 sur ≈ 0,42·Hv, face avant HA12 e15, semelle sup. HA20 e15, inf. HA14 e15, maintien HA10 4/m² (principe M4).</li>
         <li>Maintien des nappes : ${p.maintien === 'etrier' ? 'étriers' : 'épingles'} par défaut (réglable barre par barre dans « Ajuster la barre », ce choix l’emporte). Épingle 3001 = barre droite à deux crosses (135° par défaut) ; étrier = boucle fermée étroite qui ceinture un filant de chaque nappe, extrémités en demi-cercle au mandrin, fermée par deux crosses 135°. Pas de chaises d’écartement dans la proposition.</li>
-        <li>Numérotation des repères comme sur les plans KLE de piles et culées : la semelle occupe les repères 1 à 9 (1-2 nappe inférieure, 3-4 nappe supérieure, 5-6 bêche, 9 épingles / étriers) ; le voile commence au repère 10.</li>
+        <li>Numérotation KLE (piles, culées) : semelle 1 à 9 — 1 nappe inférieure transversale, 2 filants inférieurs, 3 nappe supérieure transversale, 4 filants supérieurs, 5 U de fermeture des abouts (coupe transversale, ×2), 6 U de fermeture des joints du plot (coupe longitudinale, ×2), 7 répartition des 5, 8 répartition des 6, 9 maintien ; voile à partir de 10 ; bêche juste après le voile.</li>
+        <li>Fermeture de la semelle : ${p.fermeture === 'retours' ? 'nappes à retours (1 et 3 en U, filants 2 et 4 à retours aux joints ; repères 5 à 8 non utilisés)' : 'U de fermeture — nappes 1, 3 et filants 2, 4 droits arrêtés contre l’âme des U 5 / U 6 ; branches des U en recouvrement ' + p.recouv + 'Ø (plafonné à la demi-largeur / demi-longueur) ; répartitions 7, 8 aux positions intermédiaires entre les branches, e ≤ 0,15 (aucune si la place manque)'}.</li>
         <li>Diamètres proposés par règles forfaitaires : le ferraillage doit être justifié par une note de calcul.</li>
       </ul>`;
   }
@@ -230,13 +232,26 @@
     if (!S.valid) return;
     const res = compute();
     if (!keepParams) renderParams();
-    const el = $('#v-ferr'), [W, H] = boxOf(el);
-    el.innerHTML = F.fitRender((u) => F.ferraillageScene(S.struct, res.geom, res.bars, res.params, u), W, H, { label: 'Coupe transversale ferraillée' });
+    drawFerr();
     renderKpis(); renderTable(); renderRecap();
     if (S.sel && !res.bars.some((b) => b.id === S.sel)) S.sel = null;
     applySel(false);
     $('#st3').textContent = `${fr(res.recap.total, 1)} kg`;
   }
+
+  /* Coupe transversale ou coupe longitudinale A-A (mur) dans le panneau de dessin. */
+  const hasLongi = () => S.struct === 'murT';
+  const inView = (id, v) => { const b = S.res.bars.find((x) => x.id === id); if (!b) return false; return v === 'longi' ? !!b.longi : !!(b.place && (b.place.items || b.place.dots)); };
+  function drawFerr() {
+    const res = S.res, el = $('#v-ferr'), [W, H] = boxOf(el);
+    if (!hasLongi()) S.fview = 'trans';
+    $('#fviewSeg').style.display = hasLongi() ? '' : 'none';
+    $$('#fviewSeg button').forEach((b) => b.classList.toggle('on', b.dataset.fv === S.fview));
+    el.innerHTML = S.fview === 'longi'
+      ? F.fitRender((u) => F.longiScene(S.struct, res.geom, res.bars, res.params, u), W, Math.min(H, W * 0.55), { label: 'Coupe longitudinale A-A de la semelle' })
+      : F.fitRender((u) => F.ferraillageScene(S.struct, res.geom, res.bars, res.params, u), W, H, { label: 'Coupe transversale ferraillée' });
+  }
+  $('#fviewSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-fv]'); if (!b) return; S.fview = b.dataset.fv; drawFerr(); applySel(false); });
 
   function renderKpis() {
     const r = S.res, vol = volume(r.geom) * Math.max(1, r.params.blocs);
@@ -284,6 +299,8 @@
 
   /* ───── Surbrillance d'une barre (coupe ⇄ nomenclature) ───── */
   function applySel(scroll) {
+    // barre absente de la vue affichée (ex. 6, 8 en coupe transversale) : on bascule sur l'autre coupe
+    if (S.sel && hasLongi() && !inView(S.sel, S.fview)) { const o = S.fview === 'longi' ? 'trans' : 'longi'; if (inView(S.sel, o)) { S.fview = o; drawFerr(); } }
     const svg = $('#v-ferr svg');
     if (svg) {
       svg.classList.toggle('has-sel', !!S.sel);
@@ -437,6 +454,7 @@
         <figure><figcaption>Coupe de coffrage</figcaption>${F.fitRender((u) => F.coffrageScene(S.struct, g, u), 520, 380)}</figure>
         <figure><figcaption>Coupe ferraillée</figcaption>${F.fitRender((u) => F.ferraillageScene(S.struct, g, r.bars, p, u), 520, 380)}</figure>
       </div>
+      ${hasLongi() ? `<div class="p-views"><figure><figcaption>Coupe longitudinale A-A de la semelle</figcaption>${F.fitRender((u) => F.longiScene(S.struct, g, r.bars, p, u), 1000, 150)}</figure></div>` : ''}
       <div class="p-bottom">
         <figure class="p-second"><figcaption>${S.struct === 'dalot' ? 'Vue en plan' : 'Élévation du plot'}</figcaption>${F.fitRender((u) => F.secondScene(S.struct, g, u), 560, 150)}</figure>
         <div><div class="p-h">Récapitulatif par diamètre</div>

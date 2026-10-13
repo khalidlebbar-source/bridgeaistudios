@@ -164,6 +164,15 @@
     const dxB = bA[2] - bB[0] + 1.0;
     writeScene(w, sB, dxB, 0);
     w.text([(bB[0] + bB[2]) / 2 + dxB, top], 0.07, 'COUPE TRANSVERSALE — FERRAILLAGE', 'KLE-Cotation', 'middle');
+    // coupe longitudinale A-A de la semelle sous la coupe transversale ferraillée (mur)
+    const sL = F.longiScene ? F.longiScene(struct, g, res.bars, res.params, U) : null;
+    let yLow = Math.min(bA[1], bB[1]);
+    if (sL) {
+      const bL = F.bounds(sL), dyL = bB[1] - bL[3] - 0.7, dxL = dxB + (bB[0] + bB[2]) / 2 - (bL[0] + bL[2]) / 2;
+      writeScene(w, sL, dxL, dyL);
+      w.text([(bL[0] + bL[2]) / 2 + dxL, bL[3] + dyL + 0.2], 0.07, 'COUPE LONGITUDINALE A-A \u2014 SEMELLE (FERRAILLAGE)', 'KLE-Cotation', 'middle');
+      yLow = Math.min(yLow, bL[1] + dyL);
+    }
     // seconde vue sous la coupe de coffrage
     const dyC = Math.min(bA[1], bB[1]) - bC[3] - 0.6, dxC = bA[0] - bC[0];
     writeScene(w, sC, dxC, dyC);

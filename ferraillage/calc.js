@@ -43,6 +43,7 @@
     cAutre: 0.03,     // enrobage autres parements (m)
     blocs: 1,         // nombre d'éléments identiques
     maintien: 'epingle', // barres de maintien des nappes : 'epingle' | 'etrier' (réglage global)
+    fermeture: 'U',      // fermeture de la semelle : 'U' (nappes droites + U 5/6 + répartitions 7/8) | 'retours'
   };
 
   const rad = (deg) => deg * Math.PI / 180;
@@ -50,9 +51,15 @@
   const round5mm = (x) => Math.round(x * 200 + 1e-9) / 200;
   const clone = (o) => JSON.parse(JSON.stringify(o));
 
-  /* Repères du mur : semelle 1 à 9 (9 = maintien), voile à partir de 10. */
-  const SEMELLE_IDS = { I: 1, FsI: 2, S: 3, FsS: 4, Bc: 5, Bf: 6, Es: 9 };
+  /* Repères du mur (règle KLE) : semelle 1 à 9 —
+       1 nappe inférieure transversale, 2 filants inférieurs, 3 nappe supérieure transversale,
+       4 filants supérieurs, 5 U de fermeture vus en coupe transversale (patin et talon),
+       6 U de fermeture vus en coupe longitudinale (joints du plot), 7 répartition des 5,
+       8 répartition des 6, 9 maintien (épingles / étriers) ;
+     voile à partir de 10 ; bêche (semelle pleine) juste après le dernier repère du voile. */
+  const SEMELLE_IDS = { I: 1, FsI: 2, S: 3, FsS: 4, U5: 5, U6: 6, R7: 7, R8: 8, Es: 9 };
   const VOILE_KEYS = ['V', 'Av', 'Am', 'R', 'Fv', 'Ev'];
+  const BECHE_KEYS = ['Bc', 'Bf'];
 
   /* Diamètre du mandrin (m) pour un Ø en mm. */
   function mandrin(d, norme) {
@@ -292,7 +299,11 @@
         else bx0 = g.p + eb / 2 - g.bw / 2;
         bx1 = bx0 + g.bw;
       }
+      // coupe longitudinale A-A : plan vertical parallèle au mur, au milieu du talon
+      const xCut = talon > 0.3 ? g.p + eb + talon / 2 : g.B / 2;
+      const hCut = xCut <= g.p ? hbp + (g.hs - hbp) * xCut / Math.max(g.p, 1e-9) : xCut >= g.p + eb ? g.hs + (hbt - g.hs) * (xCut - g.p - eb) / Math.max(g.B - g.p - eb, 1e-9) : g.hs;
       return Object.assign({}, g, {
+        xCut, hCut,
         Hv: r3(Hv), eb: Math.round(eb * 1e4) / 1e4, talon: Math.round(talon * 1e4) / 1e4, xAvT, xAmT, dPou,
         Hp: Math.round((g.H + dPou * Math.tan(rad(g.beta))) * 1e4) / 1e4, hbp, hbt, bx0, bx1, Htot: g.H,
       });
@@ -337,11 +348,12 @@
       if (!big) { dI = dS = dAv = dAm = mainDiam(Hv, [[1.5, 12], [2.5, 14], [99, 16]]); dFs = dFv = 12; dens = 6; }
       else if (H < 5.5) { dI = 14; dS = 20; dAm = 14; dR = 20; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
       else { dI = 16; dS = 25; dAm = 16; dR = 25; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
-      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10 };
+      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10, U5: 12, U6: 12, R7: 10, R8: 10 };
       const build = (D, forceSame) => {
       ({ I: dI, S: dS, Av: dAv, Am: dAm, R: dR, Fv: dFv } = D);
       const dFsI = D.FsI, dFsS = D.FsS, dB = D.Bc, dBf = D.Bf, dEs = D.Es, dEv = D.Ev;
-      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf);
+      const fermU = p.fermeture !== 'retours';
+      const mm = (d) => d / 1000, m5 = fermU ? mm(D.U5) : 0, m6 = fermU ? mm(D.U6) : 0, m7 = fermU ? mm(D.R7) : 0, m8 = mm(D.R8), mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf);
       const lr = r3(L - 2 * c), yL = c + mI / 2;
       const sole = this.outline(g0).sole; // 0:(0,0) 1:(B,0) 2:(B,hbt) 3:(p+eb,hs) 4:(p,hs) 5:(0,hbp)
       const env = offsetPoly(sole, c);
@@ -349,17 +361,45 @@
       const bars = [];
       const ext = (pts, d) => { const q = pts.map((x) => x.slice()), n = q.length; [[0, 1], [n - 1, n - 2]].forEach(([i, j]) => { const v = sub(q[i], q[j]), l = len2(v) || 1; q[i][0] += v[0] / l * d; q[i][1] += v[1] / l * d; }); return q; };
       const mkRep = (bar, key) => { bar.key = key; bars.push(bar); return bar; };
+      const walk = (pts, len) => { // début d'une polyligne sur une longueur donnée
+        const out = [pts[0].slice()]; let rest = len;
+        for (let i = 1; i < pts.length && rest > 1e-9; i++) {
+          const v = sub(pts[i], pts[i - 1]), l = len2(v);
+          if (l >= rest) { out.push([pts[i - 1][0] + v[0] / l * rest, pts[i - 1][1] + v[1] / l * rest]); rest = 0; } else { out.push(pts[i].slice()); rest -= l; }
+        }
+        return out;
+      };
+      const xc = g.xCut, hc = g.hCut;
+      const spreadDots = (y0, y1, n) => (n === 1 ? [(y0 + y1) / 2, (y0 + y1) / 2] : [y0, y1]);
 
+      if (fermU) {
+        // 1 — nappe inférieure transversale : droite, arrêtée contre l'âme intérieure des U 5
+        const y1 = c + mI / 2, xa = c + m5, xb = B - c - m5;
+        mkRep({ role: 'Nappe inférieure transversale (droite, arrêtée contre les U 5)', d: dI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: [{ l: r3(xb - xa), a: 0 }], hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: [[xa, y1], [xb, y1]] }], tag: { seg: 0, t: 0.3 } },
+          longi: { dotsZ: [{ y: y1, z0: c + mI / 2, z1: L - c - mI / 2 }] } }, 'I');
+        // 3 — nappe supérieure transversale : suit le dessus de semelle (biseau compris), arrêtée contre les U 5
+        const t3 = offsetPoly(sole, [0, c + m5, c + mS / 2, c + mS / 2, c + mS / 2, c + m5]);
+        const k3 = offsetPoly(sole, [0, c + m5, c, c, c, c + m5]);
+        mkRep({ role: 'Nappe supérieure transversale (suit le dessus, arrêtée contre les U 5)', d: dS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: segsOf(cleanPath([k3[5], k3[4], k3[3], k3[2]])), hooks: [0, 0], sides: [1, -1],
+          place: { items: [{ pts: cleanPath([t3[5], t3[4], t3[3], t3[2]]) }], tag: { seg: 1, t: 0.6 } },
+          longi: { dotsZ: [{ y: hc - c - mS / 2, z0: c + mS / 2, z1: L - c - mS / 2 }] } }, 'S');
+      } else {
       // 1 — U semelle, nappe inférieure (retours vers le haut)
       const p1 = cleanPath([env[5], env[0], env[1], env[2]]);
       const ax1 = offsetPoly(sole, c + mI / 2);
       mkRep({ role: 'U semelle — nappe inférieure (retours vers le haut)', d: dI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-        segs: segsOf(p1), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax1[5], ax1[0], ax1[1], ax1[2]]), mI / 2) }], tag: { seg: 1, t: 0.2 } } }, 'I');
+        segs: segsOf(p1), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax1[5], ax1[0], ax1[1], ax1[2]]), mI / 2) }], tag: { seg: 1, t: 0.2 } },
+        longi: { dotsZ: [{ y: c + mI / 2, z0: c + mI / 2, z1: L - c - mI / 2 }] } }, 'I');
       // 2 — U semelle, nappe supérieure (retours vers le bas), à l'intérieur des retours du n° 1
       const p2 = cleanPath([env[0], env[5], env[4], env[3], env[2], env[1]]);
       const ax2 = offsetPoly(sole, [c + mS / 2, c + mI + mS / 2, c + mS / 2, c + mS / 2, c + mS / 2, c + mI + mS / 2]);
       mkRep({ role: 'U semelle — nappe supérieure (retours vers le bas)', d: dS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-        segs: segsOf(p2), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax2[0], ax2[5], ax2[4], ax2[3], ax2[2], ax2[1]]), mS / 2) }], tag: { seg: 2, t: 0.75 } } }, 'S');
+        segs: segsOf(p2), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax2[0], ax2[5], ax2[4], ax2[3], ax2[2], ax2[1]]), mS / 2) }], tag: { seg: 2, t: 0.75 } },
+        longi: { dotsZ: [{ y: hc - c - mS / 2, z0: c + mS / 2, z1: L - c - mS / 2 }] } }, 'S');
+
+      }
 
       // Aciers verticaux du voile : parallèles aux parements, ancrés en pied par un retour, crosse en tête.
       const avA = [g.p, hs], avB = [xAvT, H], amA = [g.p + eb, hs], amB = [xAmT, H];
@@ -399,16 +439,86 @@
           place: { items: [{ pts: [[xF - mR / 2 + leg, yL + mAm], [xF, yL + mAm], top] }], tag: { seg: 1, t: 0.55 } } }, 'R');
       }
 
-      // Filants de semelle (avec retours aux joints) et du voile
+      // Filants de semelle et fermetures
       const r = r3(Math.min(hbp, hbt) - 2 * c);
-      const fI = offsetPoly(sole, [c + mI + mFsI / 2, c + mI + mFsI / 2, 0, 0, 0, c + mI + mFsI / 2]);
-      mkRep({ role: 'Filants semelle — nappe inférieure', d: dFsI, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
-        segs: [{ l: r, a: 90 }, { l: lr, a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 } }, 'FsI');
-      const fS = offsetPoly(sole, [0, c + mI + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mI + mS + mFsS / 2]);
-      mkRep({ role: 'Filants semelle — nappe supérieure', d: dFsS, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
-        segs: [{ l: r, a: -90 }, { l: lr, a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 } }, 'FsS');
+      let fI, fS;
+      if (fermU) {
+        // U 5 : fermeture vue en coupe transversale, aux deux abouts (patin, talon). Âme sur la face
+        // d'about, branches en recouvrement avec les nappes 1 et 3 (recouv·Ø, plafonné à (B − 2c)/2),
+        // juste à l'intérieur de ces nappes ; la branche haute suit le dessus de semelle.
+        const lb5 = r3(Math.min(p.recouv * m5, (B - 2 * c) / 2));
+        const o5 = offsetPoly(sole, [c + mI, c, c + mS, c + mS, c + mS, c]);
+        const a5 = offsetPoly(sole, [c + mI + m5 / 2, c + m5 / 2, c + mS + m5 / 2, c + mS + m5 / 2, c + mS + m5 / 2, c + m5 / 2]);
+        const uPath = (o, lb, end, m) => {
+          const top = end === 'p' ? [o[5], o[4], o[3], o[2]] : [o[2], o[3], o[4], o[5]];
+          const corner = end === 'p' ? o[0] : o[1], sg = end === 'p' ? 1 : -1;
+          return cleanPath(walk(top, lb - m).reverse().concat([corner.slice(), [corner[0] + sg * (lb - m), corner[1]]]));
+        };
+        const c5p = uPath(o5, lb5, 'p', 0), c5t = uPath(o5, lb5, 't', 0);
+        const sum = (q) => segsOf(q).reduce((t, x) => t + x.l, 0);
+        mkRep({ role: 'U de fermeture des abouts (patin et talon), vus en coupe transversale', d: D.U5, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+          segs: segsOf(sum(c5t) > sum(c5p) ? c5t : c5p), hooks: [0, 0], sides: [1, -1],
+          place: { items: [{ pts: uPath(a5, lb5, 'p', m5 / 2) }, { pts: uPath(a5, lb5, 't', m5 / 2) }], tag: { seg: 1, t: 0.5 } },
+          longi: (xc <= c + lb5 || xc >= B - c - lb5) ? { dotsZ: [{ y: c + mI + m5 / 2, z0: c + m5 / 2, z1: L - c - m5 / 2 }, { y: hc - c - mS - m5 / 2, z0: c + m5 / 2, z1: L - c - m5 / 2 }] } : null }, 'U5');
+        // 7 : répartition des 5, le long de l'âme, entre les branches (positions intermédiaires, e ≤ 0,15)
+        const ends7 = [['p', 0, hbp], ['t', B, hbt]].map(([e, x0, h]) => {
+          const yLo = c + mI + m5, yHi = h - c - mS - m5, hin = yHi - yLo, n = Math.ceil(hin / 0.15 - 1e-9) - 1;
+          const x = e === 'p' ? x0 + c + m5 + m7 / 2 : x0 - c - m5 - m7 / 2;
+          return { n, x, y0: yLo + hin / (n + 1), y1: yHi - hin / (n + 1) };
+        });
+        const n7 = Math.max(ends7[0].n, ends7[1].n);
+        if (n7 > 0) {
+          mkRep({ role: 'Répartition des U 5 (le long de l\u2019âme, entre les branches)', d: D.R7, kind: 'filant', esp: 0.15, distLen: r3((n7 - 1) * 0.15), mult: 2,
+            segs: [{ l: r3(L - 2 * c - 2 * m6), a: 0 }], hooks: [0, 0], sides: [1, -1],
+            place: { dots: ends7.filter((e) => e.n > 0).map((e) => ({ mode: 'poly', pts: [[e.x, e.y0], [e.x, e.y1]] })), tag: 0 } }, 'R7');
+        }
+        // Filants : droits, à l'intérieur des branches des U 5 et des répartitions 7, arrêtés contre l'âme des U 6
+        const eF = (mF) => c + m5 + m7 + mF / 2;
+        fI = offsetPoly(sole, [c + mI + m5 + mFsI / 2, eF(mFsI), 0, 0, 0, eF(mFsI)]);
+        fS = offsetPoly(sole, [0, eF(mFsS), c + mS + m5 + mFsS / 2, c + mS + m5 + mFsS / 2, c + mS + m5 + mFsS / 2, eF(mFsS)]);
+        const lF = r3(L - 2 * c - 2 * m6), yF2 = c + mI + m5 + mFsI / 2, yF4 = hc - c - mS - m5 - mFsS / 2;
+        mkRep({ role: 'Filants semelle — nappe inférieure (droits, arrêtés contre les U 6)', d: dFsI, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+          segs: [{ l: lF, a: 0 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 },
+          longi: { items: [{ pts: [[c + m6, yF2], [L - c - m6, yF2]] }] } }, 'FsI');
+        mkRep({ role: 'Filants semelle — nappe supérieure (droits, arrêtés contre les U 6)', d: dFsS, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+          segs: [{ l: lF, a: 0 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 },
+          longi: { items: [{ pts: [[c + m6, yF4], [L - c - m6, yF4]] }] } }, 'FsS');
+        // U 6 : fermeture vue en coupe longitudinale, aux deux joints du plot ; branches le long de L en
+        // recouvrement avec les filants (recouv·Ø, plafonné à (L − 2c)/2), juste à l'intérieur des filants.
+        const lb6 = r3(Math.min(p.recouv * m6, (L - 2 * c) / 2));
+        // nus extérieurs des branches ; avec biseau, l'âme varie sur la largeur : la nomenclature prend
+        // l'épaisseur moyenne de semelle (le dessin de la coupe A-A, l'épaisseur à l'abscisse de coupe)
+        const hmoy = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
+        const yB6o = c + mI + m5 + mFsI, yT6o = hmoy - c - mS - m5 - mFsS;
+        const yB6 = yB6o + m6 / 2, yT6 = hc - c - mS - m5 - mFsS - m6 / 2;
+        const u6 = (zW, sg) => [[zW + sg * (lb6 - m6 / 2), yT6], [zW, yT6], [zW, yB6], [zW + sg * (lb6 - m6 / 2), yB6]];
+        mkRep({ role: 'U de fermeture des joints du plot, vus en coupe longitudinale', d: D.U6, kind: 'reparti', esp: 0.20, distLen: r3(B - 2 * c), mult: 2,
+          segs: [{ l: lb6, a: 180 }, { l: r3(yT6o - yB6o), a: -90 }, { l: lb6, a: 0 }], hooks: [0, 0], sides: [1, -1],
+          place: {}, longi: { items: [{ pts: u6(c + m6 / 2, 1) }, { pts: u6(L - c - m6 / 2, -1) }], tag: { seg: 1, t: 0.5 } } }, 'U6');
+        // 8 : répartition des U 6, transversales, le long de l'âme des 6 entre leurs branches
+        const hmin = Math.min(hbp, hbt, hs), hin8 = (hmin - c - mS - m5 - mFsS - m6) - (yB6o + m6), n8 = Math.ceil(hin8 / 0.15 - 1e-9) - 1;
+        if (n8 > 0) {
+          const y0 = yB6o + m6, y1 = hc - c - mS - m5 - mFsS - m6, h8 = y1 - y0, sp = spreadDots(y0 + h8 / (n8 + 1), y1 - h8 / (n8 + 1), n8);
+          mkRep({ role: 'Répartition des U 6 (transversales, le long de l\u2019âme aux joints)', d: D.R8, kind: 'filant', esp: 0.15, distLen: r3((n8 - 1) * 0.15), mult: 2,
+            segs: [{ l: r3(B - 2 * c - 2 * m5), a: 0 }], hooks: [0, 0], sides: [1, -1],
+            place: {}, longi: { dotsY: [{ z: c + m6 + m8 / 2, y0: sp[0], y1: sp[1] }, { z: L - c - m6 - m8 / 2, y0: sp[0], y1: sp[1] }], tag: 0 } }, 'R8');
+        }
+      } else {
+        // Ancien principe : filants à retours aux joints du plot
+        fI = offsetPoly(sole, [c + mI + mFsI / 2, c + mI + mFsI / 2, 0, 0, 0, c + mI + mFsI / 2]);
+        fS = offsetPoly(sole, [0, c + mI + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mI + mS + mFsS / 2]);
+        const yF2 = c + mI + mFsI / 2, yF4 = hc - c - mS - mFsS / 2, zl = c + mFsI / 2;
+        mkRep({ role: 'Filants semelle — nappe inférieure', d: dFsI, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+          segs: [{ l: r, a: 90 }, { l: lr, a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 },
+          longi: { items: [{ pts: [[zl, c + r], [zl, yF2], [L - zl, yF2], [L - zl, c + r]] }] } }, 'FsI');
+        mkRep({ role: 'Filants semelle — nappe supérieure', d: dFsS, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+          segs: [{ l: r, a: -90 }, { l: lr, a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 },
+          longi: { items: [{ pts: [[zl, hc - c - r], [zl, yF4], [L - zl, yF4], [L - zl, hc - c - r]] }] } }, 'FsS');
+      }
       const em = (e0 + eb) / 2, rv = r3(em - c - ca);
       const yTopV = H - ca - Math.max(mAv, mAm) - mFv / 2;
       const lAv = offLine(avA, avB, -(ca + mAv + mFv / 2)), lAm = offLine(amA, amB, c + mAm + (dR ? mR : 0) + mFv / 2);
@@ -461,6 +571,8 @@
           segs: [{ l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
           place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } }, 'Es');
       }
+      const b9 = bars[bars.length - 1], Ls9 = Math.min(1.5, L / 2);
+      b9.longi = { items: [0.45, 1.05].filter((z) => z < Ls9 - 0.1).flatMap((z) => [z, L - z]).map((z) => ({ pts: [[z, c + mEs / 2], [z, hc - c - mEs / 2]] })), tag: { seg: 0, t: 0.5 } };
       // — voile
       const idEv = String(10 + bars.filter((b) => VOILE_KEYS.includes(b.key)).length), mEv = mm(dEv);
       const lav = offLine(avA, avB, -ca), lam = offLine(amA, amB, c);
@@ -482,12 +594,11 @@
           segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } }, 'Ev');
       }
 
-      // Numérotation KLE (piles, culées) : la semelle occupe les repères 1 à 9 — 1-2 nappe inférieure
-      // (U + filants), 3-4 nappe supérieure, 5-6 bêche, 9 maintien (épingles / étriers) ; l'élévation
-      // (voile) commence au repère 10. Les numéros libres restent libres.
+      // Numérotation KLE (piles, culées) : semelle 1 à 9 (voir SEMELLE_IDS), voile à partir de 10,
+      // bêche juste après le voile. Les numéros libres (5-8 en mode « retours ») restent libres.
       bars.forEach((b) => { if (SEMELLE_IDS[b.key]) b.id = String(SEMELLE_IDS[b.key]); });
       let nv = 10;
-      VOILE_KEYS.forEach((k) => bars.filter((b) => b.key === k).forEach((b) => { b.id = String(nv++); }));
+      VOILE_KEYS.concat(BECHE_KEYS).forEach((k) => bars.filter((b) => b.key === k).forEach((b) => { b.id = String(nv++); }));
       bars.sort((a, b) => Number(a.id) - Number(b.id));
       bars.meta = { hopt, big }; bars.same = same;
       return bars;
