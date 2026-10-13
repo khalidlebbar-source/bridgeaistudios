@@ -429,9 +429,10 @@
       // Barres de maintien des nappes (semelle, voile) : épingles ou étriers.
       //  - Épingle (code 3001) : barre droite, une crosse à chaque extrémité (135° par défaut),
       //    accrochée aux deux nappes.
-      //  - Étrier (code 2002) : U OUVERT (pas un cadre). L'âme s'appuie contre deux filants d'une
-      //    nappe, les deux branches traversent l'épaisseur et se terminent chacune par une crosse
-      //    135° rabattue vers l'intérieur, accrochée aux deux filants de l'autre nappe.
+      //  - Étrier : boucle FERMÉE étroite (deux branches parallèles écartées du seul mandrin) qui
+      //    ceinture UN filant de chaque nappe ; extrémités en demi-cercle au mandrin, fermeture à une
+      //    extrémité par deux crosses 135° parallèles (comme un cadre, mais d'une seule maille de large).
+      //    Le cadre, lui, ceinture plusieurs barres.
       const hsm = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
       const rs = r3(hsm - 2 * c);
       const fx = (t) => fI[0][0] + (fI[1][0] - fI[0][0]) * t;
@@ -441,15 +442,15 @@
       // — semelle
       const idEs = String(bars.length + 1), mEs = mm(dEs);
       if (maint(idEs) === 'etrier') {
+        const De = mandrin(dEs, p.norme), wE = r3(De + 2 * mEs), wa = wE - mEs;
         const nF = Math.floor((B - 2 * c) / 0.20 + 1e-9) + 1, pitch = (fI[1][0] - fI[0][0]) / Math.max(1, nF - 1);
-        const wC = r5(pitch + mFsI + 2 * mEs);
         const items = epX.map((x) => {
-          const k = Math.max(0, Math.min(nF - 2, Math.floor((x - fI[0][0]) / pitch))), cx = fI[0][0] + (k + 0.5) * pitch;
-          const xL = cx - wC / 2 + mEs / 2, xR = cx + wC / 2 - mEs / 2, yB = c + mEs / 2, yT = ytop(cx) - c - mEs / 2;
-          return { pts: [[xL, yT], [xL, yB], [xR, yB], [xR, yT]], hs: [-1, 1] };
+          const k = Math.max(0, Math.min(nF - 1, Math.round((x - fI[0][0]) / pitch))), cx = fI[0][0] + k * pitch;
+          const xL = cx - wa / 2, xR = cx + wa / 2, yB = c + mEs / 2, yT = ytop(cx) - c - mEs / 2;
+          return { pts: [[xL, yT], [xR, yT], [xR, yB], [xL, yB], [xL, yT]], hs: [1, -1] };
         });
-        mkRep({ role: 'Étriers semelle (U ouverts, crosses sur la nappe supérieure)', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'etrier', code: '2002',
-          segs: [{ l: rs, a: -90 }, { l: wC, a: 0 }, { l: rs, a: 90 }], hooks: [135, 135], sides: [-1, 1],
+        mkRep({ role: 'Étriers semelle (boucle fermée autour d\u2019un filant de chaque nappe)', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'etrier', code: '5201',
+          segs: [{ l: wE, a: 0 }, { l: rs, a: -90 }, { l: wE, a: 180 }, { l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
           place: { items, tag: { seg: 1, t: 0.5 } } }, 'Es');
       } else {
         mkRep({ role: 'Épingles semelle', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'epingle', code: '3001',
@@ -461,14 +462,15 @@
       const lav = offLine(avA, avB, -ca), lam = offLine(amA, amB, c);
       const xAv = (y) => xAt(lav[0], lav[1], y), xAm = (y) => xAt(lam[0], lam[1], y);
       if (maint(idEv) === 'etrier') {
-        const wv = r5(0.20 + mFv + 2 * mEv);
+        const De = mandrin(dEv, p.norme), wE = r3(De + 2 * mEv), wa = wE - mEv;
         const items = [0.25, 0.6].map((f) => {
-          const i = Math.max(0, Math.round((yTopV - (H - ca - f * Hv)) / 0.20 - 0.5)), yc = yTopV - (i + 0.5) * 0.20;
-          const yT = yc + wv / 2 - mEv / 2, yB = yc - wv / 2 + mEv / 2;
-          return { pts: [[xAm(yT) - mEv / 2, yT], [xAv(yT) + mEv / 2, yT], [xAv(yB) + mEv / 2, yB], [xAm(yB) - mEv / 2, yB]], hs: [-1, 1] };
+          const i = Math.max(0, Math.round((yTopV - (H - ca - f * Hv)) / 0.20)), yc = yTopV - i * 0.20;
+          const yT = yc + wa / 2, yB = yc - wa / 2;
+          const xLT = xAv(yT) + mEv / 2, xRT = xAm(yT) - mEv / 2, xLB = xAv(yB) + mEv / 2, xRB = xAm(yB) - mEv / 2;
+          return { pts: [[xLT, yT], [xRT, yT], [xRB, yB], [xLB, yB], [xLT, yT]], hs: [1, -1] };
         });
-        mkRep({ role: 'Étriers voile (U ouverts, crosses sur la nappe côté terres)', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'etrier', code: '2002',
-          segs: [{ l: rv, a: 180 }, { l: wv, a: -90 }, { l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1],
+        mkRep({ role: 'Étriers voile (boucle fermée autour d\u2019un filant de chaque face)', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'etrier', code: '5201',
+          segs: [{ l: rv, a: 0 }, { l: wE, a: -90 }, { l: rv, a: 180 }, { l: wE, a: 90 }], hooks: [135, 135], sides: [1, -1],
           place: { items, tag: { seg: 0, t: 0.5 } } }, 'Ev');
       } else {
         const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => ({ pts: [[xAv(y), y], [xAm(y), y]], hs: [-1, 1] }));

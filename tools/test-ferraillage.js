@@ -87,21 +87,21 @@ ok(Math.abs(shift.bars[0].place.items[0].pts[1][1] - (0.05 + 0.0125)) < 1e-9 && 
 for (const [nm, g0] of [['M5', M5g], ['M4', M4g]]) {
   const re = F.compute('murT', g0, { maintien: 'etrier' }, {});
   const et = re.bars.filter((b) => b.maintien === 'etrier');
-  ok(et.length === 2 && et.every((b) => b.code === '2002' && b.segs.length === 3 && b.hooks.join() === '135,135' && Math.abs(b.segs[0].a - b.segs[2].a) === 180), `${nm} étriers (global) : 2 repères code 2002, U ouvert 3 côtés + 2 crosses 135° (pas de cadre fermé)`);
+  ok(et.length === 2 && et.every((b) => b.code === '5201' && b.segs.length === 4 && b.hooks.join() === '135,135' && Math.min(b.segs[0].l, b.segs[1].l) < 0.08), `${nm} étriers (global) : 2 repères, boucle fermée étroite (largeur ${et.map((b) => Math.min(b.segs[0].l, b.segs[1].l)).join(' / ')} m) + 2 crosses 135°`);
   et.forEach((b) => {
     const bp = F.barPath(b, b.place.items[0], re.params), row = re.rows.find((r) => r.id === b.id);
     const ld = F.pathLength(bp.path), dv = F.devLength({ segs: b.segs, hooks: b.hooks }, b.d, re.params).L;
     // voile à fruit : la cote utilise l'épaisseur moyenne, le dessin l'épaisseur à la hauteur dessinée
     const tol = b.key === 'Ev' && g0.fa + g0.fv > 0 ? 0.15 : 0.03;
-    ok(Math.abs(ld - row.L) <= tol && Math.abs(dv - row.L) < 1e-9 && bp.path.filter((v) => Math.abs(v.b) > 1e-9).length === 4,
-      `${nm} repère ${b.id} étrier : L développée ${row.L.toFixed(3)} m (dessin ${ld.toFixed(3)} m), 2 angles + 2 crosses cintrés`);
+    ok(Math.abs(ld - row.L) <= tol && Math.abs(dv - row.L) < 1e-9 && bp.path.filter((v) => Math.abs(v.b) > 1e-9).length === 5,
+      `${nm} repère ${b.id} étrier : L développée ${row.L.toFixed(3)} m (dessin ${ld.toFixed(3)} m), 2 demi-cercles + 2 crosses cintrés`);
   });
   const svg = F.toSVG(F.ferraillageScene('murT', re.geom, re.bars, re.params, 1 / 300), 300) + re.rows.map((r) => F.croquisSVG(r.shape)).join('');
   ok(!bad(svg), `${nm} étriers : dessins sans NaN`);
 }
 const idEs = m4.bars.find((b) => b.key === 'Es').id, idEv = m4.bars.find((b) => b.key === 'Ev').id;
 const mix = F.compute('murT', M4g, { maintien: 'etrier' }, { [idEs]: { maint: 'epingle' } });
-ok(mix.bars.find((b) => b.id === idEs).code === '3001' && mix.bars.find((b) => b.id === idEv).code === '2002', 'Choix par barre prioritaire : semelle en épingles malgré le réglage global « étriers »');
+ok(mix.bars.find((b) => b.id === idEs).code === '3001' && mix.bars.find((b) => b.id === idEv).code === '5201', 'Choix par barre prioritaire : semelle en épingles malgré le réglage global « étriers »');
 const h180 = F.compute('murT', M4g, {}, { [idEs]: { hooks: [180, 180] } }).rows.find((r) => r.id === idEs);
 ok(h180.L > m4.rows.find((r) => r.id === idEs).L - 0.1 && h180.shape.hooks.join() === '180,180', `Épingle à crosses 180° : L = ${h180.L.toFixed(3)} m`);
 

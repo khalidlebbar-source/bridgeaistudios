@@ -169,7 +169,7 @@
     { k: 'designation', label: 'Désignation de l’ouvrage', type: 'text' },
     { k: 'norme', label: 'Règlement', type: 'select', opts: [['EC2', 'Eurocode 2'], ['BAEL', 'BAEL 91']] },
     { k: 'blocs', label: 'Éléments identiques', unit: 'u', step: 1, min: 1 },
-    { k: 'maintien', label: 'Maintien des nappes', type: 'select', opts: [['epingle', 'Épingles (3001)'], ['etrier', 'Étriers en U (2002)']] },
+    { k: 'maintien', label: 'Maintien des nappes', type: 'select', opts: [['epingle', 'Épingles (3001)'], ['etrier', 'Étriers (boucle fermée)']] },
     { k: 'cTerre', label: 'Enrobage terre / fond.', unit: 'cm', scale: 100, step: 0.5, min: 1 },
     { k: 'cAutre', label: 'Enrobage autres', unit: 'cm', scale: 100, step: 0.5, min: 1 },
     { k: 'lmax', label: 'Longueur maxi barres', unit: 'm', step: 0.5, min: 3 },
@@ -196,7 +196,7 @@
         <li>Nombre = ⌊longueur de répartition / espacement⌋ + 1 ; épingles et écarteurs : surface × densité.</li>
         <li>Au-delà de ${p.lmax} m : découpe en barres indicées avec recouvrement ${p.recouv}Ø.</li>
         <li>Mur : H &lt; 3 m → HA12 (type M5) ; H ≥ 3 m → voile terres HA14 e15 + renfort de pied HA20 e15 sur ≈ 0,42·Hv, face avant HA12 e15, semelle sup. HA20 e15, inf. HA14 e15, maintien HA10 4/m² (principe M4).</li>
-        <li>Maintien des nappes : ${p.maintien === 'etrier' ? 'étriers' : 'épingles'} par défaut (réglable barre par barre dans « Ajuster la barre », ce choix l’emporte). Épingle 3001 = barre droite à deux crosses (135° par défaut) ; étrier 2002 = U ouvert : l’âme contre deux filants d’une nappe, une crosse 135° rabattue vers l’intérieur à chaque branche, accrochée à l’autre nappe (ce n’est pas un cadre fermé). Pas de chaises d’écartement dans la proposition.</li>
+        <li>Maintien des nappes : ${p.maintien === 'etrier' ? 'étriers' : 'épingles'} par défaut (réglable barre par barre dans « Ajuster la barre », ce choix l’emporte). Épingle 3001 = barre droite à deux crosses (135° par défaut) ; étrier = boucle fermée étroite qui ceinture un filant de chaque nappe, extrémités en demi-cercle au mandrin, fermée par deux crosses 135°. Pas de chaises d’écartement dans la proposition.</li>
         <li>Diamètres proposés par règles forfaitaires : le ferraillage doit être justifié par une note de calcul.</li>
       </ul>`;
   }
@@ -360,7 +360,7 @@
     const n = bar.segs.length;
     const segF = bar.segs.map((s, i) => `<div class="f"><label for="dg-s${i}">${n > 1 ? 'Segment ' + (i + 1) : 'Longueur droite'}</label><div class="num"><input id="dg-s${i}" type="number" step="0.005" min="0.02" value="${s.l}" data-seg="${i}"><span>m</span></div></div>`).join('');
     const hk = (k, lbl) => `<div class="f"><label for="dg-h${k}">${lbl}</label><div class="num"><select id="dg-h${k}" data-hook="${k}">${F.HOOKS.map((h) => `<option value="${h}"${h === dlgDraft.hooks[k] ? ' selected' : ''}>${h ? h + '°' : 'aucune'}</option>`).join('')}</select></div></div>`;
-    const typ = bar.maintien ? `<div class="f wide"><label for="dg-type">Type de maintien</label><div class="num"><select id="dg-type" data-type="1"><option value="epingle"${bar.maintien === 'epingle' ? ' selected' : ''}>Épingle — barre droite à deux crosses (code 3001)</option><option value="etrier"${bar.maintien === 'etrier' ? ' selected' : ''}>Étrier — U ouvert, crosses 135° (code 2002)</option></select></div></div>` : '';
+    const typ = bar.maintien ? `<div class="f wide"><label for="dg-type">Type de maintien</label><div class="num"><select id="dg-type" data-type="1"><option value="epingle"${bar.maintien === 'epingle' ? ' selected' : ''}>Épingle — barre droite à deux crosses (code 3001)</option><option value="etrier"${bar.maintien === 'etrier' ? ' selected' : ''}>Étrier — boucle fermée étroite, 2 crosses 135°</option></select></div></div>` : '';
     $('#dlgFields').innerHTML = typ + segF + hk(0, 'Crosse départ') + hk(1, 'Crosse fin');
     updateDlg();
     const d = $('#barDlg');
