@@ -169,6 +169,7 @@
     { k: 'designation', label: 'Désignation de l’ouvrage', type: 'text' },
     { k: 'norme', label: 'Règlement', type: 'select', opts: [['EC2', 'Eurocode 2'], ['BAEL', 'BAEL 91']] },
     { k: 'blocs', label: 'Éléments identiques', unit: 'u', step: 1, min: 1 },
+    { k: 'maintien', label: 'Maintien des nappes', type: 'select', opts: [['epingle', 'Épingles (3001)'], ['etrier', 'Étriers (5201)']] },
     { k: 'cTerre', label: 'Enrobage terre / fond.', unit: 'cm', scale: 100, step: 0.5, min: 1 },
     { k: 'cAutre', label: 'Enrobage autres', unit: 'cm', scale: 100, step: 0.5, min: 1 },
     { k: 'lmax', label: 'Longueur maxi barres', unit: 'm', step: 0.5, min: 3 },
@@ -194,7 +195,8 @@
         <li>Longueur développée = Σ cotes hors-tout − déductions de pliage 2(r+Ø)tan(θ/2) − θ(r+Ø/2) + crosses, arrondie à 5 mm.</li>
         <li>Nombre = ⌊longueur de répartition / espacement⌋ + 1 ; épingles et écarteurs : surface × densité.</li>
         <li>Au-delà de ${p.lmax} m : découpe en barres indicées avec recouvrement ${p.recouv}Ø.</li>
-        <li>Mur : H &lt; 3 m → HA12 (type M5) ; H ≥ 3 m → voile terres HA14 e15 + renfort de pied HA20 e15 sur ≈ 0,42·Hv, face avant HA12 e15, semelle sup. HA20 e15, inf. HA14 e15, épingles HA10 4/m² (principe M4).</li>
+        <li>Mur : H &lt; 3 m → HA12 (type M5) ; H ≥ 3 m → voile terres HA14 e15 + renfort de pied HA20 e15 sur ≈ 0,42·Hv, face avant HA12 e15, semelle sup. HA20 e15, inf. HA14 e15, maintien HA10 4/m² (principe M4).</li>
+        <li>Maintien des nappes : ${p.maintien === 'etrier' ? 'étriers' : 'épingles'} par défaut (réglable barre par barre dans « Ajuster la barre », ce choix l’emporte). Épingle 3001 = barre droite à deux crosses (135° par défaut) ; étrier 5201 = cadre fermé autour de deux filants de chaque nappe, crosses 135° au même angle. Pas de chaises d’écartement dans la proposition.</li>
         <li>Diamètres proposés par règles forfaitaires : le ferraillage doit être justifié par une note de calcul.</li>
       </ul>`;
   }
@@ -263,7 +265,7 @@
         <td class="rep">${row.id}<i style="background:${colorOf(row.barId)}"></i></td><td>${row.type}</td><td>${dSel}</td>
         <td>${row.parElem}${row.mult > 1 ? `<span class="sub">${row.n}×${row.mult}</span>` : ''}</td><td>${row.nbElem}</td><td><b style="font-weight:500">${row.total}</b></td>
         <td>${esp}</td><td>${row.L.toFixed(3)}${row.tooLong ? '<span class="sub" style="color:var(--danger)">&gt; Lmax</span>' : ''}</td>
-        <td class="fac"><div class="fac-in">${croquisFor(row, 124, 40)}${first ? `<button type="button" class="ico" data-adj="${row.barId}" title="Ajuster la barre ${row.barId}" aria-label="Ajuster la barre ${row.barId}">✎</button>` : '<span style="width:28px"></span>'}</div></td>
+        <td class="fac"><div class="fac-in">${row.code ? `<span class="code" title="Code de façonnage">${row.code}</span>` : ''}${croquisFor(row, 124, 40)}${first ? `<button type="button" class="ico" data-adj="${row.barId}" title="Ajuster la barre ${row.barId}" aria-label="Ajuster la barre ${row.barId}">✎</button>` : '<span style="width:28px"></span>'}</div></td>
         <td>${(row.D * 100).toFixed(1)}</td><td>${row.Ltot.toFixed(2)}</td><td>${row.masse.toFixed(1)}</td></tr>`;
     }).join('');
     const foot = `<tfoot><tr><td colspan="10" style="text-align:right">Total</td><td>${r.recap.longueur.toFixed(2)}</td><td>${r.recap.total.toFixed(1)}</td></tr></tfoot>`;
@@ -349,16 +351,17 @@
 
   /* ───── Panneau latéral « Ajuster la barre » ───── */
   let dlgBar = null, dlgDraft = null;
-  function openBar(id) {
-    const bar = S.res.bars.find((b) => b.id === id);
+  function openBar(id, alt) {
+    const bar = alt || S.res.bars.find((b) => b.id === id);
     dlgBar = bar;
-    dlgDraft = { segs: bar.segs.map((s) => s.l), hooks: (bar.hooks || [0, 0]).slice() };
+    dlgDraft = { segs: bar.segs.map((s) => s.l), hooks: (bar.hooks || [0, 0]).slice(), maint: alt ? bar.maintien : null }; // type mémorisé seulement s'il a été changé ici
     $('#dlgTitle').textContent = `Barre n° ${id} — HA${bar.d}`;
-    $('#dlgRole').textContent = bar.role;
+    $('#dlgRole').textContent = bar.role + (bar.code ? ' — code de façonnage ' + bar.code : '');
     const n = bar.segs.length;
     const segF = bar.segs.map((s, i) => `<div class="f"><label for="dg-s${i}">${n > 1 ? 'Segment ' + (i + 1) : 'Longueur droite'}</label><div class="num"><input id="dg-s${i}" type="number" step="0.005" min="0.02" value="${s.l}" data-seg="${i}"><span>m</span></div></div>`).join('');
     const hk = (k, lbl) => `<div class="f"><label for="dg-h${k}">${lbl}</label><div class="num"><select id="dg-h${k}" data-hook="${k}">${F.HOOKS.map((h) => `<option value="${h}"${h === dlgDraft.hooks[k] ? ' selected' : ''}>${h ? h + '°' : 'aucune'}</option>`).join('')}</select></div></div>`;
-    $('#dlgFields').innerHTML = segF + hk(0, 'Crosse départ') + hk(1, 'Crosse fin');
+    const typ = bar.maintien ? `<div class="f wide"><label for="dg-type">Type de maintien</label><div class="num"><select id="dg-type" data-type="1"><option value="epingle"${bar.maintien === 'epingle' ? ' selected' : ''}>Épingle — barre droite à deux crosses (code 3001)</option><option value="etrier"${bar.maintien === 'etrier' ? ' selected' : ''}>Étrier — cadre fermé, crosses 135° (code 5201)</option></select></div></div>` : '';
+    $('#dlgFields').innerHTML = typ + segF + hk(0, 'Crosse départ') + hk(1, 'Crosse fin');
     updateDlg();
     const d = $('#barDlg');
     if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
@@ -367,10 +370,17 @@
     const b = dlgBar, shape = { segs: b.segs.map((s, i) => ({ l: dlgDraft.segs[i], a: s.a })), hooks: dlgDraft.hooks, sides: b.sides };
     $('#dlgPrev').innerHTML = F.croquisSVG(shape, colorOf(b.id), 320, 120);
     const dev = F.devLength(shape, b.d, S.params);
-    $('#dlgInfo').innerHTML = `Longueur développée : <b>${dev.L.toFixed(3)} m</b><br>Σ cotes ${dev.sumSegs.toFixed(3)} − pliages ${dev.deductions.toFixed(3)} + crosses ${dev.hooks.toFixed(3)} · mandrin ${(dev.D * 100).toFixed(1)} cm`;
+    $('#dlgInfo').innerHTML = `${b.code ? `Code de façonnage <b>${b.code}</b> · ` : ''}Longueur développée : <b>${dev.L.toFixed(3)} m</b><br>Σ cotes ${dev.sumSegs.toFixed(3)} − pliages ${dev.deductions.toFixed(3)} + crosses ${dev.hooks.toFixed(3)} · mandrin ${(dev.D * 100).toFixed(1)} cm`;
   }
+  $('#dlgFields').addEventListener('change', (e) => {
+    if (!e.target.dataset.type) return;
+    const id = dlgBar.id, tmp = Object.assign({}, S.overrides, { [id]: { d: (S.overrides[id] || {}).d, esp: (S.overrides[id] || {}).esp, maint: e.target.value } });
+    const alt = F.compute(S.struct, S.valid, S.params, tmp).bars.find((b) => b.id === id);
+    openBar(id, alt);
+  });
   $('#dlgFields').addEventListener('input', (e) => {
     const t = e.target;
+    if (t.dataset.type) return;
     if (t.dataset.seg != null) { const v = parseFloat(t.value); if (v > 0) dlgDraft.segs[+t.dataset.seg] = v; }
     if (t.dataset.hook != null) dlgDraft.hooks[+t.dataset.hook] = +t.value;
     updateDlg();
@@ -378,8 +388,13 @@
   const closeDlg = () => { const d = $('#barDlg'); if (d.close) d.close(); else d.removeAttribute('open'); };
   $('#dlgClose').addEventListener('click', closeDlg);
   $('#barDlg').addEventListener('click', (e) => { if (e.target.id === 'barDlg') closeDlg(); });
-  $('#dlgOk').addEventListener('click', () => { const o = ov(dlgBar.id); o.segs = dlgDraft.segs.slice(); o.hooks = dlgDraft.hooks.slice(); closeDlg(); renderFerraillage(true); });
-  $('#dlgReset').addEventListener('click', () => { const o = ov(dlgBar.id); delete o.segs; delete o.hooks; closeDlg(); renderFerraillage(true); });
+  $('#dlgOk').addEventListener('click', () => {
+    const o = ov(dlgBar.id);
+    if (dlgDraft.maint) o.maint = dlgDraft.maint; // choix par barre : prioritaire sur le réglage global
+    o.segs = dlgDraft.segs.slice(); o.hooks = dlgDraft.hooks.slice();
+    closeDlg(); renderFerraillage(true);
+  });
+  $('#dlgReset').addEventListener('click', () => { const o = ov(dlgBar.id); delete o.segs; delete o.hooks; delete o.maint; closeDlg(); renderFerraillage(true); });
 
   /* ───── Étape 4 ───── */
   function renderExport() {
@@ -410,7 +425,7 @@
     if (!S.res) return;
     const r = S.res, g = r.geom, p = r.params;
     const date = new Date().toLocaleDateString('fr-FR');
-    const rows = r.rows.map((row) => `<tr><td><b>${row.id}</b></td><td>${row.type}</td><td>${row.d}</td><td>${row.parElem}${row.mult > 1 ? ` (${row.n}×${row.mult})` : ''}</td><td>${row.nbElem}</td><td>${row.total}</td><td>${row.kind === 'densite' ? row.esp + '/m²' : row.esp.toFixed(2)}</td><td>${row.L.toFixed(3)}</td><td>${croquisFor(row, 150, 40)}</td><td>${(row.D * 100).toFixed(1)}</td><td>${row.Ltot.toFixed(2)}</td><td>${row.masse.toFixed(1)}</td></tr>`).join('');
+    const rows = r.rows.map((row) => `<tr><td><b>${row.id}</b></td><td>${row.type}</td><td>${row.d}</td><td>${row.parElem}${row.mult > 1 ? ` (${row.n}×${row.mult})` : ''}</td><td>${row.nbElem}</td><td>${row.total}</td><td>${row.kind === 'densite' ? row.esp + '/m²' : row.esp.toFixed(2)}</td><td>${row.L.toFixed(3)}</td><td>${croquisFor(row, 150, 40)}${row.code ? `<div style="font-size:6.5pt;color:#555">code ${row.code}</div>` : ''}</td><td>${(row.D * 100).toFixed(1)}</td><td>${row.Ltot.toFixed(2)}</td><td>${row.masse.toFixed(1)}</td></tr>`).join('');
     $('#print').innerHTML = `
       <div class="p-cart">
         <div class="p-bet">BridgeAI Studios<small>Plans coffrage &amp; ferraillage · généré le ${date}</small></div>

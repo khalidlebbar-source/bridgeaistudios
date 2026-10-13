@@ -42,6 +42,7 @@
     cTerre: 0.05,     // enrobage fondation / contact terre (m)
     cAutre: 0.03,     // enrobage autres parements (m)
     blocs: 1,         // nombre d'éléments identiques
+    maintien: 'epingle', // barres de maintien des nappes : 'epingle' | 'etrier' (réglage global)
   };
 
   const rad = (deg) => deg * Math.PI / 180;
@@ -165,7 +166,7 @@
           type: bar.type || 'HA', d: bar.d, kind: bar.kind, esp: bar.esp,
           n, mult: bar.mult || 1, parElem, nbElem: Math.max(1, Math.round(p.blocs || 1)), total,
           shape: pc.shape, L, D: pc.dev.D, Ltot, masse: Ltot * MASSE_LIN[bar.d],
-          split: pieces.length > 1, tooLong: !!pc.tooLong,
+          split: pieces.length > 1, tooLong: !!pc.tooLong, code: bar.code || '', maintien: bar.maintien || '',
         });
       });
     });
@@ -322,7 +323,7 @@
       return { outer, sole: [[0, 0], [B, 0], [B, hbt], [g.p + eb, hs], [g.p, hs], [0, hbp]] };
     },
     /* dMap : {repère: Ø} imposés par l'utilisateur — les barres sont replacées à l'axe en conséquence. */
-    propose(g0, params, dMap) {
+    propose(g0, params, dMap, mMap) {
       const p = Object.assign({}, DEFAULT_PARAMS, params);
       const g = this.derive(g0), c = p.cTerre, ca = p.cAutre;
       const { H, hs, B, L, e0 } = g, { Hv, eb, hbp, hbt, xAvT, xAmT } = g;
@@ -332,11 +333,11 @@
       if (!big) { dI = dS = dAv = dAm = mainDiam(Hv, [[1.5, 12], [2.5, 14], [99, 16]]); dFs = dFv = 12; dens = 6; }
       else if (H < 5.5) { dI = 14; dS = 20; dAm = 14; dR = 20; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
       else { dI = 16; dS = 25; dAm = 16; dR = 25; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
-      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10, C: 10 };
+      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10 };
       const build = (D, forceSame) => {
       ({ I: dI, S: dS, Av: dAv, Am: dAm, R: dR, Fv: dFv } = D);
-      const dFsI = D.FsI, dFsS = D.FsS, dB = D.Bc, dBf = D.Bf, dEs = D.Es, dEv = D.Ev, dC = D.C;
-      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf), mC = mm(dC);
+      const dFsI = D.FsI, dFsS = D.FsS, dB = D.Bc, dBf = D.Bf, dEs = D.Es, dEv = D.Ev;
+      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf);
       const lr = r3(L - 2 * c), yL = c + mI / 2;
       const sole = this.outline(g0).sole; // 0:(0,0) 1:(B,0) 2:(B,hbt) 3:(p+eb,hs) 4:(p,hs) 5:(0,hbp)
       const env = offsetPoly(sole, c);
@@ -425,25 +426,55 @@
           place: { dots: [{ mode: 'poly', pts: [[x0 + c + mB + mBf / 2, yF], [x1 - c - mB - mBf / 2, yF]] }], tag: 0 } }, 'Bf');
       }
 
-      // Épingles (semelle, voile) et écarteurs
+      // Barres de maintien des nappes (semelle, voile) : épingles ou étriers.
+      //  - Épingle (code 3001) : barre droite, une crosse à chaque extrémité (135° par défaut),
+      //    accrochée aux deux nappes.
+      //  - Étrier (code 5201) : cadre FERMÉ entourant deux filants de chaque nappe, crosses 135°
+      //    au même angle. Fermé plutôt qu'en U : il ceinture les deux nappes sur tout le pourtour,
+      //    ce qui tient l'écartement des nappes dans les deux sens (un U ouvert ne retient qu'une nappe).
       const hsm = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
       const rs = r3(hsm - 2 * c);
       const fx = (t) => fI[0][0] + (fI[1][0] - fI[0][0]) * t;
       const epX = [g.p + eb + Math.max(0.05, (B - g.p - eb) * 0.5), Math.max(c + 0.05, g.p * 0.5)].filter((x, i) => i === 0 || g.p > 0.25).map((x) => Math.min(Math.max(x, fx(0.08)), fx(0.92)));
-      mkRep({ role: 'Épingles semelle', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1,
-        segs: [{ l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
-        place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } }, 'Es');
-      const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => {
-        const a = offLine(avA, avB, -ca), b = offLine(amA, amB, c);
-        return { pts: [[xAt(a[0], a[1], y), y], [xAt(b[0], b[1], y), y]], hs: [-1, 1] };
-      });
-      mkRep({ role: 'Épingles voile', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1,
-        segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } }, 'Ev');
-      const legChair = Math.max(0.05, Math.round((hs - 2 * c - mI - mS - mFsI) * 100) / 100);
-      const xc = Math.min(Math.max(c + 0.02, g.p + eb / 2 - 0.35), B - c - 0.92);
-      mkRep({ role: 'Écarteurs (chaises) semelle', d: dC, kind: 'densite', esp: 1, area: r3(B * L), mult: 1,
-        segs: [{ l: 0.20, a: 0 }, { l: legChair, a: 90 }, { l: 0.30, a: 0 }, { l: legChair, a: -90 }, { l: 0.20, a: 0 }], hooks: [0, 0], sides: [1, -1],
-        place: { items: [{ x0: xc, y0: c + mI + mFsI + mC / 2 }], tag: { seg: 4, t: 0.7 } } }, 'C');
+      const maint = (id) => ((mMap && mMap[id]) || p.maintien || 'epingle');
+      const r5 = (x) => Math.round(x * 200) / 200;
+      // — semelle
+      const idEs = String(bars.length + 1), mEs = mm(dEs);
+      if (maint(idEs) === 'etrier') {
+        const nF = Math.floor((B - 2 * c) / 0.20 + 1e-9) + 1, pitch = (fI[1][0] - fI[0][0]) / Math.max(1, nF - 1);
+        const wC = r5(pitch + mFsI + 2 * mEs);
+        const items = epX.map((x) => {
+          const k = Math.max(0, Math.min(nF - 2, Math.floor((x - fI[0][0]) / pitch))), cx = fI[0][0] + (k + 0.5) * pitch;
+          const xL = cx - wC / 2 + mEs / 2, xR = cx + wC / 2 - mEs / 2, yB = c + mEs / 2, yT = ytop(cx) - c - mEs / 2;
+          return { pts: [[xL, yT], [xR, yT], [xR, yB], [xL, yB], [xL, yT]], hs: [1, -1] };
+        });
+        mkRep({ role: 'Étriers semelle (cadres fermés autour des deux nappes)', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'etrier', code: '5201',
+          segs: [{ l: wC, a: 0 }, { l: rs, a: -90 }, { l: wC, a: 180 }, { l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
+          place: { items, tag: { seg: 1, t: 0.5 } } }, 'Es');
+      } else {
+        mkRep({ role: 'Épingles semelle', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'epingle', code: '3001',
+          segs: [{ l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
+          place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } }, 'Es');
+      }
+      // — voile
+      const idEv = String(bars.length + 1), mEv = mm(dEv);
+      const lav = offLine(avA, avB, -ca), lam = offLine(amA, amB, c);
+      const xAv = (y) => xAt(lav[0], lav[1], y), xAm = (y) => xAt(lam[0], lam[1], y);
+      if (maint(idEv) === 'etrier') {
+        const wv = r5(0.20 + mFv + 2 * mEv);
+        const items = [0.25, 0.6].map((f) => {
+          const i = Math.max(0, Math.round((yTopV - (H - ca - f * Hv)) / 0.20 - 0.5)), yc = yTopV - (i + 0.5) * 0.20;
+          const yT = yc + wv / 2 - mEv / 2, yB = yc - wv / 2 + mEv / 2;
+          return { pts: [[xAv(yT) + mEv / 2, yT], [xAm(yT) - mEv / 2, yT], [xAm(yB) - mEv / 2, yB], [xAv(yB) + mEv / 2, yB], [xAv(yT) + mEv / 2, yT]], hs: [1, -1] };
+        });
+        mkRep({ role: 'Étriers voile (cadres fermés autour des deux nappes)', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'etrier', code: '5201',
+          segs: [{ l: rv, a: 0 }, { l: wv, a: -90 }, { l: rv, a: 180 }, { l: wv, a: 90 }], hooks: [135, 135], sides: [1, -1],
+          place: { items, tag: { seg: 0, t: 0.5 } } }, 'Ev');
+      } else {
+        const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => ({ pts: [[xAv(y), y], [xAm(y), y]], hs: [-1, 1] }));
+        mkRep({ role: 'Épingles voile', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'epingle', code: '3001',
+          segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } }, 'Ev');
+      }
 
       bars.forEach((b, i) => { b.id = String(i + 1); });
       bars.meta = { hopt, big }; bars.same = same;
@@ -569,7 +600,9 @@
     const p = Object.assign({}, DEFAULT_PARAMS, params);
     const dMap = {};
     Object.entries(overrides || {}).forEach(([id, o]) => { if (o && o.d) dMap[id] = o.d; });
-    const proposed = S.propose(g, p, dMap);
+    const mMap = {};
+    Object.entries(overrides || {}).forEach(([id, o]) => { if (o && o.maint) mMap[id] = o.maint; });
+    const proposed = S.propose(g, p, dMap, mMap);
     const bars = proposed.map((b) => applyOverride(b, overrides && overrides[b.id]));
     const rows = computeRows(bars, p);
     return { bars, rows, recap: recap(rows), params: p, geom: S.derive(g) };

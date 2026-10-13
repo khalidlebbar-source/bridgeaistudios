@@ -123,6 +123,7 @@
           const P = (q) => [cx + q[0] * uc, yt - 0.01 - q[1] * uc];
           w.bar(gm.path.map((v) => ({ p: P(v.p), b: -v.b })), 0, 'ACIERS');
           gm.texts.forEach((t) => w.text(P([t.x, t.y]), 9.5 * uc, t.s, L, t.anchor));
+          if (r.code) w.text([cx + 0.02, yc - 0.1], th * 0.75, 'code ' + r.code, L, 'start');
         } else {
           w.text([cx + c[1] / 2, yc], th, String(vals[i]), L, 'middle');
         }
