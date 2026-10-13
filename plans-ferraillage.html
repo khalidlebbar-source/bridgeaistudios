@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plans coffrage & ferraillage — BridgeAI Studios</title>
-<meta name="description" content="Plans de coffrage et de ferraillage automatiques : mur de soutènement en T, dalot cadre fermé. Ferraillage proposé, nomenclature des aciers avec façonnage, récapitulatif par diamètre, export DXF AutoCAD.">
+<meta name="description" content="Plans de coffrage et de ferraillage automatiques : mur de soutènement cantilever (fruits, talus, bêche, biseau), dalot cadre fermé. Ferraillage proposé, nomenclature des aciers avec façonnage, récapitulatif par diamètre, export DXF AutoCAD.">
 <meta name="keywords" content="plan de ferraillage, plan de coffrage, nomenclature aciers, façonnage, mur de soutènement, dalot, DXF AutoCAD, EC2, BAEL, BET">
 <meta property="og:title" content="Plans coffrage & ferraillage — BridgeAI Studios">
-<meta property="og:description" content="Coffrage coté, ferraillage proposé, nomenclature et export DXF pour murs en T et dalots.">
+<meta property="og:description" content="Coffrage coté, ferraillage proposé, nomenclature et export DXF pour murs de soutènement et dalots.">
 <meta property="og:url" content="https://www.bridgeaistudios.com/plans-ferraillage.html">
 <meta property="og:type" content="website">
 <meta name="robots" content="index, follow">
@@ -21,20 +21,20 @@
   --gold:#a8842a;--gold2:#8a6b1f;
   --teal:#0f8f7b;--blue:#2d6be4;--silver:#5f6778;--white:#14171f;
   --border:rgba(20,23,31,.09);--border2:rgba(168,132,42,.4);
-  --danger:#b3261e;
+  --danger:#b3261e;--paper:#f8f6f0;
 }
 /* menu et pied de page : sombres, comme sur le reste du site */
 nav,footer{--teal:#1ab8a0;--ink:#0c0e14;--ink2:#1a1e2e;--white:#ffffff;--silver:#8892a4;--gold:#c9a84c;--gold2:#e8c97a;--border:rgba(255,255,255,.07)}
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.5;font-weight:300;min-height:100vh;display:flex;flex-direction:column}
-::-webkit-scrollbar{width:4px;height:6px}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:2px}
+body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.45;font-weight:300;min-height:100vh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:3px}
 a{color:inherit;text-decoration:none}
 :focus-visible{outline:1px solid var(--gold);outline-offset:2px}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ─── NAV ─── */
-nav{position:sticky;top:0;z-index:100;padding:0 3vw;border-bottom:1px solid var(--border);background:rgba(12,14,20,.96);backdrop-filter:blur(16px);flex:none}
-.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1360px;margin:0 auto;gap:16px}
+nav{position:sticky;top:0;z-index:100;padding:0 24px;border-bottom:1px solid var(--border);background:rgba(12,14,20,.96);backdrop-filter:blur(16px);flex:none}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px;max-width:1880px;margin:0 auto;gap:16px}
 .nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);letter-spacing:.02em;white-space:nowrap}
 .nav-logo span{color:var(--gold)}
 .nav-links{display:flex;gap:28px;list-style:none}
@@ -44,157 +44,168 @@ nav{position:sticky;top:0;z-index:100;padding:0 3vw;border-bottom:1px solid var(
 .nav-back{font-size:13px;color:var(--silver);letter-spacing:.04em;transition:color .2s;white-space:nowrap}
 .nav-back:hover{color:var(--gold)}
 
-/* ─── EN-TÊTE ─── */
-.head{position:relative;flex:none;padding:28px 3vw 22px;border-bottom:1px solid var(--border);overflow:hidden;background:linear-gradient(180deg,#fbfaf6,#f3f0e7)}
-.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 55% 140% at 15% 0%,rgba(168,132,42,.10),transparent 70%);pointer-events:none}
-.head-inner{position:relative;max-width:1360px;margin:0 auto}
-.head-top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
-.eyebrow{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
-.eyebrow::before{content:"";width:24px;height:1px;background:var(--gold)}
-h1{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,4.4vw,52px);font-weight:300;line-height:1.05;letter-spacing:-.01em}
+/* ─── EN-TÊTE COMPACT + ONGLETS ─── */
+.head{position:relative;flex:none;padding:10px 24px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fbfaf6,#f3f0e7)}
+.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 40% 160% at 10% 0%,rgba(168,132,42,.10),transparent 70%);pointer-events:none}
+.head-inner{position:relative;max-width:1880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+h1{font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:300;line-height:1.1;white-space:nowrap}
 h1 em{font-style:italic;color:var(--gold)}
-.lead{font-size:14px;color:var(--silver);max-width:540px;line-height:1.65}
-
-/* étapes */
-.steps{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px}
-.step-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.7);cursor:pointer;text-align:left;transition:border-color .2s,background .2s}
-.step-btn:disabled{cursor:default;opacity:.55}
+h1 small{font-family:'Outfit',sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-right:12px;vertical-align:middle}
+.steps{list-style:none;display:flex;gap:6px}
+.step-btn{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px 0 6px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.75);cursor:pointer;text-align:left;transition:border-color .2s,background .2s}
+.step-btn:disabled{cursor:default;opacity:.5}
 .step-btn:not(:disabled):hover{border-color:var(--border2)}
-.step-num{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;border:1px solid #c3c7cf;color:var(--silver)}
-.step-txt{display:flex;flex-direction:column;min-width:0}
-.step-txt b{font-weight:400;font-size:13px;line-height:1.2}
-.step-txt small{font-size:11px;color:var(--silver);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-num{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:500;border:1px solid #c3c7cf;color:var(--silver)}
+.step-txt{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+.step-txt b{font-weight:400;font-size:12.5px}
+.step-txt small{font-size:10.5px;color:var(--silver);white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .step-btn.active{border-color:var(--gold);background:#fffdf7;box-shadow:0 6px 18px -12px rgba(168,132,42,.6)}
 .step-btn.active .step-num{background:var(--gold);border-color:var(--gold);color:#fff}
 .step-btn.done .step-num{border-color:var(--teal);color:var(--teal)}
 
-/* ─── CONTENU ─── */
-main{flex:1;width:100%;max-width:calc(1360px + 6vw);margin:0 auto;padding:22px 3vw 40px}
+/* ─── ESPACE DE TRAVAIL ─── */
+main{flex:1;width:100%;max-width:1928px;margin:0 auto;padding:12px 24px}
 .step{display:none}
-.step.show{display:block;animation:fade .25s ease}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.sec-h h2{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;line-height:1.1}
-.sec-h p{font-size:13px;color:var(--silver)}
-.card{border:1px solid var(--border);background:#fff;border-radius:16px;box-shadow:0 1px 2px rgba(20,23,31,.04)}
-.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border)}
-.card-h h3{font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2)}
-.card-h small{font-size:12px;color:var(--silver)}
-.card-b{padding:16px 18px}
-
-/* catalogue */
-.catalog{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
-.tile{position:relative;display:flex;flex-direction:column;gap:6px;padding:16px 18px 14px;border-radius:16px;border:1px solid var(--border);background:#fff;text-align:left;box-shadow:0 1px 2px rgba(20,23,31,.04);transition:border-color .25s,box-shadow .25s,transform .25s}
-button.tile{cursor:pointer}
-button.tile:hover{border-color:var(--border2);box-shadow:0 14px 34px -14px rgba(20,23,31,.25);transform:translateY(-3px)}
-.tile.on{background:linear-gradient(160deg,#fffdf7,#fbf6e9);border-color:var(--border2)}
-.tile.dev{background:#fbfaf7}
-.status{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--silver)}
-.status::before{content:"";width:6px;height:6px;border-radius:50%;background:#c3c7cf}
-.status.on{color:var(--teal)}
-.status.on::before{background:var(--teal);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.tile .name{font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:400;line-height:1.1}
-.tile.on .name{color:var(--gold2)}
-.tile.dev .name{color:#6b7180}
-.tile .desc{font-size:12px;color:var(--silver);line-height:1.55}
-.tile .schema{display:flex;justify-content:center;padding:8px 0 2px}
-.tile .schema svg{width:100%;max-width:190px;height:70px;color:var(--gold)}
-.tile.dev .schema svg{color:#c3c7cf}
-.tile .go{font-size:13px;color:var(--gold)}
-.tile .soon{font-size:12px;color:#9aa0ac}
-
-/* formulaires */
-.split{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:16px;align-items:start}
-.fields{display:grid;gap:10px}
-.field{display:grid;grid-template-columns:1fr 112px;align-items:center;gap:10px}
-.field label{font-size:13px;line-height:1.3}
-.field label small{display:block;font-size:11px;color:var(--silver)}
-.num{position:relative}
-.num input,.num select{width:100%;height:36px;padding:0 30px 0 10px;border:1px solid rgba(20,23,31,.16);border-radius:8px;background:#fff;font-variant-numeric:tabular-nums;font-size:14px}
-.num select{padding-right:8px}
-.num input:focus,.num select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,132,42,.15)}
-.num span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--silver);pointer-events:none}
-.derived{margin-top:12px;padding:10px 12px;border-radius:10px;background:#f8f6f0;font-size:12.5px;color:var(--silver);line-height:1.7}
-.derived b{color:var(--white);font-weight:500}
-.msg{margin-top:10px;font-size:12.5px;color:var(--danger);line-height:1.5}
-.msg:empty{display:none}
-.views{display:grid;gap:16px;min-width:0}
-.view{min-width:0}
-.view .card-b{padding:12px;overflow:hidden}
-.svgbox svg{display:block;width:100%;height:auto;margin:0 auto}
-.actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 20px;border-radius:10px;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:14px;font-weight:400;letter-spacing:.03em;cursor:pointer;transition:background .2s,opacity .2s}
+.step.show{display:grid;animation:fade .2s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.card{border:1px solid var(--border);background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(20,23,31,.04);display:flex;flex-direction:column;min-width:0;min-height:0}
+.card-h{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);min-height:44px}
+.card-h h3{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);white-space:nowrap}
+.card-h small{font-size:11.5px;color:var(--silver)}
+.card-b{padding:12px 14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 16px;border-radius:9px;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:13.5px;font-weight:400;letter-spacing:.02em;cursor:pointer;transition:background .2s,opacity .2s;white-space:nowrap}
 .btn:hover{background:var(--gold2)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.ghost{background:transparent;color:var(--gold2);border-color:var(--border2)}
 .btn.ghost:hover{background:rgba(168,132,42,.07)}
-.btn.small{height:30px;padding:0 10px;font-size:12px;border-radius:8px}
+.btn.small{height:28px;padding:0 10px;font-size:12px;border-radius:7px}
+.ico{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:#fff;color:var(--gold2);cursor:pointer}
+.ico:hover{background:#fbf6e9}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{border:none;background:#fff;padding:5px 10px;font-size:12px;color:var(--silver);cursor:pointer}
+.seg button.on{background:#fbf6e9;color:var(--gold2);font-weight:400}
 
-/* ferraillage */
-.ferr-top{display:grid;grid-template-columns:1fr minmax(280px,340px);gap:16px;align-items:start}
-.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.kpi{padding:12px 14px;border-radius:12px;background:#f8f6f0}
-.kpi small{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--silver)}
-.kpi b{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400;color:var(--gold2);line-height:1.1}
-.kpi b i{font-family:'Outfit',sans-serif;font-style:normal;font-size:12px;color:var(--silver);margin-left:3px}
-.kpi.wide{grid-column:span 2}
-details.params{margin-top:14px;border:1px solid var(--border);border-radius:12px;background:#fff}
-details.params summary{cursor:pointer;list-style:none;padding:12px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
-details.params summary::-webkit-details-marker{display:none}
-details.params summary::after{content:"+";font-size:18px;color:var(--gold)}
-details.params[open] summary::after{content:"−"}
-details.params .fields{padding:0 14px 14px}
-.hyp{margin:0 14px 14px;padding:10px 12px;border-radius:10px;background:#f8f6f0;font-size:11.5px;color:var(--silver);line-height:1.6}
+/* étape 1 : catalogue compact */
+#step1{grid-template-rows:auto 1fr;gap:10px;align-content:start}
+.intro{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.intro h2{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400}
+.intro p{font-size:12.5px;color:var(--silver)}
+.catalog{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;align-content:start}
+.tile{position:relative;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#fff;text-align:left;transition:border-color .25s,box-shadow .25s,transform .25s}
+button.tile{cursor:pointer}
+button.tile:hover{border-color:var(--border2);box-shadow:0 12px 28px -14px rgba(20,23,31,.25);transform:translateY(-2px)}
+.tile.on{background:linear-gradient(160deg,#fffdf7,#fbf6e9);border-color:var(--border2);grid-column:span 3;flex-direction:row;align-items:center;gap:14px;padding:14px 16px}
+.tile.dev{background:#fbfaf7}
+.tile .tx{display:flex;flex-direction:column;gap:3px;min-width:0}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--silver)}
+.status::before{content:"";width:6px;height:6px;border-radius:50%;background:#c3c7cf}
+.status.on{color:var(--teal)}
+.status.on::before{background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.tile .name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;line-height:1.1}
+.tile.on .name{color:var(--gold2);font-size:24px}
+.tile.dev .name{color:#6b7180}
+.tile .desc{font-size:12px;color:var(--silver);line-height:1.5}
+.tile .schema{display:flex;justify-content:center}
+.tile .schema svg{width:100%;max-width:120px;height:46px;color:#c3c7cf}
+.tile.on .schema svg{width:150px;max-width:none;height:84px;color:var(--gold);flex:none}
+.tile .go{font-size:13px;color:var(--gold)}
+
+/* étape 2 : saisie + dessin */
+#step2{grid-template-columns:340px minmax(0,1fr);gap:12px}
+.panel .card-b{flex:1;overflow:auto;padding:4px 14px 10px}
+.panel-f{flex:none;padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.panel-f .btn{flex:1}
+details.grp{border-bottom:1px solid var(--border)}
+details.grp:last-of-type{border-bottom:none}
+details.grp summary{cursor:pointer;list-style:none;padding:9px 0 7px;font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--silver);display:flex;justify-content:space-between}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary::after{content:"+";font-size:15px;line-height:1;color:var(--gold)}
+details.grp[open] summary::after{content:"−"}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding-bottom:10px}
+.f{display:flex;flex-direction:column;gap:2px;min-width:0}
+.f.wide{grid-column:span 2}
+.f label{font-size:11.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.f label small{color:var(--silver);font-size:10.5px}
+.num{position:relative}
+.num input,.num select{width:100%;height:32px;padding:0 38px 0 9px;border:1px solid rgba(20,23,31,.16);border-radius:7px;background:#fff;font-variant-numeric:tabular-nums;font-size:13.5px}
+.num select{padding-right:6px}
+.num input:focus,.num select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,132,42,.15)}
+.num span{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--silver);pointer-events:none}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;grid-column:span 2;padding:4px 0}
+.chk input{width:16px;height:16px;accent-color:var(--gold)}
+.msg{font-size:12px;color:var(--danger);line-height:1.45;padding:8px 0 4px}
+.msg:empty{display:none}
+.draw{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
+.draw svg{display:block;max-width:100%;max-height:100%}
+.band{flex:none;display:flex;flex-wrap:wrap;gap:4px 18px;padding:8px 14px;border-top:1px solid var(--border);background:var(--paper);border-radius:0 0 14px 14px;font-size:12px;color:var(--silver)}
+.band b{color:var(--white);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* étape 3 : coupe + nomenclature */
+#step3{grid-template-columns:minmax(300px,.8fr) minmax(0,1.45fr);gap:12px}
+.left3{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-height:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{padding:8px 10px;border-radius:10px;background:#fff;border:1px solid var(--border)}
+.kpi small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--silver)}
+.kpi b{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--gold2);line-height:1.1;white-space:nowrap}
+.kpi b i{font-family:'Outfit',sans-serif;font-style:normal;font-size:11px;color:var(--silver);margin-left:2px}
+.right3{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:12px;min-height:0}
+.tablewrap{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+table.nomenc{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;min-width:820px}
+.nomenc th{position:sticky;top:0;z-index:1;background:#faf8f2;font-size:9.5px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--silver);text-align:center;padding:6px 4px;border-bottom:1px solid var(--border2);line-height:1.2}
+.nomenc td{padding:2px 4px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;height:44px}
+.nomenc tr:hover td{background:#fdfcf8}
+.nomenc td.rep{font-weight:500;font-size:13px;white-space:nowrap}
+.nomenc td.rep i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px;vertical-align:middle}
+.nomenc td.fac{min-width:160px}
+.fac-in{display:flex;align-items:center;justify-content:center;gap:4px}
+.fac-in svg{display:block}
+.nomenc .num{width:80px;margin:0 auto}
+.nomenc .num select{width:62px}
+.nomenc .num input,.nomenc .num select{height:28px;font-size:12.5px}
+.nomenc .num input{padding-right:30px;padding-left:6px}
+.nomenc .sub{color:var(--silver);font-size:10.5px;display:block;line-height:1.1}
+.nomenc tfoot td{position:sticky;bottom:0;font-weight:500;background:#faf8f2;height:32px}
+table.rc{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.rc th,.rc td{padding:4px 6px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap}
+.rc th{font-size:10px;font-weight:500;letter-spacing:.06em;color:var(--silver)}
+.rc th:first-child,.rc td:first-child{text-align:left;color:var(--silver);font-size:10.5px}
+.rc td.z{color:#c0c4cb}
+.rc tr:last-child td{border-bottom:none;font-weight:500}
+.rc .tot{background:#fbf6e9;color:var(--gold2)}
+
+/* tiroirs (paramètres, ajustement de barre) */
+.drawer,dialog{position:fixed;top:0;right:0;left:auto;bottom:0;width:min(380px,100vw);height:100vh;max-height:100vh;margin:0 0 0 auto;border:none;border-left:1px solid var(--border);background:#fff;box-shadow:-24px 0 60px -30px rgba(20,23,31,.45);z-index:200;display:flex;flex-direction:column;color:var(--white);padding:0}
+.drawer{transform:translateX(105%);transition:transform .25s ease;visibility:hidden}
+.drawer.open{transform:none;visibility:visible}
+dialog:not([open]){display:none}
+dialog::backdrop{background:rgba(12,14,20,.35)}
+.scrim{position:fixed;inset:0;background:rgba(12,14,20,.3);z-index:150;display:none}
+.scrim.on{display:block}
+.dr-h{flex:none;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+.dr-h h3{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400}
+.dr-x{border:none;background:none;font-size:22px;cursor:pointer;color:var(--silver);width:32px;height:32px;border-radius:8px}
+.dr-x:hover{background:#f3f0e7}
+.dr-b{flex:1;overflow:auto;padding:12px 16px;display:grid;gap:10px;align-content:start}
+.dr-f{flex:none;display:flex;justify-content:space-between;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.prev{border-radius:10px;background:var(--paper);display:flex;justify-content:center;padding:6px}
+.prev svg{max-width:100%;height:auto}
+.info{padding:8px 10px;border-radius:9px;background:var(--paper);font-size:12px;color:var(--silver);line-height:1.6}
+.info b{color:var(--white);font-weight:500}
+.hyp{font-size:11.5px;color:var(--silver);line-height:1.55}
 .hyp ul{padding-left:16px}
 .hyp b{color:var(--white);font-weight:500}
-.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.nomenc{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;min-width:1000px}
-.nomenc th{position:sticky;top:0;background:#faf8f2;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--silver);text-align:center;padding:9px 6px;border-bottom:1px solid var(--border2);line-height:1.25}
-.nomenc td{padding:6px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
-.nomenc tr:hover td{background:#fdfcf8}
-.nomenc td.rep{font-weight:500;font-size:14px}
-.nomenc td.rep i{display:block;width:10px;height:10px;border-radius:50%;margin:3px auto 0}
-.nomenc td.fac{text-align:left;min-width:190px}
-.nomenc td.fac svg{display:block}
-.nomenc td.fac .role{display:block;font-size:11px;color:var(--silver);line-height:1.3;margin:2px 0 4px;max-width:220px}
-.nomenc .num{width:96px;margin:0 auto}
-.nomenc .num select{width:70px}
-.nomenc .num input,.nomenc .num select{height:32px;font-size:13px}
-.nomenc .num input{padding-right:26px}
-.nomenc td.sub{color:var(--silver);font-size:11.5px}
-.nomenc tfoot td{font-weight:500;background:#faf8f2;border-bottom:none}
-.recap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;margin-top:16px}
-table.rc{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.rc th{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--silver);text-align:right;padding:8px 10px;border-bottom:1px solid var(--border2)}
-.rc th:first-child,.rc td:first-child{text-align:left}
-.rc td{padding:6px 10px;border-bottom:1px solid var(--border);text-align:right}
-.rc tr.zero td{color:#b3b7bf}
-.rc tfoot td{font-weight:500;border-bottom:none;font-size:14px}
-.note{font-size:12px;color:var(--silver);line-height:1.6}
 
-/* export */
-.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-.export-grid .card-b{display:flex;flex-direction:column;gap:12px;height:100%}
-.export-grid p{font-size:13px;color:var(--silver);line-height:1.6}
+/* étape 4 */
+#step4{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-content:start}
+#step4 .card-b{display:flex;flex-direction:column;gap:10px;flex:1}
+#step4 p{font-size:13px;color:var(--silver);line-height:1.6}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--border);background:#faf8f2;color:var(--silver)}
 
-/* panneau « Ajuster la barre » */
-dialog{border:none;border-radius:18px;padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:0 30px 80px -20px rgba(20,23,31,.45);color:var(--white);background:#fff}
-dialog::backdrop{background:rgba(12,14,20,.45)}
-.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--border)}
-.dlg-h h3{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400}
-.dlg-x{border:none;background:none;font-size:22px;cursor:pointer;color:var(--silver);width:34px;height:34px;border-radius:8px}
-.dlg-x:hover{background:#f3f0e7}
-.dlg-b{padding:16px 18px;display:grid;gap:12px;overflow:auto}
-.dlg-prev{border-radius:12px;background:#f8f6f0;display:flex;justify-content:center;padding:8px}
-.dlg-prev svg{max-width:100%;height:auto}
-.dlg-f{display:flex;justify-content:space-between;gap:10px;padding:14px 18px;border-top:1px solid var(--border);flex-wrap:wrap}
-
 /* ─── FOOTER ─── */
-footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid var(--border)}
-.footer-bottom{max-width:1360px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 24px}
+footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid var(--border)}
+.footer-bottom{max-width:1880px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 24px}
 .footer-bottom p{font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.04em}
 .footer-bottom a{color:var(--silver)}
 .footer-bottom a:hover{color:var(--gold)}
@@ -202,43 +213,53 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
 .footer-logo span{color:var(--gold)}
 
 #print{display:none}
-.scroll-hint{display:none;font-size:11.5px;color:var(--silver);padding:8px 18px 0}
 
-@media(max-width:1180px){.nav-links{gap:20px}}
-@media(max-width:1060px){
-  .nav-links{display:none}
-  .ferr-top{grid-template-columns:1fr}
-  .recap{grid-template-columns:1fr}
+/* Ordinateur : l'espace de travail occupe l'écran, sans défilement de page */
+@media(min-width:1000px) and (min-height:600px){
+  html,body{height:100%}
+  body{overflow:hidden}
+  main{min-height:0;display:flex;flex-direction:column}
+  .step.show{flex:1;min-height:0}
+  #step2>.card,#step3 .card{min-height:0}
 }
-@media(max-width:900px){
-  .head{padding:22px 16px 18px}
-  main{padding:16px 16px 32px}
-  .split{grid-template-columns:1fr}
-  nav{padding:0 16px}
-  footer{padding:14px 16px}
+@media(max-width:1280px){.nav-links{gap:18px}.nav-links a{font-size:12.5px}}
+@media(max-width:1180px){.nav-links{display:none}}
+@media(max-width:1180px) and (min-width:1000px){.step-txt small{display:none}}
+/* Tablette et téléphone : empilement vertical */
+@media(max-width:999px),(max-height:599px){
+  nav,.head{padding-left:16px;padding-right:16px}
+  .head-inner{flex-direction:column;align-items:flex-start;gap:8px}
+  main{padding:12px 16px 24px}
+  #step2,#step3,#step4{grid-template-columns:minmax(0,1fr)}
+  .left3,.right3{display:flex;flex-direction:column}
+  .draw{height:min(118vw,560px);flex:none}
+  #v-ferr.draw{height:min(110vw,560px)}
+  .card-h{flex-wrap:wrap}
+  #nom-sub{display:none}
+  .tablewrap{max-height:none}
+  .catalog{grid-template-columns:repeat(3,1fr)}
+  .tile.on{grid-column:span 3}
+  footer{padding:12px 16px}
 }
 @media(max-width:640px){
-  .steps{grid-template-columns:repeat(4,auto);gap:6px;justify-content:start}
-  .step-btn{padding:8px 10px;gap:8px}
+  h1{font-size:23px;white-space:normal}
+  h1 small{display:block;margin-bottom:2px}
+  .steps{width:100%}
+  .step-btn{padding:0 10px 0 6px}
   .step-btn .step-txt{display:none}
   .step-btn.active .step-txt{display:flex}
   .step-txt small{display:none}
-  .catalog{grid-template-columns:1fr 1fr;gap:10px}
-  .tile{padding:12px 12px 10px}
-  .tile .name{font-size:19px}
-  .tile .desc{display:none}
-  .tile .schema svg{height:52px}
-  .field{grid-template-columns:1fr 104px}
-  .kpi b{font-size:24px}
-  .sec-h h2{font-size:24px}
-  .actions .btn{flex:1}
-  .scroll-hint{display:block}
+  .catalog{grid-template-columns:repeat(2,1fr)}
+  .tile.on{grid-column:span 2;flex-direction:column;align-items:flex-start}
+  .tile.on .schema svg{width:120px;height:60px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  #step4 .btn{width:100%}
 }
 
 /* ─── IMPRESSION ─── */
 @media print{
   @page{size:A4 landscape;margin:9mm 10mm}
-  html,body{background:#fff;display:block;min-height:0}
+  html,body{background:#fff;display:block;min-height:0;height:auto;overflow:visible}
   body > *:not(#print){display:none !important}
   #print{display:block;color:#111;font-family:'Outfit',Arial,sans-serif;font-size:8.6pt;line-height:1.35}
   .p-cart{display:grid;grid-template-columns:1.2fr 2fr 1.3fr;border:1px solid #333;margin-bottom:6pt}
@@ -252,20 +273,19 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
   .p-meta{font-size:7.4pt;line-height:1.45}
   .p-views{display:flex;gap:8pt;align-items:flex-start;justify-content:space-between;margin-bottom:4pt}
   .p-views figure{flex:1;text-align:center}
-  .p-views figcaption,.p-h{font-size:8pt;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#7a5c1c;border-bottom:1px solid #b9a26b;padding-bottom:1pt;margin:4pt 0 3pt;text-align:left}
-  .p-views svg{max-width:100%;height:auto;max-height:92mm}
-  .p-second svg{max-width:100%;height:auto;max-height:40mm}
-  .p-rc{font-size:7pt}.p-rc td,.p-rc th{padding:.6pt 3pt}
+  .p-views figcaption,.p-h,.p-bottom figcaption{font-size:8pt;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#7a5c1c;border-bottom:1px solid #b9a26b;padding-bottom:1pt;margin:4pt 0 3pt;text-align:left}
+  .p-views svg{max-width:100%;height:auto;max-height:100mm}
+  .p-second svg{max-width:100%;height:auto;max-height:36mm}
   .p-break{break-before:page}
   .p-tab{width:100%;border-collapse:collapse;font-size:7.6pt}
   .p-tab th,.p-tab td{border:1px solid #888;padding:1.5pt 3pt;text-align:center;vertical-align:middle}
   .p-tab th{background:#f1ede2;font-weight:500}
   .p-tab tr{break-inside:avoid}
   .p-tab td svg{display:block;margin:0 auto}
+  .p-rc{font-size:7pt}.p-rc td,.p-rc th{padding:.6pt 3pt}
   .p-bottom{display:grid;grid-template-columns:1.4fr 1fr;gap:12pt;margin-top:2pt;break-inside:avoid}
-  .p-bottom figcaption{font-size:8pt;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#7a5c1c;border-bottom:1px solid #b9a26b;padding-bottom:1pt;margin:4pt 0 3pt}
   .p-hyp{font-size:7.2pt;color:#333;line-height:1.45;margin-top:6pt}
-  .p-hyp ul{padding-left:12pt}
+  .p-hyp ul{padding-left:12pt;columns:2;column-gap:18pt}
 }
 </style>
 </head>
@@ -287,117 +307,86 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
 
 <header class="head">
   <div class="head-inner">
-    <div class="head-top">
-      <div>
-        <div class="eyebrow">Dessin automatique</div>
-        <h1>Plans de <em>coffrage &amp; ferraillage</em></h1>
-      </div>
-      <p class="lead">Choisissez une structure et saisissez son coffrage : le programme propose le ferraillage, la nomenclature avec façonnage et le récapitulatif des aciers, puis exporte le plan en DXF.</p>
-    </div>
+    <h1><small>Dessin automatique</small>Plans de <em>coffrage &amp; ferraillage</em></h1>
     <ol class="steps" id="steps">
-      <li><button class="step-btn active" data-go="1"><span class="step-num">1</span><span class="step-txt"><b>Structure</b><small id="st1">Choisir dans le catalogue</small></span></button></li>
-      <li><button class="step-btn" data-go="2" disabled><span class="step-num">2</span><span class="step-txt"><b>Coffrage</b><small id="st2">Dimensions et coupe cotée</small></span></button></li>
-      <li><button class="step-btn" data-go="3" disabled><span class="step-num">3</span><span class="step-txt"><b>Ferraillage</b><small id="st3">Barres et nomenclature</small></span></button></li>
-      <li><button class="step-btn" data-go="4" disabled><span class="step-num">4</span><span class="step-txt"><b>Export</b><small>DXF et impression</small></span></button></li>
+      <li><button class="step-btn active" data-go="1"><span class="step-num">1</span><span class="step-txt"><b>Structure</b><small id="st1">Catalogue</small></span></button></li>
+      <li><button class="step-btn" data-go="2" disabled><span class="step-num">2</span><span class="step-txt"><b>Coffrage</b><small id="st2">Dimensions</small></span></button></li>
+      <li><button class="step-btn" data-go="3" disabled><span class="step-num">3</span><span class="step-txt"><b>Ferraillage</b><small id="st3">Nomenclature</small></span></button></li>
+      <li><button class="step-btn" data-go="4" disabled><span class="step-num">4</span><span class="step-txt"><b>Export</b><small>DXF · PDF</small></span></button></li>
     </ol>
   </div>
 </header>
 
 <main>
   <!-- ÉTAPE 1 -->
-  <section class="step show" id="step1" aria-labelledby="h-step1">
-    <div class="sec-h"><h2 id="h-step1">Choix de la structure</h2><p>Deux structures disponibles en version 1 ; les autres arrivent.</p></div>
+  <section class="step show" id="step1" aria-label="Choix de la structure">
+    <div class="intro"><h2>Choix de la structure</h2><p>Deux structures disponibles ; le programme propose le ferraillage, la nomenclature avec façonnage et exporte le plan en DXF.</p></div>
     <div class="catalog" id="catalog"></div>
   </section>
 
   <!-- ÉTAPE 2 -->
-  <section class="step" id="step2" aria-labelledby="h-step2">
-    <div class="sec-h"><h2 id="h-step2">Coffrage — <span id="c-name"></span></h2><p>Dimensions en mètres ; le dessin se met à jour en direct.</p></div>
-    <div class="split">
-      <form class="card" id="coffForm" autocomplete="off" onsubmit="return false">
-        <div class="card-h"><h3>Dimensions</h3><button type="button" class="btn ghost small" id="btnReset">Valeurs par défaut</button></div>
-        <div class="card-b">
-          <div class="fields" id="fields"></div>
-          <div class="derived" id="derived"></div>
-          <div class="msg" id="coffMsg" role="alert"></div>
-        </div>
-      </form>
-      <div class="views">
-        <div class="card view"><div class="card-h"><h3>Coupe transversale</h3><small>cotes en m</small></div><div class="card-b svgbox" id="v-coupe"></div></div>
-        <div class="card view"><div class="card-h"><h3 id="v2-title">Vue</h3><small>cotes en m</small></div><div class="card-b svgbox" id="v-second"></div></div>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="btn ghost" data-go="1">← Changer de structure</button>
-      <button class="btn" id="btnValider">Valider le coffrage →</button>
+  <section class="step" id="step2" aria-label="Coffrage">
+    <form class="card panel" id="coffForm" autocomplete="off" onsubmit="return false">
+      <div class="card-h"><h3 id="c-name">Coffrage</h3><div id="presets"></div></div>
+      <div class="card-b"><div id="fields"></div><div class="msg" id="coffMsg" role="alert"></div></div>
+      <div class="panel-f"><button type="button" class="btn ghost" data-go="1" style="flex:none">←</button><button type="button" class="btn" id="btnValider">Valider le coffrage →</button></div>
+    </form>
+    <div class="card">
+      <div class="card-h"><h3 id="v-title">Coupe transversale</h3><div class="seg" id="viewSeg"><button type="button" class="on" data-v="coupe">Coupe</button><button type="button" data-v="second" id="v2btn">Élévation</button></div></div>
+      <div class="draw" id="v-coupe"></div>
+      <div class="band" id="derived"></div>
     </div>
   </section>
 
   <!-- ÉTAPE 3 -->
-  <section class="step" id="step3" aria-labelledby="h-step3">
-    <div class="sec-h"><h2 id="h-step3">Ferraillage proposé</h2><p>Modifiez le Ø et l’espacement dans la nomenclature, ou ajustez le façonnage barre par barre.</p></div>
-    <div class="ferr-top">
-      <div class="card view"><div class="card-h"><h3>Coupe ferraillée</h3><small id="ferr-sub">repères numérotés</small></div><div class="card-b svgbox" id="v-ferr"></div></div>
-      <aside>
-        <div class="kpis" id="kpis"></div>
-        <details class="params" id="paramsBox">
-          <summary>Paramètres du projet</summary>
-          <div class="fields" id="pfields"></div>
-          <div class="hyp" id="hyp"></div>
-        </details>
-      </aside>
+  <section class="step" id="step3" aria-label="Ferraillage proposé">
+    <div class="left3">
+      <div class="card"><div class="card-h"><h3>Coupe ferraillée</h3><small id="ferr-sub">repères numérotés</small></div><div class="draw" id="v-ferr"></div></div>
+      <div class="kpis" id="kpis"></div>
     </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-h"><h3>Nomenclature des aciers</h3><small id="nom-sub"></small></div>
-      <p class="scroll-hint">Faites défiler le tableau horizontalement →</p>
-      <div class="tablewrap"><table class="nomenc" id="nomenc"></table></div>
-    </div>
-    <div class="recap">
+    <div class="right3">
       <div class="card">
-        <div class="card-h"><h3>Récapitulatif par diamètre</h3></div>
-        <div class="tablewrap"><table class="rc" id="recap"></table></div>
+        <div class="card-h"><h3>Nomenclature des aciers</h3><div style="display:flex;gap:6px;align-items:center"><small id="nom-sub"></small><button type="button" class="btn ghost small" id="btnParams">⚙ Paramètres</button><button type="button" class="btn small" data-go="4">Exporter →</button></div></div>
+        <div class="tablewrap"><table class="nomenc" id="nomenc"></table></div>
       </div>
-      <div class="card"><div class="card-b note" id="recapNote"></div></div>
-    </div>
-    <div class="actions">
-      <button class="btn ghost" data-go="2">← Revenir au coffrage</button>
-      <button class="btn" data-go="4">Exporter le plan →</button>
+      <div class="card"><div class="tablewrap" style="flex:none"><table class="rc" id="recap"></table></div></div>
     </div>
   </section>
 
   <!-- ÉTAPE 4 -->
-  <section class="step" id="step4" aria-labelledby="h-step4">
-    <div class="sec-h"><h2 id="h-step4">Export</h2><p id="exp-sub"></p></div>
-    <div class="export-grid">
-      <div class="card"><div class="card-h"><h3>Fichier DXF</h3><small>AutoCAD R12 (AC1009)</small></div>
-        <div class="card-b">
-          <p>Coupe de coffrage cotée, coupe ferraillée avec repères, seconde vue, nomenclature dessinée avec croquis de façonnage et récapitulatif par diamètre. Unité : le mètre.</p>
-          <div class="chips"><span class="chip">KLE-Contour</span><span class="chip">ACIERS</span><span class="chip">KLE-Cotation</span><span class="chip">REPERAGE</span><span class="chip">NOMENC</span></div>
-          <div style="margin-top:auto"><button class="btn" id="btnDxf">Exporter DXF</button></div>
-        </div>
+  <section class="step" id="step4" aria-label="Export">
+    <div class="card"><div class="card-h"><h3>Fichier DXF</h3><small>AutoCAD R12 (AC1009)</small></div>
+      <div class="card-b">
+        <p>Coupe de coffrage cotée, coupe ferraillée avec repères, seconde vue, nomenclature dessinée avec croquis de façonnage et récapitulatif par diamètre. Unité : le mètre.</p>
+        <div class="chips"><span class="chip">KLE-Contour</span><span class="chip">ACIERS</span><span class="chip">KLE-Cotation</span><span class="chip">REPERAGE</span><span class="chip">NOMENC</span></div>
+        <div style="margin-top:auto"><button class="btn" id="btnDxf">Exporter DXF</button></div>
       </div>
-      <div class="card"><div class="card-h"><h3>Impression / PDF</h3><small>A4 paysage</small></div>
-        <div class="card-b">
-          <p>Planche avec cartouche, coupes, nomenclature et récapitulatif. Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression pour obtenir un PDF.</p>
-          <div style="margin-top:auto"><button class="btn ghost" id="btnPrint">Imprimer / PDF</button></div>
-        </div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Impression / PDF</h3><small>A4 paysage</small></div>
+      <div class="card-b">
+        <p>Planche avec cartouche, coupes, récapitulatif, nomenclature et hypothèses. Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression pour obtenir un PDF.</p>
+        <div style="margin-top:auto"><button class="btn ghost" id="btnPrint">Imprimer / PDF</button></div>
       </div>
-      <div class="card"><div class="card-h"><h3>Synthèse</h3></div><div class="card-b" id="expSum"></div></div>
     </div>
-    <div class="actions">
-      <button class="btn ghost" data-go="3">← Revenir au ferraillage</button>
-    </div>
+    <div class="card"><div class="card-h"><h3>Synthèse</h3><button class="btn ghost small" data-go="3">← Ferraillage</button></div><div class="card-b" id="expSum"></div></div>
   </section>
 </main>
 
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="paramsDrawer" aria-labelledby="pTitle" aria-hidden="true">
+  <div class="dr-h"><h3 id="pTitle">Paramètres du projet</h3><button class="dr-x" data-close="params" aria-label="Fermer">×</button></div>
+  <div class="dr-b"><div class="fg" id="pfields"></div><div class="info hyp" id="hyp"></div></div>
+</aside>
+
 <dialog id="barDlg" aria-labelledby="dlgTitle">
-  <div class="dlg-h"><h3 id="dlgTitle">Ajuster la barre</h3><button class="dlg-x" id="dlgClose" aria-label="Fermer">×</button></div>
-  <div class="dlg-b">
-    <div class="dlg-prev" id="dlgPrev"></div>
-    <div class="fields" id="dlgFields"></div>
-    <div class="derived" id="dlgInfo"></div>
+  <div class="dr-h"><h3 id="dlgTitle">Ajuster la barre</h3><button class="dr-x" id="dlgClose" aria-label="Fermer">×</button></div>
+  <div class="dr-b">
+    <div class="info" id="dlgRole"></div>
+    <div class="prev" id="dlgPrev"></div>
+    <div class="fg" id="dlgFields"></div>
+    <div class="info" id="dlgInfo"></div>
   </div>
-  <div class="dlg-f">
+  <div class="dr-f">
     <button class="btn ghost small" id="dlgReset">Rétablir la proposition</button>
     <button class="btn small" id="dlgOk">Appliquer</button>
   </div>

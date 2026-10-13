@@ -68,6 +68,19 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Outfit, Arial, sans-serif"${label}>${out}</svg>`;
   }
 
+  /* Construit une scène (build(u)) et la rend au mieux dans une boîte W × H px. */
+  function fitRender(build, W, H, opts) {
+    let s = 100, sc;
+    for (let k = 0; k < 4; k++) {
+      sc = build(1 / s);
+      const b = bounds(sc), w = (b[2] - b[0]) * s + 12, h = (b[3] - b[1]) * s + 12;
+      const f = Math.min(W / w, H / h);
+      if (Math.abs(f - 1) < 0.01) break;
+      s = Math.max(20, Math.min(s * f, 1200));
+    }
+    return toSVG(build(1 / s), s, opts);
+  }
+
   /* ───────── Cotation ───────── */
   function dim(sc, p1, p2, orient, at, txt, o) {
     o = o || {};
@@ -111,10 +124,7 @@
 
   /* ───────── Contours ───────── */
   function outline(struct, g) {
-    if (struct === 'murT') {
-      const { B, hs, p, e, H } = g;
-      return { outer: [[0, 0], [B, 0], [B, hs], [p + e, hs], [p + e, hs + H], [p, hs + H], [p, hs], [0, hs]], holes: [] };
-    }
+    if (struct === 'murT') return { outer: F.STRUCTURES.murT.outline(g).outer, holes: [] };
     const { Bext, Hext, ep, er, et } = g, G = g.g;
     const inner = G > 0.001
       ? [[ep, er + G], [ep + G, er], [Bext - ep - G, er], [Bext - ep, er + G], [Bext - ep, Hext - et - G], [Bext - ep - G, Hext - et], [ep + G, Hext - et], [ep, Hext - et - G]]
@@ -126,9 +136,19 @@
     const o = outline(struct, g);
     sc.poly(o.outer, { closed: true, holes: o.holes.length ? o.holes : undefined, fill: CONCRETE, w: light ? 1.1 : 1.6, layer: 'KLE-Contour' });
     if (struct === 'murT' && g.bp > 0) {
-      const x0 = -0.05, x1 = g.B + 0.05;
-      sc.poly([[x0, -g.bp], [x1, -g.bp], [x1, 0], [x0, 0]], { closed: true, w: 1, layer: 'KLE-Contour' });
-      hatchRect(sc, x0, -g.bp, x1, 0, Math.max(0.04, 9 * sc.u));
+      const bp = g.bp, x0 = -0.05, x1 = g.B + 0.05, st = Math.max(0.04, 9 * sc.u), L = { closed: true, w: 1, layer: 'KLE-Contour' };
+      if (g.beche) {
+        const b0 = g.bx0, b1 = g.bx1, bh = g.bh, X0 = Math.min(x0, b0 - bp), X1 = Math.max(x1, b1 + bp);
+        sc.poly(F.cleanPath([[X0, 0], [b0, 0], [b0, -bh], [b1, -bh], [b1, 0], [X1, 0], [X1, -bp], [b1 + bp, -bp], [b1 + bp, -bh - bp], [b0 - bp, -bh - bp], [b0 - bp, -bp], [X0, -bp]]), L);
+        if (b0 - bp > x0) hatchRect(sc, x0, -bp, b0 - bp, 0, st);
+        if (x1 > b1 + bp) hatchRect(sc, b1 + bp, -bp, x1, 0, st);
+        hatchRect(sc, b0 - bp, -bh - bp, b0, 0, st);
+        hatchRect(sc, b1, -bh - bp, b1 + bp, 0, st);
+        hatchRect(sc, b0, -bh - bp, b1, -bh, st);
+      } else {
+        sc.poly([[x0, -bp], [x1, -bp], [x1, 0], [x0, 0]], L);
+        hatchRect(sc, x0, -bp, x1, 0, st);
+      }
     }
   }
 
@@ -139,26 +159,79 @@
     return Math.max(40, Math.min(s, 900));
   }
 
+  /* Coupe de coffrage cotée du mur, façon feuille de stabilité : TN aval, talus amont,
+     hauteur de poussée, fruits, bêche et biseau. */
+  function murCoffrage(sc, g, u, f) {
+    const { B, hs, p, H, bp, eb, talon, Hv, xAvT, xAmT, hbp, hbt, Hp } = g;
+    const TER = { layer: 'KLE-Cotation', color: '#7b6a3a', w: 1.1 }, HID = { layer: 'KLE-Cotation', color: DIM, w: 0.8, dash: '5 4' };
+    const yb = -(bp || 0) - (g.beche ? g.bh : 0);
+    // terrain aval
+    if (g.tn > 0) {
+      const y = hs + g.tn, xf = p + g.fv * g.tn;
+      sc.line([-0.12, y], [xf, y], TER);
+      sc.text([-0.12, y + 9 * u], 'TN aval', { h: 10, color: '#7b6a3a', italic: true, anchor: 'start' });
+      if (p > 0.18) dim(sc, [p * 0.55, hs], [p * 0.55, y], 'v', p * 0.55, f(g.tn));
+    }
+    // talus amont, horizontale de référence, poussée
+    const tb = Math.tan(g.beta * Math.PI / 180), xE = B + Math.max(0.35, 0.12 * B), yE = H + (xE - xAmT) * tb;
+    sc.line([xAmT, H], [xE, yE], TER);
+    sc.text([xE, yE - 10 * u], g.beta > 0 ? 'TN amont' : 'Terre-plein', { h: 10, color: '#7b6a3a', italic: true, anchor: 'end', halo: true });
+    if (g.beta > 0) {
+      sc.line([xAmT, H], [xE, H], HID);
+      const R = Math.min(0.9, 0.45 * (xE - xAmT)), a = [];
+      for (let k = 0; k <= 10; k++) { const t = g.beta * Math.PI / 180 * k / 10; a.push([xAmT + R * Math.cos(t), H + R * Math.sin(t)]); }
+      sc.poly(a, { layer: 'KLE-Cotation', color: DIM, w: 0.8 });
+      sc.text([xAmT + R + 5 * u, H + R * tb / 2 + 2 * u], 'β = ' + g.beta.toFixed(2).replace('.', ',') + '°', { h: 10.5, anchor: 'start', halo: true });
+    }
+    if (g.q > 0) {
+      const n = 4, x0 = xAmT + 0.35 * (xE - xAmT);
+      for (let i = 0; i < n; i++) {
+        const x = x0 + 0.62 * (xE - x0) * i / (n - 1), y = H + (x - xAmT) * tb + 3 * u;
+        sc.line([x, y], [x, y + 16 * u], { layer: 'KLE-Cotation', color: '#2d6be4', w: 0.9 });
+        sc.poly([[x - 3 * u, y + 5 * u], [x, y], [x + 3 * u, y + 5 * u]], { layer: 'KLE-Cotation', color: '#2d6be4', w: 0.9 });
+      }
+      const xq = x0 + 0.31 * (xE - x0), yq = H + (xq - xAmT) * tb + 32 * u;
+      sc.text([xq, yq], 'q = ' + String(g.q.toFixed(2)).replace('.', ',') + ' t/m²', { h: 10, color: '#2d6be4', halo: true });
+    }
+    sc.line([B, hbt], [B, Hp], HID);
+    sc.line([B, Hp], [xE + 6 * u, Hp], HID);
+    dim(sc, [xE, 0], [xE, Hp], 'v', xE + 26 * u, f(Hp));
+    sc.text([xE + 40 * u, Hp * 0.5], 'hauteur de poussée', { h: 9.5, color: DIM, italic: true, rot: 90 });
+    // fruits
+    const lab = (P, txt, anchor) => sc.text(P, txt, { h: 9.5, color: DIM, italic: true, anchor, halo: true });
+    if (g.fa > 0) lab([(xAmT + p + eb) / 2 + 8 * u, hs + Hv * 0.42], 'fruit ' + String(g.fa).replace('.', ',') + ' m/m', 'start');
+    if (g.fv > 0) lab([(xAvT + p) / 2 - 8 * u, hs + Hv * 0.6], 'fruit ' + String(g.fv).replace('.', ',') + ' m/m', 'end');
+    sc.text([p + eb + Math.max(0.1, talon * 0.55), hs + Math.min(Hv * 0.25, 0.9) + 0.05], 'Remblai', { h: 10.5, color: DIM, italic: true });
+    if (p > 0.3 && !(g.tn > 0)) sc.text([p * 0.5, hs + 14 * u], 'Aval', { h: 10.5, color: DIM, italic: true });
+    // cotes horizontales
+    const yc1 = yb - 20 * u, chain = g.beche ? yb - 44 * u : yc1;
+    if (g.beche) {
+      const xs = [0, g.bx0, g.bx1, B].filter((x, i, a) => i === 0 || x - a[i - 1] > 1e-6);
+      for (let i = 1; i < xs.length; i++) dim(sc, [xs[i - 1], yb], [xs[i], yb], 'h', yc1, f(xs[i] - xs[i - 1]), { flip: i === 1 });
+      dim(sc, [g.bx1, -g.bh], [g.bx1, 0], 'v', g.bx1 + 16 * u, f(g.bh), { flip: true });
+    }
+    if (p > 1e-6) dim(sc, [0, yb], [p, yb], 'h', chain, f(p), { flip: true });
+    dim(sc, [p, yb], [p + eb, yb], 'h', chain, f(eb));
+    if (talon > 1e-6) dim(sc, [p + eb, yb], [B, yb], 'h', chain, f(talon));
+    dim(sc, [0, yb], [B, yb], 'h', chain - 24 * u, f(B));
+    dim(sc, [xAvT, H], [xAmT, H], 'h', H + 20 * u, f(g.e0));
+    // cotes verticales à gauche
+    const xl = Math.min(-0.15, g.beche ? g.bx0 - bp : 0);
+    let k = 1;
+    if (g.biseau && hbp < hs - 1e-6) { dim(sc, [0, 0], [0, hbp], 'v', xl - 20 * u, f(hbp), { flip: true }); k = 2; }
+    dim(sc, [0, 0], [0, hs], 'v', xl - (20 + 24 * (k - 1)) * u, f(hs), { flip: true });
+    dim(sc, [xAvT, hs], [xAvT, H], 'v', xl - (20 + 24 * (k - 1)) * u, f(Hv));
+    dim(sc, [0, 0], [xAvT, H], 'v', xl - (44 + 24 * (k - 1)) * u, f(H));
+    if (g.biseau && hbt < hs - 1e-6) dim(sc, [B, 0], [B, hbt], 'v', B + 16 * u, f(hbt), { flip: true });
+    if (bp > 0) sc.text([p + eb + talon * 0.5, -bp / 2], 'Béton de propreté ' + f(bp), { h: 9, color: DIM, italic: true, halo: true });
+  }
+
   /* ───────── Vue 1 : coupe de coffrage cotée ───────── */
   function coffrageScene(struct, g, u) {
     const sc = new Scene(u), f = F.fmtCote;
     drawOutline(sc, struct, g);
-    if (struct === 'murT') {
-      const { B, hs, p, e, H, bp } = g, t = B - p - e, yb = -(bp || 0);
-      dim(sc, [0, yb], [p, yb], 'h', yb - 20 * u, f(p), { flip: true });
-      dim(sc, [p, yb], [p + e, yb], 'h', yb - 20 * u, f(e));
-      dim(sc, [p + e, yb], [B, yb], 'h', yb - 20 * u, f(t));
-      dim(sc, [0, yb], [B, yb], 'h', yb - 44 * u, f(B));
-      const xl = -0.05;
-      dim(sc, [xl, 0], [xl, hs], 'v', xl - 20 * u, f(hs), { flip: true });
-      dim(sc, [p, hs], [p, hs + H], 'v', xl - 20 * u, f(H));
-      dim(sc, [xl, 0], [p, hs + H], 'v', xl - 44 * u, f(hs + H));
-      dim(sc, [p, hs + H], [p + e, hs + H], 'h', hs + H + 20 * u, f(e));
-      if (bp > 0) dim(sc, [B + 0.05, -bp], [B + 0.05, 0], 'v', B + 0.05 + 22 * u, f(bp), { flip: true });
-      sc.text([p + e + Math.max(0.05, t / 2), hs + Math.min(H * 0.55, 0.6)], 'Remblai', { h: 10.5, color: DIM, italic: true, anchor: 'middle' });
-      sc.text([p / 2, hs + 14 * u], 'Aval', { h: 10.5, color: DIM, italic: true });
-      if (bp > 0) sc.text([p + e + t / 2, -bp / 2], 'Béton de propreté', { h: 9.5, color: DIM, italic: true, halo: true });
-    } else {
+    if (struct === 'murT') murCoffrage(sc, g, u, f);
+    else {
       const { Bext, Hext, ep, er, et, O, Hi } = g, G = g.g;
       dim(sc, [0, Hext], [ep, Hext], 'h', Hext + 20 * u, f(ep), { flip: true });
       dim(sc, [ep, Hext - et], [Bext - ep, Hext - et], 'h', Hext + 20 * u, f(O));
@@ -182,13 +255,15 @@
   function secondScene(struct, g, u) {
     const sc = new Scene(u), f = F.fmtCote;
     if (struct === 'murT') {
-      const { L, hs, H } = g;
+      const { L, hs, H } = g, hb = g.beche ? g.bh : 0;
       sc.poly([[0, 0], [L, 0], [L, hs], [0, hs]], { closed: true, fill: CONCRETE, w: 1.4 });
-      sc.poly([[0, hs], [L, hs], [L, hs + H], [0, hs + H]], { closed: true, fill: '#f6f3ea', w: 1.4 });
-      dim(sc, [0, 0], [L, 0], 'h', -20 * u, f(L));
-      dim(sc, [0, 0], [0, hs + H], 'v', -20 * u, f(hs + H));
-      sc.text([L / 2, hs + H / 2], 'Parement aval du voile', { h: 10, color: DIM, italic: true });
-      sc.text([L / 2, hs + H + 12 * u], 'Élévation du bloc (joints aux extrémités)', { h: 10, color: DIM });
+      sc.poly([[0, hs], [L, hs], [L, H], [0, H]], { closed: true, fill: '#f6f3ea', w: 1.4 });
+      if (hb) sc.poly([[0, -hb], [L, -hb], [L, 0], [0, 0]], { closed: true, dash: '6 4', w: 1, color: '#7b8191' });
+      if (g.tn > 0) { sc.line([-0.3, hs + g.tn], [L + 0.3, hs + g.tn], { w: 1, color: '#7b6a3a', layer: 'KLE-Cotation' }); sc.text([L + 0.35, hs + g.tn], 'TN aval', { h: 10, color: DIM, italic: true, anchor: 'start' }); }
+      dim(sc, [0, -hb], [L, -hb], 'h', -hb - 20 * u, f(L));
+      dim(sc, [0, 0], [0, H], 'v', -20 * u, f(H));
+      sc.text([L / 2, hs + (H - hs) * 0.6], 'Parement aval du voile', { h: 10, color: DIM, italic: true });
+      sc.text([L / 2, H + 12 * u], 'Élévation du plot (joints aux extrémités)' + (hb ? ' — bêche en traits cachés' : ''), { h: 10, color: DIM });
     } else {
       const { L, Bext, ep } = g;
       sc.poly([[0, 0], [L, 0], [L, Bext], [0, Bext]], { closed: true, fill: CONCRETE, w: 1.4 });
@@ -225,10 +300,23 @@
       if (item.shrink && item.shrink.seg === i) l -= item.shrink.by;
       return Math.max(l, 0.005);
     });
-    let x = item.x0, y = item.y0;
-    if (hooks[0]) { const a0 = rad(tr(segs[0].a)); x += (D / 2 + dm) * Math.cos(a0); y += (D / 2 + dm) * Math.sin(a0); }
-    const main = [[x, y]];
-    segs.forEach((s, i) => { const a = rad(tr(s.a)); x += lens[i] * Math.cos(a); y += lens[i] * Math.sin(a); main.push([x, y]); });
+    let main, dirS, dirE, sS = sides[0] * sideF, sE = sides[1] * sideF;
+    if (item.pts) {
+      // trajet donné à l'axe ; les extrémités à crosse sont raccourcies de (D/2 + Ø)
+      main = item.pts.map((q) => q.slice());
+      const cut = (P, Q, d) => { const v = [Q[0] - P[0], Q[1] - P[1]], l = Math.hypot(v[0], v[1]) || 1, k = Math.min(d, l * 0.9) / l; P[0] += v[0] * k; P[1] += v[1] * k; };
+      if (hooks[0]) cut(main[0], main[1], D / 2 + dm);
+      if (hooks[1]) cut(main[main.length - 1], main[main.length - 2], D / 2 + dm);
+      const ang = (P, Q) => Math.atan2(Q[1] - P[1], Q[0] - P[0]) * 180 / Math.PI;
+      dirS = ang(main[0], main[1]); dirE = ang(main[main.length - 2], main[main.length - 1]);
+      if (item.hs) { sS = item.hs[0]; sE = item.hs[1]; }
+    } else {
+      let x = item.x0, y = item.y0;
+      if (hooks[0]) { const a0 = rad(tr(segs[0].a)); x += (D / 2 + dm) * Math.cos(a0); y += (D / 2 + dm) * Math.sin(a0); }
+      main = [[x, y]];
+      segs.forEach((s, i) => { const a = rad(tr(s.a)); x += lens[i] * Math.cos(a); y += lens[i] * Math.sin(a); main.push([x, y]); });
+      dirS = tr(segs[0].a); dirE = tr(segs[n - 1].a);
+    }
     const hookPts = (P, dirDeg, side, alpha) => {
       if (!alpha) return [];
       const ux = Math.cos(rad(dirDeg)), uy = Math.sin(rad(dirDeg));
@@ -242,8 +330,8 @@
       pts.push([last[0] + ext * Math.cos(fd), last[1] + ext * Math.sin(fd)]);
       return pts;
     };
-    const endH = hookPts(main[main.length - 1], tr(segs[n - 1].a), sides[1] * sideF, hooks[1]);
-    const startH = hookPts(main[0], tr(segs[0].a) + 180, sides[0] * sideF, hooks[0]).reverse();
+    const endH = hookPts(main[main.length - 1], dirE, sE, hooks[1]);
+    const startH = hookPts(main[0], dirS + 180, sS, hooks[0]).reverse();
     return { pts: startH.concat(main, endH), main };
   }
 
@@ -251,7 +339,20 @@
     const n = F.barCount(bar), out = [];
     (bar.place.dots || []).forEach((ln) => {
       const pts = [];
-      if (ln.mode === 'step') {
+      if (ln.mode === 'poly') {
+        const P = ln.pts, cum = [0];
+        for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+        const T = cum[cum.length - 1];
+        for (let i = 0; i < n; i++) {
+          const s = n === 1 ? T / 2 : T * i / (n - 1);
+          let k = 1; while (k < P.length - 1 && cum[k] < s) k++;
+          const t = (s - cum[k - 1]) / ((cum[k] - cum[k - 1]) || 1);
+          pts.push([P[k - 1][0] + (P[k][0] - P[k - 1][0]) * t, P[k - 1][1] + (P[k][1] - P[k - 1][1]) * t]);
+        }
+      } else if (ln.mode === 'stepY') {
+        const [A, B] = ln.line;
+        for (let i = 0; i < n; i++) { const y = ln.y0 - bar.esp * i; pts.push([A[0] + (B[0] - A[0]) * (y - A[1]) / (B[1] - A[1]), y]); }
+      } else if (ln.mode === 'step') {
         for (let i = 0; i < n; i++) pts.push([ln.a[0] + ln.dir[0] * bar.esp * i, ln.a[1] + ln.dir[1] * bar.esp * i]);
       } else {
         for (let i = 0; i < n; i++) {
@@ -379,6 +480,14 @@
       const anchor = Math.abs(nx) > 0.7 ? (nx > 0 ? 'start' : 'end') : 'middle';
       return { x: tx, y: ty + (Math.abs(nx) > 0.7 ? 0 : -ny * 2), s: F.fmtCote(shape.segs[i].l), anchor };
     });
+    // évite le chevauchement des cotes : décale le long de la normale tant qu'il y a collision
+    const box = (t) => { const tw = t.s.length * 5.4, x0 = t.anchor === 'start' ? t.x : t.anchor === 'end' ? t.x - tw : t.x - tw / 2; return [x0, t.y - 5.5, x0 + tw, t.y + 5.5]; };
+    const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    texts.forEach((t, i) => {
+      for (let k = 0; k < 4 && texts.slice(0, i).some((o) => hit(box(t), box(o))); k++) {
+        if (t.anchor === 'middle') t.y += (t.y < h / 2 ? -1 : 1) * 10; else t.x += t.anchor === 'start' ? 10 : -10;
+      }
+    });
     return { w, h, pts: all.map(P), texts };
   }
 
@@ -390,5 +499,5 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Outfit, Arial, sans-serif" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || '#c0392b'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${t}</svg>`;
   }
 
-  return { COLORS, Scene, bounds, toSVG, fitScale, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
+  return { COLORS, Scene, bounds, toSVG, fitScale, fitRender, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
 });

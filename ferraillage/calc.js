@@ -19,6 +19,8 @@
  *               BAEL (simplifié, HA) → 5Ø.
  *  - Nombre de barres réparties = floor(longueur de répartition / espacement) + 1.
  *  - Barres à densité (épingles, écarteurs) : ceil(surface × densité).
+ *  - Mur : aciers verticaux parallèles aux parements (fruits), barres identiques
+ *    des deux faces regroupées sous un même repère.
  *  - Barre plus longue que Lmax : découpe en k barres indicées (4a, 4b…) avec
  *    recouvrement l0 = n·Ø, k = ceil((L − l0)/(Lmax − l0)).
  */
@@ -192,77 +194,254 @@
     return steps[steps.length - 1][1];
   }
 
-  /* Mur de soutènement en T. Repère : x depuis l'arête du patin (aval, à gauche),
-     y depuis la sous-face de la semelle ; talon côté terre (droite). */
+  /* ── Outils géométriques (sections planes, y vers le haut) ── */
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const len2 = (v) => Math.hypot(v[0], v[1]);
+  const angOf = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+
+  /* Décale chaque côté d'un polygone (sens trigonométrique, intérieur à gauche)
+     de dists[i] vers l'intérieur et renvoie les nouveaux sommets (même indexation). */
+  function offsetPoly(poly, dists) {
+    const n = poly.length, N = [];
+    for (let i = 0; i < n; i++) {
+      const d = sub(poly[(i + 1) % n], poly[i]), l = len2(d);
+      N.push(l < 1e-9 ? null : [-d[1] / l, d[0] / l]);
+    }
+    for (let i = 0; i < n; i++) if (!N[i]) { let k = i; do { k = (k + n - 1) % n; } while (!N[k] && k !== i); N[i] = N[k]; }
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const ip = (i + n - 1) % n, n0 = N[ip], n1 = N[i], d0 = typeof dists === 'number' ? dists : dists[ip], d1 = typeof dists === 'number' ? dists : dists[i];
+      const P = poly[i], A = [P[0] + n0[0] * d0, P[1] + n0[1] * d0], B = [P[0] + n1[0] * d1, P[1] + n1[1] * d1];
+      const u0 = [n0[1], -n0[0]], u1 = [n1[1], -n1[0]], cr = u0[0] * u1[1] - u0[1] * u1[0];
+      if (Math.abs(cr) < 1e-9) { out.push(B); continue; }
+      const t = ((B[0] - A[0]) * u1[1] - (B[1] - A[1]) * u1[0]) / cr;
+      out.push([A[0] + u0[0] * t, A[1] + u0[1] * t]);
+    }
+    return out;
+  }
+
+  /* Supprime les points doublons et alignés d'un trajet ouvert. */
+  function cleanPath(pts) {
+    const p = [];
+    pts.forEach((q) => { if (!p.length || len2(sub(q, p[p.length - 1])) > 1e-6) p.push(q); });
+    for (let i = p.length - 2; i > 0; i--) {
+      const a = sub(p[i], p[i - 1]), b = sub(p[i + 1], p[i]);
+      if (Math.abs(a[0] * b[1] - a[1] * b[0]) < 1e-9 * len2(a) * len2(b) + 1e-12 && a[0] * b[0] + a[1] * b[1] > 0) p.splice(i, 1);
+    }
+    return p;
+  }
+
+  /* Segments cotés {l, a} à partir d'un trajet (cotes hors-tout = longueurs du trajet). */
+  const segsOf = (pts) => pts.slice(1).map((q, i) => ({ l: r3(len2(sub(q, pts[i]))), a: Math.round(angOf(pts[i], q) * 1000) / 1000 }));
+  /* Abscisse sur la droite AB à l'ordonnée y. */
+  const xAt = (A, B, y) => A[0] + (B[0] - A[0]) * (y - A[1]) / (B[1] - A[1]);
+  /* Droite AB décalée de d vers la gauche du sens A→B. */
+  function offLine(A, B, d) {
+    const v = sub(B, A), l = len2(v), n = [-v[1] / l * d, v[0] / l * d];
+    return [[A[0] + n[0], A[1] + n[1]], [B[0] + n[0], B[1] + n[1]]];
+  }
+
+  /* Mur de soutènement cantilever. Repère : x depuis l'arête du patin (aval, à gauche),
+     y depuis la sous-face de la semelle ; talon côté terres (droite).
+     Paramétrage identique à la feuille de stabilité (Fascicule 62 titre V). */
+  const BPOS = [['voile', 'sous le voile'], ['talon', 'au bout du talon'], ['patin', 'au bout du patin'], ['libre', 'abscisse libre']];
   const murT = {
     id: 'murT',
     label: 'Mur de soutènement en T',
+    groups: [['geo', 'Géométrie'], ['ter', 'Terrain'], ['opt', 'Options']],
     fields: [
-      fld('H', 'Hauteur du voile H', 1.00, 0.4, 8),
-      fld('e', 'Épaisseur du voile e', 0.25, 0.15, 1.2),
-      fld('B', 'Largeur de la semelle B', 1.20, 0.5, 8),
-      fld('hs', 'Épaisseur de la semelle hs', 0.25, 0.15, 1.5),
-      fld('p', 'Patin (côté aval) p', 0.475, 0, 4, 0.005, 'Talon = B − p − e'),
-      fld('L', 'Longueur du bloc L', 10.00, 1, 40, 0.05),
-      fld('bp', 'Béton de propreté', 0.10, 0, 0.3, 0.01),
+      { k: 'H', label: 'Hauteur totale H', def: 4.00, min: 0.6, max: 12, step: 0.05, unit: 'm', g: 'geo', hint: 'dessus voile → dessous semelle' },
+      { k: 'hs', label: 'Semelle hs', def: 0.70, min: 0.2, max: 2, step: 0.05, unit: 'm', g: 'geo' },
+      { k: 'e0', label: 'Voile en tête e0', def: 0.25, min: 0.15, max: 1.5, step: 0.01, unit: 'm', g: 'geo' },
+      { k: 'fa', label: 'Fruit amont', def: 0.075, min: 0, max: 0.3, step: 0.005, unit: 'm/m', g: 'geo', hint: 'côté terres' },
+      { k: 'fv', label: 'Fruit aval', def: 0, min: 0, max: 0.2, step: 0.005, unit: 'm/m', g: 'geo', hint: 'parement' },
+      { k: 'p', label: 'Patin p', def: 0.50, min: 0, max: 6, step: 0.05, unit: 'm', g: 'geo' },
+      { k: 'B', label: 'Semelle B', def: 3.70, min: 0.5, max: 12, step: 0.05, unit: 'm', g: 'geo' },
+      { k: 'L', label: 'Longueur plot L', def: 10.00, min: 1, max: 40, step: 0.5, unit: 'm', g: 'geo' },
+      { k: 'bp', label: 'Béton propreté', def: 0.10, min: 0, max: 0.3, step: 0.01, unit: 'm', g: 'geo' },
+      { k: 'beta', label: 'Talus amont β', def: 26.57, min: 0, max: 45, step: 0.01, unit: '°', g: 'ter', hint: '0 = terre-plein' },
+      { k: 'tn', label: 'TN aval', def: 0.50, min: 0, max: 10, step: 0.05, unit: 'm', g: 'ter', hint: 'au-dessus semelle' },
+      { k: 'q', label: 'Surcharge q', def: 1.00, min: 0, max: 10, step: 0.1, unit: 't/m²', g: 'ter' },
+      { k: 'beche', label: 'Bêche sous semelle', def: false, type: 'check', g: 'opt' },
+      { k: 'bw', label: 'Largeur bêche', def: 0.50, min: 0.25, max: 3, step: 0.05, unit: 'm', g: 'opt', when: 'beche' },
+      { k: 'bh', label: 'Hauteur bêche', def: 0.50, min: 0.2, max: 2, step: 0.05, unit: 'm', g: 'opt', when: 'beche' },
+      { k: 'bpos', label: 'Position', def: 'voile', type: 'select', opts: BPOS, g: 'opt', when: 'beche' },
+      { k: 'bx', label: 'Abscisse bêche', def: 1.00, min: 0, max: 12, step: 0.05, unit: 'm', g: 'opt', when: 'beche', whenVal: ['bpos', 'libre'], hint: 'bord gauche' },
+      { k: 'biseau', label: 'Semelle en biseau', def: false, type: 'check', g: 'opt' },
+      { k: 'hbp', label: 'Ép. bout patin', def: 0.40, min: 0.15, max: 2, step: 0.05, unit: 'm', g: 'opt', when: 'biseau' },
+      { k: 'hbt', label: 'Ép. bout talon', def: 0.40, min: 0.15, max: 2, step: 0.05, unit: 'm', g: 'opt', when: 'biseau' },
     ],
-    derive(g) { return Object.assign({}, g, { talon: r3(g.B - g.p - g.e), Htot: g.H + g.hs }); },
+    presets: {
+      M4: { label: 'Mur M4 (H 4,00)', g: {} },
+      M5: { label: 'Mur M5 (H 1,25)', g: { H: 1.25, hs: 0.25, e0: 0.25, fa: 0, fv: 0, p: 0.475, B: 1.20, L: 10, bp: 0.10, beta: 0, tn: 0.30, q: 1.00, beche: false, biseau: false } },
+    },
+    derive(g) {
+      const Hv = g.H - g.hs, eb = g.e0 + (g.fa + g.fv) * Hv, talon = g.B - g.p - eb;
+      const xAvT = g.p + g.fv * Hv, xAmT = xAvT + g.e0, dPou = g.B - xAmT;
+      const hbp = g.biseau ? g.hbp : g.hs, hbt = g.biseau ? g.hbt : g.hs;
+      let bx0 = 0, bx1 = 0;
+      if (g.beche) {
+        if (g.bpos === 'talon') bx0 = g.B - g.bw;
+        else if (g.bpos === 'patin') bx0 = 0;
+        else if (g.bpos === 'libre') bx0 = g.bx;
+        else bx0 = g.p + eb / 2 - g.bw / 2;
+        bx1 = bx0 + g.bw;
+      }
+      return Object.assign({}, g, {
+        Hv: r3(Hv), eb: Math.round(eb * 1e4) / 1e4, talon: Math.round(talon * 1e4) / 1e4, xAvT, xAmT, dPou,
+        Hp: Math.round((g.H + dPou * Math.tan(rad(g.beta))) * 1e4) / 1e4, hbp, hbt, bx0, bx1, Htot: g.H,
+      });
+    },
     validate(g) {
-      const e = [];
-      const t = g.B - g.p - g.e;
-      if (t < -1e-9) e.push('Le talon est négatif : réduisez le patin p ou l’épaisseur e (B − p − e = ' + t.toFixed(3) + ' m).');
-      if (g.hs < 0.15) e.push('Semelle trop mince pour deux nappes et l’enrobage.');
-      for (const f of this.fields) if (!(g[f.k] >= f.min - 1e-9)) e.push(f.label + ' doit être ≥ ' + f.min + ' m.');
+      const e = [], d = this.derive(g);
+      for (const f of this.fields) {
+        if (f.type || (f.when && !g[f.when]) || (f.whenVal && g[f.whenVal[0]] !== f.whenVal[1])) continue;
+        if (!(g[f.k] >= f.min - 1e-9)) e.push(f.label + ' doit être ≥ ' + f.min + ' ' + f.unit + '.');
+        else if (g[f.k] > f.max + 1e-9) e.push(f.label + ' doit être ≤ ' + f.max + ' ' + f.unit + '.');
+      }
+      if (e.length) return e;
+      if (d.Hv < 0.3) e.push('Hauteur du voile Hv = H − hs = ' + d.Hv.toFixed(2) + ' m : trop faible (≥ 0,30 m).');
+      if (d.eb >= g.B) e.push('L’épaisseur du voile à la base (' + d.eb.toFixed(3) + ' m) dépasse la largeur de semelle B.');
+      if (d.talon < -1e-9) e.push('Talon négatif : B − p − eb = ' + d.talon.toFixed(3) + ' m. Augmentez B ou réduisez p, e0 ou les fruits.');
+      if (g.tn > d.Hv + 1e-9) e.push('Le TN aval dépasse la tête du voile.');
+      if (g.biseau) {
+        if (g.hbp > g.hs + 1e-9 || g.hbt > g.hs + 1e-9) e.push('Biseau : les épaisseurs aux abouts doivent être ≤ hs.');
+        if (g.p < 0.1 && g.hbp < g.hs - 1e-9) e.push('Biseau côté patin impossible sans patin (p < 0,10 m).');
+      }
+      if (g.beche) {
+        if (d.bx0 < -1e-9 || d.bx1 > g.B + 1e-9) e.push('La bêche sort de l’emprise de la semelle (0 à ' + g.B + ' m).');
+      }
       return e;
     },
-    propose(g, params) {
+    /* Contour de coffrage (sens trigonométrique) et polygone de la semelle seule. */
+    outline(g) {
+      const d = this.derive(g), { B, hs, H } = g, { hbp, hbt, eb, xAvT, xAmT, bx0, bx1 } = d;
+      const bottom = g.beche ? [[0, 0], [bx0, 0], [bx0, -g.bh], [bx1, -g.bh], [bx1, 0], [B, 0]] : [[0, 0], [B, 0]];
+      const outer = cleanPath(bottom.concat([[B, hbt], [g.p + eb, hs], [xAmT, H], [xAvT, H], [g.p, hs], [0, hbp], [0, 0]]));
+      outer.pop();
+      return { outer, sole: [[0, 0], [B, 0], [B, hbt], [g.p + eb, hs], [g.p, hs], [0, hbp]] };
+    },
+    propose(g0, params) {
       const p = Object.assign({}, DEFAULT_PARAMS, params);
-      const c = p.cTerre, ca = p.cAutre;
-      const d1 = mainDiam(g.H, [[1.5, 12], [2.5, 14], [3.5, 16], [5, 20], [99, 25]]);
-      const d2 = 12, d3 = 10;
-      const m1 = d1 / 1000, m2 = d2 / 1000, m3 = d3 / 1000;
-      const { H, e, B, hs, p: pa, L } = g;
-      const talon = B - pa - e;
-      const r = r3(hs - 2 * c);                       // retours des U de semelle
-      const lr = r3(L - 2 * c);                        // longueur de répartition longitudinale
-      const V = r3(hs + H - c - ca);                    // hauteur des aciers verticaux du voile
-      const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * m1), Math.min(pa, talon) + e / 2 - c)));
-      const rv = r3(e - c - ca);                       // retours des filants du voile
-      const xf = pa + ca + m1 / 2, xb = pa + e - c - m1 / 2;
-      const yL = c + m1 / 2;
-      const legChair = Math.max(0.05, Math.round((hs - 2 * c - 2 * m1 - m2) * 100) / 100);
-      const nF = Math.floor((B - 2 * c) / 0.20 + 1e-9) + 1;
-      const fx = (i) => c + m1 + m2 / 2 + i * (B - 2 * c - 2 * m1 - m2) / Math.max(1, nF - 1);
-      const yTopV = hs + H - ca - m1 - m2 / 2;
-      return [
-        { id: '1', role: 'U semelle — nappe inférieure (retours vers le haut)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: r, a: -90 }, { l: r3(B - 2 * c), a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ x0: c + m1 / 2, y0: hs - c }], tag: { seg: 1, t: 0.22 } } },
-        { id: '2', role: 'U semelle — nappe supérieure (retours vers le bas)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: r, a: 90 }, { l: r3(B - 2 * c), a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ x0: c + 1.5 * m1, y0: c, shrink: { seg: 1, by: 2 * m1 } }], tag: { seg: 1, t: 0.8 } } },
-        { id: '3', role: 'Aciers verticaux du voile en L + crosse (2 faces)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
-          segs: [{ l: leg, a: 0 }, { l: V, a: 90 }], hooks: [0, 90], sides: [1, -1],
-          place: { items: [{ x0: xf - leg + m1 / 2, y0: yL }, { x0: xb + leg - m1 / 2, y0: yL, mx: true }], tag: { seg: 1, t: 0.72 } } },
-        { id: '4', role: 'Filants semelle — nappe inférieure', d: d2, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
-          segs: [{ l: r, a: 90 }, { l: lr, a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ a: [fx(0), c + m1 + m2 / 2], b: [fx(nF - 1), c + m1 + m2 / 2], mode: 'spread' }], tag: 1 } },
-        { id: '5', role: 'Filants semelle — nappe supérieure', d: d2, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
-          segs: [{ l: r, a: -90 }, { l: lr, a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ a: [fx(0), hs - c - m1 - m2 / 2], b: [fx(nF - 1), hs - c - m1 - m2 / 2], mode: 'spread' }], tag: -1 } },
-        { id: '6', role: 'Filants voile (2 faces)', d: d2, kind: 'filant', esp: 0.20, distLen: r3(H - ca), mult: 2,
-          segs: [{ l: rv, a: 90 }, { l: lr, a: 0 }, { l: rv, a: -90 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ a: [pa + ca + m1 + m2 / 2, yTopV], dir: [0, -1], mode: 'step' }, { a: [pa + e - c - m1 - m2 / 2, yTopV], dir: [0, -1], mode: 'step' }], tag: 1 } },
-        { id: '7', role: 'Épingles semelle', d: d3, kind: 'densite', esp: 6, area: r3(B * L), mult: 1,
-          segs: [{ l: r, a: 90 }], hooks: [135, 135], sides: [1, -1],
-          place: { items: [{ x0: fx(1) + m2 / 2 + m3 / 2, y0: c }, { x0: fx(nF - 2) + m2 / 2 + m3 / 2, y0: c }], tag: { seg: 0, t: 0.5 } } },
-        { id: '8', role: 'Épingles voile', d: d3, kind: 'densite', esp: 6, area: r3(H * L), mult: 1,
-          segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1],
-          place: { items: [{ x0: pa + ca, y0: yTopV - 0.2 - m2 / 2 - m3 / 2 }, { x0: pa + ca, y0: yTopV - 0.6 - m2 / 2 - m3 / 2 }], tag: { seg: 0, t: 0.5 } } },
-        { id: '9', role: 'Écarteurs (chaises) semelle', d: d3, kind: 'densite', esp: 1, area: r3(B * L), mult: 1,
-          segs: [{ l: 0.20, a: 0 }, { l: legChair, a: 90 }, { l: 0.30, a: 0 }, { l: legChair, a: -90 }, { l: 0.20, a: 0 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ x0: Math.max(c + 0.02, B / 2 - 0.35), y0: c + m1 + m2 + m3 / 2 }], tag: { seg: 4, t: 0.7 } } },
-      ];
+      const g = this.derive(g0), c = p.cTerre, ca = p.cAutre;
+      const { H, hs, B, L, e0 } = g, { Hv, eb, hbp, hbt, xAvT, xAmT } = g;
+      const big = H >= 3 - 1e-9;
+      // Diamètres par défaut : petit mur (type M5) HA12 partout ; H ≥ 3 m principe M4.
+      let dI, dS, dAv, dAm, dR = 0, dFs, dFv, dens;
+      if (!big) { dI = dS = dAv = dAm = mainDiam(Hv, [[1.5, 12], [2.5, 14], [99, 16]]); dFs = dFv = 12; dens = 6; }
+      else if (H < 5.5) { dI = 14; dS = 20; dAm = 14; dR = 20; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
+      else { dI = 16; dS = 25; dAm = 16; dR = 25; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
+      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFs = mm(dFs), mFv = mm(dFv), mE = 0.010;
+      const lr = r3(L - 2 * c), yL = c + mI / 2;
+      const sole = this.outline(g0).sole; // 0:(0,0) 1:(B,0) 2:(B,hbt) 3:(p+eb,hs) 4:(p,hs) 5:(0,hbp)
+      const env = offsetPoly(sole, c);
+      const ytop = (x) => (x <= g.p ? hbp + (hs - hbp) * x / Math.max(g.p, 1e-9) : x >= g.p + eb ? hs + (hbt - hs) * (x - g.p - eb) / Math.max(B - g.p - eb, 1e-9) : hs);
+      const bars = [];
+      const mkRep = (bar) => { bars.push(bar); return bar; };
+
+      // 1 — U semelle, nappe inférieure (retours vers le haut)
+      const p1 = cleanPath([env[5], env[0], env[1], env[2]]);
+      const ax1 = offsetPoly(sole, c + mI / 2);
+      mkRep({ role: 'U semelle — nappe inférieure (retours vers le haut)', d: dI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: segsOf(p1), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: cleanPath([ax1[5], ax1[0], ax1[1], ax1[2]]) }], tag: { seg: 1, t: 0.2 } } });
+      // 2 — U semelle, nappe supérieure (retours vers le bas), à l'intérieur des retours du n° 1
+      const p2 = cleanPath([env[0], env[5], env[4], env[3], env[2], env[1]]);
+      const ax2 = offsetPoly(sole, [c + mS / 2, c + mI + mS / 2, c + mS / 2, c + mS / 2, c + mS / 2, c + mI + mS / 2]);
+      mkRep({ role: 'U semelle — nappe supérieure (retours vers le bas)', d: dS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: segsOf(p2), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: cleanPath([ax2[0], ax2[5], ax2[4], ax2[3], ax2[2], ax2[1]]) }], tag: { seg: 2, t: 0.75 } } });
+
+      // Aciers verticaux du voile : parallèles aux parements, ancrés en pied par un retour, crosse en tête.
+      const avA = [g.p, hs], avB = [xAvT, H], amA = [g.p + eb, hs], amB = [xAmT, H];
+      const vert = (face, d, side) => {
+        const m = mm(d), cov = face === 'av' ? ca : c;
+        const [A, Bp] = face === 'av' ? offLine(avA, avB, -(cov + m / 2)) : offLine(amA, amB, cov + m / 2);
+        const xFoot = xAt(A, Bp, yL), top = [xAt(A, Bp, H - ca), H - ca];
+        const avail = face === 'av' ? xFoot + m / 2 - c : B - c - (xFoot - m / 2);
+        const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * m), avail)));
+        const tip = [face === 'av' ? xFoot + m / 2 - leg : xFoot - m / 2 + leg, yL];
+        const Vl = r3((H - ca - c) / Math.cos(Math.atan(face === 'av' ? g.fv : g.fa)));
+        const tipC = [face === 'av' ? xFoot + m / 2 - leg : xFoot - m / 2 + leg, c]; // trajet coté (hors-tout)
+        return { leg, Vl, pts: [tip, [xFoot, yL], top], side, segs: [{ l: leg, a: face === 'av' ? 0 : 180 }, { l: Vl, a: r3(angOf([xFoot, yL], top)) }], tipC };
+      };
+      const vAv = vert('av', dAv, -1), vAm = vert('am', dAm, 1);
+      const same = dAv === dAm && Math.abs(g.fa - g.fv) < 1e-9 && Math.abs(vAv.leg - vAm.leg) < 1e-9 && Math.abs(vAv.Vl - vAm.Vl) < 1e-9;
+      if (same) {
+        mkRep({ role: 'Aciers verticaux du voile en L + crosse (2 faces)', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+          segs: [{ l: vAv.leg, a: 0 }, { l: vAv.Vl, a: 90 }], hooks: [0, 90], sides: [1, -1],
+          place: { items: [{ pts: vAv.pts, hs: [1, -1] }, { pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.72 } } });
+      } else {
+        mkRep({ role: 'Voile face aval — verticaux en L + crosse', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: vAv.segs, hooks: [0, 90], sides: [1, -1], place: { items: [{ pts: vAv.pts, hs: [1, -1] }], tag: { seg: 1, t: 0.8 } } });
+        mkRep({ role: 'Voile face terres — verticaux en L + crosse', d: dAm, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: vAm.segs, hooks: [0, 90], sides: [-1, 1], place: { items: [{ pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.62 } } });
+      }
+      // Renfort de pied côté terres (barres arrêtées), hauteur d'optimisation ≈ 0,42·Hv
+      let hopt = 0;
+      if (dR) {
+        hopt = Math.round(0.42 * Hv * 20) / 20;
+        const [A, Bp] = offLine(amA, amB, c + mAm + mR / 2);
+        const xF = xAt(A, Bp, yL + mAm), yT = hs + hopt, top = [xAt(A, Bp, yT), yT];
+        const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * mR), B - c - (xF - mR / 2))));
+        const Vl = r3((yT - c) / Math.cos(Math.atan(g.fa)));
+        mkRep({ role: 'Renfort de pied côté terres (arrêté à ' + fmtCote(hopt) + ' m au-dessus de la semelle)', d: dR, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: [{ l: leg, a: 180 }, { l: Vl, a: r3(angOf([xF, yL], top)) }], hooks: [0, 0], sides: [-1, 1],
+          place: { items: [{ pts: [[xF - mR / 2 + leg, yL + mAm], [xF, yL + mAm], top] }], tag: { seg: 1, t: 0.55 } } });
+      }
+
+      // Filants de semelle (avec retours aux joints) et du voile
+      const r = r3(Math.min(hbp, hbt) - 2 * c);
+      const fI = offsetPoly(sole, [c + mI + mFs / 2, c + mI + mFs / 2, 0, 0, 0, c + mI + mFs / 2]);
+      mkRep({ role: 'Filants semelle — nappe inférieure', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+        segs: [{ l: r, a: 90 }, { l: lr, a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
+        place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 } });
+      const fS = offsetPoly(sole, [0, c + mI + mS + mFs / 2, c + mS + mFs / 2, c + mS + mFs / 2, c + mS + mFs / 2, c + mI + mS + mFs / 2]);
+      mkRep({ role: 'Filants semelle — nappe supérieure', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+        segs: [{ l: r, a: -90 }, { l: lr, a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
+        place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 } });
+      const em = (e0 + eb) / 2, rv = r3(em - c - ca);
+      const yTopV = H - ca - Math.max(mAv, mAm) - mFv / 2;
+      const lAv = offLine(avA, avB, -(ca + mAv + mFv / 2)), lAm = offLine(amA, amB, c + mAm + (dR ? mR : 0) + mFv / 2);
+      mkRep({ role: 'Filants voile (2 faces)', d: dFv, kind: 'filant', esp: 0.20, distLen: r3(Hv - ca), mult: 2,
+        segs: [{ l: rv, a: 90 }, { l: lr, a: 0 }, { l: rv, a: -90 }], hooks: [0, 0], sides: [1, -1],
+        place: { dots: [{ mode: 'stepY', line: lAv, y0: yTopV }, { mode: 'stepY', line: lAm, y0: yTopV }], tag: 1 } });
+
+      // Bêche : cadre en U ancré dans la semelle + filants en fond de bêche
+      if (g.beche) {
+        const dB = dI, mB = mm(dB), x0 = g.bx0, x1 = g.bx1, yb = -g.bh;
+        const yT = Math.min(ytop(x0 + c), ytop(x1 - c)) - c;
+        const pts = [[x0 + c + mB / 2, yT], [x0 + c + mB / 2, yb + c + mB / 2], [x1 - c - mB / 2, yb + c + mB / 2], [x1 - c - mB / 2, yT]];
+        mkRep({ role: 'Bêche — cadres en U ancrés dans la semelle', d: dB, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: [{ l: r3(yT - yb - c), a: -90 }, { l: r3(g.bw - 2 * c), a: 0 }, { l: r3(yT - yb - c), a: 90 }], hooks: [0, 0], sides: [1, -1],
+          place: { items: [{ pts }], tag: { seg: 1, t: 0.5 } } });
+        const yF = yb + c + mB + mFs / 2;
+        mkRep({ role: 'Bêche — filants de fond', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(g.bw - 2 * c), mult: 1,
+          segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'poly', pts: [[x0 + c + mB + mFs / 2, yF], [x1 - c - mB - mFs / 2, yF]] }], tag: 0 } });
+      }
+
+      // Épingles (semelle, voile) et écarteurs
+      const hsm = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
+      const rs = r3(hsm - 2 * c);
+      const fx = (t) => fI[0][0] + (fI[1][0] - fI[0][0]) * t;
+      const epX = [g.p + eb + Math.max(0.05, (B - g.p - eb) * 0.5), Math.max(c + 0.05, g.p * 0.5)].filter((x, i) => i === 0 || g.p > 0.25).map((x) => Math.min(Math.max(x, fx(0.08)), fx(0.92)));
+      mkRep({ role: 'Épingles semelle', d: 10, kind: 'densite', esp: dens, area: r3(B * L), mult: 1,
+        segs: [{ l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
+        place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } });
+      const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => {
+        const a = offLine(avA, avB, -ca), b = offLine(amA, amB, c);
+        return { pts: [[xAt(a[0], a[1], y), y], [xAt(b[0], b[1], y), y]], hs: [-1, 1] };
+      });
+      mkRep({ role: 'Épingles voile', d: 10, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1,
+        segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } });
+      const legChair = Math.max(0.05, Math.round((hs - 2 * c - mI - mS - mFs) * 100) / 100);
+      const xc = Math.min(Math.max(c + 0.02, g.p + eb / 2 - 0.35), B - c - 0.92);
+      mkRep({ role: 'Écarteurs (chaises) semelle', d: 10, kind: 'densite', esp: 1, area: r3(B * L), mult: 1,
+        segs: [{ l: 0.20, a: 0 }, { l: legChair, a: 90 }, { l: 0.30, a: 0 }, { l: legChair, a: -90 }, { l: 0.20, a: 0 }], hooks: [0, 0], sides: [1, -1],
+        place: { items: [{ x0: xc, y0: c + mI + mFs + mE / 2 }], tag: { seg: 4, t: 0.7 } } });
+
+      bars.forEach((b, i) => { b.id = String(i + 1); });
+      bars.meta = { hopt, big };
+      return bars;
     },
   };
 
@@ -366,6 +545,12 @@
     return g;
   }
 
+  /* Valeurs d'un exemple prédéfini (ex. murs M4, M5 de KLE). */
+  function preset(struct, name) {
+    const P = STRUCTURES[struct].presets && STRUCTURES[struct].presets[name];
+    return Object.assign(defaults(struct), P ? P.g : {});
+  }
+
   /* Calcul complet : proposition + modifications → lignes + récapitulatif. */
   function compute(struct, g, params, overrides) {
     const S = STRUCTURES[struct];
@@ -385,6 +570,6 @@
   return {
     DIAMS, MASSE_LIN, HOOKS, DEFAULT_PARAMS, STRUCTURES,
     mandrin, deviation, bendDeduction, hookStraight, hookLength, devLength,
-    barCount, splitShape, applyOverride, computeRows, recap, defaults, compute, fmtCote, round5mm,
+    barCount, splitShape, applyOverride, computeRows, recap, defaults, preset, compute, fmtCote, round5mm, offsetPoly, cleanPath,
   };
 });
