@@ -429,9 +429,9 @@
       // Barres de maintien des nappes (semelle, voile) : épingles ou étriers.
       //  - Épingle (code 3001) : barre droite, une crosse à chaque extrémité (135° par défaut),
       //    accrochée aux deux nappes.
-      //  - Étrier (code 5201) : cadre FERMÉ entourant deux filants de chaque nappe, crosses 135°
-      //    au même angle. Fermé plutôt qu'en U : il ceinture les deux nappes sur tout le pourtour,
-      //    ce qui tient l'écartement des nappes dans les deux sens (un U ouvert ne retient qu'une nappe).
+      //  - Étrier (code 2002) : U OUVERT (pas un cadre). L'âme s'appuie contre deux filants d'une
+      //    nappe, les deux branches traversent l'épaisseur et se terminent chacune par une crosse
+      //    135° rabattue vers l'intérieur, accrochée aux deux filants de l'autre nappe.
       const hsm = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
       const rs = r3(hsm - 2 * c);
       const fx = (t) => fI[0][0] + (fI[1][0] - fI[0][0]) * t;
@@ -446,10 +446,10 @@
         const items = epX.map((x) => {
           const k = Math.max(0, Math.min(nF - 2, Math.floor((x - fI[0][0]) / pitch))), cx = fI[0][0] + (k + 0.5) * pitch;
           const xL = cx - wC / 2 + mEs / 2, xR = cx + wC / 2 - mEs / 2, yB = c + mEs / 2, yT = ytop(cx) - c - mEs / 2;
-          return { pts: [[xL, yT], [xR, yT], [xR, yB], [xL, yB], [xL, yT]], hs: [1, -1] };
+          return { pts: [[xL, yT], [xL, yB], [xR, yB], [xR, yT]], hs: [-1, 1] };
         });
-        mkRep({ role: 'Étriers semelle (cadres fermés autour des deux nappes)', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'etrier', code: '5201',
-          segs: [{ l: wC, a: 0 }, { l: rs, a: -90 }, { l: wC, a: 180 }, { l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
+        mkRep({ role: 'Étriers semelle (U ouverts, crosses sur la nappe supérieure)', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'etrier', code: '2002',
+          segs: [{ l: rs, a: -90 }, { l: wC, a: 0 }, { l: rs, a: 90 }], hooks: [135, 135], sides: [-1, 1],
           place: { items, tag: { seg: 1, t: 0.5 } } }, 'Es');
       } else {
         mkRep({ role: 'Épingles semelle', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1, maintien: 'epingle', code: '3001',
@@ -465,10 +465,10 @@
         const items = [0.25, 0.6].map((f) => {
           const i = Math.max(0, Math.round((yTopV - (H - ca - f * Hv)) / 0.20 - 0.5)), yc = yTopV - (i + 0.5) * 0.20;
           const yT = yc + wv / 2 - mEv / 2, yB = yc - wv / 2 + mEv / 2;
-          return { pts: [[xAv(yT) + mEv / 2, yT], [xAm(yT) - mEv / 2, yT], [xAm(yB) - mEv / 2, yB], [xAv(yB) + mEv / 2, yB], [xAv(yT) + mEv / 2, yT]], hs: [1, -1] };
+          return { pts: [[xAm(yT) - mEv / 2, yT], [xAv(yT) + mEv / 2, yT], [xAv(yB) + mEv / 2, yB], [xAm(yB) - mEv / 2, yB]], hs: [-1, 1] };
         });
-        mkRep({ role: 'Étriers voile (cadres fermés autour des deux nappes)', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'etrier', code: '5201',
-          segs: [{ l: rv, a: 0 }, { l: wv, a: -90 }, { l: rv, a: 180 }, { l: wv, a: 90 }], hooks: [135, 135], sides: [1, -1],
+        mkRep({ role: 'Étriers voile (U ouverts, crosses sur la nappe côté terres)', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1, maintien: 'etrier', code: '2002',
+          segs: [{ l: rv, a: 180 }, { l: wv, a: -90 }, { l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1],
           place: { items, tag: { seg: 0, t: 0.5 } } }, 'Ev');
       } else {
         const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => ({ pts: [[xAv(y), y], [xAm(y), y]], hs: [-1, 1] }));
