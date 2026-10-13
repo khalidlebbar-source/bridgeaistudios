@@ -30,7 +30,7 @@
   /* ───── État ───── */
   const S = {
     struct: null, geom: {}, valid: null, validKey: '', params: Object.assign({}, F.DEFAULT_PARAMS),
-    designation: '', overrides: {}, res: null, step: 1, maxStep: 1, view: 'coupe',
+    designation: '', overrides: {}, res: null, step: 1, maxStep: 1, view: 'coupe', sel: null,
   };
 
   /* ───── Navigation entre étapes ───── */
@@ -146,6 +146,7 @@
   $('#presets').addEventListener('click', (e) => {
     const b = e.target.closest('[data-preset]'); if (!b) return;
     S.geom = b.dataset.preset ? F.preset(S.struct, b.dataset.preset) : F.defaults(S.struct);
+    S.overrides = {}; S.sel = null; // nouvel exemple : on repart de la proposition
     keepOpen(); renderForm(); renderCoffrage();
   });
   $('#viewSeg').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (b) { S.view = b.dataset.v; renderCoffrage(); } });
@@ -229,6 +230,8 @@
     const el = $('#v-ferr'), [W, H] = boxOf(el);
     el.innerHTML = F.fitRender((u) => F.ferraillageScene(S.struct, res.geom, res.bars, res.params, u), W, H, { label: 'Coupe transversale ferraillée' });
     renderKpis(); renderTable(); renderRecap();
+    if (S.sel && !res.bars.some((b) => b.id === S.sel)) S.sel = null;
+    applySel(false);
     $('#st3').textContent = `${fr(res.recap.total, 1)} kg`;
   }
 
@@ -256,7 +259,7 @@
       const esp = first
         ? `<div class="num"><input type="number" data-esp="${row.barId}" value="${dens ? row.esp : row.esp.toFixed(2)}" step="${dens ? 1 : 0.01}" min="${dens ? 1 : 0.05}" aria-label="Espacement repère ${row.barId}"><span>${dens ? '/m²' : 'm'}</span></div>`
         : `<span class="sub">idem ${row.barId}a</span>`;
-      return `<tr title="${esc(row.role + (row.split ? ' — découpe avec recouvrement' : ''))}">
+      return `<tr data-bar="${row.barId}" title="${esc(row.role + (row.split ? ' — découpe avec recouvrement' : ''))}">
         <td class="rep">${row.id}<i style="background:${colorOf(row.barId)}"></i></td><td>${row.type}</td><td>${dSel}</td>
         <td>${row.parElem}${row.mult > 1 ? `<span class="sub">${row.n}×${row.mult}</span>` : ''}</td><td>${row.nbElem}</td><td><b style="font-weight:500">${row.total}</b></td>
         <td>${esp}</td><td>${row.L.toFixed(3)}${row.tooLong ? '<span class="sub" style="color:var(--danger)">&gt; Lmax</span>' : ''}</td>
@@ -275,6 +278,60 @@
       <tr><td>Longueur (m)</td>${L.map((l) => cell(l, fr(l.longueur, 1))).join('')}<td class="tot">${fr(R.longueur, 1)}</td></tr>
       <tr><td>Masse (kg)</td>${L.map((l) => cell(l, fr(l.masse, 1))).join('')}<td class="tot">${fr(R.total, 1)}</td></tr>`;
   }
+
+  /* ───── Surbrillance d'une barre (coupe ⇄ nomenclature) ───── */
+  function applySel(scroll) {
+    const svg = $('#v-ferr svg');
+    if (svg) {
+      svg.classList.toggle('has-sel', !!S.sel);
+      $$('[data-bar]', svg).forEach((e) => e.classList.toggle('on', e.getAttribute('data-bar') === S.sel));
+    }
+    $$('#nomenc tbody tr').forEach((tr) => tr.classList.toggle('sel', tr.dataset.bar === S.sel));
+    $('#ferr-sub').textContent = S.sel ? 'repère ' + S.sel + ' — ' + S.res.bars.find((b) => b.id === S.sel).role : 'cliquez une barre pour la repérer';
+    if (scroll && S.sel) {
+      const tr = $(`#nomenc tbody tr[data-bar="${S.sel}"]`), w = tr && tr.closest('.tablewrap');
+      if (w && w.scrollHeight > w.clientHeight + 2) {
+        const rw = w.getBoundingClientRect(), rt = tr.getBoundingClientRect(), head = 40, foot = 34;
+        if (rt.top < rw.top + head) w.scrollTop += rt.top - rw.top - head;
+        else if (rt.bottom > rw.bottom - foot) w.scrollTop += rt.bottom - rw.bottom + foot;
+      }
+    }
+  }
+  function select(id, scroll) { S.sel = id && id !== S.sel ? id : null; applySel(scroll); }
+  // Choix de la barre visée : parmi les éléments sous le doigt (zones de saisie élargies comprises),
+  // on retient celui dont la géométrie réelle (axe de barre, centre de pastille) est la plus proche.
+  function distTo(el, P) {
+    if (el.tagName === 'g') el = el.lastElementChild;
+    if (el.tagName === 'circle') return Math.hypot(el.cx.baseVal.value - P.x, el.cy.baseVal.value - P.y);
+    if (el.tagName === 'text') return Math.hypot(el.x.baseVal[0].value - P.x, el.y.baseVal[0].value - P.y);
+    if (el.getTotalLength) {
+      const L = el.getTotalLength(), n = Math.min(400, Math.max(20, Math.ceil(L / 2)));
+      let d = Infinity;
+      for (let i = 0; i <= n; i++) { const q = el.getPointAtLength(L * i / n); d = Math.min(d, Math.hypot(q.x - P.x, q.y - P.y)); }
+      return d;
+    }
+    return Infinity;
+  }
+  // coordonnées fractionnaires du pointeur (l'événement click les arrondit au pixel)
+  let lastPt = null;
+  $('#v-ferr').addEventListener('pointerdown', (e) => { lastPt = { x: e.clientX, y: e.clientY, t: Date.now() }; });
+  $('#v-ferr').addEventListener('click', (e) => {
+    const svg = $('#v-ferr svg');
+    const cp = lastPt && Date.now() - lastPt.t < 1500 && Math.abs(lastPt.x - e.clientX) < 2 && Math.abs(lastPt.y - e.clientY) < 2 ? lastPt : { x: e.clientX, y: e.clientY };
+    const stack = document.elementsFromPoint(cp.x, cp.y).map((el) => el.closest && el.closest('#v-ferr [data-bar]')).filter(Boolean);
+    let best = null;
+    if (svg && stack.length) {
+      const P = new DOMPoint(cp.x, cp.y).matrixTransform(svg.getScreenCTM().inverse());
+      let dmin = Infinity;
+      new Set(stack).forEach((el) => { const d = distTo(el, P); if (d < dmin) { dmin = d; best = el; } });
+    }
+    select(best ? best.getAttribute('data-bar') : null, true);
+  });
+  $('#nomenc').addEventListener('click', (e) => {
+    if (e.target.closest('input,select,button,option')) return;
+    const tr = e.target.closest('tbody tr'); if (tr) select(tr.dataset.bar, false);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.sel && !$('#barDlg').open) select(null); });
 
   const ov = (id) => (S.overrides[id] = S.overrides[id] || {});
   $('#nomenc').addEventListener('change', (e) => {

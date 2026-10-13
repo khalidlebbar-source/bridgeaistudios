@@ -22,6 +22,7 @@
   Scene.prototype.poly = function (pts, o) { this.items.push(Object.assign({ t: 'poly', pts, layer: 'KLE-Contour', color: INK, w: 1 }, o)); return this; };
   Scene.prototype.line = function (a, b, o) { return this.poly([a, b], o); };
   Scene.prototype.circle = function (c, r, o) { this.items.push(Object.assign({ t: 'circle', c, r, layer: 'KLE-Contour', color: INK, w: 1 }, o)); return this; };
+  Scene.prototype.bar = function (path, wM, o) { this.items.push(Object.assign({ t: 'bar', path, wM, layer: 'ACIERS', color: INK }, o)); return this; };
   Scene.prototype.text = function (p, s, o) { this.items.push(Object.assign({ t: 'text', p, s: String(s), h: 11, anchor: 'middle', rot: 0, layer: 'KLE-Cotation', color: INK }, o)); return this; };
 
   function textBox(it, u) {
@@ -37,6 +38,7 @@
     const add = (x, y) => { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); };
     for (const it of scene.items) {
       if (it.t === 'poly') { it.pts.forEach((p) => add(p[0], p[1])); (it.holes || []).forEach((h) => h.forEach((p) => add(p[0], p[1]))); }
+      else if (it.t === 'bar') samplePath(it.path, 6).forEach((p) => add(p[0], p[1]));
       else if (it.t === 'circle') { add(it.c[0] - it.r, it.c[1] - it.r); add(it.c[0] + it.r, it.c[1] + it.r); }
       else if (it.t === 'text') { const tb = textBox(it, scene.u); add(tb[0], tb[1]); add(tb[2], tb[3]); }
     }
@@ -56,12 +58,28 @@
       if (it.t === 'poly') {
         let d = pathOf(it.pts, it.closed);
         (it.holes || []).forEach((h) => { d += pathOf(h, true); });
-        out += `<path d="${d}" fill="${it.fill || 'none'}"${it.holes ? ' fill-rule="evenodd"' : ''} stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linejoin="round" stroke-linecap="round"/>`;
+        out += `<path d="${d}" fill="${it.fill || 'none'}"${it.holes ? ' fill-rule="evenodd"' : ''} stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linejoin="round" stroke-linecap="round"${it.barId ? ` data-bar="${it.barId}"` : ''}/>`;
+      } else if (it.t === 'bar') {
+        // trajet cintré : arcs SVG (l'axe y est inversé à l'écran, donc un bulge positif
+        // — sens trigonométrique — devient un arc horaire : sweep-flag 0) ; tracé transparent
+        // plus large derrière pour la sélection
+        let d = 'M' + X(it.path[0].p[0]) + ' ' + Y(it.path[0].p[1]);
+        for (let i = 0; i < it.path.length - 1; i++) {
+          const A = it.path[i].p, B = it.path[i + 1].p, bu = it.path[i].b;
+          if (Math.abs(bu) < 1e-9) d += 'L' + X(B[0]) + ' ' + Y(B[1]);
+          else {
+            const th = Math.abs(4 * Math.atan(bu)), c = Math.hypot(B[0] - A[0], B[1] - A[1]), r = (c / (2 * Math.sin(th / 2)) * s).toFixed(2);
+            d += `A${r} ${r} 0 ${th > Math.PI ? 1 : 0} ${bu > 0 ? 0 : 1} ${X(B[0])} ${Y(B[1])}`;
+          }
+        }
+        const w = Math.max(it.minPx || 1, it.wM * s).toFixed(2);
+        out += `<g data-bar="${it.barId}"><path d="${d}" fill="none" stroke="transparent" stroke-width="${Math.max(14, +w + 8)}" stroke-linecap="round" pointer-events="stroke"/><path d="${d}" fill="none" stroke="${it.color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="butt"/></g>`;
       } else if (it.t === 'circle') {
-        out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(it.minPx || 0, it.r * s).toFixed(2)}" fill="${it.fill || 'none'}" stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"/>`;
+        if (it.hit) out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(9, it.r * s).toFixed(1)}" fill="transparent" data-bar="${it.barId}"/>`;
+        out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(it.minPx || 0, it.r * s).toFixed(2)}" fill="${it.fill || 'none'}" stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.barId ? ` data-bar="${it.barId}"` : ''}/>`;
       } else if (it.t === 'text') {
         const tr = it.rot ? ` transform="rotate(${-it.rot} ${X(it.p[0])} ${Y(it.p[1])})"` : '';
-        out += `<text x="${X(it.p[0])}" y="${Y(it.p[1])}" font-size="${it.h}" text-anchor="${it.anchor}" dominant-baseline="central" fill="${it.color}"${it.halo ? ' stroke="#ffffff" stroke-width="3" paint-order="stroke"' : ''}${it.weight ? ` font-weight="${it.weight}"` : ''}${it.italic ? ' font-style="italic"' : ''}${tr}>${esc(it.s)}</text>`;
+        out += `<text x="${X(it.p[0])}" y="${Y(it.p[1])}" font-size="${it.h}" text-anchor="${it.anchor}" dominant-baseline="central" fill="${it.color}"${it.halo ? ' stroke="#ffffff" stroke-width="3" paint-order="stroke"' : ''}${it.weight ? ` font-weight="${it.weight}"` : ''}${it.italic ? ' font-style="italic"' : ''}${it.barId ? ` data-bar="${it.barId}"` : ''}${tr}>${esc(it.s)}</text>`;
       }
     }
     const label = opts.label ? ` role="img" aria-label="${esc(opts.label)}"` : '';
@@ -285,21 +303,78 @@
   }
 
   /* ───────── Barres en coupe ───────── */
-  /* Trajet d'une barre (axe) à partir de son point de départ. */
+  /* ───────── Trajets cintrés ─────────
+     Un trajet est une liste de sommets {p:[x,y], b} où b est le « bulge » DXF du segment
+     qui part de ce sommet : b = tan(angle balayé / 4), positif dans le sens trigonométrique
+     (repère y vers le haut). b = 0 : segment droit. */
+
+  /* Arrondit les angles d'une polyligne avec un rayon R (rayon à l'axe). */
+  function filletPath(pts, R) {
+    const n = pts.length, out = [{ p: pts[0].slice(), b: 0 }];
+    for (let i = 1; i < n - 1; i++) {
+      const P = pts[i], A = pts[i - 1], C = pts[i + 1];
+      const v1 = [P[0] - A[0], P[1] - A[1]], v2 = [C[0] - P[0], C[1] - P[1]];
+      const l1 = Math.hypot(v1[0], v1[1]), l2 = Math.hypot(v2[0], v2[1]);
+      if (l1 < 1e-9 || l2 < 1e-9) continue;
+      const u1 = [v1[0] / l1, v1[1] / l1], u2 = [v2[0] / l2, v2[1] / l2];
+      const cr = u1[0] * u2[1] - u1[1] * u2[0], th = Math.atan2(Math.abs(cr), u1[0] * u2[0] + u1[1] * u2[1]);
+      if (th < 1e-4 || th > Math.PI - 1e-3) { out.push({ p: P.slice(), b: 0 }); continue; }
+      // longueur de tangente bornée par les segments voisins (moitié, ou totalité aux extrémités)
+      const tmax = Math.min(l1 * (i === 1 ? 0.98 : 0.5), l2 * (i === n - 2 ? 0.98 : 0.5));
+      const t = Math.min(R * Math.tan(th / 2), tmax);
+      out.push({ p: [P[0] - u1[0] * t, P[1] - u1[1] * t], b: Math.sign(cr) * Math.tan(th / 4) });
+      out.push({ p: [P[0] + u2[0] * t, P[1] + u2[1] * t], b: 0 });
+    }
+    out.push({ p: pts[n - 1].slice(), b: 0 });
+    return out;
+  }
+
+  /* Points d'un arc défini par sa corde A→B et son bulge. */
+  function arcPts(A, B, b, k) {
+    const th = 4 * Math.atan(b), cx = (A[0] + B[0]) / 2, cy = (A[1] + B[1]) / 2;
+    const dx = B[0] - A[0], dy = B[1] - A[1], c = Math.hypot(dx, dy);
+    const h = c / 2 / Math.tan(th / 2); // distance signée du milieu de corde au centre
+    const O = [cx - dy / c * h, cy + dx / c * h], r = Math.hypot(A[0] - O[0], A[1] - O[1]);
+    const a0 = Math.atan2(A[1] - O[1], A[0] - O[0]), out = [];
+    for (let i = 1; i <= k; i++) { const t = a0 + th * i / k; out.push([O[0] + r * Math.cos(t), O[1] + r * Math.sin(t)]); }
+    return out;
+  }
+  /* Échantillonne un trajet (pour les emprises, la longueur, les croquis DXF…). */
+  function samplePath(path, k) {
+    const pts = [path[0].p];
+    for (let i = 0; i < path.length - 1; i++) {
+      if (Math.abs(path[i].b) > 1e-9) arcPts(path[i].p, path[i + 1].p, path[i].b, k || 8).forEach((q) => pts.push(q));
+      else pts.push(path[i + 1].p);
+    }
+    return pts;
+  }
+  /* Longueur exacte d'un trajet (arcs compris). */
+  function pathLength(path) {
+    let L = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const A = path[i].p, B = path[i + 1].p, c = Math.hypot(B[0] - A[0], B[1] - A[1]), b = path[i].b;
+      if (Math.abs(b) < 1e-9) L += c;
+      else { const th = Math.abs(4 * Math.atan(b)); L += th * c / (2 * Math.sin(th / 2)); }
+    }
+    return L;
+  }
+  /* Crosse d'extrémité : arc de rayon R balayant alpha à partir de P (direction dirDeg), puis retour droit. */
+  function hookArc(P, dirDeg, side, alpha, R, straight) {
+    const ux = Math.cos(rad(dirDeg)), uy = Math.sin(rad(dirDeg));
+    const nx = side > 0 ? -uy : uy, ny = side > 0 ? ux : -ux;
+    const C = [P[0] + nx * R, P[1] + ny * R], sw = side * rad(alpha);
+    const vx = P[0] - C[0], vy = P[1] - C[1];
+    const Q = [C[0] + vx * Math.cos(sw) - vy * Math.sin(sw), C[1] + vx * Math.sin(sw) + vy * Math.cos(sw)];
+    const fd = rad(dirDeg + side * alpha);
+    return { b: Math.sign(side) * Math.tan(rad(alpha) / 4), Q, E: [Q[0] + straight * Math.cos(fd), Q[1] + straight * Math.sin(fd)] };
+  }
+
+  /* Trajet d'une barre (axe), angles cintrés au mandrin et crosses comprises. */
   function barPath(bar, item, params) {
     const dm = bar.d / 1000, D = F.mandrin(bar.d, params.norme), R = D / 2 + dm / 2;
     const segs = bar.segs, n = segs.length, hooks = bar.hooks || [0, 0], sides = bar.sides || [1, -1];
     const tr = (a) => { if (item.mx) a = 180 - a; if (item.my) a = -a; return a; };
     const sideF = (item.mx ? -1 : 1) * (item.my ? -1 : 1);
-    const lens = segs.map((s, i) => {
-      let l = s.l;
-      if (i > 0 && F.deviation(segs[i - 1].a, s.a) > 1e-6) l -= dm / 2;
-      if (i < n - 1 && F.deviation(s.a, segs[i + 1].a) > 1e-6) l -= dm / 2;
-      if (i === 0 && hooks[0]) l -= D / 2 + dm;
-      if (i === n - 1 && hooks[1]) l -= D / 2 + dm;
-      if (item.shrink && item.shrink.seg === i) l -= item.shrink.by;
-      return Math.max(l, 0.005);
-    });
     let main, dirS, dirE, sS = sides[0] * sideF, sE = sides[1] * sideF;
     if (item.pts) {
       // trajet donné à l'axe ; les extrémités à crosse sont raccourcies de (D/2 + Ø)
@@ -311,28 +386,31 @@
       dirS = ang(main[0], main[1]); dirE = ang(main[main.length - 2], main[main.length - 1]);
       if (item.hs) { sS = item.hs[0]; sE = item.hs[1]; }
     } else {
+      const lens = segs.map((s, i) => {
+        let l = s.l;
+        if (i > 0 && F.deviation(segs[i - 1].a, s.a) > 1e-6) l -= dm / 2;
+        if (i < n - 1 && F.deviation(s.a, segs[i + 1].a) > 1e-6) l -= dm / 2;
+        if (i === 0 && hooks[0]) l -= D / 2 + dm;
+        if (i === n - 1 && hooks[1]) l -= D / 2 + dm;
+        if (item.shrink && item.shrink.seg === i) l -= item.shrink.by;
+        return Math.max(l, 0.005);
+      });
       let x = item.x0, y = item.y0;
       if (hooks[0]) { const a0 = rad(tr(segs[0].a)); x += (D / 2 + dm) * Math.cos(a0); y += (D / 2 + dm) * Math.sin(a0); }
       main = [[x, y]];
       segs.forEach((s, i) => { const a = rad(tr(s.a)); x += lens[i] * Math.cos(a); y += lens[i] * Math.sin(a); main.push([x, y]); });
       dirS = tr(segs[0].a); dirE = tr(segs[n - 1].a);
     }
-    const hookPts = (P, dirDeg, side, alpha) => {
-      if (!alpha) return [];
-      const ux = Math.cos(rad(dirDeg)), uy = Math.sin(rad(dirDeg));
-      const nx = side > 0 ? -uy : uy, ny = side > 0 ? ux : -ux;
-      const cx = P[0] + nx * R, cy = P[1] + ny * R;
-      const a0 = Math.atan2(P[1] - cy, P[0] - cx), sweep = side * rad(alpha), pts = [];
-      for (let k = 1; k <= 8; k++) { const t = a0 + sweep * k / 8; pts.push([cx + R * Math.cos(t), cy + R * Math.sin(t)]); }
-      // retour droit dessiné plafonné pour rester lisible sur les petites barres (épingles)
-      const fd = rad(dirDeg + side * alpha), last = pts[pts.length - 1];
-      const ext = Math.min(F.hookStraight(alpha, dm, params.norme), Math.max(0.03, 0.4 * lens.reduce((a, b) => a + b, 0)));
-      pts.push([last[0] + ext * Math.cos(fd), last[1] + ext * Math.sin(fd)]);
-      return pts;
-    };
-    const endH = hookPts(main[main.length - 1], dirE, sE, hooks[1]);
-    const startH = hookPts(main[0], dirS + 180, sS, hooks[0]).reverse();
-    return { pts: startH.concat(main, endH), main };
+    const path = filletPath(main, R);
+    if (hooks[1]) {
+      const h = hookArc(main[main.length - 1], dirE, sE, hooks[1], R, F.hookStraight(hooks[1], dm, params.norme));
+      path[path.length - 1].b = h.b; path.push({ p: h.Q, b: 0 }, { p: h.E, b: 0 });
+    }
+    if (hooks[0]) {
+      const h = hookArc(main[0], dirS + 180, sS, hooks[0], R, F.hookStraight(hooks[0], dm, params.norme));
+      path.unshift({ p: h.E, b: 0 }, { p: h.Q, b: -h.b });
+    }
+    return { path, main, pts: samplePath(path), R };
   }
 
   function dotPositions(bar) {
@@ -397,12 +475,11 @@
     const tags = [];
     bars.forEach((bar, i) => {
       const col = COLORS[i % COLORS.length];
-      const w = Math.max(1.5, Math.min(3.2, bar.d / 1000 / u));
       const pl = bar.place || {};
       if (pl.items) {
         pl.items.forEach((it, k) => {
           const bp = barPath(bar, it, params);
-          sc.poly(bp.pts, { layer: 'ACIERS', color: col, w, barId: bar.id });
+          sc.bar(bp.path, bar.d / 1000, { color: col, barId: bar.id, minPx: 1 }); // épaisseur = Ø réel à l'échelle
           if (k === 0 && pl.tag) {
             const s = Math.min(pl.tag.seg, bp.main.length - 2), a = bp.main[s], b = bp.main[s + 1];
             tags.push({ id: bar.id, col, p: [a[0] + (b[0] - a[0]) * pl.tag.t, a[1] + (b[1] - a[1]) * pl.tag.t] });
@@ -411,7 +488,7 @@
       }
       if (pl.dots) {
         const lines = dotPositions(bar);
-        lines.forEach((pts) => pts.forEach((p) => sc.circle(p, bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, w: 0.6, minPx: 2.6 })));
+        lines.forEach((pts) => pts.forEach((p) => sc.circle(p, bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, stroke: false, w: 0, minPx: 1.2, barId: bar.id, hit: true })));
         const first = lines[0] || [];
         if (first.length) {
           let idx = pl.tag == null ? 0 : pl.tag;
@@ -425,10 +502,10 @@
     placeBubbles(tags, bb, u, R);
     tags.forEach((t) => {
       const dx = t.p[0] - t.b[0], dy = t.p[1] - t.b[1], dl = Math.hypot(dx, dy) || 1;
-      sc.line([t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p, { layer: 'REPERAGE', color: t.col, w: 0.8 });
-      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5 });
-      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2 });
-      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500 });
+      sc.poly([[t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p], { layer: 'REPERAGE', color: t.col, w: 0.8, barId: t.id });
+      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5, barId: t.id });
+      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2, barId: t.id, hit: true });
+      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500, barId: t.id });
     });
     return sc;
   }
@@ -488,16 +565,24 @@
         if (t.anchor === 'middle') t.y += (t.y < h / 2 ? -1 : 1) * 10; else t.x += t.anchor === 'start' ? 10 : -10;
       }
     });
-    return { w, h, pts: all.map(P), texts };
+    const ptsPx = all.map(P);
+    // angles arrondis (croquis schématique : rayon d'affichage fixe, proportionné au dessin)
+    const path = filletPath(ptsPx, Math.min(5, Math.max(2, 0.045 * k)));
+    return { w, h, pts: ptsPx, path, texts };
   }
 
   function croquisSVG(shape, color, w, h) {
     w = w || 150; h = h || 56;
     const gm = croquisGeom(shape, w, h);
-    const d = 'M' + gm.pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L');
+    let d = 'M' + gm.path[0].p[0].toFixed(1) + ' ' + gm.path[0].p[1].toFixed(1);
+    for (let i = 0; i < gm.path.length - 1; i++) {
+      const A = gm.path[i].p, B = gm.path[i + 1].p, bu = gm.path[i].b;
+      if (Math.abs(bu) < 1e-9) d += 'L' + B[0].toFixed(1) + ' ' + B[1].toFixed(1);
+      else { const th = Math.abs(4 * Math.atan(bu)), r = (Math.hypot(B[0] - A[0], B[1] - A[1]) / (2 * Math.sin(th / 2))).toFixed(2); d += `A${r} ${r} 0 0 ${bu > 0 ? 1 : 0} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`; }
+    }
     const t = gm.texts.map((x) => `<text x="${x.x.toFixed(1)}" y="${x.y.toFixed(1)}" font-size="9.5" text-anchor="${x.anchor}" dominant-baseline="central" fill="#14171f">${x.s}</text>`).join('');
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Outfit, Arial, sans-serif" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || '#c0392b'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${t}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" font-family="Outfit, Arial, sans-serif" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || '#c0392b'}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="butt"/>${t}</svg>`;
   }
 
-  return { COLORS, Scene, bounds, toSVG, fitScale, fitRender, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
+  return { COLORS, Scene, bounds, toSVG, fitScale, fitRender, filletPath, samplePath, pathLength, arcPts, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
 });

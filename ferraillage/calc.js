@@ -321,7 +321,8 @@
       outer.pop();
       return { outer, sole: [[0, 0], [B, 0], [B, hbt], [g.p + eb, hs], [g.p, hs], [0, hbp]] };
     },
-    propose(g0, params) {
+    /* dMap : {repère: Ø} imposés par l'utilisateur — les barres sont replacées à l'axe en conséquence. */
+    propose(g0, params, dMap) {
       const p = Object.assign({}, DEFAULT_PARAMS, params);
       const g = this.derive(g0), c = p.cTerre, ca = p.cAutre;
       const { H, hs, B, L, e0 } = g, { Hv, eb, hbp, hbt, xAvT, xAmT } = g;
@@ -331,24 +332,29 @@
       if (!big) { dI = dS = dAv = dAm = mainDiam(Hv, [[1.5, 12], [2.5, 14], [99, 16]]); dFs = dFv = 12; dens = 6; }
       else if (H < 5.5) { dI = 14; dS = 20; dAm = 14; dR = 20; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
       else { dI = 16; dS = 25; dAm = 16; dR = 25; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
-      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFs = mm(dFs), mFv = mm(dFv), mE = 0.010;
+      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10, C: 10 };
+      const build = (D, forceSame) => {
+      ({ I: dI, S: dS, Av: dAv, Am: dAm, R: dR, Fv: dFv } = D);
+      const dFsI = D.FsI, dFsS = D.FsS, dB = D.Bc, dBf = D.Bf, dEs = D.Es, dEv = D.Ev, dC = D.C;
+      const mm = (d) => d / 1000, mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf), mC = mm(dC);
       const lr = r3(L - 2 * c), yL = c + mI / 2;
       const sole = this.outline(g0).sole; // 0:(0,0) 1:(B,0) 2:(B,hbt) 3:(p+eb,hs) 4:(p,hs) 5:(0,hbp)
       const env = offsetPoly(sole, c);
       const ytop = (x) => (x <= g.p ? hbp + (hs - hbp) * x / Math.max(g.p, 1e-9) : x >= g.p + eb ? hs + (hbt - hs) * (x - g.p - eb) / Math.max(B - g.p - eb, 1e-9) : hs);
       const bars = [];
-      const mkRep = (bar) => { bars.push(bar); return bar; };
+      const ext = (pts, d) => { const q = pts.map((x) => x.slice()), n = q.length; [[0, 1], [n - 1, n - 2]].forEach(([i, j]) => { const v = sub(q[i], q[j]), l = len2(v) || 1; q[i][0] += v[0] / l * d; q[i][1] += v[1] / l * d; }); return q; };
+      const mkRep = (bar, key) => { bar.key = key; bars.push(bar); return bar; };
 
       // 1 — U semelle, nappe inférieure (retours vers le haut)
       const p1 = cleanPath([env[5], env[0], env[1], env[2]]);
       const ax1 = offsetPoly(sole, c + mI / 2);
       mkRep({ role: 'U semelle — nappe inférieure (retours vers le haut)', d: dI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-        segs: segsOf(p1), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: cleanPath([ax1[5], ax1[0], ax1[1], ax1[2]]) }], tag: { seg: 1, t: 0.2 } } });
+        segs: segsOf(p1), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax1[5], ax1[0], ax1[1], ax1[2]]), mI / 2) }], tag: { seg: 1, t: 0.2 } } }, 'I');
       // 2 — U semelle, nappe supérieure (retours vers le bas), à l'intérieur des retours du n° 1
       const p2 = cleanPath([env[0], env[5], env[4], env[3], env[2], env[1]]);
       const ax2 = offsetPoly(sole, [c + mS / 2, c + mI + mS / 2, c + mS / 2, c + mS / 2, c + mS / 2, c + mI + mS / 2]);
       mkRep({ role: 'U semelle — nappe supérieure (retours vers le bas)', d: dS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-        segs: segsOf(p2), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: cleanPath([ax2[0], ax2[5], ax2[4], ax2[3], ax2[2], ax2[1]]) }], tag: { seg: 2, t: 0.75 } } });
+        segs: segsOf(p2), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: ext(cleanPath([ax2[0], ax2[5], ax2[4], ax2[3], ax2[2], ax2[1]]), mS / 2) }], tag: { seg: 2, t: 0.75 } } }, 'S');
 
       // Aciers verticaux du voile : parallèles aux parements, ancrés en pied par un retour, crosse en tête.
       const avA = [g.p, hs], avB = [xAvT, H], amA = [g.p + eb, hs], amB = [xAmT, H];
@@ -364,16 +370,16 @@
         return { leg, Vl, pts: [tip, [xFoot, yL], top], side, segs: [{ l: leg, a: face === 'av' ? 0 : 180 }, { l: Vl, a: r3(angOf([xFoot, yL], top)) }], tipC };
       };
       const vAv = vert('av', dAv, -1), vAm = vert('am', dAm, 1);
-      const same = dAv === dAm && Math.abs(g.fa - g.fv) < 1e-9 && Math.abs(vAv.leg - vAm.leg) < 1e-9 && Math.abs(vAv.Vl - vAm.Vl) < 1e-9;
+      const same = forceSame != null ? forceSame : dAv === dAm && Math.abs(g.fa - g.fv) < 1e-9 && Math.abs(vAv.leg - vAm.leg) < 1e-9 && Math.abs(vAv.Vl - vAm.Vl) < 1e-9;
       if (same) {
         mkRep({ role: 'Aciers verticaux du voile en L + crosse (2 faces)', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
           segs: [{ l: vAv.leg, a: 0 }, { l: vAv.Vl, a: 90 }], hooks: [0, 90], sides: [1, -1],
-          place: { items: [{ pts: vAv.pts, hs: [1, -1] }, { pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.72 } } });
+          place: { items: [{ pts: vAv.pts, hs: [1, -1] }, { pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.72 } } }, 'V');
       } else {
         mkRep({ role: 'Voile face aval — verticaux en L + crosse', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: vAv.segs, hooks: [0, 90], sides: [1, -1], place: { items: [{ pts: vAv.pts, hs: [1, -1] }], tag: { seg: 1, t: 0.8 } } });
+          segs: vAv.segs, hooks: [0, 90], sides: [1, -1], place: { items: [{ pts: vAv.pts, hs: [1, -1] }], tag: { seg: 1, t: 0.8 } } }, 'Av');
         mkRep({ role: 'Voile face terres — verticaux en L + crosse', d: dAm, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: vAm.segs, hooks: [0, 90], sides: [-1, 1], place: { items: [{ pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.62 } } });
+          segs: vAm.segs, hooks: [0, 90], sides: [-1, 1], place: { items: [{ pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.62 } } }, 'Am');
       }
       // Renfort de pied côté terres (barres arrêtées), hauteur d'optimisation ≈ 0,42·Hv
       let hopt = 0;
@@ -385,38 +391,38 @@
         const Vl = r3((yT - c) / Math.cos(Math.atan(g.fa)));
         mkRep({ role: 'Renfort de pied côté terres (arrêté à ' + fmtCote(hopt) + ' m au-dessus de la semelle)', d: dR, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
           segs: [{ l: leg, a: 180 }, { l: Vl, a: r3(angOf([xF, yL], top)) }], hooks: [0, 0], sides: [-1, 1],
-          place: { items: [{ pts: [[xF - mR / 2 + leg, yL + mAm], [xF, yL + mAm], top] }], tag: { seg: 1, t: 0.55 } } });
+          place: { items: [{ pts: [[xF - mR / 2 + leg, yL + mAm], [xF, yL + mAm], top] }], tag: { seg: 1, t: 0.55 } } }, 'R');
       }
 
       // Filants de semelle (avec retours aux joints) et du voile
       const r = r3(Math.min(hbp, hbt) - 2 * c);
-      const fI = offsetPoly(sole, [c + mI + mFs / 2, c + mI + mFs / 2, 0, 0, 0, c + mI + mFs / 2]);
-      mkRep({ role: 'Filants semelle — nappe inférieure', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+      const fI = offsetPoly(sole, [c + mI + mFsI / 2, c + mI + mFsI / 2, 0, 0, 0, c + mI + mFsI / 2]);
+      mkRep({ role: 'Filants semelle — nappe inférieure', d: dFsI, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
         segs: [{ l: r, a: 90 }, { l: lr, a: 0 }, { l: r, a: -90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 } });
-      const fS = offsetPoly(sole, [0, c + mI + mS + mFs / 2, c + mS + mFs / 2, c + mS + mFs / 2, c + mS + mFs / 2, c + mI + mS + mFs / 2]);
-      mkRep({ role: 'Filants semelle — nappe supérieure', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
+        place: { dots: [{ mode: 'poly', pts: [fI[0], fI[1]] }], tag: 1 } }, 'FsI');
+      const fS = offsetPoly(sole, [0, c + mI + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mS + mFsS / 2, c + mI + mS + mFsS / 2]);
+      mkRep({ role: 'Filants semelle — nappe supérieure', d: dFsS, kind: 'filant', esp: 0.20, distLen: r3(B - 2 * c), mult: 1,
         segs: [{ l: r, a: -90 }, { l: lr, a: 0 }, { l: r, a: 90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 } });
+        place: { dots: [{ mode: 'poly', pts: cleanPath([fS[5], fS[4], fS[3], fS[2]]) }], tag: -1 } }, 'FsS');
       const em = (e0 + eb) / 2, rv = r3(em - c - ca);
       const yTopV = H - ca - Math.max(mAv, mAm) - mFv / 2;
       const lAv = offLine(avA, avB, -(ca + mAv + mFv / 2)), lAm = offLine(amA, amB, c + mAm + (dR ? mR : 0) + mFv / 2);
       mkRep({ role: 'Filants voile (2 faces)', d: dFv, kind: 'filant', esp: 0.20, distLen: r3(Hv - ca), mult: 2,
         segs: [{ l: rv, a: 90 }, { l: lr, a: 0 }, { l: rv, a: -90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'stepY', line: lAv, y0: yTopV }, { mode: 'stepY', line: lAm, y0: yTopV }], tag: 1 } });
+        place: { dots: [{ mode: 'stepY', line: lAv, y0: yTopV }, { mode: 'stepY', line: lAm, y0: yTopV }], tag: 1 } }, 'Fv');
 
       // Bêche : cadre en U ancré dans la semelle + filants en fond de bêche
       if (g.beche) {
-        const dB = dI, mB = mm(dB), x0 = g.bx0, x1 = g.bx1, yb = -g.bh;
+        const mB = mm(dB), x0 = g.bx0, x1 = g.bx1, yb = -g.bh;
         const yT = Math.min(ytop(x0 + c), ytop(x1 - c)) - c;
         const pts = [[x0 + c + mB / 2, yT], [x0 + c + mB / 2, yb + c + mB / 2], [x1 - c - mB / 2, yb + c + mB / 2], [x1 - c - mB / 2, yT]];
         mkRep({ role: 'Bêche — cadres en U ancrés dans la semelle', d: dB, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
           segs: [{ l: r3(yT - yb - c), a: -90 }, { l: r3(g.bw - 2 * c), a: 0 }, { l: r3(yT - yb - c), a: 90 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ pts }], tag: { seg: 1, t: 0.5 } } });
-        const yF = yb + c + mB + mFs / 2;
-        mkRep({ role: 'Bêche — filants de fond', d: dFs, kind: 'filant', esp: 0.20, distLen: r3(g.bw - 2 * c), mult: 1,
+          place: { items: [{ pts }], tag: { seg: 1, t: 0.5 } } }, 'Bc');
+        const yF = yb + c + mB + mBf / 2;
+        mkRep({ role: 'Bêche — filants de fond', d: dBf, kind: 'filant', esp: 0.20, distLen: r3(g.bw - 2 * c), mult: 1,
           segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ mode: 'poly', pts: [[x0 + c + mB + mFs / 2, yF], [x1 - c - mB - mFs / 2, yF]] }], tag: 0 } });
+          place: { dots: [{ mode: 'poly', pts: [[x0 + c + mB + mBf / 2, yF], [x1 - c - mB - mBf / 2, yF]] }], tag: 0 } }, 'Bf');
       }
 
       // Épingles (semelle, voile) et écarteurs
@@ -424,24 +430,30 @@
       const rs = r3(hsm - 2 * c);
       const fx = (t) => fI[0][0] + (fI[1][0] - fI[0][0]) * t;
       const epX = [g.p + eb + Math.max(0.05, (B - g.p - eb) * 0.5), Math.max(c + 0.05, g.p * 0.5)].filter((x, i) => i === 0 || g.p > 0.25).map((x) => Math.min(Math.max(x, fx(0.08)), fx(0.92)));
-      mkRep({ role: 'Épingles semelle', d: 10, kind: 'densite', esp: dens, area: r3(B * L), mult: 1,
+      mkRep({ role: 'Épingles semelle', d: dEs, kind: 'densite', esp: dens, area: r3(B * L), mult: 1,
         segs: [{ l: rs, a: 90 }], hooks: [135, 135], sides: [1, -1],
-        place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } });
+        place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } }, 'Es');
       const ve = [0.25, 0.6].map((f) => H - ca - f * Hv).map((y) => {
         const a = offLine(avA, avB, -ca), b = offLine(amA, amB, c);
         return { pts: [[xAt(a[0], a[1], y), y], [xAt(b[0], b[1], y), y]], hs: [-1, 1] };
       });
-      mkRep({ role: 'Épingles voile', d: 10, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1,
-        segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } });
-      const legChair = Math.max(0.05, Math.round((hs - 2 * c - mI - mS - mFs) * 100) / 100);
+      mkRep({ role: 'Épingles voile', d: dEv, kind: 'densite', esp: dens, area: r3(Hv * L), mult: 1,
+        segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } }, 'Ev');
+      const legChair = Math.max(0.05, Math.round((hs - 2 * c - mI - mS - mFsI) * 100) / 100);
       const xc = Math.min(Math.max(c + 0.02, g.p + eb / 2 - 0.35), B - c - 0.92);
-      mkRep({ role: 'Écarteurs (chaises) semelle', d: 10, kind: 'densite', esp: 1, area: r3(B * L), mult: 1,
+      mkRep({ role: 'Écarteurs (chaises) semelle', d: dC, kind: 'densite', esp: 1, area: r3(B * L), mult: 1,
         segs: [{ l: 0.20, a: 0 }, { l: legChair, a: 90 }, { l: 0.30, a: 0 }, { l: legChair, a: -90 }, { l: 0.20, a: 0 }], hooks: [0, 0], sides: [1, -1],
-        place: { items: [{ x0: xc, y0: c + mI + mFs + mE / 2 }], tag: { seg: 4, t: 0.7 } } });
+        place: { items: [{ x0: xc, y0: c + mI + mFsI + mC / 2 }], tag: { seg: 4, t: 0.7 } } }, 'C');
 
       bars.forEach((b, i) => { b.id = String(i + 1); });
-      bars.meta = { hopt, big };
+      bars.meta = { hopt, big }; bars.same = same;
       return bars;
+      };
+      const b0 = build(D0);
+      if (!dMap || !Object.keys(dMap).length) return b0;
+      const D1 = Object.assign({}, D0);
+      b0.forEach((b) => { const d = dMap[b.id]; if (d) { if (b.key === 'V') D1.Av = D1.Am = d; else D1[b.key] = d; } });
+      return build(D1, b0.same);
     },
   };
 
@@ -555,7 +567,9 @@
   function compute(struct, g, params, overrides) {
     const S = STRUCTURES[struct];
     const p = Object.assign({}, DEFAULT_PARAMS, params);
-    const proposed = S.propose(g, p);
+    const dMap = {};
+    Object.entries(overrides || {}).forEach(([id, o]) => { if (o && o.d) dMap[id] = o.d; });
+    const proposed = S.propose(g, p, dMap);
     const bars = proposed.map((b) => applyOverride(b, overrides && overrides[b.id]));
     const rows = computeRows(bars, p);
     return { bars, rows, recap: recap(rows), params: p, geom: S.derive(g) };

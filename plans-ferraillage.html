@@ -138,6 +138,13 @@ details.grp[open] summary::after{content:"−"}
 .msg:empty{display:none}
 .draw{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
 .draw svg{display:block;max-width:100%;max-height:100%}
+#v-ferr [data-bar]{cursor:pointer;transition:opacity .15s}
+#v-ferr svg.has-sel [data-bar]{opacity:.14}
+#v-ferr svg.has-sel [data-bar].on{opacity:1;filter:drop-shadow(0 0 1.5px rgba(168,132,42,.95)) drop-shadow(0 0 5px rgba(168,132,42,.6))}
+#v-ferr svg{-webkit-tap-highlight-color:transparent}
+.nomenc tbody tr{cursor:pointer}
+.nomenc tbody tr.sel td{background:#fbf1d6}
+.nomenc tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
 .band{flex:none;display:flex;flex-wrap:wrap;gap:4px 18px;padding:8px 14px;border-top:1px solid var(--border);background:var(--paper);border-radius:0 0 14px 14px;font-size:12px;color:var(--silver)}
 .band b{color:var(--white);font-weight:500;font-variant-numeric:tabular-nums}
 
@@ -341,7 +348,7 @@ footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid v
   <!-- ÉTAPE 3 -->
   <section class="step" id="step3" aria-label="Ferraillage proposé">
     <div class="left3">
-      <div class="card"><div class="card-h"><h3>Coupe ferraillée</h3><small id="ferr-sub">repères numérotés</small></div><div class="draw" id="v-ferr"></div></div>
+      <div class="card"><div class="card-h"><h3>Coupe ferraillée</h3><small id="ferr-sub" style="max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">cliquez une barre pour la repérer</small></div><div class="draw" id="v-ferr"></div></div>
       <div class="kpis" id="kpis"></div>
     </div>
     <div class="right3">

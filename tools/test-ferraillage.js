@@ -64,6 +64,21 @@ for (const [s, g0] of [['murT', M5g], ['murT', M4g], ['murT', opt], ['dalot', F.
   ok(/^[\x00-\x7f]*$/.test(dxf), `${s} : DXF en ASCII pur (accents en \\U+XXXX)`);
 }
 
+// 2 bis. Dessin : angles cintrés au mandrin, longueur dessinée = longueur développée (±5 mm d'arrondi)
+for (const [nm, g0, ids] of [['M5', M5g, ['1', '3', '7']], ['M4', M4g, ['1', '3', '4', '9']]]) {
+  const res = F.compute('murT', g0, {}, {});
+  ids.forEach((id) => {
+    const b = res.bars.find((x) => x.id === id), bp = F.barPath(b, b.place.items[0], res.params), row = res.rows.find((r) => r.id === id);
+    const ld = F.pathLength(bp.path), nb = bp.path.filter((v) => Math.abs(v.b) > 1e-9).length;
+    ok(Math.abs(ld - row.L) <= 0.005 && nb > 0, `${nm} repère ${id} : dessiné ${ld.toFixed(3)} m / nomenclature ${row.L.toFixed(3)} m, ${nb} arc(s) au rayon ${(bp.R * 100).toFixed(1)} cm`);
+  });
+}
+const thick = F.toSVG(F.ferraillageScene('murT', F.STRUCTURES.murT.derive(M4g), m4.bars, m4.params, 1 / 1000), 1000);
+ok(/stroke-width="20\.00"/.test(thick) && /stroke-width="14\.00"/.test(thick), 'Épaisseurs réelles à 1000 px/m : HA20 → 20 px, HA14 → 14 px');
+const shift = F.compute('murT', M4g, {}, { 1: { d: 25 } });
+ok(Math.abs(shift.bars[0].place.items[0].pts[1][1] - (0.05 + 0.0125)) < 1e-9 && shift.bars[1].place.items[0].pts[1][0] > m4.bars[1].place.items[0].pts[1][0],
+  'Ø du repère 1 porté à 25 : axe replacé à enrobage + Ø/2, nappe imbriquée décalée');
+
 // 3. Recalcul quand l'espacement change
 const m2 = F.compute('murT', M5g, {}, { 1: { esp: 0.20 }, 4: { esp: 0.10 } });
 const n1 = m2.rows.find((r) => r.id === '1').n, n4 = m2.rows.find((r) => r.id === '4').n;

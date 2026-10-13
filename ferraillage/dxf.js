@@ -40,6 +40,17 @@
     pts.forEach((q) => { this.p(0, 'VERTEX', 8, layer, 10, num(q[0]), 20, num(q[1]), 30, 0); this.grow(q[0], q[1]); });
     this.p(0, 'SEQEND', 8, layer);
   };
+  /* Barre cintrée : POLYLINE à largeur constante (40/41 = Ø en m) et sommets à bulge (42). */
+  Writer.prototype.bar = function (path, width, layer) {
+    const wd = num(width);
+    this.p(0, 'POLYLINE', 8, layer, 66, 1, 10, 0, 20, 0, 30, 0, 70, 0, 40, wd, 41, wd);
+    path.forEach((v) => {
+      this.p(0, 'VERTEX', 8, layer, 10, num(v.p[0]), 20, num(v.p[1]), 30, 0, 40, wd, 41, wd);
+      if (Math.abs(v.b) > 1e-9) this.p(42, v.b.toFixed(6));
+      this.grow(v.p[0], v.p[1]);
+    });
+    this.p(0, 'SEQEND', 8, layer);
+  };
   Writer.prototype.circle = function (c, r, layer) {
     this.p(0, 'CIRCLE', 8, layer, 10, num(c[0]), 20, num(c[1]), 30, 0, 40, num(r));
     this.grow(c[0] - r, c[1] - r); this.grow(c[0] + r, c[1] + r);
@@ -68,8 +79,10 @@
         const lt = it.dash ? 'DASHED' : null;
         w.poly(it.pts.map(T), it.layer, !!it.closed, lt);
         (it.holes || []).forEach((h) => w.poly(h.map(T), it.layer, true));
+      } else if (it.t === 'bar') {
+        w.bar(it.path.map((v) => ({ p: T(v.p), b: v.b })), it.wM, it.layer);
       } else if (it.t === 'circle') {
-        if (it.layer === 'ACIERS' && it.fill) w.dot(T(it.c), Math.max(it.r, 0.004), it.layer);
+        if (it.layer === 'ACIERS' && it.fill) w.dot(T(it.c), it.r, it.layer);
         else w.circle(T(it.c), it.r, it.layer);
       } else if (it.t === 'text') {
         w.text(T(it.p), it.h * sc.u, it.s, it.layer, it.anchor, it.rot);
@@ -108,7 +121,7 @@
         if (i === 8) {
           const gm = F.croquisGeom(r.shape, 150, 48), uc = c[1] / 150;
           const P = (q) => [cx + q[0] * uc, yt - 0.01 - q[1] * uc];
-          w.poly(gm.pts.map(P), 'ACIERS', false);
+          w.bar(gm.path.map((v) => ({ p: P(v.p), b: -v.b })), 0, 'ACIERS');
           gm.texts.forEach((t) => w.text(P([t.x, t.y]), 9.5 * uc, t.s, L, t.anchor));
         } else {
           w.text([cx + c[1] / 2, yc], th, String(vals[i]), L, 'middle');
