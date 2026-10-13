@@ -197,6 +197,7 @@
         <li>Au-delà de ${p.lmax} m : découpe en barres indicées avec recouvrement ${p.recouv}Ø.</li>
         <li>Mur : H &lt; 3 m → HA12 (type M5) ; H ≥ 3 m → voile terres HA14 e15 + renfort de pied HA20 e15 sur ≈ 0,42·Hv, face avant HA12 e15, semelle sup. HA20 e15, inf. HA14 e15, maintien HA10 4/m² (principe M4).</li>
         <li>Maintien des nappes : ${p.maintien === 'etrier' ? 'étriers' : 'épingles'} par défaut (réglable barre par barre dans « Ajuster la barre », ce choix l’emporte). Épingle 3001 = barre droite à deux crosses (135° par défaut) ; étrier = boucle fermée étroite qui ceinture un filant de chaque nappe, extrémités en demi-cercle au mandrin, fermée par deux crosses 135°. Pas de chaises d’écartement dans la proposition.</li>
+        <li>Numérotation des repères comme sur les plans KLE de piles et culées : la semelle occupe les repères 1 à 9 (1-2 nappe inférieure, 3-4 nappe supérieure, 5-6 bêche, 9 épingles / étriers) ; le voile commence au repère 10.</li>
         <li>Diamètres proposés par règles forfaitaires : le ferraillage doit être justifié par une note de calcul.</li>
       </ul>`;
   }

@@ -18,9 +18,9 @@ const m = F.compute('murT', M5g, {}, {});
 const r1 = m.rows.find((r) => r.id === '1');
 const ecart = (m.recap.total - M5.total) / M5.total * 100;
 ok(r1 && r1.n === 67 && r1.d === 12 && r1.esp === 0.15, `M5 barre 1 : HA${r1.d} × ${r1.n} e=${r1.esp} (attendu HA12 × 67 e=0.15)`);
-ok(m.rows.length === 8 && !m.bars.some((b) => /cart|chaise/i.test(b.role)), 'M5 : aucun écarteur, repères continus 1 à 8');
+ok(m.rows.map((r) => r.id).join() === '1,2,3,4,9,10,11,12' && !m.bars.some((b) => /cart|chaise/i.test(b.role)), 'M5 : aucun écarteur ; numérotation KLE : semelle 1-4 + 9 (maintien), voile 10-12');
 ok(Math.abs(ecart) <= 5, `M5 masse totale ${m.recap.total.toFixed(1)} kg vs ${M5.total.toFixed(1)} kg (écart ${ecart >= 0 ? '+' : ''}${ecart.toFixed(2)} %)`);
-const ref = { 1: [12, 67, 0.15], 2: [12, 67, 0.15], 3: [12, 134, 0.15], 4: [12, 6, 0.2], 5: [12, 6, 0.2], 6: [12, 10, 0.2], 7: [10, 72, 6], 8: [10, 60, 6] };
+const ref = { 1: [12, 67, 0.15], 3: [12, 67, 0.15], 10: [12, 134, 0.15], 2: [12, 6, 0.2], 4: [12, 6, 0.2], 11: [12, 10, 0.2], 9: [10, 72, 6], 12: [10, 60, 6] };
 for (const [id, [d, tot, esp]] of Object.entries(ref)) {
   const r = m.rows.find((x) => x.id === id);
   ok(r && r.d === d && r.total === tot && r.esp === esp, `M5 repère ${id} : HA${r.d}, ${r.total} barres, esp. ${r.esp}`);
@@ -43,7 +43,9 @@ const has = (role, d) => m4.bars.some((b) => b.role.startsWith(role) && b.d === 
 ok(has('Voile face terres', 14) && has('Renfort de pied', 20) && has('Voile face aval', 12) && has('U semelle — nappe sup', 20) && has('U semelle — nappe inf', 14),
   'M4 : voile terres HA14 + renfort HA20, face avant HA12, semelle sup. HA20 / inf. HA14');
 ok(m4.bars.find((b) => b.key === 'Ev').esp === 4 && m4.bars.find((b) => b.key === 'Ev').code === '3001', 'M4 : épingles HA10 4/m², code 3001');
-ok(m4.bars.map((b) => +b.id).join() === '1,2,3,4,5,6,7,8,9,10', 'M4 : sans écarteur, repères continus 1 à 10');
+ok(m4.bars.map((b) => +b.id).join() === '1,2,3,4,9,10,11,12,13,14', 'M4 : sans écarteur ; semelle 1-4 + 9, voile 10-14');
+const mb = F.compute('murT', Object.assign({}, M4g, { beche: true }), {}, {});
+ok(mb.bars.map((b) => b.id + ':' + b.key).join() === '1:I,2:FsI,3:S,4:FsS,5:Bc,6:Bf,9:Es,10:Av,11:Am,12:R,13:Fv,14:Ev', 'M4 avec bêche : bêche en 5-6 (semelle), maintien 9, voile 10-14');
 const vt = m4.bars.find((b) => b.role.startsWith('Voile face terres'));
 ok(Math.abs(vt.segs[1].a - (90 + Math.atan(0.075) * 180 / Math.PI)) < 0.01, `M4 : verticaux terres parallèles au parement (${vt.segs[1].a}°)`);
 // options de forme : bêche + biseau, et contrôles de cohérence
@@ -69,7 +71,7 @@ for (const [s, g0] of [['murT', M5g], ['murT', M4g], ['murT', opt], ['dalot', F.
 }
 
 // 2 bis. Dessin : angles cintrés au mandrin, longueur dessinée = longueur développée (±5 mm d'arrondi)
-for (const [nm, g0, ids] of [['M5', M5g, ['1', '3', '7']], ['M4', M4g, ['1', '3', '4', '9']]]) {
+for (const [nm, g0, ids] of [['M5', M5g, ['1', '10', '9']], ['M4', M4g, ['1', '10', '11', '9']]]) {
   const res = F.compute('murT', g0, {}, {});
   ids.forEach((id) => {
     const b = res.bars.find((x) => x.id === id), bp = F.barPath(b, b.place.items[0], res.params), row = res.rows.find((r) => r.id === id);
@@ -80,7 +82,7 @@ for (const [nm, g0, ids] of [['M5', M5g, ['1', '3', '7']], ['M4', M4g, ['1', '3'
 const thick = F.toSVG(F.ferraillageScene('murT', F.STRUCTURES.murT.derive(M4g), m4.bars, m4.params, 1 / 1000), 1000);
 ok(/stroke-width="20\.00"/.test(thick) && /stroke-width="14\.00"/.test(thick), 'Épaisseurs réelles à 1000 px/m : HA20 → 20 px, HA14 → 14 px');
 const shift = F.compute('murT', M4g, {}, { 1: { d: 25 } });
-ok(Math.abs(shift.bars[0].place.items[0].pts[1][1] - (0.05 + 0.0125)) < 1e-9 && shift.bars[1].place.items[0].pts[1][0] > m4.bars[1].place.items[0].pts[1][0],
+ok(Math.abs(shift.bars[0].place.items[0].pts[1][1] - (0.05 + 0.0125)) < 1e-9 && shift.bars.find((b) => b.key === 'S').place.items[0].pts[1][0] > m4.bars.find((b) => b.key === 'S').place.items[0].pts[1][0],
   'Ø du repère 1 porté à 25 : axe replacé à enrobage + Ø/2, nappe imbriquée décalée');
 
 // 2 ter. Maintien des nappes : épingles ou étriers (réglage global, choix par barre prioritaire)
@@ -106,18 +108,18 @@ const h180 = F.compute('murT', M4g, {}, { [idEs]: { hooks: [180, 180] } }).rows.
 ok(h180.L > m4.rows.find((r) => r.id === idEs).L - 0.1 && h180.shape.hooks.join() === '180,180', `Épingle à crosses 180° : L = ${h180.L.toFixed(3)} m`);
 
 // 3. Recalcul quand l'espacement change
-const m2 = F.compute('murT', M5g, {}, { 1: { esp: 0.20 }, 4: { esp: 0.10 } });
-const n1 = m2.rows.find((r) => r.id === '1').n, n4 = m2.rows.find((r) => r.id === '4').n;
+const m2 = F.compute('murT', M5g, {}, { 1: { esp: 0.20 }, 2: { esp: 0.10 } });
+const n1 = m2.rows.find((r) => r.id === '1').n, n4 = m2.rows.find((r) => r.id === '2').n;
 ok(n1 === 50, `Repère 1 à e=0.20 : ${n1} barres (floor(9.90/0.20)+1 = 50)`);
-ok(n4 === 12, `Repère 4 à e=0.10 : ${n4} barres (floor(1.10/0.10)+1 = 12)`);
+ok(n4 === 12, `Repère 2 (filants inf.) à e=0.10 : ${n4} barres (floor(1.10/0.10)+1 = 12)`);
 ok(Math.abs(m2.recap.total - m.recap.total) > 1, `Masse recalculée : ${m2.recap.total.toFixed(1)} kg`);
-const m3 = F.compute('murT', M5g, {}, { 3: { d: 14, hooks: [0, 180] } });
-const r3 = m3.rows.find((r) => r.id === '3'), r3o = m.rows.find((r) => r.id === '3');
-ok(r3.d === 14 && r3.L !== r3o.L, `Repère 3 en HA14 + crosse 180° : L = ${r3.L.toFixed(3)} m (au lieu de ${r3o.L.toFixed(3)})`);
+const m3 = F.compute('murT', M5g, {}, { 10: { d: 14, hooks: [0, 180] } });
+const r3 = m3.rows.find((r) => r.id === '10'), r3o = m.rows.find((r) => r.id === '10');
+ok(r3.d === 14 && r3.L !== r3o.L, `Repère 10 (voile) en HA14 + crosse 180° : L = ${r3.L.toFixed(3)} m (au lieu de ${r3o.L.toFixed(3)})`);
 const long = F.compute('murT', Object.assign({}, M5g, { L: 25 }), {}, {});
-const pieces = long.rows.filter((r) => r.barId === '4');
-ok(pieces.length === 3 && pieces.every((p) => p.L <= 12 + 1e-9) && pieces.map((p) => p.id).join() === '4a,4b,4c',
-  `Bloc de 25 m : filants 4 découpés en ${pieces.map((p) => p.id + ' ' + p.L.toFixed(3)).join(', ')}`);
+const pieces = long.rows.filter((r) => r.barId === '2');
+ok(pieces.length === 3 && pieces.every((p) => p.L <= 12 + 1e-9) && pieces.map((p) => p.id).join() === '2a,2b,2c',
+  `Bloc de 25 m : filants 2 découpés en ${pieces.map((p) => p.id + ' ' + p.L.toFixed(3)).join(', ')}`);
 
 console.log(fails ? `\n${fails} échec(s)` : '\nTous les tests passent');
 process.exit(fails ? 1 : 0);

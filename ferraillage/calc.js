@@ -50,6 +50,10 @@
   const round5mm = (x) => Math.round(x * 200 + 1e-9) / 200;
   const clone = (o) => JSON.parse(JSON.stringify(o));
 
+  /* Repères du mur : semelle 1 à 9 (9 = maintien), voile à partir de 10. */
+  const SEMELLE_IDS = { I: 1, FsI: 2, S: 3, FsS: 4, Bc: 5, Bf: 6, Es: 9 };
+  const VOILE_KEYS = ['V', 'Av', 'Am', 'R', 'Fv', 'Ev'];
+
   /* Diamètre du mandrin (m) pour un Ø en mm. */
   function mandrin(d, norme) {
     if (norme === 'BAEL') return 5 * d / 1000;
@@ -440,7 +444,7 @@
       const maint = (id) => ((mMap && mMap[id]) || p.maintien || 'epingle');
       const r5 = (x) => Math.round(x * 200) / 200;
       // — semelle
-      const idEs = String(bars.length + 1), mEs = mm(dEs);
+      const idEs = '9', mEs = mm(dEs);
       if (maint(idEs) === 'etrier') {
         const De = mandrin(dEs, p.norme), wE = r3(De + 2 * mEs), wa = wE - mEs;
         const nF = Math.floor((B - 2 * c) / 0.20 + 1e-9) + 1, pitch = (fI[1][0] - fI[0][0]) / Math.max(1, nF - 1);
@@ -458,7 +462,7 @@
           place: { items: epX.map((x) => ({ pts: [[x, c], [x, ytop(x) - c]], hs: [1, -1] })), tag: { seg: 0, t: 0.5 } } }, 'Es');
       }
       // — voile
-      const idEv = String(bars.length + 1), mEv = mm(dEv);
+      const idEv = String(10 + bars.filter((b) => VOILE_KEYS.includes(b.key)).length), mEv = mm(dEv);
       const lav = offLine(avA, avB, -ca), lam = offLine(amA, amB, c);
       const xAv = (y) => xAt(lav[0], lav[1], y), xAm = (y) => xAt(lam[0], lam[1], y);
       if (maint(idEv) === 'etrier') {
@@ -478,7 +482,13 @@
           segs: [{ l: rv, a: 0 }], hooks: [135, 135], sides: [-1, 1], place: { items: ve, tag: { seg: 0, t: 0.5 } } }, 'Ev');
       }
 
-      bars.forEach((b, i) => { b.id = String(i + 1); });
+      // Numérotation KLE (piles, culées) : la semelle occupe les repères 1 à 9 — 1-2 nappe inférieure
+      // (U + filants), 3-4 nappe supérieure, 5-6 bêche, 9 maintien (épingles / étriers) ; l'élévation
+      // (voile) commence au repère 10. Les numéros libres restent libres.
+      bars.forEach((b) => { if (SEMELLE_IDS[b.key]) b.id = String(SEMELLE_IDS[b.key]); });
+      let nv = 10;
+      VOILE_KEYS.forEach((k) => bars.filter((b) => b.key === k).forEach((b) => { b.id = String(nv++); }));
+      bars.sort((a, b) => Number(a.id) - Number(b.id));
       bars.meta = { hopt, big }; bars.same = same;
       return bars;
       };
