@@ -34,6 +34,13 @@
   const DIAMS = [6, 8, 10, 12, 14, 16, 20, 25, 32, 40];
   const MASSE_LIN = { 6: 0.222, 8: 0.395, 10: 0.617, 12: 0.888, 14: 1.208, 16: 1.578, 20: 2.466, 25: 3.854, 32: 6.313, 40: 9.864 };
   const HOOKS = [0, 90, 135, 180];
+  /* Paramétrage ADFER de KLE (aciers.dat) : diamètre d'encombrement (colonne REEL, Ø nominal + nervures) et
+     couleur AutoCAD (ACI) par diamètre. L'encombrement sert au dessin (épaisseur des barres, diamètre des
+     points) et au placement (enrobage au nu extérieur, imbrication des nappes, tangences). Longueurs
+     développées, mandrins et masses restent au Ø nominal. */
+  const ENCOMBREMENT = { 6: 8, 8: 10, 10: 12, 12: 14, 14: 17, 16: 19, 20: 24, 25: 30, 32: 38, 40: 48 };
+  const COULEUR_ACI = { 6: 1, 8: 2, 10: 3, 12: 4, 14: 5, 16: 6, 20: 7, 25: 8, 32: 9, 40: 10 };
+  const encM = (d) => (ENCOMBREMENT[d] || Math.round(1.2 * d)) / 1000;
 
   const DEFAULT_PARAMS = {
     norme: 'EC2',     // 'EC2' | 'BAEL'
@@ -58,7 +65,11 @@
        8 répartition des 6, 9 maintien (épingles / étriers) ;
      voile à partir de 10 ; bêche (semelle pleine) juste après le dernier repère du voile. */
   const SEMELLE_IDS = { I: 1, FsI: 2, S: 3, FsS: 4, U5: 5, U6: 6, R7: 7, R8: 8, Es: 9 };
-  const VOILE_KEYS = ['V', 'Av', 'Am', 'R', 'Fv', 'Ev'];
+  /* Numéros fixes du voile (KLE) : face à fruit 10 attente, 11 courante, 12 renfort, 13 filants ; face opposée
+     14 attente, 15 courante, 16 filants ; 17 fourchette de tête ; 18 maintien (étrier). Un repère absent laisse
+     son numéro libre. Bêche à partir du premier numéro libre après le voile. */
+  const VOILE_IDS = { AttF: 10, CourF: 11, R: 12, FvF: 13, AttO: 14, CourO: 15, FvO: 16, Fo: 17, Ev: 18 };
+  const VOILE_KEYS = Object.keys(VOILE_IDS);
   const BECHE_KEYS = ['Bc', 'Bf'];
 
   /* Diamètre du mandrin (m) pour un Ø en mm. */
@@ -348,12 +359,14 @@
       if (!big) { dI = dS = dAv = dAm = mainDiam(Hv, [[1.5, 12], [2.5, 14], [99, 16]]); dFs = dFv = 12; dens = 6; }
       else if (H < 5.5) { dI = 14; dS = 20; dAm = 14; dR = 20; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
       else { dI = 16; dS = 25; dAm = 16; dR = 25; dAv = 12; dFs = 12; dFv = 10; dens = 4; }
-      const D0 = { I: dI, S: dS, Av: dAv, Am: dAm, R: dR, FsI: dFs, FsS: dFs, Fv: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10, U5: 12, U6: 12, R7: 10, R8: 10 };
+      const fa0 = g.fa >= g.fv; // face à fruit = terres (sinon aval) : Ø de la face physique
+      const D0 = { I: dI, S: dS, AttF: fa0 ? dAm : dAv, CourF: fa0 ? dAm : dAv, AttO: fa0 ? dAv : dAm, CourO: fa0 ? dAv : dAm, R: dR, Fo: dAv,
+        FsI: dFs, FsS: dFs, FvF: dFv, FvO: dFv, Bc: dI, Bf: dFs, Es: 10, Ev: 10, U5: 12, U6: 12, R7: 10, R8: 10 };
       const build = (D, forceSame) => {
-      ({ I: dI, S: dS, Av: dAv, Am: dAm, R: dR, Fv: dFv } = D);
+      ({ I: dI, S: dS, R: dR } = D);
       const dFsI = D.FsI, dFsS = D.FsS, dB = D.Bc, dBf = D.Bf, dEs = D.Es, dEv = D.Ev;
       const fermU = p.fermeture !== 'retours';
-      const mm = (d) => d / 1000, m5 = fermU ? mm(D.U5) : 0, m6 = fermU ? mm(D.U6) : 0, m7 = fermU ? mm(D.R7) : 0, m8 = mm(D.R8), mI = mm(dI), mS = mm(dS), mAv = mm(dAv), mAm = mm(dAm), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mFv = mm(dFv), mBf = mm(dBf);
+      const mm = encM, nom = (d) => d / 1000, m5 = fermU ? mm(D.U5) : 0, m6 = fermU ? mm(D.U6) : 0, m7 = fermU ? mm(D.R7) : 0, m8 = mm(D.R8), mI = mm(dI), mS = mm(dS), mR = mm(dR), mFsI = mm(dFsI), mFsS = mm(dFsS), mBf = mm(dBf);
       const lr = r3(L - 2 * c), yL = c + mI / 2;
       const sole = this.outline(g0).sole; // 0:(0,0) 1:(B,0) 2:(B,hbt) 3:(p+eb,hs) 4:(p,hs) 5:(0,hbp)
       const env = offsetPoly(sole, c);
@@ -401,42 +414,66 @@
 
       }
 
-      // Aciers verticaux du voile : parallèles aux parements, ancrés en pied par un retour, crosse en tête.
+      // Aciers verticaux du voile, par face, du parement vers l'intérieur : barre courante (à l'enrobage, droite
+      // de la reprise jusqu'en tête, arrêtée sous l'âme de la fourchette 17), attente en L ancrée dans la
+      // semelle et remontant de l0 = recouv·Ø au-dessus de la reprise, puis (face à fruit) renfort de pied.
+      // Face à fruit : la plus inclinée ; à égalité (faces verticales), la face terres.
       const avA = [g.p, hs], avB = [xAvT, H], amA = [g.p + eb, hs], amB = [xAmT, H];
-      const vert = (face, d, side) => {
-        const m = mm(d), cov = face === 'av' ? ca : c;
-        const [A, Bp] = face === 'av' ? offLine(avA, avB, -(cov + m / 2)) : offLine(amA, amB, cov + m / 2);
-        const xFoot = xAt(A, Bp, yL), top = [xAt(A, Bp, H - ca), H - ca];
-        const avail = face === 'av' ? xFoot + m / 2 - c : B - c - (xFoot - m / 2);
-        const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * m), avail)));
-        const tip = [face === 'av' ? xFoot + m / 2 - leg : xFoot - m / 2 + leg, yL];
-        const Vl = r3((H - ca - c) / Math.cos(Math.atan(face === 'av' ? g.fv : g.fa)));
-        const tipC = [face === 'av' ? xFoot + m / 2 - leg : xFoot - m / 2 + leg, c]; // trajet coté (hors-tout)
-        return { leg, Vl, pts: [tip, [xFoot, yL], top], side, segs: [{ l: leg, a: face === 'av' ? 0 : 180 }, { l: Vl, a: r3(angOf([xFoot, yL], top)) }], tipC };
+      const fruitAm = g.fa >= g.fv, fF = fruitAm ? 'am' : 'av', fO = fruitAm ? 'av' : 'am';
+      const covOf = (face) => (face === 'av' ? ca : c);
+      const faceLine = (face, off) => (face === 'av' ? offLine(avA, avB, -off) : offLine(amA, amB, off));
+      const cosF = (face) => Math.cos(Math.atan(face === 'av' ? g.fv : g.fa));
+      const lb5u = fermU ? r3(Math.min(p.recouv * nom(D.U5), (B - 2 * c) / 2)) : 0;
+      const mFo = mm(D.Fo), yTopC = H - ca - mFo; // tête des barres courantes, sous l'âme de la fourchette
+      // L ancré en pied : pied sur la nappe 1 (ou sur la branche d'un U 5 là où elle passe), retour vers l'intérieur
+      const footL = (face, d, off, yTop, yBase) => {
+        const m = mm(d), [A, Bp] = faceLine(face, off + m / 2), av = face === 'av';
+        const xf0 = xAt(A, Bp, c), avail0 = av ? xf0 + m / 2 - c : B - c - (xf0 - m / 2);
+        const leg0 = Math.max(0.15, Math.min(Math.max(0.30, 25 * nom(d)), avail0));
+        const x0 = av ? xf0 - leg0 : xf0, x1 = av ? xf0 : xf0 + leg0;
+        const lift = yBase != null ? 0 : (fermU && (x0 < c + lb5u || x1 > B - c - lb5u) ? m5 : 0);
+        const yF = yBase != null ? yBase + m / 2 : c + mI + lift + m / 2;
+        const xFoot = xAt(A, Bp, yF), top = [xAt(A, Bp, yTop), yTop];
+        const avail = av ? xFoot + m / 2 - c : B - c - (xFoot - m / 2);
+        const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * nom(d)), avail)));
+        const tip = [av ? xFoot + m / 2 - leg : xFoot - m / 2 + leg, yF];
+        const Vl = r3((yTop - (yF - m / 2)) / cosF(face));
+        return { leg, Vl, yF, m, pts: [tip, [xFoot, yF], top], segs: [{ l: leg, a: av ? 0 : 180 }, { l: Vl, a: r3(angOf([xFoot, yF], top)) }] };
       };
-      const vAv = vert('av', dAv, -1), vAm = vert('am', dAm, 1);
-      const same = forceSame != null ? forceSame : dAv === dAm && Math.abs(g.fa - g.fv) < 1e-9 && Math.abs(vAv.leg - vAm.leg) < 1e-9 && Math.abs(vAv.Vl - vAm.Vl) < 1e-9;
-      if (same) {
-        mkRep({ role: 'Aciers verticaux du voile en L + crosse (2 faces)', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
-          segs: [{ l: vAv.leg, a: 0 }, { l: vAv.Vl, a: 90 }], hooks: [0, 90], sides: [1, -1],
-          place: { items: [{ pts: vAv.pts, hs: [1, -1] }, { pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.72 } } }, 'V');
-      } else {
-        mkRep({ role: 'Voile face aval — verticaux en L + crosse', d: dAv, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: vAv.segs, hooks: [0, 90], sides: [1, -1], place: { items: [{ pts: vAv.pts, hs: [1, -1] }], tag: { seg: 1, t: 0.8 } } }, 'Av');
-        mkRep({ role: 'Voile face terres — verticaux en L + crosse', d: dAm, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: vAm.segs, hooks: [0, 90], sides: [-1, 1], place: { items: [{ pts: vAm.pts, hs: [-1, 1] }], tag: { seg: 1, t: 0.62 } } }, 'Am');
-      }
-      // Renfort de pied côté terres (barres arrêtées), hauteur d'optimisation ≈ 0,42·Hv
-      let hopt = 0;
+      const voileFace = (face, kAtt, kCour) => {
+        const nomF = face === 'av' ? 'aval' : 'terres', dC = D[kCour], dA = D[kAtt], mC = mm(dC), cov = covOf(face);
+        // courante : droite, de la reprise (y = hs) à la tête
+        const [A, Bp] = faceLine(face, cov + mC / 2), P0 = [xAt(A, Bp, hs), hs], P1 = [xAt(A, Bp, yTopC), yTopC];
+        mkRep({ role: 'Voile face ' + nomF + ' — barre courante (recouvre l’attente, arrêtée sous la fourchette)', d: dC, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: [{ l: r3((yTopC - hs) / cosF(face)), a: r3(angOf(P0, P1)) }], hooks: [0, 0], sides: [1, -1],
+          place: { items: [{ pts: [P0, P1] }], tag: { seg: 0, t: 0.75 } } }, kCour);
+        // attente : L ancré, remonte de l0 au-dessus de la reprise, juste à l'intérieur de la courante
+        const l0 = Math.min(p.recouv * nom(dA), Hv - ca - 0.05), att = footL(face, dA, cov + mC, hs + l0);
+        mkRep({ role: 'Voile face ' + nomF + ' — attente en L (recouvrement ' + fmtCote(r3(l0)) + ' m au-dessus de la reprise)', d: dA, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: att.segs, hooks: [0, 0], sides: [1, -1], l0: r3(l0),
+          place: { items: [{ pts: att.pts }], tag: { seg: 1, t: 0.3 } } }, kAtt);
+        return { mC, att };
+      };
+      const vF = voileFace(fF, 'AttF', 'CourF');
+      // Renfort de pied (face à fruit), à l'intérieur de l'attente, posé sur son pied ; hauteur ≈ 0,42·Hv
+      let hopt = 0, mRf = 0;
       if (dR) {
-        hopt = Math.round(0.42 * Hv * 20) / 20;
-        const [A, Bp] = offLine(amA, amB, c + mAm + mR / 2);
-        const xF = xAt(A, Bp, yL + mAm), yT = hs + hopt, top = [xAt(A, Bp, yT), yT];
-        const leg = r3(Math.max(0.15, Math.min(Math.max(0.30, 25 * mR), B - c - (xF - mR / 2))));
-        const Vl = r3((yT - c) / Math.cos(Math.atan(g.fa)));
-        mkRep({ role: 'Renfort de pied côté terres (arrêté à ' + fmtCote(hopt) + ' m au-dessus de la semelle)', d: dR, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: leg, a: 180 }, { l: Vl, a: r3(angOf([xF, yL], top)) }], hooks: [0, 0], sides: [-1, 1],
-          place: { items: [{ pts: [[xF - mR / 2 + leg, yL + mAm], [xF, yL + mAm], top] }], tag: { seg: 1, t: 0.55 } } }, 'R');
+        hopt = Math.round(0.42 * Hv * 20) / 20; mRf = mR;
+        const rf = footL(fF, dR, covOf(fF) + vF.mC + vF.att.m, hs + hopt, vF.att.yF + vF.att.m / 2);
+        mkRep({ role: 'Renfort de pied face ' + (fF === 'av' ? 'aval' : 'terres') + ' (arrêté à ' + fmtCote(hopt) + ' m au-dessus de la semelle)', d: dR, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: rf.segs, hooks: [0, 0], sides: [-1, 1], place: { items: [{ pts: rf.pts }], tag: { seg: 1, t: 0.55 } } }, 'R');
+      }
+      const vO = voileFace(fO, 'AttO', 'CourO');
+      // Fourchette 17 : U renversé en tête, âme sous l'enrobage de tête, branches de 0,25 m juste à l'intérieur des courantes
+      {
+        const BR = 0.25, cF = vF.mC, cO = vO.mC, mCav = fF === 'av' ? cF : cO, mCam = fF === 'am' ? cF : cO;
+        const yTip = H - ca - BR, ya = H - ca - mFo / 2;
+        const La = faceLine('av', ca + mCav + mFo / 2), Lm = faceLine('am', c + mCam + mFo / 2);
+        const Lao = faceLine('av', ca + mCav), Lmo = faceLine('am', c + mCam);
+        const pts = [[xAt(La[0], La[1], yTip), yTip], [xAt(La[0], La[1], ya), ya], [xAt(Lm[0], Lm[1], ya), ya], [xAt(Lm[0], Lm[1], yTip), yTip]];
+        const hors = [[xAt(Lao[0], Lao[1], yTip), yTip], [xAt(Lao[0], Lao[1], H - ca), H - ca], [xAt(Lmo[0], Lmo[1], H - ca), H - ca], [xAt(Lmo[0], Lmo[1], yTip), yTip]];
+        mkRep({ role: 'Fourchette de fermeture en tête du voile (branches ' + fmtCote(BR) + ' m)', d: D.Fo, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+          segs: segsOf(hors), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts }], tag: { seg: 1, t: 0.5 } } }, 'Fo');
       }
 
       // Filants de semelle et fermetures
@@ -446,7 +483,7 @@
         // U 5 : fermeture vue en coupe transversale, aux deux abouts (patin, talon). Âme sur la face
         // d'about, branches en recouvrement avec les nappes 1 et 3 (recouv·Ø, plafonné à (B − 2c)/2),
         // juste à l'intérieur de ces nappes ; la branche haute suit le dessus de semelle.
-        const lb5 = r3(Math.min(p.recouv * m5, (B - 2 * c) / 2));
+        const lb5 = r3(Math.min(p.recouv * nom(D.U5), (B - 2 * c) / 2));
         const o5 = offsetPoly(sole, [c + mI, c, c + mS, c + mS, c + mS, c]);
         const a5 = offsetPoly(sole, [c + mI + m5 / 2, c + m5 / 2, c + mS + m5 / 2, c + mS + m5 / 2, c + mS + m5 / 2, c + m5 / 2]);
         const uPath = (o, lb, end, m) => {
@@ -458,7 +495,7 @@
         const sum = (q) => segsOf(q).reduce((t, x) => t + x.l, 0);
         mkRep({ role: 'U de fermeture des abouts (patin et talon), vus en coupe transversale', d: D.U5, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
           segs: segsOf(sum(c5t) > sum(c5p) ? c5t : c5p), hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ pts: uPath(a5, lb5, 'p', m5 / 2) }, { pts: uPath(a5, lb5, 't', m5 / 2) }], tag: { seg: 1, t: 0.5 } },
+          place: { items: [{ pts: uPath(a5, lb5, 'p', m5 / 2) }, { pts: uPath(a5, lb5, 't', m5 / 2) }], tag: { pick: 'v', t: 0.5 } },
           longi: (xc <= c + lb5 || xc >= B - c - lb5) ? { dotsZ: [{ y: c + mI + m5 / 2, z0: c + m5 / 2, z1: L - c - m5 / 2 }, { y: hc - c - mS - m5 / 2, z0: c + m5 / 2, z1: L - c - m5 / 2 }] } : null }, 'U5');
         // 7 : répartition des 5, le long de l'âme, entre les branches (positions intermédiaires, e ≤ 0,15)
         const ends7 = [['p', 0, hbp], ['t', B, hbt]].map(([e, x0, h]) => {
@@ -487,7 +524,7 @@
           longi: { items: [{ pts: [[c + m6, yF4], [L - c - m6, yF4]] }] } }, 'FsS');
         // U 6 : fermeture vue en coupe longitudinale, aux deux joints du plot ; branches le long de L en
         // recouvrement avec les filants (recouv·Ø, plafonné à (L − 2c)/2), juste à l'intérieur des filants.
-        const lb6 = r3(Math.min(p.recouv * m6, (L - 2 * c) / 2));
+        const lb6 = r3(Math.min(p.recouv * nom(D.U6), (L - 2 * c) / 2));
         // nus extérieurs des branches ; avec biseau, l'âme varie sur la largeur : la nomenclature prend
         // l'épaisseur moyenne de semelle (le dessin de la coupe A-A, l'épaisseur à l'abscisse de coupe)
         const hmoy = g.biseau ? (g.p * (hbp + hs) / 2 + eb * hs + (B - g.p - eb) * (hs + hbt) / 2) / B : hs;
@@ -520,11 +557,19 @@
           longi: { items: [{ pts: [[zl, hc - c - r], [zl, yF4], [L - zl, yF4], [L - zl, hc - c - r]] }] } }, 'FsS');
       }
       const em = (e0 + eb) / 2, rv = r3(em - c - ca);
-      const yTopV = H - ca - Math.max(mAv, mAm) - mFv / 2;
-      const lAv = offLine(avA, avB, -(ca + mAv + mFv / 2)), lAm = offLine(amA, amB, c + mAm + (dR ? mR : 0) + mFv / 2);
-      mkRep({ role: 'Filants voile (2 faces)', d: dFv, kind: 'filant', esp: 0.20, distLen: r3(Hv - ca), mult: 2,
-        segs: [{ l: rv, a: 90 }, { l: lr, a: 0 }, { l: rv, a: -90 }], hooks: [0, 0], sides: [1, -1],
-        place: { dots: [{ mode: 'stepY', line: lAv, y0: yTopV }, { mode: 'stepY', line: lAm, y0: yTopV }], tag: 1 } }, 'Fv');
+      // Filants du voile : deux repères, d'abord la face à fruit (la plus inclinée ; sans fruit, la face
+      // terres), puis la face opposée. Rangées placées sous les deux crosses de tête.
+      const yTopOf = (m) => H - ca - mFo - m / 2; // sous l'âme de la fourchette
+      const filV = (key, face) => {
+        const d = D[key], m = mm(d), am = face === 'am', vv = face === fF ? vF : vO;
+        const inner = Math.max(mFo, vv.att.m + (face === fF ? mRf : 0));
+        const line = faceLine(face, covOf(face) + vv.mC + inner + m / 2);
+        mkRep({ role: 'Filants voile — face ' + (am ? 'terres' : 'aval') + (key === 'FvF' ? ' (face à fruit)' : ' (face opposée)'), d, kind: 'filant', esp: 0.20, distLen: r3(Hv - ca), mult: 1,
+          segs: [{ l: rv, a: 90 }, { l: lr, a: 0 }, { l: rv, a: -90 }], hooks: [0, 0], sides: [1, -1],
+          place: { dots: [{ mode: 'stepY', line, y0: yTopOf(m) }], tag: 1 } }, key);
+      };
+      filV('FvF', fF); filV('FvO', fO);
+      const yTopV = yTopOf(Math.max(mm(D.FvF), mm(D.FvO))); // hauteur de la rangée haute (épingles / étriers du voile)
 
       // Bêche : cadre en U ancré dans la semelle + filants en fond de bêche
       if (g.beche) {
@@ -556,7 +601,7 @@
       // — semelle
       const idEs = '9', mEs = mm(dEs);
       if (maint(idEs) === 'etrier') {
-        const De = mandrin(dEs, p.norme), wE = r3(De + 2 * mEs), wa = wE - mEs;
+        const De = mandrin(dEs, p.norme), wE = r3(De + 2 * nom(dEs)), wa = De + mEs; // cote au Ø nominal, dessin à l'encombrement
         const nF = Math.floor((B - 2 * c) / 0.20 + 1e-9) + 1, pitch = (fI[1][0] - fI[0][0]) / Math.max(1, nF - 1);
         const items = epX.map((x) => {
           const k = Math.max(0, Math.min(nF - 1, Math.round((x - fI[0][0]) / pitch))), cx = fI[0][0] + k * pitch;
@@ -574,11 +619,11 @@
       const b9 = bars[bars.length - 1], Ls9 = Math.min(1.5, L / 2);
       b9.longi = { items: [0.45, 1.05].filter((z) => z < Ls9 - 0.1).flatMap((z) => [z, L - z]).map((z) => ({ pts: [[z, c + mEs / 2], [z, hc - c - mEs / 2]] })), tag: { seg: 0, t: 0.5 } };
       // — voile
-      const idEv = String(10 + bars.filter((b) => VOILE_KEYS.includes(b.key)).length), mEv = mm(dEv);
+      const idEv = String(VOILE_IDS.Ev), mEv = mm(dEv);
       const lav = offLine(avA, avB, -ca), lam = offLine(amA, amB, c);
       const xAv = (y) => xAt(lav[0], lav[1], y), xAm = (y) => xAt(lam[0], lam[1], y);
-      if (maint(idEv) === 'etrier') {
-        const De = mandrin(dEv, p.norme), wE = r3(De + 2 * mEv), wa = wE - mEv;
+      if (((mMap && mMap[idEv]) || 'etrier') === 'etrier') { // 18 : étrier par défaut (KLE), basculable en épingle
+        const De = mandrin(dEv, p.norme), wE = r3(De + 2 * nom(dEv)), wa = De + mEv;
         const items = [0.25, 0.6].map((f) => {
           const i = Math.max(0, Math.round((yTopV - (H - ca - f * Hv)) / 0.20)), yc = yTopV - i * 0.20;
           const yT = yc + wa / 2, yB = yc - wa / 2;
@@ -596,18 +641,18 @@
 
       // Numérotation KLE (piles, culées) : semelle 1 à 9 (voir SEMELLE_IDS), voile à partir de 10,
       // bêche juste après le voile. Les numéros libres (5-8 en mode « retours ») restent libres.
-      bars.forEach((b) => { if (SEMELLE_IDS[b.key]) b.id = String(SEMELLE_IDS[b.key]); });
-      let nv = 10;
-      VOILE_KEYS.concat(BECHE_KEYS).forEach((k) => bars.filter((b) => b.key === k).forEach((b) => { b.id = String(nv++); }));
+      bars.forEach((b) => { if (SEMELLE_IDS[b.key]) b.id = String(SEMELLE_IDS[b.key]); else if (VOILE_IDS[b.key]) b.id = String(VOILE_IDS[b.key]); });
+      let nv = Math.max.apply(null, Object.values(VOILE_IDS)) + 1;
+      BECHE_KEYS.forEach((k) => bars.filter((b) => b.key === k).forEach((b) => { b.id = String(nv++); }));
       bars.sort((a, b) => Number(a.id) - Number(b.id));
-      bars.meta = { hopt, big }; bars.same = same;
+      bars.meta = { hopt, big };
       return bars;
       };
       const b0 = build(D0);
       if (!dMap || !Object.keys(dMap).length) return b0;
       const D1 = Object.assign({}, D0);
-      b0.forEach((b) => { const d = dMap[b.id]; if (d) { if (b.key === 'V') D1.Av = D1.Am = d; else D1[b.key] = d; } });
-      return build(D1, b0.same);
+      b0.forEach((b) => { const d = dMap[b.id]; if (d) D1[b.key] = d; });
+      return build(D1);
     },
   };
 
@@ -637,10 +682,10 @@
       const c = p.cTerre, ca = p.cAutre;
       const d1 = mainDiam(Math.max(g.O, g.Hi), [[2, 12], [3, 14], [4, 16], [99, 20]]);
       const d2 = 10, dg = 10;
-      const m1 = d1 / 1000, m2 = d2 / 1000, mg = dg / 1000;
+      const m1 = encM(d1), m2 = encM(d2), mg = encM(dg);
       const { O, Hi, et, ep, er, L, Bext, Hext } = g;
       const lr = r3(L - 2 * c);
-      const lap = p.recouv * m1;
+      const lap = p.recouv * d1 / 1000;
       const legU = r3(Math.min((Hext - 2 * c) / 2 + lap / 2, Hext - 2 * c));
       const lx = r3(Bext - 2 * c);
       const lInt = r3(Bext - 2 * c - 4 * m1);
@@ -738,7 +783,7 @@
   }
 
   return {
-    DIAMS, MASSE_LIN, HOOKS, DEFAULT_PARAMS, STRUCTURES,
+    ENCOMBREMENT, COULEUR_ACI, encM, DIAMS, MASSE_LIN, HOOKS, DEFAULT_PARAMS, STRUCTURES,
     mandrin, deviation, bendDeduction, hookStraight, hookLength, devLength,
     barCount, splitShape, applyOverride, computeRows, recap, defaults, preset, compute, fmtCote, round5mm, offsetPoly, cleanPath,
   };

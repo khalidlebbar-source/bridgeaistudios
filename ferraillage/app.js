@@ -262,7 +262,7 @@
       <div class="kpi"><small>Repères</small><b>${r.bars.length}<i>· ${fr(r.recap.longueur, 0)} m</i></b></div>`;
   }
 
-  const colorOf = (barId) => { const i = S.res.bars.findIndex((b) => b.id === barId); return F.COLORS[i % F.COLORS.length]; };
+  const colorOf = (barId) => { const i = S.res.bars.findIndex((b) => b.id === barId); return F.barColor(S.res.bars[i], i); };
   const croquisFor = (row, w, h) => F.croquisSVG(row.shape, colorOf(row.barId), w, h);
 
   function renderTable() {

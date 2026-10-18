@@ -14,6 +14,14 @@
 
   const COLORS = ['#c0392b', '#2d6be4', '#0f8f7b', '#b07d12', '#8e44ad', '#d35400', '#1e8449', '#34495e', '#c2185b', '#5e35b1', '#00838f', '#6d4c41'];
   const INK = '#14171f', DIM = '#6b7280', CONCRETE = '#efebe0';
+  /* Code couleur ADFER de KLE : la couleur dépend du diamètre (barres et points d'un repère). ACI dans le DXF ;
+     à l'écran, RVB des ACI rendus lisibles sur fond clair (jaune, vert, cyan, magenta foncés ; ACI 7 en noir). */
+  const RED = '#e0302a', ZIG = '#a3a01c';
+  const ACI_WEB = { 1: '#ff0000', 2: '#c9a800', 3: '#1fb41f', 4: '#00a8c8', 5: '#0000ff', 6: '#d000d0', 7: '#1a1a1a', 8: '#808080', 9: '#9a9a9a', 10: '#e03030' };
+  const aciOf = (d) => F.COULEUR_ACI[d] || 7;
+  function barColor(bar) { return ACI_WEB[aciOf(bar.d)]; }
+  const vsub = (a, b) => [a[0] - b[0], a[1] - b[1]], vadd = (a, b) => [a[0] + b[0], a[1] + b[1]], vmul = (a, k) => [a[0] * k, a[1] * k];
+  const vunit = (a) => { const l = Math.hypot(a[0], a[1]) || 1; return [a[0] / l, a[1] / l]; };
   const rad = (d) => d * Math.PI / 180;
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -58,7 +66,9 @@
       if (it.t === 'poly') {
         let d = pathOf(it.pts, it.closed);
         (it.holes || []).forEach((h) => { d += pathOf(h, true); });
-        out += `<path d="${d}" fill="${it.fill || 'none'}"${it.holes ? ' fill-rule="evenodd"' : ''} stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linejoin="round" stroke-linecap="round"${it.barId ? ` data-bar="${it.barId}"` : ''}/>`;
+        const cls = it.cls ? ` class="${it.cls}"` : '', db = it.barId ? ` data-bar="${it.barId}"` : '';
+        if (it.hitW) out += `<path d="${d}" fill="none" stroke="transparent" stroke-width="${it.hitW}" pointer-events="stroke"${db}/>`;
+        out += `<path d="${d}" fill="${it.fill || 'none'}"${it.holes ? ' fill-rule="evenodd"' : ''} stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.dash ? ` stroke-dasharray="${it.dash}"` : ''} stroke-linejoin="round" stroke-linecap="${it.cap || 'round'}"${cls}${db}/>`;
       } else if (it.t === 'bar') {
         // trajet cintré : arcs SVG (l'axe y est inversé à l'écran, donc un bulge positif
         // — sens trigonométrique — devient un arc horaire : sweep-flag 0) ; tracé transparent
@@ -73,13 +83,13 @@
           }
         }
         const w = Math.max(it.minPx || 1, it.wM * s).toFixed(2);
-        out += `<g data-bar="${it.barId}"><path d="${d}" fill="none" stroke="transparent" stroke-width="${Math.max(14, +w + 8)}" stroke-linecap="round" pointer-events="stroke"/><path d="${d}" fill="none" stroke="${it.color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="butt"/></g>`;
+        out += `<g data-bar="${it.barId}"><path d="${d}" fill="none" stroke="transparent" stroke-width="${Math.max(14, +w + 8)}" stroke-linecap="round" pointer-events="stroke"/><path class="bv" d="${d}" fill="none" stroke="${it.color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="butt"/></g>`;
       } else if (it.t === 'circle') {
         if (it.hit) out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(9, it.r * s).toFixed(1)}" fill="transparent" data-bar="${it.barId}"/>`;
-        out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(it.minPx || 0, it.r * s).toFixed(2)}" fill="${it.fill || 'none'}" stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.barId ? ` data-bar="${it.barId}"` : ''}/>`;
+        out += `<circle cx="${X(it.c[0])}" cy="${Y(it.c[1])}" r="${Math.max(it.minPx || 0, it.r * s).toFixed(2)}" fill="${it.fill || 'none'}" stroke="${it.stroke === false ? 'none' : it.color}" stroke-width="${it.w}"${it.cls ? ` class="${it.cls}"` : ''}${it.barId ? ` data-bar="${it.barId}"` : ''}/>`;
       } else if (it.t === 'text') {
         const tr = it.rot ? ` transform="rotate(${-it.rot} ${X(it.p[0])} ${Y(it.p[1])})"` : '';
-        out += `<text x="${X(it.p[0])}" y="${Y(it.p[1])}" font-size="${it.h}" text-anchor="${it.anchor}" dominant-baseline="central" fill="${it.color}"${it.halo ? ' stroke="#ffffff" stroke-width="3" paint-order="stroke"' : ''}${it.weight ? ` font-weight="${it.weight}"` : ''}${it.italic ? ' font-style="italic"' : ''}${it.barId ? ` data-bar="${it.barId}"` : ''}${tr}>${esc(it.s)}</text>`;
+        out += `<text x="${X(it.p[0])}" y="${Y(it.p[1])}" font-size="${it.h}" text-anchor="${it.anchor}" dominant-baseline="central" fill="${it.color}"${it.halo ? ' stroke="#ffffff" stroke-width="3" paint-order="stroke"' : ''}${it.weight ? ` font-weight="${it.weight}"` : ''}${it.italic ? ' font-style="italic"' : ''}${it.cls ? ` class="${it.cls}"` : ''}${it.barId ? ` data-bar="${it.barId}"` : ''}${tr}>${esc(it.s)}</text>`;
       }
     }
     const label = opts.label ? ` role="img" aria-label="${esc(opts.label)}"` : '';
@@ -102,29 +112,30 @@
   /* ───────── Cotation ───────── */
   function dim(sc, p1, p2, orient, at, txt, o) {
     o = o || {};
-    const u = sc.u, gap = 3 * u, tk = 4 * u, L = { layer: 'KLE-Cotation', color: DIM, w: 0.8 };
+    const u = sc.u, gap = 3 * u, tk = 4 * u, L = { layer: 'KLE-Cotation', color: o.color || DIM, w: o.color ? 0.7 : 0.8, aci: o.aci };
+    const TX = { color: o.color || INK, aci: o.aci, h: o.h || 11 }, TK = Object.assign({}, L, { color: o.color || INK });
     if (orient === 'h') {
       const [x1, x2] = [Math.min(p1[0], p2[0]), Math.max(p1[0], p2[0])];
       const sgn = at < p1[1] ? -1 : 1;
       sc.line([p1[0], p1[1] + sgn * gap], [p1[0], at + sgn * 3 * u], L);
       sc.line([p2[0], p2[1] + sgn * gap], [p2[0], at + sgn * 3 * u], L);
       sc.line([x1, at], [x2, at], L);
-      [x1, x2].forEach((x) => sc.line([x - tk, at - tk], [x + tk, at + tk], Object.assign({}, L, { color: INK })));
+      [x1, x2].forEach((x) => sc.line([x - tk, at - tk], [x + tk, at + tk], TK));
       const tw = txt.length * 11 * 0.56 * u;
-      if (x2 - x1 > tw + 8 * u) sc.text([(x1 + x2) / 2, at + 8 * u], txt, { color: INK });
-      else sc.text([o.flip ? x1 - 5 * u : x2 + 5 * u, at + 8 * u], txt, { color: INK, anchor: o.flip ? 'end' : 'start' });
+      if (x2 - x1 > tw + 8 * u) sc.text([(x1 + x2) / 2, at + 8 * u], txt, TX);
+      else sc.text([o.flip ? x1 - 5 * u : x2 + 5 * u, at + 8 * u], txt, Object.assign({}, TX, { anchor: o.flip ? 'end' : 'start' }));
     } else {
       const [y1, y2] = [Math.min(p1[1], p2[1]), Math.max(p1[1], p2[1])];
       const sgn = at < p1[0] ? -1 : 1;
       sc.line([p1[0] + sgn * gap, p1[1]], [at + sgn * 3 * u, p1[1]], L);
       sc.line([p2[0] + sgn * gap, p2[1]], [at + sgn * 3 * u, p2[1]], L);
       sc.line([at, y1], [at, y2], L);
-      [y1, y2].forEach((y) => sc.line([at - tk, y - tk], [at + tk, y + tk], Object.assign({}, L, { color: INK })));
+      [y1, y2].forEach((y) => sc.line([at - tk, y - tk], [at + tk, y + tk], TK));
       const tw = txt.length * 11 * 0.56 * u;
-      if (y2 - y1 > tw + 8 * u) sc.text([at - 8 * u, (y1 + y2) / 2], txt, { color: INK, rot: 90 });
+      if (y2 - y1 > tw + 8 * u) sc.text([at + (o.out ? sgn : -1) * 8 * u, (y1 + y2) / 2], txt, Object.assign({}, TX, { rot: 90 }));
       else { // cote trop courte : texte horizontal, à l'extérieur de la ligne de cote
         const out = sgn < 0 ? -1 : 1;
-        sc.text([at + out * 5 * u, (y1 + y2) / 2], txt, { color: INK, anchor: out < 0 ? 'end' : 'start' });
+        sc.text([at + out * 5 * u, (y1 + y2) / 2], txt, Object.assign({}, TX, { anchor: out < 0 ? 'end' : 'start' }));
       }
     }
   }
@@ -371,7 +382,7 @@
 
   /* Trajet d'une barre (axe), angles cintrés au mandrin et crosses comprises. */
   function barPath(bar, item, params) {
-    const dm = bar.d / 1000, D = F.mandrin(bar.d, params.norme), R = D / 2 + dm / 2;
+    const dm = F.encM(bar.d), D = F.mandrin(bar.d, params.norme), R = D / 2 + dm / 2; // nu intérieur au mandrin, axe à Ø encombrement / 2
     const segs = bar.segs, n = segs.length, hooks = bar.hooks || [0, 0], sides = bar.sides || [1, -1];
     const tr = (a) => { if (item.mx) a = 180 - a; if (item.my) a = -a; return a; };
     const sideF = (item.mx ? -1 : 1) * (item.my ? -1 : 1);
@@ -403,11 +414,11 @@
     }
     const path = filletPath(main, R);
     if (hooks[1]) {
-      const h = hookArc(main[main.length - 1], dirE, sE, hooks[1], R, F.hookStraight(hooks[1], dm, params.norme));
+      const h = hookArc(main[main.length - 1], dirE, sE, hooks[1], R, F.hookStraight(hooks[1], bar.d / 1000, params.norme));
       path[path.length - 1].b = h.b; path.push({ p: h.Q, b: 0 }, { p: h.E, b: 0 });
     }
     if (hooks[0]) {
-      const h = hookArc(main[0], dirS + 180, sS, hooks[0], R, F.hookStraight(hooks[0], dm, params.norme));
+      const h = hookArc(main[0], dirS + 180, sS, hooks[0], R, F.hookStraight(hooks[0], bar.d / 1000, params.norme));
       path.unshift({ p: h.E, b: 0 }, { p: h.Q, b: -h.b });
     }
     return { path, main, pts: samplePath(path), R };
@@ -443,76 +454,303 @@
     return out;
   }
 
-  /* Répartit des bulles de repère sur deux colonnes, sans chevauchement. */
-  function placeBubbles(tags, bb, u, R) {
-    // côté le plus proche, puis rééquilibrage si un côté est trop chargé
-    const cx = (bb[0] + bb[2]) / 2;
-    const left = tags.filter((t) => t.p[0] < cx).sort((a, b) => b.p[0] - a.p[0]);
-    const right = tags.filter((t) => t.p[0] >= cx).sort((a, b) => a.p[0] - b.p[0]);
-    while (left.length > right.length + 2) right.push(left.shift());
-    while (right.length > left.length + 2) left.push(right.shift());
-    const sidesOut = [left, right];
-    const gapM = (2 * R + 6) * u;
-    sidesOut.forEach((list, k) => {
-      list.sort((a, b) => b.p[1] - a.p[1]);
-      const x = k === 0 ? bb[0] - 34 * u : bb[2] + 34 * u;
-      let y = Infinity;
-      list.forEach((t) => { y = Math.min(t.p[1], y - gapM); t.b = [x, y]; });
-      const lowest = list.length ? list[list.length - 1].b[1] : 0;
-      const floor = bb[1] - 4 * u;
-      if (lowest < floor) {
-        let shift = floor - lowest;
-        list.forEach((t) => { t.b[1] += shift; });
+  /* ───────── Repérage façon plans KLE ─────────
+     Barres façonnées : bulle cerclée rangée en colonne à gauche ou à droite de la coupe, ligne d'attache
+     orthogonale (horizontale depuis la bulle, coude à 90° si besoin) terminée par une flèche pleine posée
+     sur la barre ; texte de quantité « 60HA10 » au-dessus du premier segment.
+     Barres réparties (points) : pas de bulle ; marqueur rouge en équerre à chaque extrémité de rangée.
+     Le côté d'approche est choisi en lançant des rayons depuis le point d'attache vers le contour du béton. */
+
+  /* Distance t > 0 du premier bord de polygone rencontré par le rayon P + t·d (d unitaire). */
+  function rayHit(P, d, polys) {
+    let best = Infinity;
+    polys.forEach((poly) => {
+      for (let i = 0; i < poly.length; i++) {
+        const A = poly[i], B = poly[(i + 1) % poly.length], ex = B[0] - A[0], ey = B[1] - A[1];
+        const den = d[0] * ey - d[1] * ex;
+        if (Math.abs(den) < 1e-12) continue;
+        const ax = A[0] - P[0], ay = A[1] - P[1], t = (ax * ey - ay * ex) / den, q = (ax * d[1] - ay * d[0]) / den;
+        if (t > 1e-7 && q >= -1e-9 && q <= 1 + 1e-9) best = Math.min(best, t);
       }
+    });
+    return best;
+  }
+  const segFree = (A, B, polys) => { const v = vsub(B, A), l = Math.hypot(v[0], v[1]); return l < 1e-9 || rayHit(A, vmul(v, 1 / l), polys) >= l - 1e-9; };
+
+  /* Marqueurs rouges aux extrémités des rangées de points : trait perpendiculaire vers le parement le plus
+     proche (jusqu'au-delà du béton) puis petit retour vers l'intérieur de la rangée, numéro à côté. */
+  function rowMarkers(sc, rows, polys) {
+    const u = sc.u, boxes = [];
+    const boxOf = (T, txt, anchor) => { const w = txt.length * 9 * 0.56 * u, h = 9 * u, x0 = anchor === 'start' ? T[0] : anchor === 'end' ? T[0] - w : T[0] - w / 2; return [x0 - u, T[1] - h / 2, x0 + w + u, T[1] + h / 2]; };
+    const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    rows.forEach((rw) => {
+      const P = rw.pts; if (!P.length) return;
+      const ends = P.length === 1 ? [[P[0], rw.dir || [1, 0]]] : [[P[0], vunit(vsub(P[0], P[1]))], [P[P.length - 1], vunit(vsub(P[P.length - 1], P[P.length - 2]))]];
+      ends.forEach(([E, d]) => {
+        const n1 = [-d[1], d[0]], n2 = [d[1], -d[0]], t1 = rayHit(E, n1, polys), t2 = rayHit(E, n2, polys);
+        const n = t1 <= t2 ? n1 : n2, t = Math.min(t1, t2, 0.6);
+        const A = vadd(E, vmul(n, rw.r + 1.5 * u)), B = vadd(E, vmul(n, Math.max(t + 6 * u, rw.r + 9 * u))), C = vadd(B, vmul(d, -8 * u));
+        sc.poly([A, B, C], { layer: 'REPERAGE', color: RED, aci: 1, w: 0.9, barId: rw.id, cls: 'mk', hitW: 8, cap: 'butt' });
+        const along = Math.abs(d[0]) > Math.abs(d[1]); // rangée plutôt horizontale : numéro au-dessus/au-dessous du retour
+        let T = along ? vadd(C, vadd(vmul(d, -4 * u), vmul(n, 5 * u))) : vadd(C, vadd(vmul(d, -3 * u), vmul(n, 7 * u)));
+        const anchor = along ? 'middle' : (n[0] < 0 ? 'end' : 'start');
+        // numéro déjà occupé par un autre marqueur : on l'écarte le long de la rangée, vers l'intérieur
+        for (let k = 0; k < 4 && boxes.some((b) => hit(b, boxOf(T, rw.id, anchor))); k++) T = vadd(T, vmul(d, -9 * u));
+        boxes.push(boxOf(T, rw.id, anchor));
+        sc.text(T, rw.id, { layer: 'REPERAGE', color: RED, aci: 1, h: 9, barId: rw.id, cls: 'mkt', anchor });
+      });
+    });
+  }
+
+  /* Bulles, lignes d'attache orthogonales, flèches et quantités. tags : {id, p, dir, wM, qty}. */
+  function placeReperes(sc, tags, polys, obst) {
+    const u = sc.u, R = 10, G = (2 * R + 5) * u, LV = 22 * u;
+    const bb = bounds(sc), cx = (bb[0] + bb[2]) / 2, W = bb[2] - bb[0];
+    const colX = [bb[0] - (R + 46) * u, bb[2] + (R + 46) * u];
+    // rayon libre : sortie du béton sans y rentrer plus loin (sinon la ligne traverserait un vide ou un autre élément)
+    const ray = (P, d) => { const t = rayHit(P, d, polys); return { t, ok: isFinite(t) && !isFinite(rayHit(vadd(P, vmul(d, t + 1e-4)), d, polys)) }; };
+    const pick = (A, B) => (A.ok && B.ok ? (A.t <= B.t ? 0 : 1) : A.ok ? 0 : B.ok ? 1 : (A.t <= B.t ? 0 : 1));
+    const nearH = Math.max(0.35, 0.14 * W);
+    const vertOf = (t, P) => { const D = ray(P, [0, -1]), U = ray(P, [0, 1]), k = pick(D, U); t.vert = k ? 1 : -1; t.reach = k ? P[1] + U.t : P[1] - D.t; return { D, U, k }; };
+    const sideUp = (t, P) => { // côté d'où l'horizontale au-dessus de l'élément ne recoupe pas le béton
+      const y = t.reach + 16 * u, f0 = segFree([P[0], y], [colX[0], y], polys), f1 = segFree([P[0], y], [colX[1], y], polys);
+      return f0 && !f1 ? 0 : f1 && !f0 ? 1 : (P[0] - bb[0] <= bb[2] - P[0] ? 0 : 1);
+    };
+    const toHB = (t) => { t.kind = 'HB'; const r = vertOf(t, t.p); if (r.D.ok) { t.vert = -1; t.reach = t.p[1] - r.D.t; } /* par dessous de préférence */ t.side = t.vert < 0 ? (t.p[0] < cx ? 0 : 1) : sideUp(t, t.p); delete t.want; };
+    // point d'attache dégagé : aucune autre barre ne croise ce point (sinon la flèche tomberait sur elle)
+    const clear = (P, id, wM) => !(obst || []).some((o) => {
+      if (o.id === id) return false; // une barre tangente (distance = somme des demi-épaisseurs) ne gêne pas
+      const ab = vsub(o.b, o.a), L2 = ab[0] * ab[0] + ab[1] * ab[1], k = L2 ? Math.max(0, Math.min(1, ((P[0] - o.a[0]) * ab[0] + (P[1] - o.a[1]) * ab[1]) / L2)) : 0;
+      return Math.hypot(P[0] - o.a[0] - ab[0] * k, P[1] - o.a[1] - ab[1] * k) < o.h + 0.25 * (wM || 0);
+    });
+    const orig = tags.map((t) => ({ p: t.p.slice(), dir: t.dir.slice() }));
+    const layout = () => {
+      tags.forEach((t, i) => { t.p = orig[i].p.slice(); t.dir = orig[i].dir.slice(); ['kind', 'side', 'want', 'near', 'vert', 'reach', 'ub', 'lb', 'by'].forEach((k) => delete t[k]); });
+      tags.forEach((t) => {
+        const d = t.dir;
+        if (Math.abs(d[1]) >= Math.abs(d[0])) { // barre verticale à cet endroit : arrivée horizontale
+          if (!clear(t.p, t.id, t.wM)) {
+            const alt = [0.6, 0.5, 0.7, 0.4, 0.8, 0.3, 0.85, 0.2].sort((x, y) => Math.abs(x - t.t0) - Math.abs(y - t.t0))
+              .map((tt) => vadd(t.a, vmul(vsub(t.b, t.a), tt))).find((Q) => clear(Q, t.id, t.wM));
+            if (alt) t.p = alt;
+          }
+          const P = t.p, Lr = ray(P, [-1, 0]), Rr = ray(P, [1, 0]), k = pick(Lr, Rr), near = k ? Rr : Lr;
+          if (near.ok && near.t <= nearH && !t.forceHB) { t.kind = 'H'; t.side = k; t.want = P[1]; t.near = near.t; } else toHB(t);
+          return;
+        }
+        // barre horizontale : bulle hors du béton si l'élément est mince, sinon attache locale (voile) ;
+        // le point d'attache glisse le long du segment pour éviter un passage sous le voile
+        const ts = [t.t0].concat([0.5, 0.3, 0.7, 0.2, 0.8, 0.12, 0.88].filter((x) => Math.abs(x - t.t0) > 0.02).sort((x, y) => Math.abs(x - t.t0) - Math.abs(y - t.t0)));
+        // segment d'origine d'abord, puis les autres segments plutôt horizontaux de la barre, du plus proche au plus lointain
+        const M = t.main || [t.a, t.b], s0 = t.seg || 0, segs = [];
+        for (let k = 0; k < M.length - 1; k++) { const v = vsub(M[k + 1], M[k]); if (k === s0 || Math.abs(v[0]) > Math.abs(v[1])) segs.push(k); }
+        segs.sort((x, y) => Math.abs(x - s0) - Math.abs(y - s0));
+        for (const k of segs) for (const tt of ts) {
+          const P = vadd(M[k], vmul(vsub(M[k + 1], M[k]), tt)), r = vertOf(t, P), c = r.k ? r.U : r.D;
+          if (c.ok && c.t <= 0.6 && (r.D.t + r.U.t <= 1.2 || (!r.k && c.t <= 0.25) || c.t <= 0.12) && clear(P, t.id, t.wM)) { t.p = P; t.dir = vunit(vsub(M[k + 1], M[k])); t.kind = 'V'; t.side = t.vert < 0 ? (P[0] < cx ? 0 : 1) : sideUp(t, P); return; }
+        }
+        const Lr = ray(t.p, [-1, 0]), Rr = ray(t.p, [1, 0]);
+        t.kind = 'VL'; t.side = pick(Lr, Rr); t.want = t.p[1] - 30 * u; delete t.vert;
+      });
+      // deux arrivées horizontales à la même hauteur du même côté : la plus éloignée du parement passe par dessous
+      tags.filter((t) => t.kind === 'H').sort((a, b) => a.near - b.near).forEach((t, i, arr) => {
+        if (arr.slice(0, i).some((o) => o.kind === 'H' && o.side === t.side && Math.abs(o.p[1] - t.p[1]) < G)) toHB(t);
+      });
+      const xv = (t) => (t.kind === 'HB' ? t.p[0] + (t.side ? 1 : -1) * 8 * u : t.p[0]); // abscisse du tronçon vertical
+      // niveaux des attaches passant sous (ou au-dessus de) la coupe : la plus proche de la colonne au niveau
+      // le plus proche du béton, pour qu'aucune ligne n'en croise une autre
+      [0, 1].forEach((sd) => [-1, 1].forEach((vt) => {
+        const grp = tags.filter((t) => t.side === sd && t.vert === vt && (t.kind === 'V' || t.kind === 'HB'))
+          .sort((a, b) => Math.abs(xv(a) - colX[sd]) - Math.abs(xv(b) - colX[sd]));
+        let y = vt < 0 ? bb[1] - 16 * u + LV : -Infinity;
+        grp.forEach((t) => {
+          if (vt < 0) { y -= LV; t.want = y; t.ub = y; }
+          else { y = Math.max(t.reach + 16 * u, y + LV); t.want = y; t.lb = y; }
+        });
+      }));
+      // colonnes : espacement régulier sans chevauchement (descente puis remontée pour les bornes basses)
+      [0, 1].forEach((sd) => {
+        const list = tags.filter((t) => t.side === sd).sort((a, b) => b.want - a.want);
+        list.forEach((t, i) => { t.by = i ? Math.min(t.want, list[i - 1].by - G) : t.want; if (t.ub != null) t.by = Math.min(t.by, t.ub); });
+        for (let i = list.length - 1; i >= 0; i--) {
+          const t = list[i]; let y = t.by;
+          if (t.lb != null) y = Math.max(y, t.lb);
+          if (i < list.length - 1) y = Math.max(y, list[i + 1].by + G);
+          t.by = y;
+        }
+      });
+      tags.forEach((t) => {
+        const s = t.side ? 1 : -1, X = colX[t.side], E = [X - s * R * u, t.by], P = t.p, h = t.wM / 2;
+        let path;
+        if (t.kind === 'H' || t.kind === 'HB') {
+          const T = [P[0] + s * h, P[1]];
+          if (t.kind === 'H' && Math.abs(t.by - P[1]) < 0.5 * u) path = [E, T];
+          else { const xk = t.kind === 'H' ? X - s * (R + 42) * u : P[0] + s * 8 * u; path = [E, [xk, t.by], [xk, P[1]], T]; }
+        } else {
+          const v = t.by < P[1] ? -1 : 1;
+          path = [E, [P[0], t.by], [P[0], P[1] + v * h]];
+        }
+
+        t.path = path;
+      });
+    };
+    // résolution des croisements : une arrivée horizontale qui croise une autre attache passe par dessous
+    const segX = (a, b, c, d) => { const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d), e = 1e-12; return ((d1 > e && d2 < -e) || (d1 < -e && d2 > e)) && ((d3 > e && d4 < -e) || (d3 < -e && d4 > e)); };
+    const crossPair = () => { for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) { const A = tags[i].path, B = tags[j].path; for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) if (segX(A[a], A[a + 1], B[b], B[b + 1])) return [tags[i], tags[j]]; } return null; };
+    layout();
+    for (let it = 0; it < 6; it++) {
+      const pr = crossPair(); if (!pr) break;
+      const h = pr.filter((t) => t.kind === 'H').sort((a, b) => (b.path.length - a.path.length) || (b.near - a.near))[0];
+      if (!h) break;
+      h.forceHB = true; layout();
+    }
+    tags.forEach((t) => {
+      const s = t.side ? 1 : -1, X = colX[t.side], E = [X - s * R * u, t.by], path = t.path;
+      const o = { layer: 'REPERAGE', color: INK, barId: t.id };
+      sc.poly(path, Object.assign({ w: 0.8, cls: 'rp', hitW: 8, cap: 'butt' }, o));
+      const T = path[path.length - 1], v = vunit(vsub(T, path[path.length - 2])), n = [-v[1], v[0]], B0 = vsub(T, vmul(v, 7 * u));
+      sc.poly([T, vadd(B0, vmul(n, 2.6 * u)), vsub(B0, vmul(n, 2.6 * u))], Object.assign({ closed: true, fill: INK, w: 0.4, cls: 'rpf', solid: true }, o));
+      sc.circle([X, t.by], R * u, Object.assign({ fill: '#ffffff', w: 0.9, hit: true, cls: 'bub' }, o));
+      sc.text([X, t.by], t.id, Object.assign({ h: 11, cls: 'bt' }, o));
+      sc.text([E[0] - s * 3 * u, t.by + 6 * u], t.qty, Object.assign({ h: 8.5, cls: 'qt', anchor: s < 0 ? 'start' : 'end' }, o));
     });
     return tags;
   }
 
+  /* Pastilles tangentes : chaque point qui empiète sur une barre façonnée (ou sur un point déjà placé d'un
+     autre repère) est repoussé jusqu'au contact. Dans un coude, la poussée combinée de l'arc le place à
+     l'intérieur du coude, tangent à la barre qui le porte. */
+  function settleDot(c, r, obst, placed) {
+    const q = c.slice(), cap = 4 * r + 0.03;
+    for (let it = 0; it < 6; it++) {
+      let moved = false;
+      obst.forEach((o) => {
+        const ab = vsub(o.b, o.a), L2 = ab[0] * ab[0] + ab[1] * ab[1], t = L2 ? Math.max(0, Math.min(1, ((q[0] - o.a[0]) * ab[0] + (q[1] - o.a[1]) * ab[1]) / L2)) : 0;
+        const K = vadd(o.a, vmul(ab, t)), v = vsub(q, K), dist = Math.hypot(v[0], v[1]), need = o.h + r;
+        if (dist < need - 1e-6) {
+          // centre sur l'axe de la barre : poussée perpendiculaire, vers l'intérieur de la barre façonnée
+          // centre dans l'épaisseur de la barre : on sort du côté intérieur de la forme (centroïde), sinon radialement
+          const m = vunit([-ab[1], ab[0]]), side = (o.cen[0] - K[0]) * m[0] + (o.cen[1] - K[1]) * m[1];
+          const n = (dist < o.h && Math.abs(side) > 1e-4) || dist <= 1e-7 ? (side >= 0 ? m : vmul(m, -1)) : vmul(v, 1 / dist);
+          q[0] = K[0] + n[0] * need; q[1] = K[1] + n[1] * need; moved = true;
+        }
+      });
+      placed.forEach((o) => {
+        if (o.id === undefined) return;
+        const v = vsub(q, o.c), dist = Math.hypot(v[0], v[1]), need = o.r + r;
+        if (dist < need - 1e-6 && dist > 1e-9) { const k = (need - dist) / dist; q[0] += v[0] * k; q[1] += v[1] * k; moved = true; }
+      });
+      if (!moved) break;
+    }
+    return Math.hypot(q[0] - c[0], q[1] - c[1]) <= cap ? q : c;
+  }
+  const obstOf = (path, wM, id) => {
+    const P = samplePath(path, 10), out = [], cen = vmul(P.reduce((a, q) => vadd(a, q), [0, 0]), 1 / P.length);
+    for (let i = 0; i < P.length - 1; i++) out.push({ a: P[i], b: P[i + 1], h: wM / 2, cen, id });
+    return out;
+  };
+
+  /* Symbole d'arrêt / de reprise : trait avec un zigzag au milieu. */
+  function zigzag(sc, A, B) {
+    const u = sc.u, d = vunit(vsub(B, A)), n = [-d[1], d[0]], M = vmul(vadd(A, B), 0.5), w = 5 * u, k = 6 * u;
+    sc.poly([A, vsub(M, vmul(d, w)), vadd(vsub(M, vmul(d, w / 3)), vmul(n, k)), vsub(vadd(M, vmul(d, w / 3)), vmul(n, k)), vadd(M, vmul(d, w)), B],
+      { layer: 'KLE-Cotation', color: ZIG, aci: 41, w: 0.9, cap: 'butt' });
+  }
+
+  /* Étiquettes de repérage d'une barre façonnée (une par position si la barre est présente à plusieurs endroits). */
+  function tagsOf(bar, mains, params) {
+    const tg = bar.place && bar.place.tag; if (!tg || typeof tg !== 'object') return [];
+    const blocs = Math.max(1, Math.round((params && params.blocs) || 1));
+    const qty = F.barCount(bar) * (bar.mult || 1) * blocs + (bar.type || 'HA') + bar.d;
+    const all = mains.length > 1 && (bar.mult || 1) >= mains.length;
+    return (all ? mains : mains.slice(0, 1)).map((m) => {
+      let s = Math.min(tg.seg || 0, m.length - 2);
+      if (tg.pick === 'v') { // segment le plus vertical (âme d'un U), à défaut le plus long
+        let best = -1;
+        for (let k = 0; k < m.length - 1; k++) { const v = vsub(m[k + 1], m[k]), l = Math.hypot(v[0], v[1]), sc = Math.abs(v[1]) / (l || 1) + l * 1e-3; if (sc > best) { best = sc; s = k; } }
+      }
+      const a = m[s], b = m[s + 1], t = tg.t == null ? 0.5 : tg.t;
+      return { id: bar.id, qty, wM: F.encM(bar.d), p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], dir: vunit(vsub(b, a)), a, b, t0: t, main: m, seg: s };
+    });
+  }
+
   /* ───────── Vue 3 : coupe ferraillée ───────── */
+  /* Pastilles des barres réparties : disques cyan au Ø réel (minimum lisible). */
+  const dotOpt = (bar) => ({ layer: 'ACIERS', color: barColor(bar), aci: aciOf(bar.d), fill: barColor(bar), stroke: false, w: 0, minPx: 0.9, barId: bar.id, hit: true, cls: 'dv' });
+
+  /* Cotes générales en rouge, à l'extérieur du repérage (bb = emprise après repérage).
+     Règle KLE : on ne cote que les grandeurs saisies (B, hs, e0 en tête, patin p, bêche), au format 2 décimales,
+     plus la hauteur du voile Hv au-dessus de la semelle, dans la même chaîne que l'épaisseur de semelle ;
+     une grandeur variable s'écrit « a à b ». Jamais de valeur déduite à 3 décimales (talon, eb…). */
+  const f2 = (v) => { const x = Math.round(v * 1000) / 1000; return Math.abs(x * 100 - Math.round(x * 100)) > 1e-6 ? x.toFixed(3) : x.toFixed(2); }; // 2 décimales (3 si la saisie l'exige, ex. 0.475)
+  const var2 = (a, b) => (Math.abs(a - b) < 0.005 ? f2(a) : f2(Math.min(a, b)) + ' à ' + f2(Math.max(a, b)));
+  function redDims(sc, struct, g, bb) {
+    const u = sc.u, o = { color: RED, aci: 1, h: 11.5 };
+    if (struct === 'murT') {
+      const { B, H, hs, hbp, xAvT, xAmT, p } = g, xl = bb[0] - 16 * u;
+      dim(sc, [0, 0], [p, hs], 'v', xl, g.biseau ? var2(hbp, hs) : f2(hs), Object.assign({ flip: true }, o));
+      dim(sc, [p, hs], [xAvT, H], 'v', xl, f2(H - hs), o);
+      dim(sc, [xAvT, H], [xAmT, H], 'h', Math.max(H, bb[3]) + 14 * u, f2(g.e0), o);
+      let y = bb[1] - 14 * u;
+      if (p > 1e-6) { dim(sc, [0, 0], [p, hs], 'h', y, f2(p), Object.assign({ flip: true }, o)); y -= 24 * u; }
+      if (g.beche) {
+        dim(sc, [g.bx0, -g.bh], [g.bx1, -g.bh], 'h', y, f2(g.bw), o); y -= 24 * u;
+        dim(sc, [g.bx1, -g.bh], [g.bx1, 0], 'v', bb[2] + 16 * u, f2(g.bh), Object.assign({ out: true, flip: true }, o));
+      }
+      dim(sc, [0, 0], [B, 0], 'h', y, f2(B), o);
+    } else {
+      dim(sc, [0, 0], [g.Bext, 0], 'h', bb[1] - 16 * u, f2(g.Bext), o);
+      dim(sc, [g.Bext, 0], [g.Bext, g.Hext], 'v', bb[2] + 16 * u, f2(g.Hext), Object.assign({ out: true }, o));
+    }
+  }
+
   function ferraillageScene(struct, g, bars, params, u) {
     const sc = new Scene(u);
     drawOutline(sc, struct, g, true);
-    const tags = [];
+    const ol = outline(struct, g), polys = [ol.outer].concat(ol.holes);
+    const tags = [], rows = [], obst = [], placed = [];
     bars.forEach((bar, i) => {
-      const col = COLORS[i % COLORS.length];
-      const pl = bar.place || {};
+      const col = barColor(bar), pl = bar.place || {};
       if (pl.items) {
-        pl.items.forEach((it, k) => {
+        const mains = pl.items.map((it) => {
           const bp = barPath(bar, it, params);
-          sc.bar(bp.path, bar.d / 1000, { color: col, barId: bar.id, minPx: 1 }); // épaisseur = Ø réel à l'échelle
-          if (k === 0 && pl.tag) {
-            const s = Math.min(pl.tag.seg, bp.main.length - 2), a = bp.main[s], b = bp.main[s + 1];
-            tags.push({ id: bar.id, col, p: [a[0] + (b[0] - a[0]) * pl.tag.t, a[1] + (b[1] - a[1]) * pl.tag.t] });
-          }
+          sc.bar(bp.path, F.encM(bar.d), { color: col, aci: aciOf(bar.d), barId: bar.id, minPx: bar.maintien ? 1.8 : 1.5 }); // épaisseur = Ø d'encombrement à l'échelle
+          obstOf(bp.path, F.encM(bar.d), bar.id).forEach((o) => obst.push(o));
+          return bp.main;
         });
-      }
-      if (pl.dots) {
-        const lines = dotPositions(bar);
-        lines.forEach((pts) => pts.forEach((p) => sc.circle(p, bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, stroke: false, w: 0, minPx: 1.2, barId: bar.id, hit: true })));
-        const first = lines[0] || [];
-        if (first.length) {
-          let idx = pl.tag == null ? 0 : pl.tag;
-          if (idx < 0) idx = first.length + idx;
-          idx = Math.max(0, Math.min(first.length - 1, idx));
-          tags.push({ id: bar.id, col, p: first[idx] });
-        }
+        tagsOf(bar, mains, params).forEach((t) => tags.push(t));
       }
     });
+    bars.forEach((bar) => {
+      const pl = bar.place || {};
+      if (pl.dots) {
+        const lines = dotPositions(bar), r0 = F.encM(bar.d) / 2;
+        lines.forEach((pts0, k) => {
+          const pts = pts0.map((q) => { const c = settleDot(q, r0, obst, placed.filter((o) => o.id !== bar.id)); placed.push({ id: bar.id, c, r: r0 }); return c; });
+          pts.forEach((q) => sc.circle(q, r0, dotOpt(bar)));
+          const ln = pl.dots[k], dir = ln && ln.a && ln.b ? vunit(vsub(ln.b, ln.a)) : ln && ln.pts ? vunit(vsub(ln.pts[ln.pts.length - 1], ln.pts[0])) : [1, 0];
+          rows.push({ id: bar.id, pts, r: Math.max(r0, 0.9 * u), dir });
+        });
+      }
+    });
+    if (struct === 'murT') {
+      // reprise de bétonnage voile / semelle, arrêt du renfort de pied
+      zigzag(sc, [g.p, g.hs], [g.p + g.eb, g.hs]);
+      // arrêts : tête des attentes (fin du recouvrement l0) et du renfort de pied
+      bars.filter((b) => ['AttF', 'AttO', 'R'].includes(b.key) && b.place.items).forEach((b) => {
+        const m = barPath(b, b.place.items[0], params).main, T = m[m.length - 1];
+        zigzag(sc, [T[0] - 13 * u, T[1]], [T[0] + 13 * u, T[1]]);
+      });
+    }
     if (struct === 'murT' && g.xCut != null) {
       const yb = -(g.bp || 0) - 0.08, yt = g.hCut + 0.12, L = { layer: 'KLE-Cotation', color: DIM, w: 0.9, dash: '10 3 2 3' };
       sc.line([g.xCut, yb], [g.xCut, yt], L);
       sc.text([g.xCut, yt + 7 * u], 'A', { h: 10.5, weight: 500 });
       sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
     }
-    const bb = bounds(sc), R = 10;
-    placeBubbles(tags, bb, u, R);
-    tags.forEach((t) => {
-      const dx = t.p[0] - t.b[0], dy = t.p[1] - t.b[1], dl = Math.hypot(dx, dy) || 1;
-      sc.poly([[t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p], { layer: 'REPERAGE', color: t.col, w: 0.8, barId: t.id });
-      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5, barId: t.id });
-      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2, barId: t.id, hit: true });
-      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500, barId: t.id });
-    });
+    rowMarkers(sc, rows, polys);
+    placeReperes(sc, tags, polys, obst);
+    redDims(sc, struct, g, bounds(sc));
     return sc;
   }
 
@@ -632,47 +870,44 @@
       });
       return pieces.filter((pc) => pc.length > 1);
     };
-    const tags = [];
+    const tags = [], rows = [], obst = [], placed = [];
     bars.forEach((bar, i) => {
       const lg = bar.longi; if (!lg) return;
-      const col = COLORS[i % COLORS.length];
-      let tagged = false;
+      const col = barColor(bar), mains = [];
       (lg.items || []).forEach((it) => {
-        clip(it.pts).forEach((pc) => {
+        const pcs = clip(it.pts);
+        pcs.forEach((pc, k) => {
           const bp2 = barPath({ d: bar.d, hooks: [0, 0], segs: [{ l: 0, a: 0 }], sides: [1, -1] }, { pts: pc.map(P) }, params);
-          sc.bar(bp2.path, bar.d / 1000, { color: col, barId: bar.id, minPx: 1 });
-          if (!tagged) {
-            const sgi = Math.min((lg.tag && lg.tag.seg) || 0, bp2.main.length - 2), a = bp2.main[sgi], b = bp2.main[sgi + 1], t = (lg.tag && lg.tag.t) || 0.5;
-            tags.push({ id: bar.id, col, p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t] }); tagged = true;
-          }
+          sc.bar(bp2.path, F.encM(bar.d), { color: col, aci: aciOf(bar.d), barId: bar.id, minPx: bar.maintien ? 1.8 : 1.5 });
+          obstOf(bp2.path, F.encM(bar.d), bar.id).forEach((o) => obst.push(o));
+          if (k === 0) mains.push(bp2.main);
         });
       });
-      const n = F.barCount(bar), dot = (q) => sc.circle(P(q), bar.d / 2000, { layer: 'ACIERS', color: col, fill: col, stroke: false, w: 0, minPx: 1.2, barId: bar.id, hit: true });
-      (lg.dotsZ || []).forEach((ln, k) => {
+      if (mains.length) tagsOf(Object.assign({}, bar, { place: { tag: lg.tag || { seg: 0, t: 0.5 } } }), mains, params).forEach((t) => tags.push(t));
+    });
+    bars.forEach((bar) => {
+      const lg = bar.longi; if (!lg) return;
+      const n = F.barCount(bar), r0 = F.encM(bar.d) / 2, r = Math.max(r0, 0.9 * u);
+      const put = (pts0) => pts0.map((q) => { const c = settleDot(q, r0, obst, placed.filter((o) => o.id !== bar.id)); placed.push({ id: bar.id, c, r: r0 }); sc.circle(c, r0, dotOpt(bar)); return c; });
+      (lg.dotsZ || []).forEach((ln) => {
         const zs = []; for (let j = 0; j < n; j++) zs.push(n === 1 ? (ln.z0 + ln.z1) / 2 : ln.z0 + (ln.z1 - ln.z0) * j / (n - 1));
-        const vis = zs.filter(inWin);
-        vis.forEach((z) => dot([z, ln.y]));
-        if (!tagged && vis.length) { tags.push({ id: bar.id, col, p: P([vis[Math.min(vis.length - 1, 2 + k)], ln.y]) }); tagged = true; }
+        rows.push({ id: bar.id, pts: put(zs.filter(inWin).map((z) => P([z, ln.y]))), r, dir: [1, 0] });
       });
       (lg.dotsY || []).forEach((ln) => {
-        for (let j = 0; j < n; j++) { const y = n === 1 ? (ln.y0 + ln.y1) / 2 : ln.y0 + (ln.y1 - ln.y0) * j / (n - 1); dot([ln.z, y]); if (!tagged) { tags.push({ id: bar.id, col, p: P([ln.z, y]) }); tagged = true; } }
+        const pts = []; for (let j = 0; j < n; j++) pts.push(P([ln.z, n === 1 ? (ln.y0 + ln.y1) / 2 : ln.y0 + (ln.y1 - ln.y0) * j / (n - 1)]));
+        rows.push({ id: bar.id, pts: put(pts), r, dir: [0, 1] });
       });
     });
-    // cotes : L du plot (au-dessus de la coupure), épaisseur à la coupe
-    dim(sc, [Z(0), hc], [Z(L), hc], 'h', hc + 22 * u, 'L = ' + F.fmtCote(L) + (brk ? ' (plot interrompu)' : ''));
-    dim(sc, [Z(0), 0], [Z(0), hc], 'v', Z(0) - 20 * u, F.fmtCote(hc), { flip: true });
-    sc.text([(Z(0) + Z(L)) / 2, -bp - 14 * u], 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin', { h: 10, color: DIM, italic: true });
-    const bb = bounds(sc), R = 10;
-    placeBubbles(tags, bb, u, R);
-    tags.forEach((t) => {
-      const dx = t.p[0] - t.b[0], dy = t.p[1] - t.b[1], dl = Math.hypot(dx, dy) || 1;
-      sc.poly([[t.b[0] + dx / dl * R * u, t.b[1] + dy / dl * R * u], t.p], { layer: 'REPERAGE', color: t.col, w: 0.8, barId: t.id });
-      sc.circle(t.p, 1.8 * u, { layer: 'REPERAGE', color: t.col, fill: t.col, w: 0.5, barId: t.id });
-      sc.circle(t.b, R * u, { layer: 'REPERAGE', color: t.col, fill: '#ffffff', w: 1.2, barId: t.id, hit: true });
-      sc.text(t.b, t.id, { layer: 'REPERAGE', color: t.col, h: 11, weight: 500, barId: t.id });
-    });
+    const polys = wins.map(([a, b]) => [[Z(a), 0], [Z(b), 0], [Z(b), hc], [Z(a), hc]]);
+    rowMarkers(sc, rows, polys);
+    placeReperes(sc, tags, polys, obst);
+    const bb = bounds(sc);
+    // cotes (épaisseur à la coupe, L du plot) et titre, à l'extérieur du repérage
+    dim(sc, [Z(0), 0], [Z(0), hc], 'v', bb[0] - 16 * u, f2(hc), { flip: true, color: RED, aci: 1, h: 11.5 });
+    dim(sc, [Z(0), hc], [Z(L), hc], 'h', bb[3] + 14 * u, 'L = ' + f2(L) + (brk ? ' (plot interrompu)' : ''), { color: RED, aci: 1, h: 11.5 });
+    sc.text([(Z(0) + Z(L)) / 2, bb[1] - 12 * u], 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin', { h: 10, color: DIM, italic: true });
     return sc;
   }
 
-  return { COLORS, Scene, bounds, longiScene, toSVG, fitScale, fitRender, filletPath, samplePath, pathLength, arcPts, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
+  return { COLORS, ACI_WEB, barColor, rayHit, Scene, bounds, longiScene, toSVG, fitScale, fitRender, filletPath, samplePath, pathLength, arcPts, coffrageScene, secondScene, ferraillageScene, croquisGeom, croquisSVG, barPath, dotPositions, outline };
 });

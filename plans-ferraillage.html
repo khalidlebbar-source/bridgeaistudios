@@ -139,8 +139,15 @@ details.grp[open] summary::after{content:"−"}
 .draw{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px;overflow:hidden}
 .draw svg{display:block;max-width:100%;max-height:100%}
 #v-ferr [data-bar]{cursor:pointer;transition:opacity .15s}
-#v-ferr svg.has-sel [data-bar]{opacity:.14}
-#v-ferr svg.has-sel [data-bar].on{opacity:1;filter:drop-shadow(0 0 1.5px rgba(168,132,42,.95)) drop-shadow(0 0 5px rgba(168,132,42,.6))}
+#v-ferr svg.has-sel [data-bar]{opacity:.16}
+#v-ferr svg.has-sel [data-bar].on{opacity:1}
+/* barre et repère sélectionnés : doré du site */
+#v-ferr svg.has-sel [data-bar].on .bv{stroke:#c9a227;filter:drop-shadow(0 0 2px rgba(168,132,42,.7))}
+#v-ferr svg.has-sel circle.dv.on{fill:#c9a227}
+#v-ferr svg.has-sel .rp.on,#v-ferr svg.has-sel .mk.on{stroke:#a8842a;stroke-width:1.6}
+#v-ferr svg.has-sel .rpf.on{fill:#a8842a;stroke:#a8842a}
+#v-ferr svg.has-sel circle.bub.on{stroke:#a8842a;stroke-width:2;fill:#fbf1d6}
+#v-ferr svg.has-sel text.on{fill:#8a6b1f;font-weight:500}
 #v-ferr svg{-webkit-tap-highlight-color:transparent}
 .nomenc tbody tr{cursor:pointer}
 .nomenc tbody tr.sel td{background:#fbf1d6}

@@ -13,7 +13,7 @@
 })(typeof self !== 'undefined' ? self : this, function (F) {
   'use strict';
 
-  const LAYERS = [['KLE-Contour', 7], ['ACIERS', 1], ['KLE-Cotation', 3], ['REPERAGE', 5], ['NOMENC', 7]];
+  const LAYERS = [['KLE-Contour', 7], ['ACIERS', 1], ['KLE-Cotation', 3], ['REPERAGE', 7], ['NOMENC', 7]];
   const U = 0.004; // mètres par « pixel » des scènes (texte 11 px → 0,044 m)
 
   function enc(s) {
@@ -29,21 +29,23 @@
   function Writer() { this.o = []; this.ext = [Infinity, Infinity, -Infinity, -Infinity]; }
   Writer.prototype.p = function () { for (let i = 0; i < arguments.length; i += 2) this.o.push(String(arguments[i]), String(arguments[i + 1])); };
   Writer.prototype.grow = function (x, y) { const e = this.ext; e[0] = Math.min(e[0], x); e[1] = Math.min(e[1], y); e[2] = Math.max(e[2], x); e[3] = Math.max(e[3], y); };
-  Writer.prototype.line = function (a, b, layer) {
-    this.p(0, 'LINE', 8, layer, 10, num(a[0]), 20, num(a[1]), 30, 0, 11, num(b[0]), 21, num(b[1]), 31, 0);
+  /* aci : couleur forcée (sinon DUCALQUE). */
+  Writer.prototype.col = function (aci) { if (aci) this.p(62, aci); };
+  Writer.prototype.line = function (a, b, layer, aci) {
+    this.p(0, 'LINE', 8, layer); this.col(aci); this.p(10, num(a[0]), 20, num(a[1]), 30, 0, 11, num(b[0]), 21, num(b[1]), 31, 0);
     this.grow(a[0], a[1]); this.grow(b[0], b[1]);
   };
-  Writer.prototype.poly = function (pts, layer, closed, ltype) {
-    if (pts.length === 2 && !closed && !ltype) return this.line(pts[0], pts[1], layer);
-    this.p(0, 'POLYLINE', 8, layer); if (ltype) this.p(6, ltype);
+  Writer.prototype.poly = function (pts, layer, closed, ltype, aci) {
+    if (pts.length === 2 && !closed && !ltype) return this.line(pts[0], pts[1], layer, aci);
+    this.p(0, 'POLYLINE', 8, layer); if (ltype) this.p(6, ltype); this.col(aci);
     this.p(66, 1, 10, 0, 20, 0, 30, 0, 70, closed ? 1 : 0);
     pts.forEach((q) => { this.p(0, 'VERTEX', 8, layer, 10, num(q[0]), 20, num(q[1]), 30, 0); this.grow(q[0], q[1]); });
     this.p(0, 'SEQEND', 8, layer);
   };
   /* Barre cintrée : POLYLINE à largeur constante (40/41 = Ø en m) et sommets à bulge (42). */
-  Writer.prototype.bar = function (path, width, layer) {
+  Writer.prototype.bar = function (path, width, layer, aci) {
     const wd = num(width);
-    this.p(0, 'POLYLINE', 8, layer, 66, 1, 10, 0, 20, 0, 30, 0, 70, 0, 40, wd, 41, wd);
+    this.p(0, 'POLYLINE', 8, layer); this.col(aci); this.p(66, 1, 10, 0, 20, 0, 30, 0, 70, 0, 40, wd, 41, wd);
     path.forEach((v) => {
       this.p(0, 'VERTEX', 8, layer, 10, num(v.p[0]), 20, num(v.p[1]), 30, 0, 40, wd, 41, wd);
       if (Math.abs(v.b) > 1e-9) this.p(42, v.b.toFixed(6));
@@ -51,21 +53,27 @@
     });
     this.p(0, 'SEQEND', 8, layer);
   };
-  Writer.prototype.circle = function (c, r, layer) {
-    this.p(0, 'CIRCLE', 8, layer, 10, num(c[0]), 20, num(c[1]), 30, 0, 40, num(r));
+  Writer.prototype.circle = function (c, r, layer, aci) {
+    this.p(0, 'CIRCLE', 8, layer); this.col(aci); this.p(10, num(c[0]), 20, num(c[1]), 30, 0, 40, num(r));
     this.grow(c[0] - r, c[1] - r); this.grow(c[0] + r, c[1] + r);
   };
   /* Disque plein (pastille d'acier filant) : polyligne fermée à largeur, 2 sommets en arc. */
-  Writer.prototype.dot = function (c, r, layer) {
-    this.p(0, 'POLYLINE', 8, layer, 66, 1, 10, 0, 20, 0, 30, 0, 70, 1, 40, num(r), 41, num(r));
+  Writer.prototype.dot = function (c, r, layer, aci) {
+    this.p(0, 'POLYLINE', 8, layer); this.col(aci); this.p(66, 1, 10, 0, 20, 0, 30, 0, 70, 1, 40, num(r), 41, num(r));
     this.p(0, 'VERTEX', 8, layer, 10, num(c[0] - r / 2), 20, num(c[1]), 30, 0, 42, 1);
     this.p(0, 'VERTEX', 8, layer, 10, num(c[0] + r / 2), 20, num(c[1]), 30, 0, 42, 1);
     this.p(0, 'SEQEND', 8, layer);
     this.grow(c[0] - r, c[1] - r); this.grow(c[0] + r, c[1] + r);
   };
-  Writer.prototype.text = function (p, h, s, layer, anchor, rot) {
+  /* Triangle plein (flèche de ligne d'attache) : SOLID à 3 sommets (le 4e répète le 3e). */
+  Writer.prototype.solid = function (q, layer, aci) {
+    this.p(0, 'SOLID', 8, layer); this.col(aci);
+    this.p(10, num(q[0][0]), 20, num(q[0][1]), 30, 0, 11, num(q[1][0]), 21, num(q[1][1]), 31, 0, 12, num(q[2][0]), 22, num(q[2][1]), 32, 0, 13, num(q[2][0]), 23, num(q[2][1]), 33, 0);
+    q.forEach((v) => this.grow(v[0], v[1]));
+  };
+  Writer.prototype.text = function (p, h, s, layer, anchor, rot, aci) {
     const hj = anchor === 'middle' ? 1 : anchor === 'end' ? 2 : 0;
-    this.p(0, 'TEXT', 8, layer, 10, num(p[0]), 20, num(p[1]), 30, 0, 40, num(h), 1, enc(s));
+    this.p(0, 'TEXT', 8, layer); this.col(aci); this.p(10, num(p[0]), 20, num(p[1]), 30, 0, 40, num(h), 1, enc(s));
     if (rot) this.p(50, num(rot));
     this.p(72, hj, 11, num(p[0]), 21, num(p[1]), 31, 0, 73, 2);
     this.grow(p[0], p[1]);
@@ -76,16 +84,17 @@
     const T = (q) => [q[0] + dx, q[1] + dy];
     for (const it of sc.items) {
       if (it.t === 'poly') {
+        if (it.solid && it.pts.length === 3) { w.solid(it.pts.map(T), it.layer, it.aci); continue; }
         const lt = it.dash ? 'DASHED' : null;
-        w.poly(it.pts.map(T), it.layer, !!it.closed, lt);
-        (it.holes || []).forEach((h) => w.poly(h.map(T), it.layer, true));
+        w.poly(it.pts.map(T), it.layer, !!it.closed, lt, it.aci);
+        (it.holes || []).forEach((h) => w.poly(h.map(T), it.layer, true, null, it.aci));
       } else if (it.t === 'bar') {
-        w.bar(it.path.map((v) => ({ p: T(v.p), b: v.b })), it.wM, it.layer);
+        w.bar(it.path.map((v) => ({ p: T(v.p), b: v.b })), it.wM, it.layer, it.aci);
       } else if (it.t === 'circle') {
-        if (it.layer === 'ACIERS' && it.fill) w.dot(T(it.c), it.r, it.layer);
-        else w.circle(T(it.c), it.r, it.layer);
+        if (it.layer === 'ACIERS' && it.fill) w.dot(T(it.c), it.r, it.layer, it.aci);
+        else w.circle(T(it.c), it.r, it.layer, it.aci);
       } else if (it.t === 'text') {
-        w.text(T(it.p), it.h * sc.u, it.s, it.layer, it.anchor, it.rot);
+        w.text(T(it.p), it.h * sc.u, it.s, it.layer, it.anchor, it.rot, it.aci);
       }
     }
   }
@@ -121,7 +130,7 @@
         if (i === 8) {
           const gm = F.croquisGeom(r.shape, 150, 48), uc = c[1] / 150;
           const P = (q) => [cx + q[0] * uc, yt - 0.01 - q[1] * uc];
-          w.bar(gm.path.map((v) => ({ p: P(v.p), b: -v.b })), 0, 'ACIERS');
+          w.bar(gm.path.map((v) => ({ p: P(v.p), b: -v.b })), 0, 'ACIERS', F.COULEUR_ACI[r.d]); // couleur ADFER du Ø
           gm.texts.forEach((t) => w.text(P([t.x, t.y]), 9.5 * uc, t.s, L, t.anchor));
           if (r.code) w.text([cx + 0.02, yc - 0.1], th * 0.75, 'code ' + r.code, L, 'start');
         } else {
