@@ -485,7 +485,9 @@
     const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
     rows.forEach((rw) => {
       const P = rw.pts; if (!P.length) return;
-      const ends = P.length === 1 ? [[P[0], rw.dir || [1, 0]]] : [[P[0], vunit(vsub(P[0], P[1]))], [P[P.length - 1], vunit(vsub(P[P.length - 1], P[P.length - 2]))]];
+      // direction nominale de la rangée (les points ont pu être légèrement poussés au contact des barres)
+      const dn = rw.dir ? vunit(rw.dir) : null, sgn = (v) => (dn && (v[0] * dn[0] + v[1] * dn[1]) < 0 ? vmul(dn, -1) : dn);
+      const ends = P.length === 1 ? [[P[0], rw.dir || [1, 0]]] : [[P[0], sgn(vsub(P[0], P[1])) || vunit(vsub(P[0], P[1]))], [P[P.length - 1], sgn(vsub(P[P.length - 1], P[P.length - 2])) || vunit(vsub(P[P.length - 1], P[P.length - 2]))]];
       ends.forEach(([E, d]) => {
         const n1 = [-d[1], d[0]], n2 = [d[1], -d[0]], t1 = rayHit(E, n1, polys), t2 = rayHit(E, n2, polys);
         const n = t1 <= t2 ? n1 : n2, t = Math.min(t1, t2, 0.6);
@@ -523,9 +525,11 @@
       const ab = vsub(o.b, o.a), L2 = ab[0] * ab[0] + ab[1] * ab[1], k = L2 ? Math.max(0, Math.min(1, ((P[0] - o.a[0]) * ab[0] + (P[1] - o.a[1]) * ab[1]) / L2)) : 0;
       return Math.hypot(P[0] - o.a[0] - ab[0] * k, P[1] - o.a[1] - ab[1] * k) < o.h + 0.25 * (wM || 0);
     });
-    const orig = tags.map((t) => ({ p: t.p.slice(), dir: t.dir.slice() }));
+    const orig = tags.map((t) => ({ p: t.p.slice(), dir: t.dir.slice() })), usedX = [];
+    const freeX = (x) => usedX.every((v) => Math.abs(v - x) > 12 * u);
     const layout = () => {
       tags.forEach((t, i) => { t.p = orig[i].p.slice(); t.dir = orig[i].dir.slice(); ['kind', 'side', 'want', 'near', 'vert', 'reach', 'ub', 'lb', 'by'].forEach((k) => delete t[k]); });
+      usedX.length = 0; // abscisses des tronçons verticaux déjà pris (deux attaches ne doivent pas se superposer)
       tags.forEach((t) => {
         const d = t.dir;
         if (Math.abs(d[1]) >= Math.abs(d[0])) { // barre verticale à cet endroit : arrivée horizontale
@@ -543,20 +547,32 @@
         const ts = [t.t0].concat([0.5, 0.3, 0.7, 0.2, 0.8, 0.12, 0.88].filter((x) => Math.abs(x - t.t0) > 0.02).sort((x, y) => Math.abs(x - t.t0) - Math.abs(y - t.t0)));
         // segment d'origine d'abord, puis les autres segments plutôt horizontaux de la barre, du plus proche au plus lointain
         const M = t.main || [t.a, t.b], s0 = t.seg || 0, segs = [];
-        for (let k = 0; k < M.length - 1; k++) { const v = vsub(M[k + 1], M[k]); if (k === s0 || Math.abs(v[0]) > Math.abs(v[1])) segs.push(k); }
-        segs.sort((x, y) => Math.abs(x - s0) - Math.abs(y - s0));
-        for (const k of segs) for (const tt of ts) {
-          const P = vadd(M[k], vmul(vsub(M[k + 1], M[k]), tt)), r = vertOf(t, P), c = r.k ? r.U : r.D;
-          if (c.ok && c.t <= 0.6 && (r.D.t + r.U.t <= 1.2 || (!r.k && c.t <= 0.25) || c.t <= 0.12) && clear(P, t.id, t.wM)) { t.p = P; t.dir = vunit(vsub(M[k + 1], M[k])); t.kind = 'V'; t.side = t.vert < 0 ? (P[0] < cx ? 0 : 1) : sideUp(t, P); return; }
+        for (let k = 0; k < M.length - 1; k++) { const v = vsub(M[k + 1], M[k]); if (k === s0 || Math.abs(v[0]) > Math.abs(v[1])) segs.push([M[k], M[k + 1], Math.abs(k - s0)]); }
+        (t.extra || []).forEach((q) => segs.push([q[0], q[1], 99])); // autres tronçons visibles de la barre (coupe A-A interrompue)
+        segs.sort((x, y) => x[2] - y[2]);
+        let best = null;
+        for (const [A, B] of segs) for (const tt of ts) {
+          const P = vadd(A, vmul(vsub(B, A), tt)), r = vertOf(t, P), c = r.k ? r.U : r.D;
+          if (!(c.ok && c.t <= 0.6 && (r.D.t + r.U.t <= 1.2 || (!r.k && c.t <= 0.25) || c.t <= 0.12) && clear(P, t.id, t.wM))) continue;
+          if ((t.avoid || []).some((q) => P[0] >= q[0] - 6 * u && P[0] <= q[1] + 6 * u)) continue; // hors de l'horizontale finale d'une autre attache
+          const dmin = usedX.reduce((m, v) => Math.min(m, Math.abs(v - P[0])), Infinity);
+          if (freeX(P[0])) { best = { P, A, B }; break; }
+          if (!best || dmin > best.dmin) best = { P, A, B, dmin };
         }
+        if (best) { const P = best.P; vertOf(t, P); usedX.push(P[0]); t.p = P; t.dir = vunit(vsub(best.B, best.A)); t.kind = 'V'; t.side = t.vert < 0 ? (P[0] < cx ? 0 : 1) : sideUp(t, P); return; }
         const Lr = ray(t.p, [-1, 0]), Rr = ray(t.p, [1, 0]);
-        t.kind = 'VL'; t.side = pick(Lr, Rr); t.want = t.p[1] - 30 * u; delete t.vert;
+        t.kind = 'VL'; t.side = pick(Lr, Rr); t.want = t.p[1] + (t.vlUp ? 30 : -30) * u; delete t.vert;
       });
       // deux arrivées horizontales à la même hauteur du même côté : la plus éloignée du parement passe par dessous
       tags.filter((t) => t.kind === 'H').sort((a, b) => a.near - b.near).forEach((t, i, arr) => {
-        if (arr.slice(0, i).some((o) => o.kind === 'H' && o.side === t.side && Math.abs(o.p[1] - t.p[1]) < G)) toHB(t);
+        const busy = (y) => arr.slice(0, i).some((o) => o.kind === 'H' && o.side === t.side && Math.abs(o.p[1] - y) < G);
+        if (!busy(t.p[1])) return;
+        // d'abord glisser le long de la barre vers une hauteur libre, sinon passer par dessous
+        const alt = [0.5, 0.35, 0.65, 0.25, 0.75, 0.15, 0.85].map((tt) => vadd(t.a, vmul(vsub(t.b, t.a), tt)))
+          .filter((Q) => !busy(Q[1]) && clear(Q, t.id, t.wM)).sort((A, B) => Math.abs(A[1] - t.p[1]) - Math.abs(B[1] - t.p[1]))[0];
+        if (alt) { t.p = alt; t.want = alt[1]; } else toHB(t);
       });
-      const xv = (t) => (t.kind === 'HB' ? t.p[0] + (t.side ? 1 : -1) * 8 * u : t.p[0]); // abscisse du tronçon vertical
+      const xv = (t) => (t.kind === 'HB' ? t.p[0] + (t.side ? 1 : -1) * (t.hbOff || 8 * u) : t.p[0]); // abscisse du tronçon vertical
       // niveaux des attaches passant sous (ou au-dessus de) la coupe : la plus proche de la colonne au niveau
       // le plus proche du béton, pour qu'aucune ligne n'en croise une autre
       [0, 1].forEach((sd) => [-1, 1].forEach((vt) => {
@@ -585,7 +601,7 @@
         if (t.kind === 'H' || t.kind === 'HB') {
           const T = [P[0] + s * h, P[1]];
           if (t.kind === 'H' && Math.abs(t.by - P[1]) < 0.5 * u) path = [E, T];
-          else { const xk = t.kind === 'H' ? X - s * (R + 42) * u : P[0] + s * 8 * u; path = [E, [xk, t.by], [xk, P[1]], T]; }
+          else { const xk = t.kind === 'H' ? X - s * (R + 42) * u : P[0] + s * (t.hbOff || 8 * u); path = [E, [xk, t.by], [xk, P[1]], T]; }
         } else {
           const v = t.by < P[1] ? -1 : 1;
           path = [E, [P[0], t.by], [P[0], P[1] + v * h]];
@@ -596,13 +612,22 @@
     };
     // résolution des croisements : une arrivée horizontale qui croise une autre attache passe par dessous
     const segX = (a, b, c, d) => { const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d), e = 1e-12; return ((d1 > e && d2 < -e) || (d1 < -e && d2 > e)) && ((d3 > e && d4 < -e) || (d3 < -e && d4 > e)); };
-    const crossPair = () => { for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) { const A = tags[i].path, B = tags[j].path; for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) if (segX(A[a], A[a + 1], B[b], B[b + 1])) return [tags[i], tags[j]]; } return null; };
+    const ovC = (a, b, c, d) => { const vx = Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(c[0] - d[0]) < 1e-9 && Math.abs(a[0] - c[0]) < 1e-6, hy = Math.abs(a[1] - b[1]) < 1e-9 && Math.abs(c[1] - d[1]) < 1e-9 && Math.abs(a[1] - c[1]) < 1e-6;
+      const ov = (p0, p1, q0, q1) => Math.min(Math.max(p0, p1), Math.max(q0, q1)) - Math.max(Math.min(p0, p1), Math.min(q0, q1)) > 1e-6;
+      return (vx && ov(a[1], b[1], c[1], d[1])) || (hy && ov(a[0], b[0], c[0], d[0])); };
+    const crossPair = () => { for (let i = 0; i < tags.length; i++) for (let j = i + 1; j < tags.length; j++) { const A = tags[i].path, B = tags[j].path; for (let a = 0; a < A.length - 1; a++) for (let b = 0; b < B.length - 1; b++) if (segX(A[a], A[a + 1], B[b], B[b + 1]) || ovC(A[a], A[a + 1], B[b], B[b + 1])) return [tags[i], tags[j]]; } return null; };
     layout();
-    for (let it = 0; it < 6; it++) {
+    for (let it = 0; it < 12; it++) {
       const pr = crossPair(); if (!pr) break;
       const h = pr.filter((t) => t.kind === 'H').sort((a, b) => (b.path.length - a.path.length) || (b.near - a.near))[0];
-      if (!h) break;
-      h.forceHB = true; layout();
+      if (h) { h.forceHB = true; layout(); continue; }
+      // deux arrivées par dessous voisines : le coude de celle qui s'attache le plus haut s'écarte de la barre
+      if (pr.every((t) => t.kind === 'HB')) { const [lo, hi] = pr.slice().sort((a, b) => a.p[1] - b.p[1]); hi.hbOff = (lo.hbOff || 8 * u) + 10 * u; layout(); continue; }
+      const vl = pr.find((t) => t.kind === 'VL' && !t.vlUp);
+      if (vl) { vl.vlUp = true; layout(); continue; } // attache locale : par le dessus
+      const v = pr.find((t) => t.kind === 'V'), o = pr.find((t) => t !== v && t.path.length === 4);
+      if (v && o) { const a = o.path[2][0], b = o.path[3][0]; (v.avoid = v.avoid || []).push([Math.min(a, b), Math.max(a, b)]); layout(); continue; }
+      break;
     }
     tags.forEach((t) => {
       const s = t.side ? 1 : -1, X = colX[t.side], E = [X - s * R * u, t.by], path = t.path;
@@ -699,8 +724,14 @@
       }
       dim(sc, [0, 0], [B, 0], 'h', y, f2(B), o);
     } else {
-      dim(sc, [0, 0], [g.Bext, 0], 'h', bb[1] - 16 * u, f2(g.Bext), o);
-      dim(sc, [g.Bext, 0], [g.Bext, g.Hext], 'v', bb[2] + 16 * u, f2(g.Hext), Object.assign({ out: true }, o));
+      // dalot : grandeurs saisies — ep | O | ep en tête, er | Hi | et à gauche
+      const yt = bb[3] + 14 * u, xl = bb[0] - 16 * u, { Bext, Hext, ep, er, et } = g;
+      dim(sc, [0, Hext], [ep, Hext], 'h', yt, f2(ep), Object.assign({ flip: true }, o));
+      dim(sc, [ep, Hext - et], [Bext - ep, Hext - et], 'h', yt, f2(g.O), o);
+      dim(sc, [Bext - ep, Hext], [Bext, Hext], 'h', yt, f2(ep), o);
+      dim(sc, [0, 0], [0, er], 'v', xl, f2(er), Object.assign({ flip: true }, o));
+      dim(sc, [ep, er], [ep, Hext - et], 'v', xl, f2(g.Hi), o);
+      dim(sc, [0, Hext - et], [0, Hext], 'v', xl, f2(et), o);
     }
   }
 
@@ -728,7 +759,7 @@
         lines.forEach((pts0, k) => {
           const pts = pts0.map((q) => { const c = settleDot(q, r0, obst, placed.filter((o) => o.id !== bar.id)); placed.push({ id: bar.id, c, r: r0 }); return c; });
           pts.forEach((q) => sc.circle(q, r0, dotOpt(bar)));
-          const ln = pl.dots[k], dir = ln && ln.a && ln.b ? vunit(vsub(ln.b, ln.a)) : ln && ln.pts ? vunit(vsub(ln.pts[ln.pts.length - 1], ln.pts[0])) : [1, 0];
+          const ln = pl.dots[k], dir = ln && ln.a && ln.b ? vunit(vsub(ln.b, ln.a)) : ln && ln.pts ? vunit(vsub(ln.pts[ln.pts.length - 1], ln.pts[0])) : ln && ln.line ? vunit(vsub(ln.line[1], ln.line[0])) : ln && ln.dir ? ln.dir : (pts.length > 1 ? vunit(vsub(pts[pts.length - 1], pts[0])) : [1, 0]);
           rows.push({ id: bar.id, pts, r: Math.max(r0, 0.9 * u), dir });
         });
       }
@@ -742,8 +773,15 @@
         zigzag(sc, [T[0] - 13 * u, T[1]], [T[0] + 13 * u, T[1]]);
       });
     }
-    if (struct === 'murT' && g.xCut != null) {
-      const yb = -(g.bp || 0) - 0.08, yt = g.hCut + 0.12, L = { layer: 'KLE-Cotation', color: DIM, w: 0.9, dash: '10 3 2 3' };
+    if (struct === 'dalot') {
+      // reprise de bétonnage radier / piédroits, arrêt des attentes
+      zigzag(sc, [0, g.er], [g.ep, g.er]); zigzag(sc, [g.Bext - g.ep, g.er], [g.Bext, g.er]);
+      bars.filter((b) => ['AE', 'AI'].includes(b.key) && b.place.items).forEach((b) => b.place.items.forEach((it) => {
+        const m = barPath(b, it, params).main, T = m[m.length - 1]; zigzag(sc, [T[0] - 9 * u, T[1]], [T[0] + 9 * u, T[1]]);
+      }));
+    }
+    if (g.xCut != null) {
+      const yb = -(g.bp || 0) - 0.08, yt = (struct === 'murT' ? g.hCut : g.Hext) + 0.12, L = { layer: 'KLE-Cotation', color: DIM, w: 0.9, dash: '10 3 2 3' };
       sc.line([g.xCut, yb], [g.xCut, yt], L);
       sc.text([g.xCut, yt + 7 * u], 'A', { h: 10.5, weight: 500 });
       sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
@@ -833,8 +871,11 @@
      Plan vertical parallèle au mur, à l'abscisse g.xCut. Axe horizontal z le long du plot (0 → L),
      dessiné compact : les deux extrémités sur Ls ≈ 1,5 m, ligne de coupure au milieu. */
   function longiScene(struct, g, bars, params, u) {
-    if (struct !== 'murT') return null;
-    const sc = new Scene(u), L = g.L, hc = g.hCut, bp = g.bp || 0;
+    if (struct !== 'murT' && struct !== 'dalot') return null;
+    const sc = new Scene(u), L = g.L, bp = struct === 'murT' ? (g.bp || 0) : 0;
+    // tranches de béton coupées : semelle du mur, ou radier + traverse du dalot (coupe dans l'axe de la cellule)
+    const slabs = struct === 'murT' ? [[0, g.hCut]] : [[0, g.er], [g.Hext - g.et, g.Hext]];
+    const hc = slabs[slabs.length - 1][1];
     const Ls = Math.min(1.5, L / 2), brk = L > 2 * Ls + 0.05, gap = brk ? 0.3 : 0;
     const wins = brk ? [[0, Ls], [L - Ls, L]] : [[0, L]];
     const Z = (z) => (brk && z > Ls + 1e-9 ? z - (L - 2 * Ls) + gap : z);
@@ -842,11 +883,14 @@
     const P = (q) => [Z(q[0]), q[1]];
     // béton (deux tronçons), coupure, propreté
     wins.forEach(([a, b]) => {
-      sc.poly([[Z(a), 0], [Z(b), 0], [Z(b), hc], [Z(a), hc]], { closed: true, fill: CONCRETE, stroke: false, w: 0 });
-      sc.line([Z(a), 0], [Z(b), 0], { w: 1.1 }); sc.line([Z(a), hc], [Z(b), hc], { w: 1.1 });
+      slabs.forEach(([y0, y1]) => {
+        sc.poly([[Z(a), y0], [Z(b), y0], [Z(b), y1], [Z(a), y1]], { closed: true, fill: CONCRETE, stroke: false, w: 0 });
+        sc.line([Z(a), y0], [Z(b), y0], { w: 1.1 }); sc.line([Z(a), y1], [Z(b), y1], { w: 1.1 });
+      });
       if (bp > 0) { sc.poly([[Z(a), -bp], [Z(b), -bp]], { w: 0.8 }); hatchRect(sc, Z(a), -bp, Z(b), 0, Math.max(0.04, 9 * u)); }
     });
-    sc.line([Z(0), 0], [Z(0), hc], { w: 1.1 }); sc.line([Z(L), 0], [Z(L), hc], { w: 1.1 });
+    slabs.forEach(([y0, y1]) => { sc.line([Z(0), y0], [Z(0), y1], { w: 1.1 }); sc.line([Z(L), y0], [Z(L), y1], { w: 1.1 }); });
+    if (struct === 'dalot') wins.forEach(([a, b]) => sc.poly([[Z(a), g.er], [Z(b), g.er], [Z(b), g.Hext - g.et], [Z(a), g.Hext - g.et]], { closed: true, stroke: false, w: 0, fill: 'none' }));
     if (brk) [Ls, Ls + gap].forEach((zd) => {
       const y0 = -bp - 0.06, y1 = hc + 0.06, k = 0.04;
       sc.poly([[zd, y0], [zd, (y0 + y1) / 2 - k], [zd + k * 0.8, (y0 + y1) / 2 - k / 3], [zd - k * 0.8, (y0 + y1) / 2 + k / 3], [zd, (y0 + y1) / 2 + k], [zd, y1]], { w: 0.8, color: DIM, layer: 'KLE-Cotation' });
@@ -873,17 +917,17 @@
     const tags = [], rows = [], obst = [], placed = [];
     bars.forEach((bar, i) => {
       const lg = bar.longi; if (!lg) return;
-      const col = barColor(bar), mains = [];
+      const col = barColor(bar), mains = [], extra = [];
       (lg.items || []).forEach((it) => {
         const pcs = clip(it.pts);
         pcs.forEach((pc, k) => {
           const bp2 = barPath({ d: bar.d, hooks: [0, 0], segs: [{ l: 0, a: 0 }], sides: [1, -1] }, { pts: pc.map(P) }, params);
           sc.bar(bp2.path, F.encM(bar.d), { color: col, aci: aciOf(bar.d), barId: bar.id, minPx: bar.maintien ? 1.8 : 1.5 });
           obstOf(bp2.path, F.encM(bar.d), bar.id).forEach((o) => obst.push(o));
-          if (k === 0) mains.push(bp2.main);
+          if (k === 0) mains.push(bp2.main); else for (let j = 0; j < bp2.main.length - 1; j++) extra.push([bp2.main[j], bp2.main[j + 1]]);
         });
       });
-      if (mains.length) tagsOf(Object.assign({}, bar, { place: { tag: lg.tag || { seg: 0, t: 0.5 } } }), mains, params).forEach((t) => tags.push(t));
+      if (mains.length) tagsOf(Object.assign({}, bar, { place: { tag: lg.tag || { seg: 0, t: 0.5 } } }), mains, params).forEach((t) => { t.extra = extra; tags.push(t); });
     });
     bars.forEach((bar) => {
       const lg = bar.longi; if (!lg) return;
@@ -898,14 +942,16 @@
         rows.push({ id: bar.id, pts: put(pts), r, dir: [0, 1] });
       });
     });
-    const polys = wins.map(([a, b]) => [[Z(a), 0], [Z(b), 0], [Z(b), hc], [Z(a), hc]]);
+    const polys = []; wins.forEach(([a, b]) => slabs.forEach(([y0, y1]) => polys.push([[Z(a), y0], [Z(b), y0], [Z(b), y1], [Z(a), y1]])));
     rowMarkers(sc, rows, polys);
     placeReperes(sc, tags, polys, obst);
     const bb = bounds(sc);
     // cotes (épaisseur à la coupe, L du plot) et titre, à l'extérieur du repérage
-    dim(sc, [Z(0), 0], [Z(0), hc], 'v', bb[0] - 16 * u, f2(hc), { flip: true, color: RED, aci: 1, h: 11.5 });
+    const rd = { color: RED, aci: 1, h: 11.5 };
+    if (struct === 'murT') dim(sc, [Z(0), 0], [Z(0), hc], 'v', bb[0] - 16 * u, f2(hc), Object.assign({ flip: true }, rd));
+    else { const xl = bb[0] - 16 * u; dim(sc, [Z(0), 0], [Z(0), g.er], 'v', xl, f2(g.er), Object.assign({ flip: true }, rd)); dim(sc, [Z(0), g.er], [Z(0), g.Hext - g.et], 'v', xl, f2(g.Hi), rd); dim(sc, [Z(0), g.Hext - g.et], [Z(0), g.Hext], 'v', xl, f2(g.et), rd); }
     dim(sc, [Z(0), hc], [Z(L), hc], 'h', bb[3] + 14 * u, 'L = ' + f2(L) + (brk ? ' (plot interrompu)' : ''), { color: RED, aci: 1, h: 11.5 });
-    sc.text([(Z(0) + Z(L)) / 2, bb[1] - 12 * u], 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin', { h: 10, color: DIM, italic: true });
+    sc.text([(Z(0) + Z(L)) / 2, bb[1] - 12 * u], struct === 'murT' ? 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin' : 'Coupe A-A — dans l’axe de la cellule (radier et traverse)', { h: 10, color: DIM, italic: true });
     return sc;
   }
 

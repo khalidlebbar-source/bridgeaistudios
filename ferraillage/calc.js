@@ -71,6 +71,13 @@
   const VOILE_IDS = { AttF: 10, CourF: 11, R: 12, FvF: 13, AttO: 14, CourO: 15, FvO: 16, Fo: 17, Ev: 18 };
   const VOILE_KEYS = Object.keys(VOILE_IDS);
   const BECHE_KEYS = ['Bc', 'Bf'];
+  /* Dalot : numéros fixes par ordre de pose sur chantier (blocs comme le mur, numéro libre si repère absent).
+     Radier 1-9 : 1 nappe inf., 2 filants inf., 3 attentes ext., 4 attentes int., 5 goussets inf., 6 nappe sup.,
+     7 filants sup., 8 U de fermeture (joints), 9 épingles. Piédroits 10-19 : 10 courante ext., 11 filants ext.,
+     12 courante int., 13 filants int., 18 épingles. Traverse 20-29 : 20 nappe inf., 21 filants inf.,
+     22 goussets sup., 23 nappe sup., 24 filants sup., 25 U de fermeture (joints), 29 épingles. */
+  const DALOT_IDS = { RI: 1, FRI: 2, AE: 3, AI: 4, GI: 5, RS: 6, FRS: 7, U8: 8, ER: 9, CE: 10, FPE: 11, CI: 12, FPI: 13, EP: 18,
+    TI: 20, FTI: 21, GS: 22, TS: 23, FTS: 24, U25: 25, ET: 29 };
 
   /* Diamètre du mandrin (m) pour un Ø en mm. */
   function mandrin(d, norme) {
@@ -669,81 +676,165 @@
       fld('g', 'Goussets g (45°)', 0.15, 0, 0.5),
       fld('L', 'Longueur L', 10.00, 1, 40, 0.05),
     ],
-    derive(g) { return Object.assign({}, g, { Bext: r3(g.O + 2 * g.ep), Hext: r3(g.er + g.Hi + g.et) }); },
+    presets: {
+      D200: { label: 'Dalot 2,00 × 1,50', g: {} },
+      D135: { label: 'Dalot 135 × 135 (plan KLE, plot de 6,75 m)', g: { O: 1.35, Hi: 1.35, et: 0.25, ep: 0.25, er: 0.25, g: 0.10, L: 6.75 } },
+    },
+    derive(g) {
+      const Bext = r3(g.O + 2 * g.ep), Hext = r3(g.er + g.Hi + g.et);
+      return Object.assign({}, g, { Bext, Hext, xCut: Bext / 2 }); // coupe A-A dans l'axe de la cellule
+    },
     validate(g) {
       const e = [];
       for (const f of this.fields) if (!(g[f.k] >= f.min - 1e-9)) e.push(f.label + ' doit être ≥ ' + f.min + ' m.');
       if (g.g > Math.min(g.O, g.Hi) / 3) e.push('Goussets trop grands par rapport à l’ouverture.');
       return e;
     },
-    propose(g0, params) {
+    /* Ferraillage façon plans KLE (dalots 135×135, OH6, OH9) et numérotation par ORDRE DE POSE.
+       Phasage retenu (cas courant des petits cadres) : 1) radier coulé avec les attentes des piédroits ;
+       2) piédroits et traverse coulés ensemble — les barres courantes des piédroits recouvrent les attentes
+       (l0 = recouv·Ø) et s'ancrent dans la traverse par un retour. Dalles : nappe extérieure droite, nappe
+       intérieure en U dont les retours ferment l'about de la dalle ; angles extérieurs fermés par les retours
+       (50Ø) des attentes (radier) et des courantes (traverse). Joints du plot : U de fermeture vus en coupe
+       longitudinale (option « retours » : filants à retours). */
+    propose(g0, params, dMap, mMap) {
       const p = Object.assign({}, DEFAULT_PARAMS, params);
-      const g = this.derive(g0);
-      const c = p.cTerre, ca = p.cAutre;
-      const d1 = mainDiam(Math.max(g.O, g.Hi), [[2, 12], [3, 14], [4, 16], [99, 20]]);
-      const d2 = 10, dg = 10;
-      const m1 = encM(d1), m2 = encM(d2), mg = encM(dg);
-      const { O, Hi, et, ep, er, L, Bext, Hext } = g;
-      const lr = r3(L - 2 * c);
-      const lap = p.recouv * d1 / 1000;
-      const legU = r3(Math.min((Hext - 2 * c) / 2 + lap / 2, Hext - 2 * c));
-      const lx = r3(Bext - 2 * c);
-      const lInt = r3(Bext - 2 * c - 4 * m1);
-      const lV = r3(Hext - 2 * c - 2 * m1);
-      const bars = [
-        { id: '1', role: 'U extérieur supérieur (traverse + piédroits)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: legU, a: 90 }, { l: lx, a: 0 }, { l: legU, a: -90 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ x0: c + m1 / 2, y0: Hext - c - legU }], tag: { seg: 1, t: 0.3 } } },
-        { id: '2', role: 'U extérieur inférieur (radier + piédroits)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: legU, a: -90 }, { l: lx, a: 0 }, { l: legU, a: 90 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [{ x0: c + 1.5 * m1, y0: c + legU, shrink: { seg: 1, by: 2 * m1 } }], tag: { seg: 1, t: 0.3 } } },
-        { id: '3', role: 'Traverse — nappe inférieure (crosses dans les piédroits)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: lInt, a: 0 }], hooks: [90, 90], sides: [1, -1],
-          place: { items: [{ x0: c + 2 * m1, y0: Hext - et + ca + m1 / 2 }], tag: { seg: 0, t: 0.62 } } },
-        { id: '4', role: 'Radier — nappe supérieure (crosses dans les piédroits)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
-          segs: [{ l: lInt, a: 0 }], hooks: [90, 90], sides: [-1, 1],
-          place: { items: [{ x0: c + 2 * m1, y0: er - ca - m1 / 2 }], tag: { seg: 0, t: 0.62 } } },
-        { id: '5', role: 'Piédroits — face intérieure (2 piédroits)', d: d1, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
-          segs: [{ l: lV, a: 90 }], hooks: [90, 90], sides: [-1, 1],
-          place: { items: [{ x0: ep - ca - m1 / 2, y0: c + m1 }, { x0: Bext - ep + ca + m1 / 2, y0: c + m1, mx: true }], tag: { seg: 0, t: 0.55 } } },
-      ];
-      if (g.g > 0.01) {
-        // barres de gousset, parallèles au chanfrein, à l'enrobage intérieur
-        const off = ca + mg / 2;
-        const cx = ep + g.g / 2 - off / Math.SQRT2, cy = Hext - et - g.g / 2 + off / Math.SQRT2; // coin haut gauche
-        const lim1 = (cx - (c + 2 * m1 + mg)) * Math.SQRT2;     // vers le piédroit
-        const lim2 = ((Hext - c - 2 * m1 - mg) - cy) * Math.SQRT2; // vers la traverse
-        const half = Math.max(0.1, Math.min(lim1, lim2, g.g * Math.SQRT2 / 2 + 30 * mg));
-        const lg = Math.floor(2 * half * 20) / 20;
-        const sx = cx - lg / 2 / Math.SQRT2, sy = cy - lg / 2 / Math.SQRT2;
-        const cyb = g.er + g.g / 2 - off / Math.SQRT2; // coin bas gauche (symétrique)
-        const syb = cyb + lg / 2 / Math.SQRT2;
-        bars.push({ id: '6', role: 'Goussets (4 angles)', d: dg, kind: 'reparti', esp: 0.15, distLen: lr, mult: 4,
-          segs: [{ l: lg, a: 45 }], hooks: [0, 0], sides: [1, -1],
-          place: { items: [
-            { x0: sx, y0: sy }, { x0: Bext - sx, y0: sy, mx: true },
-            { x0: sx, y0: syb, my: true }, { x0: Bext - sx, y0: syb, mx: true, my: true },
-          ], tag: { seg: 0, t: 0.5 } } });
+      const g = this.derive(g0), c = p.cTerre, ca = p.cAutre;
+      const { O, Hi, et, ep, er, L, Bext, Hext } = g, G = g.g;
+      const S = Math.max(O, Hi);
+      // Ø proposés d'après les plans KLE : 135×135 HA12 / HA10 / HA8, OH-75 HA12-14, OH6 HA14-16, OH9 HA16-20
+      const row = S <= 1.5 ? [12, 12, 12, 10, 10, 8] : S <= 2.5 ? [14, 12, 12, 10, 10, 10] : S <= 3.5 ? [16, 14, 14, 10, 10, 10] : [20, 16, 16, 12, 12, 12];
+      const [dOut, dIn, dWe, dWi, dF, dG] = row;
+      const D0 = { RI: dOut, FRI: dF, AE: dWe, AI: dWi, GI: dG, RS: dIn, FRS: dF, U8: 12, ER: 10, CE: dWe, FPE: dF, CI: dWi, FPI: dF, EP: 10,
+        TI: dIn, FTI: dF, GS: dG, TS: dOut, FTS: dF, U25: 12, ET: 10 };
+      Object.entries(dMap || {}).forEach(([id, d]) => { const k = Object.keys(DALOT_IDS).find((x) => String(DALOT_IDS[x]) === id); if (k) D0[k] = d; });
+      const D = D0, mm = encM, nom = (d) => d / 1000;
+      const fermU = p.fermeture !== 'retours';
+      const M = {}; Object.keys(D).forEach((k) => { M[k] = mm(D[k]); });
+      const lr = r3(L - 2 * c), bars = [];
+      const mk = (b, key) => { b.key = key; b.id = String(DALOT_IDS[key]); bars.push(b); return b; };
+      const segsAx = (pts, m) => pts.slice(1).map((q, i) => { const n = pts.length - 1; let l = len2(sub(q, pts[i])); if (i > 0) l += m / 2; if (i < n - 1) l += m / 2; return { l: r3(l), a: Math.round(angOf(pts[i], q) * 1000) / 1000 }; });
+      const mir = (pts) => pts.map((q) => [Bext - q[0], q[1]]);
+      const items2 = (pts) => [{ pts }, { pts: mir(pts) }];
+      const z0 = (m) => c + m / 2, z1 = (m) => L - c - m / 2;
+      const yTraverse = Hext - et;
+      // lignes de référence (axes) des faces
+      const x10 = c + M.CE / 2, x3 = c + M.CE + M.AE / 2;                 // face extérieure : courante puis attente
+      const x12 = ep - ca - M.CI / 2, x4 = ep - ca - M.CI - M.AI / 2;      // face intérieure
+      // ── RADIER ──
+      const y1 = c + M.RI / 2;
+      mk({ role: 'Radier — nappe inférieure transversale (droite)', d: D.RI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: [{ l: r3(Bext - 2 * c), a: 0 }], hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: [[c, y1], [Bext - c, y1]] }], tag: { seg: 0, t: 0.5 } },
+        longi: { dotsZ: [{ y: y1, z0: z0(M.RI), z1: z1(M.RI) }] } }, 'RI');
+      // attentes extérieures : L, retour 50Ø posé sur la nappe 1 vers la cellule, remontée l0 au-dessus de la reprise (y = er)
+      const l0e = Math.min(p.recouv * nom(D.AE), Hi - 0.1), legE = r3(Math.min(p.recouv * nom(D.AE), Bext / 2 - c));
+      const yAE = c + M.RI + M.AE / 2, pAE = [[x3 - M.AE / 2 + legE, yAE], [x3, yAE], [x3, er + l0e]];
+      mk({ role: 'Attentes des piédroits — face extérieure (L, recouvrement ' + fmtCote(r3(l0e)) + ' m)', d: D.AE, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+        segs: segsAx(pAE, M.AE), hooks: [0, 0], sides: [1, -1], place: { items: items2(pAE), tag: { seg: 1, t: 0.25 } } }, 'AE');
+      // attentes intérieures : L, retour en travers du piédroit vers l'extérieur, posé sur le retour des attentes ext.
+      const l0i = Math.min(p.recouv * nom(D.AI), Hi - 0.1), yAI = c + M.RI + M.AE + M.AI / 2, xEndI = x3 + M.AE / 2;
+      const pAI = [[xEndI + M.AI / 2, yAI], [x4, yAI], [x4, er + l0i]];
+      mk({ role: 'Attentes des piédroits — face intérieure (L, recouvrement ' + fmtCote(r3(l0i)) + ' m)', d: D.AI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+        segs: segsAx(pAI, M.AI), hooks: [0, 0], sides: [1, -1], place: { items: items2(pAI), tag: { seg: 1, t: 0.5 } } }, 'AI');
+      // goussets (barre parallèle au chanfrein, à l'enrobage intérieur)
+      const gous = (top, key, id) => {
+        if (!(G > 0.01)) return;
+        const mg = M[key], off = ca + mg / 2;
+        const cx = ep + G / 2 - off / Math.SQRT2, cy = top ? yTraverse - G / 2 + off / Math.SQRT2 : er + G / 2 - off / Math.SQRT2;
+        const lim1 = (cx - (c + M.CE + M.AE + mg)) * Math.SQRT2, lim2 = top ? ((Hext - c - M.TS - mg) - cy) * Math.SQRT2 : (cy - (c + M.RI + mg)) * Math.SQRT2;
+        const half = Math.max(0.1, Math.min(lim1, lim2, G * Math.SQRT2 / 2 + 30 * nom(D[key])));
+        const lg = Math.floor(2 * half * 20) / 20, dx = lg / 2 / Math.SQRT2;
+        const pts = top ? [[cx - dx, cy - dx], [cx + dx, cy + dx]] : [[cx - dx, cy + dx], [cx + dx, cy - dx]];
+        mk({ role: 'Barres de gousset ' + (top ? 'supérieures (traverse)' : 'inférieures (radier)'), d: D[key], kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+          segs: [{ l: lg, a: top ? 45 : -45 }], hooks: [0, 0], sides: [1, -1], place: { items: items2(pts), tag: { seg: 0, t: 0.5 } } }, key);
+      };
+      gous(false, 'GI');
+      // nappe supérieure du radier : U, retours vers le bas juste à l'intérieur des attentes extérieures
+      const y6 = er - ca - M.RS / 2, x6 = c + M.CE + M.AE + M.RS / 2, yb6 = c + M.RI + M.AE + M.AI;
+      const p6 = [[x6, yb6], [x6, y6], [Bext - x6, y6], [Bext - x6, yb6]];
+      mk({ role: 'Radier — nappe supérieure transversale (U, retours fermant l’about)', d: D.RS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: segsAx(p6, M.RS), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: p6 }], tag: { seg: 1, t: 0.5 } },
+        longi: { dotsZ: [{ y: y6, z0: z0(M.RS), z1: z1(M.RS) }] } }, 'RS');
+      // filants du radier (2 inf., 7 sup.) ; fermetures 8 aux joints
+      const m8 = fermU ? M.U8 : 0, lF = r3(L - 2 * c - 2 * m8);
+      const yF2 = c + M.RI + M.FRI / 2, yF7 = y6 - M.RS / 2 - M.FRS / 2;
+      const filZ = (y, sg, r, m) => (fermU ? { items: [{ pts: [[c + m8, y], [L - c - m8, y]] }] } : { items: [{ pts: [[c + m / 2, y + sg * r], [c + m / 2, y], [L - c - m / 2, y], [L - c - m / 2, y + sg * r]] }] });
+      const rR = r3(er - c - ca - M.RI - M.RS), rT = r3(et - c - ca - M.TI - M.TS);
+      const segF = (r, sg) => (fermU ? [{ l: lF, a: 0 }] : [{ l: r, a: sg * 90 }, { l: lr, a: 0 }, { l: r, a: -sg * 90 }]);
+      const xa = c + M.CE + M.AE + M.RS + 0.001;
+      mk({ role: 'Radier — filants inférieurs', d: D.FRI, kind: 'filant', esp: 0.20, distLen: r3(Bext - 2 * c), mult: 1,
+        segs: segF(rR, 1), hooks: [0, 0], sides: [1, -1], place: { dots: [{ mode: 'poly', pts: [[c + M.FRI / 2 + M.CE, yF2], [Bext - c - M.FRI / 2 - M.CE, yF2]] }], tag: 1 },
+        longi: filZ(yF2, 1, rR, M.FRI) }, 'FRI');
+      mk({ role: 'Radier — filants supérieurs', d: D.FRS, kind: 'filant', esp: 0.20, distLen: r3(Bext - 2 * c), mult: 1,
+        segs: segF(rR, -1), hooks: [0, 0], sides: [1, -1], place: { dots: [{ mode: 'poly', pts: [[xa + M.FRS / 2, yF7], [Bext - xa - M.FRS / 2, yF7]] }], tag: -1 },
+        longi: filZ(yF7, -1, rR, M.FRS) }, 'FRS');
+      const uJ = (key, yB, yT, role) => {
+        const m = M[key], lb = r3(Math.min(p.recouv * nom(D[key]), (L - 2 * c) / 2));
+        const u6 = (zW, sg) => [[zW + sg * (lb - m / 2), yT], [zW, yT], [zW, yB], [zW + sg * (lb - m / 2), yB]];
+        mk({ role, d: D[key], kind: 'reparti', esp: 0.20, distLen: r3(Bext - 2 * c), mult: 2,
+          segs: [{ l: lb, a: 180 }, { l: r3(yT - yB + m), a: -90 }, { l: lb, a: 0 }], hooks: [0, 0], sides: [1, -1],
+          place: {}, longi: { items: [{ pts: u6(c + m / 2, 1) }, { pts: u6(L - c - m / 2, -1) }], tag: { seg: 1, t: 0.5 } } }, key);
+      };
+      if (fermU) uJ('U8', yF2 + M.FRI / 2 + M.U8 / 2, yF7 - M.FRS / 2 - M.U8 / 2, 'Radier — U de fermeture des joints du plot (vus en coupe longitudinale)');
+      // maintien (épingles 135°) dans les éléments d'au moins 0,30 m
+      const epingles = (key, area, pts, longiPts) => {
+        mk({ role: 'Épingles ' + ({ ER: 'radier', EP: 'piédroits', ET: 'traverse' })[key], d: D[key], kind: 'densite', esp: 4, area: r3(area), mult: 1, maintien: 'epingle', code: '3001',
+          segs: [{ l: r3(len2(sub(pts[0][1], pts[0][0]))), a: 90 }], hooks: [135, 135], sides: [1, -1],
+          place: { items: pts.map((q) => ({ pts: q, hs: [1, -1] })), tag: { seg: 0, t: 0.5 } }, longi: longiPts ? { items: longiPts.map((q) => ({ pts: q })), tag: { seg: 0, t: 0.5 } } : null }, key);
+      };
+      const zEp = [0.45, 1.05].filter((z) => z < Math.min(1.5, L / 2) - 0.1).flatMap((z) => [z, L - z]);
+      if (er >= 0.30 - 1e-9) {
+        const ya = c, yb = er - ca, xs = [Bext / 2 - O / 4, Bext / 2 + O / 4];
+        epingles('ER', Bext * L, xs.map((x) => [[x, ya], [x, yb]]), zEp.map((z) => [[z, ya], [z, yb]]));
       }
-      const n = String(bars.length + 1), n2 = String(bars.length + 2), n3 = String(bars.length + 3);
-      const xa = c + 2 * m1 + m2 / 2, xb = Bext - xa;
-      bars.push(
-        { id: n, role: 'Filants traverse et radier — nappes extérieures', d: d2, kind: 'filant', esp: 0.20, distLen: lx, mult: 2,
-          segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ a: [xa, Hext - c - m1 - m2 / 2], b: [xb, Hext - c - m1 - m2 / 2], mode: 'spread' },
-                          { a: [xa, c + m1 + m2 / 2], b: [xb, c + m1 + m2 / 2], mode: 'spread' }], tag: 2 } },
-        { id: n2, role: 'Filants traverse et radier — nappes intérieures', d: d2, kind: 'filant', esp: 0.20, distLen: r3(O), mult: 2,
-          segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [{ a: [ep + 0.02, Hext - et + ca + m1 + m2 / 2], b: [Bext - ep - 0.02, Hext - et + ca + m1 + m2 / 2], mode: 'spread' },
-                          { a: [ep + 0.02, er - ca - m1 - m2 / 2], b: [Bext - ep - 0.02, er - ca - m1 - m2 / 2], mode: 'spread' }], tag: -3 } },
-        { id: n3, role: 'Filants piédroits (2 faces × 2 piédroits)', d: d2, kind: 'filant', esp: 0.20, distLen: r3(Hi), mult: 4,
-          segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
-          place: { dots: [
-            { a: [c + 2 * m1 + m2 / 2, er + 0.05], b: [c + 2 * m1 + m2 / 2, Hext - et - 0.05], mode: 'spread' },
-            { a: [ep - ca - m1 - m2 / 2, er + 0.05], b: [ep - ca - m1 - m2 / 2, Hext - et - 0.05], mode: 'spread' },
-            { a: [Bext - ep + ca + m1 + m2 / 2, er + 0.05], b: [Bext - ep + ca + m1 + m2 / 2, Hext - et - 0.05], mode: 'spread' },
-            { a: [Bext - c - 2 * m1 - m2 / 2, er + 0.05], b: [Bext - c - 2 * m1 - m2 / 2, Hext - et - 0.05], mode: 'spread' }], tag: 2 } }
-      );
+      // ── PIÉDROITS ── courantes : de la reprise (y = er) à la traverse, retour d'ancrage dans la traverse
+      const yLegE = Hext - c - M.TS - M.CE / 2, legCE = r3(Math.min(p.recouv * nom(D.CE), Bext / 2 - c));
+      const pCE = [[x10, er], [x10, yLegE], [x10 - M.CE / 2 + legCE, yLegE]];
+      mk({ role: 'Piédroits — courante face extérieure (recouvre l’attente, retour 50Ø sous la nappe sup. de traverse)', d: D.CE, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+        segs: segsAx(pCE, M.CE), hooks: [0, 0], sides: [1, -1], place: { items: items2(pCE), tag: { seg: 0, t: 0.62 } } }, 'CE');
+      const yTop = Hext - c - M.TS - M.CE;
+      const yF11a = er + 0.05, yF11b = yTop - M.FPE / 2 - 0.02;
+      const xF11 = c + M.CE + M.AE + M.FPE / 2, xF13 = ep - ca - M.CI - M.AI - M.FPI / 2;
+      mk({ role: 'Piédroits — filants face extérieure', d: D.FPE, kind: 'filant', esp: 0.20, distLen: r3(Hi), mult: 2,
+        segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
+        place: { dots: [{ mode: 'poly', pts: [[xF11, yF11a], [xF11, yF11b]] }, { mode: 'poly', pts: [[Bext - xF11, yF11a], [Bext - xF11, yF11b]] }], tag: 1 } }, 'FPE');
+      const yLegI = yTraverse + ca + M.TI + M.CI / 2, xEndC = c + M.CE + M.TI;
+      const pCI = [[x12, er], [x12, yLegI], [xEndC + M.CI / 2, yLegI]];
+      mk({ role: 'Piédroits — courante face intérieure (recouvre l’attente, retour en travers du piédroit)', d: D.CI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 2,
+        segs: segsAx(pCI, M.CI), hooks: [0, 0], sides: [1, -1], place: { items: items2(pCI), tag: { seg: 0, t: 0.62 } } }, 'CI');
+      mk({ role: 'Piédroits — filants face intérieure', d: D.FPI, kind: 'filant', esp: 0.20, distLen: r3(Hi), mult: 2,
+        segs: [{ l: lr, a: 0 }], hooks: [0, 0], sides: [1, -1],
+        place: { dots: [{ mode: 'poly', pts: [[xF13, er + G + 0.05], [xF13, yTraverse - G - 0.05]] }, { mode: 'poly', pts: [[Bext - xF13, er + G + 0.05], [Bext - xF13, yTraverse - G - 0.05]] }], tag: 1 } }, 'FPI');
+      if (ep >= 0.30 - 1e-9) {
+        const xa2 = c, xb2 = ep - ca, ys = [er + Hi * 0.3, er + Hi * 0.7];
+        const pts = ys.map((y) => [[xa2, y], [xb2, y]]);
+        epingles('EP', 2 * Hi * L, pts.concat(pts.map(mir)));
+        const b = bars[bars.length - 1]; b.segs[0].a = 0;
+      }
+      // ── TRAVERSE ──
+      const y20 = yTraverse + ca + M.TI / 2, x20 = c + M.CE + M.TI / 2, yt20 = Hext - c - M.TS - M.CE;
+      const p20 = [[x20, yt20], [x20, y20], [Bext - x20, y20], [Bext - x20, yt20]];
+      mk({ role: 'Traverse — nappe inférieure transversale (U, retours fermant l’about)', d: D.TI, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: segsAx(p20, M.TI), hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: p20 }], tag: { seg: 1, t: 0.5 } },
+        longi: { dotsZ: [{ y: y20, z0: z0(M.TI), z1: z1(M.TI) }] } }, 'TI');
+      const yF21 = y20 + M.TI / 2 + M.FTI / 2, y23 = Hext - c - M.TS / 2, yF24 = y23 - M.TS / 2 - M.CE - M.FTS / 2;
+      const xb = c + M.CE + M.TI + 0.001;
+      mk({ role: 'Traverse — filants inférieurs', d: D.FTI, kind: 'filant', esp: 0.20, distLen: r3(Bext - 2 * c), mult: 1,
+        segs: segF(rT, 1), hooks: [0, 0], sides: [1, -1], place: { dots: [{ mode: 'poly', pts: [[xb + M.FTI / 2, yF21], [Bext - xb - M.FTI / 2, yF21]] }], tag: 1 },
+        longi: filZ(yF21, 1, rT, M.FTI) }, 'FTI');
+      gous(true, 'GS');
+      mk({ role: 'Traverse — nappe supérieure transversale (droite)', d: D.TS, kind: 'reparti', esp: 0.15, distLen: lr, mult: 1,
+        segs: [{ l: r3(Bext - 2 * c), a: 0 }], hooks: [0, 0], sides: [1, -1], place: { items: [{ pts: [[c, y23], [Bext - c, y23]] }], tag: { seg: 0, t: 0.5 } },
+        longi: { dotsZ: [{ y: y23, z0: z0(M.TS), z1: z1(M.TS) }] } }, 'TS');
+      mk({ role: 'Traverse — filants supérieurs', d: D.FTS, kind: 'filant', esp: 0.20, distLen: r3(Bext - 2 * c), mult: 1,
+        segs: segF(rT, -1), hooks: [0, 0], sides: [1, -1], place: { dots: [{ mode: 'poly', pts: [[c + M.CE + M.FTS / 2, yF24], [Bext - c - M.CE - M.FTS / 2, yF24]] }], tag: -1 },
+        longi: filZ(yF24, -1, rT, M.FTS) }, 'FTS');
+      if (fermU) uJ('U25', yF21 + M.FTI / 2 + M.U25 / 2, yF24 - M.FTS / 2 - M.U25 / 2, 'Traverse — U de fermeture des joints du plot (vus en coupe longitudinale)');
+      if (et >= 0.30 - 1e-9) {
+        const ya = yTraverse + ca, yb = Hext - c, xs = [Bext / 2 - O / 4, Bext / 2 + O / 4];
+        epingles('ET', Bext * L, xs.map((x) => [[x, ya], [x, yb]]), zEp.map((z) => [[z, ya], [z, yb]]));
+      }
+      bars.sort((a, b2) => Number(a.id) - Number(b2.id));
       return bars;
     },
   };
@@ -783,7 +874,7 @@
   }
 
   return {
-    ENCOMBREMENT, COULEUR_ACI, encM, DIAMS, MASSE_LIN, HOOKS, DEFAULT_PARAMS, STRUCTURES,
+    ENCOMBREMENT, COULEUR_ACI, DALOT_IDS, encM, DIAMS, MASSE_LIN, HOOKS, DEFAULT_PARAMS, STRUCTURES,
     mandrin, deviation, bendDeduction, hookStraight, hookLength, devLength,
     barCount, splitShape, applyOverride, computeRows, recap, defaults, preset, compute, fmtCote, round5mm, offsetPoly, cleanPath,
   };

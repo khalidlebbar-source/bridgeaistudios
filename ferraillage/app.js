@@ -240,7 +240,7 @@
   }
 
   /* Coupe transversale ou coupe longitudinale A-A (mur) dans le panneau de dessin. */
-  const hasLongi = () => S.struct === 'murT';
+  const hasLongi = () => S.struct === 'murT' || S.struct === 'dalot';
   const inView = (id, v) => { const b = S.res.bars.find((x) => x.id === id); if (!b) return false; return v === 'longi' ? !!b.longi : !!(b.place && (b.place.items || b.place.dots)); };
   function drawFerr() {
     const res = S.res, el = $('#v-ferr'), [W, H] = boxOf(el);
@@ -454,7 +454,7 @@
         <figure><figcaption>Coupe de coffrage</figcaption>${F.fitRender((u) => F.coffrageScene(S.struct, g, u), 520, 380)}</figure>
         <figure><figcaption>Coupe ferraillée</figcaption>${F.fitRender((u) => F.ferraillageScene(S.struct, g, r.bars, p, u), 520, 380)}</figure>
       </div>
-      ${hasLongi() ? `<div class="p-views"><figure><figcaption>Coupe longitudinale A-A de la semelle</figcaption>${F.fitRender((u) => F.longiScene(S.struct, g, r.bars, p, u), 1000, 150)}</figure></div>` : ''}
+      ${hasLongi() ? `<div class="p-views"><figure><figcaption>${S.struct === 'dalot' ? 'Coupe longitudinale A-A (radier et traverse)' : 'Coupe longitudinale A-A de la semelle'}</figcaption>${F.fitRender((u) => F.longiScene(S.struct, g, r.bars, p, u), 1000, S.struct === 'dalot' ? 330 : 150)}</figure></div>` : ''}
       <div class="p-bottom">
         <figure class="p-second"><figcaption>${S.struct === 'dalot' ? 'Vue en plan' : 'Élévation du plot'}</figcaption>${F.fitRender((u) => F.secondScene(S.struct, g, u), 560, 150)}</figure>
         <div><div class="p-h">Récapitulatif par diamètre</div>

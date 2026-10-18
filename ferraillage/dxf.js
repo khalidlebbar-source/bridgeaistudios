@@ -179,7 +179,7 @@
     if (sL) {
       const bL = F.bounds(sL), dyL = bB[1] - bL[3] - 0.7, dxL = dxB + (bB[0] + bB[2]) / 2 - (bL[0] + bL[2]) / 2;
       writeScene(w, sL, dxL, dyL);
-      w.text([(bL[0] + bL[2]) / 2 + dxL, bL[3] + dyL + 0.2], 0.07, 'COUPE LONGITUDINALE A-A \u2014 SEMELLE (FERRAILLAGE)', 'KLE-Cotation', 'middle');
+      w.text([(bL[0] + bL[2]) / 2 + dxL, bL[3] + dyL + 0.2], 0.07, 'COUPE LONGITUDINALE A-A \u2014 ' + (struct === 'dalot' ? 'RADIER ET TRAVERSE' : 'SEMELLE') + ' (FERRAILLAGE)', 'KLE-Cotation', 'middle');
       yLow = Math.min(yLow, bL[1] + dyL);
     }
     // seconde vue sous la coupe de coffrage

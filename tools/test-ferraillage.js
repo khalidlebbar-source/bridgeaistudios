@@ -194,7 +194,11 @@ const segX = (a, b, c, d) => { // intersection propre de deux segments (extrémi
   return ((d1 > e && d2 < -e) || (d1 < -e && d2 > e)) && ((d3 > e && d4 < -e) || (d3 < -e && d4 > e));
 };
 const leaders = (sc) => sc.items.filter((it) => it.cls === 'rp').map((it) => it.pts);
-const crossings = (sc) => { const L = leaders(sc); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) for (let a = 0; a < L[i].length - 1; a++) for (let b = 0; b < L[j].length - 1; b++) if (segX(L[i][a], L[i][a + 1], L[j][b], L[j][b + 1])) n++; return n; };
+// tronçons colinéaires superposés (deux attaches sur la même verticale / horizontale) : comptés comme croisements
+const overlapC = (a, b, c, d) => { const vx = Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(c[0] - d[0]) < 1e-9 && Math.abs(a[0] - c[0]) < 1e-6, hy = Math.abs(a[1] - b[1]) < 1e-9 && Math.abs(c[1] - d[1]) < 1e-9 && Math.abs(a[1] - c[1]) < 1e-6;
+  const ov = (p0, p1, q0, q1) => Math.min(Math.max(p0, p1), Math.max(q0, q1)) - Math.max(Math.min(p0, p1), Math.min(q0, q1)) > 1e-6;
+  return (vx && ov(a[1], b[1], c[1], d[1])) || (hy && ov(a[0], b[0], c[0], d[0])); };
+const crossings = (sc) => { const L = leaders(sc); let n = 0; for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) for (let a = 0; a < L[i].length - 1; a++) for (let b = 0; b < L[j].length - 1; b++) if (segX(L[i][a], L[i][a + 1], L[j][b], L[j][b + 1]) || overlapC(L[i][a], L[i][a + 1], L[j][b], L[j][b + 1])) n++; return n; };
 const overlapDots = (sc) => { // pastilles qui mordent sur une barre façonnée (tolérance 0,5 mm)
   const bars = sc.items.filter((it) => it.t === 'bar').map((it) => ({ P: F.samplePath(it.path, 10), h: it.wM / 2 }));
   return sc.items.filter((it) => it.cls === 'dv').filter((c) => bars.some((b) => b.P.some((A, k) => {
@@ -229,6 +233,39 @@ const rt4 = redTxt(F.ferraillageScene('murT', m4.geom, m4.bars, m4.params, 1 / 3
 ok(['0.70', '3.30', '0.25', '0.50', '3.70'].every((x) => rt4.includes(x)) && !rt4.includes('4.00') && !rt4.some((x) => /\d\.\d{3}/.test(x)), `M4 cotes rouges : ${rt4.join(' · ')} (ni H 4.00, ni talon 2.703)`);
 const ob = F.compute('murT', opt, {}, {}), rtb = redTxt(F.ferraillageScene('murT', ob.geom, ob.bars, ob.params, 1 / 300));
 ok(rtb.includes('0.40 à 0.70') && rtb.includes(opt.bw.toFixed(2)) && rtb.includes(opt.bh.toFixed(2)), `M4 biseau + bêche : ${rtb.join(' · ')}`);
+// 6. Dalot (V7) : façonnage KLE, phasage radier + attentes puis piédroits et traverse, numéros fixes par ordre de pose
+{
+  const D2 = F.compute('dalot', F.preset('dalot', 'D200'), {}, {}), ids2 = D2.bars.map((b) => b.id + ':' + b.key).join();
+  ok(ids2 === '1:RI,2:FRI,3:AE,4:AI,5:GI,6:RS,7:FRS,8:U8,9:ER,10:CE,11:FPE,12:CI,13:FPI,20:TI,21:FTI,22:GS,23:TS,24:FTS,25:U25',
+    'Dalot 2,00 × 1,50 : radier 1-9, piédroits 10-13 (18 libre, piédroits de 0,25), traverse 20-25 (29 libre)');
+  const D3 = F.compute('dalot', Object.assign(F.defaults('dalot'), { O: 3, Hi: 2.5, et: 0.35, ep: 0.30, er: 0.35, g: 0.2 }), {}, {});
+  ok(['9', '18', '29'].every((x) => D3.bars.some((b) => b.id === x && b.code === '3001')) && D3.bars.find((b) => b.id === '1').d === 16, 'Dalot 3,00 × 2,50 : épingles 9 / 18 / 29 (éléments ≥ 0,30 m), nappe extérieure HA16');
+  const DR = F.compute('dalot', F.preset('dalot', 'D200'), { fermeture: 'retours' }, {});
+  ok(!DR.bars.some((b) => ['8', '25'].includes(b.id)) && DR.bars.find((b) => b.id === '2').segs.length === 3, 'Dalot option « retours » : pas de 8 / 25, filants à retours');
+  const att = D2.bars.find((b) => b.key === 'AE'), cou = D2.bars.find((b) => b.key === 'CE'), gg2 = D2.geom;
+  ok(Math.abs(att.place.items[0].pts[2][1] - (gg2.er + 50 * att.d / 1000)) < 1e-9 && Math.abs(cou.place.items[0].pts[0][1] - gg2.er) < 1e-9,
+    `Dalot : attentes 3 remontant de l0 = 50Ø au-dessus de la reprise (y = ${gg2.er}), courantes 10 partant de la reprise`);
+  // longueurs dessinées = nomenclature (dessin à l'encombrement : ≈ 2,5 mm par coude)
+  D2.bars.filter((b) => b.place.items && b.place.items[0].pts).forEach((b) => {
+    const ld = F.pathLength(F.barPath(b, b.place.items[0], D2.params).path), row = D2.rows.find((r) => r.id === b.id);
+    ok(Math.abs(ld - row.L) <= 0.012, `Dalot repère ${b.id} : dessin ${ld.toFixed(3)} m / nomenclature ${row.L.toFixed(3)} m`);
+  });
+  ['8', '25'].forEach((id) => { const b = D2.bars.find((x) => x.id === id), ld = F.pathLength(F.barPath({ d: b.d, hooks: [0, 0], segs: [{ l: 0, a: 0 }] }, { pts: b.longi.items[0].pts }, D2.params).path), row = D2.rows.find((r) => r.id === id);
+    ok(Math.abs(ld - row.L) <= 0.012, `Dalot repère ${id} (coupe A-A) : dessin ${ld.toFixed(3)} m / nomenclature ${row.L.toFixed(3)} m`); });
+  // plan KLE « Dalot 135x135 » : 1 067,5 kg pour un plot de 6,75 m
+  const K = F.compute('dalot', F.preset('dalot', 'D135'), {}, {}), ek = (K.recap.total - 1067.5) / 1067.5 * 100;
+  ok(Math.abs(ek) <= 10, `Dalot 135 × 135 (plot 6,75 m) : ${K.recap.total.toFixed(1)} kg vs 1 067,5 kg au plan KLE (écart ${ek >= 0 ? '+' : ''}${ek.toFixed(1)} %)`);
+  for (const [nm, re] of [['D200', D2], ['D300', D3], ['retours', DR], ['D135', K]]) {
+    let pT, pL; F.fitRender((uu) => (pT = F.ferraillageScene('dalot', re.geom, re.bars, re.params, uu)), 460, 470); F.fitRender((uu) => (pL = F.longiScene('dalot', re.geom, re.bars, re.params, uu)), 460, 260);
+    const sT = F.ferraillageScene('dalot', re.geom, re.bars, re.params, 1 / 300), sL = F.longiScene('dalot', re.geom, re.bars, re.params, 1 / 300);
+    const all = [pT, pL, sT, sL].map((x) => F.toSVG(x, 300)).join('');
+    ok(crossings(pT) + crossings(pL) + crossings(sT) + crossings(sL) === 0 && !bad(all) && overlapDots(sT) === 0, `Dalot ${nm} : coupes sans croisement d'attache ni NaN, points tangents`);
+    const rt = redTxt(sT);
+    ok(rt.length >= 6 && !rt.some((x) => /\d\.\d{3}/.test(x)) && rt.includes(re.geom.O.toFixed(2)), `Dalot ${nm} cotes rouges saisies : ${rt.join(' · ')}`);
+  }
+  const dxd = F.buildDXF('dalot', D2.geom, D2, {});
+  ok(!bad(dxd) && dxd.includes('RADIER ET TRAVERSE') && dxd.includes('SOLID\r\n8\r\nREPERAGE'), 'Dalot : DXF avec coupe longitudinale A-A et repérage V6');
+}
 const dx = F.buildDXF('murT', m4.geom, m4, {});
 ok(dx.includes('SOLID\r\n8\r\nREPERAGE') && /TEXT\r\n8\r\nREPERAGE\r\n62\r\n1\r\n/.test(dx) && /8\r\nKLE-Cotation\r\n62\r\n41\r\n/.test(dx),
   'DXF : flèches SOLID et marqueurs rouges (couleur 1) sur REPERAGE, zigzags sur KLE-Cotation');
