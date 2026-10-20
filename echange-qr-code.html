@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Échange QR code — BridgeAI Studios</title>
+<meta name="description" content="Contenus liés aux documents techniques de KLE Ingénierie : vidéos et séquences accessibles depuis le QR code imprimé sur les avis et notes.">
+<meta name="author" content="BridgeAI Studios">
+<meta property="og:title" content="Échange QR code — BridgeAI Studios">
+<meta property="og:description" content="Les vidéos et séquences qui accompagnent les avis techniques KLE Ingénierie.">
+<meta property="og:url" content="https://www.bridgeaistudios.com/echange-qr-code.html">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://www.bridgeaistudios.com/echange-qr-code.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#f6f4ee;--ink2:#ffffff;--ink3:#efece3;
+  --gold:#a8842a;--gold2:#8a6b1f;
+  --teal:#0f8f7b;--silver:#5f6778;--white:#14171f;
+  --border:rgba(20,23,31,.09);--border2:rgba(168,132,42,.4);
+  --rust:#c4521f;
+}
+nav,footer{--ink:#0c0e14;--ink2:#1a1e2e;--white:#ffffff;--silver:#8892a4;--teal:#1ab8a0;--gold:#c9a84c;--gold2:#e8c97a;--border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.2)}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.55;font-weight:300}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+
+/* ─── NAV (identique au site) ─── */
+nav{position:sticky;top:0;z-index:100;padding:0 3vw;border-bottom:1px solid var(--border);background:rgba(12,14,20,.92);backdrop-filter:blur(16px)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1360px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;color:var(--white);letter-spacing:.02em;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{font-size:13px;color:var(--silver);letter-spacing:.04em;transition:color .2s}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--gold);font-weight:400}
+
+/* ─── EN-TÊTE ─── */
+.head{position:relative;padding:34px 3vw 26px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fbfaf6,#f3f0e7);overflow:hidden}
+.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 140% at 15% 0%,rgba(168,132,42,.10) 0%,transparent 70%);pointer-events:none}
+.head-inner{position:relative;max-width:1080px;margin:0 auto}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px}
+.eyebrow::before{content:"";width:24px;height:1px;background:var(--gold)}
+h1{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:300;line-height:1.05;letter-spacing:-.01em;text-wrap:balance}
+h1 em{font-style:italic;color:var(--gold)}
+.lede{margin-top:10px;max-width:640px;color:var(--silver);font-size:15px}
+
+/* ─── ENTRÉES ─── */
+main{max-width:1080px;margin:0 auto;padding:28px 3vw 56px;display:flex;flex-direction:column;gap:28px}
+.entry{background:var(--ink2);border:1px solid var(--border);border-radius:6px;overflow:hidden;scroll-margin-top:84px}
+.entry:target{border-color:var(--border2);box-shadow:0 0 0 3px rgba(168,132,42,.12)}
+.entry-head{padding:20px 24px 14px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--border)}
+.ref{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--rust);font-weight:500}
+.entry h2{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;line-height:1.12;flex:1 1 100%;text-wrap:balance}
+.meta{font-size:12.5px;color:var(--silver);display:flex;flex-wrap:wrap;gap:4px 14px}
+.video-wrap{background:#0c0e14}
+video{display:block;width:100%;height:auto;aspect-ratio:16/9;max-width:100%;background:#0c0e14}
+.entry-body{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;padding:20px 24px 24px}
+.entry-body p{font-size:14.5px;max-width:62ch}
+.entry-body p+p{margin-top:10px}
+ol.steps{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:baseline}
+ol.steps li::before{content:counter(s);font-size:11px;font-weight:500;color:#fff;background:var(--rust);border-radius:2px;text-align:center;line-height:20px;height:20px}
+.figs{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:12.5px}
+.figs b{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold2);margin-right:4px}
+.note{font-size:12px;color:var(--silver);margin-top:12px}
+.empty{font-size:13px;color:var(--silver);border:1px dashed var(--border2);border-radius:6px;padding:16px 20px}
+
+footer{background:#0c0e14;color:var(--silver);padding:22px 3vw;font-size:12.5px}
+.footer-bottom{max-width:1360px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:16px;color:#fff}
+.footer-logo span{color:var(--gold)}
+footer a:hover{color:#fff}
+
+@media(max-width:900px){
+  .nav-links{display:none}
+  .head{padding:24px 16px 20px}
+  h1{font-size:36px}
+  main{padding:20px 16px 40px}
+  .entry-head{padding:16px 16px 12px}
+  .entry h2{font-size:25px}
+  .entry-body{grid-template-columns:minmax(0,1fr);padding:16px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <ul class="nav-links">
+      <li><a href="ponts-types.html">Ponts types</a></li>
+      <li><a href="plans-ferraillage.html">Plans coffrage &amp; ferraillage</a></li>
+      <li><a href="handbag.html">HandBag</a></li>
+      <li><a href="bibliotheque.html">Bibliothèque</a></li>
+      <li><a href="liens-utiles.html">Liens utiles</a></li>
+      <li><a href="echange-qr-code.html" class="active">Échange QR code</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="head">
+  <div class="head-inner">
+    <div class="eyebrow">Documents KLE Ingénierie</div>
+    <h1>Échange <em>QR code</em></h1>
+    <p class="lede">Certains avis et notes techniques de KLE Ingénierie portent un QR code. Il renvoie ici, vers la vidéo qui accompagne le document.</p>
+  </div>
+</header>
+
+<main>
+  <article class="entry" id="ps28-aa">
+    <div class="entry-head">
+      <span class="ref">Avis technique · PS28</span>
+      <span class="meta"><span>20 octobre 2026</span><span>Autoroute continentale Casablanca – Rabat</span></span>
+      <h2>Visite et remplacement des appareils d’appui sur le cadre fermé</h2>
+    </div>
+    <div class="video-wrap">
+      <video controls playsinline preload="metadata" poster="videos/ps28-verinage-aa.jpg">
+        <source src="videos/ps28-verinage-aa.mp4" type="video/mp4">
+        Votre navigateur ne lit pas cette vidéo. <a href="videos/ps28-verinage-aa.mp4">Télécharger la vidéo (MP4)</a>.
+      </video>
+    </div>
+    <div class="entry-body">
+      <div>
+        <p>La culée C0 du PS28 est remplacée par un cadre fermé qui livre passage à une nouvelle bretelle. Le tablier existant prend désormais appui sur la traverse supérieure du cadre.</p>
+        <p>La séquence montre comment un agent atteint les appareils d’appui par les têtes du cadre, les visite, puis les remplace par vérinage direct sur la traverse.</p>
+        <div class="figs">
+          <span><b>0,40 m</b>sous la nervure</span>
+          <span><b>≈ 0,90 m</b>sous l’encorbellement</span>
+          <span><b>2 à 5 mm</b>de levée</span>
+        </div>
+        <p class="note">Séquence de principe. La levée est amplifiée ×10 à l’image pour la lisibilité.</p>
+      </div>
+      <ol class="steps">
+        <li>Accès par la tête du cadre, en nacelle depuis la bretelle</li>
+        <li>Agent à genoux sous l’encorbellement, appareil à portée de main</li>
+        <li>Pose de 4 vérins extra-plats de 100 t, de part et d’autre des bossages</li>
+        <li>Levée simultanée des deux appareils</li>
+        <li>Extraction latérale et pose de l’appareil neuf</li>
+        <li>Redescente, dépose des vérins, nivellement</li>
+      </ol>
+    </div>
+  </article>
+</main>
+
+<footer>
+  <div class="footer-bottom">
+    <p><span class="footer-logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="ponts-types.html">Ponts types</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html">Bibliothèque</a> &nbsp;·&nbsp; <a href="liens-utiles.html">Liens utiles</a> &nbsp;·&nbsp; <a href="echange-qr-code.html">Échange QR code</a></p>
+    <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
+  </div>
+</footer>
+
+</body>
+</html>
