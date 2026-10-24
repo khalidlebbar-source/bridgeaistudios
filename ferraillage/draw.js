@@ -796,6 +796,7 @@
       sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
     }
     rowMarkers(sc, rows, polys);
+    sc.repData = { tags: tags.map((t) => Object.assign({}, t, { p: t.p.slice(), dir: t.dir.slice() })), polys, obst }; // export DXF : repérage ADFER local
     placeReperes(sc, tags, polys, obst);
     redDims(sc, struct, g, bounds(sc));
     return sc;
@@ -953,6 +954,7 @@
     });
     const polys = []; wins.forEach(([a, b]) => slabs.forEach(([y0, y1]) => polys.push([[Z(a), y0], [Z(b), y0], [Z(b), y1], [Z(a), y1]])));
     rowMarkers(sc, rows, polys);
+    sc.repData = { tags: tags.map((t) => Object.assign({}, t, { p: t.p.slice(), dir: t.dir.slice() })), polys, obst };
     placeReperes(sc, tags, polys, obst);
     const bb = bounds(sc);
     // cotes (épaisseur à la coupe, L du plot) et titre, à l'extérieur du repérage
