@@ -88,7 +88,7 @@ for (const [s, g0] of [['murT', M5g], ['murT', M4g], ['murT', opt], ['dalot', F.
     F.toSVG(F.ferraillageScene(s, gg, res.bars, res.params, 1 / 300), 300)].concat(res.rows.map((r) => F.croquisSVG(r.shape)));
   ok(!svgs.some(bad), `${s} : dessins SVG sans NaN`);
   const dxf = F.buildDXF(s, gg, res, {});
-  ok(!bad(dxf) && dxf.includes('AC1009') && /\r\nEOF\r\n$/.test(dxf) && F.DXF_LAYERS.every((l) => dxf.includes('\r\n' + l + '\r\n')), `${s} : DXF R12 complet (${dxf.length} octets, 5 calques)`);
+  ok(!bad(dxf) && dxf.includes('AC1009') && /\r\nEOF\r\n$/.test(dxf) && F.DXF_LAYERS.every((l) => dxf.includes('\r\n' + l + '\r\n')), `${s} : DXF R12 complet (${dxf.length} octets, calques KLE/ADFER)`);
   ok(/^[\x00-\x7f]*$/.test(dxf), `${s} : DXF en ASCII pur (accents en \\U+XXXX)`);
 }
 
@@ -178,7 +178,7 @@ for (const [nm, g0] of [['M5', M5g], ['M4', M4g], ['M4 biseau', Object.assign({}
   ok(!bad(svgT + svgL + re.rows.map((r) => F.croquisSVG(r.shape)).join('')) && /data-bar="6"/.test(svgL) && /data-bar="1"/.test(svgL) && !/data-bar="6"/.test(svgT),
     `${nm} (U) : coupes transversale et longitudinale sans NaN (6 visible en coupe longitudinale)`);
   const dxf = F.buildDXF('murT', gg, re, {});
-  ok(!bad(dxf) && dxf.includes('COUPE LONGITUDINALE A-A') && /^[\x00-\x7f]*$/.test(dxf), `${nm} (U) : DXF avec coupe longitudinale titrée`);
+  ok(!bad(dxf) && dxf.includes('COUPE A-A - SEMELLE') && /^[\x00-\x7f]*$/.test(dxf), `${nm} (U) : DXF avec coupe longitudinale titrée`);
 }
 const r7 = F.compute('murT', M4g, {}, { 7: { esp: 0.10 } }).rows.find((r) => r.id === '7');
 ok(r7.n === 4, `Répartition 7 à e=0,10 : ${r7.n} barres (nombre recalculé)`);
@@ -264,11 +264,20 @@ ok(rtb.includes('0.40 à 0.70') && rtb.includes(opt.bw.toFixed(2)) && rtb.includ
     ok(rt.length >= 6 && !rt.some((x) => /\d\.\d{3}/.test(x)) && rt.includes(re.geom.O.toFixed(2)), `Dalot ${nm} cotes rouges saisies : ${rt.join(' · ')}`);
   }
   const dxd = F.buildDXF('dalot', D2.geom, D2, {});
-  ok(!bad(dxd) && dxd.includes('RADIER ET TRAVERSE') && dxd.includes('SOLID\r\n8\r\nREPERAGE'), 'Dalot : DXF avec coupe longitudinale A-A et repérage V6');
+  ok(!bad(dxd) && dxd.includes('RADIER ET TRAVERSE') && dxd.includes('INSERT\r\n8\r\nADFER-REPERAGE\r\n2\r\nFLECHE'), 'Dalot : DXF avec coupe longitudinale A-A et repérage ADFER');
 }
 const dx = F.buildDXF('murT', m4.geom, m4, {});
-ok(dx.includes('SOLID\r\n8\r\nREPERAGE') && /TEXT\r\n8\r\nREPERAGE\r\n62\r\n1\r\n/.test(dx) && /8\r\nKLE-Cotation\r\n62\r\n41\r\n/.test(dx),
-  'DXF : flèches SOLID et marqueurs rouges (couleur 1) sur REPERAGE, zigzags sur KLE-Cotation');
+const hasDx = (re) => re.test(dx);
+ok(['fer-nom', 'fer-tit', 'FER-TITREGEN', 'FER-FINNOM', 'REC-TAB', '$$FER_BUL', '$FER_REPERE', 'FLECHE'].every((n) => dx.includes('BLOCK\r\n8\r\n0\r\n2\r\n' + n + '\r\n')),
+  'DXF : blocs ADFER de KLE définis (nomenclature, bulle, numéro, flèche)');
+ok(hasDx(/INSERT\r\n8\r\nADFER-NOMENC\r\n66\r\n1\r\n2\r\nfer-nom/) && hasDx(/ATTRIB\r\n8\r\nADFER-NOMENC\r\n[^]*?\r\n2\r\nNTOT\r\n/) && hasDx(/2\r\nNUMERO\r\n/),
+  'DXF : nomenclature et repères en blocs à attributs (fer-nom, NUMERO)');
+ok(hasDx(/DIMENSION\r\n8\r\n1-COTATION\r\n/) && dx.includes('\r\n3\r\nKLE-50\r\n') && /\r\n1\r\n,\d\d\r\n/.test(dx) && /\r\n1\r\n\d+,\d\d\r\n/.test(dx),
+  'DXF : vraies cotes AutoCAD au style KLE-50 (« ,25 », « 3,30 »)');
+ok(hasDx(/BLOCK\r\n8\r\n0\r\n2\r\n\*X1\r\n70\r\n1\r\n/) && hasDx(/INSERT\r\n8\r\n1-HACH-1\r\n2\r\n\*X1/), 'DXF : béton coupé hachuré (ANSI31) sur 1-HACH-1');
+ok([6, 8, 10, 12, 14, 16, 20, 25, 32, 40].every((d) => dx.includes('\r\nADFER-ACIERS__HA' + d + '\r\n')) && hasDx(/POLYLINE\r\n8\r\nADFER-ACIERS__HA\d+\r\n66/),
+  'DXF : aciers sur les calques ADFER-ACIERS__HAxx (couleur par diamètre)');
+ok(/^[\x00-\x7f]*$/.test(dx) && !bad(dx), 'DXF : ASCII pur, sans NaN');
 
 console.log(fails ? `\n${fails} échec(s)` : '\nTous les tests passent');
 process.exit(fails ? 1 : 0);

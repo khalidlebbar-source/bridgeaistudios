@@ -372,8 +372,8 @@ footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid v
   <section class="step" id="step4" aria-label="Export">
     <div class="card"><div class="card-h"><h3>Fichier DXF</h3><small>AutoCAD R12 (AC1009)</small></div>
       <div class="card-b">
-        <p>Coupe de coffrage cotée, coupe ferraillée avec repères, seconde vue, nomenclature dessinée avec croquis de façonnage et récapitulatif par diamètre. Unité : le mètre.</p>
-        <div class="chips"><span class="chip">KLE-Contour</span><span class="chip">ACIERS</span><span class="chip">KLE-Cotation</span><span class="chip">REPERAGE</span><span class="chip">NOMENC</span></div>
+        <p>Présentation des plans ADFER de KLE, échelle 1/40, unité le mètre : coupe de coffrage hachurée avec vraies cotes AutoCAD, coupe ferraillée avec repères ADFER (bulle, numéro, flèche, « 67 HA10 »), nomenclature générale et récapitulatif des aciers en blocs ADFER à attributs.</p>
+        <div class="chips"><span class="chip">ADFER-ACIERS__HAxx</span><span class="chip">ADFER-REPERAGE</span><span class="chip">ADFER-NOMENC</span><span class="chip">1-COUPE</span><span class="chip">1-HACH-1</span><span class="chip">1-COTATION</span><span class="chip">1-TITRE</span></div>
         <div style="margin-top:auto"><button class="btn" id="btnDxf">Exporter DXF</button></div>
       </div>
     </div>
@@ -416,9 +416,9 @@ footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid v
   </div>
 </footer>
 
-<script src="ferraillage/calc.js"></script>
-<script src="ferraillage/draw.js"></script>
-<script src="ferraillage/dxf.js"></script>
+<script src="ferraillage/calc.js?v=8"></script>
+<script src="ferraillage/draw.js?v=8"></script>
+<script src="ferraillage/dxf.js?v=8"></script>
 <script src="ferraillage/app.js"></script>
 </body>
 </html>

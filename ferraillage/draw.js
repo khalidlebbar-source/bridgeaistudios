@@ -112,6 +112,13 @@
   /* ───────── Cotation ───────── */
   function dim(sc, p1, p2, orient, at, txt, o) {
     o = o || {};
+    const i0 = sc.items.length;
+    dimDraw(sc, p1, p2, orient, at, txt, o);
+    // export DXF : les traits ci-dessus sont remplacés par une vraie cote AutoCAD
+    for (let i = i0; i < sc.items.length; i++) sc.items[i].dimPart = true;
+    sc.items.push({ t: 'dim', p1: p1.slice(), p2: p2.slice(), orient, at, txt: String(txt), aci: o.aci });
+  }
+  function dimDraw(sc, p1, p2, orient, at, txt, o) {
     const u = sc.u, gap = 3 * u, tk = 4 * u, L = { layer: 'KLE-Cotation', color: o.color || DIM, w: o.color ? 0.7 : 0.8, aci: o.aci };
     const TX = { color: o.color || INK, aci: o.aci, h: o.h || 11 }, TK = Object.assign({}, L, { color: o.color || INK });
     if (orient === 'h') {
@@ -141,7 +148,7 @@
   }
 
   function hatchRect(sc, x0, y0, x1, y1, step) {
-    const L = { layer: 'KLE-Contour', color: '#9aa0ac', w: 0.6 };
+    const L = { layer: 'KLE-Contour', color: '#9aa0ac', w: 0.6, hach: true };
     for (let k = x0 - (y1 - y0); k < x1; k += step) {
       // segment de pente 1 : x = k + (y − y0)
       let ya = y0, xa = k, yb = y1, xb = k + (y1 - y0);
@@ -163,7 +170,7 @@
 
   function drawOutline(sc, struct, g, light) {
     const o = outline(struct, g);
-    sc.poly(o.outer, { closed: true, holes: o.holes.length ? o.holes : undefined, fill: CONCRETE, w: light ? 1.1 : 1.6, layer: 'KLE-Contour' });
+    sc.poly(o.outer, { closed: true, holes: o.holes.length ? o.holes : undefined, fill: CONCRETE, w: light ? 1.1 : 1.6, layer: 'KLE-Contour', section: true, hatch: !light });
     if (struct === 'murT' && g.bp > 0) {
       const bp = g.bp, x0 = -0.05, x1 = g.B + 0.05, st = Math.max(0.04, 9 * sc.u), L = { closed: true, w: 1, layer: 'KLE-Contour' };
       if (g.beche) {
@@ -631,7 +638,9 @@
     }
     tags.forEach((t) => {
       const s = t.side ? 1 : -1, X = colX[t.side], E = [X - s * R * u, t.by], path = t.path;
-      const o = { layer: 'REPERAGE', color: INK, barId: t.id };
+      // export DXF : repère ADFER (bulle, numéro, flèche, quantité) reconstruit à partir de ces données
+      sc.items.push({ t: 'rep', id: t.id, qty: t.qty, path: path.map((q) => q.slice()), c: [X, t.by], r: R * u, side: s });
+      const o = { layer: 'REPERAGE', color: INK, barId: t.id, repPart: true };
       sc.poly(path, Object.assign({ w: 0.8, cls: 'rp', hitW: 8, cap: 'butt' }, o));
       const T = path[path.length - 1], v = vunit(vsub(T, path[path.length - 2])), n = [-v[1], v[0]], B0 = vsub(T, vmul(v, 7 * u));
       sc.poly([T, vadd(B0, vmul(n, 2.6 * u)), vsub(B0, vmul(n, 2.6 * u))], Object.assign({ closed: true, fill: INK, w: 0.4, cls: 'rpf', solid: true }, o));
