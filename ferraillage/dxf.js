@@ -261,7 +261,7 @@
 
   /* ───────── Repère ADFER : ligne d'attache, flèche, bulle, numéro, quantité ───────── */
   function repere(W, it, T) {
-    const path = it.path.map(T), c = T(it.c), L = 'ADFER-REPERAGE';
+    const path = it.path.map(T), c = T(it.c), L = it.faux ? 'ADFER-FAUX_REPERES' : 'ADFER-REPERAGE'; // vrai repère / faux repère
     W.poly(path, L, false);
     const tip = path[path.length - 1], prev = path[path.length - 2];
     W.insert('FLECHE', tip, L, { sx: 0.08, rot: deg([prev[0] - tip[0], prev[1] - tip[1]]) });
@@ -285,7 +285,7 @@
         let layer = '1-VU', lt = null;
         if (it.section) layer = '1-COUPE';
         else if (it.hach) layer = '1-HACH-1';
-        else if (it.layer === 'REPERAGE') layer = 'ADFER-REPERAGE';
+        else if (it.layer === 'REPERAGE') layer = it.faux ? 'ADFER-FAUX_REPERES' : 'ADFER-REPERAGE';
         else if (it.layer === 'KLE-Contour') layer = '1-COUPE';
         else if (it.aci === 41) layer = '1-REPRISE';
         if (it.dash && it.dash.split(' ').length >= 4) { layer = '1-AXES'; lt = 'CENTER2'; }
@@ -314,7 +314,7 @@
         if (it.layer === 'ACIERS' && it.fill) W.dot(T(it.c), it.r, layerHA(HA_OF_ACI[it.aci] || 10));
         else W.circle(T(it.c), it.r, it.layer === 'REPERAGE' ? 'ADFER-REPERAGE' : '1-VU');
       } else if (it.t === 'text') {
-        if (it.cls === 'mkt') W.text(T(it.p), 0.14, it.s, 'ADFER-REPERAGE', { hj: anchorHJ(it.anchor) });
+        if (it.cls === 'mkt') W.text(T(it.p), 0.14, it.s, it.faux ? 'ADFER-FAUX_REPERES' : 'ADFER-REPERAGE', { hj: anchorHJ(it.anchor) });
         else W.text(T(it.p), Math.max(0.08, it.h * 0.01), it.s, '1-TEXTE', { hj: anchorHJ(it.anchor), rot: it.rot, style: 'M' });
       }
     }

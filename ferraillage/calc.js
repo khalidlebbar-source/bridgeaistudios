@@ -288,7 +288,6 @@
       { k: 'p', label: 'Patin p', def: 0.50, min: 0, max: 6, step: 0.05, unit: 'm', g: 'geo' },
       { k: 'B', label: 'Semelle B', def: 3.70, min: 0.5, max: 12, step: 0.05, unit: 'm', g: 'geo' },
       { k: 'L', label: 'Longueur plot L', def: 10.00, min: 1, max: 40, step: 0.5, unit: 'm', g: 'geo' },
-      { k: 'bp', label: 'Béton propreté', def: 0.10, min: 0, max: 0.3, step: 0.01, unit: 'm', g: 'geo' },
       { k: 'beta', label: 'Talus amont β', def: 26.57, min: 0, max: 45, step: 0.01, unit: '°', g: 'ter', hint: '0 = terre-plein' },
       { k: 'tn', label: 'TN aval', def: 0.50, min: 0, max: 10, step: 0.05, unit: 'm', g: 'ter', hint: 'au-dessus semelle' },
       { k: 'q', label: 'Surcharge q', def: 1.00, min: 0, max: 10, step: 0.1, unit: 't/m²', g: 'ter' },
@@ -321,7 +320,7 @@
       const xCut = talon > 0.3 ? g.p + eb + talon / 2 : g.B / 2;
       const hCut = xCut <= g.p ? hbp + (g.hs - hbp) * xCut / Math.max(g.p, 1e-9) : xCut >= g.p + eb ? g.hs + (hbt - g.hs) * (xCut - g.p - eb) / Math.max(g.B - g.p - eb, 1e-9) : g.hs;
       return Object.assign({}, g, {
-        xCut, hCut,
+        xCut, hCut, bp: 0, // béton de propreté : non dessiné (plans KLE)
         Hv: r3(Hv), eb: Math.round(eb * 1e4) / 1e4, talon: Math.round(talon * 1e4) / 1e4, xAvT, xAmT, dPou,
         Hp: Math.round((g.H + dPou * Math.tan(rad(g.beta))) * 1e4) / 1e4, hbp, hbt, bx0, bx1, Htot: g.H,
       });

@@ -484,14 +484,20 @@
   }
   const segFree = (A, B, polys) => { const v = vsub(B, A), l = Math.hypot(v[0], v[1]); return l < 1e-9 || rayHit(A, vmul(v, 1 / l), polys) >= l - 1e-9; };
 
-  /* Marqueurs rouges aux extrémités des rangées de points : trait perpendiculaire vers le parement le plus
-     proche (jusqu'au-delà du béton) puis petit retour vers l'intérieur de la rangée, numéro à côté. */
-  function rowMarkers(sc, rows, polys) {
+  /* Marqueurs aux extrémités des rangées de points : trait perpendiculaire vers le parement le plus
+     proche (jusqu'au-delà du béton) puis petit retour vers l'intérieur de la rangée, numéro à côté.
+     Convention ADFER : la première apparition d'un repère est le « vrai repère » (noir), les suivantes
+     sont des « faux repères » (rouge). used : repères déjà apparus. */
+  function rowMarkers(sc, rows, polys, used) {
     const u = sc.u, boxes = [];
+    used = used || new Set();
+    const seenHere = new Set();
     const boxOf = (T, txt, anchor) => { const w = txt.length * 9 * 0.56 * u, h = 9 * u, x0 = anchor === 'start' ? T[0] : anchor === 'end' ? T[0] - w : T[0] - w / 2; return [x0 - u, T[1] - h / 2, x0 + w + u, T[1] + h / 2]; };
     const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
     rows.forEach((rw) => {
       const P = rw.pts; if (!P.length) return;
+      const faux = used.has(rw.id); seenHere.add(rw.id); // toutes les rangées d'une même répartition : même statut
+      const MK = faux ? { color: RED, aci: 1, faux: true } : { color: INK };
       // direction nominale de la rangée (les points ont pu être légèrement poussés au contact des barres)
       const dn = rw.dir ? vunit(rw.dir) : null, sgn = (v) => (dn && (v[0] * dn[0] + v[1] * dn[1]) < 0 ? vmul(dn, -1) : dn);
       const ends = P.length === 1 ? [[P[0], rw.dir || [1, 0]]] : [[P[0], sgn(vsub(P[0], P[1])) || vunit(vsub(P[0], P[1]))], [P[P.length - 1], sgn(vsub(P[P.length - 1], P[P.length - 2])) || vunit(vsub(P[P.length - 1], P[P.length - 2]))]];
@@ -499,16 +505,17 @@
         const n1 = [-d[1], d[0]], n2 = [d[1], -d[0]], t1 = rayHit(E, n1, polys), t2 = rayHit(E, n2, polys);
         const n = t1 <= t2 ? n1 : n2, t = Math.min(t1, t2, 0.6);
         const A = vadd(E, vmul(n, rw.r + 1.5 * u)), B = vadd(E, vmul(n, Math.max(t + 6 * u, rw.r + 9 * u))), C = vadd(B, vmul(d, -8 * u));
-        sc.poly([A, B, C], { layer: 'REPERAGE', color: RED, aci: 1, w: 0.9, barId: rw.id, cls: 'mk', hitW: 8, cap: 'butt' });
+        sc.poly([A, B, C], Object.assign({ layer: 'REPERAGE', w: 0.9, barId: rw.id, cls: 'mk', hitW: 8, cap: 'butt' }, MK));
         const along = Math.abs(d[0]) > Math.abs(d[1]); // rangée plutôt horizontale : numéro au-dessus/au-dessous du retour
         let T = along ? vadd(C, vadd(vmul(d, -4 * u), vmul(n, 5 * u))) : vadd(C, vadd(vmul(d, -3 * u), vmul(n, 7 * u)));
         const anchor = along ? 'middle' : (n[0] < 0 ? 'end' : 'start');
         // numéro déjà occupé par un autre marqueur : on l'écarte le long de la rangée, vers l'intérieur
         for (let k = 0; k < 4 && boxes.some((b) => hit(b, boxOf(T, rw.id, anchor))); k++) T = vadd(T, vmul(d, -9 * u));
         boxes.push(boxOf(T, rw.id, anchor));
-        sc.text(T, rw.id, { layer: 'REPERAGE', color: RED, aci: 1, h: 9, barId: rw.id, cls: 'mkt', anchor });
+        sc.text(T, rw.id, Object.assign({ layer: 'REPERAGE', h: 9, barId: rw.id, cls: 'mkt', anchor }, MK));
       });
     });
+    seenHere.forEach((id) => used.add(id));
   }
 
   /* Bulles, lignes d'attache orthogonales, flèches et quantités. tags : {id, p, dir, wM, qty}. */
@@ -657,7 +664,8 @@
      horizontal vers la bulle. Quantité « 67 HA10 » au-dessus du tronçon horizontal côté bulle. Les bulles, quantités
      et attaches ne se chevauchent pas : le point d'attache glisse le long de la barre, la bulle s'éloigne ou descend
      d'un cran ; à défaut on retient la position la moins encombrée. */
-  function placeReperesLocal(sc, tags, polys, obst) {
+  function placeReperesLocal(sc, tags, polys, obst, used) {
+    used = used || new Set();
     const u = sc.u, RB = 10 * u, LH = 34 * u, OUT = 19 * u, STEP = 25 * u, QH = 8.5, ray = (P, d) => rayHit(P, d, polys);
     const inside = (q) => polys.reduce((n, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > q[1]) !== (b[1] > q[1]) && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return n + (c ? 1 : 0); }, 0) % 2 === 1;
     let bx = [Infinity, -Infinity]; polys.forEach((r) => r.forEach((q) => { bx = [Math.min(bx[0], q[0]), Math.max(bx[1], q[0])]; }));
@@ -733,12 +741,12 @@
       for (let i = 0; i < best.path.length - 1; i++) segs.push([best.path[i], best.path[i + 1]]);
     });
     res.forEach((r) => {
-      const t = r.t, path = r.path;
-      sc.items.push({ t: 'rep', id: t.id, qty: t.qty, path: path.map((q) => q.slice()), c: r.c.slice(), r: RB, side: r.side });
-      const o = { layer: 'REPERAGE', color: INK, barId: t.id, repPart: true };
+      const t = r.t, path = r.path, faux = used.has(t.id); used.add(t.id); // vrai repère noir, faux repère rouge (ADFER)
+      sc.items.push({ t: 'rep', id: t.id, qty: t.qty, path: path.map((q) => q.slice()), c: r.c.slice(), r: RB, side: r.side, faux });
+      const o = { layer: 'REPERAGE', color: faux ? RED : INK, barId: t.id, repPart: true };
       sc.poly(path, Object.assign({ w: 0.8, cls: 'rp', hitW: 8, cap: 'butt' }, o));
       const T = path[path.length - 1], v = vunit(vsub(T, path[path.length - 2])), n = [-v[1], v[0]], B0 = vsub(T, vmul(v, 7 * u));
-      sc.poly([T, vadd(B0, vmul(n, 2.6 * u)), vsub(B0, vmul(n, 2.6 * u))], Object.assign({ closed: true, fill: INK, w: 0.4, cls: 'rpf', solid: true }, o));
+      sc.poly([T, vadd(B0, vmul(n, 2.6 * u)), vsub(B0, vmul(n, 2.6 * u))], Object.assign({ closed: true, fill: o.color, w: 0.4, cls: 'rpf', solid: true }, o));
       sc.circle(r.c, RB, Object.assign({ fill: '#ffffff', w: 0.9, hit: true, cls: 'bub' }, o));
       sc.text(r.c, t.id, Object.assign({ h: 11, cls: 'bt' }, o));
       sc.text(r.qp, String(t.qty).replace(/^(\d+)(HA|TS|RL)/, '$1 $2'), Object.assign({ h: QH, cls: 'qt' }, o));
@@ -875,8 +883,9 @@
       sc.text([g.xCut, yt + 7 * u], 'A', { h: 10.5, weight: 500 });
       sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
     }
-    rowMarkers(sc, rows, polys);
-    placeReperesLocal(sc, tags, polys, obst); // plans KLE : pas de cotes sur la coupe ferraillée
+    const used = new Set();
+    rowMarkers(sc, rows, polys, used);
+    placeReperesLocal(sc, tags, polys, obst, used); // plans KLE : pas de cotes sur la coupe ferraillée
     return sc;
   }
 
@@ -1031,8 +1040,10 @@
       });
     });
     const polys = []; wins.forEach(([a, b]) => slabs.forEach(([y0, y1]) => polys.push([[Z(a), y0], [Z(b), y0], [Z(b), y1], [Z(a), y1]])));
-    rowMarkers(sc, rows, polys);
-    placeReperesLocal(sc, tags, polys, obst);
+    // repères déjà définis sur la coupe transversale : ici ce sont des faux repères (rouge)
+    const used = new Set(bars.filter((b) => b.place && ((b.place.items && b.place.tag) || b.place.dots)).map((b) => b.id));
+    rowMarkers(sc, rows, polys, used);
+    placeReperesLocal(sc, tags, polys, obst, used);
     const bb = bounds(sc);
     // cotes (épaisseur à la coupe, L du plot) et titre, à l'extérieur du repérage
     // plans KLE (ADFER) : pas de cotes sur les coupes ferraillées

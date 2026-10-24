@@ -216,8 +216,10 @@ for (const [nm, g0, pr] of [['M4 (U)', M4g, {}], ['M5 (U)', M5g, {}], ['M4 retou
   ok(shaped.every((b) => nb('bub', b.id) >= 1 && nb('bub', b.id) === nb('rpf', b.id)) && dotted.every((b) => nb('bub', b.id) === 0),
     `${nm} : une bulle + une flèche par barre façonnée (${shaped.map((b) => b.id + '×' + nb('bub', b.id)).join(' ')}), aucune bulle pour les barres en points`);
   const expMk = (b) => F.dotPositions(b).reduce((t, r) => t + (r.length > 1 ? 2 : r.length), 0);
-  ok(dotted.every((b) => nb('mk', b.id) === expMk(b)), `${nm} : un marqueur rouge à chaque extrémité de rangée de points (${dotted.map((b) => b.id + ':' + nb('mk', b.id)).join(' ')})`);
+  ok(dotted.every((b) => nb('mk', b.id) === expMk(b)), `${nm} : un marqueur à chaque extrémité de rangée de points (${dotted.map((b) => b.id + ':' + nb('mk', b.id)).join(' ')})`);
   const b5 = re.bars.find((b) => b.key === 'U5');
+  if (b5) ok(sT.items.filter((it) => it.t === 'rep' && it.id === b5.id).map((it) => !!it.faux).sort().join() === 'false,true', `${nm} : fermeture 5 — un vrai repère (noir) et un faux repère (rouge), convention ADFER`);
+  ok(sT.items.filter((it) => it.cls === 'mk').every((it) => !it.faux), `${nm} : marqueurs des rangées de points en vrais repères (noirs) sur la coupe transversale`);
   if (b5) ok(nb('bub', b5.id) === 2 && svg.includes(`>${F.barCount(b5) * 2} HA${b5.d}<`), `${nm} : fermeture 5 repérée aux deux abouts, quantité « ${F.barCount(b5) * 2} HA${b5.d} »`);
   // à l'échelle du panneau de l'application (≈ 460 × 470 px) comme à 300 px/m
   let pT, pL; F.fitRender((uu) => (pT = F.ferraillageScene('murT', re.geom, re.bars, re.params, uu)), 460, 470); F.fitRender((uu) => (pL = F.longiScene('murT', re.geom, re.bars, re.params, uu)), 460, 260);
