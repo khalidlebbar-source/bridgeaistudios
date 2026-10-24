@@ -265,36 +265,44 @@
   const colorOf = (barId) => { const i = S.res.bars.findIndex((b) => b.id === barId); return F.barColor(S.res.bars[i], i); };
   const croquisFor = (row, w, h) => F.croquisSVG(row.shape, colorOf(row.barId), w, h);
 
+  /* Diamètre moyen ADFER : racine de la moyenne des Ø² pondérée par les longueurs */
+  const dMoy = (rec) => { let L = 0, D2 = 0; rec.lignes.forEach((l) => { L += l.longueur; D2 += l.d * l.d * l.longueur; }); return L > 0 ? Math.sqrt(D2 / L) : 0; };
+
+  /* Nomenclature au format des plans ADFER de KLE (colonnes, intitulés et pied identiques). */
   function renderTable() {
     const r = S.res;
     $('#nom-sub').textContent = `${r.rows.length} lignes · ${r.params.norme}`;
-    const head = `<thead><tr><th>N°</th><th>Type</th><th>Ø</th><th>Nb par<br>élément</th><th>Nb<br>élém.</th><th>Total</th><th>Espacement</th><th>L unit.<br>(m)</th><th>Façonnage</th><th>Mandrin<br>(cm)</th><th>L totale<br>(m)</th><th>Masse<br>(kg)</th></tr></thead>`;
+    const head = `<thead><tr><th colspan="12" class="nt">Nomenclature générale des aciers .</th></tr>
+      <tr><th rowspan="2">N°</th><th rowspan="2" class="sm">TYPE</th><th rowspan="2">Ø</th><th colspan="3">Nombre</th><th rowspan="2">Esp</th><th rowspan="2">Long.<br>Unitaire</th><th rowspan="2" class="big">Façonnage</th><th rowspan="2" class="sm">Mandrin<br>(cm)</th><th rowspan="2">Long.<br>TOTALE</th><th rowspan="2" class="sm vt">Indice</th></tr>
+      <tr><th class="xs">Par Elément</th><th class="xs">d'éléments</th><th class="xs">Total</th></tr></thead>`;
     const body = r.rows.map((row) => {
       const first = !row.suffix || row.suffix === 'a', dens = row.kind === 'densite';
+      const bends = (row.shape.segs || []).length > 1 || (row.shape.hooks || []).some((k) => k);
       const dSel = first
         ? `<div class="num"><select data-d="${row.barId}" aria-label="Diamètre repère ${row.barId}">${F.DIAMS.map((d) => `<option value="${d}"${d === row.d ? ' selected' : ''}>${d}</option>`).join('')}</select></div>`
-        : `<span class="sub">${row.d}</span>`;
+        : `<span>${row.d}</span>`;
       const esp = first
-        ? `<div class="num"><input type="number" data-esp="${row.barId}" value="${dens ? row.esp : row.esp.toFixed(2)}" step="${dens ? 1 : 0.01}" min="${dens ? 1 : 0.05}" aria-label="Espacement repère ${row.barId}"><span>${dens ? '/m²' : 'm'}</span></div>`
-        : `<span class="sub">idem ${row.barId}a</span>`;
+        ? `<div class="num"><input type="number" data-esp="${row.barId}" value="${dens ? row.esp : row.esp.toFixed(3)}" step="${dens ? 1 : 0.01}" min="${dens ? 1 : 0.05}" aria-label="${dens ? 'Densité' : 'Espacement'} repère ${row.barId}"><span>${dens ? '/m²' : 'm'}</span></div>`
+        : `<span>${dens ? '' : row.esp.toFixed(3)}</span>`;
       return `<tr data-bar="${row.barId}" title="${esc(row.role + (row.split ? ' — découpe avec recouvrement' : ''))}">
         <td class="rep">${row.id}<i style="background:${colorOf(row.barId)}"></i></td><td>${row.type}</td><td>${dSel}</td>
-        <td>${row.parElem}${row.mult > 1 ? `<span class="sub">${row.n}×${row.mult}</span>` : ''}</td><td>${row.nbElem}</td><td><b style="font-weight:500">${row.total}</b></td>
-        <td>${esp}</td><td>${row.L.toFixed(3)}${row.tooLong ? '<span class="sub" style="color:var(--danger)">&gt; Lmax</span>' : ''}</td>
+        <td>${row.n}</td><td>${(row.mult || 1) * (row.nbElem || 1)}</td><td>${row.total}</td>
+        <td>${esp}</td><td>${row.L.toFixed(3)}${dens ? '*' : ''}${row.tooLong ? '<span class="sub" style="color:var(--danger)">&gt; Lmax</span>' : ''}</td>
         <td class="fac"><div class="fac-in">${row.code ? `<span class="code" title="Code de façonnage">${row.code}</span>` : ''}${croquisFor(row, 124, 40)}${first ? `<button type="button" class="ico" data-adj="${row.barId}" title="Ajuster la barre ${row.barId}" aria-label="Ajuster la barre ${row.barId}">✎</button>` : '<span style="width:28px"></span>'}</div></td>
-        <td>${(row.D * 100).toFixed(1)}</td><td>${row.Ltot.toFixed(2)}</td><td>${row.masse.toFixed(1)}</td></tr>`;
+        <td class="sm">${bends ? (row.D * 100).toFixed(1) : ''}</td><td>${row.Ltot.toFixed(3)}</td><td class="sm">1</td></tr>`;
     }).join('');
-    const foot = `<tfoot><tr><td colspan="10" style="text-align:right">Total</td><td>${r.recap.longueur.toFixed(2)}</td><td>${r.recap.total.toFixed(1)}</td></tr></tfoot>`;
+    const foot = `<tfoot><tr><td colspan="6" class="lm">*&nbsp; : LONGUEUR MOYENNE</td><td colspan="6" class="dm">Diamètre moyen : ${dMoy(r.recap).toFixed(1)}</td></tr></tfoot>`;
     $('#nomenc').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
   }
 
+  /* Récapitulatif des aciers au format ADFER : DIAMETRE / MASSE (kg/ml) / LONGUEUR / POIDS, D.MOY et TOTAL. */
   function renderRecap() {
-    const L = S.res.recap.lignes, R = S.res.recap;
-    const cell = (l, v) => `<td class="${l.masse ? '' : 'z'}">${l.masse ? v : '—'}</td>`;
-    $('#recap').innerHTML = `<tr><th>Récapitulatif</th>${L.map((l) => `<th>HA${l.d}</th>`).join('')}<th class="tot">Total</th></tr>
-      <tr><td>kg/m</td>${L.map((l) => `<td class="${l.masse ? '' : 'z'}">${l.ml.toFixed(3)}</td>`).join('')}<td class="tot"></td></tr>
-      <tr><td>Longueur (m)</td>${L.map((l) => cell(l, fr(l.longueur, 1))).join('')}<td class="tot">${fr(R.longueur, 1)}</td></tr>
-      <tr><td>Masse (kg)</td>${L.map((l) => cell(l, fr(l.masse, 1))).join('')}<td class="tot">${fr(R.total, 1)}</td></tr>`;
+    const L = S.res.recap.lignes, R = S.res.recap, v = (l, x) => (l.masse ? x : '-');
+    $('#recap').innerHTML = `<tr><th colspan="${L.length + 3}" class="nt">RECAPITULATIF DES ACIERS</th></tr>
+      <tr><th>DIAMETRE</th>${L.map((l) => `<th>HA${l.d}</th>`).join('')}<th>HA-</th><th class="tot">D.MOY(mm)</th></tr>
+      <tr><td>MASSE<br>(kg/ml)</td>${L.map((l) => `<td>${l.ml.toFixed(3)}</td>`).join('')}<td>-</td><td class="tot">${dMoy(R).toFixed(2)}</td></tr>
+      <tr><td>LONGUEUR<br>(m)</td>${L.map((l) => `<td class="${l.masse ? '' : 'z'}">${v(l, l.longueur.toFixed(1))}</td>`).join('')}<td class="z">-</td><td class="tot">TOTAL(kg)</td></tr>
+      <tr><td>POIDS<br>(kg)</td>${L.map((l) => `<td class="${l.masse ? '' : 'z'}">${v(l, l.masse.toFixed(1))}</td>`).join('')}<td class="z">-</td><td class="tot">${R.total.toFixed(1)}</td></tr>`;
   }
 
   /* ───── Surbrillance d'une barre (coupe ⇄ nomenclature) ───── */

@@ -218,7 +218,7 @@ for (const [nm, g0, pr] of [['M4 (U)', M4g, {}], ['M5 (U)', M5g, {}], ['M4 retou
   const expMk = (b) => F.dotPositions(b).reduce((t, r) => t + (r.length > 1 ? 2 : r.length), 0);
   ok(dotted.every((b) => nb('mk', b.id) === expMk(b)), `${nm} : un marqueur rouge à chaque extrémité de rangée de points (${dotted.map((b) => b.id + ':' + nb('mk', b.id)).join(' ')})`);
   const b5 = re.bars.find((b) => b.key === 'U5');
-  if (b5) ok(nb('bub', b5.id) === 2 && svg.includes(`>${F.barCount(b5) * 2}HA${b5.d}<`), `${nm} : fermeture 5 repérée aux deux abouts, quantité « ${F.barCount(b5) * 2}HA${b5.d} »`);
+  if (b5) ok(nb('bub', b5.id) === 2 && svg.includes(`>${F.barCount(b5) * 2} HA${b5.d}<`), `${nm} : fermeture 5 repérée aux deux abouts, quantité « ${F.barCount(b5) * 2} HA${b5.d} »`);
   // à l'échelle du panneau de l'application (≈ 460 × 470 px) comme à 300 px/m
   let pT, pL; F.fitRender((uu) => (pT = F.ferraillageScene('murT', re.geom, re.bars, re.params, uu)), 460, 470); F.fitRender((uu) => (pL = F.longiScene('murT', re.geom, re.bars, re.params, uu)), 460, 260);
   ok(crossings(sT) + crossings(sL) + crossings(pT) + crossings(pL) === 0, `${nm} : aucune ligne d'attache croisée (coupes transversale et A-A, deux échelles)`);
@@ -227,12 +227,12 @@ for (const [nm, g0, pr] of [['M4 (U)', M4g, {}], ['M5 (U)', M5g, {}], ['M4 retou
   const colOk = re.bars.every((b) => { const c = F.ACI_WEB[F.COULEUR_ACI[b.d]]; return !new RegExp(`data-bar="${b.id}"[^>]*>(<path[^>]*>)?<path class="bv"[^>]*stroke="(?!${c})`).test(svg) && !new RegExp(`fill="(?!${c})[^"]*"[^>]*class="dv" data-bar="${b.id}"`).test(svg); });
   ok(colOk && !bad(svg + F.toSVG(sL, 300)), `${nm} : couleur par Ø (${[...new Set(re.bars.map((b) => 'HA' + b.d + '→ACI ' + F.COULEUR_ACI[b.d]))].join(', ')}), sans NaN`);
 }
-// cotes rouges de la coupe ferraillée : grandeurs saisies seulement, 2 décimales, Hv dans la chaîne de hs
-const redTxt = (sc) => sc.items.filter((it) => it.t === 'text' && it.color === '#e0302a' && it.layer === 'KLE-Cotation').map((it) => it.s);
+// plans KLE (ADFER) : la coupe ferraillée ne porte ni cote ni symbole de reprise
+const redTxt = (sc) => sc.items.filter((it) => it.t === 'dim' || (it.t === 'poly' && it.aci === 41)).map((it) => it.txt || 'reprise');
 const rt4 = redTxt(F.ferraillageScene('murT', m4.geom, m4.bars, m4.params, 1 / 300));
-ok(['0.70', '3.30', '0.25', '0.50', '3.70'].every((x) => rt4.includes(x)) && !rt4.includes('4.00') && !rt4.some((x) => /\d\.\d{3}/.test(x)), `M4 cotes rouges : ${rt4.join(' · ')} (ni H 4.00, ni talon 2.703)`);
+ok(rt4.length === 0, 'M4 : coupe ferraillée sans cote ni reprise, comme les plans ADFER de KLE');
 const ob = F.compute('murT', opt, {}, {}), rtb = redTxt(F.ferraillageScene('murT', ob.geom, ob.bars, ob.params, 1 / 300));
-ok(rtb.includes('0.40 à 0.70') && rtb.includes(opt.bw.toFixed(2)) && rtb.includes(opt.bh.toFixed(2)), `M4 biseau + bêche : ${rtb.join(' · ')}`);
+ok(rtb.length === 0, 'M4 biseau + bêche : coupe ferraillée sans cote');
 // 6. Dalot (V7) : façonnage KLE, phasage radier + attentes puis piédroits et traverse, numéros fixes par ordre de pose
 {
   const D2 = F.compute('dalot', F.preset('dalot', 'D200'), {}, {}), ids2 = D2.bars.map((b) => b.id + ':' + b.key).join();
@@ -261,7 +261,7 @@ ok(rtb.includes('0.40 à 0.70') && rtb.includes(opt.bw.toFixed(2)) && rtb.includ
     const all = [pT, pL, sT, sL].map((x) => F.toSVG(x, 300)).join('');
     ok(crossings(pT) + crossings(pL) + crossings(sT) + crossings(sL) === 0 && !bad(all) && overlapDots(sT) === 0, `Dalot ${nm} : coupes sans croisement d'attache ni NaN, points tangents`);
     const rt = redTxt(sT);
-    ok(rt.length >= 6 && !rt.some((x) => /\d\.\d{3}/.test(x)) && rt.includes(re.geom.O.toFixed(2)), `Dalot ${nm} cotes rouges saisies : ${rt.join(' · ')}`);
+    ok(rt.length === 0, `Dalot ${nm} : coupe ferraillée sans cote`);
   }
   const dxd = F.buildDXF('dalot', D2.geom, D2, {});
   ok(!bad(dxd) && dxd.includes('RADIER ET TRAVERSE') && dxd.includes('INSERT\r\n8\r\nADFER-REPERAGE\r\n2\r\nFLECHE'), 'Dalot : DXF avec coupe longitudinale A-A et repérage ADFER');

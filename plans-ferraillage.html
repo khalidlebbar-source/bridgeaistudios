@@ -188,6 +188,26 @@ table.rc{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric
 .rc td.z{color:#c0c4cb}
 .rc tr:last-child td{border-bottom:none;font-weight:500}
 .rc .tot{background:#fbf6e9;color:var(--gold2)}
+/* nomenclature et récapitulatif au format des plans ADFER de KLE */
+table.nomenc{border:2px solid #222}
+.nomenc thead{position:sticky;top:0;z-index:2;background:#fff}
+.nomenc th{position:static;background:#fff;color:#14171f;font-size:11.5px;font-weight:400;letter-spacing:0;text-transform:none;border:1px solid #222;padding:4px 3px}
+.nomenc th.nt{font-size:15px;padding:7px;border-bottom:2px solid #222}
+.nomenc th.sm{font-size:9.5px}.nomenc th.xs{font-size:8.5px}.nomenc th.big{font-size:14px}
+.nomenc th.vt{writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;padding:2px}
+.nomenc td{border:1px solid #222;font-size:13px}
+.nomenc td.sm{font-size:11px}
+.nomenc .num{width:98px}
+.nomenc td.fac{border-top-color:transparent;border-bottom-color:transparent}
+.nomenc tfoot td{border:1px solid #222;border-top:2px solid #222;background:#fff;font-weight:400}
+.nomenc tfoot td.lm{text-align:left;font-size:10.5px}.nomenc tfoot td.dm{text-align:left;font-size:14px}
+table.rc{border:2px solid #222}
+.rc th,.rc td{border:1px solid #222;text-align:center;color:#14171f}
+.rc th.nt{font-size:15px;font-weight:400;padding:7px;border-bottom:2px solid #222;text-align:center;color:#14171f}
+.rc th:first-child,.rc td:first-child{text-align:center;color:#14171f;font-size:10px}
+.rc tr:last-child td{font-weight:400}
+.rc .tot{background:#fff;color:#14171f}
+
 
 /* tiroirs (paramètres, ajustement de barre) */
 .drawer,dialog{position:fixed;top:0;right:0;left:auto;bottom:0;width:min(380px,100vw);height:100vh;max-height:100vh;margin:0 0 0 auto;border:none;border-left:1px solid var(--border);background:#fff;box-shadow:-24px 0 60px -30px rgba(20,23,31,.45);z-index:200;display:flex;flex-direction:column;color:var(--white);padding:0}
@@ -416,9 +436,9 @@ footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid v
   </div>
 </footer>
 
-<script src="ferraillage/calc.js?v=9"></script>
-<script src="ferraillage/draw.js?v=9"></script>
-<script src="ferraillage/dxf.js?v=9"></script>
-<script src="ferraillage/app.js"></script>
+<script src="ferraillage/calc.js?v=10"></script>
+<script src="ferraillage/draw.js?v=10"></script>
+<script src="ferraillage/dxf.js?v=10"></script>
+<script src="ferraillage/app.js?v=10"></script>
 </body>
 </html>

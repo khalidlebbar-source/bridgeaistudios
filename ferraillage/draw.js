@@ -651,6 +651,101 @@
     return tags;
   }
 
+  /* Repérage « local » façon ADFER (plans KLE) : la bulle est posée près de la barre.
+     Barre verticale au point d'attache : attache horizontale vers le parement le plus proche, bulle juste après.
+     Barre horizontale (ou trop profonde dans le béton) : sortie verticale vers la face la plus proche, puis retour
+     horizontal vers la bulle. Quantité « 67 HA10 » au-dessus du tronçon horizontal côté bulle. Les bulles, quantités
+     et attaches ne se chevauchent pas : le point d'attache glisse le long de la barre, la bulle s'éloigne ou descend
+     d'un cran ; à défaut on retient la position la moins encombrée. */
+  function placeReperesLocal(sc, tags, polys, obst) {
+    const u = sc.u, RB = 10 * u, LH = 34 * u, OUT = 19 * u, STEP = 25 * u, QH = 8.5, ray = (P, d) => rayHit(P, d, polys);
+    const inside = (q) => polys.reduce((n, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > q[1]) !== (b[1] > q[1]) && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return n + (c ? 1 : 0); }, 0) % 2 === 1;
+    let bx = [Infinity, -Infinity]; polys.forEach((r) => r.forEach((q) => { bx = [Math.min(bx[0], q[0]), Math.max(bx[1], q[0])]; }));
+    const cx = (bx[0] + bx[1]) / 2;
+    const sceneB = [], repB = [], segs = [];
+    const hitB = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    const segX = (a, b, c, d) => { const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d), e = 1e-12; return ((d1 > e && d2 < -e) || (d1 < -e && d2 > e)) && ((d3 > e && d4 < -e) || (d3 < -e && d4 > e)); };
+    const segBox = (a, b, m) => [Math.min(a[0], b[0]) - m, Math.min(a[1], b[1]) - m, Math.max(a[0], b[0]) + m, Math.max(a[1], b[1]) + m];
+    // obstacles déjà dessinés : numéros et équerres des rangées de points, textes de la vue
+    sc.items.forEach((it) => {
+      if (it.t === 'text') { const b = textBox(it, u); sceneB.push([b[0] - u, b[1] - u, b[2] + u, b[3] + u]); }
+      else if (it.t === 'poly' && it.cls === 'mk') for (let i = 0; i < it.pts.length - 1; i++) sceneB.push(segBox(it.pts[i], it.pts[i + 1], 0.5 * u));
+    });
+    const make = (t, o) => {
+      const E = o.path[0], c = [E[0] + o.s * RB, E[1]], q = String(t.qty).length * QH * 0.56 * u + 4 * u;
+      const n = o.path[1], seg = Math.abs(n[0] - E[0]), qx = seg > q + 4 * u ? (E[0] + n[0]) / 2 : E[0] - o.s * (q / 2 + 2 * u);
+      return { t, path: o.path, c, side: o.s, pen: o.e, qp: [qx, E[1] + 6 * u],
+        bub: [c[0] - RB - u, c[1] - RB - u, c[0] + RB + u, c[1] + RB + u], txt: [qx - q / 2, E[1] + 2 * u, qx + q / 2, E[1] + 10.5 * u] };
+    };
+    const variants = (t, P, d) => {
+      const h = (t.wM || 0) / 2, vert = Math.abs(d[1]) >= Math.abs(d[0]), out = [];
+      const vertExit = (Q, tip, s0, base) => [-1, 1].forEach((v) => {
+        const f = ray(Q, [0, v]); if (!isFinite(f) || f > 1.5) return;
+        [0, 1, 2, 3].forEach((lev) => [0, 1, 2].forEach((ext) => {
+          const Y = Q[1] + v * (f + OUT + lev * STEP);
+          (s0 ? [s0] : [P[0] >= cx ? 1 : -1, P[0] >= cx ? -1 : 1]).forEach((s, k) => {
+            out.push(make(t, { s, e: base + f + lev * 2 * STEP + ext * STEP + k * 0.5, path: [[Q[0] + s * (LH + ext * STEP), Y], [Q[0], Y]].concat(tip) }));
+          });
+        }));
+      });
+      if (vert) {
+        [-1, 1].forEach((s) => {
+          const e = ray(P, [s, 0]); if (!isFinite(e)) return;
+          if (e <= 0.7) [0, 1, 2, 3].forEach((ext) => out.push(make(t, { s, e: 4 * e + ext * STEP, path: [[P[0] + s * (e + LH + ext * STEP), P[1]], [P[0] + s * h, P[1]]] })));
+          else { const Q = [P[0] + s * 12 * u, P[1]]; vertExit(Q, [Q, [P[0] + s * h, P[1]]], s, 1); }
+        });
+      } else vertExit(P, [[P[0], P[1]]], 0, 0);
+      if (!out.length) [-1, 1].forEach((s) => { const e = ray(P, [s, 0]), L0 = (isFinite(e) ? e : 0) + LH; out.push(make(t, { s, e: 50 + L0, path: [[P[0] + s * L0, P[1]], [P[0] + s * h, P[1]]] })); }); // repli : attache horizontale directe
+      out.forEach((r) => { const L = r.path, T = L[L.length - 1], Pv = L[L.length - 2]; if (Math.abs(T[0] - Pv[0]) < 1e-9 && Math.abs(T[1] - Pv[1]) > 1e-9) { const v = Math.sign(Pv[1] - T[1]); L[L.length - 1] = [T[0], T[1] + v * h]; } });
+      return out;
+    };
+    const score = (r) => {
+      let n = 0;
+      if ([[r.bub[0], r.bub[1]], [r.bub[2], r.bub[3]], [r.bub[0], r.bub[3]], [r.bub[2], r.bub[1]], r.c].some(inside)) n += 10;
+      n += sceneB.filter((b) => hitB(b, r.bub) || hitB(b, r.txt)).length * 3;
+      n += repB.filter((b) => hitB(b, r.bub) || hitB(b, r.txt)).length * 5;
+      const L = r.path;
+      for (let i = 0; i < L.length - 1; i++) {
+        n += segs.filter((sg) => segX(L[i], L[i + 1], sg[0], sg[1])).length * 2;
+        const sb = segBox(L[i], L[i + 1], u);
+        n += repB.filter((b) => hitB(b, sb)).length * 4;
+      }
+      n += segs.filter((sg) => hitB(segBox(sg[0], sg[1], 0), r.bub) || hitB(segBox(sg[0], sg[1], 0), r.txt)).length * 4;
+      return n;
+    };
+    const res = [];
+    tags.slice().sort((a, b) => b.p[1] - a.p[1]).forEach((t) => {
+      const ts = [t.t0 == null ? 0.5 : t.t0].concat([0.5, 0.35, 0.65, 0.25, 0.75, 0.15, 0.85]);
+      const M = t.main || [t.a, t.b], cand = [];
+      for (let k = 0; k < M.length - 1; k++) cand.push([M[k], M[k + 1], k === (t.seg || 0) ? 0 : 1]);
+      (t.extra || []).forEach((q) => cand.push([q[0], q[1], 2]));
+      let best = null, bs = Infinity;
+      for (const [A, Bq, pr] of cand) {
+        const dv = vsub(Bq, A), l = Math.hypot(dv[0], dv[1]); if (l < 0.02) continue;
+        const d = [dv[0] / l, dv[1] / l];
+        ts.forEach((tt, j) => {
+          const P = vadd(A, vmul(dv, tt));
+          variants(t, P, d).forEach((r) => { const v = score(r) * 100 + r.pen + pr * 0.6 + j * 0.05; if (v < bs) { bs = v; best = r; } });
+        });
+      }
+      if (!best) return;
+      res.push(best); repB.push(best.bub, best.txt);
+      for (let i = 0; i < best.path.length - 1; i++) segs.push([best.path[i], best.path[i + 1]]);
+    });
+    res.forEach((r) => {
+      const t = r.t, path = r.path;
+      sc.items.push({ t: 'rep', id: t.id, qty: t.qty, path: path.map((q) => q.slice()), c: r.c.slice(), r: RB, side: r.side });
+      const o = { layer: 'REPERAGE', color: INK, barId: t.id, repPart: true };
+      sc.poly(path, Object.assign({ w: 0.8, cls: 'rp', hitW: 8, cap: 'butt' }, o));
+      const T = path[path.length - 1], v = vunit(vsub(T, path[path.length - 2])), n = [-v[1], v[0]], B0 = vsub(T, vmul(v, 7 * u));
+      sc.poly([T, vadd(B0, vmul(n, 2.6 * u)), vsub(B0, vmul(n, 2.6 * u))], Object.assign({ closed: true, fill: INK, w: 0.4, cls: 'rpf', solid: true }, o));
+      sc.circle(r.c, RB, Object.assign({ fill: '#ffffff', w: 0.9, hit: true, cls: 'bub' }, o));
+      sc.text(r.c, t.id, Object.assign({ h: 11, cls: 'bt' }, o));
+      sc.text(r.qp, String(t.qty).replace(/^(\d+)(HA|TS|RL)/, '$1 $2'), Object.assign({ h: QH, cls: 'qt' }, o));
+    });
+    return res;
+  }
+
   /* Pastilles tangentes : chaque point qui empiète sur une barre façonnée (ou sur un point déjà placé d'un
      autre repère) est repoussé jusqu'au contact. Dans un coude, la poussée combinée de l'arc le place à
      l'intérieur du coude, tangent à la barre qui le porte. */
@@ -773,22 +868,7 @@
         });
       }
     });
-    if (struct === 'murT') {
-      // reprise de bétonnage voile / semelle, arrêt du renfort de pied
-      zigzag(sc, [g.p, g.hs], [g.p + g.eb, g.hs]);
-      // arrêts : tête des attentes (fin du recouvrement l0) et du renfort de pied
-      bars.filter((b) => ['AttF', 'AttO', 'R'].includes(b.key) && b.place.items).forEach((b) => {
-        const m = barPath(b, b.place.items[0], params).main, T = m[m.length - 1];
-        zigzag(sc, [T[0] - 13 * u, T[1]], [T[0] + 13 * u, T[1]]);
-      });
-    }
-    if (struct === 'dalot') {
-      // reprise de bétonnage radier / piédroits, arrêt des attentes
-      zigzag(sc, [0, g.er], [g.ep, g.er]); zigzag(sc, [g.Bext - g.ep, g.er], [g.Bext, g.er]);
-      bars.filter((b) => ['AE', 'AI'].includes(b.key) && b.place.items).forEach((b) => b.place.items.forEach((it) => {
-        const m = barPath(b, it, params).main, T = m[m.length - 1]; zigzag(sc, [T[0] - 9 * u, T[1]], [T[0] + 9 * u, T[1]]);
-      }));
-    }
+    // plans KLE (ADFER) : ni symbole de reprise ni arrêt dessiné sur la coupe ferraillée
     if (g.xCut != null) {
       const yb = -(g.bp || 0) - 0.08, yt = (struct === 'murT' ? g.hCut : g.Hext) + 0.12, L = { layer: 'KLE-Cotation', color: DIM, w: 0.9, dash: '10 3 2 3' };
       sc.line([g.xCut, yb], [g.xCut, yt], L);
@@ -796,9 +876,7 @@
       sc.text([g.xCut, yb - 7 * u], 'A', { h: 10.5, weight: 500 });
     }
     rowMarkers(sc, rows, polys);
-    sc.repData = { tags: tags.map((t) => Object.assign({}, t, { p: t.p.slice(), dir: t.dir.slice() })), polys, obst }; // export DXF : repérage ADFER local
-    placeReperes(sc, tags, polys, obst);
-    redDims(sc, struct, g, bounds(sc));
+    placeReperesLocal(sc, tags, polys, obst); // plans KLE : pas de cotes sur la coupe ferraillée
     return sc;
   }
 
@@ -954,14 +1032,10 @@
     });
     const polys = []; wins.forEach(([a, b]) => slabs.forEach(([y0, y1]) => polys.push([[Z(a), y0], [Z(b), y0], [Z(b), y1], [Z(a), y1]])));
     rowMarkers(sc, rows, polys);
-    sc.repData = { tags: tags.map((t) => Object.assign({}, t, { p: t.p.slice(), dir: t.dir.slice() })), polys, obst };
-    placeReperes(sc, tags, polys, obst);
+    placeReperesLocal(sc, tags, polys, obst);
     const bb = bounds(sc);
     // cotes (épaisseur à la coupe, L du plot) et titre, à l'extérieur du repérage
-    const rd = { color: RED, aci: 1, h: 11.5 };
-    if (struct === 'murT') dim(sc, [Z(0), 0], [Z(0), hc], 'v', bb[0] - 16 * u, f2(hc), Object.assign({ flip: true }, rd));
-    else { const xl = bb[0] - 16 * u; dim(sc, [Z(0), 0], [Z(0), g.er], 'v', xl, f2(g.er), Object.assign({ flip: true }, rd)); dim(sc, [Z(0), g.er], [Z(0), g.Hext - g.et], 'v', xl, f2(g.Hi), rd); dim(sc, [Z(0), g.Hext - g.et], [Z(0), g.Hext], 'v', xl, f2(g.et), rd); }
-    dim(sc, [Z(0), hc], [Z(L), hc], 'h', bb[3] + 14 * u, 'L = ' + f2(L) + (brk ? ' (plot interrompu)' : ''), { color: RED, aci: 1, h: 11.5 });
+    // plans KLE (ADFER) : pas de cotes sur les coupes ferraillées
     sc.text([(Z(0) + Z(L)) / 2, bb[1] - 12 * u], struct === 'murT' ? 'Coupe A-A — x = ' + F.fmtCote(g.xCut) + ' m depuis l’arête du patin' : 'Coupe A-A — dans l’axe de la cellule (radier et traverse)', { h: 10, color: DIM, italic: true });
     return sc;
   }

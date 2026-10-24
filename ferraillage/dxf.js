@@ -274,109 +274,13 @@
     W.text(P, 0.1, String(it.qty).replace(/^(\d+)(HA|TS|RL)/, '$1 $2'), L, { hj: 4, style: 'STANDARD' });
   }
 
-  /* ───────── Repérage ADFER « local » : bulle près de la barre, comme sur les plans KLE ─────────
-     Barre verticale au point d'attache : ligne horizontale vers le parement le plus proche, bulle 0,55 m
-     au-delà. Barre horizontale (ou barre trop profonde dans le béton) : sortie verticale vers la face la plus
-     proche, 0,3 m au-delà, puis retour horizontal de 0,55 m vers la bulle. Bulles, quantités et lignes
-     d'attache ne se chevauchent pas : le point d'attache glisse le long de la barre, puis la ligne s'allonge. */
-  const RB = 0.16, LH = 0.55, OUT = 0.3;
-  function localReperes(sc) {
-    const D = sc.repData, polys = D.polys, ray = (P, d) => F.rayHit(P, d, polys);
-    const inside = (q) => polys.reduce((n, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const a = r[i], b = r[j]; if ((a[1] > q[1]) !== (b[1] > q[1]) && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return n + (c ? 1 : 0); }, 0) % 2 === 1;
-    let bx = [Infinity, -Infinity]; polys.forEach((r) => r.forEach((q) => { bx = [Math.min(bx[0], q[0]), Math.max(bx[1], q[0])]; }));
-    const cx = (bx[0] + bx[1]) / 2;
-    const sceneB = [], repB = [], segs = [];
-    const hitB = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
-    const segX = (a, b, c, d) => { const o = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); const d1 = o(c, d, a), d2 = o(c, d, b), d3 = o(a, b, c), d4 = o(a, b, d), e = 1e-12; return ((d1 > e && d2 < -e) || (d1 < -e && d2 > e)) && ((d3 > e && d4 < -e) || (d3 < -e && d4 > e)); };
-    const segBox = (a, b, m) => [Math.min(a[0], b[0]) - m, Math.min(a[1], b[1]) - m, Math.max(a[0], b[0]) + m, Math.max(a[1], b[1]) + m];
-    // obstacles de la vue : numéros et équerres des rangées de points, textes
-    sc.items.forEach((it) => {
-      if (it.repPart || it.dimPart) return;
-      if (it.t === 'text') { const h = it.cls === 'mkt' ? 0.14 : Math.max(0.08, it.h * 0.01), w = String(it.s).length * h * 0.62, x0 = it.anchor === 'start' ? it.p[0] : it.anchor === 'end' ? it.p[0] - w : it.p[0] - w / 2; sceneB.push([x0 - 0.02, it.p[1] - h / 2 - 0.02, x0 + w + 0.02, it.p[1] + h / 2 + 0.02]); }
-      else if (it.t === 'poly' && it.cls === 'mk') for (let i = 0; i < it.pts.length - 1; i++) sceneB.push(segBox(it.pts[i], it.pts[i + 1], 0.01));
-    });
-    const make = (t, o) => {
-      const E = o.path[0], c = [E[0] + o.s * RB, E[1]], q = String(t.qty).length * 0.1 * 0.62;
-      const n = o.path[1], seg = Math.abs(n[0] - E[0]), qx = seg > q + 0.06 ? (E[0] + n[0]) / 2 : E[0] - o.s * (q / 2 + 0.03);
-      return { id: t.id, qty: t.qty, path: o.path, c, side: o.s, pen: o.e, bub: [c[0] - RB - 0.02, c[1] - RB - 0.02, c[0] + RB + 0.02, c[1] + RB + 0.02], txt: [qx - q / 2, E[1] + 0.03, qx + q / 2, E[1] + 0.16] };
-    };
-    const variants = (t, P, d) => {
-      const h = (t.wM || 0) / 2, vert = Math.abs(d[1]) >= Math.abs(d[0]), out = [];
-      const vertExit = (Q, tip, s0, base) => [-1, 1].forEach((v) => {
-        const f = ray(Q, [0, v]); if (!isFinite(f) || f > 1.5) return;
-        [0, 0.4, 0.8, 1.2].forEach((lev) => [0, 0.4, 0.8].forEach((ext) => {
-          const Y = Q[1] + v * (f + OUT + lev);
-          (s0 ? [s0] : [P[0] >= cx ? 1 : -1, P[0] >= cx ? -1 : 1]).forEach((s, k) => {
-            const E = [Q[0] + s * (LH + ext), Y];
-            out.push(make(t, { s, e: base + f + lev * 2 + ext + k * 0.5, path: [E, [Q[0], Y]].concat(tip) }));
-          });
-        }));
-      });
-      if (vert) {
-        [-1, 1].forEach((s) => {
-          const e = ray(P, [s, 0]); if (!isFinite(e)) return;
-          if (e <= 0.7) [0, 0.4, 0.8, 1.2].forEach((ext) => out.push(make(t, { s, e: 4 * e + ext, path: [[P[0] + s * (e + LH + ext), P[1]], [P[0] + s * h, P[1]]] })));
-          else { const Q = [P[0] + s * 0.2, P[1]]; vertExit(Q, [Q, [P[0] + s * h, P[1]]], s, 1); }
-        });
-      } else vertExit(P, [[P[0], P[1] + 0]], 0, 0);
-      // pointe de flèche sur la face de la barre
-      out.forEach((r) => { const L = r.path, T = L[L.length - 1], Pv = L[L.length - 2]; if (Math.abs(T[0] - Pv[0]) < 1e-9) { const v = Math.sign(Pv[1] - T[1]) || 1; L[L.length - 1] = [T[0], T[1] + v * h]; } });
-      return out;
-    };
-    const score = (r) => {
-      let n = 0;
-      if ([[r.bub[0], r.bub[1]], [r.bub[2], r.bub[3]], [r.bub[0], r.bub[3]], [r.bub[2], r.bub[1]], r.c].some(inside)) n += 10;
-      n += sceneB.filter((b) => hitB(b, r.bub) || hitB(b, r.txt)).length * 3;
-      n += repB.filter((b) => hitB(b, r.bub) || hitB(b, r.txt)).length * 5;
-      const L = r.path;
-      for (let i = 0; i < L.length - 1; i++) {
-        n += segs.filter((s) => segX(L[i], L[i + 1], s[0], s[1])).length * 2;
-        const sb = segBox(L[i], L[i + 1], 0.02);
-        n += repB.filter((b) => hitB(b, sb)).length * 4;
-      }
-      n += segs.filter((s) => hitB(segBox(s[0], s[1], 0), r.bub) || hitB(segBox(s[0], s[1], 0), r.txt)).length * 4;
-      return n;
-    };
-    const res = [];
-    D.tags.slice().sort((a, b) => b.p[1] - a.p[1]).forEach((t) => {
-      const ts = [t.t0 == null ? 0.5 : t.t0].concat([0.5, 0.35, 0.65, 0.25, 0.75, 0.15, 0.85]);
-      const M = t.main || [t.a, t.b], cand = [];
-      for (let k = 0; k < M.length - 1; k++) cand.push([M[k], M[k + 1], k === (t.seg || 0) ? 0 : 1]);
-      cand.sort((x, y) => x[2] - y[2]);
-      let best = null, bs = Infinity;
-      for (const [A, Bq, pr] of cand) {
-        const dv = [Bq[0] - A[0], Bq[1] - A[1]], l = Math.hypot(dv[0], dv[1]); if (l < 0.1) continue;
-        const d = [dv[0] / l, dv[1] / l];
-        ts.forEach((tt, j) => {
-          const P = [A[0] + dv[0] * tt, A[1] + dv[1] * tt];
-          variants(t, P, d).forEach((r) => { const sc0 = score(r) * 100 + r.pen + pr * 0.6 + j * 0.05; if (sc0 < bs) { bs = sc0; best = r; } });
-        });
-      }
-      if (!best) return;
-      res.push(best); repB.push(best.bub, best.txt);
-      for (let i = 0; i < best.path.length - 1; i++) segs.push([best.path[i], best.path[i + 1]]);
-    });
-    return res;
-  }
-
-  /* Emprise d'une scène telle qu'exportée (sans repérage en colonnes ni cotes écartées). */
-  function sceneBox(sc, reps, noDims) {
-    const tmp = { u: sc.u, items: sc.items.filter((it) => !it.repPart && !(noDims && it.dimPart) && it.t !== 'rep' && it.t !== 'dim') };
-    const b = F.bounds(tmp);
-    (reps || []).forEach((r) => { [r.bub, r.txt].forEach((q) => { b[0] = Math.min(b[0], q[0]); b[1] = Math.min(b[1], q[1]); b[2] = Math.max(b[2], q[2]); b[3] = Math.max(b[3], q[3]); }); r.path.forEach((q) => { b[0] = Math.min(b[0], q[0]); b[1] = Math.min(b[1], q[1]); b[2] = Math.max(b[2], q[0]); b[3] = Math.max(b[3], q[1]); }); });
-    return b;
-  }
-
   /* ───────── Écriture d'une scène décalée de (dx, dy) ───────── */
-  function writeScene(W, B, sc, dx, dy, st, opt) {
-    opt = opt || {};
+  function writeScene(W, B, sc, dx, dy, st) {
     const T = (q) => [q[0] + dx, q[1] + dy];
-    if (opt.reps) opt.reps.forEach((r) => repere(W, r, T));
     for (const it of sc.items) {
       if (it.dimPart || it.repPart) continue;
-      if (it.t === 'dim') { if (!opt.noDims) dimension(W, B, it, dx, dy, ++st.nd); continue; }
-      if (it.t === 'rep') { if (!opt.reps) repere(W, it, T); continue; }
-      if (opt.noZig && it.t === 'poly' && it.aci === 41) continue;
+      if (it.t === 'dim') { dimension(W, B, it, dx, dy, ++st.nd); continue; }
+      if (it.t === 'rep') { repere(W, it, T); continue; }
       if (it.t === 'poly') {
         let layer = '1-VU', lt = null;
         if (it.section) layer = '1-COUPE';
@@ -489,13 +393,12 @@
     meta = meta || {};
     const W = new Writer(), B = new Writer(), st = { nd: 0, nx: 0 };
     const sA = F.coffrageScene(struct, g, U), bA = F.bounds(sA);
-    const sB = F.ferraillageScene(struct, g, res.bars, res.params, U), rB = localReperes(sB), bB = sceneBox(sB, rB, true);
-    const FER = { reps: rB, noDims: true, noZig: true };
+    const sB = F.ferraillageScene(struct, g, res.bars, res.params, U), bB = F.bounds(sB);
     const sC = F.secondScene(struct, g, U), bC = F.bounds(sC);
     // coupe de coffrage à l'origine, coupe ferraillée à droite
     writeScene(W, B, sA, 0, 0, st);
     const dxB = bA[2] - bB[0] + 1.5;
-    writeScene(W, B, sB, dxB, 0, st, FER);
+    writeScene(W, B, sB, dxB, 0, st);
     const yTitle = Math.min(bA[1], bB[1]) - 0.5;
     viewTitle(W, (bA[0] + bA[2]) / 2, yTitle, 'COFFRAGE - COUPE TYPE');
     viewTitle(W, (bB[0] + bB[2]) / 2 + dxB, yTitle, 'FERRAILLAGE - COUPE TYPE');
@@ -503,8 +406,8 @@
     // coupe longitudinale A-A sous la coupe ferraillée
     const sL = F.longiScene ? F.longiScene(struct, g, res.bars, res.params, U) : null;
     if (sL) {
-      const rL = localReperes(sL), bL = sceneBox(sL, rL, true), dyL = yLow - bL[3] - 0.4, dxL = dxB + (bB[0] + bB[2]) / 2 - (bL[0] + bL[2]) / 2;
-      writeScene(W, B, sL, dxL, dyL, st, { reps: rL, noDims: true, noZig: true });
+      const bL = F.bounds(sL), dyL = yLow - bL[3] - 0.4, dxL = dxB + (bB[0] + bB[2]) / 2 - (bL[0] + bL[2]) / 2;
+      writeScene(W, B, sL, dxL, dyL, st);
       viewTitle(W, (bL[0] + bL[2]) / 2 + dxL, bL[1] + dyL - 0.5, 'COUPE A-A - ' + (struct === 'dalot' ? 'RADIER ET TRAVERSE' : 'SEMELLE'));
       yLow = bL[1] + dyL - 1.1;
     }
