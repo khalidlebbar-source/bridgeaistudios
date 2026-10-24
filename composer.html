@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bridge Composer — BridgeAI Studios</title>
+<meta name="description" content="Bridge Composer : composez un pont routier ou ferroviaire par blocs (tablier PSI-DA, PSI-DP, VIPP, PRAD, PRP, bipoutre mixte ; piles, culées, fondations, équipements). Prédimensionnement SETRA, descente de charges estimée EN 1991-2 ou Fascicule 61, métrés, chiffrage, note PDF et plan de coffrage DXF.">
+<meta name="keywords" content="bridge composer, prédimensionnement pont, descente de charges, métré pont, estimation pont, PSI-DA, PSI-DP, VIPP, PRAD, PRP, bipoutre mixte, EN 1991-2, Fascicule 61, LM71, DXF AutoCAD">
+<meta property="og:title" content="Bridge Composer — BridgeAI Studios">
+<meta property="og:description" content="Composez votre pont par blocs : prédimensionnement, descente de charges estimée, métrés, chiffrage, note PDF et plan DXF.">
+<meta property="og:url" content="https://www.bridgeaistudios.com/composer.html">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.bridgeaistudios.com/composer.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#f6f4ee;--ink2:#ffffff;
+  --gold:#a8842a;--gold2:#8a6b1f;
+  --teal:#0f8f7b;--blue:#2d6be4;--silver:#5f6778;--white:#14171f;
+  --border:rgba(20,23,31,.09);--border2:rgba(168,132,42,.4);
+  --danger:#b3261e;--warn:#9a6700;--paper:#f8f6f0;
+}
+nav,footer{--teal:#1ab8a0;--ink:#0c0e14;--ink2:#1a1e2e;--white:#ffffff;--silver:#8892a4;--gold:#c9a84c;--gold2:#e8c97a;--border:rgba(255,255,255,.07)}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--ink);color:var(--white);line-height:1.45;font-weight:300;min-height:100vh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:3px}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+button,input,select{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ─── NAV ─── */
+nav{position:sticky;top:0;z-index:100;padding:0 24px;border-bottom:1px solid var(--border);background:rgba(12,14,20,.96);backdrop-filter:blur(16px);flex:none}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:56px;max-width:1880px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);letter-spacing:.02em;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:13px;color:var(--silver);letter-spacing:.04em;transition:color .2s;white-space:nowrap}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--gold);font-weight:400}
+.nav-back{font-size:13px;color:var(--silver);letter-spacing:.04em;transition:color .2s;white-space:nowrap}
+.nav-back:hover{color:var(--gold)}
+
+/* ─── EN-TÊTE ─── */
+.head{position:relative;flex:none;padding:10px 24px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fbfaf6,#f3f0e7)}
+.head::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 40% 160% at 10% 0%,rgba(168,132,42,.10),transparent 70%);pointer-events:none}
+.head-inner{position:relative;max-width:1880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:300;line-height:1.1;white-space:nowrap}
+h1 em{font-style:italic;color:var(--gold)}
+h1 small{font-family:'Outfit',sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-right:12px;vertical-align:middle}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ─── BOUTONS ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:13px;font-weight:400;cursor:pointer;letter-spacing:.02em;transition:background .2s;white-space:nowrap}
+.btn:hover{background:var(--gold2)}
+.btn.ghost{background:#fff;color:var(--gold2);border-color:var(--border2)}
+.btn.ghost:hover{background:#fbf6e9}
+.btn.small{height:28px;padding:0 10px;font-size:12px;border-radius:7px}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff}
+.seg button{border:none;background:#fff;padding:6px 11px;font-size:12.5px;color:var(--silver);cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button.on{background:#fbf6e9;color:var(--gold2);font-weight:400;box-shadow:inset 0 -2px 0 var(--gold)}
+.seg.full{display:flex}.seg.full button{flex:1}
+
+/* ─── ESPACE DE TRAVAIL ─── */
+main{flex:1;width:100%;max-width:1880px;margin:0 auto;padding:12px 24px 24px;display:grid;grid-template-columns:400px minmax(0,1fr);gap:12px;align-items:start}
+.card{border:1px solid var(--border);background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(20,23,31,.04);display:flex;flex-direction:column;min-width:0}
+.card-h{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;border-bottom:1px solid var(--border);min-height:46px;flex-wrap:wrap}
+.card-h h3{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold2);white-space:nowrap}
+.card-h small{font-size:11.5px;color:var(--silver)}
+
+/* configuration */
+.cfg{position:sticky;top:68px;max-height:calc(100vh - 80px)}
+.cfg-b{overflow:auto;padding:2px 14px 12px;-webkit-overflow-scrolling:touch}
+details.blk{border-bottom:1px solid var(--border)}
+details.blk:last-child{border-bottom:none}
+details.blk>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:11px 0 9px}
+details.blk>summary::-webkit-details-marker{display:none}
+details.blk>summary::after{content:"+";margin-left:auto;font-size:16px;line-height:1;color:var(--gold)}
+details.blk[open]>summary::after{content:"−"}
+.lt{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:500;flex:none;background:#fbf6e9;color:var(--gold2);border:1px solid var(--border2)}
+.blk-t{font-size:12.5px;font-weight:400;letter-spacing:.02em}
+.blk-s{font-size:11px;color:var(--silver);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.blk-b{padding:0 0 12px;display:grid;gap:10px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tiles.two{grid-template-columns:repeat(2,1fr)}
+.tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 8px 7px;border-radius:10px;border:1px solid var(--border);background:#fff;cursor:pointer;text-align:left;transition:border-color .2s,background .2s;min-width:0}
+.tile:hover{border-color:var(--border2)}
+.tile.on{border-color:var(--gold);background:linear-gradient(160deg,#fffdf7,#fbf6e9);box-shadow:0 6px 16px -12px rgba(168,132,42,.7)}
+.tile svg{width:100%;height:30px;color:#9aa0ad}
+.tile.on svg{color:var(--gold)}
+.tile b{font-size:12.5px;font-weight:500;line-height:1.1}
+.tile small{font-size:10px;color:var(--silver);line-height:1.25}
+.tile .st{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;letter-spacing:.04em;color:var(--silver)}
+.tile .st::before{content:"";width:6px;height:6px;border-radius:50%;background:#c3c7cf}
+.tile .st.ok{color:var(--teal)}.tile .st.ok::before{background:var(--teal)}
+.tile .st.lim{color:var(--warn)}.tile .st.lim::before{background:#d29b14}
+.tile .st.hors{color:var(--danger)}.tile .st.hors::before{background:var(--danger)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px}
+.fg.three{grid-template-columns:1fr 1fr 1fr}
+.f{display:flex;flex-direction:column;gap:2px;min-width:0}
+.f.wide{grid-column:1/-1}
+.f>label{font-size:11.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.num{position:relative}
+.num input,.num select{width:100%;height:32px;padding:0 34px 0 9px;border:1px solid rgba(20,23,31,.16);border-radius:7px;background:#fff;font-variant-numeric:tabular-nums;font-size:13.5px}
+.num select{padding-right:6px}
+.num input.txt{padding-right:9px}
+.num input:focus,.num select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(168,132,42,.15)}
+.num input::placeholder{color:#a3a9b5}
+.num span{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--silver);pointer-events:none}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;padding:2px 0}
+.chk input{width:16px;height:16px;accent-color:var(--gold);flex:none}
+.hint{font-size:11.5px;color:var(--silver);line-height:1.5}
+.hint b{color:var(--white);font-weight:500}
+.spans{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end}
+.spans .f{width:78px}
+.spans .num input{padding-right:22px}
+.spans .num span{right:6px}
+.ico{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:7px;border:1px solid var(--border2);background:#fff;color:var(--gold2);cursor:pointer;font-size:17px;line-height:1}
+.ico:hover{background:#fbf6e9}
+.ico:disabled{opacity:.4;cursor:default}
+.sub-t{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);margin-top:2px}
+.prix{display:grid;grid-template-columns:1fr 92px;gap:4px 8px;align-items:center}
+.prix label{font-size:11.5px;line-height:1.2}
+.prix label small{color:var(--silver)}
+.prix .num input{height:28px;font-size:12.5px;padding-right:30px}
+
+/* aperçu */
+.view{display:grid;gap:12px;min-width:0}
+.draw{position:relative;overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;max-height:72vh;background:linear-gradient(#fff,#fdfcf8)}
+.draw svg{display:block;margin:0 auto;max-width:none;height:auto}
+.draw-cap{font-size:11px;color:var(--silver);padding:0 14px 10px}
+.kpis{display:flex;flex-wrap:wrap;gap:8px}
+.kpi{flex:1 1 118px;padding:8px 11px;border-radius:11px;background:#fff;border:1px solid var(--border)}
+.kpi small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);white-space:nowrap}
+.kpi b{font-family:'Cormorant Garamond',serif;font-size:23px;font-weight:400;color:var(--gold2);line-height:1.1;white-space:nowrap}
+.kpi b i{font-family:'Outfit',sans-serif;font-style:normal;font-size:11px;color:var(--silver);margin-left:3px}
+.kpi.big{background:linear-gradient(160deg,#fffdf7,#fbf6e9);border-color:var(--border2)}
+
+/* résultats */
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{border:1px solid transparent;background:none;padding:6px 10px;border-radius:8px;font-size:12.5px;color:var(--silver);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--white)}
+.tab.on{background:#fbf6e9;border-color:var(--border2);color:var(--gold2)}
+.res-b{padding:12px 14px 14px;display:grid;gap:14px}
+.msgs{display:grid;gap:6px}
+.msg{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;padding:7px 10px;border-radius:9px;background:#fff8e6;border:1px solid #f0d79a;color:#6b4a00}
+.msg::before{content:"!";flex:none;width:17px;height:17px;border-radius:50%;background:#d29b14;color:#fff;font-size:11px;font-weight:600;display:grid;place-items:center;margin-top:1px}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.t th{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--silver);text-align:right;padding:6px 8px;border-bottom:1px solid var(--border2);white-space:nowrap;background:#faf8f2}
+.t td{padding:5px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.t th:first-child,.t td:first-child,.t .l{text-align:left}
+.t td.l{white-space:normal}
+.t tr.lot td{background:#fbf6e9;color:var(--gold2);font-weight:500;font-size:11.5px;letter-spacing:.04em}
+.t tr.tot td{font-weight:500;border-top:2px solid var(--border2);background:#faf8f2}
+.t tr.grand td{font-weight:500;font-size:14px;color:var(--gold2);background:#fbf6e9;border-top:2px solid var(--gold)}
+.t td small{color:var(--silver);font-size:10.5px}
+.t .mute{color:var(--silver)}
+.h4{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;line-height:1.2}
+.h4 small{font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--silver);margin-left:8px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.sup{border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:grid;gap:6px;background:#fff}
+.sup h5{font-size:13px;font-weight:500;display:flex;justify-content:space-between;gap:8px}
+.sup h5 span{font-weight:300;color:var(--silver);font-size:11.5px}
+.sup ul{list-style:none;display:grid;gap:2px}
+.sup li{font-size:12px;display:flex;justify-content:space-between;gap:10px}
+.sup li span:last-child{color:var(--silver);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sup .ok{color:var(--teal)}.sup .ko{color:var(--danger)}
+.notes{font-size:11.5px;color:var(--silver);line-height:1.6;padding-left:16px}
+
+footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid var(--border)}
+.footer-bottom{max-width:1880px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px 24px}
+.footer-bottom p{font-size:11px;color:rgba(255,255,255,.2);letter-spacing:.04em}
+.footer-bottom a{color:var(--silver)}
+.footer-bottom a:hover{color:var(--gold)}
+.footer-logo{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--white)}
+.footer-logo span{color:var(--gold)}
+#print{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media(max-width:1280px){.nav-links{gap:18px}.nav-links a{font-size:12.5px}}
+@media(max-width:1180px){.nav-links{display:none}}
+@media(max-width:999px){
+  nav,.head{padding-left:16px;padding-right:16px}
+  main{grid-template-columns:minmax(0,1fr);padding:12px 16px 24px}
+  .cfg{position:static;max-height:none;order:2}
+  .view{display:contents}
+  #pv{order:1}#kp{order:1}#rs{order:3}
+  .draw{max-height:none}
+  footer{padding:12px 16px}
+}
+@media(max-width:640px){
+  h1{font-size:23px;white-space:normal}
+  h1 small{display:block;margin-bottom:2px}
+  .acts{width:100%}.acts .btn{flex:1;padding:0 8px}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .kpi{flex-basis:40%}
+  .card-h{padding:8px 12px}
+}
+
+/* ─── IMPRESSION : note de prédimensionnement A4 ─── */
+@media print{
+  @page{size:A4 portrait;margin:12mm 12mm 14mm}
+  html,body{background:#fff;display:block;min-height:0;height:auto;overflow:visible}
+  body > *:not(#print){display:none !important}
+  #print{display:block;color:#111;font-family:'Outfit',Arial,sans-serif;font-size:9pt;line-height:1.4}
+  .p-cart{display:grid;grid-template-columns:1.1fr 2fr 1.2fr;border:1px solid #333;margin-bottom:10pt}
+  .p-cart>div{padding:5pt 7pt;border-right:1px solid #333}
+  .p-cart>div:last-child{border-right:none}
+  .p-bet{font-family:'Cormorant Garamond',serif;font-size:14pt;font-weight:600;line-height:1.1}
+  .p-bet small{display:block;font-family:'Outfit',Arial,sans-serif;font-size:7pt;font-weight:300;color:#555;margin-top:2pt}
+  .p-title{text-align:center}
+  .p-k{font-size:7pt;letter-spacing:.14em;text-transform:uppercase;color:#7a5c1c}
+  .p-n{font-family:'Cormorant Garamond',serif;font-size:16pt;font-weight:600;line-height:1.15}
+  .p-meta{font-size:7.5pt;line-height:1.5}
+  h2.p-h{font-size:10.5pt;font-weight:500;color:#7a5c1c;border-bottom:1px solid #b9a26b;padding-bottom:2pt;margin:10pt 0 5pt;break-after:avoid}
+  h3.p-h3{font-size:9pt;font-weight:500;margin:6pt 0 3pt;break-after:avoid}
+  #print p{margin:0 0 4pt}
+  .p-fig{text-align:center;break-inside:avoid;margin:4pt 0 6pt}
+  .p-fig svg{max-width:100%;height:auto;max-height:118mm}
+  .p-fig figcaption{font-size:7.5pt;color:#555;margin-top:2pt}
+  .p-tab{width:100%;border-collapse:collapse;font-size:7.8pt;margin:2pt 0 6pt}
+  .p-tab th,.p-tab td{border:1px solid #999;padding:1.5pt 4pt;text-align:right}
+  .p-tab th{background:#f1ede2;font-weight:500;text-align:center}
+  .p-tab td:first-child,.p-tab .l{text-align:left}
+  .p-tab tr{break-inside:avoid}
+  .p-tab tr.lot td{background:#f7f3e8;font-weight:500}
+  .p-tab tr.tot td{font-weight:600;background:#f1ede2}
+  .p-warn{border:1px solid #d9b45a;background:#fff8e6;padding:4pt 6pt;font-size:8pt;margin:4pt 0}
+  .p-break{break-before:page}
+  .p-small{font-size:7.6pt;color:#333}
+  .p-small ul{padding-left:12pt}
+  .p-2{display:grid;grid-template-columns:1fr 1fr;gap:10pt}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">Bridge<span>AI</span> Studios</a>
+    <ul class="nav-links">
+      <li><a href="composer.html" class="active">Bridge Composer</a></li>
+      <li><a href="ponts-types.html">Ponts types</a></li>
+      <li><a href="plans-ferraillage.html">Plans coffrage &amp; ferraillage</a></li>
+      <li><a href="handbag.html" style="color:var(--teal)">HandBag</a></li>
+      <li><a href="bibliotheque.html">Bibliothèque</a></li>
+      <li><a href="liens-utiles.html" style="color:var(--teal)">Liens utiles</a></li>
+    </ul>
+    <a href="index.html" class="nav-back">← Accueil</a>
+  </div>
+</nav>
+
+<header class="head">
+  <div class="head-inner">
+    <h1><small>Configurateur</small>Bridge <em>Composer</em></h1>
+    <div class="acts">
+      <button class="btn ghost" id="bOpen" title="Ouvrir un projet (.json)"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg>Ouvrir</button>
+      <button class="btn ghost" id="bSave" title="Enregistrer le projet (.json)"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>Enregistrer</button>
+      <button class="btn ghost" id="bDxf" title="Plan de coffrage d'ensemble (DXF AutoCAD)"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>DXF</button>
+      <button class="btn" id="bPdf" title="Note de prédimensionnement (PDF)"><svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z"/></svg>Note PDF</button>
+      <input type="file" id="fOpen" accept=".json,application/json" class="sr">
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside class="card cfg" aria-label="Composition de l'ouvrage">
+    <div class="card-h"><h3>Composition</h3><button class="btn ghost small" id="bReset" title="Revenir à l'ouvrage par défaut">Réinitialiser</button></div>
+    <div class="cfg-b" id="cfg"></div>
+  </aside>
+
+  <div class="view">
+    <section class="card" id="pv" aria-label="Aperçu">
+      <div class="card-h">
+        <h3>Aperçu</h3>
+        <div class="seg" id="vSeg"><button class="on" data-v="elev">Élévation</button><button data-v="sec">Coupe transversale</button></div>
+      </div>
+      <div class="draw" id="draw"></div>
+      <div class="draw-cap" id="drawCap"></div>
+    </section>
+
+    <div class="kpis" id="kp"></div>
+
+    <section class="card" id="rs" aria-label="Résultats">
+      <div class="card-h">
+        <div class="tabs" id="tabs">
+          <button class="tab on" data-t="predim">Prédimensionnement</button>
+          <button class="tab" data-t="ddc">Descente de charges</button>
+          <button class="tab" data-t="appuis">Appuis &amp; fondations</button>
+          <button class="tab" data-t="metre">Métrés &amp; coût</button>
+        </div>
+      </div>
+      <div class="res-b" id="res"></div>
+    </section>
+  </div>
+</main>
+
+<div id="print" aria-hidden="true"></div>
+
+<footer>
+  <div class="footer-bottom">
+    <p><span class="footer-logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="composer.html">Bridge Composer</a> &nbsp;·&nbsp; <a href="ponts-types.html">Ponts types</a> &nbsp;·&nbsp; <a href="plans-ferraillage.html">Plans coffrage &amp; ferraillage</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html">Bibliothèque</a></p>
+    <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
+  </div>
+</footer>
+
+<script src="composer/calc.js?v=1"></script>
+<script src="composer/draw.js?v=1"></script>
+<script src="composer/dxf.js?v=1"></script>
+<script src="composer/app.js?v=1"></script>
+</body>
+</html>
