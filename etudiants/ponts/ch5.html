@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 5 — Méthodes de calcul des tabliers · Espace étudiants · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts, chapitre 5 : calcul des sollicitations d'un tablier — RDM de la poutre isostatique, lignes d'influence, théorème de Barré, enveloppes, répartition transversale (Courbon, Guyon-Massonnet), flexion locale du hourdis, tabliers continus, combinaisons. Simulateur de convoi et calculatrice Courbon.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/ponts/ch5.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/cours.css">
+<style>
+  .calc input[type=range]{padding:0;border:none;background:transparent;accent-color:#a8842a;height:26px}
+  .calc .rowbtn{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .calc .rowbtn .btn{font-size:13px}
+  .calc .val{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500}
+  .c5-ok{color:#0b7a5f;font-weight:500}.c5-ko{color:#b3361d;font-weight:500}
+  .c5-tbl-small td,.c5-tbl-small th{padding:6px 9px}
+</style>
+</head>
+<body data-ch="ch5">
+
+<header class="ch-head">
+  <div class="in">
+    <div class="ch-num">5</div>
+    <div class="ch-kicker">Cours de ponts · Chapitre 5</div>
+    <h1>Méthodes de calcul <em>des tabliers</em></h1>
+    <div class="ch-meta">
+      <span class="chip">≈ 75 min de lecture</span>
+      <span class="chip">Simulateur de convoi</span>
+      <span class="chip">Calculatrice Courbon</span>
+      <span class="chip">2 séquences animées</span>
+      <span class="chip">Quiz final</span>
+      <button class="btn ghost" type="button" data-print>Télécharger en PDF</button>
+    </div>
+  </div>
+  <svg class="ch-art" viewBox="0 0 600 220" fill="none" aria-hidden="true">
+    <path d="M40 80 H560" stroke="#c9a84c" stroke-width="1.4"/>
+    <path d="M40 80 l-10 16 h20 z M560 80 l-10 16 h20 z" stroke="#c9a84c" stroke-width="1"/>
+    <path d="M40 120 L248 196 L560 120" stroke="#1ab8a0" stroke-width="1" opacity=".8"/>
+    <path d="M40 120 H560" stroke="#c9a84c" stroke-width=".6" opacity=".6"/>
+    <path d="M40 120 Q 300 250 560 120" stroke="#e8c97a" stroke-width=".8" opacity=".6"/>
+    <path d="M248 20 V200" stroke="#e8c97a" stroke-width=".6" stroke-dasharray="4 4" opacity=".7"/>
+    <path d="M200 30 V76 M248 30 V76 M296 30 V76" stroke="#e8c97a" stroke-width="1"/>
+    <path d="M195 68 l5 8 l5 -8 M243 68 l5 8 l5 -8 M291 68 l5 8 l5 -8" stroke="#e8c97a" stroke-width="1"/>
+  </svg>
+</header>
+
+<div class="layout">
+<aside class="side"></aside>
+<article>
+
+<section>
+  <p class="lede">Au chapitre 4, on a fait l'<span class="kw">inventaire des charges</span>. Il faut maintenant savoir ce qu'elles <b>font</b> au tablier : quel moment fléchissant, quel effort tranchant, à quel endroit, pour quelle position des camions. Ce chapitre est le cœur du calcul d'un pont : on y apprend à <b>placer les charges au pire endroit</b>, puis à <b>partager</b> l'effort entre les poutres.</p>
+  <div class="box note"><span class="t">Objectifs du chapitre</span>
+    <ul>
+      <li>Calculer M(x) et T(x) d'une poutre isostatique sous charge répartie et sous charges concentrées.</li>
+      <li>Construire et utiliser une <b>ligne d'influence</b> (LI) pour une section donnée.</li>
+      <li>Trouver la position la plus défavorable d'un convoi (règle de la charge répartie, <b>théorème de Barré</b>).</li>
+      <li>Tracer les <b>courbes enveloppes</b> des sollicitations.</li>
+      <li>Répartir les charges entre les poutres : <b>Courbon</b>, <b>Guyon-Massonnet</b>, grillage et éléments finis.</li>
+      <li>Connaître le calcul local du <b>hourdis</b>, l'effet de la <b>continuité</b> et les <b>combinaisons</b>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5.1 ═══════════════════════ -->
+<section>
+  <h2><span class="n">5.1</span>La démarche de calcul d'un tablier</h2>
+  <p>Quel que soit le pont, le calcul suit toujours la même chaîne. Le but n'est pas de calculer « un » moment, mais le moment <b>le plus défavorable</b> dans chaque section, pour chaque combinaison réglementaire. On travaille donc en cinq temps :</p>
+  <figure class="fig">
+    <svg viewBox="0 0 960 230" role="img" aria-label="Les cinq étapes du calcul d'un tablier">
+      <defs><marker id="c5f1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker></defs>
+      <rect width="960" height="230" fill="#fbfaf6"/>
+      <g>
+        <rect x="16" y="30" width="164" height="170" rx="14" fill="#eef5ff" stroke="#9fbdf3"/>
+        <rect x="204" y="30" width="164" height="170" rx="14" fill="#fff3ee" stroke="#f7c9bd"/>
+        <rect x="392" y="30" width="164" height="170" rx="14" fill="#eefaf6" stroke="#b6e6dc"/>
+        <rect x="580" y="30" width="164" height="170" rx="14" fill="#f3f0fb" stroke="#ddd0f5"/>
+        <rect x="768" y="30" width="176" height="170" rx="14" fill="#fff9e8" stroke="#f2e2b0"/>
+      </g>
+      <g stroke="#a8842a" stroke-width="1.6"><path d="M182 115 H200" marker-end="url(#c5f1-ar)"/><path d="M370 115 H388" marker-end="url(#c5f1-ar)"/><path d="M558 115 H576" marker-end="url(#c5f1-ar)"/><path d="M746 115 H764" marker-end="url(#c5f1-ar)"/></g>
+      <!-- icônes -->
+      <g><path d="M48 80 H148" stroke="#6e7884" stroke-width="6"/><path d="M48 84 l-8 13 h16 z M148 84 l-8 13 h16 z" fill="#cfd5dc" stroke="#6e7884"/></g>
+      <g><path d="M236 84 H336" stroke="#6e7884" stroke-width="6"/><g stroke="#d9472b" stroke-width="2"><path d="M256 50 V78 M286 50 V78 M316 50 V78"/></g><path d="M252 72 l4 6 l4 -6 M282 72 l4 6 l4 -6 M312 72 l4 6 l4 -6" stroke="#d9472b" fill="none" stroke-width="2"/></g>
+      <g><path d="M424 60 H524" stroke="#6e7884" stroke-width="2"/><path d="M424 60 Q474 120 524 60" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/></g>
+      <g class="svg-label" fill="#7a52c7"><text x="662" y="76" text-anchor="middle" style="font-size:15px">1,35 G + 1,6 Q</text></g>
+      <g><path d="M800 60 H912" stroke="#6e7884" stroke-width="2"/><path d="M800 60 Q856 120 912 60" fill="none" stroke="#c9a84c" stroke-width="2.4"/><path d="M800 60 Q856 100 912 60" fill="none" stroke="#c9a84c" stroke-width="1" stroke-dasharray="3 3"/><path d="M800 60 Q856 86 912 60" fill="none" stroke="#c9a84c" stroke-width="1" stroke-dasharray="3 3"/></g>
+      <g text-anchor="middle">
+        <text x="98" y="130" class="svg-title">1. Modéliser</text>
+        <text x="98" y="152" class="svg-small">schéma statique,</text><text x="98" y="167" class="svg-small">portée, sections,</text><text x="98" y="182" class="svg-small">inerties</text>
+        <text x="286" y="130" class="svg-title">2. Charger</text>
+        <text x="286" y="152" class="svg-small">G, superstructures,</text><text x="286" y="167" class="svg-small">A(l), Bc, Bt, Br, Mc,</text><text x="286" y="182" class="svg-small">trottoirs, δ</text>
+        <text x="474" y="130" class="svg-title">3. Sollicitations</text>
+        <text x="474" y="152" class="svg-small">M(x), T(x) par RDM</text><text x="474" y="167" class="svg-small">et lignes d'influence ;</text><text x="474" y="182" class="svg-small">répartition transversale</text>
+        <text x="662" y="130" class="svg-title">4. Combiner</text>
+        <text x="662" y="152" class="svg-small">ELU, ELS :</text><text x="662" y="167" class="svg-small">coefficients γ</text><text x="662" y="182" class="svg-small">selon le règlement</text>
+        <text x="856" y="130" class="svg-title">5. Enveloppes</text>
+        <text x="856" y="152" class="svg-small">M et T maximaux</text><text x="856" y="167" class="svg-small">dans chaque section</text><text x="856" y="182" class="svg-small">→ ferraillage (ch. 8)</text>
+      </g>
+    </svg>
+    <figcaption><b>Figure 5.1 —</b> La chaîne du calcul d'un tablier. Les étapes 3 et 5 font l'objet de ce chapitre ; l'étape 2 a été vue au chapitre 4, le dimensionnement final au chapitre 8.</figcaption>
+  </figure>
+  <div class="box tip"><span class="t">Le fil rouge du cours</span>
+    Pour notre <b>pont routier sur voie ferrée</b> (voie portée 1,5 + 7 + 1,5 = 10 m), le prédimensionnement a retenu un tablier à poutres de portée L ≈ 25 m, de hauteur ≈ L/14 ≈ 1,80 m, avec 4 poutres espacées de 2,50 m et un hourdis de 20 à 25 cm. C'est exactement le cas du <b>TD n° 1</b>, que nous déroulons dans tout le chapitre.
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5.2 ═══════════════════════ -->
+<section>
+  <h2><span class="n">5.2</span>Rappels de RDM : la poutre isostatique</h2>
+  <p>Un tablier à travées indépendantes (VIPP, PRAD, poutres BA) se calcule, dans le sens longitudinal, comme une <span class="kw">poutre sur deux appuis simples</span>. Il suffit de deux formules pour la charge répartie et d'une pour la charge concentrée.</p>
+
+  <h3>Charge uniformément répartie p</h3>
+  <p>Les réactions valent chacune pL/2. En coupant la poutre à l'abscisse x et en écrivant l'équilibre de la partie gauche :</p>
+  <div class="formula"><span class="lbl">Poutre isostatique sous charge répartie p</span>
+    <span class="texd">M(x) = \frac{p\,x\,(L-x)}{2} \qquad T(x) = p\left(\frac{L}{2}-x\right) \qquad M_{\max} = M\!\left(\tfrac{L}{2}\right) = \frac{pL^2}{8}</span>
+    <div class="where">M est maximal à mi-travée (où T s'annule) ; T est maximal sur appui : T(0) = pL/2. Convention : M &gt; 0 tend la fibre inférieure.</div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 400" role="img" aria-label="Diagrammes du moment et de l'effort tranchant sous charge répartie">
+      <defs>
+        <marker id="c5f2-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <marker id="c5f2-dim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+      </defs>
+      <rect width="960" height="400" fill="#fbfaf6"/>
+      <!-- charge -->
+      <rect x="160" y="30" width="640" height="10" fill="#f7c9bd" stroke="#d9472b"/>
+      <g stroke="#d9472b" stroke-width="1.6">
+        <path d="M170 40 V64 M222 40 V64 M274 40 V64 M326 40 V64 M378 40 V64 M430 40 V64 M482 40 V64 M534 40 V64 M586 40 V64 M638 40 V64 M690 40 V64 M742 40 V64 M790 40 V64" marker-end="url(#c5f2-ar)"/>
+      </g>
+      <text x="814" y="42" class="svg-label" fill="#d9472b">p (t/ml)</text>
+      <!-- poutre -->
+      <rect x="160" y="66" width="640" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M160 78 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/><path d="M800 78 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/><path d="M790 98 h20" stroke="#6e7884"/><circle cx="795" cy="101" r="2" fill="#6e7884"/><circle cx="805" cy="101" r="2" fill="#6e7884"/>
+      <path d="M160 108 H800" stroke="#a8842a" marker-start="url(#c5f2-dim)" marker-end="url(#c5f2-dim)"/>
+      <text x="480" y="104" text-anchor="middle" class="svg-small" fill="#a8842a">L</text>
+      <text x="40" y="76" class="svg-label">Poutre</text>
+      <!-- M -->
+      <text x="40" y="160" class="svg-label">M(x)</text>
+      <path d="M160 140 H800" stroke="#14171f"/>
+      <path d="M160 140 Q480 320 800 140 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/>
+      <path d="M480 140 V230" stroke="#0f8f7b" stroke-dasharray="4 3"/>
+      <text x="492" y="222" class="svg-label" fill="#0b6b5c">pL²/8</text>
+      <text x="300" y="168" class="svg-small" fill="#0b6b5c">parabole</text>
+      <!-- T -->
+      <text x="40" y="320" class="svg-label">T(x)</text>
+      <path d="M160 320 H800" stroke="#14171f"/>
+      <path d="M160 320 L160 268 L800 372 L800 320 Z" fill="#ddd0f5" stroke="#7a52c7" stroke-width="2"/>
+      <text x="168" y="262" class="svg-label" fill="#5b3a9e">+pL/2</text>
+      <text x="740" y="390" class="svg-label" fill="#5b3a9e">−pL/2</text>
+      <circle cx="480" cy="320" r="4" fill="#7a52c7"/><text x="488" y="312" class="svg-small" fill="#5b3a9e">T = 0 à mi-travée</text>
+    </svg>
+    <figcaption><b>Figure 5.2 —</b> Sous charge répartie, le moment est une <b>parabole</b> (maximum pL²/8 au milieu) et l'effort tranchant une <b>droite</b> (maximum pL/2 sur appui). Le moment est maximal là où l'effort tranchant s'annule : c'est la relation T = dM/dx.</figcaption>
+  </figure>
+
+  <h3>Charge concentrée P à l'abscisse a</h3>
+  <p>Avec b = L − a, la réaction gauche vaut R<sub>A</sub> = P·b/L et la droite R<sub>B</sub> = P·a/L. Le moment est un <b>triangle</b> dont le sommet est sous la charge :</p>
+  <div class="formula"><span class="lbl">Charge concentrée</span>
+    <span class="texd">M(a) = \frac{P\,a\,b}{L} \quad;\quad \text{si } a = x \text{ (charge dans la section étudiée)} : \; M_{\max}(x) = \frac{P\,x\,(L-x)}{L}</span>
+    <div class="where">Pour une seule charge, le moment maximal en x s'obtient en plaçant la charge <b>dans la section x</b>. À mi-travée : PL/4.</div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Diagrammes sous une charge concentrée">
+      <defs>
+        <marker id="c5f3-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <marker id="c5f3-dim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+      </defs>
+      <rect width="960" height="330" fill="#fbfaf6"/>
+      <path d="M416 14 V58" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5f3-ar)"/>
+      <text x="426" y="28" class="svg-label" fill="#d9472b">P</text>
+      <rect x="160" y="60" width="640" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M160 72 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/><path d="M800 72 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M160 100 H416" stroke="#a8842a" marker-start="url(#c5f3-dim)" marker-end="url(#c5f3-dim)"/><path d="M416 100 H800" stroke="#a8842a" marker-start="url(#c5f3-dim)" marker-end="url(#c5f3-dim)"/>
+      <text x="288" y="94" text-anchor="middle" class="svg-small" fill="#a8842a">a</text><text x="608" y="94" text-anchor="middle" class="svg-small" fill="#a8842a">b = L − a</text>
+      <text x="40" y="150" class="svg-label">M(x)</text>
+      <path d="M160 130 H800" stroke="#14171f"/>
+      <path d="M160 130 L416 214 L800 130 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/>
+      <text x="428" y="226" class="svg-label" fill="#0b6b5c">P·a·b / L</text>
+      <text x="40" y="270" class="svg-label">T(x)</text>
+      <path d="M160 270 H800" stroke="#14171f"/>
+      <path d="M160 270 V238 H416 V308 H800 V270" fill="#ddd0f5" stroke="#7a52c7" stroke-width="2"/>
+      <text x="200" y="232" class="svg-small" fill="#5b3a9e">+P·b/L</text>
+      <text x="700" y="322" class="svg-small" fill="#5b3a9e">−P·a/L</text>
+      <text x="430" y="290" class="svg-small" fill="#5b3a9e">saut = P</text>
+    </svg>
+    <figcaption><b>Figure 5.3 —</b> Sous une charge concentrée, le moment est un triangle et l'effort tranchant fait un <b>saut égal à P</b> au droit de la charge. Pour plusieurs charges, on superpose : le diagramme devient une ligne brisée dont les sommets sont sous les charges.</figcaption>
+  </figure>
+
+  <div class="box ex"><span class="t">Exemple du TD n° 1 — charge permanente p = 25 t/ml, L = 25 m</span>
+    Le tablier pèse G = 20 t/ml et les superstructures (revêtement, trottoirs, corniches, dispositifs de retenue) Q<sub>sup</sub> = 5 t/ml, soit une charge permanente totale p = 25 t/ml. On calcule M et T dans les sections usuelles 0 ; 0,1L ; … ; 0,5L (par symétrie, inutile d'aller plus loin).
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th>Section</th><th class="num">x (m)</th><th class="num">M = p x (L−x)/2 (t.m)</th><th class="num">T = p (L/2 − x) (t)</th><th class="num">Roue Br 10 t : P x (L−x)/L (t.m)</th></tr>
+      <tr><td>0,0 L</td><td class="num">0</td><td class="num">0</td><td class="num">312,5</td><td class="num">0</td></tr>
+      <tr><td>0,1 L</td><td class="num">2,5</td><td class="num">703,1</td><td class="num">250,0</td><td class="num">22,5</td></tr>
+      <tr><td>0,2 L</td><td class="num">5,0</td><td class="num">1 250,0</td><td class="num">187,5</td><td class="num">40,0</td></tr>
+      <tr><td>0,3 L</td><td class="num">7,5</td><td class="num">1 640,6</td><td class="num">125,0</td><td class="num">52,5</td></tr>
+      <tr><td>0,4 L</td><td class="num">10,0</td><td class="num">1 875,0</td><td class="num">62,5</td><td class="num">60,0</td></tr>
+      <tr class="hl"><td>0,5 L</td><td class="num">12,5</td><td class="num">1 953,1</td><td class="num">0</td><td class="num">62,5</td></tr>
+    </table></div>
+    Vérification : pL²/8 = 25 × 25² / 8 = 1 953,1 t.m et pL/2 = 312,5 t. Pour la roue Br, la charge est placée dans chaque section : en 0,4L, M = 10 × 10 × 15 / 25 = 60 t.m.
+  </div>
+  <div class="box warn"><span class="t">Piège classique</span>
+    La formule P x (L−x)/L donne le maximum <b>pour une charge unique</b>. Pour un camion à plusieurs essieux, placer « un » essieu dans la section ne suffit pas : il faut chercher la meilleure position de l'ensemble. C'est le rôle des lignes d'influence (§ 5.3) et du théorème de Barré (§ 5.4).
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5.3 ═══════════════════════ -->
+<section>
+  <h2><span class="n">5.3</span>Les lignes d'influence</h2>
+  <p>Un diagramme de moment répond à la question : « <i>pour un chargement donné, que vaut M dans chaque section ?</i> ». Pour des charges <b>mobiles</b>, on retourne la question : « <i>pour une section donnée, que vaut M quand la charge est ici, ou là ?</i> ». La réponse est la ligne d'influence.</p>
+  <div class="box def"><span class="t">Ligne d'influence (LI)</span>
+    La ligne d'influence d'un effet E (réaction, effort tranchant, moment…) <b>dans une section fixe x</b> est la courbe qui donne la valeur de E lorsqu'une <b>charge unité</b> (1 t, ou 1 kN) se déplace le long de la poutre. Son abscisse est la <b>position de la charge</b> α, et non la section étudiée.
+  </div>
+
+  <div class="seq" data-seq="c5-li" data-title="La ligne d'influence se construit point par point">
+    <div class="seq-stage">
+      <svg viewBox="0 0 960 360" role="img" aria-label="Construction point par point de la ligne d'influence du moment">
+        <defs>
+          <marker id="c5s1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        </defs>
+        <text x="30" y="30" class="svg-title">Poutre L = 10 m — section étudiée x = 4 m</text>
+        <rect x="140" y="90" width="720" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M140 102 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/><path d="M860 102 l-10 16 h20 z" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M428 70 V330" stroke="#0f8f7b" stroke-dasharray="5 4"/>
+        <text x="436" y="80" class="svg-small" fill="#0b6b5c">section x = 4 m</text>
+        <text x="30" y="236" class="svg-label">LI de M(4)</text>
+        <path d="M140 230 H860" stroke="#14171f"/>
+        <g class="svg-small" text-anchor="middle"><text x="140" y="140">0</text><text x="284" y="140">2</text><text x="428" y="140">4</text><text x="572" y="140">6</text><text x="716" y="140">8</text><text x="860" y="140">10 m</text></g>
+        <!-- charge unité aux différentes positions -->
+        <g data-only="1"><path d="M140 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="150" y="50" class="svg-label" fill="#d9472b">1 t</text></g>
+        <g data-only="2"><path d="M284 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="294" y="50" class="svg-label" fill="#d9472b">1 t en α = 2 m</text></g>
+        <g data-only="3"><path d="M428 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="438" y="50" class="svg-label" fill="#d9472b">1 t en α = 4 m</text></g>
+        <g data-only="4"><path d="M572 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="582" y="50" class="svg-label" fill="#d9472b">1 t en α = 6 m</text></g>
+        <g data-only="5"><path d="M716 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="726" y="50" class="svg-label" fill="#d9472b">1 t en α = 8 m</text></g>
+        <g data-only="6,7"><path d="M860 40 V86" stroke="#d9472b" stroke-width="2.4" marker-end="url(#c5s1-ar)"/><text x="760" y="50" class="svg-label" fill="#d9472b">1 t en α = 10 m</text></g>
+        <!-- points de la LI -->
+        <g data-step="1"><circle cx="140" cy="230" r="6" fill="#d9472b"/><text x="150" y="222" class="svg-small">M = 0</text></g>
+        <g data-step="2" class="grow"><path d="M284 230 V278" stroke="#d9472b" stroke-dasharray="3 3"/><circle cx="284" cy="278" r="6" fill="#d9472b"/><text x="294" y="282" class="svg-small">1 × 2 × 6/10 = 1,20</text></g>
+        <g data-step="3" class="grow"><path d="M428 230 V326" stroke="#d9472b" stroke-dasharray="3 3"/><circle cx="428" cy="326" r="7" fill="#d9472b"/><text x="440" y="340" class="svg-small">2,40 (charge DANS la section)</text></g>
+        <g data-step="4" class="grow"><path d="M572 230 V294" stroke="#d9472b" stroke-dasharray="3 3"/><circle cx="572" cy="294" r="6" fill="#d9472b"/><text x="582" y="298" class="svg-small">4 × 4/10 = 1,60</text></g>
+        <g data-step="5" class="grow"><path d="M716 230 V262" stroke="#d9472b" stroke-dasharray="3 3"/><circle cx="716" cy="262" r="6" fill="#d9472b"/><text x="726" y="266" class="svg-small">0,80</text></g>
+        <g data-step="6"><circle cx="860" cy="230" r="6" fill="#d9472b"/><text x="822" y="222" class="svg-small">M = 0</text></g>
+        <g data-step="6"><path d="M140 230 L428 326 L860 230" fill="none" stroke="#0f8f7b" stroke-width="2.5"/></g>
+        <g data-step="7"><path d="M140 230 L428 326 L860 230 Z" fill="#b6e6dc" opacity=".75"/>
+          <rect x="560" y="160" width="300" height="50" rx="10" fill="#fff" stroke="#0f8f7b"/>
+          <text x="710" y="182" text-anchor="middle" class="svg-label" fill="#0b6b5c">sommet = x(L − x)/L = 2,40 m</text>
+          <text x="710" y="200" text-anchor="middle" class="svg-small">deux droites, sommet au droit de la section</text></g>
+      </svg>
+    </div>
+    <ol class="seq-steps">
+      <li>On fixe une <b>section</b> (x = 4 m sur une poutre de 10 m) et on pose une charge unité de 1 t sur l'appui gauche : elle descend directement dans l'appui, M(4) = 0.</li>
+      <li>La charge avance en α = 2 m. La réaction droite vaut 1 × 2/10 = 0,2 t ; on calcule M(4) en coupant à droite : 0,2 × 6 = <b>1,20 t.m</b>. On reporte ce point <b>sous la position de la charge</b>.</li>
+      <li>La charge est dans la section : M(4) = 1 × 4 × 6/10 = <b>2,40 t.m</b>. C'est le maximum : une charge unique produit son plus grand effet quand elle est dans la section.</li>
+      <li>La charge a dépassé la section (α = 6 m) : réaction gauche 0,4 t, donc M(4) = 0,4 × 4 = <b>1,60 t.m</b>.</li>
+      <li>En α = 8 m : M(4) = 0,2 × 4 = <b>0,80 t.m</b>. Les points sont alignés : la LI est faite de droites.</li>
+      <li>Sur l'appui droit, M(4) = 0. On relie les points : la LI du moment en x est un <b>triangle</b>.</li>
+      <li data-dur="6500">Résultat général : un triangle de hauteur <span class="tex">x(L-x)/L</span> au droit de la section. Attention : cette courbe <b>n'est pas</b> un diagramme de moment ; elle se lit « effet en x quand la charge est en α ».</li>
+    </ol>
+  </div>
+
+  <h3>Les LI de la poutre isostatique</h3>
+  <p>En reprenant le raisonnement de la séquence pour chaque effet, on obtient trois lignes d'influence à connaître par cœur (α = position de la charge unité) :</p>
+  <div class="formula"><span class="lbl">Lignes d'influence de la poutre sur deux appuis</span>
+    <span class="texd">\text{LI}_{R_A}(\alpha) = 1-\frac{\alpha}{L} \qquad
+    \text{LI}_{T(x)}(\alpha) = \begin{cases} -\dfrac{\alpha}{L} & \alpha \lt x \\[4pt] 1-\dfrac{\alpha}{L} & \alpha \gt x \end{cases} \qquad
+    \text{LI}_{M(x)}(\alpha) = \begin{cases} \dfrac{\alpha\,(L-x)}{L} & \alpha \le x \\[4pt] \dfrac{x\,(L-\alpha)}{L} & \alpha \ge x \end{cases}</span>
+    <div class="where">La LI de T présente un <b>saut de 1</b> dans la section ; la LI de M est un triangle de sommet <span class="tex">x(L-x)/L</span> (en mètres).</div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 520" role="img" aria-label="Lignes d'influence de la réaction, de l'effort tranchant et du moment">
+      <defs><marker id="c5f4-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker></defs>
+      <rect width="960" height="520" fill="#fbfaf6"/>
+      <path d="M560 14 V48" stroke="#d9472b" stroke-width="2.2" marker-end="url(#c5f4-ar)"/>
+      <text x="570" y="26" class="svg-small" fill="#d9472b">charge unité mobile (α)</text>
+      <path d="M520 32 H545" stroke="#d9472b" marker-end="url(#c5f4-ar)"/>
+      <rect x="140" y="50" width="720" height="10" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M140 60 l-9 14 h18 z" fill="#cfd5dc" stroke="#6e7884"/><path d="M860 60 l-9 14 h18 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <text x="126" y="92" class="svg-small" text-anchor="middle">A</text><text x="874" y="92" class="svg-small" text-anchor="middle">B</text>
+      <path d="M428 40 V500" stroke="#0f8f7b" stroke-dasharray="5 4"/>
+      <text x="436" y="96" class="svg-small" fill="#0b6b5c">section x (ici x = 0,4 L)</text>
+      <!-- LI RA -->
+      <text x="20" y="150" class="svg-label">LI de R<tspan font-size="10" dy="3">A</tspan></text>
+      <path d="M140 140 H860" stroke="#14171f"/>
+      <path d="M140 140 L140 200 L860 140 Z" fill="#cfe0fb" stroke="#2d6be4" stroke-width="2"/>
+      <text x="148" y="216" class="svg-small" fill="#1d4fb0">1</text>
+      <text x="600" y="190" class="svg-small" fill="#1d4fb0">1 − α/L</text>
+      <!-- LI T -->
+      <text x="20" y="290" class="svg-label">LI de T(x)</text>
+      <path d="M140 280 H860" stroke="#14171f"/>
+      <path d="M140 280 L428 256 L428 280 Z" fill="#f7c9bd" stroke="#d9472b" stroke-width="2"/>
+      <path d="M428 280 L428 316 L860 280 Z" fill="#ddd0f5" stroke="#7a52c7" stroke-width="2"/>
+      <text x="356" y="250" class="svg-small" fill="#b3361d">− x/L</text>
+      <text x="436" y="330" class="svg-small" fill="#5b3a9e">1 − x/L</text>
+      <text x="470" y="262" class="svg-small">saut de 1 dans la section</text>
+      <!-- LI M -->
+      <text x="20" y="420" class="svg-label">LI de M(x)</text>
+      <path d="M140 410 H860" stroke="#14171f"/>
+      <path d="M140 410 L428 480 L860 410 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/>
+      <text x="440" y="496" class="svg-label" fill="#0b6b5c">x (L − x) / L</text>
+      <text x="200" y="404" class="svg-small" fill="#0b6b5c">pente (L − x)/L</text>
+      <text x="660" y="404" class="svg-small" fill="#0b6b5c">pente − x/L</text>
+      <text x="20" y="512" class="svg-small">Ordonnées positives portées vers le bas (même convention que les moments).</text>
+    </svg>
+    <figcaption><b>Figure 5.4 —</b> Les trois lignes d'influence de la poutre isostatique. Elles sont toutes <b>linéaires par morceaux</b> : c'est une propriété générale des structures isostatiques (pour une structure hyperstatique, les LI sont courbes).</figcaption>
+  </figure>
+
+  <h3>Utiliser une ligne d'influence</h3>
+  <p>Grâce au principe de superposition, une fois la LI connue, l'effet de n'importe quel chargement s'obtient par une simple somme :</p>
+  <div class="formula"><span class="lbl">Effet d'un chargement à l'aide de la LI</span>
+    <span class="texd">E = \sum_i P_i\, y_i \qquad\text{(charges concentrées)} \qquad\qquad E = p \int_{a}^{a+c} y(\alpha)\,d\alpha = p \times \text{aire} \qquad\text{(charge répartie)}</span>
+    <div class="where">y<sub>i</sub> = ordonnée de la LI sous la charge P<sub>i</sub> ; « aire » = aire de la LI sous la zone chargée. Pour une charge répartie sur toute la travée : M(x) = p × L × x(L−x)/L / 2 = p x (L−x)/2 — on retrouve la formule du § 5.2.</div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 300" role="img" aria-label="Utilisation de la ligne d'influence pour un camion et pour une charge répartie">
+      <defs><marker id="c5f5-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <pattern id="c5f5-hat" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#b6e6dc"/><path d="M0 0 V7" stroke="#0f8f7b" stroke-width="1.2"/></pattern></defs>
+      <rect width="960" height="300" fill="#fbfaf6"/>
+      <rect x="10" y="10" width="460" height="280" rx="14" fill="#f4f7fb"/>
+      <rect x="490" y="10" width="460" height="280" rx="14" fill="#f4f7fb"/>
+      <text x="240" y="36" text-anchor="middle" class="svg-title">Camion Bc : E = Σ Pᵢ·yᵢ</text>
+      <text x="720" y="36" text-anchor="middle" class="svg-title">Charge répartie : E = p × aire</text>
+      <!-- gauche : L=25 -> 400 px, x0=40 ; section 12,5 -->
+      <g stroke="#d9472b" stroke-width="2.2"><path d="M240 58 V104" marker-end="url(#c5f5-ar)"/><path d="M264 58 V104" marker-end="url(#c5f5-ar)"/><path d="M168 70 V104" marker-end="url(#c5f5-ar)"/></g>
+      <g class="svg-small" fill="#d9472b" text-anchor="middle"><text x="168" y="64">6 t</text><text x="236" y="52">12 t</text><text x="268" y="52">12 t</text></g>
+      <rect x="40" y="106" width="400" height="8" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M40 114 l-7 11 h14 z M440 114 l-7 11 h14 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M40 160 H440" stroke="#14171f"/>
+      <path d="M40 160 L240 260 L440 160 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/>
+      <g stroke="#d9472b" stroke-dasharray="3 3"><path d="M168 160 V224"/><path d="M240 160 V260"/><path d="M264 160 V248"/></g>
+      <g class="svg-small"><text x="120" y="236">y₁ = 4,00</text><text x="200" y="278">y₂ = 6,25</text><text x="272" y="252">y₃ = 5,50</text></g>
+      <text x="240" y="150" text-anchor="middle" class="svg-small">L = 25 m, section x = L/2</text>
+      <!-- droite -->
+      <rect x="640" y="76" width="160" height="12" fill="#f7c9bd" stroke="#d9472b"/>
+      <g stroke="#d9472b" stroke-width="1.5"><path d="M650 88 V102 M680 88 V102 M710 88 V102 M740 88 V102 M770 88 V102 M796 88 V102"/></g>
+      <text x="720" y="70" text-anchor="middle" class="svg-small" fill="#d9472b">p sur une longueur c</text>
+      <rect x="520" y="106" width="400" height="8" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M520 114 l-7 11 h14 z M920 114 l-7 11 h14 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M520 160 H920" stroke="#14171f"/>
+      <path d="M520 160 L720 260 L920 160 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2" opacity=".5"/>
+      <path d="M640 160 L640 220 L720 260 L800 220 L800 160 Z" fill="url(#c5f5-hat)" stroke="#0f8f7b" stroke-width="2"/>
+      <text x="720" y="200" text-anchor="middle" class="svg-label" fill="#0b4f45">aire</text>
+      <text x="720" y="284" text-anchor="middle" class="svg-small">seule la partie chargée de la LI compte</text>
+    </svg>
+    <figcaption><b>Figure 5.5 —</b> À gauche : moment à mi-travée (L = 25 m) d'un camion Bc dont un essieu arrière est au milieu : M = 6 × 4,00 + 12 × 6,25 + 12 × 5,50 = <b>165 t.m</b>. À droite : pour une charge répartie, on multiplie p par l'aire hachurée de la LI.</figcaption>
+  </figure>
+
+  <h3>Simulateur : faites rouler un convoi</h3>
+  <p>Choisissez une portée, une section et un convoi, puis déplacez-le (ou cliquez sur <b>Animer</b>). Le simulateur lit la LI sous chaque essieu, calcule <span class="tex">M = \sum P_i y_i</span> (ou <span class="tex">p \times \text{aire}</span>) et trace en bas la courbe du moment en x en fonction de la position du convoi. Les valeurs sont <b>hors coefficients</b> (bc, δ…).</p>
+  <div class="calc" id="calc-c5-sim"><div class="calc-h">Faites rouler un convoi sur la poutre</div><div class="calc-b">
+    <div class="inputs">
+      <label>Portée L (m) <input type="number" id="c5-sim-L" value="25" step="0.5" min="5" max="60"></label>
+      <label>Convoi <select id="c5-sim-conv">
+        <option value="br">Roue Br 10 t</option>
+        <option value="bc" selected>Camion Bc 30 t</option>
+        <option value="bc2">2 camions Bc en file (60 t)</option>
+        <option value="bt">Tandem Bt (2 × 16 t)</option>
+        <option value="mc">Char Mc120 (110 t sur 6,10 m)</option>
+        <option value="ud">Charge répartie 2 t/ml sur 10 m</option>
+      </select></label>
+      <label class="full">Section étudiée x / L = <span class="val" id="c5-sim-xv">0,40</span> <input type="range" id="c5-sim-x" min="0.05" max="0.95" step="0.01" value="0.40"></label>
+      <label class="full">Position de la tête du convoi = <span class="val" id="c5-sim-sv">—</span> <input type="range" id="c5-sim-s" min="0" max="1000" step="1" value="500"></label>
+      <div class="full rowbtn" style="grid-column:1/-1"><button class="btn sm" type="button" id="c5-sim-play">▶ Animer</button><button class="btn sm light" type="button" id="c5-sim-best">Placer au maximum</button><button class="btn sm light" type="button" id="c5-sim-reset">Effacer la trace</button></div>
+    </div>
+    <div class="out">
+      <div class="res big"><span>Moment courant M(x)</span><b id="c5-sim-M">—</b></div>
+      <div class="res"><span>Maximum atteint (trace)</span><b id="c5-sim-max">—</b></div>
+      <div class="res"><span>… pour une tête de convoi en</span><b id="c5-sim-maxs">—</b></div>
+      <div class="res"><span>Maximum théorique en x</span><b id="c5-sim-th">—</b></div>
+      <div class="steps" id="c5-sim-steps"></div>
+    </div>
+    <div class="calc-fig"><svg id="c5-sim-svg" viewBox="0 0 960 460" role="img" aria-label="Poutre, convoi, ligne d'influence et courbe du moment"></svg></div>
+  </div></div>
+  <div class="box tip"><span class="t">Essais à faire</span>
+    <ul>
+      <li><b>Roue Br, L = 25 m, x = 0,40</b> : le maximum vaut <b>60 t.m</b>, atteint quand la roue est dans la section (tête en 10 m).</li>
+      <li><b>Mc120, L = 20 m, x = 0,50</b> : maximum <b>466,1 t.m</b> (hors δ), chenille centrée sur la section.</li>
+      <li><b>Camion Bc, L = 25 m, x = 0,50</b> : 165 t.m, avec le 1<sup>er</sup> essieu arrière dans la section — et non l'essieu avant de 6 t.</li>
+      <li>Comparez la forme de la courbe du bas avec la LI : pour une roue unique, c'est la même courbe !</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5.4 ═══════════════════════ -->
+<section>
+  <h2><span class="n">5.4</span>Positions les plus défavorables</h2>
+  <p>Faire défiler le convoi au simulateur fonctionne, mais à la main on veut une <b>règle</b>. Deux résultats classiques suffisent pour la poutre isostatique.</p>
+
+  <h3>Charge répartie de longueur c (char Mc, convoi D ou E, A(l) partiel)</h3>
+  <p>Le moment en x vaut p × aire de la LI sous la charge. Si l'on déplace la charge d'une petite longueur, on gagne l'ordonnée à l'avant et on perd celle de l'arrière : l'aire est maximale quand <b>les ordonnées de la LI aux deux extrémités de la charge sont égales</b>. Pour un triangle, cela revient à :</p>
+  <div class="formula"><span class="lbl">Position la plus défavorable d'une charge répartie de longueur c</span>
+    <span class="texd">\text{la section partage la charge dans le même rapport que la travée :}\quad \frac{c_1}{c_2} = \frac{x}{L-x} \;\Rightarrow\; c_1 = \frac{c\,x}{L},\quad a = x - \frac{c\,x}{L}</span>
+    <div class="where">a = abscisse de l'extrémité gauche de la charge ; c<sub>1</sub> = partie de la charge à gauche de la section, c<sub>2</sub> = c − c<sub>1</sub> à droite.</div>
+  </div>
+  <figure class="fig">
+    <svg viewBox="0 0 960 300" role="img" aria-label="Position la plus défavorable d'une charge répartie">
+      <defs><marker id="c5f6-dim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+        <pattern id="c5f6-hat" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#b6e6dc"/><path d="M0 0 V7" stroke="#0f8f7b" stroke-width="1.2"/></pattern></defs>
+      <rect width="960" height="300" fill="#fbfaf6"/>
+      <!-- L=20 m -> 720 px (36 px/m), x0=120 ; section 0,3L = 6 m -> 336 ; c = 6,1 m -> 219.6 px ; c1 = 1,83 m -> 65.9 ; a=4,17 m -> 270.1 ; fin 489.7 -->
+      <rect x="270" y="40" width="220" height="22" rx="4" fill="#7a52c7" opacity=".85"/>
+      <text x="380" y="56" text-anchor="middle" class="svg-small" fill="#fff">chenille Mc120 : c = 6,10 m</text>
+      <rect x="120" y="66" width="720" height="10" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M120 76 l-8 13 h16 z M840 76 l-8 13 h16 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M336 30 V270" stroke="#0f8f7b" stroke-dasharray="5 4"/>
+      <text x="342" y="28" class="svg-small" fill="#0b6b5c">section x = 0,3 L</text>
+      <path d="M270 104 H336" stroke="#a8842a" marker-start="url(#c5f6-dim)" marker-end="url(#c5f6-dim)"/><path d="M336 104 H490" stroke="#a8842a" marker-start="url(#c5f6-dim)" marker-end="url(#c5f6-dim)"/>
+      <text x="303" y="98" text-anchor="middle" class="svg-small" fill="#a8842a">c₁</text><text x="413" y="98" text-anchor="middle" class="svg-small" fill="#a8842a">c₂</text>
+      <path d="M120 140 H840" stroke="#14171f"/>
+      <path d="M120 140 L336 241 L840 140 Z" fill="#b6e6dc" opacity=".45" stroke="#0f8f7b"/>
+      <!-- ordonnées : y(a)=4,17*0,7=2,919 ; y(fin)=6*(20-10,27)/20=2,919 ; sommet 4,2 -> 101 px => 24 px/m -->
+      <path d="M270 140 L270 210 L336 241 L490 210 L490 140 Z" fill="url(#c5f6-hat)" stroke="#0f8f7b" stroke-width="2"/>
+      <path d="M250 210 H510" stroke="#d9472b" stroke-dasharray="4 3"/>
+      <text x="520" y="214" class="svg-small" fill="#b3361d">ordonnées égales aux deux extrémités</text>
+      <text x="344" y="258" class="svg-small" fill="#0b6b5c">x(L−x)/L</text>
+      <text x="600" y="250" class="svg-label">c₁ / c₂ = x / (L − x)</text>
+      <text x="600" y="272" class="svg-small">ici : c₁ = 6,10 × 0,3 = 1,83 m</text>
+    </svg>
+    <figcaption><b>Figure 5.6 —</b> Position la plus défavorable d'une charge répartie de longueur c : les deux extrémités « voient » la même ordonnée de LI. C'est la règle utilisée dans l'examen 2016 pour le char Mc120 (L = 20 m).</figcaption>
+  </figure>
+  <div class="box ex"><span class="t">Mc120 sur L = 20 m (examen du 19/02/2016)</span>
+    q = 110 / 6,10 = 18,03 t/m. En x = 0,5L = 10 m, la chenille est centrée : aire = c × (y<sub>sommet</sub> − c/4) = 6,10 × (5 − 1,525) = 21,20 m², d'où M = 18,03 × 21,20 = <b>466,12 t.m</b> (hors δ). Avec δ = 1,1205 : <b>522,3 t.m</b>. En appliquant la règle dans les autres sections : 167,81 (0,1L) ; 298,32 (0,2L) ; 391,55 (0,3L) ; 447,48 (0,4L) t.m.
+  </div>
+
+  <h3>Convoi de charges concentrées : le théorème de Barré</h3>
+  <p>Pour une section x donnée, le maximum de <span class="tex">\sum P_i y_i</span> est toujours atteint avec <b>une charge dans la section</b> (la LI est faite de droites : la somme est linéaire par morceaux et son maximum est à un « coin »). On essaie donc chaque essieu dans la section et on garde le meilleur. Mais où se trouve le <b>maximum absolu</b> le long de la poutre ?</p>
+  <div class="box def"><span class="t">Théorème de Barré</span>
+    Le moment fléchissant <b>maximum maximorum</b> sous un convoi de charges concentrées se produit <b>sous l'une des charges</b>, lorsque le <b>milieu de la poutre</b> partage en deux parties égales la distance entre cette charge et la <b>résultante</b> du convoi (supposé entièrement sur la travée). En pratique, la charge en question est l'une des plus lourdes, voisine de la résultante.
+  </div>
+
+  <div class="seq" data-seq="c5-barre" data-title="Barré : trouver la position critique">
+    <div class="seq-stage">
+      <svg viewBox="0 0 960 400" role="img" aria-label="Application du théorème de Barré à deux camions Bc">
+        <defs>
+          <marker id="c5s2-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+          <marker id="c5s2-arv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#7a52c7"/></marker>
+          <marker id="c5s2-dim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+        </defs>
+        <text x="24" y="28" class="svg-title">2 camions Bc en file (60 t) sur une travée L = 25 m</text>
+        <!-- poutre : 100 → 860 (30,4 px/m) -->
+        <rect x="100" y="150" width="760" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M100 162 l-9 14 h18 z M860 162 l-9 14 h18 z" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M480 40 V380" stroke="#0f8f7b" stroke-dasharray="5 4"/>
+        <text x="486" y="388" class="svg-small" fill="#0b6b5c">milieu de la travée</text>
+        <!-- convoi : position A (essieu 3 au milieu) -->
+        <g data-only="1-3">
+          <g transform="translate(-52.4 0)">
+            <rect x="522" y="66" width="150" height="30" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="672" y="60" width="52" height="36" rx="5" fill="#d9472b"/>
+            <rect x="196" y="66" width="150" height="30" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="346" y="60" width="52" height="36" rx="5" fill="#2d6be4"/>
+            <g stroke="#d9472b" stroke-width="2.2"><path d="M714.8 104 V146" marker-end="url(#c5s2-ar)"/><path d="M578 104 V146" marker-end="url(#c5s2-ar)"/><path d="M532.4 104 V146" marker-end="url(#c5s2-ar)"/><path d="M395.6 104 V146" marker-end="url(#c5s2-ar)"/><path d="M258.8 104 V146" marker-end="url(#c5s2-ar)"/><path d="M213.2 104 V146" marker-end="url(#c5s2-ar)"/></g>
+            <g class="svg-small" text-anchor="middle"><text x="714.8" y="122" dx="16">6</text><text x="578" y="122" dx="16">12</text><text x="532.4" y="122" dx="-16">12</text><text x="395.6" y="122" dx="16">6</text><text x="258.8" y="122" dx="16">12</text><text x="213.2" y="122" dx="-16">12</text></g>
+          </g>
+        </g>
+        <g data-only="2-3">
+          <path d="M375.1 40 V146" stroke="#7a52c7" stroke-width="3.5" marker-end="url(#c5s2-arv)"/>
+          <text x="368" y="52" text-anchor="end" class="svg-label" fill="#5b3a9e">R = 60 t</text>
+          <text x="368" y="68" text-anchor="end" class="svg-small" fill="#5b3a9e">à 9,45 m de l'essieu avant</text>
+        </g>
+        <g data-only="3"><circle cx="480" cy="156" r="16" fill="none" stroke="#e39b1b" stroke-width="3"/><text x="500" y="200" class="svg-small" fill="#a86d00">essieu 12 t le plus proche de R : 1,05 m</text></g>
+        <!-- position B (Barré) -->
+        <g data-only="4-7" class="slide-r" data-step="4">
+          <rect x="522" y="66" width="150" height="30" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="672" y="60" width="52" height="36" rx="5" fill="#d9472b"/>
+          <rect x="196" y="66" width="150" height="30" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="346" y="60" width="52" height="36" rx="5" fill="#2d6be4"/>
+          <g stroke="#d9472b" stroke-width="2.2"><path d="M714.8 104 V146" marker-end="url(#c5s2-ar)"/><path d="M578 104 V146" marker-end="url(#c5s2-ar)"/><path d="M532.4 104 V146" marker-end="url(#c5s2-ar)"/><path d="M395.6 104 V146" marker-end="url(#c5s2-ar)"/><path d="M258.8 104 V146" marker-end="url(#c5s2-ar)"/><path d="M213.2 104 V146" marker-end="url(#c5s2-ar)"/></g>
+          <g class="svg-small" text-anchor="middle"><text x="714.8" y="122" dx="16">6</text><text x="578" y="122" dx="16">12</text><text x="532.4" y="122" dx="-16">12</text><text x="395.6" y="122" dx="16">6</text><text x="258.8" y="122" dx="16">12</text><text x="213.2" y="122" dx="-16">12</text></g>
+          <path d="M427.6 40 V146" stroke="#7a52c7" stroke-width="3.5" marker-end="url(#c5s2-arv)"/>
+          <text x="420" y="52" text-anchor="end" class="svg-label" fill="#5b3a9e">R</text>
+        </g>
+        <g data-only="4-5">
+          <path d="M427.6 186 H480" stroke="#a8842a" marker-start="url(#c5s2-dim)" marker-end="url(#c5s2-dim)"/><path d="M480 186 H532.4" stroke="#a8842a" marker-start="url(#c5s2-dim)" marker-end="url(#c5s2-dim)"/>
+          <text x="454" y="206" text-anchor="middle" class="svg-small" fill="#a8842a">0,525</text><text x="506" y="206" text-anchor="middle" class="svg-small" fill="#a8842a">0,525</text>
+        </g>
+        <!-- diagramme de moment, base 220 -->
+        <g data-step="5">
+          <path d="M100 220 H860" stroke="#14171f"/>
+          <path d="M100 220 L213.2 293.6 L258.8 312.8 L395.6 339.2 L532.4 350 L578 343.2 L714.8 291.5 L860 220 Z" fill="#b6e6dc" stroke="#0f8f7b" stroke-width="2"/>
+          <path d="M532.4 220 V350" stroke="#0f8f7b" stroke-dasharray="3 3"/>
+          <text x="544" y="368" class="svg-label" fill="#0b6b5c">M max = 224,6 t.m en x = 14,23 m</text>
+        </g>
+        <g data-only="6">
+          <rect x="600" y="230" width="260" height="62" rx="10" fill="#fff" stroke="#e39b1b"/>
+          <text x="730" y="254" text-anchor="middle" class="svg-label">à mi-travée, au mieux : 217,5 t.m</text>
+          <text x="730" y="276" text-anchor="middle" class="svg-small">Barré : 224,6 t.m, soit + 3,3 %</text>
+        </g>
+        <g data-only="7">
+          <rect x="600" y="230" width="260" height="62" rx="10" fill="#fff" stroke="#7a52c7"/>
+          <text x="730" y="254" text-anchor="middle" class="svg-label">position symétrique aussi critique</text>
+          <text x="730" y="276" text-anchor="middle" class="svg-small">(convoi dans l'autre sens : x = 10,77 m)</text>
+        </g>
+      </svg>
+    </div>
+    <ol class="seq-steps">
+      <li>Deux camions Bc en file (essieux 6-12-12 t, espacements 4,50 / 1,50 / 4,50 / 4,50 / 1,50 m) roulent sur une travée de 25 m. Ici, un essieu de 12 t est exactement à mi-travée.</li>
+      <li>On calcule la <b>résultante</b> du convoi : R = 60 t, à <span class="tex">d_R = \sum P_i d_i / \sum P_i = 567/60 = 9{,}45</span> m derrière l'essieu avant.</li>
+      <li>On repère l'essieu lourd le plus proche de R : le 2<sup>e</sup> essieu arrière du 1<sup>er</sup> camion (à 6 m de l'avant), situé à 9,45 − 6 = <b>1,05 m</b> de R.</li>
+      <li>Barré : on décale le convoi pour que le <b>milieu de la poutre</b> soit à mi-distance entre cet essieu et R. L'essieu se retrouve à 1,05/2 = 0,525 m du milieu, en x = 12,5 + 0,525 = <b>14,225 m</b>.</li>
+      <li>Le diagramme des moments (ligne brisée, sommets sous les essieux) culmine sous l'essieu choisi : <b>M = 224,6 t.m</b>. On vérifie par acquit de conscience les autres essieux : 214,2 et 218,2 t.m, plus faibles.</li>
+      <li>Comparaison : le moment maximal <b>à mi-travée</b> ne vaut que 217,5 t.m. Le maximum absolu n'est donc pas forcément au milieu, mais l'écart reste faible (3 %) : en pratique, on dimensionne souvent la zone centrale avec le maximum absolu.</li>
+      <li>Le convoi peut circuler dans les deux sens : la position symétrique (x = 25 − 14,225 = 10,775 m) donne le même moment. Pour un camion Bc seul, Barré donne 165,03 t.m en x = 12,35 m, presque identique aux 165,0 t.m à mi-travée.</li>
+    </ol>
+  </div>
+  <div class="box warn"><span class="t">Pièges de Barré</span>
+    <ul>
+      <li>Le théorème suppose que <b>tout le convoi reste sur la travée</b>. Sur une petite portée, un essieu peut sortir : il faut alors refaire le calcul de R avec les seules charges restant sur la poutre.</li>
+      <li>Il donne le maximum <b>absolu</b> ; pour le moment dans une section imposée (0,1L, 0,2L…), on revient à la LI et on teste chaque essieu dans la section.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5.5 ═══════════════════════ -->
+<section>
+  <h2><span class="n">5.5</span>Enveloppes des sollicitations</h2>
+  <p>Pour ferrailler une poutre, on a besoin, <b>dans chaque section</b>, du plus grand moment et des efforts tranchants extrêmes (positif et négatif), toutes positions de charges confondues. La courbe qui relie ces valeurs est la <span class="kw">courbe enveloppe</span>. On la trace section par section (0 ; 0,1L ; … ; 0,5L) avec la LI, puis on complète par symétrie.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 960 380" role="img" aria-label="Courbes enveloppes du moment et de l'effort tranchant pour deux camions Bc">
+      <rect width="960" height="380" fill="#fbfaf6"/>
+      <text x="20" y="28" class="svg-title">Enveloppes — 2 camions Bc en file, L = 25 m (hors bc et δ)</text>
+      <text x="20" y="80" class="svg-label">M<tspan font-size="10" dy="3">max</tspan></text>
+      <path d="M100 70 H880" stroke="#14171f"/>
+      <path d="M100.0 70.0 L107.8 75.7 L115.6 81.2 L123.4 86.5 L131.2 91.7 L139.0 96.8 L146.8 101.6 L154.6 106.3 L162.4 110.9 L170.2 115.3 L178.0 119.5 L185.8 123.6 L193.6 127.5 L201.4 131.3 L209.2 134.8 L217.0 138.3 L224.8 141.5 L232.6 144.6 L240.4 147.6 L248.2 150.4 L256.0 153.0 L263.8 156.0 L271.6 158.8 L279.4 161.4 L287.2 164.0 L295.0 166.4 L302.8 168.8 L310.6 171.0 L318.4 173.0 L326.2 174.8 L334.0 176.4 L341.8 177.9 L349.6 179.2 L357.4 180.4 L365.2 181.4 L373.0 182.3 L380.8 183.0 L388.6 183.5 L396.4 183.9 L404.2 184.4 L412.0 185.5 L419.8 186.6 L427.6 187.6 L435.4 188.4 L443.2 189.2 L451.0 189.7 L458.8 190.0 L466.6 189.4 L474.4 186.9 L480.0 186.2 L485.6 186.9 L493.4 189.4 L501.2 190.0 L509.0 189.7 L516.8 189.2 L524.6 188.4 L532.4 187.6 L540.2 186.6 L548.0 185.5 L555.8 184.4 L563.6 183.9 L571.4 183.5 L579.2 183.0 L587.0 182.3 L594.8 181.4 L602.6 180.4 L610.4 179.2 L618.2 177.9 L626.0 176.4 L633.8 174.8 L641.6 173.0 L649.4 171.0 L657.2 168.8 L665.0 166.4 L672.8 164.0 L680.6 161.4 L688.4 158.8 L696.2 156.0 L704.0 153.0 L711.8 150.4 L719.6 147.6 L727.4 144.6 L735.2 141.5 L743.0 138.3 L750.8 134.8 L758.6 131.3 L766.4 127.5 L774.2 123.6 L782.0 119.5 L789.8 115.3 L797.6 110.9 L805.4 106.3 L813.2 101.6 L821.0 96.8 L828.8 91.7 L836.6 86.5 L844.4 81.2 L852.2 75.7 L860.0 70.0" fill="none" stroke="#c9a84c" stroke-width="2.6" id="c5f7-env" transform="translate(0 0)"/>
+      <text x="474" y="210" text-anchor="middle" class="svg-small" fill="#8a6a1c">224,6 t.m (x ≈ 0,43 L)</text>
+      <text x="474" y="224" text-anchor="middle" class="svg-small" fill="#8a6a1c">217,5 t.m à mi-travée</text>
+      <path d="M100 280 H880" stroke="#14171f"/>
+      <text x="20" y="250" class="svg-label">T<tspan font-size="10" dy="3">max</tspan></text>
+      <text x="20" y="318" class="svg-label">T<tspan font-size="10" dy="3">min</tspan></text>
+      <path id="c5f7-tp" d="" fill="none" stroke="#7a52c7" stroke-width="2.4"/>
+      <path id="c5f7-tm" d="" fill="none" stroke="#d9472b" stroke-width="2.4"/>
+      <text x="108" y="200" class="svg-small" fill="#5b3a9e" dy="0"></text>
+      <text x="110" y="222" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="112" y="206" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="106" y="200" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="206" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="212" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="208" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="214" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="216" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="218" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="220" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="230" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+      <text x="108" y="232" class="svg-small" fill="#5b3a9e" style="display:none">.</text>
+    </svg>
+    <figcaption><b>Figure 5.7 —</b> Courbes enveloppes. Le moment maximal est presque constant dans la zone centrale ; l'effort tranchant maximal décroît linéairement depuis l'appui (43,1 t) et change de signe : chaque section doit résister à un T positif et à un T négatif.</figcaption>
+  </figure>
+</section>
+
+</article>
+</div>
+</body>
+</html>
