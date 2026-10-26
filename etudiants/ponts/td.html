@@ -28,6 +28,7 @@
   .chrono-mini{position:fixed;right:14px;bottom:14px;z-index:180;background:#14171f;color:#e8c97a;border:1px solid #c9a84c;border-radius:999px;padding:6px 14px;font-size:14px;font-variant-numeric:tabular-nums;box-shadow:0 8px 24px -10px rgba(0,0,0,.5);display:none;cursor:pointer}
   .chrono-mini.on{display:block}
   .tbl td.ok{color:#0b5e4f;font-weight:500}
+  @media(max-width:640px){article .tex{white-space:normal}.chrono .clock{font-size:42px;min-width:0}}
   @media print{.chrono,.chrono-mini,#calc-verif{display:none!important}}
 </style>
 </head>
@@ -764,7 +765,7 @@
       <tr><td>Mc120</td><td>110 t (un seul char sur 25 m)</td><td class="num">5,682</td><td class="num">0,0253</td><td class="num"><b>1,0920</b></td></tr>
     </table></div>
     <div class="box ex"><span class="t">Détail pour Bc, 2 files</span>
-      <span class="tex">\delta = 1 + 0{,}0667 + \dfrac{0{,}6}{1 + 4 \times 625/132} = 1 + 0{,}0667 + \dfrac{0{,}6}{19{,}94} = 1 + 0{,}0667 + 0{,}0301 = 1{,}0968</span>
+      <div class="formula"><span class="texd">\delta = 1 + 0{,}0667 + \dfrac{0{,}6}{1 + 4 \times 625/132} = 1 + 0{,}0667 + \dfrac{0{,}6}{19{,}94} = 1{,}0968</span></div>
     </div>
     <div class="box warn"><span class="t">Pièges</span>
       <ul>
@@ -1331,7 +1332,7 @@
       <ul>
         <li><span class="tex">\eta = 8 \times 12/20 = 4{,}80\ \text{m}</span> ; <span class="tex">a = 8 - 6{,}10 \times 0{,}4 = 5{,}56\ \text{m}</span> ; <span class="tex">b = 11{,}66\ \text{m}</span>.</li>
         <li><span class="tex">\eta(a) = 5{,}56 \times 12/20 = 3{,}336</span> ; <span class="tex">\eta(b) = 8 \times (20 - 11{,}66)/20 = 3{,}336</span>.</li>
-        <li><span class="tex">\Omega = \tfrac{3{,}336 + 4{,}80}{2} \times 2{,}44 + \tfrac{4{,}80 + 3{,}336}{2} \times 3{,}66 = 9{,}926 + 14{,}889 = 24{,}815\ \text{m}^2</span>.</li>
+        <li>Aire sous la charge (deux trapèzes, de a à x puis de x à b) :<div class="formula"><span class="texd">\Omega = \tfrac{3{,}336 + 4{,}80}{2} \times 2{,}44 + \tfrac{4{,}80 + 3{,}336}{2} \times 3{,}66 = 9{,}926 + 14{,}889 = 24{,}815\ \text{m}^2</span></div></li>
         <li><span class="tex">M = 18{,}033 \times 24{,}815 = 447{,}48\ \text{t.m}</span>.</li>
       </ul>
     </div>
