@@ -952,7 +952,7 @@
     var iL = byId("c5-sim-L"), iC = byId("c5-sim-conv"), iX = byId("c5-sim-x"), iS = byId("c5-sim-s");
     var bPlay = byId("c5-sim-play"), bBest = byId("c5-sim-best"), bReset = byId("c5-sim-reset");
     if (!iL || !iC || !iX || !iS) return;
-    var trace = {}, maxT = { m: -1, s: 0 }, anim = null;
+    var trace = {}, maxT = { m: -1, s: 0 }, anim = null, paused = false;
 
     function params() {
       var L = parseFloat(iL.value); if (!(L >= 5)) L = 5; if (L > 80) L = 80;
@@ -1062,10 +1062,11 @@
       var st = byId("c5-sim-steps");
       if (st) st.innerHTML = "<b>" + c.nom + "</b> — L = " + F(L, 2) + " m, x = " + F(x, 2) + " m.<br>M(x) = " + (stepsTxt.length ? stepsTxt.join(" + ") : "0 (aucune charge sur la travée)") + " = <b>" + F(M, 2) + " t.m</b>";
     }
-    function stop() { if (anim) { cancelAnimationFrame(anim); anim = null; } if (bPlay) bPlay.textContent = "▶ Animer"; }
+    function stop(keep) { if (anim) { cancelAnimationFrame(anim); anim = null; } paused = !!keep; if (bPlay) bPlay.textContent = keep ? "▶ Reprendre" : "▶ Animer"; }
     function play() {
-      if (anim) { stop(); return; }
-      if (+iS.value >= 1000) { iS.value = 0; }
+      if (anim) { stop(true); return; }
+      if (!paused || +iS.value >= 1000) { iS.value = 0; resetTrace(); }
+      paused = false;
       if (bPlay) bPlay.textContent = "❚❚ Pause";
       var last = null;
       var tick = function (ts) {
