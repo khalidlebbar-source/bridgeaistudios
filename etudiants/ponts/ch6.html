@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 6 — Calcul des appuis & fondations · Espace étudiants · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts, chapitre 6 : descente de charges, efforts sur piles et culées, appareils d'appui en élastomère fretté, répartition des efforts horizontaux, calcul des piles et des culées, stabilité, fondations superficielles et profondes. Calculatrices et vidéo de vérinage.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/ponts/ch6.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/cours.css">
+<style>
+  .c6-ok{color:#0b7a5f;font-weight:500}.c6-ko{color:#b3361d;font-weight:500}
+  .calc .res b.c6-ok{color:#0b7a5f}.calc .res b.c6-ko{color:#b3361d}
+  .c6-tbl-small td,.c6-tbl-small th{padding:6px 9px}
+  .calc input:disabled{opacity:.45}
+</style>
+</head>
+<body data-ch="ch6">
+
+<header class="ch-head">
+  <div class="in">
+    <div class="ch-num">6</div>
+    <div class="ch-kicker">Cours de ponts · Chapitre 6</div>
+    <h1>Calcul des appuis <em>&amp; fondations</em></h1>
+    <div class="ch-meta">
+      <span class="chip">≈ 70 min de lecture</span>
+      <span class="chip">3 calculatrices</span>
+      <span class="chip">3 séquences animées</span>
+      <span class="chip">Vidéo de chantier</span>
+      <span class="chip">Quiz final</span>
+      <button class="btn ghost" type="button" data-print>Télécharger en PDF</button>
+    </div>
+  </div>
+  <svg class="ch-art" viewBox="0 0 600 220" fill="none" aria-hidden="true">
+    <path d="M60 60 H540" stroke="#c9a84c" stroke-width="1.4"/>
+    <path d="M60 66 H540" stroke="#c9a84c" stroke-width=".6" opacity=".6"/>
+    <path d="M270 72 H330 V80 H270 Z" stroke="#e8c97a" stroke-width=".8"/>
+    <path d="M280 80 V170 M320 80 V170" stroke="#c9a84c" stroke-width="1.2"/>
+    <path d="M230 170 H370 V186 H230 Z" stroke="#c9a84c" stroke-width="1"/>
+    <path d="M250 186 V220 M300 186 V220 M350 186 V220" stroke="#1ab8a0" stroke-width="1" opacity=".8"/>
+    <path d="M300 20 V54 M295 46 l5 8 l5 -8" stroke="#e8c97a" stroke-width="1"/>
+    <path d="M420 72 L530 210" stroke="#1ab8a0" stroke-width=".7" opacity=".6"/>
+    <path d="M60 210 Q 300 150 540 210" stroke="#e8c97a" stroke-width=".6" opacity=".5"/>
+  </svg>
+</header>
+
+<div class="layout">
+<aside class="side"></aside>
+<article>
+
+<section>
+  <p class="lede">Le tablier est calculé : il faut maintenant le <span class="kw">porter</span>. Les appuis (piles et culées) reçoivent les réactions verticales, mais aussi tous les efforts horizontaux — freinage, vent, dilatation, poussée des terres — et les transmettent au sol par les fondations. Ce chapitre suit ce cheminement, de l'appareil d'appui jusqu'à la pointe du pieu.</p>
+  <div class="box note"><span class="t">Objectifs du chapitre</span>
+    <ul>
+      <li>Faire l'inventaire complet des efforts appliqués à une pile et à une culée.</li>
+      <li>Dimensionner un <b>appareil d'appui en élastomère fretté</b> (contrainte, distorsion, glissement, rotation).</li>
+      <li>Répartir un effort horizontal entre les appuis selon leurs <b>rigidités</b>.</li>
+      <li>Calculer une pile (console encastrée) et vérifier la <b>stabilité d'une culée</b> (glissement, renversement, portance).</li>
+      <li>Vérifier une semelle (Navier, Meyerhof) et un groupe de pieux.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 6.1 ═══════════════════════ -->
+<section>
+  <h2><span class="n">6.1</span>Le rôle des appuis et la descente de charges</h2>
+  <p>Un appui a trois fonctions : <b>porter</b> le tablier (efforts verticaux), le <b>tenir</b> (efforts horizontaux longitudinaux et transversaux) et, pour une culée, <b>retenir les terres</b> du remblai. La charge suit toujours le même chemin, que l'on appelle la <span class="kw">descente de charges</span> :</p>
+  <figure class="fig">
+    <svg viewBox="0 0 960 400" class="hotspots" role="img" aria-label="Descente de charges du tablier jusqu'au sol">
+      <defs>
+        <pattern id="c6f1-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/><circle cx="8" cy="7" r=".8" fill="#c9a77a"/></pattern>
+        <marker id="c6f1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+      </defs>
+      <rect width="960" height="400" fill="#fbfaf6"/>
+      <rect x="0" y="250" width="960" height="150" fill="url(#c6f1-earth)"/>
+      <path d="M0 250 H960" stroke="#b98a55"/>
+      <g data-tip="Tablier|Il reçoit les charges (G, trafic) et les transmet aux appuis par ses réactions d'appui.">
+        <rect x="40" y="70" width="880" height="26" fill="#b9c2cc" stroke="#6e7884"/><rect x="40" y="66" width="880" height="5" fill="#3c4049"/>
+      </g>
+      <g data-tip="Appareils d'appui|Ils transmettent les réactions verticales et horizontales, et autorisent rotations et déplacements.">
+        <rect x="456" y="96" width="48" height="10" fill="#1d1f24"/>
+      </g>
+      <g data-tip="Chevêtre|Poutre en tête de pile qui reçoit les appareils d'appui et répartit les charges sur les fûts.">
+        <rect x="400" y="106" width="160" height="26" fill="#dfe3e8" stroke="#6e7884"/>
+      </g>
+      <g data-tip="Fût|Élément vertical (colonne ou voile) qui descend les efforts : compression + flexion due aux efforts horizontaux.">
+        <rect x="440" y="132" width="26" height="148" fill="#cfd5dc" stroke="#6e7884"/><rect x="494" y="132" width="26" height="148" fill="#cfd5dc" stroke="#6e7884"/>
+      </g>
+      <g data-tip="Semelle|Elle répartit les efforts sur le sol (fondation superficielle) ou sur une tête de pieux.">
+        <rect x="380" y="280" width="200" height="36" fill="#9aa3ae" stroke="#5d6672"/>
+      </g>
+      <g data-tip="Sol|Il doit supporter la contrainte transmise sans rupture (portance) ni tassement excessif.">
+        <path d="M380 316 L360 380 H600 L580 316" fill="#d9472b" opacity=".12"/>
+        <path d="M390 330 Q 480 360 570 330" fill="none" stroke="#d9472b" stroke-dasharray="4 3"/>
+      </g>
+      <g stroke="#d9472b" stroke-width="2.4">
+        <path d="M480 22 V62" marker-end="url(#c6f1-ar)"/>
+        <path d="M600 112 V148" marker-end="url(#c6f1-ar)"/>
+        <path d="M600 200 V236" marker-end="url(#c6f1-ar)"/>
+        <path d="M600 290 V316" marker-end="url(#c6f1-ar)"/>
+        <path d="M480 350 V384" marker-end="url(#c6f1-ar)"/>
+      </g>
+      <g class="svg-label">
+        <text x="492" y="36">charges sur le tablier (G + Q)</text>
+        <text x="614" y="134">réaction d'appui (verticale + horizontale)</text>
+        <text x="614" y="222">efforts dans le fût : N, H, M</text>
+        <text x="614" y="306">efforts sur la semelle</text>
+        <text x="614" y="372" style="fill:#b3361d">contrainte sur le sol σ ≤ σ<tspan font-size="9" dy="3">adm</tspan></text>
+      </g>
+      <g class="svg-small">
+        <text x="40" y="128">1 tablier</text><text x="40" y="146">2 appareils d'appui</text><text x="40" y="164">3 chevêtre</text><text x="40" y="182">4 fûts</text><text x="40" y="200">5 semelle / pieux</text><text x="40" y="218">6 sol</text>
+      </g>
+    </svg>
+    <figcaption><b>Figure 6.1 —</b> La descente de charges, maillon par maillon. Chaque maillon doit être vérifié : un pont ne vaut que par son élément le plus faible. Survolez les éléments pour leur rôle.</figcaption>
+  </figure>
+  <div class="box tip"><span class="t">Le fil rouge</span>
+    Notre pont sur voie ferrée franchit 2 voies existantes et 2 voies futures. Dans la variante retenue au prédimensionnement, il comporte <b>deux travées isostatiques de 25 m</b> (le tablier du chapitre 5), <b>une pile centrale</b> entre les voies existantes et futures (2 fûts Ø 1,20 m sur semelle) et <b>deux culées</b> remblayées. Le bon sol est à <b>−3 m</b> : fondations superficielles sur semelles.
+  </div>
+</section>
+
+<!-- ═══════════════════════ 6.2 ═══════════════════════ -->
+<section>
+  <h2><span class="n">6.2</span>Inventaire des efforts sur une pile ou une culée</h2>
+  <h3>Les efforts verticaux</h3>
+  <p>La réaction verticale comprend la part des charges <b>permanentes</b> (poids propre, superstructures) et celle du <b>trafic</b>, placé de façon à <b>maximiser la réaction</b>. On utilise la ligne d'influence de la réaction : pour une pile entre deux travées isostatiques, c'est un triangle de hauteur 1 au droit de la pile, de base égale aux deux portées.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 960 300" role="img" aria-label="Ligne d'influence de la réaction d'une pile entre deux travées isostatiques">
+      <defs><marker id="c6f2-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <pattern id="c6f2-hat" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#b6e6dc"/><path d="M0 0 V7" stroke="#0f8f7b" stroke-width="1.2"/></pattern></defs>
+      <rect width="960" height="300" fill="#fbfaf6"/>
+      <rect x="100" y="70" width="374" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="486" y="70" width="374" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M100 82 l-9 14 h18 z M860 82 l-9 14 h18 z" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="456" y="82" width="48" height="10" fill="#dfe3e8" stroke="#6e7884"/><rect x="468" y="92" width="24" height="44" fill="#cfd5dc" stroke="#6e7884"/>
+      <text x="480" y="152" text-anchor="middle" class="svg-small">pile P1</text>
+      <g class="svg-small" text-anchor="middle"><text x="287" y="62">travée 1 : L₁ = 25 m</text><text x="673" y="62">travée 2 : L₂ = 25 m</text></g>
+      <path d="M100 190 H860" stroke="#14171f"/>
+      <path d="M100 190 L474 270 L486 270 L860 190 Z" fill="url(#c6f2-hat)" stroke="#0f8f7b" stroke-width="2"/>
+      <text x="480" y="290" text-anchor="middle" class="svg-label" style="fill:#0b6b5c">1</text>
+      <text x="40" y="196" class="svg-label">LI R<tspan font-size="9" dy="3">P1</tspan></text>
+      <text x="640" y="214" class="svg-small" style="fill:#0b6b5c">aire = (L₁ + L₂)/2 = 25 m</text>
+      <g stroke="#d9472b" stroke-width="2.2"><path d="M474 18 V64" marker-end="url(#c6f2-ar)"/><path d="M426 30 V64" marker-end="url(#c6f2-ar)"/><path d="M402 30 V64" marker-end="url(#c6f2-ar)"/></g>
+      <text x="360" y="26" class="svg-small" style="fill:#b3361d">essieu lourd sur la pile</text>
+    </svg>
+    <figcaption><b>Figure 6.2 —</b> LI de la réaction d'une pile entre deux travées indépendantes. Pour la maximiser, on charge les <b>deux</b> travées avec A(l) (longueur chargée l = 50 m), ou on place l'essieu le plus lourd d'un convoi B au droit de la pile.</figcaption>
+  </figure>
+  <div class="box ex"><span class="t">Fil rouge : réaction verticale sur la pile centrale</span>
+    G : 2 × 312,5 = <b>625 t</b> (une demi-travée de chaque côté, 25 t/ml × 25 m). A(l) avec l = 50 m : A = 230 + 36 000/62 = 811 kg/m², soit 0,811 × 7 = 5,68 t/ml, et R = 5,68 × aire 25 m = <b>142 t</b> (a1 = a2 = 1). Une culée ne reçoit que la moitié d'une travée : G = 312,5 t, A(25) = 105,3 t.
+  </div>
+
+  <h3>Les efforts horizontaux</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Effort</th><th>Origine</th><th>Ordre de grandeur / règle</th></tr>
+    <tr><td><b>Freinage</b></td><td>Véhicules qui freinent sur le tablier</td><td>Bc : un seul camion freine, 30 t ; A : A·S/(20 + 0,0035 S) ; sans δ</td></tr>
+    <tr><td><b>Vent</b></td><td>Pression sur le tablier, les véhicules et la pile</td><td>2 kN/m² en service (non cumulé avec le trafic maximal)</td></tr>
+    <tr><td><b>Température, retrait, fluage</b></td><td>Déformations gênées du tablier</td><td>Distorsion des appareils d'appui : H = G·a·b·u/T (§ 6.3)</td></tr>
+    <tr><td><b>Séisme</b></td><td>Accélération du sol</td><td>Voir chapitre 7</td></tr>
+    <tr><td><b>Poussée des terres</b></td><td>Remblai derrière les culées</td><td>K<sub>a</sub>·γ·h (§ 6.6) + surcharge de remblai</td></tr>
+    <tr><td><b>Choc de véhicule</b></td><td>Poids lourd heurtant une pile au bord d'une route</td><td>Effort accidentel fixé par le règlement / CPS ; ou protection par barrière</td></tr>
+    <tr><td><b>Crue</b></td><td>Pression hydrodynamique sur une pile en rivière</td><td>Proportionnelle à ρv² ; + corps flottants ; + <b>affouillement</b></td></tr>
+  </table></div>
+  <figure class="fig wide">
+    <svg viewBox="0 0 1000 440" class="hotspots" role="img" aria-label="Efforts appliqués sur une culée et sur une pile">
+      <defs>
+        <pattern id="c6f3-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/><circle cx="8" cy="7" r=".8" fill="#c9a77a"/></pattern>
+        <marker id="c6f3-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <marker id="c6f3-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#2d6be4"/></marker>
+        <marker id="c6f3-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#0f8f7b"/></marker>
+        <marker id="c6f3-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#7a52c7"/></marker>
+        <marker id="c6f3-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#3a9ad9"/></marker>
+      </defs>
+      <rect width="1000" height="440" fill="#fbfaf6"/>
+      <!-- terrain -->
+      <path d="M0 120 H150 V330 H0 Z" fill="url(#c6f3-earth)"/>
+      <rect x="0" y="330" width="1000" height="110" fill="url(#c6f3-earth)"/>
+      <path d="M0 330 H1000" stroke="#b98a55"/>
+      <!-- culée -->
+      <g data-tip="Culée|Elle reçoit la réaction du tablier, la poussée des terres du remblai et une part des efforts horizontaux.">
+        <path d="M150 120 L166 120 L166 152 L196 152 L196 330 L150 330 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="90" y="330" width="170" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+      </g>
+      <!-- tablier -->
+      <rect x="168" y="120" width="620" height="28" fill="#b9c2cc" stroke="#6e7884"/><rect x="168" y="116" width="620" height="5" fill="#3c4049"/>
+      <rect x="178" y="148" width="14" height="5" fill="#14171f"/><rect x="760" y="148" width="22" height="6" fill="#14171f"/>
+      <!-- pile -->
+      <g data-tip="Pile|Elle reçoit la réaction verticale, une part du freinage et de la dilatation, le vent sur le tablier et sur son fût, et éventuellement la crue ou un choc.">
+        <rect x="730" y="154" width="80" height="22" fill="#dfe3e8" stroke="#6e7884"/>
+        <rect x="756" y="176" width="28" height="154" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="700" y="330" width="140" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+      </g>
+      <!-- camion -->
+      <g><rect x="420" y="90" width="34" height="26" rx="3" fill="#d9472b"/><rect x="454" y="96" width="80" height="20" rx="3" fill="#e9eef3" stroke="#9aa3ae"/><circle cx="430" cy="117" r="5" fill="#14171f"/><circle cx="500" cy="117" r="5" fill="#14171f"/><circle cx="520" cy="117" r="5" fill="#14171f"/></g>
+      <!-- efforts -->
+      <g data-tip="Réactions verticales|Charges permanentes + trafic placé pour maximiser la réaction (LI de la réaction).">
+        <path d="M185 40 V112" stroke="#d9472b" stroke-width="3" marker-end="url(#c6f3-r)"/>
+        <path d="M770 40 V112" stroke="#d9472b" stroke-width="3" marker-end="url(#c6f3-r)"/>
+        <text x="194" y="52" class="svg-label" style="fill:#b3361d">R<tspan font-size="9" dy="3">culée</tspan></text>
+        <text x="780" y="52" class="svg-label" style="fill:#b3361d">R<tspan font-size="9" dy="3">pile</tspan></text>
+      </g>
+      <g data-tip="Freinage|Le camion qui freine pousse le tablier ; l'effort est partagé entre appuis selon leurs rigidités (§ 6.4).">
+        <path d="M410 80 H330" stroke="#2d6be4" stroke-width="3" marker-end="url(#c6f3-b)"/>
+        <text x="300" y="72" class="svg-label" style="fill:#1d4fb0">freinage</text>
+      </g>
+      <g data-tip="Dilatation, retrait, fluage|Le tablier s'allonge ou se raccourcit ; les appareils d'appui se distordent et renvoient un effort H aux appuis.">
+        <path d="M600 134 H680" stroke="#0f8f7b" stroke-width="2.4" marker-end="url(#c6f3-t)"/><path d="M360 134 H280" stroke="#0f8f7b" stroke-width="2.4" marker-end="url(#c6f3-t)"/>
+        <text x="520" y="166" text-anchor="middle" class="svg-small" style="fill:#0b6b5c">température / retrait</text>
+      </g>
+      <g data-tip="Vent|Pression sur la surface exposée du tablier (et des véhicules) et sur le fût de la pile, dans le sens transversal.">
+        <g stroke="#7a52c7" stroke-width="2"><path d="M880 190 H820" marker-end="url(#c6f3-v)"/><path d="M880 230 H820" marker-end="url(#c6f3-v)"/><path d="M880 270 H820" marker-end="url(#c6f3-v)"/></g>
+        <text x="886" y="234" class="svg-label" style="fill:#5b3a9e">vent</text>
+      </g>
+      <g data-tip="Poussée des terres|Pression du remblai sur le mur de front et le garde-grève : triangle Ka·γ·h + rectangle Ka·q pour la surcharge.">
+        <path d="M150 152 L150 330 L80 330 Z" fill="#e39b1b" opacity=".3"/>
+        <g stroke="#a86d00" stroke-width="2"><path d="M100 300 H146" marker-end="url(#c6f3-r)"/><path d="M118 250 H146" marker-end="url(#c6f3-r)"/><path d="M134 200 H146" marker-end="url(#c6f3-r)"/></g>
+        <text x="16" y="212" class="svg-label" style="fill:#a86d00">poussée</text><text x="16" y="228" class="svg-label" style="fill:#a86d00">des terres</text>
+      </g>
+      <g data-tip="Choc de véhicule|Un poids lourd peut heurter une pile en bord de route : effort accidentel à vérifier, ou pile protégée par une barrière.">
+        <rect x="600" y="300" width="60" height="26" rx="4" fill="#e8b21f"/><circle cx="612" cy="328" r="5" fill="#14171f"/><circle cx="648" cy="328" r="5" fill="#14171f"/>
+        <path d="M664 312 H750" stroke="#d9472b" stroke-width="2.4" stroke-dasharray="6 3" marker-end="url(#c6f3-r)"/>
+        <text x="600" y="292" class="svg-small" style="fill:#b3361d">choc (accidentel)</text>
+      </g>
+      <g data-tip="Fondations|Elles reçoivent N, H et M en pied d'appui et les transmettent au sol (semelle) ou aux pieux.">
+        <g stroke="#5d6672" stroke-width="2"><path d="M770 360 V420" marker-end="url(#c6f3-r)"/><path d="M175 360 V420" marker-end="url(#c6f3-r)"/></g>
+        <text x="786" y="410" class="svg-small">réaction du sol</text><text x="190" y="410" class="svg-small">réaction du sol</text>
+      </g>
+      <text x="984" y="434" text-anchor="end" class="svg-small">bon sol à −3 m</text>
+    </svg>
+    <figcaption><b>Figure 6.3 —</b> Inventaire des efforts sur les appuis (survolez chaque effort). Les efforts longitudinaux (freinage, dilatation) et transversaux (vent) ne sont pas cumulés au hasard : on suit les combinaisons du règlement. Pour une pile en rivière, ajouter la <b>pression de la crue</b> et vérifier l'<b>affouillement</b> (chapitre 1).</figcaption>
+  </figure>
+  <div class="box warn"><span class="t">Pièges classiques</span>
+    <ul>
+      <li>Le freinage s'applique <b>sans</b> coefficient de majoration dynamique, et un seul camion Bc freine (30 t), quel que soit le nombre de files.</li>
+      <li>La poussée des terres sur une culée est une charge <b>permanente</b> : elle est toujours présente, y compris en phase de construction (remblai monté avant la pose du tablier : cas souvent dimensionnant).</li>
+      <li>Une pile dans une rivière est aussi vérifiée <b>fondation affouillée</b> : la hauteur libre du fût augmente, la butée du sol disparaît.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 6.3 ═══════════════════════ -->
+<section>
+  <h2><span class="n">6.3</span>Les appareils d'appui en élastomère fretté</h2>
+  <p>C'est l'appareil d'appui des ponts courants : un « sandwich » de <b>feuillets d'élastomère</b> (caoutchouc naturel ou synthétique, type néoprène) collés par vulcanisation sur des <b>frettes en acier</b>. Les frettes empêchent l'élastomère de s'écraser latéralement : l'appareil est <b>raide en compression</b>, mais <b>souple en cisaillement</b> et en rotation.</p>
+  <figure class="fig">
+    <svg viewBox="0 0 960 360" role="img" aria-label="Vue éclatée d'un appareil d'appui en élastomère fretté">
+      <defs><marker id="c6f4-dim" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker></defs>
+      <rect width="960" height="360" fill="#fbfaf6"/>
+      <text x="20" y="28" class="svg-title">Vue éclatée (perspective)</text>
+      <!-- couches en perspective : losanges -->
+      <g>
+        <path d="M120 300 L300 300 L380 250 L200 250 Z" fill="#2b2e35" stroke="#14171f"/>
+        <path d="M120 300 V312 H300 V300 M300 312 L380 262 V250" fill="none" stroke="#14171f"/>
+        <text x="400" y="282" class="svg-small">enrobage inférieur (élastomère)</text>
+        <path d="M120 262 L300 262 L380 212 L200 212 Z" fill="#9fbdf3" stroke="#2d6be4"/>
+        <text x="400" y="240" class="svg-small" style="fill:#1d4fb0">frette acier t<tspan font-size="8" dy="2">s</tspan><tspan dy="-2"> (2 à 4 mm)</tspan></text>
+        <path d="M120 224 L300 224 L380 174 L200 174 Z" fill="#2b2e35" stroke="#14171f"/>
+        <text x="400" y="200" class="svg-small">feuillet d'élastomère t (8, 10, 12, 16 mm…)</text>
+        <path d="M120 186 L300 186 L380 136 L200 136 Z" fill="#9fbdf3" stroke="#2d6be4"/>
+        <path d="M120 148 L300 148 L380 98 L200 98 Z" fill="#2b2e35" stroke="#14171f"/>
+        <path d="M120 110 L300 110 L380 60 L200 60 Z" fill="#9fbdf3" stroke="#2d6be4"/>
+        <path d="M120 72 L300 72 L380 22 L200 22 Z" fill="#2b2e35" stroke="#14171f" opacity=".9"/>
+        <text x="400" y="50" class="svg-small">enrobage supérieur</text>
+        <path d="M120 300 L120 72 M300 300 L300 72" stroke="#c9c3b2" stroke-dasharray="3 4"/>
+        <path d="M120 326 H300" stroke="#a8842a" marker-start="url(#c6f4-dim)" marker-end="url(#c6f4-dim)"/><text x="210" y="344" text-anchor="middle" class="svg-small" style="fill:#8a6a1c">a (∥ à l'axe du pont)</text>
+        <path d="M310 318 L390 268" stroke="#a8842a" marker-start="url(#c6f4-dim)" marker-end="url(#c6f4-dim)"/><text x="362" y="316" class="svg-small" style="fill:#8a6a1c">b</text>
+      </g>
+      <!-- coupe -->
+      <text x="640" y="28" class="svg-title">Coupe et désignation</text>
+      <g transform="translate(640 70)">
+        <rect x="0" y="0" width="260" height="10" fill="#2b2e35"/>
+        <rect x="0" y="10" width="260" height="4" fill="#2d6be4"/>
+        <rect x="0" y="14" width="260" height="24" fill="#2b2e35"/>
+        <rect x="0" y="38" width="260" height="4" fill="#2d6be4"/>
+        <rect x="0" y="42" width="260" height="24" fill="#2b2e35"/>
+        <rect x="0" y="66" width="260" height="4" fill="#2d6be4"/>
+        <rect x="0" y="70" width="260" height="24" fill="#2b2e35"/>
+        <rect x="0" y="94" width="260" height="4" fill="#2d6be4"/>
+        <rect x="0" y="98" width="260" height="10" fill="#2b2e35"/>
+        <path d="M276 14 V38" stroke="#a8842a" marker-start="url(#c6f4-dim)" marker-end="url(#c6f4-dim)"/><text x="284" y="30" class="svg-small" style="fill:#8a6a1c">t</text>
+        <path d="M276 38 V42" stroke="#2d6be4" stroke-width="2"/><text x="284" y="46" class="svg-small" style="fill:#1d4fb0">t<tspan font-size="8" dy="2">s</tspan></text>
+        <path d="M-16 0 V108" stroke="#a8842a" marker-start="url(#c6f4-dim)" marker-end="url(#c6f4-dim)"/>
+        <text x="-22" y="58" text-anchor="end" class="svg-small" style="fill:#8a6a1c">T</text>
+      </g>
+      <rect x="560" y="200" width="380" height="140" rx="12" fill="#fff" stroke="#e3dfd4"/>
+      <text x="750" y="228" text-anchor="middle" class="svg-label">Désignation : a × b × n (t + t<tspan font-size="9" dy="3">s</tspan><tspan dy="-3">)</tspan></text>
+      <text x="750" y="254" text-anchor="middle" class="svg-label" style="fill:#0b6b5c">ex. 300 × 400 × 3 (12 + 3)</text>
+      <text x="750" y="280" text-anchor="middle" class="svg-small">n = 3 feuillets de 12 mm, frettes de 3 mm</text>
+      <text x="750" y="300" text-anchor="middle" class="svg-small">T = épaisseur totale d'élastomère ≈ n·t = 36 mm</text>
+      <text x="750" y="320" text-anchor="middle" class="svg-small">(les enrobages minces s'ajoutent selon le fabricant)</text>
+    </svg>
+    <figcaption><b>Figure 6.4 —</b> Constitution d'un appareil d'appui en élastomère fretté. Les dimensions en plan a × b sont choisies pour limiter la contrainte de compression ; l'épaisseur T pour autoriser le déplacement u du tablier.</figcaption>
+  </figure>
+
+  <h3>Comportement : compression, distorsion, rotation</h3>
+  <div class="formula"><span class="lbl">Effort horizontal dû à un déplacement imposé</span>
+    <span class="texd">\tan\gamma = \frac{u}{T} \qquad\qquad H = G\cdot a\cdot b\cdot\frac{u}{T} = \frac{G\,A}{T}\,u</span>
+    <div class="where">G = module de cisaillement de l'élastomère, de l'ordre de <b>0,9 MPa</b> sous effets lents (valeur usuelle ; on double couramment G pour les effets instantanés) ; A = a·b ; T = épaisseur totale d'élastomère ; u = déplacement du tablier. La raideur <span class="tex">K = GA/T</span> sert à la répartition des efforts (§ 6.4).</div>
+  </div>
+
+  <div class="seq" data-seq="c6-distorsion" data-title="L'appareil d'appui se distord">
+    <div class="seq-stage">
+      <svg viewBox="0 0 960 340" role="img" aria-label="Distorsion d'un appareil d'appui sous un déplacement du tablier">
+        <defs>
+          <marker id="c6s1-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+          <marker id="c6s1-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#0f8f7b"/></marker>
+        </defs>
+        <!-- appui -->
+        <rect x="260" y="250" width="440" height="80" fill="#cfd5dc" stroke="#6e7884"/>
+        <text x="480" y="300" text-anchor="middle" class="svg-small">sommier de la culée / chevêtre de la pile</text>
+        <!-- état repos -->
+        <g data-only="1,2">
+          <rect x="300" y="78" width="360" height="56" fill="#b9c2cc" stroke="#6e7884"/>
+          <text x="480" y="112" text-anchor="middle" class="svg-small">tablier</text>
+          <rect x="400" y="134" width="160" height="116" fill="#2b2e35"/>
+          <g fill="#2d6be4"><rect x="400" y="160" width="160" height="5"/><rect x="400" y="190" width="160" height="5"/><rect x="400" y="220" width="160" height="5"/></g>
+        </g>
+        <g data-only="2">
+          <path d="M480 20 V72" stroke="#d9472b" stroke-width="3" marker-end="url(#c6s1-r)"/><text x="492" y="40" class="svg-label" style="fill:#b3361d">N</text>
+          <text x="600" y="210" class="svg-small" style="fill:#b3361d">les frettes empêchent</text><text x="600" y="226" class="svg-small" style="fill:#b3361d">le gonflement latéral</text>
+          <path d="M396 150 q-8 13 0 26 M396 180 q-8 13 0 26 M564 150 q8 13 0 26 M564 180 q8 13 0 26" stroke="#d9472b" fill="none"/>
+        </g>
+        <!-- distorsion -->
+        <g data-only="3-5">
+          <rect x="340" y="78" width="360" height="56" fill="#b9c2cc" stroke="#6e7884"/>
+          <text x="520" y="112" text-anchor="middle" class="svg-small">tablier</text>
+          <polygon points="440,134 600,134 560,250 400,250" fill="#2b2e35"/>
+          <g fill="#2d6be4"><polygon points="431,160 591,160 589,165 429,165"/><polygon points="420,190 580,190 579,195 419,195"/><polygon points="410,220 570,220 569,225 409,225"/></g>
+          <path d="M400 250 L400 134" stroke="#9aa3ae" stroke-dasharray="4 3"/>
+          <path d="M400 160 A 26 26 0 0 0 409 159" stroke="#e39b1b" stroke-width="2" fill="none"/>
+          <text x="368" y="180" class="svg-label" style="fill:#a86d00">γ</text>
+        </g>
+        <g data-only="3"><path d="M300 106 H336" stroke="#0f8f7b" stroke-width="3" marker-end="url(#c6s1-t)"/><text x="190" y="100" class="svg-label" style="fill:#0b6b5c">déplacement u</text><text x="190" y="118" class="svg-small" style="fill:#0b6b5c">(dilatation, retrait…)</text></g>
+        <g data-only="4"><path d="M380 236 H330" stroke="#d9472b" stroke-width="3" marker-end="url(#c6s1-r)"/><text x="150" y="232" class="svg-label" style="fill:#b3361d">H = G·a·b·u/T</text><text x="150" y="250" class="svg-small" style="fill:#b3361d">renvoyé à l'appui</text></g>
+        <g data-only="5"><rect x="720" y="60" width="220" height="110" rx="10" fill="#fff" stroke="#e39b1b"/>
+          <text x="830" y="86" text-anchor="middle" class="svg-label">tan γ = u / T</text>
+          <text x="830" y="110" text-anchor="middle" class="svg-small">≤ 0,5 (effets lents)</text>
+          <text x="830" y="130" text-anchor="middle" class="svg-small">≤ 0,7 avec effets rapides</text>
+          <text x="830" y="150" text-anchor="middle" class="svg-small">(critères usuels SETRA)</text></g>
+        <!-- rotation -->
+        <g data-only="6">
+          <g transform="rotate(-2.5 480 134)"><rect x="300" y="78" width="360" height="56" fill="#b9c2cc" stroke="#6e7884"/></g>
+          <polygon points="400,141 560,127 560,250 400,250" fill="#2b2e35"/>
+          <g fill="#2d6be4"><polygon points="400,165 560,153 560,158 400,170"/><polygon points="400,193 560,184 560,189 400,198"/><polygon points="400,222 560,216 560,221 400,227"/></g>
+          <path d="M660 70 a 40 40 0 0 1 10 30" stroke="#d9472b" stroke-width="2.4" fill="none" marker-end="url(#c6s1-r)"/>
+          <text x="690" y="84" class="svg-label" style="fill:#b3361d">rotation α</text>
+          <text x="600" y="216" class="svg-small" style="fill:#b3361d">écrasement différentiel :</text><text x="600" y="232" class="svg-small" style="fill:#b3361d">il ne faut pas de soulèvement</text>
+        </g>
+      </svg>
+    </div>
+    <ol class="seq-steps">
+      <li>L'appareil d'appui est posé entre le tablier et l'appui. Au repos, ses feuillets sont parallèles.</li>
+      <li>Sous la réaction verticale N, l'élastomère voudrait s'écraser en gonflant sur les côtés ; les <b>frettes</b> l'en empêchent. Résultat : un tassement de quelques dixièmes de millimètre seulement. Contrainte moyenne <span class="tex">\sigma_m = N/(a\,b)</span>.</li>
+      <li>Le tablier se dilate de <b>u</b>. Le haut de l'appareil suit le tablier, le bas reste sur l'appui : l'appareil se <b>distord</b> d'un angle γ, avec tan γ = u/T.</li>
+      <li>Cette distorsion n'est pas gratuite : l'appareil renvoie un effort <span class="tex">H = G\,a\,b\,u/T</span> à l'appui. Plus l'élastomère est épais (T grand), plus l'effort est faible.</li>
+      <li>On limite la distorsion : tan γ ≤ 0,5 sous effets lents (température, retrait, fluage) et ≤ 0,7 en ajoutant les effets rapides (freinage) — critères usuels du guide SETRA.</li>
+      <li>Quand le tablier fléchit, son about <b>tourne</b> : l'appareil s'écrase davantage d'un côté. On vérifie qu'il n'y a pas de <b>soulèvement</b> du côté le moins comprimé.</li>
+    </ol>
+  </div>
+
+  <h3>Les vérifications usuelles</h3>
+  <p>Le guide SETRA « Appareils d'appui en élastomère fretté » (et désormais la norme NF EN 1337-3) fixe les vérifications. Les critères ci-dessous sont ceux couramment employés dans la méthode SETRA ; les valeurs exactes dépendent de l'édition du guide et du CPS du projet.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Vérification</th><th>Critère usuel</th><th>Pourquoi</th></tr>
+    <tr><td><b>Compression</b></td><td>σ<sub>m</sub> = N<sub>max</sub>/(a·b) ≤ 15 MPa (ordre de grandeur)</td><td>Limiter l'écrasement et les contraintes dans les frettes</td></tr>
+    <tr><td><b>Distorsion</b></td><td>tan γ<sub>1</sub> = u<sub>1</sub>/T ≤ 0,5 (effets lents) ; tan γ<sub>1</sub> + 0,5 tan γ<sub>2</sub> ≤ 0,7 (avec effets rapides)</td><td>Éviter la déchirure de l'élastomère</td></tr>
+    <tr><td><b>Cisaillement cumulé</b></td><td>τ<sub>N</sub> + τ<sub>H</sub> + τ<sub>α</sub> ≤ 5 G, avec τ<sub>N</sub> = 1,5 σ<sub>m</sub>/β ≤ 3 G</td><td>Contrainte de cisaillement totale dans le feuillet le plus sollicité</td></tr>
+    <tr><td><b>Non-glissement</b></td><td>H ≤ f·N<sub>min</sub>, f = 0,10 + 0,6/σ<sub>m</sub> (σ<sub>m</sub> en MPa) ; et σ<sub>m,min</sub> ≥ 2 MPa</td><td>L'appareil ne doit pas « marcher » (pas d'ancrage mécanique)</td></tr>
+    <tr><td><b>Non-soulèvement</b></td><td>α<sub>t</sub> ≤ (3/β)·(t/a)²·σ<sub>m</sub>/G, avec α<sub>t</sub> = α/n</td><td>Le bord le moins comprimé reste en contact</td></tr>
+  </table></div>
+  <p>β = a·b / [2t(a + b)] est le <b>coefficient de forme</b> d'un feuillet ; τ<sub>H</sub> = G·tan γ<sub>1</sub> + 0,5·H<sub>2</sub>/(a·b) ; τ<sub>α</sub> = (G/2)·(a/t)²·α<sub>t</sub>.</p>
+
+  <div class="calc" id="calc-c6-aa"><div class="calc-h">Calculatrice — appareil d'appui en élastomère fretté</div><div class="calc-b">
+    <div class="inputs">
+      <label>a (mm, ∥ axe du pont) <input type="number" id="c6-aa-a" value="300" step="50" min="50"></label>
+      <label>b (mm) <input type="number" id="c6-aa-b" value="400" step="50" min="50"></label>
+      <label>Nombre de feuillets n <input type="number" id="c6-aa-n" value="3" step="1" min="1" max="20"></label>
+      <label>Épaisseur d'un feuillet t (mm) <input type="number" id="c6-aa-t" value="12" step="1" min="4"></label>
+      <label>Épaisseur des frettes t<sub>s</sub> (mm) <input type="number" id="c6-aa-ts" value="3" step="1" min="1"></label>
+      <label>Module G (MPa) <input type="number" id="c6-aa-G" value="0.9" step="0.05" min="0.5"></label>
+      <label>N max (kN) <input type="number" id="c6-aa-N" value="1100" step="50" min="0"></label>
+      <label>N min (kN) <input type="number" id="c6-aa-Nmin" value="750" step="50" min="0"></label>
+      <label>Déplacement lent u₁ (mm) <input type="number" id="c6-aa-u" value="8" step="1" min="0"></label>
+      <label>Effort rapide H₂ (kN, freinage) <input type="number" id="c6-aa-H2" value="37.5" step="2.5" min="0"></label>
+      <label class="full">Rotation α (10⁻³ rad, facultatif) <input type="number" id="c6-aa-rot" value="3" step="0.5" min="0"></label>
+    </div>
+    <div class="out">
+      <div class="res"><span>T = n·t (élastomère) / hauteur totale</span><b id="c6-aa-T">—</b></div>
+      <div class="res"><span>Coefficient de forme β</span><b id="c6-aa-beta">—</b></div>
+      <div class="res"><span>σ<sub>m</sub> = N/(a·b) ≤ 15 MPa</span><b id="c6-aa-sig">—</b></div>
+      <div class="res"><span>tan γ₁ = u₁/T ≤ 0,5</span><b id="c6-aa-g1">—</b></div>
+      <div class="res"><span>tan γ₁ + 0,5 tan γ₂ ≤ 0,7</span><b id="c6-aa-g2">—</b></div>
+      <div class="res big"><span>Effort horizontal H₁ = G·a·b·u₁/T</span><b id="c6-aa-H">—</b></div>
+      <div class="res"><span>τ<sub>N</sub> + τ<sub>H</sub> + τ<sub>α</sub> ≤ 5G</span><b id="c6-aa-tau">—</b></div>
+      <div class="res"><span>Non-glissement H ≤ f·N<sub>min</sub></span><b id="c6-aa-gl">—</b></div>
+      <div class="res"><span>Non-soulèvement</span><b id="c6-aa-sl">—</b></div>
+      <div class="steps" id="c6-aa-steps"></div>
+    </div>
+    <div class="calc-fig"><svg id="c6-aa-svg" viewBox="0 0 960 260" role="img" aria-label="Appareil d'appui distordu à l'échelle"></svg></div>
+  </div></div>
+
+  <h3>Remplacer un appareil d'appui : le vérinage</h3>
+  <p>Un appareil d'appui vieillit (fissuration de l'élastomère, cheminement, frettes corrodées) : on le <b>remplace</b> sans démolir le pont. On soulève le tablier de quelques millimètres avec des <b>vérins hydrauliques</b> placés sous les entretoises d'about (d'où l'importance de prévoir des <b>emplacements de vérinage</b> dès la conception), on extrait l'ancien appareil, on pose le nouveau, puis on redescend le tablier.</p>
+  <div class="video"><video controls preload="none" poster="../../videos/ps28-verinage-aa.jpg" src="../../videos/ps28-verinage-aa.mp4"></video><div class="cap"><b>Vidéo — vérinage du tablier du PS28 pour le remplacement des appareils d'appui.</b> Observez : les vérins sous l'about du tablier, la levée très faible et synchronisée (pour ne pas tordre le tablier), puis le dégagement de l'espace où l'appareil sera changé. La réaction d'un appui (calculée au § 6.2) donne la capacité nécessaire des vérins, avec une marge.</div></div>
+  <div class="box tip"><span class="t">Conseil de conception</span>
+    Prévoyez toujours sur les chevêtres et sommiers : des <b>bossages</b> sous les appareils (pour régler le niveau et faciliter le remplacement), des <b>zones de vérinage</b> dimensionnées et accessibles, et une hauteur libre suffisante pour glisser les vérins. Un appareil d'appui dure de l'ordre de quelques décennies ; le pont, un siècle.
+  </div>
+</section>

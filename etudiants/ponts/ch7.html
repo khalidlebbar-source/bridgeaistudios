@@ -15,6 +15,7 @@
   .calc .btns .btn{font-size:13px}
   .calc .btn.light{color:var(--ink)}
   .calc .steps{overflow-x:auto;line-height:1.9}
+  @media(max-width:640px){.tex{white-space:normal}}
   .legend-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--mute);margin-top:6px}
   .legend-row i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
 </style>
@@ -873,7 +874,7 @@
         <g data-only="3-4">
           <g fill="#e7eaee" stroke="#6e7884"><path d="M596 240 l14 -6 l2 22 z"/><path d="M584 270 l18 2 l-6 16 z"/><path d="M800 236 l16 4 l-10 16 z"/><path d="M806 268 l18 -4 l-4 18 z"/></g>
           <rect x="610" y="220" width="16" height="80" fill="#fff"/><rect x="774" y="220" width="16" height="80" fill="#fff"/>
-          <text x="560" y="214" class="svg-small" fill="#a6463a">éclatement</text><text x="560" y="228" class="svg-small" fill="#a6463a">de l'enrobage</text>
+          <text x="472" y="200" class="svg-small" fill="#a6463a">éclatement</text><text x="472" y="214" class="svg-small" fill="#a6463a">de l'enrobage</text>
         </g>
         <g data-only="4">
           <g stroke="#2d6be4" stroke-width="5" fill="none"><path d="M636 60 V200 Q608 240 636 300"/><path d="M670 60 V200 Q650 240 670 300"/><path d="M730 60 V200 Q750 240 730 300"/><path d="M764 60 V200 Q792 240 764 300"/></g>
@@ -987,7 +988,7 @@
       <text x="586" y="264" class="svg-small" fill="#0b6e5f">T = 2,5 s ; ξ = 15 %</text>
       <text x="586" y="278" class="svg-small" fill="#0b6e5f">→ 0,05 g</text>
       <text x="112" y="98" class="svg-small" fill="#d9472b">ξ = 5 %</text>
-      <text x="104" y="194" class="svg-small" fill="#0f8f7b">ξ = 15 % (η = 0,71)</text>
+      <text x="112" y="222" class="svg-small" fill="#0f8f7b">ξ = 15 % (η = 0,71)</text>
       <rect x="710" y="70" width="230" height="250" rx="12" fill="#fff" stroke="#e3dfd4"/>
       <text x="726" y="96" class="svg-title">Bilan (spectre élastique)</text>
       <text x="726" y="124" class="svg-label">Effort : ÷ 6 environ</text>
@@ -1143,7 +1144,7 @@
       h += '<rect x="' + (cx - 110).toFixed(1) + '" y="' + (top - 30) + '" width="220" height="30" rx="3" fill="#b9c2cc" stroke="#6e7884"/>';
       h += '<rect x="' + (cx - 110).toFixed(1) + '" y="' + (top - 34) + '" width="220" height="5" fill="#3c4049"/>';
       h += '<text x="' + cx.toFixed(1) + '" y="' + (top - 10) + '" text-anchor="middle" class="svg-small">M = ' + fmt(P.M, 0) + ' t</text>';
-      h += '<text x="20" y="24" class="svg-small">déplacement affiché × ' + (sc / 100).toFixed(0) + ' (échelle cm → px)</text>';
+      h += '<text x="20" y="24" class="svg-small">déplacements très amplifiés (1 cm à l\'écran ≈ ' + fmt(sc / 100, 0) + ' px)</text>';
       h += '<text x="20" y="290" class="svg-small" fill="#d9472b">sol : ' + (P.typ === "sin" ? "sinus " + fmt(P.f, 2) + " Hz" : P.typ === "imp" ? "impulsion" : "séisme synthétique") + '</text>';
       // graphe
       var X0 = 460, W = 480, Y0 = 150, span = 8;
@@ -1184,7 +1185,7 @@
       var st = byId("c7s-steps");
       if (st) {
         var txt = 'Intégration numérique de <span class="tex">\\ddot u = -\\ddot u_g - 2\\xi\\omega\\dot u - \\omega^2 u</span> avec <span class="tex">\\omega = ' + tf(P.w, 2) + '\\ \\text{rad/s}</span>. ';
-        if (P.typ === "sin") { var r = P.f / P.fn, Dd = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * P.xi * r, 2)); txt += 'Régime permanent théorique : <span class="tex">u_{max} = \\dfrac{a_g}{\\omega^2}\\,D = ' + tf(P.a * g / (P.w * P.w) * Dd * 100, 2) + '\\ \\text{cm}</span> (D = ' + tf(Dd, 2) + ').'; }
+        if (P.typ === "sin") { var r = P.f / P.fn, Dd = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * P.xi * r, 2)); txt += 'Régime permanent théorique : <span class="tex">u_{max} = \\dfrac{a_g}{\\omega^2}\\,D = ' + tf(P.a * g / (P.w * P.w) * Dd * 100, 2) + '\\ \\text{cm}</span> (D = ' + fmt(Dd, 2) + ').'; }
         else if (P.typ === "imp") txt += "Après le choc, le pont vibre librement : la période mesurée doit égaler T.";
         else txt += "Séisme synthétique : le maximum dépend de la position de T dans le contenu fréquentiel du signal.";
         st.innerHTML = txt; st.removeAttribute("data-done"); tex(st);
@@ -1223,7 +1224,7 @@
           (T > p[2] && T <= p[3] ? '<span class="tex">S_e = 2{,}5\\,a_g S \\eta\\,T_C/T = 2{,}5 \\times ' + tf(ag, 3) + ' \\times ' + tf(p[0], 2) + ' \\times ' + tf(eta, 3) + ' \\times ' + tf(p[2], 2) + '/' + tf(T, 2) + '</span><br><span class="tex">S_e = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>' :
             T > p[1] && T <= p[2] ? '<span class="tex">S_e = 2{,}5\\,a_g S \\eta = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>' :
             '<span class="tex">S_e(T) = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>') +
-          (q > 1 ? '<br>Avec q = ' + tf(q, 1) + ' : <span class="tex">S_d = ' + tf(sd, 3) + '\\ \\text{m/s}^2</span> (plancher <span class="tex">0{,}2\\,a_g</span>).' : '');
+          (q > 1 ? '<br>Avec q = ' + fmt(q, 1) + ' : <span class="tex">S_d = ' + tf(sd, 3) + '\\ \\text{m/s}^2</span> (plancher <span class="tex">0{,}2\\,a_g</span>).' : '');
         tex(st);
       }
       // dessin
