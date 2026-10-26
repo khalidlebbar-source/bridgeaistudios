@@ -119,9 +119,9 @@ figure.fig figcaption{font-size:13.5px;color:var(--mute);margin-top:10px;line-he
 figure.fig figcaption b{color:var(--ink);font-weight:500}
 .fig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:18px 0}
 .fig-grid figure.fig{margin:0}
-.svg-label{font-family:'Outfit',sans-serif;font-size:13px;fill:#2a2f3b}
-.svg-small{font-family:'Outfit',sans-serif;font-size:11px;fill:#5a6170}
-.svg-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;fill:#14171f}
+.svg-label{font-family:'Outfit',sans-serif;font-size:13px}.svg-label:not([fill]){fill:#2a2f3b}
+.svg-small{font-family:'Outfit',sans-serif;font-size:11px}.svg-small:not([fill]){fill:#5a6170}
+.svg-title{font-family:'Outfit',sans-serif;font-size:14px;font-weight:500}.svg-title:not([fill]){fill:#14171f}
 
 /* étiquettes interactives sur schémas */
 .hotspots g[data-tip]{cursor:pointer}

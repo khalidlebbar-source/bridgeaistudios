@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 7 — Analyse sismique des ponts · Espace étudiants · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts, chapitre 7 : pourquoi les ponts souffrent des séismes, oscillateur à un degré de liberté, spectre de réponse de l'Eurocode 8, coefficient de comportement, méthode monomodale, longueurs d'appui, butées, confinement des piles et isolation sismique. Simulateur et calculatrices interactifs.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/ponts/ch7.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/cours.css">
+<style>
+  .calc .btns{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+  .calc .btns .btn{font-size:13px}
+  .calc .btn.light{color:var(--ink)}
+  .calc .steps{overflow-x:auto;line-height:1.9}
+  .legend-row{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--mute);margin-top:6px}
+  .legend-row i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body data-ch="ch7">
+
+<header class="ch-head">
+  <div class="in">
+    <div class="ch-num">7</div>
+    <div class="ch-kicker">Cours de ponts · Chapitre 7</div>
+    <h1>Analyse sismique <em>des ponts</em></h1>
+    <div class="ch-meta">
+      <span class="chip">≈ 70 min de lecture</span>
+      <span class="chip">Simulateur d'oscillateur animé</span>
+      <span class="chip">Spectre EC8 interactif</span>
+      <span class="chip">Calculatrice monomodale</span>
+      <span class="chip">Quiz final</span>
+      <button class="btn ghost" type="button" data-print>Télécharger en PDF</button>
+    </div>
+  </div>
+  <svg class="ch-art" viewBox="0 0 600 220" fill="none" aria-hidden="true">
+    <path d="M0 120 H600" stroke="#c9a84c" stroke-width="1.2"/>
+    <path d="M0 128 H600" stroke="#c9a84c" stroke-width=".6" opacity=".6"/>
+    <path d="M150 128 V190 M300 128 V190 M450 128 V190" stroke="#c9a84c" stroke-width="1.2"/>
+    <path d="M0 200 L40 200 L52 192 L60 207 L70 185 L80 214 L92 180 L104 218 L116 176 L128 222 L140 182 L152 214 L164 188 L176 208 L188 194 L200 204 L214 197 L230 202 L250 199 L280 200 L600 200" stroke="#1ab8a0" stroke-width=".9" opacity=".8"/>
+    <g stroke="#e8c97a" stroke-width=".6" opacity=".5"><circle cx="300" cy="200" r="30"/><circle cx="300" cy="200" r="60"/><circle cx="300" cy="200" r="95"/></g>
+    <path d="M140 120 l10 -14 l10 14 M290 120 l10 -14 l10 14 M440 120 l10 -14 l10 14" stroke="#e8c97a" stroke-width=".7" opacity=".7"/>
+  </svg>
+</header>
+
+<div class="layout">
+<aside class="side"></aside>
+<article>
+
+<section>
+  <p class="lede">Un séisme ne « pèse » rien : il <span class="kw">secoue</span>. Le sol se déplace brutalement, et le pont, par son inertie, refuse de suivre. Ce sont les masses du tablier, mises en mouvement, qui chargent les piles, les appareils d'appui et les fondations. Ce chapitre explique comment un ingénieur transforme une secousse en efforts de calcul — et quelles dispositions simples évitent l'effondrement.</p>
+  <div class="box note"><span class="t">Objectifs du chapitre</span>
+    <ul>
+      <li>Comprendre les <b>modes de ruine</b> sismique des ponts et les leçons des grands séismes.</li>
+      <li>Maîtriser l'<b>oscillateur à un degré de liberté</b> : période, amortissement, résonance.</li>
+      <li>Lire et construire un <b>spectre de réponse</b> de l'Eurocode 8 (EN 1998-1 et EN 1998-2).</li>
+      <li>Choisir un <b>coefficient d'importance</b> et un <b>coefficient de comportement</b> ; comprendre le dimensionnement en capacité.</li>
+      <li>Mener un calcul <b>monomodal</b> complet d'un pont courant sur appareils en élastomère.</li>
+      <li>Connaître les <b>dispositions constructives</b> qui sauvent les ponts : longueurs d'appui, butées, confinement, isolation.</li>
+    </ul>
+  </div>
+  <div class="box warn"><span class="t">Quel règlement au Maroc ?</span>
+    Le <b>RPS 2000</b> (version révisée en 2011) est le règlement parasismique marocain des <b>bâtiments</b> ; il fournit notamment un zonage du territoire. Pour les <b>ponts</b>, c'est le <b>CPS</b> (cahier des prescriptions spéciales) de chaque projet qui fixe le référentiel : le plus souvent l'<b>Eurocode 8 partie 2</b> (EN 1998-2) et/ou le guide SETRA « Ponts courants en zones sismiques », avec une accélération de calcul et des paramètres de sol propres au site. Les valeurs données dans ce chapitre sont celles des Eurocodes (valeurs recommandées) : elles servent à apprendre la méthode, pas à remplacer le CPS.
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.1</span>Pourquoi les ponts souffrent des séismes</h2>
+  <p>Un pont est une structure « simple » : un tablier très lourd posé sur quelques appuis. C'est justement ce qui le rend vulnérable. Presque toute sa masse est concentrée <b>en haut</b>, dans le tablier ; et il n'existe souvent qu'<b>un seul chemin</b> pour ramener les efforts horizontaux au sol (les piles et leurs appareils d'appui). Pas de cloisons, pas de redondance : si une pile cède, la travée tombe.</p>
+  <p>Les grands séismes de la fin du XX<sup>e</sup> siècle ont servi de laboratoire grandeur nature. Trois modes de ruine reviennent sans cesse :</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 340" class="hotspots" role="img" aria-label="Trois modes de ruine sismique des ponts">
+      <defs>
+        <pattern id="c7f1-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/><circle cx="8" cy="7" r=".8" fill="#c9a77a"/></pattern>
+        <marker id="c7f1-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+      </defs>
+      <!-- panneau 1 -->
+      <g data-tip="Chute de travée|Les deux travées oscillent sans être synchrones : leur déplacement relatif dépasse la longueur sur laquelle elles reposent. La travée glisse hors de son appui et tombe. C'est le mode de ruine le plus fréquent des ponts à travées indépendantes.">
+        <rect x="10" y="10" width="300" height="320" rx="14" fill="#f4f7fb"/>
+        <text x="160" y="38" text-anchor="middle" class="svg-title">1. Chute de travée</text>
+        <text x="160" y="56" text-anchor="middle" class="svg-small">longueur d'appui insuffisante</text>
+        <rect x="10" y="280" width="300" height="50" fill="url(#c7f1-earth)"/>
+        <rect x="148" y="150" width="24" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="140" y="142" width="40" height="10" fill="#dfe3e8" stroke="#6e7884"/>
+        <rect x="20" y="126" width="146" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M184 140 L296 272" stroke="#b9c2cc" stroke-width="16"/>
+        <path d="M184 140 L296 272" stroke="#6e7884" stroke-width="1" fill="none"/>
+        <path d="M180 112 H220" stroke="#d9472b" stroke-width="2" marker-end="url(#c7f1-ar)"/>
+        <path d="M140 112 H100" stroke="#d9472b" stroke-width="2" marker-end="url(#c7f1-ar)"/>
+        <text x="160" y="100" text-anchor="middle" class="svg-small" fill="#d9472b">déplacement relatif</text>
+        <g fill="#8a939e"><circle cx="270" cy="282" r="4"/><circle cx="285" cy="278" r="3"/><circle cx="300" cy="283" r="3"/></g>
+      </g>
+      <!-- panneau 2 -->
+      <g data-tip="Rupture par effort tranchant|Une pile courte et trapue est très raide : elle attire une grande part de l'effort sismique. Mal armée transversalement, elle se fissure en X et casse de façon fragile, sans prévenir.">
+        <rect x="330" y="10" width="300" height="320" rx="14" fill="#f4f7fb"/>
+        <text x="480" y="38" text-anchor="middle" class="svg-title">2. Cisaillement d'une pile courte</text>
+        <text x="480" y="56" text-anchor="middle" class="svg-small">armatures transversales insuffisantes</text>
+        <rect x="330" y="280" width="300" height="50" fill="url(#c7f1-earth)"/>
+        <rect x="345" y="120" width="270" height="18" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="445" y="138" width="70" height="142" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M447 150 L462 172 L470 190 L486 212 L494 234 L512 266" stroke="#d9472b" stroke-width="2.5" fill="none"/>
+        <path d="M513 150 L498 174 L489 196 L476 214 L466 238 L449 268" stroke="#d9472b" stroke-width="2.5" fill="none"/>
+        <path d="M560 200 H525" stroke="#d9472b" stroke-width="2" marker-end="url(#c7f1-ar)"/>
+        <text x="565" y="196" class="svg-small" fill="#d9472b">V</text>
+        <text x="480" y="305" text-anchor="middle" class="svg-small">fissures diagonales en X</text>
+      </g>
+      <!-- panneau 3 -->
+      <g data-tip="Rotule non confinée|En pied de pile, là où le moment est maximal, l'enrobage éclate, les cadres trop espacés s'ouvrent et les barres longitudinales flambent : la pile s'écrase et bascule. Tablier en béton : la pile s'effondre sur le côté.">
+        <rect x="650" y="10" width="300" height="320" rx="14" fill="#f4f7fb"/>
+        <text x="800" y="38" text-anchor="middle" class="svg-title">3. Pied de pile non confiné</text>
+        <text x="800" y="56" text-anchor="middle" class="svg-small">enrobage éclaté, barres flambées</text>
+        <rect x="650" y="280" width="300" height="50" fill="url(#c7f1-earth)"/>
+        <g transform="rotate(8 800 280)">
+          <rect x="700" y="80" width="200" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="786" y="96" width="28" height="150" fill="#cfd5dc" stroke="#6e7884"/>
+        </g>
+        <path d="M784 246 Q770 262 782 280 M818 246 Q834 262 820 280" stroke="#2d6be4" stroke-width="2.5" fill="none"/>
+        <path d="M791 246 Q782 263 791 280 M809 246 Q818 263 809 280" stroke="#2d6be4" stroke-width="2" fill="none"/>
+        <g fill="#9aa3ae"><path d="M760 262 l8 -4 l3 7z"/><path d="M836 258 l9 2 l-4 7z"/><path d="M752 276 l7 -2 l1 6z"/><path d="M846 274 l6 3 l-6 3z"/></g>
+        <circle cx="801" cy="263" r="30" fill="none" stroke="#d9472b" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="850" y="230" class="svg-small" fill="#d9472b">zone critique</text>
+      </g>
+    </svg>
+    <figcaption><b>Figure 7.1 —</b> Les trois grands modes de ruine observés (Loma Prieta 1989, Northridge 1994, Kobe 1995…). Survolez chaque panneau. Les deux premiers sont <b>fragiles</b> : ils surviennent sans déformation préalable. Toute la philosophie parasismique consiste à les rendre impossibles et à n'autoriser que des déformations <b>ductiles</b> contrôlées.</figcaption>
+  </figure>
+
+  <div class="box def"><span class="t">Les leçons des grands séismes (résumé prudent)</span>
+    <ul>
+      <li><b>Loma Prieta (Californie, 1989)</b> : effondrement d'un tronçon du viaduc à deux niveaux de Cypress Street (Oakland) et chute d'une travée du pont de la baie de San Francisco–Oakland. Les liaisons entre éléments et le confinement étaient insuffisants.</li>
+      <li><b>Northridge (Los Angeles, 1994)</b> : plusieurs ouvrages autoroutiers effondrés, notamment par rupture de piles courtes en cisaillement et par perte d'appui de travées.</li>
+      <li><b>Kobe (Japon, 1995)</b> : renversement d'un long viaduc de l'autoroute Hanshin, dont les piles uniques en béton armé n'étaient pas assez confinées en pied ; nombreuses chutes de travées.</li>
+    </ul>
+    Ces événements ont conduit aux règles modernes : <b>longueurs d'appui minimales</b>, <b>dimensionnement en capacité</b>, <b>confinement</b> des zones critiques et <b>butées</b> de sécurité.
+  </div>
+
+  <h3>Le contexte marocain</h3>
+  <p>Le Maroc est situé à la frontière entre les plaques africaine et eurasienne, qui convergent lentement de quelques millimètres par an. Cette convergence se traduit par une sismicité <b>modérée mais réelle</b>, concentrée dans le <b>Rif</b> et la côte méditerranéenne d'une part, dans le <b>Haut Atlas</b> et le Moyen Atlas d'autre part.</p>
+
+  <figure class="fig wide">
+    <svg viewBox="0 0 960 500" role="img" aria-label="Carte schématique de la sismicité du Maroc (indicative)">
+      <defs>
+        <pattern id="c7f2-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#f6c9bd" opacity=".55"/><path d="M0 0 V8" stroke="#d9472b" stroke-width="1.2" opacity=".55"/></pattern>
+      </defs>
+      <rect width="960" height="500" fill="#eaf3fa"/>
+      <rect x="550" y="0" width="410" height="500" fill="#fbfaf6"/>
+      <polygon points="365,36 379,33 380,42 398,54 422,53 440,54 452,53 473,57 487,63 485,78 488,102 503,132 503,147 452,153 428,168 428,183 389,210 371,216 344,225 311,228 278,249 279,280 279,330 179,330 179,407 146,426 149,470 31,470 27,485 44,438 62,399 92,369 104,327 131,306 143,296 152,272 194,261 206,255 233,230 244,213 251,198 244,188 246,165 260,141 284,113 311,102 334,89 341,81 355,54 358,46" fill="#f3ead8" stroke="#a8842a" stroke-width="1.4"/>
+      <polygon points="359,35 389,32 431,44 479,50 491,72 443,75 398,72 362,60" fill="url(#c7f2-hatch)" stroke="#d9472b" stroke-width="1.2"/>
+      <polygon points="239,204 260,174 305,162 353,144 407,123 449,108 461,126 419,150 365,174 317,189 269,210" fill="url(#c7f2-hatch)" stroke="#d9472b" stroke-width="1.2"/>
+      <polygon points="341,102 383,81 431,84 449,105 407,123 353,132" fill="#f7deb0" fill-opacity=".7" stroke="#e39b1b" stroke-width="1.2"/>
+      <text x="452" y="66" class="svg-small" fill="#a6463a">Rif</text>
+      <text x="392" y="152" text-anchor="middle" class="svg-small" fill="#a6463a" transform="rotate(-24 392 152)">Haut Atlas</text>
+      <text x="402" y="112" text-anchor="middle" class="svg-small" fill="#9a6a10">Moyen Atlas</text>
+      <text x="440" y="36" class="svg-small" fill="#2a74ad">Méditerranée</text>
+      <text x="40" y="150" class="svg-label" fill="#2a74ad">Océan Atlantique</text>
+      <g fill="#14171f">
+        <circle cx="365" cy="37" r="3"/><circle cx="334" cy="89" r="3"/><circle cx="311" cy="103" r="3"/><circle cx="389" cy="89" r="3"/>
+        <circle cx="299" cy="161" r="3"/><circle cx="482" cy="70" r="3"/><circle cx="143" cy="296" r="3"/><circle cx="61" cy="399" r="3"/>
+      </g>
+      <g class="svg-small" fill="#14171f">
+        <text x="358" y="32" text-anchor="end">Tanger</text>
+        <text x="328" y="86" text-anchor="end">Rabat</text>
+        <text x="305" y="108" text-anchor="end">Casablanca</text>
+        <text x="383" y="84" text-anchor="end">Fès</text>
+        <text x="293" y="158" text-anchor="end">Marrakech</text>
+        <text x="489" y="88">Oujda</text>
+        <text x="151" y="300">Laâyoune</text>
+        <text x="69" y="403">Dakhla</text>
+      </g>
+      <g>
+        <circle cx="421" cy="53" r="7" fill="#d9472b" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="421" cy="53" r="13" fill="none" stroke="#d9472b" opacity=".6"/>
+        <path d="M425 46 L436 22" stroke="#d9472b"/>
+        <text x="540" y="16" text-anchor="end" class="svg-small" fill="#a6463a">Al Hoceima, 24 février 2004 (M ≈ 6,3)</text>
+        <circle cx="287" cy="178" r="7" fill="#d9472b" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="287" cy="178" r="13" fill="none" stroke="#d9472b" opacity=".6"/>
+        <path d="M280 186 L236 226" stroke="#d9472b"/>
+        <text x="232" y="234" text-anchor="end" class="svg-small" fill="#a6463a">Al Haouz, 8 sept. 2023 (M 6,8)</text>
+        <circle cx="251" cy="197" r="5" fill="#e39b1b" stroke="#fff" stroke-width="1.2"/>
+        <text x="242" y="201" text-anchor="end" class="svg-small" fill="#9a6a10">Agadir, 1960 (M ≈ 5,7)</text>
+      </g>
+      <!-- légende -->
+      <text x="572" y="44" class="svg-title">Sismicité du Maroc — schéma indicatif</text>
+      <rect x="572" y="66" width="26" height="16" fill="url(#c7f2-hatch)" stroke="#d9472b"/>
+      <text x="608" y="79" class="svg-label">Zones les plus actives (Rif, Haut Atlas)</text>
+      <rect x="572" y="94" width="26" height="16" fill="#f7deb0" stroke="#e39b1b"/>
+      <text x="608" y="107" class="svg-label">Activité modérée (Moyen Atlas)</text>
+      <circle cx="585" cy="132" r="7" fill="#d9472b" stroke="#fff" stroke-width="1.5"/>
+      <text x="608" y="136" class="svg-label">Séisme destructeur récent</text>
+      <rect x="572" y="166" width="370" height="150" rx="12" fill="#fff3ee" stroke="#f6d3c7"/>
+      <text x="590" y="192" class="svg-label" fill="#a6463a">Attention : carte NON réglementaire</text>
+      <text x="590" y="214" class="svg-small">Les contours sont volontairement grossiers et servent seulement</text>
+      <text x="590" y="230" class="svg-small">à situer les grands ensembles sismotectoniques.</text>
+      <text x="590" y="252" class="svg-small">Pour un projet : zonage officiel du RPS 2000 (version 2011)</text>
+      <text x="590" y="268" class="svg-small">et, surtout, accélération et sol de calcul fixés par le CPS</text>
+      <text x="590" y="284" class="svg-small">ou par une étude d'aléa sismique spécifique au site.</text>
+      <text x="590" y="300" class="svg-small">Ne jamais dimensionner à partir de cette figure.</text>
+      <text x="572" y="350" class="svg-label">Repères</text>
+      <text x="572" y="372" class="svg-small">• Al Hoceima 2004 : plus de 600 victimes, dégâts dans le Rif.</text>
+      <text x="572" y="392" class="svg-small">• Al Haouz 2023 : près de 3 000 victimes ; routes de montagne coupées</text>
+      <text x="572" y="408" class="svg-small">   (éboulements), ouvrages anciens et constructions en terre très touchés.</text>
+      <text x="572" y="428" class="svg-small">• Agadir 1960 : ville détruite, origine des premières règles parasismiques.</text>
+      <text x="572" y="452" class="svg-small">Les grands axes (LGV, autoroutes, Tanger Med) traversent ou longent</text>
+      <text x="572" y="468" class="svg-small">ces zones : leurs ouvrages d'art sont tous justifiés au séisme.</text>
+    </svg>
+    <figcaption><b>Figure 7.2 —</b> Carte schématique de la sismicité marocaine (indicative, non réglementaire). Les deux séismes les plus destructeurs du XXI<sup>e</sup> siècle (Al Hoceima 2004, Al Haouz 2023) se situent dans les deux grandes zones actives : le Rif et le Haut Atlas.</figcaption>
+  </figure>
+
+  <div class="box maroc"><span class="t">Ce que le séisme d'Al Haouz a rappelé aux ingénieurs</span>
+    Le 8 septembre 2023, le séisme d'Al Haouz (magnitude 6,8) a frappé une région de montagne longtemps considérée comme moins exposée que le Rif. Pour les ouvrages d'art, l'enseignement principal est double : d'une part, les <b>accès</b> (routes de montagne, talus, murs de soutènement) ont été les plus vulnérables, coupant des vallées entières ; d'autre part, l'aléa sismique ne se limite pas au nord du pays. Tout pont neuf, y compris un ouvrage courant, doit faire l'objet d'une justification sismique selon le référentiel imposé par le CPS.
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.2</span>Notions de dynamique : l'oscillateur simple</h2>
+  <p>Pour comprendre la réponse d'un pont à un séisme, on commence par le modèle le plus simple possible : une <b>masse</b> M (le tablier) posée sur un <b>ressort</b> de raideur K (les piles et les appareils d'appui), avec un peu de <b>frottement interne</b> (l'amortissement). C'est l'<span class="kw">oscillateur à un degré de liberté</span>. Pour la direction longitudinale d'un pont courant, ce modèle est souvent étonnamment proche de la réalité.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 340" role="img" aria-label="Du pont réel à l'oscillateur à un degré de liberté">
+      <defs>
+        <pattern id="c7f3-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern>
+        <marker id="c7f3-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <marker id="c7f3-arg" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+      </defs>
+      <rect width="960" height="340" fill="#fbfaf6"/>
+      <text x="230" y="30" text-anchor="middle" class="svg-title">Le pont réel (élévation)</text>
+      <rect x="20" y="270" width="420" height="50" fill="url(#c7f3-earth)"/>
+      <rect x="40" y="100" width="380" height="22" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="40" y="96" width="380" height="5" fill="#3c4049"/>
+      <rect x="20" y="130" width="34" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="406" y="130" width="34" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="160" y="130" width="18" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="282" y="130" width="18" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+      <g fill="#14171f"><rect x="40" y="122" width="10" height="8"/><rect x="164" y="122" width="10" height="8"/><rect x="286" y="122" width="10" height="8"/><rect x="410" y="122" width="10" height="8"/></g>
+      <text x="230" y="88" text-anchor="middle" class="svg-small">tablier : presque toute la masse</text>
+      <text x="230" y="205" text-anchor="middle" class="svg-small">piles + appareils : la raideur</text>
+      <path d="M150 300 H310" stroke="#d9472b" stroke-width="2.4" marker-start="url(#c7f3-ar)" marker-end="url(#c7f3-ar)"/>
+      <text x="230" y="292" text-anchor="middle" class="svg-small" fill="#d9472b">mouvement du sol üg(t)</text>
+      <path d="M470 180 H540" stroke="#a8842a" stroke-width="2.4" marker-end="url(#c7f3-arg)"/>
+      <text x="505" y="168" text-anchor="middle" class="svg-small" fill="#a8842a">modélisation</text>
+      <text x="745" y="30" text-anchor="middle" class="svg-title">L'oscillateur simple équivalent</text>
+      <rect x="600" y="290" width="300" height="30" fill="url(#c7f3-earth)"/>
+      <path d="M600 290 H900" stroke="#6e7884" stroke-width="2"/>
+      <path d="M745 290 V130" stroke="#9aa3ae" stroke-width="7"/>
+      <path d="M745 290 C745 230 750 170 785 130" stroke="#2d6be4" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+      <rect x="705" y="80" width="80" height="50" rx="4" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="745" y="80" width="80" height="50" rx="4" fill="none" stroke="#2d6be4" stroke-dasharray="6 4"/>
+      <text x="745" y="111" text-anchor="middle" class="svg-label">M</text>
+      <path d="M745 66 H825" stroke="#2d6be4" stroke-width="1.6" marker-start="url(#c7f3-ar)" marker-end="url(#c7f3-ar)"/>
+      <text x="785" y="58" text-anchor="middle" class="svg-small" fill="#2d6be4">u(t) relatif au sol</text>
+      <text x="700" y="215" text-anchor="end" class="svg-label">raideur K</text>
+      <text x="700" y="232" text-anchor="end" class="svg-small">(force pour 1 m de déplacement)</text>
+      <text x="800" y="240" class="svg-label">amortissement ξ</text>
+      <text x="800" y="256" class="svg-small">≈ 5 % pour le béton</text>
+      <path d="M690 308 H800" stroke="#d9472b" stroke-width="2.4" marker-start="url(#c7f3-ar)" marker-end="url(#c7f3-ar)"/>
+      <text x="745" y="333" text-anchor="middle" class="svg-small" fill="#d9472b">üg(t)</text>
+    </svg>
+    <figcaption><b>Figure 7.3 —</b> La masse du tablier et la raideur des appuis suffisent à décrire le mouvement d'ensemble du pont dans une direction. Le déplacement <b>u</b> se mesure par rapport au sol en mouvement.</figcaption>
+  </figure>
+
+  <div class="formula"><span class="lbl">Équation du mouvement et période propre</span>
+    <span class="texd">M\,\ddot u + c\,\dot u + K\,u = -M\,\ddot u_g(t) \qquad \omega = \sqrt{\frac{K}{M}},\quad T = \frac{2\pi}{\omega} = 2\pi\sqrt{\frac{M}{K}},\quad f = \frac{1}{T}</span>
+    <div class="where">M en tonnes et K en kN/m donnent directement ω en rad/s. Le séisme agit comme une <b>force d'inertie</b> fictive <span class="tex">-M\ddot u_g</span> appliquée à la masse. L'amortissement s'exprime en fraction de l'amortissement critique : <span class="tex">\xi = c/(2M\omega)</span>, de l'ordre de 5 % pour le béton armé, 2 % pour l'acier soudé.</div>
+  </div>
+
+  <div class="box ex"><span class="t">Ordre de grandeur</span>
+    Un tablier de <b>300 t</b> sur une pile unique de 8 m de haut et 1,20 m de diamètre (E = 32 000 MPa) : <span class="tex">I = \pi D^4/64 = 0{,}102\ \text{m}^4</span>, raideur en console <span class="tex">K = 3EI/H^3 = 3 \times 32\,000\,000 \times 0{,}102 / 512 \approx 19\,100\ \text{kN/m}</span>, d'où <span class="tex">T = 2\pi\sqrt{300/19\,100} \approx 0{,}79\ \text{s}</span>. Les ponts courants ont des périodes comprises entre environ 0,3 s (pont très raide sur appuis fixes) et 2 à 3 s (pont isolé).
+  </div>
+
+  <h3>Résonance : quand le sol « pousse au bon moment »</h3>
+  <p>Si le sol oscille à une fréquence proche de la fréquence propre du pont, chaque secousse arrive au bon moment pour augmenter l'amplitude, comme on pousse une balançoire. C'est la <span class="kw">résonance</span>. Seul l'amortissement limite alors la réponse : pour une excitation sinusoïdale entretenue, l'amplification à la résonance vaut <span class="tex">1/(2\xi)</span>, soit 10 pour ξ = 5 %.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 360" role="img" aria-label="Facteur d'amplification dynamique en fonction du rapport des fréquences">
+      <rect width="960" height="360" fill="#fbfaf6"/>
+      <text x="80" y="30" class="svg-title">Amplification du déplacement sous une excitation sinusoïdale</text>
+      <g stroke="#e3dfd4"><path d="M80 60 H600 M80 100 H600 M80 140 H600 M80 180 H600 M80 220 H600 M80 260 H600"/><path d="M253 60 V300 M427 60 V300 M600 60 V300"/></g>
+      <path d="M80 300 H610 M80 300 V54" stroke="#14171f"/>
+      <g class="svg-small" text-anchor="middle"><text x="80" y="318">0</text><text x="253" y="318">1</text><text x="427" y="318">2</text><text x="600" y="318">3</text><text x="340" y="342">rapport des fréquences  f_sol / f_pont</text></g>
+      <g class="svg-small" text-anchor="end"><text x="72" y="304">0</text><text x="72" y="264">2</text><text x="72" y="224">4</text><text x="72" y="184">6</text><text x="72" y="144">8</text><text x="72" y="104">10</text><text x="72" y="64">12</text></g>
+      <text x="40" y="180" class="svg-small" transform="rotate(-90 40 180)" text-anchor="middle">amplification D</text>
+      <path d="M80.0 280.0L81.7 280.0L83.5 280.0L85.2 280.0L86.9 280.0L88.7 279.9L90.4 279.9L92.1 279.9L93.9 279.9L95.6 279.8L97.3 279.8L99.1 279.8L100.8 279.7L102.5 279.7L104.3 279.6L106.0 279.5L107.7 279.5L109.5 279.4L111.2 279.3L112.9 279.3L114.7 279.2L116.4 279.1L118.1 279.0L119.9 278.9L121.6 278.8L123.3 278.7L125.1 278.6L126.8 278.4L128.5 278.3L130.3 278.2L132.0 278.0L133.7 277.9L135.5 277.7L137.2 277.6L138.9 277.4L140.7 277.2L142.4 277.0L144.1 276.8L145.9 276.6L147.6 276.4L149.3 276.2L151.1 276.0L152.8 275.7L154.5 275.5L156.3 275.2L158.0 274.9L159.7 274.6L161.5 274.3L163.2 274.0L164.9 273.7L166.7 273.3L168.4 273.0L170.1 272.6L171.9 272.2L173.6 271.8L175.3 271.3L177.1 270.9L178.8 270.4L180.5 269.9L182.3 269.3L184.0 268.8L185.7 268.2L187.5 267.5L189.2 266.9L190.9 266.2L192.7 265.4L194.4 264.6L196.1 263.8L197.9 262.8L199.6 261.9L201.3 260.8L203.1 259.7L204.8 258.5L206.5 257.3L208.3 255.9L210.0 254.4L211.7 252.8L213.5 251.0L215.2 249.1L216.9 247.0L218.7 244.7L220.4 242.1L222.1 239.3L223.9 236.1L225.6 232.5L227.3 228.5L229.1 223.9L230.8 218.6L232.5 212.4L234.3 205.2L236.0 196.6L237.7 186.2L239.5 173.4L241.2 157.3L242.9 136.5L244.7 108.9L246.4 70.9L248.1 60.0L249.9 60.0L251.6 60.0L253.3 60.0L255.1 60.0L256.8 60.0L258.5 60.0L260.3 81.6L262.0 119.4L263.7 146.9L265.5 167.6L267.2 183.7L268.9 196.4L270.7 206.8L272.4 215.4L274.1 222.6L275.9 228.7L277.6 234.0L279.3 238.6L281.1 242.6L282.8 246.2L284.5 249.4L286.3 252.2L288.0 254.8L289.7 257.1L291.5 259.3L293.2 261.2L294.9 263.0L296.7 264.6L298.4 266.1L300.1 267.5L301.9 268.8L303.6 270.0L305.3 271.1L307.1 272.1L308.8 273.1L310.5 274.1L312.3 274.9L314.0 275.7L315.7 276.5L317.5 277.2L319.2 277.9L320.9 278.6L322.7 279.2L324.4 279.8L326.1 280.4L327.9 280.9L329.6 281.4L331.3 281.9L333.1 282.3L334.8 282.8L336.5 283.2L338.3 283.6L340.0 284.0L341.7 284.4L343.5 284.8L345.2 285.1L346.9 285.4L348.7 285.8L350.4 286.1L352.1 286.4L353.9 286.6L355.6 286.9L357.3 287.2L359.1 287.4L360.8 287.7L362.5 287.9L364.3 288.2L366.0 288.4L367.7 288.6L369.5 288.8L371.2 289.0L372.9 289.2L374.7 289.4L376.4 289.6L378.1 289.8L379.9 290.0L381.6 290.1L383.3 290.3L385.1 290.5L386.8 290.6L388.5 290.8L390.3 290.9L392.0 291.1L393.7 291.2L395.5 291.4L397.2 291.5L398.9 291.6L400.7 291.7L402.4 291.9L404.1 292.0L405.9 292.1L407.6 292.2L409.3 292.3L411.1 292.5L412.8 292.6L414.5 292.7L416.3 292.8L418.0 292.9L419.7 293.0L421.5 293.1L423.2 293.2L424.9 293.2L426.7 293.3L428.4 293.4L430.1 293.5L431.9 293.6L433.6 293.7L435.3 293.8L437.1 293.8L438.8 293.9L440.5 294.0L442.3 294.1L444.0 294.1L445.7 294.2L447.5 294.3L449.2 294.3L450.9 294.4L452.7 294.5L454.4 294.5L456.1 294.6L457.9 294.7L459.6 294.7L461.3 294.8L463.1 294.9L464.8 294.9L466.5 295.0L468.3 295.0L470.0 295.1L471.7 295.1L473.5 295.2L475.2 295.2L476.9 295.3L478.7 295.3L480.4 295.4L482.1 295.4L483.9 295.5L485.6 295.5L487.3 295.6L489.1 295.6L490.8 295.7L492.5 295.7L494.3 295.8L496.0 295.8L497.7 295.8L499.5 295.9L501.2 295.9L502.9 296.0L504.7 296.0L506.4 296.0L508.1 296.1L509.9 296.1L511.6 296.2L513.3 296.2L515.1 296.2L516.8 296.3L518.5 296.3L520.3 296.3L522.0 296.4L523.7 296.4L525.5 296.4L527.2 296.5L528.9 296.5L530.7 296.5L532.4 296.6L534.1 296.6L535.9 296.6L537.6 296.7L539.3 296.7L541.1 296.7L542.8 296.7L544.5 296.8L546.3 296.8L548.0 296.8L549.7 296.8L551.5 296.9L553.2 296.9L554.9 296.9L556.7 297.0L558.4 297.0L560.1 297.0L561.9 297.0L563.6 297.1L565.3 297.1L567.1 297.1L568.8 297.1L570.5 297.1L572.3 297.2L574.0 297.2L575.7 297.2L577.5 297.2L579.2 297.3L580.9 297.3L582.7 297.3L584.4 297.3L586.1 297.3L587.9 297.4L589.6 297.4L591.3 297.4L593.1 297.4L594.8 297.4L596.5 297.5L598.3 297.5L600.0 297.5" stroke="#7a52c7" stroke-width="1.8" fill="none"/>
+      <path d="M80.0 280.0L81.7 280.0L83.5 280.0L85.2 280.0L86.9 280.0L88.7 280.0L90.4 279.9L92.1 279.9L93.9 279.9L95.6 279.8L97.3 279.8L99.1 279.8L100.8 279.7L102.5 279.7L104.3 279.6L106.0 279.5L107.7 279.5L109.5 279.4L111.2 279.3L112.9 279.3L114.7 279.2L116.4 279.1L118.1 279.0L119.9 278.9L121.6 278.8L123.3 278.7L125.1 278.6L126.8 278.4L128.5 278.3L130.3 278.2L132.0 278.0L133.7 277.9L135.5 277.7L137.2 277.6L138.9 277.4L140.7 277.2L142.4 277.0L144.1 276.8L145.9 276.6L147.6 276.4L149.3 276.2L151.1 276.0L152.8 275.7L154.5 275.5L156.3 275.2L158.0 275.0L159.7 274.7L161.5 274.4L163.2 274.1L164.9 273.7L166.7 273.4L168.4 273.0L170.1 272.7L171.9 272.3L173.6 271.8L175.3 271.4L177.1 271.0L178.8 270.5L180.5 270.0L182.3 269.4L184.0 268.9L185.7 268.3L187.5 267.7L189.2 267.0L190.9 266.3L192.7 265.6L194.4 264.8L196.1 264.0L197.9 263.1L199.6 262.2L201.3 261.1L203.1 260.1L204.8 258.9L206.5 257.7L208.3 256.4L210.0 254.9L211.7 253.4L213.5 251.7L215.2 249.9L216.9 247.9L218.7 245.8L220.4 243.4L222.1 240.8L223.9 237.9L225.6 234.7L227.3 231.1L229.1 227.1L230.8 222.5L232.5 217.4L234.3 211.6L236.0 204.9L237.7 197.2L239.5 188.3L241.2 178.1L242.9 166.3L244.7 153.1L246.4 138.6L248.1 123.9L249.9 110.8L251.6 101.9L253.3 100.0L255.1 105.8L256.8 117.7L258.5 132.9L260.3 148.7L262.0 163.7L263.7 177.2L265.5 189.0L267.2 199.2L268.9 208.0L270.7 215.6L272.4 222.3L274.1 228.0L275.9 233.1L277.6 237.6L279.3 241.6L281.1 245.1L282.8 248.3L284.5 251.2L286.3 253.8L288.0 256.1L289.7 258.3L291.5 260.3L293.2 262.1L294.9 263.7L296.7 265.3L298.4 266.7L300.1 268.0L301.9 269.3L303.6 270.4L305.3 271.5L307.1 272.5L308.8 273.5L310.5 274.4L312.3 275.2L314.0 276.0L315.7 276.8L317.5 277.5L319.2 278.1L320.9 278.8L322.7 279.4L324.4 280.0L326.1 280.5L327.9 281.0L329.6 281.5L331.3 282.0L333.1 282.5L334.8 282.9L336.5 283.3L338.3 283.7L340.0 284.1L341.7 284.5L343.5 284.8L345.2 285.2L346.9 285.5L348.7 285.8L350.4 286.1L352.1 286.4L353.9 286.7L355.6 287.0L357.3 287.2L359.1 287.5L360.8 287.7L362.5 288.0L364.3 288.2L366.0 288.4L367.7 288.7L369.5 288.9L371.2 289.1L372.9 289.3L374.7 289.5L376.4 289.6L378.1 289.8L379.9 290.0L381.6 290.2L383.3 290.3L385.1 290.5L386.8 290.7L388.5 290.8L390.3 291.0L392.0 291.1L393.7 291.2L395.5 291.4L397.2 291.5L398.9 291.6L400.7 291.8L402.4 291.9L404.1 292.0L405.9 292.1L407.6 292.2L409.3 292.4L411.1 292.5L412.8 292.6L414.5 292.7L416.3 292.8L418.0 292.9L419.7 293.0L421.5 293.1L423.2 293.2L424.9 293.3L426.7 293.3L428.4 293.4L430.1 293.5L431.9 293.6L433.6 293.7L435.3 293.8L437.1 293.8L438.8 293.9L440.5 294.0L442.3 294.1L444.0 294.1L445.7 294.2L447.5 294.3L449.2 294.4L450.9 294.4L452.7 294.5L454.4 294.6L456.1 294.6L457.9 294.7L459.6 294.7L461.3 294.8L463.1 294.9L464.8 294.9L466.5 295.0L468.3 295.0L470.0 295.1L471.7 295.1L473.5 295.2L475.2 295.2L476.9 295.3L478.7 295.3L480.4 295.4L482.1 295.4L483.9 295.5L485.6 295.5L487.3 295.6L489.1 295.6L490.8 295.7L492.5 295.7L494.3 295.8L496.0 295.8L497.7 295.8L499.5 295.9L501.2 295.9L502.9 296.0L504.7 296.0L506.4 296.0L508.1 296.1L509.9 296.1L511.6 296.2L513.3 296.2L515.1 296.2L516.8 296.3L518.5 296.3L520.3 296.3L522.0 296.4L523.7 296.4L525.5 296.4L527.2 296.5L528.9 296.5L530.7 296.5L532.4 296.6L534.1 296.6L535.9 296.6L537.6 296.7L539.3 296.7L541.1 296.7L542.8 296.7L544.5 296.8L546.3 296.8L548.0 296.8L549.7 296.9L551.5 296.9L553.2 296.9L554.9 296.9L556.7 297.0L558.4 297.0L560.1 297.0L561.9 297.0L563.6 297.1L565.3 297.1L567.1 297.1L568.8 297.1L570.5 297.1L572.3 297.2L574.0 297.2L575.7 297.2L577.5 297.2L579.2 297.3L580.9 297.3L582.7 297.3L584.4 297.3L586.1 297.3L587.9 297.4L589.6 297.4L591.3 297.4L593.1 297.4L594.8 297.4L596.5 297.5L598.3 297.5L600.0 297.5" stroke="#d9472b" stroke-width="2.6" fill="none"/>
+      <path d="M80.0 280.0L81.7 280.0L83.5 280.0L85.2 280.0L86.9 280.0L88.7 280.0L90.4 279.9L92.1 279.9L93.9 279.9L95.6 279.8L97.3 279.8L99.1 279.8L100.8 279.7L102.5 279.7L104.3 279.6L106.0 279.5L107.7 279.5L109.5 279.4L111.2 279.3L112.9 279.3L114.7 279.2L116.4 279.1L118.1 279.0L119.9 278.9L121.6 278.8L123.3 278.7L125.1 278.6L126.8 278.5L128.5 278.3L130.3 278.2L132.0 278.1L133.7 277.9L135.5 277.8L137.2 277.6L138.9 277.5L140.7 277.3L142.4 277.1L144.1 276.9L145.9 276.7L147.6 276.5L149.3 276.3L151.1 276.1L152.8 275.8L154.5 275.6L156.3 275.3L158.0 275.1L159.7 274.8L161.5 274.5L163.2 274.2L164.9 273.9L166.7 273.6L168.4 273.2L170.1 272.9L171.9 272.5L173.6 272.1L175.3 271.7L177.1 271.2L178.8 270.8L180.5 270.3L182.3 269.8L184.0 269.3L185.7 268.7L187.5 268.2L189.2 267.5L190.9 266.9L192.7 266.2L194.4 265.5L196.1 264.7L197.9 263.9L199.6 263.1L201.3 262.2L203.1 261.2L204.8 260.2L206.5 259.1L208.3 258.0L210.0 256.8L211.7 255.4L213.5 254.0L215.2 252.6L216.9 251.0L218.7 249.2L220.4 247.4L222.1 245.4L223.9 243.3L225.6 241.0L227.3 238.5L229.1 235.9L230.8 233.1L232.5 230.1L234.3 226.9L236.0 223.6L237.7 220.1L239.5 216.6L241.2 213.0L242.9 209.6L244.7 206.3L246.4 203.6L248.1 201.4L249.9 200.0L251.6 199.5L253.3 200.0L255.1 201.5L256.8 203.8L258.5 206.9L260.3 210.5L262.0 214.4L263.7 218.5L265.5 222.6L267.2 226.6L268.9 230.5L270.7 234.2L272.4 237.7L274.1 241.0L275.9 244.0L277.6 246.9L279.3 249.5L281.1 252.0L282.8 254.2L284.5 256.3L286.3 258.3L288.0 260.1L289.7 261.8L291.5 263.4L293.2 264.8L294.9 266.2L296.7 267.5L298.4 268.7L300.1 269.9L301.9 270.9L303.6 271.9L305.3 272.9L307.1 273.8L308.8 274.6L310.5 275.4L312.3 276.2L314.0 276.9L315.7 277.6L317.5 278.2L319.2 278.8L320.9 279.4L322.7 280.0L324.4 280.5L326.1 281.0L327.9 281.5L329.6 282.0L331.3 282.5L333.1 282.9L334.8 283.3L336.5 283.7L338.3 284.1L340.0 284.4L341.7 284.8L343.5 285.1L345.2 285.5L346.9 285.8L348.7 286.1L350.4 286.4L352.1 286.7L353.9 286.9L355.6 287.2L357.3 287.4L359.1 287.7L360.8 287.9L362.5 288.2L364.3 288.4L366.0 288.6L367.7 288.8L369.5 289.0L371.2 289.2L372.9 289.4L374.7 289.6L376.4 289.8L378.1 289.9L379.9 290.1L381.6 290.3L383.3 290.4L385.1 290.6L386.8 290.7L388.5 290.9L390.3 291.0L392.0 291.2L393.7 291.3L395.5 291.5L397.2 291.6L398.9 291.7L400.7 291.8L402.4 292.0L404.1 292.1L405.9 292.2L407.6 292.3L409.3 292.4L411.1 292.5L412.8 292.6L414.5 292.7L416.3 292.8L418.0 292.9L419.7 293.0L421.5 293.1L423.2 293.2L424.9 293.3L426.7 293.4L428.4 293.5L430.1 293.6L431.9 293.6L433.6 293.7L435.3 293.8L437.1 293.9L438.8 294.0L440.5 294.0L442.3 294.1L444.0 294.2L445.7 294.2L447.5 294.3L449.2 294.4L450.9 294.5L452.7 294.5L454.4 294.6L456.1 294.6L457.9 294.7L459.6 294.8L461.3 294.8L463.1 294.9L464.8 294.9L466.5 295.0L468.3 295.1L470.0 295.1L471.7 295.2L473.5 295.2L475.2 295.3L476.9 295.3L478.7 295.4L480.4 295.4L482.1 295.5L483.9 295.5L485.6 295.6L487.3 295.6L489.1 295.6L490.8 295.7L492.5 295.7L494.3 295.8L496.0 295.8L497.7 295.9L499.5 295.9L501.2 295.9L502.9 296.0L504.7 296.0L506.4 296.1L508.1 296.1L509.9 296.1L511.6 296.2L513.3 296.2L515.1 296.2L516.8 296.3L518.5 296.3L520.3 296.3L522.0 296.4L523.7 296.4L525.5 296.4L527.2 296.5L528.9 296.5L530.7 296.5L532.4 296.6L534.1 296.6L535.9 296.6L537.6 296.7L539.3 296.7L541.1 296.7L542.8 296.7L544.5 296.8L546.3 296.8L548.0 296.8L549.7 296.9L551.5 296.9L553.2 296.9L554.9 296.9L556.7 297.0L558.4 297.0L560.1 297.0L561.9 297.0L563.6 297.1L565.3 297.1L567.1 297.1L568.8 297.1L570.5 297.2L572.3 297.2L574.0 297.2L575.7 297.2L577.5 297.2L579.2 297.3L580.9 297.3L582.7 297.3L584.4 297.3L586.1 297.4L587.9 297.4L589.6 297.4L591.3 297.4L593.1 297.4L594.8 297.5L596.5 297.5L598.3 297.5L600.0 297.5" stroke="#e39b1b" stroke-width="2" fill="none"/>
+      <path d="M80.0 280.0L81.7 280.0L83.5 280.0L85.2 280.0L86.9 280.0L88.7 280.0L90.4 279.9L92.1 279.9L93.9 279.9L95.6 279.8L97.3 279.8L99.1 279.8L100.8 279.7L102.5 279.7L104.3 279.6L106.0 279.6L107.7 279.5L109.5 279.5L111.2 279.4L112.9 279.3L114.7 279.2L116.4 279.2L118.1 279.1L119.9 279.0L121.6 278.9L123.3 278.8L125.1 278.7L126.8 278.6L128.5 278.5L130.3 278.3L132.0 278.2L133.7 278.1L135.5 277.9L137.2 277.8L138.9 277.6L140.7 277.5L142.4 277.3L144.1 277.2L145.9 277.0L147.6 276.8L149.3 276.6L151.1 276.4L152.8 276.2L154.5 276.0L156.3 275.8L158.0 275.5L159.7 275.3L161.5 275.0L163.2 274.8L164.9 274.5L166.7 274.2L168.4 273.9L170.1 273.6L171.9 273.3L173.6 273.0L175.3 272.7L177.1 272.3L178.8 271.9L180.5 271.5L182.3 271.2L184.0 270.7L185.7 270.3L187.5 269.9L189.2 269.4L190.9 268.9L192.7 268.4L194.4 267.9L196.1 267.4L197.9 266.8L199.6 266.2L201.3 265.6L203.1 265.0L204.8 264.4L206.5 263.7L208.3 263.0L210.0 262.3L211.7 261.6L213.5 260.8L215.2 260.1L216.9 259.3L218.7 258.5L220.4 257.7L222.1 256.9L223.9 256.0L225.6 255.2L227.3 254.4L229.1 253.6L230.8 252.9L232.5 252.2L234.3 251.5L236.0 250.9L237.7 250.3L239.5 249.8L241.2 249.5L242.9 249.2L244.7 249.0L246.4 249.0L248.1 249.0L249.9 249.2L251.6 249.6L253.3 250.0L255.1 250.6L256.8 251.2L258.5 252.0L260.3 252.8L262.0 253.7L263.7 254.7L265.5 255.7L267.2 256.8L268.9 257.9L270.7 259.0L272.4 260.1L274.1 261.2L275.9 262.3L277.6 263.3L279.3 264.4L281.1 265.4L282.8 266.4L284.5 267.4L286.3 268.4L288.0 269.3L289.7 270.2L291.5 271.0L293.2 271.9L294.9 272.7L296.7 273.4L298.4 274.2L300.1 274.9L301.9 275.6L303.6 276.2L305.3 276.9L307.1 277.5L308.8 278.0L310.5 278.6L312.3 279.2L314.0 279.7L315.7 280.2L317.5 280.7L319.2 281.1L320.9 281.6L322.7 282.0L324.4 282.4L326.1 282.8L327.9 283.2L329.6 283.6L331.3 283.9L333.1 284.3L334.8 284.6L336.5 285.0L338.3 285.3L340.0 285.6L341.7 285.9L343.5 286.2L345.2 286.4L346.9 286.7L348.7 287.0L350.4 287.2L352.1 287.5L353.9 287.7L355.6 287.9L357.3 288.1L359.1 288.4L360.8 288.6L362.5 288.8L364.3 289.0L366.0 289.2L367.7 289.3L369.5 289.5L371.2 289.7L372.9 289.9L374.7 290.0L376.4 290.2L378.1 290.4L379.9 290.5L381.6 290.7L383.3 290.8L385.1 291.0L386.8 291.1L388.5 291.2L390.3 291.4L392.0 291.5L393.7 291.6L395.5 291.8L397.2 291.9L398.9 292.0L400.7 292.1L402.4 292.2L404.1 292.3L405.9 292.4L407.6 292.5L409.3 292.6L411.1 292.7L412.8 292.8L414.5 292.9L416.3 293.0L418.0 293.1L419.7 293.2L421.5 293.3L423.2 293.4L424.9 293.5L426.7 293.6L428.4 293.6L430.1 293.7L431.9 293.8L433.6 293.9L435.3 294.0L437.1 294.0L438.8 294.1L440.5 294.2L442.3 294.2L444.0 294.3L445.7 294.4L447.5 294.4L449.2 294.5L450.9 294.6L452.7 294.6L454.4 294.7L456.1 294.7L457.9 294.8L459.6 294.9L461.3 294.9L463.1 295.0L464.8 295.0L466.5 295.1L468.3 295.1L470.0 295.2L471.7 295.2L473.5 295.3L475.2 295.3L476.9 295.4L478.7 295.4L480.4 295.5L482.1 295.5L483.9 295.6L485.6 295.6L487.3 295.7L489.1 295.7L490.8 295.8L492.5 295.8L494.3 295.8L496.0 295.9L497.7 295.9L499.5 296.0L501.2 296.0L502.9 296.0L504.7 296.1L506.4 296.1L508.1 296.2L509.9 296.2L511.6 296.2L513.3 296.3L515.1 296.3L516.8 296.3L518.5 296.4L520.3 296.4L522.0 296.4L523.7 296.5L525.5 296.5L527.2 296.5L528.9 296.6L530.7 296.6L532.4 296.6L534.1 296.6L535.9 296.7L537.6 296.7L539.3 296.7L541.1 296.8L542.8 296.8L544.5 296.8L546.3 296.8L548.0 296.9L549.7 296.9L551.5 296.9L553.2 296.9L554.9 297.0L556.7 297.0L558.4 297.0L560.1 297.0L561.9 297.1L563.6 297.1L565.3 297.1L567.1 297.1L568.8 297.2L570.5 297.2L572.3 297.2L574.0 297.2L575.7 297.2L577.5 297.3L579.2 297.3L580.9 297.3L582.7 297.3L584.4 297.4L586.1 297.4L587.9 297.4L589.6 297.4L591.3 297.4L593.1 297.5L594.8 297.5L596.5 297.5L598.3 297.5L600.0 297.5" stroke="#0f8f7b" stroke-width="2" fill="none"/>
+      <path d="M253 60 V300" stroke="#a8842a" stroke-dasharray="4 4"/>
+      <text x="290" y="74" class="svg-small" fill="#7a52c7">ξ = 2 % → 25 (hors échelle)</text>
+      <text x="290" y="104" class="svg-small" fill="#d9472b">ξ = 5 % → 10</text>
+      <text x="290" y="196" class="svg-small" fill="#9a6a10">ξ = 10 % → 5</text>
+      <text x="300" y="232" class="svg-small" fill="#0f8f7b">ξ = 20 % → 2,5</text>
+      <rect x="640" y="60" width="300" height="240" rx="12" fill="#fff" stroke="#e3dfd4"/>
+      <text x="660" y="88" class="svg-title">Trois régimes</text>
+      <text x="660" y="116" class="svg-label">f_sol ≪ f_pont : pont très raide</text>
+      <text x="660" y="134" class="svg-small">il suit le sol, D ≈ 1 (efforts = M·ag)</text>
+      <text x="660" y="166" class="svg-label" fill="#d9472b">f_sol ≈ f_pont : résonance</text>
+      <text x="660" y="184" class="svg-small">seul l'amortissement limite la réponse</text>
+      <text x="660" y="216" class="svg-label">f_sol ≫ f_pont : pont très souple</text>
+      <text x="660" y="234" class="svg-small">la masse reste presque immobile : D → 0</text>
+      <text x="660" y="252" class="svg-small">(c'est le principe de l'isolation, § 7.8)</text>
+      <text x="660" y="284" class="svg-small" fill="#a8842a">Un séisme réel dure peu : D reste plus faible.</text>
+    </svg>
+    <figcaption><b>Figure 7.4 —</b> Facteur d'amplification dynamique <span class="tex">D = 1/\sqrt{(1-r^2)^2 + (2\xi r)^2}</span> avec <span class="tex">r = f_\text{sol}/f_\text{pont}</span>. Un séisme réel contient de nombreuses fréquences et ne dure que quelques secondes : la réponse est moins spectaculaire qu'en régime entretenu, mais le message reste vrai : la <b>période propre</b> du pont décide de l'effort qu'il subit.</figcaption>
+  </figure>
+
+  <h3>Simulateur : secouez votre pont</h3>
+  <p>Changez la masse du tablier, la hauteur ou le diamètre de la pile, puis lancez la secousse. Le programme intègre pas à pas l'équation du mouvement (schéma d'Euler semi-implicite, 2 000 pas par seconde). Essayez : (1) une <b>impulsion</b> pour voir le pont vibrer librement à sa période propre ; (2) un <b>sinus</b> réglé exactement sur la fréquence propre affichée : c'est la résonance ; (3) doublez la masse : la période augmente de <span class="tex">\sqrt 2</span>.</p>
+
+  <div class="calc" id="calc-c7sim"><div class="calc-h">Simulateur — oscillateur amorti soumis à une secousse du sol</div><div class="calc-b">
+    <div class="inputs">
+      <label><span>Masse du tablier M (t)</span> <input type="number" id="c7s-M" value="300" step="10" min="10"></label>
+      <label><span>Hauteur de pile H (m)</span> <input type="number" id="c7s-H" value="8" step="0.5" min="2"></label>
+      <label><span>Diamètre du fût D (m)</span> <input type="number" id="c7s-D" value="1.2" step="0.1" min="0.3"></label>
+      <label><span>Amortissement ξ (%)</span> <input type="number" id="c7s-xi" value="5" step="1" min="0" max="50"></label>
+      <label><span>Type de secousse</span> <select id="c7s-type"><option value="sin">Sinus entretenu</option><option value="imp">Impulsion (choc bref)</option><option value="eq">Séisme synthétique (12 s)</option></select></label>
+      <label><span>Fréquence du sol (Hz)</span> <input type="number" id="c7s-f" value="1.0" step="0.05" min="0.1"></label>
+      <label class="full"><span>Accélération maximale du sol (g)</span> <input type="number" id="c7s-a" value="0.10" step="0.01" min="0"></label>
+      <div class="btns"><button class="btn sm" type="button" id="c7s-go">▶ Lancer la secousse</button><button class="btn sm light" type="button" id="c7s-stop">■ Arrêter</button><button class="btn sm light" type="button" id="c7s-res">Caler sur la résonance</button></div>
+    </div>
+    <div class="out">
+      <div class="res"><span>Raideur de la pile K = 3EI/H³</span><b id="c7s-K">—</b></div>
+      <div class="res"><span>Fréquence propre f</span><b id="c7s-fn">—</b></div>
+      <div class="res"><span>Rapport f_sol / f_pont</span><b id="c7s-r">—</b></div>
+      <div class="res big"><span>Période propre T</span><b id="c7s-T">—</b></div>
+      <div class="res"><span>Période mesurée (passages par zéro)</span><b id="c7s-Tm">—</b></div>
+      <div class="res"><span>Déplacement max. du tablier</span><b id="c7s-u">—</b></div>
+      <div class="res"><span>Effort max. en tête de pile K·u</span><b id="c7s-F">—</b></div>
+      <div class="steps" id="c7s-steps">Lancez la secousse pour voir le pont osciller.</div>
+    </div>
+    <div class="calc-fig"><svg id="c7s-svg" viewBox="0 0 960 300" role="img" aria-label="Animation de l'oscillateur"></svg></div>
+  </div></div>
+</section>
+
+<section>
+  <h2><span class="n">7.3</span>Le spectre de réponse</h2>
+  <p>Un accélérogramme réel est une suite chaotique de secousses : on ne peut pas résoudre l'équation du mouvement « à la main » pour chaque séisme possible. L'idée géniale du <span class="kw">spectre de réponse</span> est de faire ce calcul une fois pour toutes, pour <b>tous les oscillateurs possibles</b>, et de ne garder que le maximum.</p>
+
+  <figure class="fig wide">
+    <svg viewBox="0 0 960 400" role="img" aria-label="Construction d'un spectre de réponse à partir d'un accélérogramme">
+      <rect width="960" height="400" fill="#fbfaf6"/>
+      <text x="20" y="26" class="svg-title">① Un séisme, plusieurs oscillateurs</text>
+      <g transform="translate(70 92)">
+        <path d="M0 0 H260" stroke="#e3dfd4"/>
+        <path d="M0.0 0.0L0.6 -0.0L1.1 0.1L1.7 0.3L2.2 0.5L2.8 1.0L3.3 1.4L3.9 1.3L4.5 0.8L5.0 0.7L5.6 1.7L6.1 3.5L6.7 4.4L7.2 3.2L7.8 0.7L8.4 -0.9L8.9 0.0L9.5 2.4L10.0 3.4L10.6 1.7L11.1 -1.5L11.7 -3.3L12.3 -2.8L12.8 -2.2L13.4 -4.5L13.9 -9.0L14.5 -11.8L15.0 -9.3L15.6 -2.9L16.2 1.6L16.7 -0.1L17.3 -5.9L17.8 -8.4L18.4 -2.7L18.9 8.2L19.5 16.0L20.1 15.4L20.6 9.5L21.2 7.0L21.7 12.2L22.3 19.9L22.8 20.1L23.4 8.8L24.0 -7.6L24.5 -17.6L25.1 -16.0L25.6 -8.4L26.2 -4.0L26.7 -6.5L27.3 -10.5L27.9 -9.1L28.4 -2.8L29.0 0.3L29.5 -6.2L30.1 -18.6L30.6 -25.8L31.2 -19.7L31.8 -4.2L32.3 8.4L32.9 10.0L33.4 3.8L34.0 0.6L34.5 6.4L35.1 15.6L35.7 18.0L36.2 9.8L36.8 -0.6L37.3 -1.0L37.9 12.1L38.4 28.7L39.0 34.9L39.6 24.9L40.1 5.7L40.7 -10.5L41.2 -16.7L41.8 -15.7L42.3 -14.7L42.9 -17.8L43.5 -22.4L44.0 -22.7L44.6 -15.4L45.1 -2.4L45.7 11.1L46.2 19.8L46.8 20.9L47.4 14.7L47.9 4.2L48.5 -6.3L49.0 -12.9L49.6 -14.0L50.1 -10.5L50.7 -4.8L51.3 1.5L51.8 7.8L52.4 13.0L52.9 15.4L53.5 13.5L54.0 8.2L54.6 2.8L55.2 -0.1L55.7 -1.3L56.3 -4.2L56.8 -9.9L57.4 -14.4L57.9 -11.3L58.5 1.4L59.1 16.6L59.6 23.2L60.2 15.3L60.7 -1.9L61.3 -16.2L61.8 -19.2L62.4 -13.6L63.0 -8.9L63.5 -10.9L64.1 -16.1L64.6 -15.9L65.2 -7.1L65.7 4.6L66.3 10.2L66.9 7.3L67.4 2.2L68.0 2.9L68.5 9.4L69.1 13.5L69.6 7.0L70.2 -8.2L70.8 -20.9L71.3 -20.7L71.9 -7.4L72.4 9.4L73.0 19.4L73.5 20.3L74.1 17.1L74.7 15.1L75.2 14.6L75.8 12.0L76.3 6.4L76.9 0.6L77.4 -1.7L78.0 -0.8L78.6 -0.4L79.1 -2.6L79.7 -5.0L80.2 -3.8L80.8 0.5L81.3 1.7L81.9 -5.9L82.5 -20.1L83.0 -31.1L83.6 -30.0L84.1 -16.9L84.7 -1.2L85.2 7.5L85.8 7.3L86.4 3.9L86.9 2.4L87.5 2.6L88.0 0.9L88.6 -2.2L89.1 -1.3L89.7 7.9L90.3 21.3L90.8 28.2L91.4 21.3L91.9 5.4L92.5 -6.6L93.0 -6.4L93.6 0.7L94.2 1.8L94.7 -9.4L95.3 -23.8L95.8 -25.9L96.4 -9.9L96.9 12.4L97.5 22.3L98.1 12.2L98.6 -6.4L99.2 -14.6L99.7 -5.5L100.3 9.7L100.8 13.6L101.4 0.9L102.0 -15.6L102.5 -18.9L103.1 -5.1L103.6 12.7L104.2 18.3L104.7 8.8L105.3 -3.6L105.9 -4.9L106.4 5.3L107.0 14.5L107.5 10.9L108.1 -3.3L108.6 -14.6L109.2 -12.3L109.8 0.6L110.3 10.7L110.9 8.6L111.4 -1.7L112.0 -7.6L112.5 -1.9L113.1 9.5L113.7 14.1L114.2 6.0L114.8 -8.1L115.3 -15.4L115.9 -9.3L116.4 4.3L117.0 13.2L117.6 9.5L118.1 -3.6L118.7 -15.9L119.2 -19.3L119.8 -13.8L120.3 -5.6L120.9 -0.3L121.5 1.0L122.0 2.0L122.6 5.6L123.1 10.9L123.7 13.4L124.2 8.7L124.8 -2.6L125.4 -15.1L125.9 -22.0L126.5 -20.6L127.0 -13.9L127.6 -7.8L128.1 -5.7L128.7 -5.2L129.3 -0.7L129.8 10.0L130.4 22.6L130.9 29.0L131.5 24.3L132.0 11.8L132.6 0.2L133.2 -3.4L133.7 0.3L134.3 4.6L134.8 3.9L135.4 -1.2L135.9 -5.0L136.5 -3.9L137.1 0.2L137.6 1.9L138.2 -1.4L138.7 -6.4L139.3 -7.6L139.8 -3.3L140.4 2.3L141.0 3.8L141.5 0.3L142.1 -2.8L142.6 -0.4L143.2 6.5L143.7 10.9L144.3 6.5L144.9 -5.4L145.4 -16.3L146.0 -17.7L146.5 -9.0L147.1 2.7L147.6 9.0L148.2 7.7L148.8 3.0L149.3 0.4L149.9 1.5L150.4 3.4L151.0 2.9L151.5 0.4L152.1 -1.2L152.7 0.0L153.2 2.7L153.8 3.9L154.3 2.5L154.9 -0.0L155.4 -1.6L156.0 -1.9L156.6 -2.6L157.1 -4.8L157.7 -7.4L158.2 -8.0L158.8 -5.5L159.3 -1.8L159.9 0.1L160.5 -0.9L161.0 -3.1L161.6 -4.0L162.1 -2.6L162.7 -0.3L163.2 1.0L163.8 1.5L164.4 2.5L164.9 4.8L165.5 7.0L166.0 6.8L166.6 3.9L167.1 0.3L167.7 -1.2L168.3 0.2L168.8 2.7L169.4 3.7L169.9 2.5L170.5 0.8L171.0 0.3L171.6 0.8L172.2 0.3L172.7 -2.1L173.3 -5.1L173.8 -5.9L174.4 -3.2L174.9 1.1L175.5 3.6L176.1 2.6L176.6 -0.1L177.2 -1.7L177.7 -0.8L178.3 0.8L178.8 0.6L179.4 -2.1L180.0 -5.2L180.5 -5.5L181.1 -2.5L181.6 1.8L182.2 4.3L182.7 4.0L183.3 2.6L183.9 2.2L184.4 3.5L185.0 4.8L185.5 4.2L186.1 1.5L186.6 -1.6L187.2 -3.1L187.8 -2.3L188.3 -0.6L188.9 0.2L189.4 -0.5L190.0 -1.9L190.5 -2.8L191.1 -2.8L191.7 -2.4L192.2 -2.3L192.8 -2.8L193.3 -3.1L193.9 -2.5L194.4 -0.9L195.0 1.2L195.6 2.9L196.1 3.9L196.7 4.1L197.2 3.9L197.8 3.3L198.3 2.1L198.9 0.2L199.5 -1.9L200.0 -3.2L200.6 -2.9L201.1 -1.0L201.7 1.2L202.2 2.4L202.8 1.7L203.4 -0.1L203.9 -1.3L204.5 -1.1L205.0 0.2L205.6 1.2L206.1 0.7L206.7 -1.1L207.3 -2.6L207.8 -2.6L208.4 -1.0L208.9 0.9L209.5 1.6L210.0 0.8L210.6 -0.4L211.2 -1.1L211.7 -1.0L212.3 -0.8L212.8 -1.0L213.4 -1.4L213.9 -1.3L214.5 -0.4L215.1 1.0L215.6 1.8L216.2 1.6L216.7 1.2L217.3 1.2L217.8 1.9L218.4 2.5L219.0 2.2L219.5 0.8L220.1 -0.6L220.6 -1.2L221.2 -0.7L221.7 -0.0L222.3 -0.0L222.9 -0.8L223.4 -1.7L224.0 -1.8L224.5 -1.2L225.1 -0.4L225.6 0.1L226.2 0.3L226.8 0.7L227.3 1.3L227.9 1.7L228.4 1.2L229.0 -0.3L229.5 -2.0L230.1 -2.9L230.7 -2.5L231.2 -1.4L231.8 -0.1L232.3 0.7L232.9 1.2L233.4 1.7L234.0 2.1L234.6 2.0L235.1 1.4L235.7 0.4L236.2 -0.3L236.8 -0.6L237.3 -0.4L237.9 -0.3L238.5 -0.2L239.0 -0.0L239.6 0.4L240.1 1.0L240.7 1.2L241.2 0.7L241.8 -0.4L242.4 -1.3L242.9 -1.5L243.5 -1.1L244.0 -0.6L244.6 -0.7L245.1 -1.2L245.7 -1.6L246.3 -1.4L246.8 -0.7L247.4 0.0L247.9 0.4L248.5 0.4L249.0 0.4L249.6 0.6L250.2 1.1L250.7 1.3L251.3 1.1L251.8 0.7L252.4 0.3L252.9 0.3L253.5 0.4L254.1 0.5L254.6 0.3L255.2 -0.1L255.7 -0.3L256.3 -0.3L256.8 -0.3L257.4 -0.3L258.0 -0.5L258.5 -0.5L259.1 -0.3L259.6 0.1" stroke="#d9472b" stroke-width="1" fill="none"/>
+        <circle cx="38.9" cy="35.0" r="3.5" fill="#d9472b"/>
+      </g>
+      <text x="70" y="50" class="svg-small" fill="#d9472b">accélération du sol üg(t) — maximum 0,25 g</text>
+      <g transform="translate(70 180)">
+        <path d="M0 0 H260" stroke="#e3dfd4"/>
+        <path d="M0.0 0.0L0.6 0.0L1.1 0.0L1.7 -0.0L2.2 -0.1L2.8 -0.2L3.3 -0.4L3.9 -0.6L4.5 -0.7L5.0 -0.5L5.6 -0.3L6.1 -0.2L6.7 -0.6L7.2 -1.4L7.8 -1.8L8.4 -1.4L8.9 -0.1L9.5 1.0L10.0 1.1L10.6 0.2L11.1 -1.1L11.7 -1.4L12.3 -0.4L12.8 1.1L13.4 2.4L13.9 3.1L14.5 3.7L15.0 4.2L15.6 3.8L16.2 1.9L16.7 -1.1L17.3 -3.1L17.8 -2.4L18.4 0.8L18.9 3.5L19.5 2.8L20.1 -2.0L20.6 -7.7L21.2 -10.6L21.7 -9.0L22.3 -5.0L22.8 -1.9L23.4 -1.1L24.0 -0.9L24.5 1.1L25.1 5.2L25.6 8.8L26.2 8.8L26.7 5.0L27.3 0.0L27.9 -2.9L28.4 -2.8L29.0 -0.8L29.5 1.6L30.1 4.3L30.6 7.7L31.2 10.9L31.8 11.1L32.3 6.0L32.9 -3.2L33.4 -11.5L34.0 -13.8L34.5 -9.0L35.1 -1.1L35.7 4.3L36.2 4.2L36.8 0.5L37.3 -3.1L37.9 -5.0L38.4 -6.5L39.0 -9.2L39.6 -12.4L40.1 -12.6L40.7 -6.9L41.2 3.8L41.8 14.4L42.3 19.3L42.9 16.2L43.5 8.0L44.0 -0.2L44.6 -4.1L45.1 -3.3L45.7 -0.6L46.2 0.2L46.8 -2.3L47.4 -6.8L47.9 -9.6L48.5 -7.7L49.0 -0.8L49.6 8.1L50.1 14.4L50.7 14.3L51.3 7.4L51.8 -3.2L52.4 -12.7L52.9 -17.0L53.5 -14.7L54.0 -6.9L54.6 2.6L55.2 9.7L55.7 11.2L56.3 7.0L56.8 0.3L57.4 -4.4L57.9 -4.1L58.5 -0.1L59.1 3.1L59.6 1.7L60.2 -4.1L60.7 -9.5L61.3 -9.0L61.8 -1.2L62.4 9.7L63.0 16.8L63.5 16.3L64.1 9.2L64.6 0.4L65.2 -5.5L65.7 -7.2L66.3 -5.8L66.9 -3.0L67.4 0.0L68.0 2.4L68.5 2.7L69.1 0.0L69.6 -4.6L70.2 -7.3L70.8 -4.4L71.3 3.9L71.9 12.7L72.4 15.1L73.0 7.8L73.5 -6.2L74.1 -19.2L74.7 -24.0L75.2 -18.4L75.8 -6.0L76.3 6.8L76.9 14.2L77.4 13.5L78.0 6.1L78.6 -3.9L79.1 -11.0L79.7 -11.3L80.2 -5.0L80.8 4.1L81.3 10.2L81.9 10.5L82.5 6.5L83.0 2.9L83.6 3.1L84.1 6.2L84.7 8.4L85.2 6.1L85.8 -0.4L86.4 -7.3L86.9 -10.6L87.5 -8.5L88.0 -2.5L88.6 4.3L89.1 8.6L89.7 8.2L90.3 1.9L90.8 -8.5L91.4 -18.1L91.9 -20.8L92.5 -13.1L93.0 1.9L93.6 15.7L94.2 20.2L94.7 13.8L95.3 2.5L95.8 -5.4L96.4 -6.0L96.9 -2.3L97.5 0.2L98.1 -0.9L98.6 -3.1L99.2 -2.4L99.7 1.6L100.3 5.1L100.8 4.1L101.4 -0.9L102.0 -4.9L102.5 -3.5L103.1 2.4L103.6 7.1L104.2 5.6L104.7 -1.4L105.3 -8.4L105.9 -10.0L106.4 -5.7L107.0 0.2L107.5 3.4L108.1 3.0L108.6 1.8L109.2 2.1L109.8 2.9L110.3 1.9L110.9 -1.7L111.4 -5.3L112.0 -5.5L112.5 -1.8L113.1 2.7L113.7 3.8L114.2 0.8L114.8 -3.1L115.3 -3.7L115.9 0.0L116.4 4.7L117.0 5.8L117.6 1.7L118.1 -4.2L118.7 -6.7L119.2 -2.9L119.8 5.2L120.3 12.1L120.9 13.0L121.5 7.2L122.0 -2.2L122.6 -10.1L123.1 -13.2L123.7 -11.0L124.2 -5.3L124.8 1.6L125.4 7.8L125.9 12.0L126.5 13.3L127.0 10.7L127.6 4.9L128.1 -1.7L128.7 -6.0L129.3 -6.1L129.8 -3.1L130.4 -0.6L130.9 -1.7L131.5 -6.5L132.0 -11.3L132.6 -11.6L133.2 -5.8L133.7 3.0L134.3 9.5L134.8 9.8L135.4 4.5L135.9 -2.6L136.5 -7.0L137.1 -6.9L137.6 -3.3L138.2 1.6L138.7 5.6L139.3 7.4L139.8 6.4L140.4 2.5L141.0 -2.7L141.5 -6.7L142.1 -6.9L142.6 -3.1L143.2 2.0L143.7 4.5L144.3 2.8L144.9 -1.0L145.4 -3.0L146.0 -0.6L146.5 4.6L147.1 8.3L147.6 6.9L148.2 0.5L148.8 -6.8L149.3 -10.5L149.9 -8.6L150.4 -2.6L151.0 3.7L151.5 7.2L152.1 6.7L152.7 2.8L153.2 -2.3L153.8 -6.3L154.3 -7.3L154.9 -4.8L155.4 0.1L156.0 4.8L156.6 7.0L157.1 5.9L157.7 2.6L158.2 -0.6L158.8 -2.0L159.3 -1.4L159.9 0.2L160.5 1.5L161.0 2.2L161.6 2.2L162.1 1.7L162.7 0.7L163.2 -0.6L163.8 -1.6L164.4 -2.0L164.9 -1.8L165.5 -1.5L166.0 -1.6L166.6 -1.9L167.1 -1.8L167.7 -0.8L168.3 0.7L168.8 1.6L169.4 1.2L169.9 -0.4L170.5 -2.1L171.0 -2.6L171.6 -1.9L172.2 -0.3L172.7 1.3L173.3 2.5L173.8 3.2L174.4 3.0L174.9 1.8L175.5 -0.6L176.1 -3.0L176.6 -4.0L177.2 -2.9L177.7 -0.0L178.3 2.7L178.8 3.7L179.4 2.7L180.0 0.7L180.5 -0.6L181.1 -0.7L181.6 -0.1L182.2 0.2L182.7 -0.3L183.3 -1.3L183.9 -1.9L184.4 -1.9L185.0 -1.5L185.5 -1.1L186.1 -0.8L186.6 -0.3L187.2 0.6L187.8 1.6L188.3 2.1L188.9 1.5L189.4 0.1L190.0 -1.1L190.5 -1.3L191.1 -0.4L191.7 1.1L192.2 2.3L192.8 2.6L193.3 2.0L193.9 0.9L194.4 -0.2L195.0 -1.0L195.6 -1.5L196.1 -1.6L196.7 -1.5L197.2 -1.3L197.8 -1.1L198.3 -0.8L198.9 -0.5L199.5 0.1L200.0 0.9L200.6 1.7L201.1 2.0L201.7 1.3L202.2 -0.2L202.8 -1.9L203.4 -2.7L203.9 -2.0L204.5 -0.1L205.0 1.8L205.6 2.6L206.1 1.8L206.7 0.0L207.3 -1.4L207.8 -1.6L208.4 -0.6L208.9 0.8L209.5 1.6L210.0 1.2L210.6 0.1L211.2 -0.9L211.7 -1.2L212.3 -0.6L212.8 0.3L213.4 1.2L213.9 1.6L214.5 1.4L215.1 0.4L215.6 -0.8L216.2 -1.8L216.7 -2.1L217.3 -1.4L217.8 -0.3L218.4 0.6L219.0 0.7L219.5 0.1L220.1 -0.6L220.6 -0.9L221.2 -0.5L221.7 0.2L222.3 0.8L222.9 0.9L223.4 0.7L224.0 0.4L224.5 0.2L225.1 0.1L225.6 -0.0L226.2 -0.1L226.8 -0.2L227.3 -0.3L227.9 -0.5L228.4 -0.6L229.0 -0.6L229.5 -0.2L230.1 0.6L230.7 1.5L231.2 1.9L231.8 1.5L232.3 0.3L232.9 -1.1L233.4 -2.0L234.0 -2.1L234.6 -1.5L235.1 -0.4L235.7 0.6L236.2 1.1L236.8 1.1L237.3 0.6L237.9 -0.1L238.5 -0.7L239.0 -0.8L239.6 -0.5L240.1 -0.1L240.7 0.2L241.2 0.2L241.8 -0.1L242.4 -0.2L242.9 0.0L243.5 0.4L244.0 0.7L244.6 0.7L245.1 0.5L245.7 0.2L246.3 0.1L246.8 0.1L247.4 0.2L247.9 0.2L248.5 0.0L249.0 -0.2L249.6 -0.4L250.2 -0.5L250.7 -0.4L251.3 -0.4L251.8 -0.3L252.4 -0.2L252.9 -0.0L253.5 0.1L254.1 0.1L254.6 -0.0L255.2 -0.2L255.7 -0.2L256.3 -0.1L256.8 0.1L257.4 0.3L258.0 0.4L258.5 0.3L259.1 0.2L259.6 -0.0" stroke="#2d6be4" stroke-width="1.1" fill="none"/>
+        <circle cx="74.7" cy="-24.0" r="3.5" fill="#2d6be4"/>
+      </g>
+      <g transform="translate(70 258)">
+        <path d="M0 0 H260" stroke="#e3dfd4"/>
+        <path d="M0.0 0.0L0.6 0.0L1.1 0.0L1.7 -0.0L2.2 -0.0L2.8 -0.1L3.3 -0.2L3.9 -0.3L4.5 -0.4L5.0 -0.6L5.6 -0.7L6.1 -0.9L6.7 -1.1L7.2 -1.4L7.8 -1.7L8.4 -1.8L8.9 -1.8L9.5 -1.6L10.0 -1.3L10.6 -1.1L11.1 -0.9L11.7 -0.4L12.3 0.1L12.8 0.8L13.4 1.5L13.9 2.3L14.5 3.2L15.0 4.4L15.6 5.5L16.2 6.1L16.7 6.1L17.3 5.5L17.8 4.7L18.4 3.8L18.9 2.7L19.5 0.9L20.1 -1.7L20.6 -4.7L21.2 -7.6L21.7 -10.0L22.3 -12.0L22.8 -13.7L23.4 -14.9L24.0 -15.0L24.5 -13.2L25.1 -9.4L25.6 -4.1L26.2 1.8L26.7 7.5L27.3 12.7L27.9 17.0L28.4 19.8L29.0 20.8L29.5 19.8L30.1 17.3L30.6 14.1L31.2 10.8L31.8 7.4L32.3 3.5L32.9 -1.0L33.4 -5.7L34.0 -9.8L34.5 -13.0L35.1 -15.1L35.7 -16.5L36.2 -17.0L36.8 -16.2L37.3 -13.9L37.9 -10.4L38.4 -6.6L39.0 -3.7L39.6 -2.0L40.1 -1.3L40.7 -0.7L41.2 0.5L41.8 2.4L42.3 4.7L42.9 7.2L43.5 9.7L44.0 12.3L44.6 14.7L45.1 16.2L45.7 16.1L46.2 14.0L46.8 9.6L47.4 3.6L47.9 -3.3L48.5 -9.8L49.0 -14.8L49.6 -17.6L50.1 -18.1L50.7 -16.3L51.3 -12.8L51.8 -8.2L52.4 -3.4L52.9 0.9L53.5 4.4L54.0 6.7L54.6 7.9L55.2 8.2L55.7 7.7L56.3 6.6L56.8 5.1L57.4 3.6L57.9 2.5L58.5 1.6L59.1 0.4L59.6 -1.5L60.2 -4.3L60.7 -7.1L61.3 -9.1L61.8 -9.4L62.4 -7.9L63.0 -5.0L63.5 -1.4L64.1 2.8L64.6 7.4L65.2 11.8L65.7 15.2L66.3 16.8L66.9 16.3L67.4 13.9L68.0 10.1L68.5 5.3L69.1 -0.3L69.6 -6.3L70.2 -11.8L70.8 -15.5L71.3 -16.6L71.9 -15.2L72.4 -12.2L73.0 -8.5L73.5 -5.1L74.1 -2.1L74.7 0.1L75.2 1.6L75.8 2.2L76.3 2.0L76.9 1.4L77.4 0.6L78.0 -0.1L78.6 -0.8L79.1 -1.3L79.7 -1.6L80.2 -1.5L80.8 -1.0L81.3 -0.6L81.9 -0.1L82.5 0.7L83.0 2.5L83.6 5.3L84.1 8.9L84.7 12.2L85.2 14.3L85.8 14.6L86.4 13.1L86.9 10.3L87.5 6.4L88.0 2.0L88.6 -2.6L89.1 -6.6L89.7 -9.9L90.3 -12.6L90.8 -15.0L91.4 -17.1L91.9 -18.5L92.5 -18.2L93.0 -15.9L93.6 -11.8L94.2 -6.8L94.7 -1.3L95.3 4.7L95.8 11.1L96.4 17.4L96.9 22.1L97.5 24.0L98.1 22.5L98.6 18.5L99.2 13.1L99.7 7.2L100.3 1.0L100.8 -5.6L101.4 -12.0L102.0 -17.0L102.5 -19.4L103.1 -19.2L103.6 -16.9L104.2 -13.7L104.7 -10.1L105.3 -5.9L105.9 -1.1L106.4 3.7L107.0 7.8L107.5 10.4L108.1 11.4L108.6 11.6L109.2 11.2L109.8 10.3L110.3 8.3L110.9 5.2L111.4 1.2L112.0 -2.6L112.5 -5.7L113.1 -8.2L113.7 -10.2L114.2 -11.8L114.8 -12.4L115.3 -11.4L115.9 -8.7L116.4 -4.9L117.0 -0.9L117.6 2.5L118.1 5.1L118.7 7.4L119.2 9.6L119.8 11.8L120.3 13.3L120.9 13.7L121.5 12.8L122.0 10.7L122.6 7.5L123.1 3.3L123.7 -1.5L124.2 -6.6L124.8 -11.3L125.4 -14.6L125.9 -15.6L126.5 -14.1L127.0 -10.3L127.6 -5.1L128.1 0.8L128.7 6.8L129.3 12.1L129.8 16.1L130.4 17.8L130.9 16.8L131.5 12.8L132.0 6.6L132.6 -0.5L133.2 -7.3L133.7 -13.1L134.3 -17.5L134.8 -20.3L135.4 -21.2L135.9 -19.9L136.5 -16.6L137.1 -11.6L137.6 -5.6L138.2 0.6L138.7 6.7L139.3 12.3L139.8 16.8L140.4 19.7L141.0 20.4L141.5 19.1L142.1 15.9L142.6 11.4L143.2 6.0L143.7 -0.2L144.3 -6.7L144.9 -12.5L145.4 -16.7L146.0 -18.4L146.5 -17.4L147.1 -14.5L147.6 -10.4L148.2 -5.8L148.8 -1.2L149.3 3.3L149.9 7.3L150.4 10.4L151.0 12.3L151.5 12.8L152.1 12.0L152.7 10.1L153.2 7.3L153.8 3.8L154.3 -0.2L154.9 -4.1L155.4 -7.5L156.0 -10.0L156.6 -11.4L157.1 -11.5L157.7 -10.2L158.2 -7.7L158.8 -4.1L159.3 -0.0L159.9 4.0L160.5 7.6L161.0 10.3L161.6 12.2L162.1 12.9L162.7 12.5L163.2 10.9L163.8 8.3L164.4 4.9L164.9 1.0L165.5 -3.2L166.0 -7.2L166.6 -10.7L167.1 -13.2L167.7 -14.4L168.3 -14.1L168.8 -12.5L169.4 -9.9L169.9 -6.5L170.5 -2.8L171.0 1.1L171.6 4.8L172.2 7.8L172.7 10.0L173.3 11.2L173.8 11.6L174.4 11.1L174.9 9.7L175.5 7.3L176.1 4.2L176.6 0.6L177.2 -2.9L177.7 -5.9L178.3 -8.3L178.8 -9.8L179.4 -10.3L180.0 -9.8L180.5 -8.0L181.1 -5.3L181.6 -2.0L182.2 1.2L182.7 4.0L183.3 6.2L183.9 7.6L184.4 8.1L185.0 7.6L185.5 6.2L186.1 4.1L186.6 1.5L187.2 -1.0L187.8 -3.2L188.3 -4.9L188.9 -6.1L189.4 -6.7L190.0 -6.5L190.5 -5.7L191.1 -4.2L191.7 -2.2L192.2 0.0L192.8 2.3L193.3 4.4L193.9 6.2L194.4 7.4L195.0 7.9L195.6 7.6L196.1 6.4L196.7 4.4L197.2 1.9L197.8 -0.9L198.3 -3.7L198.9 -6.1L199.5 -7.9L200.0 -8.7L200.6 -8.6L201.1 -7.5L201.7 -5.7L202.2 -3.4L202.8 -1.0L203.4 1.4L203.9 3.5L204.5 5.3L205.0 6.6L205.6 7.2L206.1 7.1L206.7 6.2L207.3 4.8L207.8 3.1L208.4 1.3L208.9 -0.5L209.5 -2.3L210.0 -3.9L210.6 -5.1L211.2 -5.7L211.7 -5.7L212.3 -5.1L212.8 -4.0L213.4 -2.5L213.9 -0.8L214.5 1.1L215.1 2.8L215.6 4.1L216.2 4.9L216.7 5.1L217.3 4.8L217.8 4.0L218.4 2.7L219.0 1.1L219.5 -0.7L220.1 -2.4L220.6 -3.7L221.2 -4.7L221.7 -5.1L222.3 -5.0L222.9 -4.4L223.4 -3.4L224.0 -2.0L224.5 -0.3L225.1 1.3L225.6 2.8L226.2 4.0L226.8 4.7L227.3 4.9L227.9 4.6L228.4 3.8L229.0 2.6L229.5 1.2L230.1 -0.2L230.7 -1.4L231.2 -2.3L231.8 -2.9L232.3 -3.2L232.9 -3.2L233.4 -3.0L234.0 -2.5L234.6 -2.0L235.1 -1.3L235.7 -0.6L236.2 0.1L236.8 0.8L237.3 1.4L237.9 1.9L238.5 2.2L239.0 2.3L239.6 2.2L240.1 1.8L240.7 1.2L241.2 0.5L241.8 -0.3L242.4 -1.0L242.9 -1.5L243.5 -1.8L244.0 -1.9L244.6 -1.8L245.1 -1.4L245.7 -0.9L246.3 -0.2L246.8 0.5L247.4 1.2L247.9 1.7L248.5 2.1L249.0 2.2L249.6 2.1L250.2 1.7L250.7 1.2L251.3 0.5L251.8 -0.3L252.4 -1.1L252.9 -1.7L253.5 -2.2L254.1 -2.5L254.6 -2.5L255.2 -2.3L255.7 -1.9L256.3 -1.3L256.8 -0.6L257.4 0.2L258.0 0.9L258.5 1.6L259.1 2.1L259.6 2.4" stroke="#0f8f7b" stroke-width="1.1" fill="none"/>
+        <circle cx="97.5" cy="24.0" r="3.5" fill="#0f8f7b"/>
+      </g>
+      <g transform="translate(70 336)">
+        <path d="M0 0 H260" stroke="#e3dfd4"/>
+        <path d="M0.0 0.0L0.6 0.0L1.1 0.0L1.7 -0.0L2.2 -0.0L2.8 -0.0L3.3 -0.1L3.9 -0.2L4.5 -0.3L5.0 -0.4L5.6 -0.6L6.1 -0.7L6.7 -1.0L7.2 -1.3L7.8 -1.7L8.4 -2.1L8.9 -2.4L9.5 -2.7L10.0 -3.0L10.6 -3.4L11.1 -3.7L11.7 -3.9L12.3 -4.0L12.8 -3.9L13.4 -3.7L13.9 -3.3L14.5 -2.7L15.0 -1.7L15.6 -0.4L16.2 0.8L16.7 2.0L17.3 3.2L17.8 4.5L18.4 5.9L18.9 7.2L19.5 8.2L20.1 8.6L20.6 8.5L21.2 8.0L21.7 7.2L22.3 6.0L22.8 4.2L23.4 1.8L24.0 -0.7L24.5 -2.9L25.1 -4.7L25.6 -6.0L26.2 -6.9L26.7 -7.6L27.3 -8.0L27.9 -8.1L28.4 -7.7L29.0 -7.2L29.5 -6.6L30.1 -5.7L30.6 -4.2L31.2 -2.0L31.8 0.6L32.3 3.3L32.9 5.7L33.4 7.7L34.0 9.5L34.5 11.1L35.1 12.3L35.7 12.9L36.2 12.8L36.8 12.4L37.3 11.7L37.9 10.9L38.4 9.5L39.0 7.2L39.6 4.0L40.1 0.3L40.7 -3.6L41.2 -7.1L41.8 -10.0L42.3 -12.3L42.9 -14.0L43.5 -15.0L44.0 -15.2L44.6 -14.6L45.1 -13.3L45.7 -11.9L46.2 -10.6L46.8 -9.7L47.4 -9.1L47.9 -8.8L48.5 -8.3L49.0 -7.6L49.6 -6.5L50.1 -4.9L50.7 -3.0L51.3 -1.0L51.8 1.0L52.4 2.7L52.9 4.0L53.5 4.8L54.0 5.3L54.6 5.4L55.2 5.4L55.7 5.3L56.3 5.2L56.8 5.1L57.4 5.2L57.9 5.5L58.5 6.1L59.1 6.4L59.6 6.2L60.2 5.4L60.7 4.1L61.3 2.9L61.8 2.0L62.4 1.6L63.0 1.6L63.5 1.7L64.1 2.1L64.6 2.9L65.2 4.0L65.7 5.2L66.3 6.1L66.9 6.7L67.4 7.0L68.0 7.2L68.5 7.1L69.1 6.7L69.6 5.8L70.2 4.8L70.8 3.9L71.3 3.5L71.9 3.5L72.4 3.6L73.0 3.4L73.5 2.6L74.1 1.3L74.7 -0.4L75.2 -2.5L75.8 -4.9L76.3 -7.4L76.9 -10.0L77.4 -12.4L78.0 -14.6L78.6 -16.4L79.1 -18.0L79.7 -19.2L80.2 -20.0L80.8 -20.3L81.3 -20.3L81.9 -20.1L82.5 -19.3L83.0 -17.7L83.6 -15.0L84.1 -11.5L84.7 -7.4L85.2 -3.2L85.8 0.8L86.4 4.6L86.9 8.1L87.5 11.4L88.0 14.5L88.6 17.2L89.1 19.7L89.7 21.9L90.3 23.4L90.8 24.0L91.4 23.5L91.9 22.2L92.5 20.4L93.0 18.5L93.6 16.4L94.2 14.1L94.7 11.6L95.3 9.3L95.8 7.4L96.4 6.0L96.9 4.8L97.5 3.1L98.1 0.9L98.6 -1.5L99.2 -3.7L99.7 -5.5L100.3 -7.1L100.8 -8.8L101.4 -10.6L102.0 -12.2L102.5 -13.3L103.1 -13.6L103.6 -13.7L104.2 -13.9L104.7 -14.3L105.3 -14.6L105.9 -14.7L106.4 -14.4L107.0 -14.1L107.5 -13.8L108.1 -13.7L108.6 -13.1L109.2 -12.1L109.8 -10.6L110.3 -8.9L110.9 -7.5L111.4 -6.1L112.0 -4.5L112.5 -2.8L113.1 -1.0L113.7 0.5L114.2 1.7L114.8 2.7L115.3 3.9L115.9 5.4L116.4 6.9L117.0 8.3L117.6 9.1L118.1 9.6L118.7 10.1L119.2 10.8L119.8 11.8L120.3 12.9L120.9 13.9L121.5 14.8L122.0 15.3L122.6 15.6L123.1 15.4L123.7 14.7L124.2 13.5L124.8 11.9L125.4 10.2L125.9 8.8L126.5 7.8L127.0 7.2L127.6 6.9L128.1 6.6L128.7 6.4L129.3 6.2L129.8 5.9L130.4 5.3L130.9 3.9L131.5 1.8L132.0 -0.9L132.6 -3.8L133.2 -6.7L133.7 -9.3L134.3 -11.8L134.8 -14.1L135.4 -16.3L135.9 -18.2L136.5 -19.6L137.1 -20.7L137.6 -21.4L138.2 -21.8L138.7 -21.8L139.3 -21.3L139.8 -20.3L140.4 -18.9L141.0 -17.3L141.5 -15.5L142.1 -13.5L142.6 -11.3L143.2 -8.9L143.7 -6.6L144.3 -4.5L144.9 -2.4L145.4 -0.2L146.0 2.4L146.5 5.3L147.1 8.4L147.6 11.2L148.2 13.5L148.8 15.4L149.3 17.0L149.9 18.3L150.4 19.3L151.0 19.8L151.5 20.0L152.1 19.8L152.7 19.4L153.2 18.6L153.8 17.5L154.3 16.0L154.9 14.3L155.4 12.3L156.0 10.2L156.6 8.1L157.1 5.9L157.7 3.8L158.2 1.8L158.8 0.0L159.3 -1.6L159.9 -3.1L160.5 -4.6L161.0 -5.9L161.6 -7.1L162.1 -8.0L162.7 -8.7L163.2 -9.3L163.8 -9.8L164.4 -10.1L164.9 -10.4L165.5 -10.6L166.0 -10.8L166.6 -11.0L167.1 -11.1L167.7 -11.1L168.3 -10.8L168.8 -10.4L169.4 -10.0L169.9 -9.4L170.5 -8.8L171.0 -8.1L171.6 -7.2L172.2 -6.3L172.7 -5.3L173.3 -4.1L173.8 -2.8L174.4 -1.3L174.9 0.3L175.5 1.8L176.1 3.1L176.6 4.4L177.2 5.6L177.7 6.7L178.3 7.7L178.8 8.6L179.4 9.3L180.0 9.9L180.5 10.5L181.1 11.0L181.6 11.4L182.2 11.6L182.7 11.5L183.3 11.1L183.9 10.5L184.4 9.7L185.0 8.6L185.5 7.3L186.1 5.8L186.6 4.1L187.2 2.5L187.8 1.0L188.3 -0.6L188.9 -2.0L189.4 -3.4L190.0 -4.8L190.5 -5.9L191.1 -6.9L191.7 -7.8L192.2 -8.4L192.8 -8.8L193.3 -9.0L193.9 -9.0L194.4 -8.8L195.0 -8.4L195.6 -7.9L196.1 -7.4L196.7 -6.9L197.2 -6.4L197.8 -5.9L198.3 -5.4L198.9 -4.9L199.5 -4.3L200.0 -3.5L200.6 -2.7L201.1 -1.7L201.7 -0.8L202.2 0.2L202.8 1.1L203.4 1.9L203.9 2.6L204.5 3.4L205.0 4.1L205.6 4.7L206.1 5.3L206.7 5.7L207.3 6.1L207.8 6.4L208.4 6.7L208.9 6.9L209.5 6.9L210.0 6.9L210.6 6.6L211.2 6.4L211.7 6.0L212.3 5.6L212.8 5.1L213.4 4.5L213.9 4.0L214.5 3.4L215.1 2.8L215.6 2.1L216.2 1.3L216.7 0.5L217.3 -0.3L217.8 -1.2L218.4 -2.1L219.0 -3.0L219.5 -3.9L220.1 -4.7L220.6 -5.4L221.2 -6.0L221.7 -6.5L222.3 -6.9L222.9 -7.2L223.4 -7.3L224.0 -7.3L224.5 -7.1L225.1 -6.8L225.6 -6.3L226.2 -5.8L226.8 -5.2L227.3 -4.6L227.9 -3.9L228.4 -3.2L229.0 -2.5L229.5 -1.7L230.1 -0.9L230.7 0.0L231.2 1.0L231.8 1.9L232.3 2.8L232.9 3.7L233.4 4.4L234.0 5.0L234.6 5.5L235.1 5.8L235.7 6.0L236.2 6.1L236.8 6.1L237.3 6.1L237.9 5.9L238.5 5.7L239.0 5.4L239.6 5.0L240.1 4.5L240.7 3.9L241.2 3.2L241.8 2.5L242.4 1.8L242.9 1.1L243.5 0.4L244.0 -0.3L244.6 -0.9L245.1 -1.5L245.7 -2.0L246.3 -2.5L246.8 -2.9L247.4 -3.2L247.9 -3.4L248.5 -3.6L249.0 -3.8L249.6 -3.9L250.2 -4.0L250.7 -4.0L251.3 -4.0L251.8 -4.0L252.4 -3.9L252.9 -3.7L253.5 -3.6L254.1 -3.3L254.6 -3.1L255.2 -2.8L255.7 -2.4L256.3 -2.0L256.8 -1.6L257.4 -1.1L258.0 -0.7L258.5 -0.2L259.1 0.3L259.6 0.8" stroke="#7a52c7" stroke-width="1.1" fill="none"/>
+        <circle cx="90.8" cy="24.0" r="3.5" fill="#7a52c7"/>
+      </g>
+      <!-- petits oscillateurs -->
+      <g stroke-width="3">
+        <path d="M38 196 V168" stroke="#2d6be4"/><rect x="31" y="158" width="14" height="10" fill="#2d6be4"/>
+        <path d="M38 276 V242" stroke="#0f8f7b"/><rect x="30" y="232" width="16" height="12" fill="#0f8f7b"/>
+        <path d="M38 358 V312" stroke="#7a52c7"/><rect x="29" y="302" width="18" height="12" fill="#7a52c7"/>
+      </g>
+      <g class="svg-small">
+        <text x="70" y="148" fill="#2d6be4">T = 0,25 s (pont raide) → réponse u(t)</text>
+        <text x="70" y="228" fill="#0f8f7b">T = 0,60 s</text>
+        <text x="70" y="306" fill="#7a52c7">T = 1,50 s (pont souple)</text>
+      </g>
+      <path d="M345 200 H405" stroke="#a8842a" stroke-width="2"/><path d="M405 200 l-8 -5 v10z" fill="#a8842a"/>
+      <text x="375" y="190" text-anchor="middle" class="svg-small" fill="#a8842a">on garde</text>
+      <text x="375" y="218" text-anchor="middle" class="svg-small" fill="#a8842a">le maximum</text>
+      <!-- spectre -->
+      <text x="440" y="26" class="svg-title">② On reporte chaque maximum : Sa(T) = ω²·u_max</text>
+      <g stroke="#e3dfd4"><path d="M440 70 H920 M440 170 H920 M440 270 H920"/><path d="M600 70 V370 M760 70 V370 M920 70 V370"/></g>
+      <path d="M440 370 H925 M440 370 V64" stroke="#14171f"/>
+      <g class="svg-small" text-anchor="middle"><text x="440" y="388">0</text><text x="600" y="388">1</text><text x="760" y="388">2</text><text x="920" y="388">3 s</text></g>
+      <g class="svg-small" text-anchor="end"><text x="434" y="374">0</text><text x="434" y="274">0,3 g</text><text x="434" y="174">0,6 g</text><text x="434" y="74">0,9 g</text></g>
+      <path d="M446.4 284.8L452.8 278.0L459.2 258.9L465.6 145.8L472.0 160.5L478.4 169.5L484.8 173.6L491.2 147.1L497.6 97.5L504.0 136.8L510.4 165.3L516.8 204.0L523.2 240.2L529.6 245.1L536.0 252.3L542.4 261.6L548.8 230.1L555.2 207.9L561.6 200.7L568.0 207.1L574.4 222.7L580.8 236.4L587.2 221.9L593.6 218.1L600.0 238.1L606.4 257.6L612.8 278.9L619.2 298.0L625.6 311.4L632.0 319.4L638.4 326.1L644.8 327.9L651.2 328.6L657.6 329.2L664.0 330.4L670.4 332.0L676.8 334.0L683.2 336.5L689.6 334.7L696.0 334.2L702.4 334.9L708.8 336.2L715.2 338.4L721.6 339.1L728.0 340.1L734.4 342.1L740.8 344.7L747.2 346.7L753.6 348.3L760.0 350.0L766.4 351.7L772.8 353.4L779.2 354.5L785.6 354.7L792.0 355.1L798.4 355.4L804.8 355.9L811.2 356.4L817.6 356.9L824.0 357.5L830.4 358.1L836.8 358.6L843.2 359.2L849.6 359.3L856.0 359.3L862.4 359.3L868.8 359.5L875.2 359.7L881.6 360.1L888.0 360.4L894.4 360.9L900.8 361.4L907.2 361.8L913.6 362.3L920.0 362.8" stroke="#14171f" stroke-width="1.4" fill="none" opacity=".75"/>
+      <path d="M440.0 283.3L443.2 266.0L446.4 248.7L449.6 231.3L452.8 214.0L456.0 196.7L459.2 179.3L462.4 162.0L465.6 153.3L468.8 153.3L472.0 153.3L475.2 153.3L478.4 153.3L481.6 153.3L484.8 153.3L488.0 153.3L491.2 153.3L494.4 153.3L497.6 153.3L500.8 153.3L504.0 153.3L507.2 153.3L510.4 153.3L513.6 153.3L516.8 153.3L520.0 153.3L523.2 153.3L526.4 153.3L529.6 153.3L532.8 153.3L536.0 153.3L539.2 160.3L542.4 166.9L545.6 173.0L548.8 178.8L552.0 184.3L555.2 189.4L558.4 194.3L561.6 198.9L564.8 203.3L568.0 207.5L571.2 211.5L574.4 215.2L577.6 218.8L580.8 222.3L584.0 225.6L587.2 228.7L590.4 231.7L593.6 234.6L596.8 237.3L600.0 240.0L603.2 242.5L606.4 245.0L609.6 247.4L612.8 249.6L616.0 251.8L619.2 253.9L622.4 256.0L625.6 257.9L628.8 259.8L632.0 261.7L635.2 263.4L638.4 265.2L641.6 266.8L644.8 268.4L648.0 270.0L651.2 271.5L654.4 273.0L657.6 274.4L660.8 275.8L664.0 277.1L667.2 278.5L670.4 279.7L673.6 281.0L676.8 282.2L680.0 283.3L683.2 284.5L686.4 285.6L689.6 286.7L692.8 287.7L696.0 288.8L699.2 289.8L702.4 290.7L705.6 291.7L708.8 292.6L712.0 293.5L715.2 294.4L718.4 295.3L721.6 296.1L724.8 297.0L728.0 297.8L731.2 298.6L734.4 299.3L737.6 300.1L740.8 300.9L744.0 301.6L747.2 302.3L750.4 303.0L753.6 303.7L756.8 304.3L760.0 305.0L763.2 306.3L766.4 307.5L769.6 308.7L772.8 309.9L776.0 311.0L779.2 312.2L782.4 313.2L785.6 314.3L788.8 315.3L792.0 316.3L795.2 317.2L798.4 318.2L801.6 319.1L804.8 320.0L808.0 320.9L811.2 321.7L814.4 322.5L817.6 323.3L820.8 324.1L824.0 324.9L827.2 325.6L830.4 326.3L833.6 327.0L836.8 327.7L840.0 328.4L843.2 329.1L846.4 329.7L849.6 330.3L852.8 330.9L856.0 331.5L859.2 332.1L862.4 332.7L865.6 333.3L868.8 333.8L872.0 334.3L875.2 334.9L878.4 335.4L881.6 335.9L884.8 336.4L888.0 336.8L891.2 337.3L894.4 337.8L897.6 338.2L900.8 338.7L904.0 339.1L907.2 339.5L910.4 339.9L913.6 340.3L916.8 340.7L920.0 341.1" stroke="#d9472b" stroke-width="2.4" fill="none" stroke-dasharray="8 5"/>
+      <circle cx="480" cy="189" r="6" fill="#2d6be4" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="536" cy="252" r="6" fill="#0f8f7b" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="680" cy="335" r="6" fill="#7a52c7" stroke="#fff" stroke-width="1.5"/>
+      <text x="640" y="110" class="svg-small">spectre de CE séisme (irrégulier)</text>
+      <path d="M636 106 L566 150" stroke="#6e7884"/>
+      <text x="700" y="250" class="svg-small" fill="#d9472b">spectre réglementaire lissé</text>
+      <text x="700" y="264" class="svg-small" fill="#d9472b">(enveloppe de nombreux séismes)</text>
+      <path d="M696 254 L640 268" stroke="#d9472b"/>
+    </svg>
+    <figcaption><b>Figure 7.5 —</b> Construction d'un spectre de réponse (calcul réel sur un accélérogramme synthétique, ξ = 5 %). Chaque point du spectre est le maximum de la réponse d'un oscillateur. Le règlement fournit un spectre <b>lissé</b>, enveloppe statistique des séismes possibles sur un sol donné.</figcaption>
+  </figure>
+
+  <div class="box def"><span class="t">Spectre de réponse</span>
+    Courbe qui donne, pour chaque période propre T, l'<b>accélération maximale</b> <span class="tex">S_a(T)</span> subie par un oscillateur simple d'amortissement ξ soumis au séisme. Avec le spectre, le calcul dynamique devient presque statique : on calcule T, on lit <span class="tex">S_a(T)</span>, et l'effort vaut <span class="tex">F = M\,S_a(T)</span>.
+  </div>
+
+  <h3>La forme normalisée de l'Eurocode 8</h3>
+  <p>L'EN 1998-1 (§ 3.2.2.2) définit le spectre élastique horizontal par quatre branches. Il dépend de l'accélération de calcul au rocher <span class="tex">a_g</span>, de la classe de sol (paramètres S, T<sub>B</sub>, T<sub>C</sub>, T<sub>D</sub>) et de l'amortissement via η.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 380" role="img" aria-label="Forme normalisée du spectre élastique de l'Eurocode 8">
+      <rect width="960" height="380" fill="#fbfaf6"/>
+      <text x="80" y="30" class="svg-title">Spectre élastique EC8 normalisé (sol B, ξ = 5 %) : Se / (ag·S)</text>
+      <rect x="110" y="70" width="70" height="260" fill="#f4ead0" opacity=".7"/>
+      <g stroke="#e3dfd4"><path d="M80 80 H880 M80 155 H880 M80 230 H880 M80 305 H880"/></g>
+      <path d="M80 330 H890 M80 330 V60" stroke="#14171f"/>
+      <g class="svg-small" text-anchor="end"><text x="72" y="334">0</text><text x="72" y="234">1</text><text x="72" y="84">2,5</text></g>
+      <g class="svg-small" text-anchor="middle"><text x="80" y="348">0</text><text x="280" y="348">1</text><text x="480" y="348">2</text><text x="680" y="348">3</text><text x="880" y="348">4 s</text><text x="480" y="372">période T (s)</text></g>
+      <path d="M110 70 V330 M180 70 V330 M480 70 V330" stroke="#a8842a" stroke-dasharray="4 4"/>
+      <g class="svg-label" fill="#a8842a" text-anchor="middle"><text x="110" y="62">TB</text><text x="180" y="62">TC</text><text x="480" y="62">TD</text></g>
+      <path d="M80.0 230.0L82.0 220.0L84.0 210.0L86.0 200.0L88.0 190.0L90.0 180.0L92.0 170.0L94.0 160.0L96.0 150.0L98.0 140.0L100.0 130.0L102.0 120.0L104.0 110.0L106.0 100.0L108.0 90.0L110.0 80.0L112.0 80.0L114.0 80.0L116.0 80.0L118.0 80.0L120.0 80.0L122.0 80.0L124.0 80.0L126.0 80.0L128.0 80.0L130.0 80.0L132.0 80.0L134.0 80.0L136.0 80.0L138.0 80.0L140.0 80.0L142.0 80.0L144.0 80.0L146.0 80.0L148.0 80.0L150.0 80.0L152.0 80.0L154.0 80.0L156.0 80.0L158.0 80.0L160.0 80.0L162.0 80.0L164.0 80.0L166.0 80.0L168.0 80.0L170.0 80.0L172.0 80.0L174.0 80.0L176.0 80.0L178.0 80.0L180.0 80.0L182.0 84.9L184.0 89.6L186.0 94.2L188.0 98.5L190.0 102.7L192.0 106.8L194.0 110.7L196.0 114.5L198.0 118.1L200.0 121.7L202.0 125.1L204.0 128.4L206.0 131.6L208.0 134.7L210.0 137.7L212.0 140.6L214.0 143.4L216.0 146.2L218.0 148.8L220.0 151.4L222.0 153.9L224.0 156.4L226.0 158.8L228.0 161.1L230.0 163.3L232.0 165.5L234.0 167.7L236.0 169.7L238.0 171.8L240.0 173.8L242.0 175.7L244.0 177.6L246.0 179.4L248.0 181.2L250.0 182.9L252.0 184.7L254.0 186.3L256.0 188.0L258.0 189.6L260.0 191.1L262.0 192.6L264.0 194.1L266.0 195.6L268.0 197.0L270.0 198.4L272.0 199.8L274.0 201.1L276.0 202.4L278.0 203.7L280.0 205.0L282.0 206.2L284.0 207.5L286.0 208.6L288.0 209.8L290.0 211.0L292.0 212.1L294.0 213.2L296.0 214.3L298.0 215.3L300.0 216.4L302.0 217.4L304.0 218.4L306.0 219.4L308.0 220.4L310.0 221.3L312.0 222.2L314.0 223.2L316.0 224.1L318.0 225.0L320.0 225.8L322.0 226.7L324.0 227.5L326.0 228.4L328.0 229.2L330.0 230.0L332.0 230.8L334.0 231.6L336.0 232.3L338.0 233.1L340.0 233.8L342.0 234.6L344.0 235.3L346.0 236.0L348.0 236.7L350.0 237.4L352.0 238.1L354.0 238.8L356.0 239.4L358.0 240.1L360.0 240.7L362.0 241.3L364.0 242.0L366.0 242.6L368.0 243.2L370.0 243.8L372.0 244.4L374.0 245.0L376.0 245.5L378.0 246.1L380.0 246.7L382.0 247.2L384.0 247.8L386.0 248.3L388.0 248.8L390.0 249.4L392.0 249.9L394.0 250.4L396.0 250.9L398.0 251.4L400.0 251.9L402.0 252.4L404.0 252.8L406.0 253.3L408.0 253.8L410.0 254.2L412.0 254.7L414.0 255.1L416.0 255.6L418.0 256.0L420.0 256.5L422.0 256.9L424.0 257.3L426.0 257.7L428.0 258.2L430.0 258.6L432.0 259.0L434.0 259.4L436.0 259.8L438.0 260.2L440.0 260.6L442.0 260.9L444.0 261.3L446.0 261.7L448.0 262.1L450.0 262.4L452.0 262.8L454.0 263.2L456.0 263.5L458.0 263.9L460.0 264.2L462.0 264.6L464.0 264.9L466.0 265.2L468.0 265.6L470.0 265.9L472.0 266.2L474.0 266.5L476.0 266.9L478.0 267.2L480.0 267.5L482.0 268.1L484.0 268.7L486.0 269.3L488.0 269.9L490.0 270.5L492.0 271.1L494.0 271.7L496.0 272.2L498.0 272.8L500.0 273.3L502.0 273.8L504.0 274.4L506.0 274.9L508.0 275.4L510.0 275.9L512.0 276.4L514.0 276.9L516.0 277.4L518.0 277.9L520.0 278.3L522.0 278.8L524.0 279.3L526.0 279.7L528.0 280.2L530.0 280.6L532.0 281.1L534.0 281.5L536.0 281.9L538.0 282.3L540.0 282.7L542.0 283.1L544.0 283.6L546.0 284.0L548.0 284.3L550.0 284.7L552.0 285.1L554.0 285.5L556.0 285.9L558.0 286.2L560.0 286.6L562.0 287.0L564.0 287.3L566.0 287.7L568.0 288.0L570.0 288.4L572.0 288.7L574.0 289.0L576.0 289.4L578.0 289.7L580.0 290.0L582.0 290.3L584.0 290.6L586.0 290.9L588.0 291.2L590.0 291.6L592.0 291.9L594.0 292.1L596.0 292.4L598.0 292.7L600.0 293.0L602.0 293.3L604.0 293.6L606.0 293.9L608.0 294.1L610.0 294.4L612.0 294.7L614.0 294.9L616.0 295.2L618.0 295.5L620.0 295.7L622.0 296.0L624.0 296.2L626.0 296.5L628.0 296.7L630.0 296.9L632.0 297.2L634.0 297.4L636.0 297.7L638.0 297.9L640.0 298.1L642.0 298.3L644.0 298.6L646.0 298.8L648.0 299.0L650.0 299.2L652.0 299.4L654.0 299.6L656.0 299.9L658.0 300.1L660.0 300.3L662.0 300.5L664.0 300.7L666.0 300.9L668.0 301.1L670.0 301.3L672.0 301.5L674.0 301.7L676.0 301.8L678.0 302.0L680.0 302.2L682.0 302.4L684.0 302.6L686.0 302.8L688.0 302.9L690.0 303.1L692.0 303.3L694.0 303.5L696.0 303.6L698.0 303.8L700.0 304.0L702.0 304.2L704.0 304.3L706.0 304.5L708.0 304.6L710.0 304.8L712.0 305.0L714.0 305.1L716.0 305.3L718.0 305.4L720.0 305.6L722.0 305.7L724.0 305.9L726.0 306.0L728.0 306.2L730.0 306.3L732.0 306.5L734.0 306.6L736.0 306.8L738.0 306.9L740.0 307.0L742.0 307.2L744.0 307.3L746.0 307.5L748.0 307.6L750.0 307.7L752.0 307.9L754.0 308.0L756.0 308.1L758.0 308.2L760.0 308.4L762.0 308.5L764.0 308.6L766.0 308.8L768.0 308.9L770.0 309.0L772.0 309.1L774.0 309.2L776.0 309.4L778.0 309.5L780.0 309.6L782.0 309.7L784.0 309.8L786.0 309.9L788.0 310.1L790.0 310.2L792.0 310.3L794.0 310.4L796.0 310.5L798.0 310.6L800.0 310.7L802.0 310.8L804.0 310.9L806.0 311.0L808.0 311.1L810.0 311.2L812.0 311.3L814.0 311.4L816.0 311.5L818.0 311.6L820.0 311.7L822.0 311.8L824.0 311.9L826.0 312.0L828.0 312.1L830.0 312.2L832.0 312.3L834.0 312.4L836.0 312.5L838.0 312.6L840.0 312.7L842.0 312.8L844.0 312.9L846.0 313.0L848.0 313.0L850.0 313.1L852.0 313.2L854.0 313.3L856.0 313.4L858.0 313.5L860.0 313.6L862.0 313.6L864.0 313.7L866.0 313.8L868.0 313.9L870.0 314.0L872.0 314.1L874.0 314.1L876.0 314.2L878.0 314.3L880.0 314.4" stroke="#d9472b" stroke-width="3" fill="none"/>
+      <g class="svg-small">
+        <text x="88" y="222" fill="#14171f">1</text>
+        <text x="196" y="96" fill="#14171f">← plateau 2,5·η</text>
+        <text x="270" y="160">branche en 1/T</text>
+        <text x="270" y="174" class="svg-small">(vitesse constante)</text>
+        <text x="560" y="270">branche en 1/T²</text>
+        <text x="560" y="284">(déplacement constant)</text>
+      </g>
+      <rect x="640" y="80" width="230" height="110" rx="10" fill="#fff" stroke="#e3dfd4"/>
+      <text x="656" y="104" class="svg-label">Ponts raides (T &lt; TC)</text>
+      <text x="656" y="122" class="svg-small">efforts maximaux (plateau)</text>
+      <text x="656" y="150" class="svg-label">Ponts souples (T &gt; TC)</text>
+      <text x="656" y="168" class="svg-small">efforts réduits, déplacements accrus</text>
+    </svg>
+    <figcaption><b>Figure 7.6 —</b> Les quatre branches du spectre EC8. La valeur à T = 0 est l'accélération du sol <span class="tex">a_g S</span> (oscillateur infiniment raide). Le plateau vaut <span class="tex">2{,}5\,\eta\,a_g S</span>. La plupart des ponts courants sur appuis fixes tombent sur le plateau ; les ponts sur élastomère sont souvent juste au-delà de T<sub>C</sub>.</figcaption>
+  </figure>
+
+  <div class="formula"><span class="lbl">Spectre élastique horizontal — EN 1998-1, § 3.2.2.2</span>
+    <span class="texd">\begin{aligned}
+    0 \le T \le T_B &: \quad S_e(T) = a_g\,S\left[1 + \frac{T}{T_B}\,(2{,}5\,\eta - 1)\right]\\
+    T_B \le T \le T_C &: \quad S_e(T) = 2{,}5\,a_g\,S\,\eta\\
+    T_C \le T \le T_D &: \quad S_e(T) = 2{,}5\,a_g\,S\,\eta\,\frac{T_C}{T}\\
+    T_D \le T \le 4\ \text{s} &: \quad S_e(T) = 2{,}5\,a_g\,S\,\eta\,\frac{T_C\,T_D}{T^2}
+    \end{aligned}</span>
+    <div class="where"><span class="tex">a_g = \gamma_I\,a_{gR}</span> : accélération de calcul sur sol de classe A (rocher) ; <span class="tex">\eta = \sqrt{10/(5+\xi)} \ge 0{,}55</span>, avec ξ en % (η = 1 pour 5 %) ; S : paramètre de sol.</div>
+  </div>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Classe de sol (EC8)</th><th>Description simplifiée</th><th class="num">S</th><th class="num">T<sub>B</sub> (s)</th><th class="num">T<sub>C</sub> (s)</th><th class="num">T<sub>D</sub> (s)</th></tr>
+    <tr><td><b>A</b></td><td>Rocher ou formation rocheuse (v<sub>s,30</sub> &gt; 800 m/s)</td><td class="num">1,00</td><td class="num">0,15</td><td class="num">0,40</td><td class="num">2,0</td></tr>
+    <tr class="hl"><td><b>B</b></td><td>Sables et graviers très denses, argiles très raides (360–800 m/s)</td><td class="num">1,20</td><td class="num">0,15</td><td class="num">0,50</td><td class="num">2,0</td></tr>
+    <tr><td><b>C</b></td><td>Sables denses ou moyennement denses, argiles raides (180–360 m/s)</td><td class="num">1,15</td><td class="num">0,20</td><td class="num">0,60</td><td class="num">2,0</td></tr>
+    <tr><td><b>D</b></td><td>Sols lâches à moyennement denses, sols cohérents mous (&lt; 180 m/s)</td><td class="num">1,35</td><td class="num">0,20</td><td class="num">0,80</td><td class="num">2,0</td></tr>
+    <tr><td><b>E</b></td><td>Couche alluvionnaire superficielle (5 à 20 m) sur un substratum raide</td><td class="num">1,40</td><td class="num">0,15</td><td class="num">0,50</td><td class="num">2,0</td></tr>
+  </table></div>
+  <p class="svg-small" style="font-size:13px;color:var(--mute)">Valeurs recommandées pour le spectre de <b>type 1</b> (séismes de magnitude M<sub>s</sub> &gt; 5,5). L'EC8 prévoit aussi un spectre de type 2 pour les séismes plus modérés ; l'annexe nationale ou le CPS choisit.</p>
+
+  <h3>Spectre interactif</h3>
+  <p>Modifiez l'accélération, la classe de sol, l'amortissement et le coefficient de comportement. Le point noir lit la valeur du spectre pour la période T de votre pont.</p>
+
+  <div class="calc" id="calc-c7spec"><div class="calc-h">Spectre de réponse EC8 (type 1) — élastique et de calcul</div><div class="calc-b">
+    <div class="inputs">
+      <label><span>Accélération de référence a<sub>gR</sub> (g)</span> <input type="number" id="c7p-ag" value="0.15" step="0.01" min="0"></label>
+      <label><span>Coefficient d'importance γ<sub>I</sub></span> <select id="c7p-gi"><option value="0.85">0,85 (faible)</option><option value="1" selected>1,0 (courant)</option><option value="1.3">1,3 (stratégique)</option></select></label>
+      <label><span>Classe de sol</span> <select id="c7p-sol"><option>A</option><option selected>B</option><option>C</option><option>D</option><option>E</option></select></label>
+      <label><span>Amortissement ξ (%)</span> <input type="number" id="c7p-xi" value="5" step="1" min="0"></label>
+      <label><span>Coefficient de comportement q</span> <input type="number" id="c7p-q" value="1" step="0.1" min="1"></label>
+      <label><span>Période du pont T (s)</span> <input type="number" id="c7p-T" value="0.7" step="0.05" min="0" max="4"></label>
+    </div>
+    <div class="out">
+      <div class="res"><span>Accélération de calcul a<sub>g</sub> = γ<sub>I</sub>·a<sub>gR</sub></span><b id="c7p-agd">—</b></div>
+      <div class="res"><span>S ; T<sub>B</sub> ; T<sub>C</sub> ; T<sub>D</sub></span><b id="c7p-par">—</b></div>
+      <div class="res"><span>Correction d'amortissement η</span><b id="c7p-eta">—</b></div>
+      <div class="res"><span>Plateau 2,5·a<sub>g</sub>·S·η</span><b id="c7p-pl">—</b></div>
+      <div class="res big"><span>S<sub>e</sub>(T) élastique</span><b id="c7p-se">—</b></div>
+      <div class="res big"><span>S<sub>d</sub>(T) de calcul (avec q)</span><b id="c7p-sd">—</b></div>
+      <div class="steps" id="c7p-steps"></div>
+    </div>
+    <div class="calc-fig"><svg id="c7p-svg" viewBox="0 0 960 320" role="img" aria-label="Spectre de réponse"></svg>
+      <div class="legend-row"><span><i style="background:#d9472b"></i>S<sub>e</sub>(T) élastique (ξ choisi)</span><span><i style="background:#0f8f7b"></i>S<sub>d</sub>(T) de calcul (q, ξ = 5 %)</span><span><i style="background:#14171f"></i>lecture à la période T</span></div>
+    </div>
+  </div></div>
+
+  <div class="box warn"><span class="t">Pièges classiques</span>
+    <ul>
+      <li>Confondre <span class="tex">a_{gR}</span> (référence, rocher, période de retour de référence) et <span class="tex">a_g = \gamma_I a_{gR}</span> (de calcul).</li>
+      <li>Oublier le paramètre de sol <b>S</b> : sur un sol D, l'accélération au niveau du sol est 35 % plus forte qu'au rocher.</li>
+      <li>Appliquer η avec le spectre de calcul : dans l'EC8, la réduction par <b>q</b> remplace la correction d'amortissement (spectre de calcul établi pour 5 %).</li>
+      <li>Oublier que <span class="tex">S_e</span> est une accélération en m/s² : diviser par g = 9,81 pour l'exprimer en « g ».</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.4</span>Importance de l'ouvrage et comportement de la structure</h2>
+  <h3>Le coefficient d'importance γ<sub>I</sub></h3>
+  <p>Tous les ponts n'ont pas le même enjeu. Un pont qui permet aux secours d'atteindre une ville après le séisme doit rester utilisable ; un petit ouvrage sur une route secondaire peut accepter un risque plus élevé. On module l'accélération par <span class="tex">\gamma_I</span>, ce qui revient à changer la <b>période de retour</b> du séisme de calcul.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Classe d'importance</th><th>Exemples</th><th class="num">γ<sub>I</sub> (ordre de grandeur EC8-2)</th></tr>
+    <tr><td><b>III</b> — ponts stratégiques</td><td>Ouvrages indispensables aux communications après séisme : grands axes, accès aux hôpitaux, ponts dont la ruine ferait de nombreuses victimes, grands ponts</td><td class="num">1,3</td></tr>
+    <tr class="hl"><td><b>II</b> — ponts courants</td><td>Ponts routiers et ferroviaires courants (cas général)</td><td class="num">1,0</td></tr>
+    <tr><td><b>I</b> — importance faible</td><td>Ouvrages peu essentiels aux communications, dont la durée d'utilisation est courte</td><td class="num">0,85</td></tr>
+  </table></div>
+  <p>Ces valeurs sont les valeurs <b>recommandées</b> par l'EN 1998-2 ; l'annexe nationale ou le CPS du projet peut en fixer d'autres. Au Maroc, la classe de l'ouvrage est en principe indiquée par le maître d'ouvrage (ADM, ONCF, Direction des Routes…).</p>
+
+  <h3>Élastique ou ductile ? Le coefficient de comportement q</h3>
+  <p>Dimensionner un pont pour rester parfaitement élastique sous le séisme rare est possible, mais coûteux. L'alternative est d'accepter que <b>certaines zones choisies</b> (les pieds de piles) se plastifient : elles dissipent l'énergie par des déformations permanentes, sans perte de résistance, comme un trombone que l'on plie. On divise alors le spectre par un coefficient de comportement <span class="tex">q &gt; 1</span>.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Comportement visé</th><th>Cas typique</th><th class="num">q (ordre de grandeur, EC8-2)</th></tr>
+    <tr><td><b>Élastique</b></td><td>Pont dont l'action sismique est reprise par des appareils d'appui en élastomère ; culées ; éléments non ductiles</td><td class="num">≈ 1,0</td></tr>
+    <tr><td><b>Ductilité limitée</b></td><td>Piles en béton armé peu élancées, zone de faible sismicité</td><td class="num">≤ 1,5</td></tr>
+    <tr class="hl"><td><b>Ductile</b></td><td>Piles en béton armé verticales travaillant en flexion, élancées (rapport portée de cisaillement / hauteur de section ≥ 3)</td><td class="num">jusqu'à 3,5</td></tr>
+  </table></div>
+  <p>Pour les piles trapues, la valeur de q est réduite (le cisaillement domine et la rupture devient fragile). Ces valeurs dépendent de conditions précises de l'EC8-2 (régularité, effort normal réduit, détails de ferraillage) : à vérifier dans le texte pour chaque projet.</p>
+
+  <div class="formula"><span class="lbl">Spectre de calcul (EN 1998-1, § 3.2.2.5)</span>
+    <span class="texd">\begin{aligned}
+    0 \le T \le T_B &: \ S_d = a_g S\left[\tfrac{2}{3} + \tfrac{T}{T_B}\left(\tfrac{2{,}5}{q} - \tfrac{2}{3}\right)\right] &\quad T_B \le T \le T_C &: \ S_d = a_g S\,\tfrac{2{,}5}{q}\\
+    T_C \le T \le T_D &: \ S_d = a_g S\,\tfrac{2{,}5}{q}\,\tfrac{T_C}{T} \ \ge \beta\,a_g &\quad T \ge T_D &: \ S_d = a_g S\,\tfrac{2{,}5}{q}\,\tfrac{T_C T_D}{T^2} \ \ge \beta\,a_g
+    \end{aligned}</span>
+    <div class="where">β = 0,2 (valeur recommandée) : plancher qui évite de sous-estimer l'effort des structures très souples.</div>
+  </div>
+
+  <h3>Le dimensionnement en capacité</h3>
+  <p>Accepter des rotules plastiques n'a de sens que si l'on <b>choisit</b> où elles se forment, et si tout le reste de la structure est assez résistant pour les laisser travailler. C'est le <span class="kw">dimensionnement en capacité</span> : on dimensionne d'abord les zones ductiles, puis on calcule tout le reste (effort tranchant des piles, chevêtres, fondations, appareils d'appui) pour l'effort que ces zones peuvent réellement transmettre, majoré d'une <b>surrésistance</b>.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 360" role="img" aria-label="Principe du dimensionnement en capacité">
+      <defs>
+        <marker id="c7f7-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <pattern id="c7f7-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern>
+        <pattern id="c7f7-hinge" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#f7c9bd"/><path d="M0 0 V6" stroke="#d9472b" stroke-width="1.4"/></pattern>
+      </defs>
+      <rect width="960" height="360" fill="#fbfaf6"/>
+      <text x="40" y="30" class="svg-title">Pile ductile : la rotule est choisie en pied</text>
+      <rect x="20" y="300" width="420" height="50" fill="url(#c7f7-earth)"/>
+      <rect x="110" y="300" width="140" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+      <rect x="60" y="56" width="240" height="18" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="160" y="74" width="40" height="226" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="160" y="245" width="40" height="55" fill="url(#c7f7-hinge)" stroke="#d9472b"/>
+      <path d="M100 66 H150" stroke="#d9472b" stroke-width="3" marker-end="url(#c7f7-ar)"/>
+      <text x="80" y="50" class="svg-label" fill="#d9472b">F sismique</text>
+      <path d="M215 74 L215 300 L330 300 Z" fill="#d9472b" opacity=".18" stroke="#d9472b"/>
+      <text x="268" y="180" class="svg-small" fill="#d9472b">moment M(z)</text>
+      <text x="268" y="196" class="svg-small" fill="#d9472b">maximal en pied</text>
+      <path d="M158 280 H120" stroke="#6e7884"/>
+      <text x="26" y="262" class="svg-small" fill="#a6463a">zone critique</text>
+      <text x="26" y="276" class="svg-small" fill="#a6463a">(rotule plastique)</text>
+      <text x="26" y="290" class="svg-small" fill="#a6463a">confinée</text>
+      <text x="345" y="110" class="svg-small" fill="#0f8f7b">reste élastique :</text>
+      <text x="345" y="126" class="svg-small" fill="#0f8f7b">fût hors rotule,</text>
+      <text x="345" y="142" class="svg-small" fill="#0f8f7b">chevêtre, appareils,</text>
+      <text x="345" y="158" class="svg-small" fill="#0f8f7b">fondation, tablier</text>
+      <text x="345" y="174" class="svg-small" fill="#0f8f7b">et effort tranchant</text>
+      <!-- chaîne -->
+      <text x="500" y="30" class="svg-title">L'analogie de la chaîne</text>
+      <path d="M520 150 H920" stroke="#e3dfd4" stroke-width="2"/>
+      <g fill="none" stroke-width="7">
+        <rect x="520" y="134" width="70" height="32" rx="16" stroke="#9aa3ae"/>
+        <rect x="575" y="140" width="70" height="20" rx="10" stroke="#9aa3ae"/>
+        <rect x="630" y="134" width="70" height="32" rx="16" stroke="#9aa3ae"/>
+        <rect x="685" y="138" width="92" height="24" rx="12" stroke="#c9a84c"/>
+        <rect x="762" y="134" width="70" height="32" rx="16" stroke="#9aa3ae"/>
+        <rect x="817" y="140" width="70" height="20" rx="10" stroke="#9aa3ae"/>
+      </g>
+      <path d="M500 150 H470 M940 150 H920" stroke="#d9472b" stroke-width="3"/>
+      <path d="M490 150 h-30" stroke="#d9472b" stroke-width="3" marker-end="url(#c7f7-ar)"/>
+      <path d="M915 150 h30" stroke="#d9472b" stroke-width="3" marker-end="url(#c7f7-ar)"/>
+      <text x="731" y="120" text-anchor="middle" class="svg-label" fill="#a8842a">maillon ductile</text>
+      <text x="600" y="200" class="svg-small">maillons fragiles (gris) : rendus PLUS résistants</text>
+      <text x="600" y="216" class="svg-small">que le maillon ductile, avec une marge de surrésistance</text>
+      <rect x="520" y="240" width="400" height="90" rx="12" fill="#fff" stroke="#e3dfd4"/>
+      <text x="540" y="266" class="svg-label">Effort de capacité :  M₀ = γ₀ · M_Rd</text>
+      <text x="540" y="288" class="svg-small">M_Rd : moment résistant réel de la rotule (armatures en place)</text>
+      <text x="540" y="306" class="svg-small">γ₀ : surrésistance, de l'ordre de 1,35 pour le béton (EC8-2)</text>
+    </svg>
+    <figcaption><b>Figure 7.7 —</b> Une chaîne casse toujours par son maillon le plus faible. On choisit ce maillon (la rotule en pied de pile), on le rend <b>ductile</b> par un confinement soigné, et on rend tous les autres maillons plus résistants que lui : la ruine fragile devient impossible.</figcaption>
+  </figure>
+
+  <div class="box tip"><span class="t">Pourquoi les ponts sur élastomère sont souvent calculés avec q = 1</span>
+    Les appareils en élastomère fretté sont beaucoup plus souples que les piles : ce sont eux qui prennent l'essentiel du déplacement, et les piles restent dans le domaine élastique. Il n'y a donc pas de rotule plastique à mobiliser, et l'EC8-2 demande dans ce cas un calcul essentiellement élastique (q ≈ 1). Avantage : le calcul est simple et les piles ne demandent pas de dispositions de ductilité aussi poussées. Inconvénient : il faut vérifier soigneusement les appareils (distorsion) et les longueurs d'appui.
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.5</span>La méthode monomodale (mode fondamental)</h2>
+  <p>Pour un pont courant <b>régulier</b> (tablier continu ou travées liées, appuis de raideurs comparables, peu de biais, masse des piles faible devant celle du tablier — critère de l'ordre de 20 % dans l'EC8-2), la réponse est dominée par un seul mode : le tablier se déplace d'un bloc. On remplace alors le pont par l'oscillateur de la figure 7.3 : c'est la <span class="kw">méthode monomodale</span> (« méthode du mode fondamental » dans l'EC8-2, modèle à tablier rigide).</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 330" role="img" aria-label="Raideurs en série et en parallèle des appuis d'un pont">
+      <defs>
+        <marker id="c7f8-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        <pattern id="c7f8-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern>
+      </defs>
+      <rect width="960" height="330" fill="#fbfaf6"/>
+      <rect x="80" y="62" width="800" height="22" fill="#b9c2cc" stroke="#6e7884"/>
+      <text x="480" y="78" text-anchor="middle" class="svg-small">tablier rigide de masse M (se déplace d'un bloc de d)</text>
+      <path d="M20 73 H72" stroke="#d9472b" stroke-width="3" marker-end="url(#c7f8-ar)"/>
+      <text x="22" y="56" class="svg-label" fill="#d9472b">F = M·Sd(T)</text>
+      <rect x="40" y="270" width="880" height="40" fill="url(#c7f8-earth)"/>
+      <!-- culée C0 -->
+      <path d="M140 84L140 90L149 92.8L131 98.3L149 103.8L131 109.3L149 114.8L131 120.3L149 125.8L131 131.3L140 134L140 140" stroke="#0f8f7b" stroke-width="2.2" fill="none"/>
+      <rect x="105" y="140" width="70" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+      <text x="140" y="210" text-anchor="middle" class="svg-label">C0</text>
+      <text x="152" y="116" class="svg-small" fill="#0f8f7b">k_a</text>
+      <!-- pile P1 -->
+      <path d="M360 84L360 90L369 92.8L351 98.3L369 103.8L351 109.3L369 114.8L351 120.3L369 125.8L351 131.3L360 134L360 140" stroke="#0f8f7b" stroke-width="2.2" fill="none"/>
+      <path d="M360 140L360 146L369 152.9L351 166.6L369 180.4L351 194.1L369 207.9L351 221.6L369 235.4L351 249.1L360 256L360 262" stroke="#2d6be4" stroke-width="2.2" fill="none"/>
+      <rect x="330" y="262" width="60" height="10" fill="#9aa3ae" stroke="#5d6672"/>
+      <text x="372" y="116" class="svg-small" fill="#0f8f7b">k_a</text>
+      <text x="374" y="205" class="svg-small" fill="#2d6be4">k_pile</text>
+      <text x="340" y="296" text-anchor="middle" class="svg-label">P1</text>
+      <!-- pile P2 -->
+      <path d="M600 84L600 90L609 92.8L591 98.3L609 103.8L591 109.3L609 114.8L591 120.3L609 125.8L591 131.3L600 134L600 140" stroke="#0f8f7b" stroke-width="2.2" fill="none"/>
+      <path d="M600 140L600 146L609 152.9L591 166.6L609 180.4L591 194.1L609 207.9L591 221.6L609 235.4L591 249.1L600 256L600 262" stroke="#2d6be4" stroke-width="2.2" fill="none"/>
+      <rect x="570" y="262" width="60" height="10" fill="#9aa3ae" stroke="#5d6672"/>
+      <text x="612" y="116" class="svg-small" fill="#0f8f7b">k_a</text>
+      <text x="614" y="205" class="svg-small" fill="#2d6be4">k_pile</text>
+      <text x="580" y="296" text-anchor="middle" class="svg-label">P2</text>
+      <!-- culée C3 -->
+      <path d="M820 84L820 90L829 92.8L811 98.3L829 103.8L811 109.3L829 114.8L811 120.3L829 125.8L811 131.3L820 134L820 140" stroke="#0f8f7b" stroke-width="2.2" fill="none"/>
+      <rect x="785" y="140" width="70" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+      <text x="820" y="210" text-anchor="middle" class="svg-label">C3</text>
+      <text x="832" y="116" class="svg-small" fill="#0f8f7b">k_a</text>
+      <rect x="430" y="150" width="110" height="80" rx="10" fill="#fff" stroke="#e3dfd4"/>
+      <text x="485" y="172" text-anchor="middle" class="svg-small">sur une pile :</text>
+      <text x="485" y="190" text-anchor="middle" class="svg-small" fill="#14171f">série</text>
+      <text x="485" y="208" text-anchor="middle" class="svg-small">entre appuis :</text>
+      <text x="485" y="224" text-anchor="middle" class="svg-small" fill="#14171f">parallèle</text>
+    </svg>
+    <figcaption><b>Figure 7.8 —</b> Modèle de ressorts. Sur une pile, l'appareil d'appui (teal) et le fût (bleu) se déforment l'un après l'autre : leurs souplesses s'ajoutent (<b>série</b>). Tous les appuis subissent le même déplacement du tablier : leurs raideurs s'ajoutent (<b>parallèle</b>). Une culée est généralement supposée infiniment raide : seul compte son appareil.</figcaption>
+  </figure>
+
+  <div class="formula"><span class="lbl">Méthode monomodale — étape par étape</span>
+    <span class="texd">\begin{aligned}
+    &k_a = \frac{G\,a\,b}{T_e} \ \text{(un appareil)} \qquad k_\text{pile} = n_f\,\frac{3\,E\,I}{H^3} \qquad \frac{1}{K_i} = \frac{1}{n\,k_a} + \frac{1}{k_\text{pile}}\\[4pt]
+    &K = \sum_i K_i \qquad T = 2\pi\sqrt{\frac{M}{K}} \qquad F = M\,S_d(T) \qquad F_i = F\,\frac{K_i}{K} \qquad d = \frac{F}{K} = S_d(T)\,\frac{T^2}{4\pi^2}
+    \end{aligned}</span>
+    <div class="where">G : module de cisaillement de l'élastomère (de l'ordre de 0,9 MPa pour les actions lentes ; une valeur plus élevée, souvent prise vers 1,2 MPa, pour les actions rapides comme le séisme — selon le guide de référence) ; a × b : dimensions en plan ; T<sub>e</sub> : épaisseur totale d'élastomère ; n : nombre d'appareils par ligne d'appui ; n<sub>f</sub> : nombre de fûts ; H : hauteur du fût encastré en pied, libre en tête. Si q &gt; 1, le déplacement réel s'obtient en multipliant d par la ductilité en déplacement <span class="tex">\mu_d</span> (≈ q pour <span class="tex">T \ge 1{,}25\,T_C</span>).</div>
+  </div>
+
+  <h3>Calculatrice monomodale longitudinale</h3>
+  <div class="calc" id="calc-c7mono"><div class="calc-h">Pont courant sur appareils en élastomère — calcul monomodal longitudinal</div><div class="calc-b">
+    <div class="inputs">
+      <label><span>Masse sismique du tablier M (t)</span> <input type="number" id="c7m-M" value="900" step="10" min="1"></label>
+      <label><span>Nombre de piles</span> <input type="number" id="c7m-np" value="2" step="1" min="0" max="6"></label>
+      <label><span>Fûts par pile n<sub>f</sub></span> <input type="number" id="c7m-nf" value="2" step="1" min="1" max="6"></label>
+      <label><span>Diamètre des fûts D (m)</span> <input type="number" id="c7m-D" value="1.0" step="0.05" min="0.3"></label>
+      <label><span>Hauteur des fûts H (m)</span> <input type="number" id="c7m-H" value="7" step="0.5" min="1"></label>
+      <label><span>Module du béton E (MPa)</span> <input type="number" id="c7m-E" value="32000" step="1000" min="5000"></label>
+      <label><span>Inertie prise en compte</span> <select id="c7m-phi"><option value="1">brute (fût non fissuré)</option><option value="0.5">fissurée ≈ 50 %</option></select></label>
+      <label><span>Appareils par ligne n</span> <input type="number" id="c7m-n" value="5" step="1" min="1"></label>
+      <label><span>Appareil a (mm)</span> <input type="number" id="c7m-a" value="400" step="50" min="100"></label>
+      <label><span>Appareil b (mm)</span> <input type="number" id="c7m-b" value="500" step="50" min="100"></label>
+      <label><span>Épaisseur d'élastomère T<sub>e</sub> (mm)</span> <input type="number" id="c7m-te" value="50" step="4" min="8"></label>
+      <label><span>Module G (MPa)</span> <input type="number" id="c7m-G" value="1.2" step="0.1" min="0.5"></label>
+      <label><span>a<sub>gR</sub> (g)</span> <input type="number" id="c7m-ag" value="0.15" step="0.01" min="0"></label>
+      <label><span>γ<sub>I</sub></span> <select id="c7m-gi"><option value="0.85">0,85</option><option value="1" selected>1,0</option><option value="1.3">1,3</option></select></label>
+      <label><span>Classe de sol</span> <select id="c7m-sol"><option>A</option><option selected>B</option><option>C</option><option>D</option><option>E</option></select></label>
+      <label><span>Coefficient q</span> <input type="number" id="c7m-q" value="1" step="0.1" min="1"></label>
+    </div>
+    <div class="out">
+      <div class="res"><span>Raideur d'un appareil k<sub>a</sub></span><b id="c7m-ka">—</b></div>
+      <div class="res"><span>Raideur des fûts d'une pile</span><b id="c7m-kp">—</b></div>
+      <div class="res"><span>Raideur d'une culée / d'une pile (série)</span><b id="c7m-ki">—</b></div>
+      <div class="res"><span>Raideur totale K</span><b id="c7m-K">—</b></div>
+      <div class="res big"><span>Période T</span><b id="c7m-T">—</b></div>
+      <div class="res"><span>Accélération spectrale S<sub>d</sub>(T)</span><b id="c7m-sd">—</b></div>
+      <div class="res big"><span>Effort sismique total F</span><b id="c7m-F">—</b></div>
+      <div class="res big"><span>Déplacement du tablier d</span><b id="c7m-d">—</b></div>
+      <div class="res"><span>Distorsion des appareils de culée d/T<sub>e</sub></span><b id="c7m-gam">—</b></div>
+      <div class="res"><span>Moment en pied d'un fût de pile</span><b id="c7m-Mb">—</b></div>
+      <div class="steps" id="c7m-steps"></div>
+    </div>
+    <div class="calc-fig"><svg id="c7m-svg" viewBox="0 0 960 300" role="img" aria-label="Répartition de l'effort sismique entre appuis"></svg></div>
+  </div></div>
+
+  <div class="box note"><span class="t">Ce que montre la calculatrice</span>
+    <ul>
+      <li>Les <b>culées</b>, plus raides (leur appareil n'est pas en série avec un fût souple), attirent la plus grande part de l'effort.</li>
+      <li>Passer à l'inertie <b>fissurée</b> assouplit les piles : la période augmente, l'effort total baisse, le déplacement augmente. L'EC8-2 impose d'utiliser une raideur réaliste (fissurée pour les éléments ductiles).</li>
+      <li>Augmenter l'épaisseur d'élastomère réduit l'effort mais augmente le déplacement : c'est un premier pas vers l'isolation (§ 7.8).</li>
+    </ul>
+  </div>
+
+  <h3>Les autres directions et leur combinaison</h3>
+  <p>Le même calcul se fait dans la direction <b>transversale</b> (raideurs transversales des appareils et des piles, éventuelles butées). La <b>composante verticale</b> du séisme est généralement négligeable pour les ponts courants, mais elle doit être prise en compte dans certains cas (tabliers précontraints, consoles, risque de soulèvement des appareils, zones de forte sismicité) : se référer à l'EC8-2 et au CPS. Les effets des trois directions, calculés séparément, sont ensuite combinés :</p>
+  <div class="formula"><span class="lbl">Combinaison des directions (règle « 100 % – 30 % – 30 % »)</span>
+    <span class="texd">E = E_x \;\text{“+”}\; 0{,}3\,E_y \;\text{“+”}\; 0{,}3\,E_z \quad\text{et permutations circulaires}</span>
+    <div class="where">« + » signifie « combiné avec », en prenant les signes les plus défavorables. Variante admise : la racine de la somme des carrés <span class="tex">\sqrt{E_x^2 + E_y^2 + E_z^2}</span>.</div>
+  </div>
+  <div class="formula"><span class="lbl">Combinaison sismique (accidentelle)</span>
+    <span class="texd">E_d = G + A_{Ed} + \psi_{2,1}\,Q_{1}</span>
+    <div class="where">Pas de coefficients partiels sur G. Pour les ponts routiers, la part de trafic concomitante <span class="tex">\psi_{2,1}</span> est généralement nulle en trafic normal (de l'ordre de 0,2 pour un trafic intense et 0,3 pour les ponts ferroviaires selon l'EC8-2) ; la masse sismique comprend alors G et cette fraction de trafic.</div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.6</span>Les dispositions constructives qui sauvent les ponts</h2>
+  <p>Le calcul ne suffit pas. Les séismes réels sont souvent plus forts que prévu, et les déplacements différentiels du sol ne sont qu'approchés. L'expérience a montré que quelques <b>dispositions constructives simples</b> font la différence entre un pont endommagé et un pont effondré.</p>
+
+  <div class="seq" data-seq="c7-chute" data-title="Pourquoi une travée tombe">
+    <div class="seq-stage">
+      <svg viewBox="0 0 960 360" role="img" aria-label="Séquence : chute d'une travée et parade">
+        <defs>
+          <pattern id="c7s1-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern>
+          <marker id="c7s1-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        </defs>
+        <g>
+          <g data-only="2,6"><animateTransform attributeName="transform" type="translate" values="0 0;-7 0;6 0;-4 0;5 0;0 0" dur="0.7s" repeatCount="indefinite"/>
+            <rect x="0" y="300" width="960" height="60" fill="url(#c7s1-earth)"/></g>
+          <rect x="0" y="300" width="960" height="60" fill="url(#c7s1-earth)" data-only="1,3,4,5,7"/>
+          <rect x="0" y="150" width="64" height="150" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="896" y="150" width="64" height="150" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="465" y="172" width="30" height="128" fill="#cfd5dc" stroke="#6e7884"/>
+        </g>
+        <!-- A : appui court -->
+        <g data-only="1-4">
+          <rect x="452" y="160" width="56" height="12" fill="#dfe3e8" stroke="#6e7884"/>
+          <path d="M452 188 H508" stroke="#a8842a" stroke-width="1.4"/>
+          <text x="480" y="204" text-anchor="middle" class="svg-small" fill="#a8842a">appui court</text>
+        </g>
+        <g data-only="1"><rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/><rect x="485" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+          <text x="480" y="110" text-anchor="middle" class="svg-label">Deux travées indépendantes posées sur une pile, avec une faible longueur d'appui</text></g>
+        <g data-only="2">
+          <g><animateTransform attributeName="transform" type="translate" values="0 0;-10 0;9 0;-6 0;8 0;0 0" dur="0.7s" repeatCount="indefinite"/><rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/></g>
+          <g><animateTransform attributeName="transform" type="translate" values="0 0;12 0;-8 0;10 0;-6 0;0 0" dur="0.9s" repeatCount="indefinite"/><rect x="485" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/></g>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#d9472b">Le séisme : chaque travée oscille à son rythme</text>
+        </g>
+        <g data-only="3">
+          <rect x="44" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/><rect x="511" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+          <path d="M459 128 H420" stroke="#d9472b" stroke-width="2" marker-end="url(#c7s1-ar)"/><path d="M511 128 H550" stroke="#d9472b" stroke-width="2" marker-end="url(#c7s1-ar)"/>
+          <circle cx="510" cy="160" r="16" fill="none" stroke="#d9472b" stroke-width="2.5"/>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#d9472b">Déplacement relatif &gt; longueur d'appui : l'about quitte son appui</text>
+        </g>
+        <g data-only="4">
+          <rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+          <g transform="rotate(-20 900 150)"><rect x="485" y="140" width="415" height="20" fill="#d9a5a0" stroke="#a6463a"/></g>
+          <g fill="#8a939e"><circle cx="520" cy="300" r="5"/><circle cx="540" cy="297" r="4"/><circle cx="505" cy="296" r="3"/></g>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#a6463a">La travée tombe : ruine totale, même si la pile est intacte</text>
+        </g>
+        <!-- B : parade -->
+        <g data-only="5-7">
+          <rect x="415" y="160" width="130" height="12" fill="#dfe3e8" stroke="#6e7884"/>
+          <rect x="423" y="172" width="14" height="10" fill="#cfd5dc" stroke="#6e7884" opacity="0"/>
+          <path d="M415 192 H545" stroke="#0f8f7b" stroke-width="1.6" marker-start="url(#c7s1-ar)" marker-end="url(#c7s1-ar)"/>
+          <text x="480" y="210" text-anchor="middle" class="svg-small" fill="#0f8f7b">longueur d'appui l_ov suffisante</text>
+          <g fill="#0f8f7b"><rect x="58" y="128" width="8" height="12"/><rect x="894" y="128" width="8" height="12"/></g>
+        </g>
+        <g data-only="5">
+          <rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/><rect x="485" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+          <path d="M440 150 C470 172 490 172 520 150" stroke="#2d6be4" stroke-width="2" stroke-dasharray="5 3" fill="none"/>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#0f8f7b">Parade : chevêtre élargi, butées, éventuels câbles de liaison entre travées</text>
+          <text x="600" y="186" class="svg-small" fill="#2d6be4">liaison (option)</text>
+        </g>
+        <g data-only="6">
+          <g><animateTransform attributeName="transform" type="translate" values="0 0;-10 0;9 0;-6 0;8 0;0 0" dur="0.7s" repeatCount="indefinite"/><rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/></g>
+          <g><animateTransform attributeName="transform" type="translate" values="0 0;12 0;-8 0;10 0;-6 0;0 0" dur="0.9s" repeatCount="indefinite"/><rect x="485" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/></g>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#d9472b">Même séisme, mêmes déplacements…</text>
+        </g>
+        <g data-only="7">
+          <rect x="60" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/><rect x="485" y="140" width="415" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+          <text x="480" y="110" text-anchor="middle" class="svg-label" fill="#0f8f7b">… la travée reste sur son appui : l'ouvrage est réparable</text>
+          <path d="M660 70 l14 14 l26 -30" stroke="#0f8f7b" stroke-width="5" fill="none"/>
+        </g>
+      </svg>
+    </div>
+    <ol class="seq-steps">
+      <li>Deux <b>travées indépendantes</b> reposent sur une pile par l'intermédiaire d'appareils d'appui. Le chevêtre est étroit : chaque about ne dispose que de quelques centimètres d'appui au-delà de l'appareil.</li>
+      <li data-dur="5200">Le séisme arrive. Les deux travées n'ont ni la même masse effective ni les mêmes appuis : elles oscillent <b>sans être synchrones</b>, et le sol lui-même ne bouge pas de la même façon sous chaque appui.</li>
+      <li>À un instant donné, les deux abouts s'écartent : le <b>déplacement relatif</b> dépasse la longueur d'appui disponible.</li>
+      <li>La travée glisse hors du chevêtre et <b>tombe</b>. C'est le mode de ruine le plus fréquent des ponts à travées indépendantes (Loma Prieta, Northridge, Kobe…).</li>
+      <li>Parade : un chevêtre plus large offrant une <b>longueur d'appui</b> l<sub>ov</sub> calculée, des <b>butées</b> aux culées et, si nécessaire, des <b>dispositifs de liaison</b> (câbles, barres) entre travées.</li>
+      <li data-dur="5200">Même séisme, mêmes déplacements : les abouts bougent autant qu'avant…</li>
+      <li>… mais restent sur leur appui. L'ouvrage est endommagé (appareils, joints) mais <b>réparable</b>, et il reste utilisable par les secours.</li>
+    </ol>
+  </div>
+
+  <h3>La longueur d'appui minimale</h3>
+  <p>L'EC8-2 (§ 6.6.4) impose, aux appuis où un déplacement relatif est possible (abouts de travées, culées), une longueur de recouvrement minimale. Sa forme générale est :</p>
+  <div class="formula"><span class="lbl">Longueur d'appui minimale — forme de l'EN 1998-2, § 6.6.4 (à vérifier dans le texte)</span>
+    <span class="texd">l_{ov} = l_m + d_{eg} + d_{es} \qquad l_m \ge 400\ \text{mm}</span>
+    <div class="where"><span class="tex">l_m</span> : longueur minimale garantissant la transmission de la réaction d'appui (au moins 400 mm) ; <span class="tex">d_{eg}</span> : déplacement relatif dû au mouvement différentiel du sol entre appuis (proportionnel à la longueur du tablier et au déplacement du sol <span class="tex">d_g</span>) ; <span class="tex">d_{es}</span> : déplacement sismique de calcul du tablier par rapport à l'appui. Le CPS ou le guide SETRA peuvent imposer des règles complémentaires.</div>
+  </div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 360" role="img" aria-label="Dispositions constructives parasismiques">
+      <defs>
+        <marker id="c7f9-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#a8842a"/></marker>
+      </defs>
+      <!-- a -->
+      <rect x="10" y="10" width="300" height="340" rx="14" fill="#f4f7fb"/>
+      <text x="160" y="38" text-anchor="middle" class="svg-title">a. Longueur d'appui</text>
+      <rect x="40" y="150" width="240" height="40" fill="#dfe3e8" stroke="#6e7884"/>
+      <rect x="130" y="190" width="60" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="20" y="118" width="134" height="26" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="166" y="118" width="134" height="26" fill="#b9c2cc" stroke="#6e7884"/>
+      <g fill="#14171f"><rect x="118" y="144" width="22" height="6"/><rect x="180" y="144" width="22" height="6"/></g>
+      <path d="M40 210 H154" stroke="#a8842a" stroke-width="1.4" marker-start="url(#c7f9-ar)" marker-end="url(#c7f9-ar)"/>
+      <path d="M40 195 V218 M154 150 V218" stroke="#a8842a" stroke-dasharray="3 3"/>
+      <text x="97" y="232" text-anchor="middle" class="svg-small" fill="#a8842a">l_ov</text>
+      <text x="160" y="100" text-anchor="middle" class="svg-small">joint (souffle sismique)</text>
+      <path d="M160 104 V118" stroke="#6e7884"/>
+      <text x="160" y="270" text-anchor="middle" class="svg-small" transform="rotate(-90 160 270)">pile</text>
+      <!-- b -->
+      <rect x="330" y="10" width="300" height="340" rx="14" fill="#f4f7fb"/>
+      <text x="480" y="38" text-anchor="middle" class="svg-title">b. Butées transversales</text>
+      <text x="480" y="56" text-anchor="middle" class="svg-small">coupe transversale sur appui</text>
+      <rect x="350" y="200" width="260" height="40" fill="#dfe3e8" stroke="#6e7884"/>
+      <rect x="440" y="240" width="80" height="90" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M380 120 H580 V140 L560 140 L552 186 H408 L400 140 H380 Z" fill="#b9c2cc" stroke="#6e7884"/>
+      <g fill="#14171f"><rect x="410" y="186" width="20" height="14"/><rect x="530" y="186" width="20" height="14"/></g>
+      <rect x="352" y="160" width="30" height="40" fill="#0f8f7b" opacity=".85"/>
+      <rect x="578" y="160" width="30" height="40" fill="#0f8f7b" opacity=".85"/>
+      <rect x="382" y="166" width="6" height="28" fill="#e39b1b"/>
+      <rect x="572" y="166" width="6" height="28" fill="#e39b1b"/>
+      <text x="352" y="152" class="svg-small" fill="#0f8f7b">taquet BA</text>
+      <text x="480" y="290" text-anchor="middle" class="svg-small" transform="rotate(-90 480 290)">pile</text>
+      <text x="480" y="345" text-anchor="middle" class="svg-small" fill="#9a6a10">jeu + plaque d'élastomère (amortit le choc)</text>
+      <!-- c -->
+      <rect x="650" y="10" width="300" height="340" rx="14" fill="#f4f7fb"/>
+      <text x="800" y="38" text-anchor="middle" class="svg-title">c. Confinement d'un fût</text>
+      <text x="800" y="56" text-anchor="middle" class="svg-small">coupe dans la zone critique</text>
+      <circle cx="800" cy="190" r="110" fill="#cfd5dc" stroke="#6e7884"/>
+      <circle cx="800" cy="190" r="90" fill="none" stroke="#2d6be4" stroke-width="3"/>
+      <g fill="#2d6be4">
+        <circle cx="800" cy="105" r="6"/><circle cx="843" cy="116" r="6"/><circle cx="874" cy="147" r="6"/><circle cx="885" cy="190" r="6"/><circle cx="874" cy="233" r="6"/><circle cx="843" cy="264" r="6"/>
+        <circle cx="800" cy="275" r="6"/><circle cx="757" cy="264" r="6"/><circle cx="726" cy="233" r="6"/><circle cx="715" cy="190" r="6"/><circle cx="726" cy="147" r="6"/><circle cx="757" cy="116" r="6"/>
+      </g>
+      <path d="M800 105 V275 M715 190 H885" stroke="#7a52c7" stroke-width="2"/>
+      <path d="M800 100 v14 M800 280 v-14" stroke="#7a52c7" stroke-width="2"/>
+      <text x="800" y="330" text-anchor="middle" class="svg-small">cerces ou spirale serrées + épingles</text>
+      <text x="800" y="344" text-anchor="middle" class="svg-small">crochets à 135° ancrés dans le noyau</text>
+    </svg>
+    <figcaption><b>Figure 7.9 —</b> Trois dispositions de base : (a) une longueur d'appui suffisante de part et d'autre du joint ; (b) des butées (taquets) qui limitent le déplacement transversal du tablier, avec un jeu et une plaque amortissante ; (c) un confinement serré du fût dans la zone critique pour garantir la ductilité de la rotule.</figcaption>
+  </figure>
+
+  <div class="seq" data-seq="c7-rotule" data-title="Rotule plastique et confinement">
+    <div class="seq-stage">
+      <svg viewBox="0 0 960 380" role="img" aria-label="Séquence : pile non confinée et pile confinée">
+        <defs>
+          <pattern id="c7s2-earth" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern>
+          <marker id="c7s2-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#d9472b"/></marker>
+        </defs>
+        <!-- pile de gauche -->
+        <rect x="0" y="320" width="440" height="60" fill="url(#c7s2-earth)"/>
+        <rect x="100" y="320" width="160" height="34" fill="#9aa3ae" stroke="#5d6672"/>
+        <rect x="60" y="44" width="240" height="18" fill="#b9c2cc" stroke="#6e7884"/>
+        <g data-only="1-5,7"><rect x="160" y="62" width="40" height="258" fill="#cfd5dc" stroke="#6e7884"/></g>
+        <g data-only="6"><path d="M160 62 L176 62 L200 62 L200 260 Q200 290 200 320 L160 320 L160 260 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <path d="M180 62 L196 62" stroke="none"/></g>
+        <path d="M100 53 H150" stroke="#d9472b" stroke-width="3" marker-end="url(#c7s2-ar)"/>
+        <text x="40" y="40" class="svg-label" fill="#d9472b">F sismique</text>
+        <path d="M215 62 L215 320 L320 320 Z" fill="#d9472b" opacity=".16" stroke="#d9472b"/>
+        <text x="245" y="200" class="svg-small" fill="#d9472b">M(z)</text>
+        <rect x="160" y="270" width="40" height="50" fill="none" stroke="#d9472b" stroke-width="2" stroke-dasharray="4 3" data-step="2"/>
+        <path d="M200 290 L460 210" stroke="#a8842a" stroke-dasharray="4 4" data-step="2"/>
+        <g data-only="6-7">
+          <path d="M150 300 A 22 22 0 0 1 170 278" stroke="#0f8f7b" stroke-width="3" fill="none" marker-end="url(#c7s2-ar)"/>
+          <text x="70" y="270" class="svg-small" fill="#0f8f7b">rotation</text>
+          <text x="70" y="284" class="svg-small" fill="#0f8f7b">plastique θp</text>
+        </g>
+        <!-- zoom -->
+        <rect x="460" y="20" width="480" height="340" rx="16" fill="#fff" stroke="#e3dfd4"/>
+        <text x="700" y="190" text-anchor="middle" class="svg-label" fill="#6e7884" data-only="1">zoom sur la zone critique : étape suivante</text>
+        <text x="700" y="356" text-anchor="middle" class="svg-small">zoom sur le pied de pile (élévation, enrobage représenté en gris clair)</text>
+        <rect x="560" y="300" width="280" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+        <!-- mal confiné -->
+        <g data-only="2-4">
+          <text x="700" y="48" text-anchor="middle" class="svg-title" fill="#a6463a">Pile mal confinée : cadres espacés</text>
+          <rect x="610" y="60" width="180" height="240" fill="#e7eaee" stroke="#6e7884"/>
+          <rect x="626" y="60" width="148" height="240" fill="#cfd5dc"/>
+          <g stroke="#7a52c7" stroke-width="3"><path d="M626 90 H774 M626 170 H774 M626 250 H774"/></g>
+        </g>
+        <g data-only="2-3"><g stroke="#2d6be4" stroke-width="5"><path d="M636 60 V300 M670 60 V300 M730 60 V300 M764 60 V300"/></g></g>
+        <g data-only="3-4">
+          <g fill="#e7eaee" stroke="#6e7884"><path d="M596 240 l14 -6 l2 22 z"/><path d="M584 270 l18 2 l-6 16 z"/><path d="M800 236 l16 4 l-10 16 z"/><path d="M806 268 l18 -4 l-4 18 z"/></g>
+          <rect x="610" y="220" width="16" height="80" fill="#fff"/><rect x="774" y="220" width="16" height="80" fill="#fff"/>
+          <text x="560" y="214" class="svg-small" fill="#a6463a">éclatement</text><text x="560" y="228" class="svg-small" fill="#a6463a">de l'enrobage</text>
+        </g>
+        <g data-only="4">
+          <g stroke="#2d6be4" stroke-width="5" fill="none"><path d="M636 60 V200 Q608 240 636 300"/><path d="M670 60 V200 Q650 240 670 300"/><path d="M730 60 V200 Q750 240 730 300"/><path d="M764 60 V200 Q792 240 764 300"/></g>
+          <g stroke="#d9472b" stroke-width="2"><path d="M680 230 l40 30 M690 270 l30 -36 M660 250 l20 10"/></g>
+          <rect x="640" y="140" width="120" height="30" rx="6" fill="#d9472b"/>
+          <text x="700" y="160" text-anchor="middle" class="svg-label" fill="#fff">rupture fragile</text>
+        </g>
+        <!-- bien confiné -->
+        <g data-only="5-7">
+          <text x="700" y="48" text-anchor="middle" class="svg-title" fill="#0b6e5f">Pile bien confinée : cadres serrés + épingles</text>
+          <rect x="610" y="60" width="180" height="240" fill="#e7eaee" stroke="#6e7884"/>
+          <rect x="626" y="60" width="148" height="240" fill="#cfd5dc"/>
+          <g stroke="#7a52c7" stroke-width="2.5"><path d="M626 74 H774 M626 94 H774 M626 114 H774 M626 134 H774 M626 154 H774 M626 174 H774 M626 194 H774 M626 214 H774 M626 234 H774 M626 254 H774 M626 274 H774 M626 294 H774"/></g>
+          <g stroke="#2d6be4" stroke-width="5"><path d="M636 60 V300 M670 60 V300 M730 60 V300 M764 60 V300"/></g>
+          <g stroke="#7a52c7" stroke-width="2" fill="none"><path d="M690 84 l10 -8 M690 164 l10 -8 M690 244 l10 -8"/></g>
+          <text x="800" y="80" class="svg-small" fill="#7a52c7">espacement</text><text x="800" y="94" class="svg-small" fill="#7a52c7">réduit</text>
+        </g>
+        <g data-only="6-7">
+          <g fill="#e7eaee" stroke="#6e7884"><path d="M596 262 l12 -4 l2 16 z"/><path d="M804 260 l14 4 l-8 12 z"/></g>
+          <path d="M610 255 Q600 280 610 300 M790 255 Q800 280 790 300" stroke="#0f8f7b" stroke-width="3" fill="none"/>
+          <rect x="640" y="140" width="120" height="30" rx="6" fill="#0f8f7b"/>
+          <text x="700" y="160" text-anchor="middle" class="svg-label" fill="#fff">rotule ductile</text>
+        </g>
+        <g data-only="7">
+          <rect x="20" y="70" width="128" height="78" rx="10" fill="#fff" stroke="#0f8f7b"/>
+          <text x="84" y="92" text-anchor="middle" class="svg-small" fill="#0b6e5f">le reste est calculé</text>
+          <text x="84" y="108" text-anchor="middle" class="svg-small" fill="#0b6e5f">pour M₀ = γ₀·M_Rd :</text>
+          <text x="84" y="124" text-anchor="middle" class="svg-small" fill="#0b6e5f">tranchant, semelle,</text>
+          <text x="84" y="140" text-anchor="middle" class="svg-small" fill="#0b6e5f">pieux restent élastiques</text>
+        </g>
+      </svg>
+    </div>
+    <ol class="seq-steps">
+      <li>Sous l'effort sismique F appliqué en tête par le tablier, la pile fonctionne en console : le <b>moment</b> croît linéairement et devient <b>maximal en pied</b>.</li>
+      <li>C'est là que se trouve la <b>zone critique</b>. Zoom sur une pile ancienne : quatre barres longitudinales et des cadres espacés de 30 cm ou plus, mal ancrés.</li>
+      <li>Les cycles de flexion alternée écrasent le béton comprimé : l'<b>enrobage éclate</b> et tombe. Les cadres, trop espacés et à crochets à 90°, s'ouvrent.</li>
+      <li>Plus rien ne tient les barres longitudinales : elles <b>flambent</b> vers l'extérieur, le noyau de béton s'écrase. La pile perd sa capacité portante : <b>rupture fragile</b>, la travée s'effondre.</li>
+      <li>Pile conçue selon l'EC8-2 : <b>cadres (ou spirale) serrés</b> dans toute la zone critique, <b>épingles</b> qui tiennent chaque barre, crochets à 135° ancrés dans le noyau.</li>
+      <li>Sous le même séisme, l'enrobage peut éclater localement, mais le noyau <b>confiné</b> reste intact et les barres ne flambent pas : une <b>rotule plastique</b> se forme et tourne en dissipant l'énergie.</li>
+      <li>Dimensionnement en capacité : l'effort tranchant de la pile, la semelle et les pieux sont calculés pour le moment de surrésistance <span class="tex">M_0 = \gamma_0 M_{Rd}</span>. Ils restent élastiques : la pile plie, mais ne casse pas.</li>
+    </ol>
+  </div>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Disposition</th><th>Rôle</th><th>À retenir</th></tr>
+    <tr><td><b>Longueur d'appui</b></td><td>Empêcher la chute des travées</td><td>Toujours vérifiée, même si le calcul est élastique ; ≥ 400 mm + déplacements.</td></tr>
+    <tr><td><b>Butées (taquets)</b></td><td>Limiter les déplacements transversaux (et parfois longitudinaux)</td><td>Dimensionnées en capacité ; prévoir un jeu et une plaque d'élastomère pour amortir le choc.</td></tr>
+    <tr><td><b>Dispositifs de liaison</b></td><td>Relier deux travées ou une travée à son appui</td><td>Câbles ou barres avec jeu : dispositif de sécurité, ne participe pas au calcul principal.</td></tr>
+    <tr><td><b>Appareils spéciaux</b></td><td>Isoler et amortir</td><td>Élastomère fretté à fort amortissement, élastomère à noyau de plomb, pendules à friction (§ 7.8).</td></tr>
+    <tr><td><b>Amortisseurs visqueux / bloqueurs</b></td><td>Dissiper l'énergie ou bloquer le tablier sous choc</td><td>Les « transmetteurs de choc » laissent passer la dilatation lente mais bloquent les mouvements rapides.</td></tr>
+    <tr><td><b>Confinement des piles</b></td><td>Garantir la ductilité des rotules</td><td>Cadres et épingles serrés dans la zone critique ; recouvrements interdits dans cette zone.</td></tr>
+    <tr><td><b>Joints de chaussée</b></td><td>Continuité de la chaussée</td><td>Leur souffle doit couvrir les déplacements sismiques (ou on accepte un endommagement réparable du joint selon le CPS).</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">7.7</span>Exemple chiffré complet : calcul monomodal longitudinal</h2>
+  <p>On reprend le pont du fil rouge (passage d'une route au-dessus d'une voie ferrée) dans une variante à <b>trois travées</b> en béton, tablier continu sur appareils en élastomère fretté. On suppose une zone d'aléa moyen et un sol de classe B. Toutes les données sont <b>pédagogiques</b>.</p>
+  <div class="box ex"><span class="t">Données</span>
+    <ul>
+      <li>Masse sismique du tablier (poids propre + superstructures, ψ<sub>2,1</sub> = 0) : <b>M = 900 t</b>.</li>
+      <li>Deux piles, chacune à <b>2 fûts circulaires</b> de diamètre D = 1,00 m et de hauteur H = 7 m (encastrés en pied, E = 32 000 MPa, inertie brute pour cet exemple).</li>
+      <li>Sur chaque ligne d'appui (2 culées + 2 piles) : <b>5 appareils</b> 400 × 500 mm, épaisseur d'élastomère T<sub>e</sub> = 50 mm, G = 1,2 MPa (action rapide).</li>
+      <li>Séisme : a<sub>gR</sub> = 0,15 g, pont courant γ<sub>I</sub> = 1,0, sol B, comportement élastique q = 1 (ξ = 5 %).</li>
+    </ul>
+  </div>
+  <details class="sol" open><summary>Voir la solution</summary><div class="sol-b">
+    <p><b>1. Raideur d'un appareil.</b> <span class="tex">k_a = G\,a\,b/T_e = 1\,200 \times 0{,}40 \times 0{,}50 / 0{,}050 = 4\,800\ \text{kN/m}</span> ; une ligne de 5 appareils : <span class="tex">24\,000\ \text{kN/m}</span>.</p>
+    <p><b>2. Raideur des fûts d'une pile.</b> <span class="tex">I = \pi \times 1{,}0^4/64 = 0{,}0491\ \text{m}^4</span> ; un fût : <span class="tex">3EI/H^3 = 3 \times 32\,000\,000 \times 0{,}0491/343 = 13\,739\ \text{kN/m}</span> ; deux fûts : <span class="tex">27\,477\ \text{kN/m}</span>.</p>
+    <p><b>3. Raideur d'une pile (appareils en série avec les fûts).</b> <span class="tex">K_P = 1/(1/24\,000 + 1/27\,477) = 12\,811\ \text{kN/m}</span>. Chaque culée (supposée infiniment raide) : <span class="tex">K_C = 24\,000\ \text{kN/m}</span>.</p>
+    <p><b>4. Raideur totale et période.</b> <span class="tex">K = 2 \times 24\,000 + 2 \times 12\,811 = 73\,621\ \text{kN/m}</span> ; <span class="tex">T = 2\pi\sqrt{900/73\,621} = 0{,}695\ \text{s}</span>.</p>
+    <p><b>5. Spectre.</b> Sol B : S = 1,2 ; T<sub>C</sub> = 0,5 s &lt; T &lt; T<sub>D</sub> = 2 s → branche en 1/T : <span class="tex">S_e = 2{,}5 \times 0{,}15 \times 9{,}81 \times 1{,}2 \times 1{,}0 \times 0{,}5/0{,}695 = 3{,}18\ \text{m/s}^2 \approx 0{,}324\,g</span>.</p>
+    <p><b>6. Effort total.</b> <span class="tex">F = M\,S_e = 900 \times 3{,}177 = 2\,860\ \text{kN}</span>, soit 32 % du poids du tablier.</p>
+    <p><b>7. Répartition.</b> Chaque culée : <span class="tex">2\,860 \times 24\,000/73\,621 = 932\ \text{kN}</span> ; chaque pile : <span class="tex">2\,860 \times 12\,811/73\,621 = 498\ \text{kN}</span> (vérification : 2 × 932 + 2 × 498 = 2 860 kN).</p>
+    <p><b>8. Déplacement du tablier.</b> <span class="tex">d = F/K = 2\,860/73\,621 = 0{,}0388\ \text{m} \approx 39\ \text{mm}</span> (identique à <span class="tex">S_e T^2/4\pi^2</span>). Sur une pile, il se partage entre l'appareil (498/24 000 = 20,7 mm) et la tête des fûts (498/27 477 = 18,1 mm).</p>
+    <p><b>9. Vérifications à mener.</b></p>
+    <ul>
+      <li>Distorsion des appareils de culée : <span class="tex">\tan\gamma = 38{,}8/50 = 0{,}78</span>, à comparer à la limite du guide des appareils d'appui pour la combinaison sismique (à cumuler avec la distorsion due à la température et au retrait) : un élastomère plus épais pourrait être nécessaire.</li>
+      <li>Moment en pied d'un fût : <span class="tex">M = (498/2) \times 7 = 1\,743\ \text{kN·m}</span>, à combiner avec l'effort normal permanent (diagramme d'interaction, chapitre 8).</li>
+      <li>Longueur d'appui aux culées : avec <span class="tex">d_{es} \approx 39\ \text{mm}</span> et un terme <span class="tex">d_{eg}</span> de l'ordre d'une dizaine de millimètres, <span class="tex">l_{ov} \approx 400 + 11 + 39 \approx 450\ \text{mm}</span> : c'est le minimum forfaitaire qui domine.</li>
+      <li>Direction transversale (même méthode, raideurs transversales) puis combinaison 1 / 0,3 / 0,3.</li>
+    </ul>
+    <p>Vous pouvez retrouver tous ces chiffres dans la <b>calculatrice monomodale</b> du § 7.5 (valeurs par défaut). Essayez la classe de sol D : l'effort passe à environ 4 470 kN.</p>
+  </div></details>
+  <div class="box warn"><span class="t">Ce que cet exemple ne dit pas</span>
+    Un vrai calcul tiendrait compte de la souplesse des fondations (qui allonge la période), de la raideur fissurée des fûts, de la variabilité du module G (on encadre souvent le calcul par une valeur basse et une valeur haute), et de l'interaction avec les culées (remblai). Pour un pont non régulier, l'EC8-2 impose un <b>calcul multimodal</b> spectral sur un modèle aux éléments finis (Midas Civil, Effel, etc.).
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">7.8</span>L'isolation sismique</h2>
+  <p>Plutôt que de résister au séisme, on peut l'<b>éviter</b>. Le principe de l'<span class="kw">isolation sismique</span> est double : (1) <b>allonger la période</b> du pont bien au-delà de T<sub>C</sub>, là où le spectre est faible ; (2) <b>ajouter de l'amortissement</b> pour limiter les déplacements qui en résultent. Le tablier « flotte » sur des appareils spéciaux pendant que le sol bouge sous lui.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 960 380" role="img" aria-label="Déplacement du point de fonctionnement sur le spectre par l'isolation">
+      <defs><marker id="c7f10-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#0f8f7b"/></marker></defs>
+      <rect width="960" height="380" fill="#fbfaf6"/>
+      <text x="80" y="30" class="svg-title">Spectre élastique a<tspan dy="3" font-size="10">g</tspan><tspan dy="-3"> = 0,15 g, sol B — accélération (g)</tspan></text>
+      <g stroke="#e3dfd4"><path d="M80 80 H680 M80 155 H680 M80 230 H680 M80 305 H680"/><path d="M280 60 V330 M480 60 V330 M680 60 V330"/></g>
+      <path d="M80 330 H690 M80 330 V60" stroke="#14171f"/>
+      <g class="svg-small" text-anchor="end"><text x="72" y="334">0</text><text x="72" y="284">0,1</text><text x="72" y="234">0,2</text><text x="72" y="184">0,3</text><text x="72" y="134">0,4</text><text x="72" y="84">0,5</text></g>
+      <g class="svg-small" text-anchor="middle"><text x="80" y="348">0</text><text x="280" y="348">1</text><text x="480" y="348">2</text><text x="680" y="348">3 s</text><text x="380" y="372">période T</text></g>
+      <path d="M80.0 240.0L82.0 231.0L84.0 222.0L86.0 213.0L88.0 204.0L90.0 195.0L92.0 186.0L94.0 177.0L96.0 168.0L98.0 159.0L100.0 150.0L102.0 141.0L104.0 132.0L106.0 123.0L108.0 114.0L110.0 105.0L112.0 105.0L114.0 105.0L116.0 105.0L118.0 105.0L120.0 105.0L122.0 105.0L124.0 105.0L126.0 105.0L128.0 105.0L130.0 105.0L132.0 105.0L134.0 105.0L136.0 105.0L138.0 105.0L140.0 105.0L142.0 105.0L144.0 105.0L146.0 105.0L148.0 105.0L150.0 105.0L152.0 105.0L154.0 105.0L156.0 105.0L158.0 105.0L160.0 105.0L162.0 105.0L164.0 105.0L166.0 105.0L168.0 105.0L170.0 105.0L172.0 105.0L174.0 105.0L176.0 105.0L178.0 105.0L180.0 105.0L182.0 109.4L184.0 113.7L186.0 117.7L188.0 121.7L190.0 125.5L192.0 129.1L194.0 132.6L196.0 136.0L198.0 139.3L200.0 142.5L202.0 145.6L204.0 148.5L206.0 151.4L208.0 154.2L210.0 156.9L212.0 159.5L214.0 162.1L216.0 164.6L218.0 167.0L220.0 169.3L222.0 171.5L224.0 173.8L226.0 175.9L228.0 178.0L230.0 180.0L232.0 182.0L234.0 183.9L236.0 185.8L238.0 187.6L240.0 189.4L242.0 191.1L244.0 192.8L246.0 194.5L248.0 196.1L250.0 197.6L252.0 199.2L254.0 200.7L256.0 202.2L258.0 203.6L260.0 205.0L262.0 206.4L264.0 207.7L266.0 209.0L268.0 210.3L270.0 211.6L272.0 212.8L274.0 214.0L276.0 215.2L278.0 216.4L280.0 217.5L282.0 218.6L284.0 219.7L286.0 220.8L288.0 221.8L290.0 222.9L292.0 223.9L294.0 224.9L296.0 225.8L298.0 226.8L300.0 227.7L302.0 228.6L304.0 229.6L306.0 230.4L308.0 231.3L310.0 232.2L312.0 233.0L314.0 233.8L316.0 234.7L318.0 235.5L320.0 236.3L322.0 237.0L324.0 237.8L326.0 238.5L328.0 239.3L330.0 240.0L332.0 240.7L334.0 241.4L336.0 242.1L338.0 242.8L340.0 243.5L342.0 244.1L344.0 244.8L346.0 245.4L348.0 246.0L350.0 246.7L352.0 247.3L354.0 247.9L356.0 248.5L358.0 249.1L360.0 249.6L362.0 250.2L364.0 250.8L366.0 251.3L368.0 251.9L370.0 252.4L372.0 252.9L374.0 253.5L376.0 254.0L378.0 254.5L380.0 255.0L382.0 255.5L384.0 256.0L386.0 256.5L388.0 256.9L390.0 257.4L392.0 257.9L394.0 258.3L396.0 258.8L398.0 259.2L400.0 259.7L402.0 260.1L404.0 260.6L406.0 261.0L408.0 261.4L410.0 261.8L412.0 262.2L414.0 262.6L416.0 263.0L418.0 263.4L420.0 263.8L422.0 264.2L424.0 264.6L426.0 265.0L428.0 265.3L430.0 265.7L432.0 266.1L434.0 266.4L436.0 266.8L438.0 267.2L440.0 267.5L442.0 267.8L444.0 268.2L446.0 268.5L448.0 268.9L450.0 269.2L452.0 269.5L454.0 269.8L456.0 270.2L458.0 270.5L460.0 270.8L462.0 271.1L464.0 271.4L466.0 271.7L468.0 272.0L470.0 272.3L472.0 272.6L474.0 272.9L476.0 273.2L478.0 273.5L480.0 273.8L482.0 274.3L484.0 274.9L486.0 275.4L488.0 275.9L490.0 276.5L492.0 277.0L494.0 277.5L496.0 278.0L498.0 278.5L500.0 279.0L502.0 279.5L504.0 279.9L506.0 280.4L508.0 280.9L510.0 281.3L512.0 281.8L514.0 282.2L516.0 282.7L518.0 283.1L520.0 283.5L522.0 283.9L524.0 284.3L526.0 284.8L528.0 285.2L530.0 285.6L532.0 285.9L534.0 286.3L536.0 286.7L538.0 287.1L540.0 287.5L542.0 287.8L544.0 288.2L546.0 288.6L548.0 288.9L550.0 289.3L552.0 289.6L554.0 289.9L556.0 290.3L558.0 290.6L560.0 290.9L562.0 291.3L564.0 291.6L566.0 291.9L568.0 292.2L570.0 292.5L572.0 292.8L574.0 293.1L576.0 293.4L578.0 293.7L580.0 294.0L582.0 294.3L584.0 294.6L586.0 294.8L588.0 295.1L590.0 295.4L592.0 295.7L594.0 295.9L596.0 296.2L598.0 296.5L600.0 296.7L602.0 297.0L604.0 297.2L606.0 297.5L608.0 297.7L610.0 298.0L612.0 298.2L614.0 298.4L616.0 298.7L618.0 298.9L620.0 299.1L622.0 299.4L624.0 299.6L626.0 299.8L628.0 300.0L630.0 300.2L632.0 300.5L634.0 300.7L636.0 300.9L638.0 301.1L640.0 301.3L642.0 301.5L644.0 301.7L646.0 301.9L648.0 302.1L650.0 302.3L652.0 302.5L654.0 302.7L656.0 302.9L658.0 303.1L660.0 303.2L662.0 303.4L664.0 303.6L666.0 303.8L668.0 304.0L670.0 304.1L672.0 304.3L674.0 304.5L676.0 304.7L678.0 304.8L680.0 305.0" stroke="#d9472b" stroke-width="2.6" fill="none"/>
+      <path d="M80.0 240.0L82.0 235.4L84.0 230.8L86.0 226.2L88.0 221.6L90.0 217.0L92.0 212.4L94.0 207.8L96.0 203.1L98.0 198.5L100.0 193.9L102.0 189.3L104.0 184.7L106.0 180.1L108.0 175.5L110.0 170.9L112.0 170.9L114.0 170.9L116.0 170.9L118.0 170.9L120.0 170.9L122.0 170.9L124.0 170.9L126.0 170.9L128.0 170.9L130.0 170.9L132.0 170.9L134.0 170.9L136.0 170.9L138.0 170.9L140.0 170.9L142.0 170.9L144.0 170.9L146.0 170.9L148.0 170.9L150.0 170.9L152.0 170.9L154.0 170.9L156.0 170.9L158.0 170.9L160.0 170.9L162.0 170.9L164.0 170.9L166.0 170.9L168.0 170.9L170.0 170.9L172.0 170.9L174.0 170.9L176.0 170.9L178.0 170.9L180.0 170.9L182.0 174.0L184.0 177.0L186.0 179.9L188.0 182.7L190.0 185.4L192.0 187.9L194.0 190.4L196.0 192.8L198.0 195.2L200.0 197.4L202.0 199.6L204.0 201.7L206.0 203.7L208.0 205.7L210.0 207.6L212.0 209.5L214.0 211.3L216.0 213.0L218.0 214.7L220.0 216.4L222.0 218.0L224.0 219.5L226.0 221.0L228.0 222.5L230.0 223.9L232.0 225.3L234.0 226.7L236.0 228.0L238.0 229.3L240.0 230.6L242.0 231.8L244.0 233.0L246.0 234.2L248.0 235.3L250.0 236.4L252.0 237.5L254.0 238.6L256.0 239.6L258.0 240.6L260.0 241.6L262.0 242.6L264.0 243.5L266.0 244.5L268.0 245.4L270.0 246.3L272.0 247.1L274.0 248.0L276.0 248.8L278.0 249.6L280.0 250.5L282.0 251.2L284.0 252.0L286.0 252.8L288.0 253.5L290.0 254.2L292.0 255.0L294.0 255.7L296.0 256.3L298.0 257.0L300.0 257.7L302.0 258.3L304.0 259.0L306.0 259.6L308.0 260.2L310.0 260.8L312.0 261.4L314.0 262.0L316.0 262.6L318.0 263.2L320.0 263.7L322.0 264.3L324.0 264.8L326.0 265.3L328.0 265.8L330.0 266.4L332.0 266.9L334.0 267.4L336.0 267.9L338.0 268.3L340.0 268.8L342.0 269.3L344.0 269.7L346.0 270.2L348.0 270.6L350.0 271.1L352.0 271.5L354.0 271.9L356.0 272.4L358.0 272.8L360.0 273.2L362.0 273.6L364.0 274.0L366.0 274.4L368.0 274.8L370.0 275.1L372.0 275.5L374.0 275.9L376.0 276.3L378.0 276.6L380.0 277.0L382.0 277.3L384.0 277.7L386.0 278.0L388.0 278.3L390.0 278.7L392.0 279.0L394.0 279.3L396.0 279.7L398.0 280.0L400.0 280.3L402.0 280.6L404.0 280.9L406.0 281.2L408.0 281.5L410.0 281.8L412.0 282.1L414.0 282.4L416.0 282.6L418.0 282.9L420.0 283.2L422.0 283.5L424.0 283.8L426.0 284.0L428.0 284.3L430.0 284.5L432.0 284.8L434.0 285.1L436.0 285.3L438.0 285.6L440.0 285.8L442.0 286.0L444.0 286.3L446.0 286.5L448.0 286.8L450.0 287.0L452.0 287.2L454.0 287.5L456.0 287.7L458.0 287.9L460.0 288.1L462.0 288.4L464.0 288.6L466.0 288.8L468.0 289.0L470.0 289.2L472.0 289.4L474.0 289.6L476.0 289.8L478.0 290.0L480.0 290.2L482.0 290.6L484.0 291.0L486.0 291.4L488.0 291.8L490.0 292.1L492.0 292.5L494.0 292.9L496.0 293.2L498.0 293.6L500.0 293.9L502.0 294.3L504.0 294.6L506.0 294.9L508.0 295.3L510.0 295.6L512.0 295.9L514.0 296.2L516.0 296.5L518.0 296.8L520.0 297.1L522.0 297.4L524.0 297.7L526.0 298.0L528.0 298.3L530.0 298.6L532.0 298.9L534.0 299.1L536.0 299.4L538.0 299.7L540.0 299.9L542.0 300.2L544.0 300.4L546.0 300.7L548.0 300.9L550.0 301.2L552.0 301.4L554.0 301.7L556.0 301.9L558.0 302.1L560.0 302.4L562.0 302.6L564.0 302.8L566.0 303.1L568.0 303.3L570.0 303.5L572.0 303.7L574.0 303.9L576.0 304.1L578.0 304.3L580.0 304.5L582.0 304.7L584.0 304.9L586.0 305.1L588.0 305.3L590.0 305.5L592.0 305.7L594.0 305.9L596.0 306.1L598.0 306.3L600.0 306.5L602.0 306.6L604.0 306.8L606.0 307.0L608.0 307.2L610.0 307.3L612.0 307.5L614.0 307.7L616.0 307.8L618.0 308.0L620.0 308.2L622.0 308.3L624.0 308.5L626.0 308.7L628.0 308.8L630.0 309.0L632.0 309.1L634.0 309.3L636.0 309.4L638.0 309.6L640.0 309.7L642.0 309.9L644.0 310.0L646.0 310.1L648.0 310.3L650.0 310.4L652.0 310.5L654.0 310.7L656.0 310.8L658.0 311.0L660.0 311.1L662.0 311.2L664.0 311.3L666.0 311.5L668.0 311.6L670.0 311.7L672.0 311.8L674.0 312.0L676.0 312.1L678.0 312.2L680.0 312.3" stroke="#0f8f7b" stroke-width="2.6" fill="none" stroke-dasharray="8 5"/>
+      <path d="M228 174 L568 298" stroke="#0f8f7b" stroke-width="2" stroke-dasharray="2 5" fill="none" marker-end="url(#c7f10-ar)"/>
+      <circle cx="219" cy="168" r="7" fill="#d9472b" stroke="#fff" stroke-width="2"/>
+      <circle cx="580" cy="304.5" r="7" fill="#0f8f7b" stroke="#fff" stroke-width="2"/>
+      <text x="236" y="150" class="svg-small" fill="#a6463a">pont classique</text>
+      <text x="236" y="164" class="svg-small" fill="#a6463a">T = 0,70 s → 0,32 g</text>
+      <text x="586" y="250" class="svg-small" fill="#0b6e5f">pont isolé</text>
+      <text x="586" y="264" class="svg-small" fill="#0b6e5f">T = 2,5 s ; ξ = 15 %</text>
+      <text x="586" y="278" class="svg-small" fill="#0b6e5f">→ 0,05 g</text>
+      <text x="112" y="98" class="svg-small" fill="#d9472b">ξ = 5 %</text>
+      <text x="104" y="194" class="svg-small" fill="#0f8f7b">ξ = 15 % (η = 0,71)</text>
+      <rect x="710" y="70" width="230" height="250" rx="12" fill="#fff" stroke="#e3dfd4"/>
+      <text x="726" y="96" class="svg-title">Bilan (spectre élastique)</text>
+      <text x="726" y="124" class="svg-label">Effort : ÷ 6 environ</text>
+      <text x="726" y="142" class="svg-small">0,324 g → 0,051 g</text>
+      <text x="726" y="172" class="svg-label">Déplacement : × 2 environ</text>
+      <text x="726" y="190" class="svg-small">39 mm → 79 mm</text>
+      <text x="726" y="222" class="svg-small">Le prix à payer : des joints</text>
+      <text x="726" y="238" class="svg-small">de chaussée à grand souffle,</text>
+      <text x="726" y="254" class="svg-small">des longueurs d'appui accrues</text>
+      <text x="726" y="270" class="svg-small">et des appareils spéciaux</text>
+      <text x="726" y="286" class="svg-small">(contrôlés et remplaçables).</text>
+    </svg>
+    <figcaption><b>Figure 7.10 —</b> L'isolation fait glisser le « point de fonctionnement » du pont vers la droite du spectre (période longue) et vers le bas (amortissement accru). Valeurs calculées avec les formules EC8 pour le pont de l'exemple § 7.7. L'effort s'effondre, le déplacement augmente : il faut lui faire de la place.</figcaption>
+  </figure>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Dispositif</th><th>Principe</th><th>Remarque</th></tr>
+    <tr><td><b>Élastomère fretté à fort amortissement</b></td><td>Caoutchouc spécial dissipant de l'ordre de 10 à 15 % d'amortissement</td><td>Simple, proche des appareils courants.</td></tr>
+    <tr><td><b>Élastomère à noyau de plomb</b></td><td>Le noyau de plomb se plastifie et dissipe l'énergie ; l'élastomère recentre</td><td>Très répandu (Nouvelle-Zélande, États-Unis, Japon).</td></tr>
+    <tr><td><b>Pendule à friction</b></td><td>Le tablier glisse sur une surface sphérique de rayon R : <span class="tex">T = 2\pi\sqrt{R/g}</span>, indépendante de la masse ; le frottement dissipe l'énergie</td><td>R = 2,5 m donne T ≈ 3,2 s.</td></tr>
+    <tr><td><b>Amortisseurs visqueux</b></td><td>Vérins hydrauliques qui freinent les mouvements rapides</td><td>Souvent associés à des appareils glissants.</td></tr>
+  </table></div>
+
+  <div class="box note"><span class="t">Pour aller plus loin</span>
+    L'EC8-2 consacre un chapitre spécifique aux ponts isolés (chapitre 7 de l'EN 1998-2) : calcul avec une raideur effective et un amortissement effectif, essais de qualification des isolateurs (EN 15129), vérification de la capacité de recentrage. L'isolation est particulièrement intéressante pour les ponts lourds sur piles raides, en zone de forte sismicité.
+  </div>
+
+  <div class="video"><video controls preload="none" poster="../../videos/ps28-verinage-aa.jpg" src="../../videos/ps28-verinage-aa.mp4"></video><div class="cap">Vérinage du tablier du PS28 pour remplacer ses appareils d'appui. La même opération permet de remplacer des appareils courants par des isolateurs lors d'un renforcement parasismique : le tablier est soulevé de quelques millimètres sur vérins, les anciens appareils sont extraits et les nouveaux mis en place.</div></div>
+</section>
+
+<section>
+  <div class="keys">
+    <h3>À retenir</h3>
+    <ul>
+      <li>Le séisme crée des <b>forces d'inertie</b> : c'est la masse du tablier, mise en mouvement, qui charge les appuis.</li>
+      <li>Période propre <span class="tex">T = 2\pi\sqrt{M/K}</span> ; amortissement du béton ≈ 5 % ; la résonance amplifie la réponse.</li>
+      <li>Le <b>spectre</b> donne l'accélération maximale en fonction de T. EC8 : plateau <span class="tex">2{,}5\,a_g S \eta</span> entre T<sub>B</sub> et T<sub>C</sub>, puis branches en 1/T et 1/T².</li>
+      <li><span class="tex">a_g = \gamma_I a_{gR}</span> (γ<sub>I</sub> ≈ 1,3 / 1,0 / 0,85) ; q ≈ 1 pour un pont sur élastomère, jusqu'à 3,5 pour des piles ductiles en flexion.</li>
+      <li>Monomodal : <span class="tex">K = \sum K_i</span> (série appareil + pile), <span class="tex">F = M S_d(T)</span>, <span class="tex">F_i = F K_i/K</span>, <span class="tex">d = S_d T^2/4\pi^2</span>.</li>
+      <li>Dimensionnement en capacité : on choisit la rotule (pied de pile), on la confine, et tout le reste est dimensionné pour <span class="tex">\gamma_0 M_{Rd}</span>.</li>
+      <li>Les dispositions qui sauvent : <b>longueur d'appui</b> (≥ 400 mm + déplacements), butées, confinement, joints adaptés ; l'isolation allonge T et ajoute de l'amortissement.</li>
+      <li>Au Maroc, le référentiel sismique d'un pont est fixé par le <b>CPS</b> (souvent l'EC8-2) ; le RPS 2000 concerne les bâtiments.</li>
+    </ul>
+  </div>
+
+  <div class="quiz" data-title="Testez-vous — chapitre 7">
+    <div class="q" data-a="1"><p class="qq">1. On double la masse du tablier sans changer les appuis. La période propre…</p>
+      <div class="opts"><button>double</button><button>est multipliée par √2 ≈ 1,41</button><button>est divisée par 2</button></div>
+      <p class="q-exp"><span class="tex">T = 2\pi\sqrt{M/K}</span> : T varie comme la racine de la masse.</p></div>
+    <div class="q" data-a="2"><p class="qq">2. Sur le spectre EC8, entre T<sub>B</sub> et T<sub>C</sub>, l'accélération spectrale élastique vaut…</p>
+      <div class="opts"><button>a<sub>g</sub>·S</button><button>a<sub>g</sub>·S·T<sub>C</sub>/T</button><button>2,5·a<sub>g</sub>·S·η</button></div>
+      <p class="q-exp">C'est le plateau du spectre : l'oscillateur amplifie 2,5 fois l'accélération du sol (pour ξ = 5 %).</p></div>
+    <div class="q" data-a="0"><p class="qq">3. Pourquoi un appareil en élastomère et le fût d'une pile sont-ils combinés « en série » ?</p>
+      <div class="opts"><button>Parce qu'ils transmettent le même effort et que leurs déplacements s'ajoutent</button><button>Parce qu'ils subissent le même déplacement</button><button>Parce qu'ils ont la même raideur</button></div>
+      <p class="q-exp">L'effort passe par l'appareil puis par le fût : les souplesses s'ajoutent, <span class="tex">1/K = 1/k_a + 1/k_p</span>.</p></div>
+    <div class="q" data-a="1"><p class="qq">4. Quel est le mode de ruine le plus fréquent des ponts à travées indépendantes lors des grands séismes ?</p>
+      <div class="opts"><button>La rupture du tablier en flexion</button><button>La chute de travée par perte d'appui</button><button>Le soulèvement des culées</button></div>
+      <p class="q-exp">Le déplacement relatif dépasse la longueur d'appui : d'où l'exigence d'une longueur minimale <span class="tex">l_{ov}</span>.</p></div>
+    <div class="q" data-a="2"><p class="qq">5. Le dimensionnement en capacité consiste à…</p>
+      <div class="opts"><button>dimensionner toute la structure pour rester élastique</button><button>augmenter partout les sections de 35 %</button><button>choisir et rendre ductiles les zones plastiques, puis dimensionner le reste pour l'effort qu'elles peuvent transmettre</button></div>
+      <p class="q-exp">C'est l'analogie de la chaîne : un maillon ductile choisi, les autres plus résistants que lui (surrésistance γ<sub>0</sub>).</p></div>
+    <div class="q" data-a="0"><p class="qq">6. L'isolation sismique d'un pont…</p>
+      <div class="opts"><button>allonge la période et augmente l'amortissement : l'effort baisse, le déplacement augmente</button><button>raccourcit la période pour fuir la résonance</button><button>supprime tout déplacement du tablier</button></div>
+      <p class="q-exp">Le point de fonctionnement glisse vers la droite et vers le bas du spectre ; il faut des joints et des longueurs d'appui adaptés au déplacement.</p></div>
+    <div class="q" data-a="1"><p class="qq">7. Pour un pont courant sur un projet marocain, le référentiel sismique applicable est…</p>
+      <div class="opts"><button>obligatoirement le RPS 2000, conçu pour les ponts</button><button>celui que fixe le CPS du projet, souvent l'Eurocode 8-2 ou le guide SETRA</button><button>aucun : les ponts courants ne sont pas justifiés au séisme</button></div>
+      <p class="q-exp">Le RPS 2000 vise les bâtiments ; pour les ouvrages d'art, le CPS impose le référentiel et les paramètres sismiques du site.</p></div>
+    <div class="q" data-a="2"><p class="qq">8. Un pont a T = 0,7 s sur un sol B, a<sub>g</sub> = 0,15 g. Si l'on remplace le sol B par un sol D, l'effort sismique…</p>
+      <div class="opts"><button>diminue, car le sol mou amortit</button><button>reste identique</button><button>augmente nettement (S et T<sub>C</sub> plus grands)</button></div>
+      <p class="q-exp">Sol D : S = 1,35 et T<sub>C</sub> = 0,8 s → le pont est sur le plateau : 0,506 g au lieu de 0,324 g.</p></div>
+  </div>
+</section>
+
+</article>
+</div>
+
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/cours.js"></script>
+<script>
+(function () {
+  "use strict";
+  var C = window.Cours || {};
+  var fmt = C.fmt || function (x, d) { return isFinite(x) ? Number(x).toFixed(d) : "—"; };
+  var g = 9.81;
+  var SOILS = { A: [1.0, 0.15, 0.4, 2.0], B: [1.2, 0.15, 0.5, 2.0], C: [1.15, 0.2, 0.6, 2.0], D: [1.35, 0.2, 0.8, 2.0], E: [1.4, 0.15, 0.5, 2.0] };
+  function byId(id) { return document.getElementById(id); }
+  function num(id, def) { var e = byId(id); if (!e) return def; var v = parseFloat(String(e.value).replace(",", ".")); return isFinite(v) ? v : def; }
+  function setT(id, t) { var e = byId(id); if (e) e.innerHTML = t; }
+  function tf(x, d) { return fmt(x, d).replace(/,/g, "{,}").replace(/\s/g, "\\,"); }
+  function tex(el) { if (el && C.renderTex) C.renderTex(el); }
+
+  /* Spectre élastique EC8 (EN 1998-1 3.2.2.2) — ag en m/s², xi en % */
+  function Se(T, ag, s, xi) {
+    var p = SOILS[s] || SOILS.B, S = p[0], TB = p[1], TC = p[2], TD = p[3];
+    var eta = Math.max(0.55, Math.sqrt(10 / (5 + xi)));
+    if (T <= TB) return ag * S * (1 + T / TB * (2.5 * eta - 1));
+    if (T <= TC) return ag * S * eta * 2.5;
+    if (T <= TD) return ag * S * eta * 2.5 * TC / T;
+    return ag * S * eta * 2.5 * TC * TD / (T * T);
+  }
+  /* Spectre de calcul EC8 (EN 1998-1 3.2.2.5), beta = 0,2 */
+  function Sd(T, ag, s, q) {
+    var p = SOILS[s] || SOILS.B, S = p[0], TB = p[1], TC = p[2], TD = p[3], b = 0.2 * ag;
+    if (T <= TB) return ag * S * (2 / 3 + T / TB * (2.5 / q - 2 / 3));
+    if (T <= TC) return ag * S * 2.5 / q;
+    if (T <= TD) return Math.max(b, ag * S * 2.5 / q * TC / T);
+    return Math.max(b, ag * S * 2.5 / q * TC * TD / (T * T));
+  }
+  window.C7 = { Se: Se, Sd: Sd };
+
+  /* ───────── 1. Simulateur ───────── */
+  (function () {
+    var svg = byId("c7s-svg"); if (!svg) return;
+    var running = false, raf = 0, t = 0, u = 0, v = 0, umax = 0, last = 0, buf = [], zc = [], prevU = 0, tEnd = 1e9;
+    var P = {};
+    var eqC = [];
+    (function () { var seed = 11; function r() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      for (var k = 0; k < 30; k++) { var fr = 0.4 * Math.pow(10, r() * 1.2); eqC.push([fr, 1 / Math.sqrt(1 + Math.pow(1.2 / fr, 4)) / (1 + fr / 8), r() * 6.283]); } })();
+    var eqMax = 1;
+    (function () { var m = 0; for (var i = 0; i < 2400; i++) { var a = eqRaw(i * 0.005); if (Math.abs(a) > m) m = Math.abs(a); } eqMax = m || 1; })();
+    function eqRaw(tt) { var env = tt < 2 ? tt / 2 : (tt < 6 ? 1 : Math.exp(-(tt - 6) / 2.5)); if (tt > 12) env = 0; var a = 0; for (var k = 0; k < eqC.length; k++) a += eqC[k][1] * Math.sin(2 * Math.PI * eqC[k][0] * tt + eqC[k][2]); return env * a; }
+    function params() {
+      var M = Math.max(1, num("c7s-M", 300)), H = Math.max(0.5, num("c7s-H", 8)), D = Math.max(0.1, num("c7s-D", 1.2));
+      var xi = Math.max(0, num("c7s-xi", 5)) / 100, f = Math.max(0.05, num("c7s-f", 1)), a = Math.max(0, num("c7s-a", 0.1));
+      var typ = (byId("c7s-type") || {}).value || "sin";
+      var I = Math.PI * Math.pow(D, 4) / 64, K = 3 * 32e6 * I / Math.pow(H, 3);
+      var w = Math.sqrt(K / M);
+      P = { M: M, H: H, D: D, xi: xi, f: f, a: a, typ: typ, K: K, w: w, T: 2 * Math.PI / w, fn: w / (2 * Math.PI) };
+      setT("c7s-K", fmt(K, 0) + " kN/m");
+      setT("c7s-fn", fmt(P.fn, 2) + " Hz");
+      setT("c7s-T", fmt(P.T, 3) + " s");
+      setT("c7s-r", typ === "sin" ? fmt(f / P.fn, 2) : "—");
+    }
+    function ag(tt) {
+      if (P.typ === "sin") return P.a * g * Math.sin(2 * Math.PI * P.f * tt);
+      if (P.typ === "imp") return tt < 0.15 ? P.a * g * Math.sin(Math.PI * tt / 0.15) : 0;
+      return P.a * g * eqRaw(tt) / eqMax;
+    }
+    function draw() {
+      var sc = 600; // px par m
+      var ux = Math.max(-150, Math.min(150, u * sc));
+      var agv = ag(t), gx = P.a > 0 ? agv / (P.a * g) * 6 : 0;
+      var x0 = 210 + gx, top = 90, base = 250;
+      var cx = x0 + ux;
+      var pier = "M" + (x0 - 14) + " " + base + " C" + (x0 - 14) + " " + (base - 90) + " " + (cx - 14) + " " + (top + 60) + " " + (cx - 14) + " " + top +
+        " L" + (cx + 14) + " " + top + " C" + (cx + 14) + " " + (top + 60) + " " + (x0 + 14) + " " + (base - 90) + " " + (x0 + 14) + " " + base + " Z";
+      var h = '<rect x="0" y="0" width="960" height="300" fill="#f4f7fb"/>';
+      h += '<g transform="translate(' + gx.toFixed(1) + ' 0)"><rect x="-20" y="250" width="460" height="50" fill="#ead7bd"/>';
+      for (var i = 0; i < 22; i++) h += '<circle cx="' + (i * 20 + 6) + '" cy="' + (262 + (i % 3) * 10) + '" r="1.4" fill="#c9a77a"/>';
+      h += '<rect x="' + (210 - 50) + '" y="244" width="100" height="14" fill="#9aa3ae" stroke="#5d6672"/></g>';
+      h += '<path d="M210 70 V250" stroke="#a8842a" stroke-dasharray="4 4"/>';
+      h += '<path d="' + pier + '" fill="#cfd5dc" stroke="#6e7884"/>';
+      h += '<rect x="' + (cx - 110).toFixed(1) + '" y="' + (top - 30) + '" width="220" height="30" rx="3" fill="#b9c2cc" stroke="#6e7884"/>';
+      h += '<rect x="' + (cx - 110).toFixed(1) + '" y="' + (top - 34) + '" width="220" height="5" fill="#3c4049"/>';
+      h += '<text x="' + cx.toFixed(1) + '" y="' + (top - 10) + '" text-anchor="middle" class="svg-small">M = ' + fmt(P.M, 0) + ' t</text>';
+      h += '<text x="20" y="24" class="svg-small">déplacement affiché × ' + (sc / 100).toFixed(0) + ' (échelle cm → px)</text>';
+      h += '<text x="20" y="290" class="svg-small" fill="#d9472b">sol : ' + (P.typ === "sin" ? "sinus " + fmt(P.f, 2) + " Hz" : P.typ === "imp" ? "impulsion" : "séisme synthétique") + '</text>';
+      // graphe
+      var X0 = 460, W = 480, Y0 = 150, span = 8;
+      h += '<rect x="450" y="20" width="500" height="260" rx="10" fill="#fff" stroke="#e3dfd4"/>';
+      h += '<path d="M' + X0 + ' ' + Y0 + ' H' + (X0 + W) + '" stroke="#e3dfd4"/>';
+      var m = 0.001; for (var j = 0; j < buf.length; j++) m = Math.max(m, Math.abs(buf[j][1]));
+      var ys = 100 / m, d = "";
+      for (var k = 0; k < buf.length; k++) { var xx = X0 + W - (t - buf[k][0]) / span * W; if (xx < X0) continue; d += (d ? "L" : "M") + xx.toFixed(1) + " " + (Y0 - buf[k][1] * ys).toFixed(1); }
+      if (d) h += '<path d="' + d + '" stroke="#2d6be4" stroke-width="1.8" fill="none"/>';
+      h += '<text x="' + (X0 + 4) + '" y="38" class="svg-small">déplacement relatif u(t) — 8 dernières secondes</text>';
+      h += '<text x="' + (X0 + W - 4) + '" y="38" text-anchor="end" class="svg-small" fill="#2d6be4">échelle ± ' + fmt(m * 100, 1) + ' cm</text>';
+      h += '<text x="' + (X0 + W - 4) + '" y="272" text-anchor="end" class="svg-small">t = ' + fmt(t, 1) + ' s</text>';
+      svg.innerHTML = h;
+    }
+    function step(now) {
+      if (!running) return;
+      var dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      var n = Math.max(1, Math.round(dt * 2000)), hh = dt / n;
+      for (var i = 0; i < n; i++) {
+        var a = -ag(t) - 2 * P.xi * P.w * v - P.w * P.w * u;
+        v += a * hh; u += v * hh; t += hh;
+        if (prevU < 0 && u >= 0) { zc.push(t); if (zc.length > 6) zc.shift(); }
+        prevU = u;
+        if (Math.abs(u) > umax) umax = Math.abs(u);
+      }
+      buf.push([t, u]); while (buf.length && buf[0][0] < t - 8.2) buf.shift();
+      setT("c7s-u", fmt(umax * 100, 2) + " cm");
+      setT("c7s-F", fmt(P.K * umax, 0) + " kN");
+      if (zc.length >= 3) setT("c7s-Tm", fmt((zc[zc.length - 1] - zc[0]) / (zc.length - 1), 3) + " s");
+      draw();
+      if (t > tEnd) { stop(); return; }
+      raf = requestAnimationFrame(step);
+    }
+    function start() {
+      params(); stop(); t = 0; u = 0; v = 0; umax = 0; buf = []; zc = []; prevU = 0;
+      tEnd = P.typ === "sin" ? 40 : (P.typ === "imp" ? 20 : 16);
+      running = true; last = performance.now();
+      var st = byId("c7s-steps");
+      if (st) {
+        var txt = 'Intégration numérique de <span class="tex">\\ddot u = -\\ddot u_g - 2\\xi\\omega\\dot u - \\omega^2 u</span> avec <span class="tex">\\omega = ' + tf(P.w, 2) + '\\ \\text{rad/s}</span>. ';
+        if (P.typ === "sin") { var r = P.f / P.fn, Dd = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * P.xi * r, 2)); txt += 'Régime permanent théorique : <span class="tex">u_{max} = \\dfrac{a_g}{\\omega^2}\\,D = ' + tf(P.a * g / (P.w * P.w) * Dd * 100, 2) + '\\ \\text{cm}</span> (D = ' + tf(Dd, 2) + ').'; }
+        else if (P.typ === "imp") txt += "Après le choc, le pont vibre librement : la période mesurée doit égaler T.";
+        else txt += "Séisme synthétique : le maximum dépend de la position de T dans le contenu fréquentiel du signal.";
+        st.innerHTML = txt; st.removeAttribute("data-done"); tex(st);
+      }
+      raf = requestAnimationFrame(step);
+    }
+    function stop() { running = false; cancelAnimationFrame(raf); }
+    ["c7s-M", "c7s-H", "c7s-D", "c7s-xi", "c7s-f", "c7s-a", "c7s-type"].forEach(function (id) { var e = byId(id); if (e) e.addEventListener("input", function () { params(); if (!running) draw(); }); });
+    var go = byId("c7s-go"); if (go) go.addEventListener("click", start);
+    var sp = byId("c7s-stop"); if (sp) sp.addEventListener("click", stop);
+    var rs = byId("c7s-res"); if (rs) rs.addEventListener("click", function () { params(); var f = byId("c7s-f"), ty = byId("c7s-type"); if (ty) ty.value = "sin"; if (f) f.value = P.fn.toFixed(3); start(); });
+    params(); draw();
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting && running) stop(); }); }).observe(svg);
+    }
+  })();
+
+  /* ───────── 2. Spectre interactif ───────── */
+  (function () {
+    var svg = byId("c7p-svg"); if (!svg) return;
+    function upd() {
+      var agR = Math.max(0, num("c7p-ag", 0.15)), gi = num("c7p-gi", 1), s = (byId("c7p-sol") || {}).value || "B";
+      var xi = Math.max(0, num("c7p-xi", 5)), q = Math.max(1, num("c7p-q", 1)), T = Math.min(4, Math.max(0, num("c7p-T", 0.7)));
+      var p = SOILS[s] || SOILS.B, ag = gi * agR * g, eta = Math.max(0.55, Math.sqrt(10 / (5 + xi)));
+      var se = Se(T, ag, s, xi), sd = Sd(T, ag, s, q), pl = 2.5 * ag * p[0] * eta;
+      setT("c7p-agd", fmt(gi * agR, 3) + " g = " + fmt(ag, 2) + " m/s²");
+      setT("c7p-par", fmt(p[0], 2) + " ; " + fmt(p[1], 2) + " ; " + fmt(p[2], 2) + " ; " + fmt(p[3], 1) + " s");
+      setT("c7p-eta", fmt(eta, 3));
+      setT("c7p-pl", fmt(pl / g, 3) + " g");
+      setT("c7p-se", fmt(se / g, 3) + " g (" + fmt(se, 2) + " m/s²)");
+      setT("c7p-sd", fmt(sd / g, 3) + " g");
+      var br = T <= p[1] ? "0 \\le T \\le T_B" : T <= p[2] ? "T_B \\le T \\le T_C" : T <= p[3] ? "T_C \\le T \\le T_D" : "T \\ge T_D";
+      var st = byId("c7p-steps");
+      if (st) {
+        st.innerHTML = 'Branche : <span class="tex">' + br + '</span>.<br>' +
+          (T > p[2] && T <= p[3] ? '<span class="tex">S_e = 2{,}5\\,a_g S \\eta\\,T_C/T = 2{,}5 \\times ' + tf(ag, 3) + ' \\times ' + tf(p[0], 2) + ' \\times ' + tf(eta, 3) + ' \\times ' + tf(p[2], 2) + '/' + tf(T, 2) + '</span><br><span class="tex">S_e = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>' :
+            T > p[1] && T <= p[2] ? '<span class="tex">S_e = 2{,}5\\,a_g S \\eta = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>' :
+            '<span class="tex">S_e(T) = ' + tf(se, 3) + '\\ \\text{m/s}^2</span>') +
+          (q > 1 ? '<br>Avec q = ' + tf(q, 1) + ' : <span class="tex">S_d = ' + tf(sd, 3) + '\\ \\text{m/s}^2</span> (plancher <span class="tex">0{,}2\\,a_g</span>).' : '');
+        tex(st);
+      }
+      // dessin
+      var X0 = 70, W = 860, Y0 = 280, H = 240, Tm = 4;
+      var ymax = Math.max(0.05, pl / g * 1.15);
+      var nice = [0.05, 0.1, 0.2, 0.25, 0.5, 1]; var stp = nice[nice.length - 1]; for (var i = 0; i < nice.length; i++) { if (ymax / nice[i] <= 6) { stp = nice[i]; break; } }
+      ymax = Math.ceil(ymax / stp) * stp;
+      function X(tt) { return X0 + tt / Tm * W; } function Y(a) { return Y0 - a / ymax * H; }
+      var h = '<rect width="960" height="320" fill="#fbfaf6"/>';
+      for (var yv = 0; yv <= ymax + 1e-9; yv += stp) { h += '<path d="M' + X0 + ' ' + Y(yv).toFixed(1) + ' H' + (X0 + W) + '" stroke="#e3dfd4"/><text x="' + (X0 - 6) + '" y="' + (Y(yv) + 4).toFixed(1) + '" text-anchor="end" class="svg-small">' + fmt(yv, stp < 0.1 ? 2 : (stp < 1 ? 2 : 1)) + '</text>'; }
+      for (var tt = 0; tt <= Tm; tt += 0.5) h += '<text x="' + X(tt).toFixed(1) + '" y="' + (Y0 + 16) + '" text-anchor="middle" class="svg-small">' + fmt(tt, 1) + '</text>';
+      h += '<path d="M' + X0 + ' ' + Y0 + ' H' + (X0 + W) + ' M' + X0 + ' ' + Y0 + ' V' + (Y0 - H - 6) + '" stroke="#14171f"/>';
+      h += '<text x="' + (X0 + W) + '" y="' + (Y0 + 32) + '" text-anchor="end" class="svg-small">T (s)</text><text x="' + (X0 + 4) + '" y="22" class="svg-small">accélération spectrale (g)</text>';
+      [[p[1], "TB"], [p[2], "TC"], [p[3], "TD"]].forEach(function (a) { h += '<path d="M' + X(a[0]).toFixed(1) + ' ' + Y0 + ' V' + (Y0 - H) + '" stroke="#a8842a" stroke-dasharray="4 4"/><text x="' + X(a[0]).toFixed(1) + '" y="' + (Y0 - H - 6) + '" text-anchor="middle" class="svg-small" fill="#a8842a">' + a[1] + '</text>'; });
+      var d1 = "", d2 = "";
+      for (var k = 0; k <= 400; k++) { var T1 = k / 400 * Tm; d1 += (k ? "L" : "M") + X(T1).toFixed(1) + " " + Y(Se(T1, ag, s, xi) / g).toFixed(1); d2 += (k ? "L" : "M") + X(T1).toFixed(1) + " " + Y(Sd(T1, ag, s, q) / g).toFixed(1); }
+      h += '<path d="' + d1 + '" stroke="#d9472b" stroke-width="2.6" fill="none"/>';
+      if (q > 1) h += '<path d="' + d2 + '" stroke="#0f8f7b" stroke-width="2.4" stroke-dasharray="8 5" fill="none"/>';
+      var px = X(T), py = Y(se / g);
+      h += '<path d="M' + px.toFixed(1) + ' ' + Y0 + ' V' + py.toFixed(1) + ' H' + X0 + '" stroke="#14171f" stroke-dasharray="3 3" fill="none"/>';
+      h += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="6" fill="#14171f" stroke="#fff" stroke-width="2"/>';
+      if (q > 1) h += '<circle cx="' + px.toFixed(1) + '" cy="' + Y(sd / g).toFixed(1) + '" r="5" fill="#0f8f7b" stroke="#fff" stroke-width="2"/>';
+      var lx = Math.min(px + 10, X0 + W - 150);
+      h += '<text x="' + lx.toFixed(1) + '" y="' + Math.max(36, py - 10).toFixed(1) + '" class="svg-label">Se = ' + fmt(se / g, 3) + ' g</text>';
+      svg.innerHTML = h;
+    }
+    ["c7p-ag", "c7p-gi", "c7p-sol", "c7p-xi", "c7p-q", "c7p-T"].forEach(function (id) { var e = byId(id); if (e) { e.addEventListener("input", upd); e.addEventListener("change", upd); } });
+    upd();
+  })();
+
+  /* ───────── 3. Calcul monomodal ───────── */
+  (function () {
+    var svg = byId("c7m-svg"); if (!svg) return;
+    function upd() {
+      var M = Math.max(1, num("c7m-M", 900)), np = Math.max(0, Math.min(6, Math.round(num("c7m-np", 2)))), nf = Math.max(1, Math.round(num("c7m-nf", 2)));
+      var D = Math.max(0.1, num("c7m-D", 1)), H = Math.max(0.5, num("c7m-H", 7)), E = Math.max(1000, num("c7m-E", 32000)), phi = num("c7m-phi", 1);
+      var n = Math.max(1, Math.round(num("c7m-n", 5))), a = Math.max(10, num("c7m-a", 400)) / 1000, b = Math.max(10, num("c7m-b", 500)) / 1000, te = Math.max(1, num("c7m-te", 50)) / 1000, G = Math.max(0.1, num("c7m-G", 1.2));
+      var agR = Math.max(0, num("c7m-ag", 0.15)), gi = num("c7m-gi", 1), s = (byId("c7m-sol") || {}).value || "B", q = Math.max(1, num("c7m-q", 1));
+      var ka = G * 1000 * a * b / te, kline = n * ka;
+      var I = Math.PI * Math.pow(D, 4) / 64, kf = nf * 3 * E * 1000 * I * phi / Math.pow(H, 3);
+      var Kp = 1 / (1 / kline + 1 / kf), Kc = kline;
+      var lines = [{ n: "C0", K: Kc, pile: false }];
+      for (var i = 0; i < np; i++) lines.push({ n: "P" + (i + 1), K: Kp, pile: true });
+      lines.push({ n: "C" + (np + 1), K: Kc, pile: false });
+      var K = 0; lines.forEach(function (l) { K += l.K; });
+      var T = 2 * Math.PI * Math.sqrt(M / K), ag = gi * agR * g;
+      var sa = q > 1 ? Sd(T, ag, s, q) : Se(T, ag, s, 5);
+      var F = M * sa, dEd = F / K;
+      var TC = (SOILS[s] || SOILS.B)[2], T0 = 1.25 * TC, mud = q > 1 ? (T >= T0 ? q : Math.min((q - 1) * T0 / T + 1, 5 * q - 4)) : 1;
+      var d = mud * dEd;
+      lines.forEach(function (l) { l.F = F * l.K / K; });
+      var Mb = np ? lines[1].F / nf * H : NaN;
+      setT("c7m-ka", fmt(ka, 0) + " kN/m (ligne : " + fmt(kline, 0) + ")");
+      setT("c7m-kp", np ? fmt(kf, 0) + " kN/m" : "—");
+      setT("c7m-ki", fmt(Kc, 0) + " / " + (np ? fmt(Kp, 0) : "—") + " kN/m");
+      setT("c7m-K", fmt(K, 0) + " kN/m");
+      setT("c7m-T", fmt(T, 3) + " s");
+      setT("c7m-sd", fmt(sa / g, 3) + " g = " + fmt(sa, 2) + " m/s²");
+      setT("c7m-F", fmt(F, 0) + " kN (" + fmt(F / (M * g) * 100, 0) + " % du poids)");
+      setT("c7m-d", fmt(d * 1000, 1) + " mm" + (q > 1 ? " (μd = " + fmt(mud, 2) + ")" : ""));
+      setT("c7m-gam", fmt(d / te, 2));
+      setT("c7m-Mb", np ? fmt(Mb, 0) + " kN·m" : "—");
+      var st = byId("c7m-steps");
+      if (st) {
+        st.innerHTML = '<span class="tex">k_a = \\dfrac{G a b}{T_e} = \\dfrac{' + tf(G * 1000, 0) + ' \\times ' + tf(a, 2) + ' \\times ' + tf(b, 2) + '}{' + tf(te, 3) + '} = ' + tf(ka, 0) + '</span> kN/m' +
+          (np ? ' ; <span class="tex">\\dfrac{1}{K_P} = \\dfrac{1}{' + tf(kline, 0) + '} + \\dfrac{1}{' + tf(kf, 0) + '}</span> → <span class="tex">K_P = ' + tf(Kp, 0) + '</span>' : '') +
+          '<br><span class="tex">T = 2\\pi\\sqrt{' + tf(M, 0) + '/' + tf(K, 0) + '} = ' + tf(T, 3) + '\\ \\text{s}</span> ; <span class="tex">F = ' + tf(M, 0) + ' \\times ' + tf(sa, 3) + ' = ' + tf(F, 0) + '\\ \\text{kN}</span>' +
+          ' ; <span class="tex">d = F/K' + (q > 1 ? ' \\times \\mu_d' : '') + ' = ' + tf(d * 1000, 1) + '\\ \\text{mm}</span>';
+        tex(st);
+      }
+      // barres
+      var N = lines.length, X0 = 80, W = 800, base = 230, Hm = 150, Fm = 0;
+      lines.forEach(function (l) { Fm = Math.max(Fm, l.F); });
+      var h = '<rect width="960" height="300" fill="#fbfaf6"/>';
+      h += '<rect x="' + (X0 - 20) + '" y="40" width="' + (W + 40) + '" height="14" fill="#b9c2cc" stroke="#6e7884"/>';
+      h += '<text x="' + (X0 + W / 2) + '" y="30" text-anchor="middle" class="svg-small">tablier : déplacement d = ' + fmt(d * 1000, 1) + ' mm — effort total F = ' + fmt(F, 0) + ' kN</text>';
+      h += '<path d="M' + X0 + ' ' + base + ' H' + (X0 + W) + '" stroke="#14171f"/>';
+      lines.forEach(function (l, i) {
+        var x = N > 1 ? X0 + i * W / (N - 1) : X0 + W / 2, hh = Fm > 0 ? l.F / Fm * Hm : 0, bw = Math.min(70, W / N * 0.5);
+        var col = l.pile ? "#2d6be4" : "#0f8f7b";
+        h += '<path d="M' + x + ' 54 V' + (base - hh - 24).toFixed(1) + '" stroke="#e3dfd4" stroke-dasharray="3 3"/>';
+        h += '<rect x="' + (x - bw / 2).toFixed(1) + '" y="' + (base - hh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="4" fill="' + col + '" opacity=".85"/>';
+        h += '<text x="' + x + '" y="' + (base - hh - 8).toFixed(1) + '" text-anchor="middle" class="svg-label">' + fmt(l.F, 0) + ' kN</text>';
+        h += '<text x="' + x + '" y="' + (base + 18) + '" text-anchor="middle" class="svg-label">' + l.n + '</text>';
+        h += '<text x="' + x + '" y="' + (base + 34) + '" text-anchor="middle" class="svg-small">' + fmt(l.F / F * 100, 1) + ' %</text>';
+      });
+      h += '<rect x="' + X0 + '" y="276" width="12" height="10" fill="#0f8f7b"/><text x="' + (X0 + 18) + '" y="285" class="svg-small">culée (appareils seuls)</text>';
+      h += '<rect x="' + (X0 + 200) + '" y="276" width="12" height="10" fill="#2d6be4"/><text x="' + (X0 + 218) + '" y="285" class="svg-small">pile (appareils + fûts en série)</text>';
+      svg.innerHTML = h;
+    }
+    ["c7m-M", "c7m-np", "c7m-nf", "c7m-D", "c7m-H", "c7m-E", "c7m-phi", "c7m-n", "c7m-a", "c7m-b", "c7m-te", "c7m-G", "c7m-ag", "c7m-gi", "c7m-sol", "c7m-q"].forEach(function (id) { var e = byId(id); if (e) { e.addEventListener("input", upd); e.addEventListener("change", upd); } });
+    upd();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -11,6 +11,9 @@
 <link rel="stylesheet" href="../../handbag/katex/katex.min.css">
 <link rel="stylesheet" href="../assets/cours.css">
 <style>
+  article .formula,article .katex,.calc .steps{position:relative}
+  .calc .steps{overflow-x:auto}
+  .c-scroll{overflow-x:auto;position:relative;margin:4px 0 10px}
   .c0-chip rect.bg{transition:stroke .3s, stroke-width .3s}
   .seq .c0-chip.on rect.bg{stroke:#e8c97a;stroke-width:3}
   .c0-map a{text-decoration:none}
@@ -175,7 +178,7 @@
 
         <!-- étapes : surlignages -->
         <g data-only="1"><circle cx="266" cy="66" r="16" fill="none" stroke="#d9472b" stroke-width="3"/><path d="M266 18 V58" stroke="#d9472b" stroke-width="3" marker-end="url(#c0s1-ar)"/><text x="276" y="22" class="svg-label" style="fill:#d9472b">P = 6 t par roue</text></g>
-        <g data-only="2"><polygon points="258,75 274,75 290,96 242,96" fill="#d9472b" opacity=".45"/><rect x="20" y="80" width="610" height="16" fill="none" stroke="#d9472b" stroke-width="2.5"/><text x="20" y="62" class="svg-label" style="fill:#d9472b">hourdis : diffusion à 45°, flexion locale</text></g>
+        <g data-only="2"><polygon points="258,75 274,75 290,96 242,96" fill="#d9472b" opacity=".45"/><rect x="20" y="80" width="610" height="16" fill="none" stroke="#d9472b" stroke-width="2.5"/><text x="300" y="62" class="svg-label" style="fill:#d9472b">hourdis : diffusion à 45°, flexion locale</text></g>
         <g data-only="3"><rect x="20" y="96" width="306" height="46" fill="#d9472b" opacity=".18"/><path d="M30 120 Q 175 140 316 120" stroke="#d9472b" stroke-width="2.5" fill="none" stroke-dasharray="6 4"/><path d="M230 112 H300" stroke="#d9472b" stroke-width="3" marker-end="url(#c0s1-ar)"/><text x="40" y="160" class="svg-label" style="fill:#d9472b">poutre : flexion, la charge va vers les appuis</text></g>
         <g data-only="4"><circle cx="312" cy="146" r="18" fill="none" stroke="#d9472b" stroke-width="3"/><path d="M312 100 V136" stroke="#d9472b" stroke-width="3" marker-end="url(#c0s1-ar)"/><text x="170" y="190" class="svg-label" style="fill:#d9472b">appareil d'appui : réaction R</text></g>
         <g data-only="5"><rect x="284" y="150" width="112" height="150" fill="#d9472b" opacity=".16"/><path d="M340 160 V290" stroke="#d9472b" stroke-width="4" marker-end="url(#c0s1-ar)"/><text x="410" y="230" class="svg-label" style="fill:#d9472b">pile : compression (+ flexion)</text></g>
@@ -419,11 +422,11 @@
           <g stroke="#cfe0fb" stroke-width="1.4" fill="none">
             <path d="M230 200 H730"/><path d="M230 212 H730"/><rect x="240" y="212" width="20" height="70"/><rect x="700" y="212" width="20" height="70"/>
             <path d="M250 150 H710" stroke-dasharray="4 3"/><path d="M250 142 V158 M710 142 V158"/>
-            <path d="M230 300 H730" stroke-dasharray="10 4"/>
+            <path d="M230 296 H730" stroke-dasharray="10 4"/>
           </g>
           <text x="480" y="140" text-anchor="middle" class="svg-small" style="fill:#cfe0fb">portée 30,00 m — cotes, matériaux, appuis, fondations</text>
           <text x="210" y="118" class="svg-label" style="fill:#fff">APD — solution retenue, dimensions principales</text>
-          <text x="700" y="305" text-anchor="end" class="svg-small" style="fill:#cfe0fb">estimation du coût · planning</text>
+          <text x="750" y="314" text-anchor="end" class="svg-small" style="fill:#cfe0fb">estimation du coût · planning</text>
         </g>
 
         <!-- 4 DCE -->
@@ -760,11 +763,11 @@
   </figure>
 
   <div class="box ex"><span class="t">Premier exemple chiffré : ce pont est-il un « pont courant » ?</span>
-    <p>On reprend la définition du chapitre 1 (travée ≤ 40 m, longueur ≤ 100 m, surface ≤ 1 200 m²). Supposons qu'une seule travée d'environ 30 m suffise à dégager les quatre voies (nous le vérifierons au chapitre 2).</p>
+    <p>On reprend la définition du chapitre 1 (travée ≤ 40 m, longueur ≤ 100 m, surface ≤ 1 200 m²). Nous verrons au chapitre 2 qu'avec des culées remblayées, une travée unique de l'ordre de 27 m suffit à dégager les quatre voies ; le tablier mesure alors environ 28 m.</p>
     <ul>
-      <li>Travée : 30 m ≤ 40 m — vérifié.</li>
-      <li>Longueur : ≈ 30 m ≤ 100 m — vérifié.</li>
-      <li>Surface de tablier : 30 × 10 = <b>300 m²</b> ≤ 1 200 m² — vérifié.</li>
+      <li>Travée : ≈ 27 m ≤ 40 m — vérifié.</li>
+      <li>Longueur : ≈ 28 m ≤ 100 m — vérifié.</li>
+      <li>Surface de tablier : 28 × 10 ≈ <b>280 m²</b> ≤ 1 200 m² — vérifié.</li>
     </ul>
     <p>C'est donc un <b>pont courant</b> : les dossiers-pilotes SETRA et les méthodes de ce cours s'appliquent. La difficulté n'est pas la portée, mais l'<b>environnement</b> : voie ferrée en exploitation, caténaire, réseaux et riverains.</p>
   </div>
