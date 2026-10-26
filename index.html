@@ -270,6 +270,11 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
   .flow-arrow{transform:rotate(90deg)}
 }
 
+.student-pill{display:inline-flex;align-items:center;gap:10px;margin:0 auto clamp(14px,3vh,30px);padding:7px 16px 7px 7px;border-radius:999px;border:1px solid rgba(201,168,76,.35);background:rgba(201,168,76,.06);text-decoration:none;color:var(--white);font-size:13px;font-weight:300;letter-spacing:.02em;transition:border-color .2s,background .2s;opacity:0;animation:fadeUp .8s ease .5s forwards}
+.student-pill span{background:var(--gold);color:var(--ink);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.student-pill b{font-weight:300}
+.student-pill:hover{border-color:var(--gold);background:rgba(201,168,76,.12)}
+@media(max-width:600px){.student-pill{font-size:12px;text-align:left}}
 /* ─── ACCUEIL SIMPLIFIÉ ─── */
 .hero{padding:110px 5% 96px;min-height:calc(100vh - 64px - 70px);display:flex;align-items:center}
 .hero-inner{max-width:1240px;width:100%}
@@ -330,6 +335,7 @@ h1{font-size:clamp(52px,9vw,104px)}
       <li><a href="plans-ferraillage.html" style="color:var(--teal)" data-fr="Plans coffrage &amp; ferraillage" data-en="Formwork &amp; rebar drawings">Plans coffrage &amp; ferraillage</a></li>
       <li><a href="handbag.html" style="color:var(--teal)">HandBag</a></li>
       <li><a href="bibliotheque.html" class="gold" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a></li>
+      <li><a href="etudiants.html" class="gold" data-fr="Espace étudiants" data-en="Students">Espace étudiants</a></li>
       <li><a href="liens-utiles.html" style="color:var(--teal)" data-fr="Liens utiles" data-en="Useful links">Liens utiles</a></li>
     </ul>
   </div>
@@ -348,6 +354,7 @@ h1{font-size:clamp(52px,9vw,104px)}
     <h1>Bridge<em>AI</em> Studios</h1>
     <p class="hero-sub" data-fr="Des outils de calcul conformes aux règlements français et une bibliothèque technique complète, au même endroit." data-en="Calculation tools compliant with French standards and a complete technical library, in one place.">Des outils de calcul conformes aux règlements français et une bibliothèque technique complète, au même endroit.</p>
 
+    <a class="student-pill" href="etudiants.html"><span data-fr="Nouveau" data-en="New">Nouveau</span><b data-fr="Espace étudiants : le cours de ponts en ligne, de la conception au dimensionnement →" data-en="Students: the bridge course online, from design to sizing →">Espace étudiants : le cours de ponts en ligne, de la conception au dimensionnement →</b></a>
     <div class="tools">
       <a class="tool" href="composer.html">
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
@@ -415,7 +422,7 @@ h1{font-size:clamp(52px,9vw,104px)}
 <footer>
   <div class="footer-inner">
     <div class="footer-bottom">
-      <p><span class="footer-logo" style="font-size:16px;margin:0">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="ponts-types.html" data-fr="Ponts types" data-en="Standard bridges">Ponts types</a> &nbsp;·&nbsp; <a href="plans-ferraillage.html" data-fr="Plans coffrage &amp; ferraillage" data-en="Formwork &amp; rebar drawings">Plans coffrage &amp; ferraillage</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a> &nbsp;·&nbsp; <a href="liens-utiles.html" data-fr="Liens utiles" data-en="Useful links">Liens utiles</a></p>
+      <p><span class="footer-logo" style="font-size:16px;margin:0">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="ponts-types.html" data-fr="Ponts types" data-en="Standard bridges">Ponts types</a> &nbsp;·&nbsp; <a href="plans-ferraillage.html" data-fr="Plans coffrage &amp; ferraillage" data-en="Formwork &amp; rebar drawings">Plans coffrage &amp; ferraillage</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a> &nbsp;·&nbsp; <a href="etudiants.html" data-fr="Espace étudiants" data-en="Students">Espace étudiants</a> &nbsp;·&nbsp; <a href="liens-utiles.html" data-fr="Liens utiles" data-en="Useful links">Liens utiles</a></p>
       <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
       <div class="visits" title="Nombre de visites du site"><span class="visits-dot"></span>Visiteurs <b id="visit-count">—</b></div>
     </div>

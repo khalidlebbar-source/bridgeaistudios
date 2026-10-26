@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace étudiants — Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Espace étudiants BridgeAI Studios : cours complet de ponts, de la conception au dimensionnement. Chapitres illustrés, maquettes 3D, séquences animées, calculatrices interactives, TD et examens corrigés, téléchargement en PDF.">
+<meta name="keywords" content="cours de ponts, ouvrages d'art, conception des ponts, prédimensionnement, fascicule 61 titre II, lignes d'influence, appareils d'appui, sismique ponts, BAEL, étudiants génie civil Maroc">
+<meta property="og:title" content="Espace étudiants — Cours de ponts · BridgeAI Studios">
+<meta property="og:description" content="Le cours de ponts, de la conception au dimensionnement : chapitres illustrés, 3D, animations, calculatrices, TD corrigés.">
+<meta property="og:url" content="https://www.bridgeaistudios.com/etudiants.html">
+<meta property="og:type" content="website">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="etudiants/assets/cours.css">
+<style>
+.hero{position:relative;overflow:hidden;background:linear-gradient(160deg,#0c0f19 0%,#18203a 55%,#1f3150 100%);color:#fff;padding:72px 3vw 64px}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 45% 80% at 82% 18%,rgba(201,168,76,.25),transparent 70%),radial-gradient(ellipse 40% 70% at 8% 100%,rgba(26,184,160,.2),transparent 70%);pointer-events:none}
+.hero .in{position:relative;z-index:1;max-width:1240px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:40px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;margin-bottom:16px}
+.eyebrow::before{content:"";width:28px;height:1px;background:#c9a84c}
+.hero h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(40px,6vw,76px);line-height:1.02;letter-spacing:-.01em;margin-bottom:18px}
+.hero h1 em{font-style:italic;color:#e8c97a}
+.hero p.sub{font-size:17px;color:#c3c9d6;max-width:560px;line-height:1.7;margin-bottom:28px}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero .stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:34px}
+.hero .stats div{font-size:12px;color:#9aa3b5;letter-spacing:.06em}
+.hero .stats b{display:block;font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:400;color:#fff;line-height:1}
+.hero-art svg{width:100%;height:auto;display:block}
+.hero-art .deck{animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.hero-art .car{animation:drive 7s linear infinite}
+@keyframes drive{from{transform:translateX(-80px)}to{transform:translateX(560px)}}
+
+.wrap{max-width:1240px;margin:0 auto;padding:56px 3vw}
+.sec-h{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:24px}
+.sec-h h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(30px,3.4vw,44px);line-height:1.1}
+.sec-h h2 em{font-style:italic;color:var(--gold)}
+.sec-h p{color:var(--mute);max-width:560px;font-size:15px}
+
+.course{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:28px;align-items:start}
+.course-card{position:sticky;top:84px;background:linear-gradient(170deg,#fffdf7,#f8f1de);border:1px solid var(--line2);border-radius:22px;padding:26px 26px 22px;box-shadow:0 20px 50px -34px rgba(20,23,31,.5)}
+.course-card .tag{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.course-card h3{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:36px;line-height:1.05;margin:8px 0 10px}
+.course-card p{font-size:14.5px;color:var(--ink-soft);margin-bottom:14px}
+.course-card ul{list-style:none;margin:0 0 18px;display:grid;gap:7px}
+.course-card li{font-size:14px;color:var(--ink-soft);display:flex;gap:10px;align-items:baseline}
+.course-card li::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--teal);flex:none;transform:translateY(-1px)}
+.author{display:flex;gap:12px;align-items:center;padding-top:16px;margin-top:6px;border-top:1px solid var(--line)}
+.author .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#1b2236;color:#e8c97a;font-family:'Cormorant Garamond',serif;font-size:20px}
+.author b{display:block;font-weight:500;font-size:14px}
+.author span{font-size:12.5px;color:var(--mute)}
+
+.chapters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.chap{position:relative;display:flex;flex-direction:column;gap:6px;padding:18px 18px 16px 18px;border-radius:18px;background:#fff;border:1px solid var(--line);text-decoration:none;color:inherit;overflow:hidden;transition:border-color .25s,transform .25s,box-shadow .25s}
+.chap:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:0 16px 36px -22px rgba(20,23,31,.45)}
+.chap .num{position:absolute;right:14px;top:4px;font-family:'Cormorant Garamond',serif;font-size:64px;line-height:1;color:transparent;-webkit-text-stroke:1px rgba(168,132,42,.45)}
+.chap small{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.chap h4{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:24px;line-height:1.1;padding-right:56px}
+.chap p{font-size:13.5px;color:var(--mute);line-height:1.55}
+.chap .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:8px}
+.chap .tags span{font-size:11px;padding:2px 9px;border-radius:999px;background:#f2efe6;color:#6a5a2c}
+.chap .tags span.t3d{background:#e6eefc;color:#2453b3}.chap .tags span.ani{background:#e4f6ef;color:#0b6e5c}.chap .tags span.cal{background:#fbeee9;color:#a33d22}
+.chap.wide{grid-column:1/-1;background:linear-gradient(150deg,#121827,#1d2740);border-color:#1d2740}
+.chap.wide h4,.chap.wide{color:#fff}.chap.wide p{color:#b7bfcd}.chap.wide .num{-webkit-text-stroke:1px rgba(232,201,122,.5)}
+.chap.wide .tags span{background:rgba(255,255,255,.08);color:#e8c97a}
+
+.dl{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.dl-row{display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+.dl-row:first-child{border-top:none}
+.dl-row .n{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold)}
+.dl-row .t{font-size:15px;color:var(--ink)}
+.dl-row .t small{display:block;font-size:12.5px;color:var(--mute)}
+.dl-row .act{display:flex;gap:8px}
+.tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.tool{display:block;padding:18px;border-radius:16px;background:#fff;border:1px solid var(--line);text-decoration:none;color:inherit;transition:border-color .2s,transform .2s}
+.tool:hover{border-color:var(--line2);transform:translateY(-2px)}
+.tool b{display:block;font-weight:500;margin-bottom:4px}
+.tool span{font-size:13px;color:var(--mute)}
+.soon{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.soon span{font-size:13px;padding:7px 14px;border-radius:999px;border:1px dashed #cbbf9c;color:#7a6a3b;background:#fffaf0}
+@media(max-width:980px){.hero .in,.course{grid-template-columns:1fr}.course-card{position:static}.tools{grid-template-columns:1fr 1fr}.site-nav ul{display:none}}
+@media(max-width:640px){.chapters{grid-template-columns:1fr}.tools{grid-template-columns:1fr}.dl-row{grid-template-columns:44px 1fr}.dl-row .act{grid-column:2}.hero{padding:44px 16px 40px}.wrap{padding:40px 16px}}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="in">
+    <a href="index.html" class="logo">Bridge<span>AI</span> Studios</a>
+    <ul>
+      <li><a href="ponts-types.html">Ponts types</a></li>
+      <li><a href="plans-ferraillage.html">Plans coffrage &amp; ferraillage</a></li>
+      <li><a href="handbag.html" style="color:#1ab8a0">HandBag</a></li>
+      <li><a href="bibliotheque.html">Bibliothèque</a></li>
+      <li><a href="etudiants.html" class="active">Espace étudiants</a></li>
+    </ul>
+    <a href="index.html" class="back">← Accueil</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="in">
+    <div>
+      <div class="eyebrow">Espace étudiants</div>
+      <h1>Apprendre les ponts, <em>de la conception au dimensionnement</em></h1>
+      <p class="sub">Un cours complet, pensé pour les élèves ingénieurs en génie civil : chaque notion expliquée pas à pas, avec des schémas en couleur, des maquettes 3D à manipuler, des séquences animées, des calculatrices interactives et des sujets d'examen corrigés.</p>
+      <div class="cta">
+        <a class="btn" href="etudiants/ponts/ch0.html">Commencer le cours →</a>
+        <a class="btn ghost" href="#telecharger">Télécharger les chapitres</a>
+      </div>
+      <div class="stats">
+        <div><b>11</b>modules</div>
+        <div><b>3D</b>maquettes à explorer</div>
+        <div><b>TD</b>examens corrigés</div>
+        <div><b>PDF</b>chaque chapitre</div>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 520 300">
+        <defs>
+          <linearGradient id="h-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22304a"/><stop offset="1" stop-color="#2e4566"/></linearGradient>
+          <linearGradient id="h-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f6aa0"/><stop offset="1" stop-color="#18324f"/></linearGradient>
+          <clipPath id="h-clip"><rect width="520" height="300" rx="22"/></clipPath>
+        </defs>
+        <g clip-path="url(#h-clip)">
+          <rect width="520" height="300" fill="url(#h-sky)"/>
+          <circle cx="420" cy="70" r="34" fill="#e8c97a" opacity=".85"/>
+          <rect y="230" width="520" height="70" fill="url(#h-water)"/>
+          <path d="M0 238 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#7fb3e0" fill="none" opacity=".5"/>
+          <!-- pylône et haubans -->
+          <path d="M260 40 L248 150 M260 40 L272 150" stroke="#cfd5dc" stroke-width="7" stroke-linecap="round"/>
+          <g stroke="#e8c97a" stroke-width="1.1" opacity=".9">
+            <path d="M260 52 L60 148 M260 60 L100 148 M260 68 L140 148 M260 76 L180 148 M260 84 L220 148"/>
+            <path d="M260 52 L460 148 M260 60 L420 148 M260 68 L380 148 M260 76 L340 148 M260 84 L300 148"/>
+          </g>
+          <g class="deck">
+            <rect x="0" y="146" width="520" height="12" fill="#b9c2cc"/>
+            <rect x="0" y="143" width="520" height="4" fill="#3c4049"/>
+          </g>
+          <rect x="250" y="158" width="20" height="80" fill="#9aa3ae"/>
+          <rect x="70" y="158" width="12" height="80" fill="#9aa3ae"/><rect x="438" y="158" width="12" height="80" fill="#9aa3ae"/>
+          <g class="car"><rect x="0" y="133" width="26" height="10" rx="3" fill="#d9472b"/><rect x="34" y="131" width="16" height="12" rx="2" fill="#1ab8a0"/><rect x="50" y="134" width="30" height="9" rx="2" fill="#e9eef3"/></g>
+          <g stroke="#c9a84c" stroke-width=".8" fill="none" opacity=".7">
+            <path d="M20 270 H500"/><path d="M76 262 V278 M260 262 V278 M444 262 V278"/>
+          </g>
+          <text x="168" y="290" fill="#e8c97a" font-family="Outfit" font-size="11" letter-spacing="2">PORTÉES · CHARGES · CALCULS</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap" id="cours">
+    <div class="sec-h">
+      <h2>Le cours de <em>ponts</em></h2>
+      <p>Huit chapitres qui suivent la vraie démarche d'un bureau d'études : on conçoit, on prédimensionne, on inventorie les charges, on calcule le tablier puis les appuis, on vérifie au séisme et on dimensionne les sections.</p>
+    </div>
+    <div class="course">
+      <aside class="course-card">
+        <div class="tag">Génie civil · 4e – 5e année</div>
+        <h3>Cours de ponts</h3>
+        <p>Le cours enseigné en 5e année de génie civil, entièrement réécrit et enrichi pour le web. Il avance « en parallèle avec un calcul concret » : un pont routier au-dessus d'une voie ferrée, suivi de la collecte des données jusqu'au ferraillage.</p>
+        <ul>
+          <li>Typologie et état de l'art des ponts au Maroc</li>
+          <li>Conception et prédimensionnement des ponts courants</li>
+          <li>Méthodes de construction</li>
+          <li>Règlement de charges (fascicule 61 titre II, Eurocodes)</li>
+          <li>Calcul d'un pont courant de A à Z</li>
+        </ul>
+        <a class="btn" href="etudiants/ponts/ch0.html" style="width:100%;justify-content:center">Commencer par l'introduction</a>
+        <div class="author"><div class="av">KL</div><div><b>Khalid Lebbar</b><span>Ingénieur ouvrages d'art · directeur de KLE Ingénierie</span></div></div>
+      </aside>
+
+      <div class="chapters">
+        <a class="chap" href="etudiants/ponts/ch0.html"><span class="num">0</span><small>Chapitre 0</small><h4>Introduction au cours des ponts</h4><p>Objectifs, organisation, disciplines associées, cycle d'un projet d'ouvrage et présentation du pont « fil rouge ».</p><div class="tags"><span class="ani">Animations</span><span>Quiz</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch1.html"><span class="num">1</span><small>Chapitre 1</small><h4>Constituants d'un pont &amp; terminologie</h4><p>Tablier, piles, culées, fondations ; travée, portée, ouverture ; familles SETRA ; équipements.</p><div class="tags"><span class="t3d">3D</span><span class="ani">Animation</span><span>Quiz</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch2.html"><span class="num">2</span><small>Chapitre 2</small><h4>Conception des ponts courants</h4><p>Collecte des données, gabarits, implantation des appuis, choix du type d'ouvrage et méthodes de construction.</p><div class="tags"><span class="ani">Animations</span><span>Vidéo</span><span class="cal">Calculatrice</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch3.html"><span class="num">3</span><small>Chapitre 3</small><h4>Prédimensionnement</h4><p>Élancements, tabliers par type, piles, culées, dalles de transition, fondations et poids propre.</p><div class="tags"><span class="cal">Calculatrices</span><span class="ani">Animations</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch4.html"><span class="num">4</span><small>Chapitre 4</small><h4>Charges sur les ponts &amp; réglementation</h4><p>Fascicule 61 titre II : A(l), Bc, Bt, Br, Mc120, convois D et E, coefficient dynamique, freinage, vent, UIC 71.</p><div class="tags"><span class="cal">Calculatrices</span><span class="ani">Animations</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch5.html"><span class="num">5</span><small>Chapitre 5</small><h4>Méthodes de calcul des tabliers</h4><p>Lignes d'influence, convois mobiles, théorème de Barré, répartition transversale (Courbon, Guyon-Massonnet).</p><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch6.html"><span class="num">6</span><small>Chapitre 6</small><h4>Calcul des appuis &amp; fondations</h4><p>Efforts sur les appuis, appareils d'appui en élastomère fretté, répartition des efforts horizontaux, culées, semelles, pieux.</p><div class="tags"><span class="cal">Calculatrices</span><span>Vidéo</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch7.html"><span class="num">7</span><small>Chapitre 7</small><h4>Analyse sismique des ponts</h4><p>Dynamique, spectre de réponse, méthode monomodale, dispositions constructives et isolation sismique.</p><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div></a>
+        <a class="chap" href="etudiants/ponts/ch8.html"><span class="num">8</span><small>Chapitre 8</small><h4>Dimensionnement &amp; ferraillage</h4><p>États-limites, flexion, effort tranchant, notions de précontrainte, dispositions constructives et plans.</p><div class="tags"><span class="cal">Calculatrice</span><span class="ani">Animations</span></div></a>
+        <a class="chap" href="etudiants/ponts/td.html"><span class="num">TD</span><small>Travaux dirigés</small><h4>TD &amp; examens corrigés</h4><p>TD de janvier 2015, examen de février 2016 et sujet d'entraînement, avec corrigés détaillés.</p><div class="tags"><span>Corrigés</span><span class="cal">Vérificateur</span></div></a>
+        <a class="chap wide" href="etudiants/ponts/formulaire.html"><span class="num">F</span><small>À garder sous la main</small><h4>Formulaire de poche</h4><p>Toutes les formules et valeurs du cours sur quelques pages imprimables : élancements, charges réglementaires, RDM, appareils d'appui, séisme, béton armé.</p><div class="tags"><span>Imprimable</span><span>Recherche instantanée</span></div></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="telecharger" style="padding-top:10px">
+    <div class="sec-h">
+      <h2>Télécharger <em>les chapitres</em></h2>
+      <p>Chaque chapitre s'exporte en PDF prêt à imprimer : le bouton ouvre la fenêtre d'impression, choisissez « Enregistrer au format PDF ».</p>
+    </div>
+    <div class="dl" id="dl-list"></div>
+  </section>
+
+  <section class="wrap" style="padding-top:10px">
+    <div class="sec-h">
+      <h2>Pratiquer avec <em>les outils</em></h2>
+      <p>Les mêmes outils que ceux utilisés en bureau d'études, en accès libre sur BridgeAI Studios.</p>
+    </div>
+    <div class="tools">
+      <a class="tool" href="handbag.html"><b>HandBag</b><span>264 feuilles de calcul : béton armé, précontrainte, appuis, géotechnique, séisme…</span></a>
+      <a class="tool" href="beton.html"><b>Béton armé</b><span>Calcul de sections BAEL 91 / Eurocode 2 avec export PDF.</span></a>
+      <a class="tool" href="ponts-types.html"><b>Ponts types</b><span>Calcul automatique de tabliers VIPP et autres ponts types SETRA.</span></a>
+      <a class="tool" href="plans-ferraillage.html"><b>Plans de ferraillage</b><span>Coffrage coté, ferraillage, nomenclature et export DXF.</span></a>
+    </div>
+    <div class="soon"><span>Prochainement : béton précontraint</span><span>Hydraulique des ouvrages de franchissement</span><span>Diagnostic &amp; réparation des ouvrages</span><span>Méthodes de construction</span></div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="in">
+    <p><span class="logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="ponts-types.html">Ponts types</a> &nbsp;·&nbsp; <a href="plans-ferraillage.html">Plans coffrage &amp; ferraillage</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html">Bibliothèque</a> &nbsp;·&nbsp; <a href="liens-utiles.html">Liens utiles</a></p>
+    <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var L = [
+    ["0", "ch0", "Introduction au cours des ponts", "Organisation, objectifs, cycle d'un projet"],
+    ["1", "ch1", "Constituants d'un pont & terminologie", "Anatomie, familles, équipements"],
+    ["2", "ch2", "Conception des ponts courants", "Données, gabarits, choix du type, construction"],
+    ["3", "ch3", "Prédimensionnement", "Élancements, tabliers, piles, culées"],
+    ["4", "ch4", "Charges sur les ponts & réglementation", "Fascicule 61 titre II, δ, freinage, UIC 71"],
+    ["5", "ch5", "Méthodes de calcul des tabliers", "Lignes d'influence, Barré, Courbon"],
+    ["6", "ch6", "Calcul des appuis & fondations", "Appareils d'appui, piles, culées, pieux"],
+    ["7", "ch7", "Analyse sismique des ponts", "Spectre, méthode monomodale, dispositions"],
+    ["8", "ch8", "Dimensionnement & ferraillage", "Flexion, tranchant, précontrainte"],
+    ["TD", "td", "TD & examens corrigés", "Sujets 2015 et 2016 + entraînement"],
+    ["F", "formulaire", "Formulaire de poche", "Toutes les formules du cours"]
+  ];
+  var h = "";
+  L.forEach(function (r) {
+    h += '<div class="dl-row"><div class="n">' + r[0] + '</div><div class="t">' + r[2] + '<small>' + r[3] + '</small></div>' +
+      '<div class="act"><a class="btn sm light" href="etudiants/ponts/' + r[1] + '.html">Lire</a>' +
+      '<a class="btn sm" href="etudiants/ponts/' + r[1] + '.html?pdf=1" target="_blank" rel="noopener">PDF</a></div></div>';
+  });
+  document.getElementById("dl-list").innerHTML = h;
+})();
+</script>
+</body>
+</html>
