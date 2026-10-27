@@ -578,7 +578,7 @@ table.tb.c6-rec th{font-size:15px}
         <li data-b="4" data-fx="left">Préfabriquées sur aire de chantier, tendues, puis posées ; <b>entretoises d'about</b> pour le vérinage.</li>
       </ul>
       <div class="c6-chips" style="margin-top:20px" data-b="5" data-fx="up">
-        <span class="pill b">L = 30 m</span><span class="pill">h = L/17 → 1,80 m</span><span class="pill t">notre fil rouge</span>
+        <span class="pill b">L = 30 m</span><span class="pill">h = L/17 → 1,80 m</span><span class="pill t">fil rouge (25 m) : h = 1,40 m</span>
       </div>
     </div>
     <div class="vis">
@@ -718,13 +718,13 @@ table.tb.c6-rec th{font-size:15px}
       <tr data-b="1" data-fx="left" data-d=".16"><td><b>PSI-DA</b> continu 2 / ≥ 3 travées</td><td>10 à 20 m</td><td><span class="c6-bar" style="width:52px"></span><b>L/26 · L/28</b></td><td>L = plus grande portée</td></tr>
       <tr data-b="1" data-fx="left" data-d=".24"><td><b>PSI-DP</b></td><td>15 à 30 m</td><td><span class="c6-bar" style="width:60px"></span><b>L/25 · L/28–L/33</b></td><td>isostatique · continu</td></tr>
       <tr data-b="2" data-fx="left"><td><b>Poutres BA</b></td><td>10 à 20 m</td><td><span class="c6-bar" style="width:28px;background:#dc4a2c"></span><b>L/14</b></td><td>espacement ≤ 2,5 m ; âme 0,40 ; hourdis 0,20–0,25</td></tr>
-      <tr data-b="2" data-fx="left" data-d=".08"><td><b>PRAD</b></td><td>10 à 30 m</td><td><span class="c6-bar" style="width:42px;background:#dc4a2c"></span><b>L/20–L/22</b></td><td>poutres serrées</td></tr>
+      <tr data-b="2" data-fx="left" data-d=".08" class="hl"><td><b>PRAD</b></td><td>10 à 30 m</td><td><span class="c6-bar" style="width:42px;background:#dc4a2c"></span><b>L/20–L/22</b></td><td>poutres serrées</td></tr>
       <tr data-b="2" data-fx="left" data-d=".16" class="hl"><td><b>VIPP</b></td><td>30 à 50 m</td><td><span class="c6-bar" style="width:34px;background:#dc4a2c"></span><b>L/16–L/18</b></td><td>espacement 2,5–4 m ; talon 0,60–0,80</td></tr>
       <tr data-b="3" data-fx="left"><td><b>Bipoutre mixte</b></td><td>25 à 80 m</td><td><span class="c6-bar" style="width:52px;background:#2f6fe0"></span><b>L/25–L/28</b></td><td>charpente seule ; dalle 0,25–0,35</td></tr>
       <tr data-b="3" data-fx="left" data-d=".08"><td><b>Caisson</b> (encorbellements)</td><td>60 à 200 m</td><td><span class="c6-bar" style="width:34px;background:#2f6fe0"></span><b>L/16–L/18 · L/30–L/40</b></td><td>sur pile · à la clé</td></tr>
     </tbody>
   </table>
-  <p class="small" style="margin-top:12px" data-b="4" data-fx="fade">La barre illustre n : plus elle est longue, plus le tablier est <b>élancé</b>. Ligne surlignée : la famille de notre fil rouge.</p>
+  <p class="small" style="margin-top:12px" data-b="4" data-fx="fade">La barre illustre n : plus elle est longue, plus le tablier est <b>élancé</b>. Lignes surlignées : les poutres précontraintes préfabriquées, famille de notre fil rouge (L = 25 m).</p>
 </section>
 
 <!-- ═════════ 19. CALCULATRICE TABLIER ═════════ -->
@@ -743,11 +743,12 @@ table.tb.c6-rec th{font-size:15px}
           <option value="dp2">PSI-DP — dalle précontrainte continue</option>
           <option value="ppba">Poutres en béton armé</option>
           <option value="prad">PRAD — précontrainte par adhérence</option>
-          <option value="vipp" selected>VIPP — précontrainte par post-tension</option>
+          <option value="pp" selected>Poutres précontraintes préfabriquées (fil rouge)</option>
+          <option value="vipp">VIPP — précontrainte par post-tension</option>
           <option value="bp1">Bipoutre mixte isostatique</option>
           <option value="bp2">Bipoutre mixte continu</option>
         </select></label>
-      <label>Portée L (m)<span class="row"><input type="range" id="c6t-Lr" min="2" max="80" step="0.5" value="30"><input type="number" id="c6t-L" min="1" max="200" step="0.5" value="30"></span></label>
+      <label>Portée L (m)<span class="row"><input type="range" id="c6t-Lr" min="2" max="80" step="0.5" value="25"><input type="number" id="c6t-L" min="1" max="200" step="0.5" value="25"></span></label>
       <div class="two">
         <label>Largeur totale (m)<input type="number" id="c6t-W" value="10.5" step="0.1" min="2"></label>
         <label>Chaussée (m)<input type="number" id="c6t-Lc" value="7" step="0.1" min="1"></label>
@@ -992,13 +993,13 @@ table.tb.c6-rec th{font-size:15px}
         <rect width="520" height="260" rx="12" fill="#fdf3e2"/>
         <rect x="20" y="40" width="250" height="6" fill="#3c4049"/>
         <rect x="20" y="46" width="250" height="126" fill="#cfd5dc" stroke="#6e7884"/>
-        <text x="145" y="114" text-anchor="middle" class="lbl">tablier 1,80</text>
+        <text x="145" y="114" text-anchor="middle" class="lbl">tablier 1,40</text>
         <rect x="225" y="172" width="34" height="8" fill="#2f6fe0"/><rect x="220" y="180" width="44" height="10" fill="#dfe3e8" stroke="#6e7884"/>
         <rect x="190" y="190" width="120" height="50" fill="#cfd5dc" stroke="#6e7884"/>
         <rect x="282" y="46" width="22" height="144" fill="#e2c070" stroke="#b8902f"/>
         <path d="M330 46 V190" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s25-a)" marker-end="url(#c6s25-a)"/>
-        <g class="lbl-s"><text x="345" y="100">tablier 1,80</text><text x="345" y="124">+ appareil 0,08</text><text x="345" y="148">+ bossage 0,10</text></g>
-        <text x="345" y="180" class="lbl-b" style="fill:#8a6a1f">≈ 2,00 m</text>
+        <g class="lbl-s"><text x="345" y="100">tablier 1,40</text><text x="345" y="124">+ appareil 0,08</text><text x="345" y="148">+ bossage 0,10</text></g>
+        <text x="345" y="180" class="lbl-b" style="fill:#8a6a1f">≈ 1,60 m</text>
       </svg>
       <div class="formula" style="margin-top:10px;padding:10px 16px"><span class="tex">h_{GG} = h_{\text{tablier}} + e_{\text{appareil}} + h_{\text{bossage}}</span></div>
     </div>
@@ -1095,20 +1096,20 @@ table.tb.c6-rec th{font-size:15px}
     <div class="vis">
       <svg viewBox="0 0 600 470" aria-label="Section du tablier du fil rouge : aire de béton">
         <rect width="600" height="470" rx="18" fill="#fdf3e2"/>
-        <text x="300" y="60" text-anchor="middle" class="lbl-b">Tablier du fil rouge (VIPP)</text>
+        <text x="300" y="60" text-anchor="middle" class="lbl-b">Tablier du fil rouge (L = 25 m)</text>
         <g data-a data-fx="fade">
           <rect x="16" y="150" width="567" height="10.8" fill="#b9c2cc" stroke="#6e7884"/>
-          <path d="M59.9 160.8 L113.9 160.8 L113.9 167.3 L92.3 171.6 L92.3 225.6 L103.1 233.7 L103.1 247.2 L70.7 247.2 L70.7 233.7 L81.5 225.6 L81.5 171.6 L59.9 167.3 Z M201.6 160.8 L255.6 160.8 L255.6 167.3 L234.0 171.6 L234.0 225.6 L244.8 233.7 L244.8 247.2 L212.4 247.2 L212.4 233.7 L223.2 225.6 L223.2 171.6 L201.6 167.3 Z M343.4 160.8 L397.4 160.8 L397.4 167.3 L375.8 171.6 L375.8 225.6 L386.6 233.7 L386.6 247.2 L354.2 247.2 L354.2 233.7 L365.0 225.6 L365.0 171.6 L343.4 167.3 Z M485.1 160.8 L539.1 160.8 L539.1 167.3 L517.5 171.6 L517.5 225.6 L528.3 233.7 L528.3 247.2 L495.9 247.2 L495.9 233.7 L506.7 225.6 L506.7 171.6 L485.1 167.3 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <path d="M70.0 160.8 L124.0 160.8 L124.0 167.3 L102.4 171.6 L102.4 204.0 L113.2 212.1 L113.2 225.6 L80.8 225.6 L80.8 212.1 L91.6 204.0 L91.6 171.6 L70.0 167.3 Z M205.0 160.8 L259.0 160.8 L259.0 167.3 L237.4 171.6 L237.4 204.0 L248.2 212.1 L248.2 225.6 L215.8 225.6 L215.8 212.1 L226.6 204.0 L226.6 171.6 L205.0 167.3 Z M340.0 160.8 L394.0 160.8 L394.0 167.3 L372.4 171.6 L372.4 204.0 L383.2 212.1 L383.2 225.6 L350.8 225.6 L350.8 212.1 L361.6 204.0 L361.6 171.6 L340.0 167.3 Z M475.0 160.8 L529.0 160.8 L529.0 167.3 L507.4 171.6 L507.4 204.0 L518.2 212.1 L518.2 225.6 L485.8 225.6 L485.8 212.1 L496.6 204.0 L496.6 171.6 L475.0 167.3 Z" fill="#cfd5dc" stroke="#6e7884"/>
         </g>
         <g data-b="1" data-fx="fade">
           <rect x="16" y="150" width="567" height="10.8" fill="#e8a020" opacity=".75"/>
-          <path d="M59.9 160.8 L113.9 160.8 L113.9 167.3 L92.3 171.6 L92.3 225.6 L103.1 233.7 L103.1 247.2 L70.7 247.2 L70.7 233.7 L81.5 225.6 L81.5 171.6 L59.9 167.3 Z M201.6 160.8 L255.6 160.8 L255.6 167.3 L234.0 171.6 L234.0 225.6 L244.8 233.7 L244.8 247.2 L212.4 247.2 L212.4 233.7 L223.2 225.6 L223.2 171.6 L201.6 167.3 Z M343.4 160.8 L397.4 160.8 L397.4 167.3 L375.8 171.6 L375.8 225.6 L386.6 233.7 L386.6 247.2 L354.2 247.2 L354.2 233.7 L365.0 225.6 L365.0 171.6 L343.4 167.3 Z M485.1 160.8 L539.1 160.8 L539.1 167.3 L517.5 171.6 L517.5 225.6 L528.3 233.7 L528.3 247.2 L495.9 247.2 L495.9 233.7 L506.7 225.6 L506.7 171.6 L485.1 167.3 Z" fill="#e8a020" opacity=".75"/>
-          <g class="lbl"><text x="300" y="300" text-anchor="middle">hourdis : 10,50 × 0,20 = 2,100 m²</text><text x="300" y="330" text-anchor="middle">4 poutres × 0,578 = 2,312 m²</text></g>
-          <text x="300" y="370" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">A = 4,412 m²/ml</text>
+          <path d="M70.0 160.8 L124.0 160.8 L124.0 167.3 L102.4 171.6 L102.4 204.0 L113.2 212.1 L113.2 225.6 L80.8 225.6 L80.8 212.1 L91.6 204.0 L91.6 171.6 L70.0 167.3 Z M205.0 160.8 L259.0 160.8 L259.0 167.3 L237.4 171.6 L237.4 204.0 L248.2 212.1 L248.2 225.6 L215.8 225.6 L215.8 212.1 L226.6 204.0 L226.6 171.6 L205.0 167.3 Z M340.0 160.8 L394.0 160.8 L394.0 167.3 L372.4 171.6 L372.4 204.0 L383.2 212.1 L383.2 225.6 L350.8 225.6 L350.8 212.1 L361.6 204.0 L361.6 171.6 L340.0 167.3 Z M475.0 160.8 L529.0 160.8 L529.0 167.3 L507.4 171.6 L507.4 204.0 L518.2 212.1 L518.2 225.6 L485.8 225.6 L485.8 212.1 L496.6 204.0 L496.6 171.6 L475.0 167.3 Z" fill="#e8a020" opacity=".75"/>
+          <g class="lbl"><text x="300" y="300" text-anchor="middle">hourdis : 10,50 × 0,20 = 2,100 m²</text><text x="300" y="330" text-anchor="middle">4 poutres × 0,498 = 1,992 m²</text></g>
+          <text x="300" y="370" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">A = 4,092 m²/ml</text>
         </g>
         <g data-b="5" data-fx="up">
           <rect x="70" y="395" width="460" height="50" rx="12" fill="#141a26"/>
-          <text x="300" y="427" text-anchor="middle" class="lbl-w" style="font-size:18px">4,412 × 2,5 × 1,05 = 11,58 t/ml</text>
+          <text x="300" y="427" text-anchor="middle" class="lbl-w" style="font-size:18px">4,092 × 2,5 × 1,05 = 10,74 t/ml</text>
         </g>
       </svg>
     </div>
@@ -1124,38 +1125,38 @@ table.tb.c6-rec th{font-size:15px}
     <!-- section -->
     <g data-a data-fx="fade">
       <rect x="30" y="200" width="630" height="12" fill="#b9c2cc" stroke="#6e7884"/>
-      <path d="M78.8 212.0 L138.8 212.0 L138.8 219.2 L114.8 224.0 L114.8 284.0 L126.8 293.0 L126.8 308.0 L90.8 308.0 L90.8 293.0 L102.8 284.0 L102.8 224.0 L78.8 219.2 Z M236.2 212.0 L296.2 212.0 L296.2 219.2 L272.2 224.0 L272.2 284.0 L284.2 293.0 L284.2 308.0 L248.2 308.0 L248.2 293.0 L260.2 284.0 L260.2 224.0 L236.2 219.2 Z M393.8 212.0 L453.8 212.0 L453.8 219.2 L429.8 224.0 L429.8 284.0 L441.8 293.0 L441.8 308.0 L405.8 308.0 L405.8 293.0 L417.8 284.0 L417.8 224.0 L393.8 219.2 Z M551.2 212.0 L611.2 212.0 L611.2 219.2 L587.2 224.0 L587.2 284.0 L599.2 293.0 L599.2 308.0 L563.2 308.0 L563.2 293.0 L575.2 284.0 L575.2 224.0 L551.2 219.2 Z" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M90.0 212.0 L150.0 212.0 L150.0 219.2 L126.0 224.0 L126.0 260.0 L138.0 269.0 L138.0 284.0 L102.0 284.0 L102.0 269.0 L114.0 260.0 L114.0 224.0 L90.0 219.2 Z M240.0 212.0 L300.0 212.0 L300.0 219.2 L276.0 224.0 L276.0 260.0 L288.0 269.0 L288.0 284.0 L252.0 284.0 L252.0 269.0 L264.0 260.0 L264.0 224.0 L240.0 219.2 Z M390.0 212.0 L450.0 212.0 L450.0 219.2 L426.0 224.0 L426.0 260.0 L438.0 269.0 L438.0 284.0 L402.0 284.0 L402.0 269.0 L414.0 260.0 L414.0 224.0 L390.0 219.2 Z M540.0 212.0 L600.0 212.0 L600.0 219.2 L576.0 224.0 L576.0 260.0 L588.0 269.0 L588.0 284.0 L552.0 284.0 L552.0 269.0 L564.0 260.0 L564.0 224.0 L540.0 219.2 Z" fill="#cfd5dc" stroke="#6e7884"/>
     </g>
     <rect x="135" y="194" width="420" height="6" fill="#7a52c7" data-b="2" data-fx="down"/>
     <rect x="135" y="184" width="420" height="10" fill="#3c4049" data-b="3" data-fx="down"/>
     <g data-b="4" data-fx="down"><rect x="45" y="186" width="90" height="14" fill="#dfe3e8" stroke="#6e7884"/><rect x="555" y="186" width="90" height="14" fill="#dfe3e8" stroke="#6e7884"/></g>
     <g data-b="5" data-fx="down"><path d="M30 178 H45 V230 H36 L30 222 Z M660 178 H645 V230 H654 L660 222 Z" fill="#e2c070" stroke="#b8902f"/></g>
     <g data-b="6" data-fx="down" stroke="#5c6470" stroke-width="2.5" fill="none"><path d="M50 186 V132 M100 186 V132 M50 132 H130 M640 186 V132 M590 186 V132 M640 132 H560"/><path d="M142 184 V164 M548 184 V164" stroke-width="3"/><path d="M136 166 H150 M542 166 H556" stroke="#9aa3ae" stroke-width="6"/></g>
-    <text x="345" y="372" text-anchor="middle" class="lbl" data-b="1" data-fx="fade">structure : 4,412 m² × 2,5 t/m³ × 1,05</text>
+    <text x="345" y="372" text-anchor="middle" class="lbl" data-b="1" data-fx="fade">structure : 4,092 m² × 2,5 t/m³ × 1,05</text>
     <text x="345" y="414" text-anchor="middle" class="lbl-s" data-b="1" data-fx="fade">(épaisseurs des couches exagérées sur le dessin)</text>
     <!-- barre empilée -->
     <path d="M800 470 H920 M810 470 V50" stroke="#141a26"/>
     <g class="lbl-s" text-anchor="end"><text x="800" y="475">0</text><text x="800" y="345">5</text><text x="800" y="215">10</text><text x="800" y="85">15</text><text x="800" y="40">t/ml</text></g>
     <g stroke="#e3e6ec"><path d="M810 340 H910 M810 210 H910 M810 80 H910"/></g>
-    <rect x="820" y="168.9" width="80" height="301.1" fill="#9aa3ae" data-b="1" data-fx="grow"/>
-    <rect x="820" y="156.9" width="80" height="12" fill="#7a52c7" data-b="2" data-fx="grow"/>
-    <rect x="820" y="126.2" width="80" height="30.7" fill="#3c4049" data-b="3" data-fx="grow"/>
-    <rect x="820" y="87.2" width="80" height="39" fill="#c3cad3" data-b="4" data-fx="grow"/>
-    <rect x="820" y="71.6" width="80" height="15.6" fill="#e2c070" data-b="5" data-fx="grow"/>
-    <rect x="820" y="63.3" width="80" height="8.3" fill="#5c6470" data-b="6" data-fx="grow"/>
+    <rect x="820" y="190.8" width="80" height="279.2" fill="#9aa3ae" data-b="1" data-fx="grow"/>
+    <rect x="820" y="178.8" width="80" height="12" fill="#7a52c7" data-b="2" data-fx="grow"/>
+    <rect x="820" y="148.1" width="80" height="30.7" fill="#3c4049" data-b="3" data-fx="grow"/>
+    <rect x="820" y="109.1" width="80" height="39" fill="#c3cad3" data-b="4" data-fx="grow"/>
+    <rect x="820" y="93.5" width="80" height="15.6" fill="#e2c070" data-b="5" data-fx="grow"/>
+    <rect x="820" y="85.2" width="80" height="8.3" fill="#5c6470" data-b="6" data-fx="grow"/>
     <g class="lbl-s" style="fill:#141a26">
-      <g data-b="1" data-fx="left"><path d="M900 320 H912" stroke="#141a26"/><text x="918" y="325"><tspan font-weight="500">Structure</tspan> 11,58</text></g>
-      <g data-b="2" data-fx="left"><path d="M900 163 L912 178" stroke="#141a26"/><text x="918" y="184">Étanchéité 0,46</text></g>
-      <g data-b="3" data-fx="left"><path d="M900 141 L912 150" stroke="#141a26"/><text x="918" y="155">Enrobé (7 cm) 1,18</text></g>
-      <g data-b="4" data-fx="left"><path d="M900 107 L912 122" stroke="#141a26"/><text x="918" y="127">Trottoirs 1,50</text></g>
-      <g data-b="5" data-fx="left"><path d="M900 79 L912 92" stroke="#141a26"/><text x="918" y="98">Corniches 0,60</text></g>
-      <g data-b="6" data-fx="left"><path d="M900 67 L912 64" stroke="#141a26"/><text x="918" y="69">Garde-corps + glissières 0,32</text></g>
+      <g data-b="1" data-fx="left"><path d="M900 330 H912" stroke="#141a26"/><text x="918" y="335"><tspan font-weight="500">Structure</tspan> 10,74</text></g>
+      <g data-b="2" data-fx="left"><path d="M900 185 L912 196" stroke="#141a26"/><text x="918" y="202">Étanchéité 0,46</text></g>
+      <g data-b="3" data-fx="left"><path d="M900 163 L912 168" stroke="#141a26"/><text x="918" y="174">Enrobé (7 cm) 1,18</text></g>
+      <g data-b="4" data-fx="left"><path d="M900 129 L912 140" stroke="#141a26"/><text x="918" y="146">Trottoirs 1,50</text></g>
+      <g data-b="5" data-fx="left"><path d="M900 101 L912 112" stroke="#141a26"/><text x="918" y="118">Corniches 0,60</text></g>
+      <g data-b="6" data-fx="left"><path d="M900 89 L912 84" stroke="#141a26"/><text x="918" y="90">Garde-corps + glissières 0,32</text></g>
     </g>
     <g data-b="7" data-fx="up">
-      <text x="860" y="505" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">G ≈ 15,64 t/ml ≈ 153 kN/m</text>
+      <text x="860" y="505" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">g ≈ 14,80 t/ml ≈ 145 kN/m</text>
       <rect x="140" y="440" width="410" height="64" rx="14" fill="#141a26"/>
       <text x="345" y="466" text-anchor="middle" class="lbl-w" style="font-size:17px">Superstructures : 4,06 t/ml</text>
-      <text x="345" y="490" text-anchor="middle" class="lbl-w" style="font-size:17px;fill:#e2c070">= 26 % de G : ne jamais les oublier</text>
+      <text x="345" y="490" text-anchor="middle" class="lbl-w" style="font-size:17px;fill:#e2c070">= 27 % de g : ne jamais les oublier</text>
     </g>
   </svg>
 </section>
@@ -1163,13 +1164,13 @@ table.tb.c6-rec th{font-size:15px}
 <!-- ═════════ 30. FIL ROUGE — COUPE ═════════ -->
 <section class="slide" data-title="Notre fil rouge : le tablier">
   <div class="kicker">Notre fil rouge</div>
-  <h2 class="t">Notre pont : <em>une travée VIPP de 30 m</em></h2>
+  <h2 class="t">Notre pont : <em>une travée de 25 m</em></h2>
   <div class="split wide-v">
     <div>
       <ul class="b tight">
-        <li data-b="1" data-fx="left"><b>Portée</b> : franchir les 4 voies (2 + 2 futures) sans appui entre les voies → <b>L ≈ 30 m</b>.</li>
-        <li data-b="2" data-fx="left"><b>VIPP</b> : L/18 à L/16 = 1,67 à 1,88 m → L/17 : <b>h = 1,80 m</b> (poutre 1,60 + hourdis 0,20).</li>
-        <li data-b="3" data-fx="left"><b>Coupe</b> : 10,50 m, <b>4 poutres à 2,625 m</b> (dans la plage 2,5–4 m).</li>
+        <li data-b="1" data-fx="left"><b>Portée</b> : franchir les 4 voies (2 + 2 futures) sans appui entre les voies → travée isostatique, tablier ≈ 26 m, <b>L = 25 m</b>.</li>
+        <li data-b="2" data-fx="left"><b>Poutres précontraintes préfabriquées</b> (PRAD ou VIPP courte) : L/20 à L/17 = 1,25 à 1,47 m → <b>h = 1,40 m</b> (poutre 1,20 + hourdis 0,20).</li>
+        <li data-b="3" data-fx="left"><b>Coupe</b> : 10,50 m, <b>4 poutres à 2,50 m</b>, encorbellements de 1,50 m.</li>
         <li data-b="4" data-fx="left">La hauteur s'ajoute au <b>tirant d'air</b> sous la caténaire : elle fixe la hauteur des remblais.</li>
       </ul>
     </div>
@@ -1187,15 +1188,15 @@ table.tb.c6-rec th{font-size:15px}
           <g class="lbl-s" text-anchor="middle" style="fill:#8a6a1f"><text x="100" y="100">1,50</text><text x="355" y="100">chaussée 7,00</text><text x="610" y="100">1,50</text></g>
           <g class="drive" style="--t:7s;--from:-20px;--to:20px"><rect x="300" y="138" width="56" height="26" rx="6" fill="#2f6fe0"/><rect x="308" y="143" width="40" height="9" rx="2" fill="#cfe3ff"/></g>
         </g>
-        <path d="M88.8 182.0 L148.8 182.0 L148.8 189.2 L124.8 194.0 L124.8 254.0 L136.8 263.0 L136.8 278.0 L100.8 278.0 L100.8 263.0 L112.8 254.0 L112.8 194.0 L88.8 189.2 Z M246.2 182.0 L306.2 182.0 L306.2 189.2 L282.2 194.0 L282.2 254.0 L294.2 263.0 L294.2 278.0 L258.2 278.0 L258.2 263.0 L270.2 254.0 L270.2 194.0 L246.2 189.2 Z M403.8 182.0 L463.8 182.0 L463.8 189.2 L439.8 194.0 L439.8 254.0 L451.8 263.0 L451.8 278.0 L415.8 278.0 L415.8 263.0 L427.8 254.0 L427.8 194.0 L403.8 189.2 Z M561.2 182.0 L621.2 182.0 L621.2 189.2 L597.2 194.0 L597.2 254.0 L609.2 263.0 L609.2 278.0 L573.2 278.0 L573.2 263.0 L585.2 254.0 L585.2 194.0 L561.2 189.2 Z" fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="down"/>
+        <path d="M100.0 182.0 L160.0 182.0 L160.0 189.2 L136.0 194.0 L136.0 230.0 L148.0 239.0 L148.0 254.0 L112.0 254.0 L112.0 239.0 L124.0 230.0 L124.0 194.0 L100.0 189.2 Z M250.0 182.0 L310.0 182.0 L310.0 189.2 L286.0 194.0 L286.0 230.0 L298.0 239.0 L298.0 254.0 L262.0 254.0 L262.0 239.0 L274.0 230.0 L274.0 194.0 L250.0 189.2 Z M400.0 182.0 L460.0 182.0 L460.0 189.2 L436.0 194.0 L436.0 230.0 L448.0 239.0 L448.0 254.0 L412.0 254.0 L412.0 239.0 L424.0 230.0 L424.0 194.0 L400.0 189.2 Z M550.0 182.0 L610.0 182.0 L610.0 189.2 L586.0 194.0 L586.0 230.0 L598.0 239.0 L598.0 254.0 L562.0 254.0 L562.0 239.0 L574.0 230.0 L574.0 194.0 L550.0 189.2 Z" fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="down"/>
         <g data-b="2" data-fx="fade" data-d=".3">
-          <path d="M688 170 V278" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
-          <text x="680" y="304" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">h = 1,80 m</text>
+          <path d="M688 170 V254" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
+          <text x="680" y="282" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">h = 1,40 m</text>
         </g>
         <g data-b="3" data-fx="fade">
-          <path d="M118.75 285 V340 M276.25 285 V340" stroke="#b8902f" stroke-dasharray="3 3"/>
-          <path d="M118.75 332 H276.25" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
-          <text x="197" y="360" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">2,625 m</text>
+          <path d="M130 262 V340 M280 262 V340" stroke="#b8902f" stroke-dasharray="3 3"/>
+          <path d="M130 332 H280" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
+          <text x="205" y="360" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">2,50 m</text>
           <path d="M40 210 V405 M670 210 V405" stroke="#6e7884" stroke-dasharray="3 3"/>
           <path d="M40 396 H670" stroke="#141a26" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
           <text x="355" y="388" text-anchor="middle" class="lbl-b">largeur 10,50 m</text>
@@ -1241,25 +1242,25 @@ table.tb.c6-rec th{font-size:15px}
     <g data-b="1" data-fx="down">
       <rect x="236" y="114" width="678" height="6" fill="#3c4049"/>
       <rect x="237" y="120" width="676" height="40" fill="#b9c2cc" stroke="#6e7884"/>
-      <text x="575" y="146" text-anchor="middle" class="lbl-s" style="fill:#141a26">VIPP · h = 1,80 m</text>
+      <text x="575" y="146" text-anchor="middle" class="lbl-s" style="fill:#141a26">poutres précontraintes · h = 1,40 m</text>
       <rect x="241" y="160" width="8" height="12" fill="#2f6fe0"/><rect x="901" y="160" width="8" height="12" fill="#2f6fe0"/>
     </g>
     <g class="drive" style="--t:8s;--from:-60px;--to:1160px"><rect x="0" y="98" width="34" height="16" rx="3" fill="#dc4a2c"/></g>
     <g data-b="1" data-fx="fade" data-d=".3">
       <path d="M245 64 H905" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s31-a)" marker-end="url(#c6s31-a)"/><path d="M245 60 V160 M905 60 V160" stroke="#b8902f" stroke-dasharray="3 3"/>
-      <text x="575" y="54" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">L = 30 m</text>
+      <text x="575" y="54" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">L = 25 m (tablier ≈ 26 m)</text>
     </g>
     <g data-b="3" data-fx="fade">
       <path d="M560 160 V300" stroke="#12a08a" stroke-width="2" marker-start="url(#c6s31-a)" marker-end="url(#c6s31-a)"/>
       <text x="572" y="190" class="lbl-s" style="fill:#0b6e5c">tirant d'air</text><text x="572" y="208" class="lbl-s" style="fill:#0b6e5c">(prescriptions ONCF)</text>
-      <text x="20" y="300" class="lbl-s c6-halo">remblai ≈ 8,5 m</text>
+      <text x="20" y="300" class="lbl-s c6-halo">remblai ≈ 8 m</text>
       <text x="300" y="368" class="lbl-s c6-halo">semelles sur le bon sol à −3 m</text>
     </g>
   </svg>
   <div class="c6-chips" style="margin-top:14px">
-    <span class="pill" data-b="4" data-fx="pop" style="font-size:18px">G ≈ 15,6 t/ml ≈ 153 kN/m</span>
-    <span class="pill r" data-b="4" data-fx="pop" data-d=".1" style="font-size:18px">M<sub>G</sub> = G L²/8 ≈ 1 760 t·m</span>
-    <span class="pill t" data-b="5" data-fx="pop" style="font-size:18px">mur de front 0,90 · garde-grève 2,00 × 0,30</span>
+    <span class="pill" data-b="4" data-fx="pop" style="font-size:18px">g ≈ 14,8 t/ml · G = g × 25 ≈ 370 t</span>
+    <span class="pill r" data-b="4" data-fx="pop" data-d=".1" style="font-size:18px">M<sub>G</sub> = g L²/8 ≈ 1 156 t·m</span>
+    <span class="pill t" data-b="5" data-fx="pop" style="font-size:18px">mur de front 0,90 · garde-grève 1,60 × 0,30</span>
     <span class="pill b" data-b="5" data-fx="pop" data-d=".1" style="font-size:18px">sommier 1,40 · dalle de transition 5,00 × 0,30</span>
   </div>
 </section>
@@ -1273,7 +1274,7 @@ table.tb.c6-rec th{font-size:15px}
     <li data-b="2" data-fx="left"><b>h = L/n</b> : 14 (poutres BA), 16–18 (VIPP), 20–22 (PRAD), 20/26/28 (PSI-DA), 25–33 (PSI-DP), 25–28 (bipoutre) ; PICF : e ≈ L/32 + 0,125.</li>
     <li data-b="3" data-fx="left">Piles : <b>Ø 0,80–1,50 m et Ø &gt; H/7,5</b> ; chevêtre = poutres + appareils + débord + vérins ; semelle ≥ 3,3 × 3 m.</li>
     <li data-b="4" data-fx="left">Culées : mur de front <b>&gt; 0,80 m</b> ; garde-grève = tablier + appareil + bossage ; dalle de transition <b>0,30–0,35 m</b>.</li>
-    <li data-b="5" data-fx="left">Métré : <b>G = 2,5 × A × (1 + k) + superstructures</b> (20 à 30 % de G). Fil rouge : h = 1,80 m, G ≈ 15,6 t/ml.</li>
+    <li data-b="5" data-fx="left">Métré : <b>G = 2,5 × A × (1 + k) + superstructures</b> (20 à 30 % de G). Fil rouge (L = 25 m) : h = 1,40 m, g ≈ 14,8 t/ml.</li>
   </ul>
   <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
     <a href="ch7.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 7 : Charges et règlements →</a>
@@ -1343,6 +1344,7 @@ table.tb.c6-rec th{font-size:15px}
     ppba: { nom: "Poutres BA", kind: "ppba", nmin: 15, nc: 14, nmax: 13, txt: "L/14" },
     prad: { nom: "PRAD", kind: "prad", nmin: 22, nc: 21, nmax: 20, txt: "L/20 à L/22" },
     vipp: { nom: "VIPP", kind: "vipp", nmin: 18, nc: 17, nmax: 16, txt: "L/16 à L/18" },
+    pp: { nom: "Poutres précontraintes préfabriquées", kind: "vipp", nmin: 20, nc: 18, nmax: 17, txt: "L/17 à L/20", pp: 1 },
     bp1: { nom: "Bipoutre isostatique", kind: "bip", nmin: 27, nc: 25, nmax: 23, txt: "L/25 (charpente)" },
     bp2: { nom: "Bipoutre continu", kind: "bip", nmin: 30, nc: 28, nmax: 26, txt: "L/28 (charpente)" }
   };
@@ -1385,12 +1387,12 @@ table.tb.c6-rec th{font-size:15px}
         o.A = W * o.hd + o.n * area(o.beam);
         if (L > 32) o.warn.push("Portée au-delà du domaine usuel des PRAD (10 à 30 m).");
       } else if (T.kind === "vipp") {
-        o.hd = 0.20; o.n = Math.max(2, Math.ceil(W / 3.0)); o.s = W / o.n;
+        o.hd = 0.20; o.n = Math.max(2, Math.ceil(W / 3.0)); o.s = T.pp ? Math.min(2.5, W / o.n) : W / o.n;
         var bw = o.h > 2.0 ? 0.22 : 0.20, bf = o.h > 1.8 ? 0.70 : 0.60, btv = o.s < 3 ? 1.0 : 1.2;
         o.beam = ibeam(btv, 0.12, 0.08, bw, 0.15, 0.25, bf, o.h - o.hd);
         o.A = W * o.hd + o.n * area(o.beam);
         if (o.s < 2.5 || o.s > 4) o.warn.push("Espacement hors de la plage 2,5–4 m : ajustez la largeur.");
-        if (L < 25 || L > 50) o.warn.push("Portée hors du domaine usuel des VIPP (30 à 50 m).");
+        if (!T.pp && (L < 25 || L > 50)) o.warn.push("Portée hors du domaine usuel des VIPP (30 à 50 m).");
       } else if (T.kind === "bip") {
         o.n = 2; o.s = 0.55 * W; o.hd = Math.round(clamp(0.18 + 0.02 * o.s, 0.25, 0.35) * 100) / 100;
         o.steel = o.h * 0.02 + 0.6 * 0.04 + 0.8 * 0.06;
@@ -1437,7 +1439,7 @@ table.tb.c6-rec th{font-size:15px}
         var hd = o.hd;
         s += '<rect x="' + x1.toFixed(1) + '" y="' + y1 + '" width="' + (Wd * k2).toFixed(1) + '" height="' + (hd * k2).toFixed(1) + '" fill="#b9c2cc" stroke="#6e7884"/>';
         for (var i = 0; i < o.n; i++) {
-          var xc = x1 + (o.s / 2 + i * o.s) * k2;
+          var xc = x1 + ((Wd - (o.n - 1) * o.s) / 2 + i * o.s) * k2;
           if (o.T.kind === "bip") {
             var yt = y1 + hd * k2 + 5, hs = o.h * k2, tf = Math.max(3, 0.05 * k2);
             s += '<rect x="' + (xc - 0.3 * k2).toFixed(1) + '" y="' + yt.toFixed(1) + '" width="' + (0.6 * k2).toFixed(1) + '" height="' + tf.toFixed(1) + '" fill="#2f6fe0"/>';
@@ -1448,11 +1450,11 @@ table.tb.c6-rec th{font-size:15px}
           }
         }
         if (o.T.kind === "bip") {
-          var xa = x1 + (o.s / 2) * k2, xb = xa + o.s * k2, ym = y1 + hd * k2 + 5 + o.h * k2 * 0.5;
+          var xa = x1 + ((Wd - (o.n - 1) * o.s) / 2) * k2, xb = xa + o.s * k2, ym = y1 + hd * k2 + 5 + o.h * k2 * 0.5;
           s += '<path d="M' + xa.toFixed(1) + " " + ym.toFixed(1) + " H" + xb.toFixed(1) + '" stroke="#2f6fe0" stroke-width="2.5"/>';
         }
         if (o.n >= 2) {
-          var xA = x1 + (o.s / 2) * k2, xB = xA + o.s * k2, yy = y1 + hmax * k2 + 24;
+          var xA = x1 + ((Wd - (o.n - 1) * o.s) / 2) * k2, xB = xA + o.s * k2, yy = y1 + hmax * k2 + 24;
           s += cote(xA, yy, xB, yy) + txt((xA + xB) / 2, yy + 20, "espacement " + fmt(o.s, 2) + " m");
         }
       }
@@ -1468,8 +1470,8 @@ table.tb.c6-rec th{font-size:15px}
   }
 
   function updTab() {
-    var type = ($("c6t-type") || {}).value || "vipp";
-    var L = Math.max(1, num("c6t-L", 30)), W = Math.max(2, num("c6t-W", 10.5)), Lr = Math.max(1, num("c6t-Lc", 7)), H = Math.max(1, num("c6t-H", 5));
+    var type = ($("c6t-type") || {}).value || "pp";
+    var L = Math.max(1, num("c6t-L", 25)), W = Math.max(2, num("c6t-W", 10.5)), Lr = Math.max(1, num("c6t-Lc", 7)), H = Math.max(1, num("c6t-H", 5));
     var hl = $("c6t-Hl"); if (hl) hl.classList.toggle("c6-hide", type !== "picf");
     var o = tablier(type, L, W, Lr, H), T = o.T;
     set("c6t-rng", T.kind === "picf" ? "L/32 + 0,125 = " + fmt(o.hc, 3) + " m" : fmt(o.hmin, 2) + " – " + fmt(o.hmax, 2) + " m");
@@ -1549,7 +1551,7 @@ table.tb.c6-rec th{font-size:15px}
     eb.addEventListener("input", function () { var v = parseFloat(eb.value); if (isFinite(v)) ea.value = v; fn(); });
   }
   pair("c6t-Lr", "c6t-L", updTab);
-  var DEF = { picf: 8, da1: 15, da2: 15, da3: 15, dp1: 25, dp2: 25, ppba: 16, prad: 20, vipp: 30, bp1: 50, bp2: 50 };
+  var DEF = { pp: 25, picf: 8, da1: 15, da2: 15, da3: 15, dp1: 25, dp2: 25, ppba: 16, prad: 20, vipp: 30, bp1: 50, bp2: 50 };
   var ty = $("c6t-type");
   if (ty) ty.addEventListener("change", function () { var v = DEF[ty.value]; if (v) { $("c6t-L").value = v; $("c6t-Lr").value = v; } updTab(); });
   bind(["c6t-type", "c6t-W", "c6t-Lc", "c6t-H"], updTab);

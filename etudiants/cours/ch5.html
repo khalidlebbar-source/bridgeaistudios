@@ -99,7 +99,7 @@
     <g data-b="4" data-fx="fade"><path d="M800 60 H1040" stroke="#b9c2cc" stroke-width="12"/><path d="M806 66 V134 M1034 66 V134" stroke="#9aa3ae" stroke-width="10"/>
       <g class="drive" style="--t:4s;--from:-260px;--to:1300px"><rect x="0" y="104" width="200" height="26" rx="6" fill="#e8a020"/></g></g>
   </svg>
-  <div class="callout t" style="margin-top:16px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Notre pont de 26 m au-dessus de la voie ferrée sera <b>construit sans arrêter les trains</b>, sauf quelques courtes nuits.</div>
+  <div class="callout t" style="margin-top:16px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Notre pont d'une travée (25 m de portée, 4 poutres) au-dessus de la voie ferrée sera <b>construit sans arrêter les trains</b>, sauf quelques courtes nuits.</div>
 </section>
 
 <!-- ═════════ 3. LA MÉTHODE COMPTE ═════════ -->
@@ -477,7 +477,7 @@
     <g id="c5g-toff" class="c5-mv" style="opacity:0"><rect x="480" y="214" width="190" height="26" rx="13" fill="#141a26"/><text x="575" y="232" text-anchor="middle" class="lbl-w" style="font-size:15px">consignée, hors tension</text></g>
     <g clip-path="url(#c5s14-clip)"><g id="c5g-train" class="c5-mv"><g class="drive" style="--t:4.5s;--from:-420px;--to:1200px"><rect x="0" y="296" width="380" height="46" rx="8" fill="#e8a020"/><rect x="12" y="304" width="356" height="12" fill="#fff" opacity=".6"/><path d="M190 296 L210 272 L190 248" stroke="#3c4049" stroke-width="2" fill="none"/></g></g></g>
     <!-- remorque -->
-    <g id="c5g-trl" class="c5-mv"><rect x="-170" y="162" width="470" height="8" fill="#3c4049"/><circle cx="240" cy="172" r="7" fill="#141a26"/><circle cx="262" cy="172" r="7" fill="#141a26"/><circle cx="-60" cy="172" r="7" fill="#141a26"/></g>
+    <g id="c5g-trl" class="c5-mv"><rect x="0" y="162" width="300" height="8" fill="#3c4049"/><circle cx="240" cy="172" r="7" fill="#141a26"/><circle cx="262" cy="172" r="7" fill="#141a26"/><circle cx="40" cy="172" r="7" fill="#141a26"/></g>
     <!-- poutre (position finale 330–820) -->
     <g id="c5g-beam" class="c5-slow" style="transform:translate(-480px,-28px)">
       <path d="M575 134 L420 164 M575 134 L730 164" stroke="#3c4049" stroke-width="2" class="c5g-sl"/>
@@ -493,7 +493,7 @@
     <g id="c5g-lamp" class="c5-mv" style="opacity:0"><path d="M60 130 L330 330 L120 330 Z M1100 130 L820 330 L1030 330 Z" fill="#ffe9a8" opacity=".18"/><rect x="54" y="124" width="12" height="12" fill="#ffe9a8"/><rect x="1094" y="124" width="12" height="12" fill="#ffe9a8"/></g>
   </svg>
   <div class="c5-caps r">
-    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>De jour : culées terminées, trains en circulation. La poutre de 26 m arrive sur remorque.</div>
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>De jour : culées terminées, trains en circulation. L'une des 4 poutres (≈ 26 m) arrive sur remorque.</div>
     <div data-b="1" data-only data-fx="fade"><span class="n">1</span><b>Interruption de nuit</b> programmée avec l'ONCF : plus de trains, caténaire <b>consignée</b>.</div>
     <div data-b="2" data-only data-fx="fade"><span class="n">2</span>La grue <b>lève</b> la poutre au palonnier.</div>
     <div data-b="3" data-only data-fx="fade"><span class="n">3</span>Rotation de la flèche : la poutre passe <b>au-dessus des voies</b>.</div>
@@ -1129,7 +1129,7 @@
     set(sl, "c5g-tlive", null, night ? 0 : 1);
     set(sl, "c5g-toff", null, night ? 1 : 0);
     set(sl, "c5g-train", null, night ? 0 : 1);
-    set(sl, "c5g-trl", st >= 3 ? "translateX(-150px)" : "translateX(0)", st >= 3 ? 0 : 1);
+    set(sl, "c5g-trl", null, st >= 3 ? 0 : 1);
     set(sl, "c5g-hd", null, st >= 5 ? 1 : 0);
   };
 
