@@ -38,7 +38,7 @@ for (const u of ['route', 'rail']) for (const t of C.TYPE_KEYS) for (const reg o
 ok(fails === f0, n + ' combinaisons type × usage × règlement × fondation sans NaN, DXF et vue 3D complets');
 
 // 3. prédimensionnement
-const a = C.compute(C.defaults('route'));
+const a = C.compute(Object.assign(C.defaults('route'), { tablier: { type: 'PSIDA' }, travees: [12, 15, 12], piles: { type: 'voile', hauteurs: [6, 6] }, culees: { hauteurs: [3.5, 3.5] } }));
 ok(a.h === 0.6 && a.cont, `PSI-DA 12 + 15 + 12 continu : h = ${a.h} m`);
 
 // 4. fondations

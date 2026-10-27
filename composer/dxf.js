@@ -20,12 +20,14 @@
   const LAYERS = [
     ['1-COUPE', 7], ['1-PREFA', 30], ['1-CHARPENTE', 5], ['1-VU', 8, 'TIRETS'], ['1-AXES', 1, 'AXES'], ['1-TN', 32],
     ['1-REMBLAI', 42], ['1-PIEUX', 7, 'TIRETS'], ['1-APPUIS', 6], ['1-EQUIPEMENTS', 4], ['1-COTATION', 1],
-    ['1-TEXTE', 7], ['1-TITRE', 2], ['1-CARTOUCHE', 7],
+    ['1-TEXTE', 7], ['1-TITRE', 2], ['1-CARTOUCHE', 7], ['1-CORNICHES', 8], ['1-REVETEMENT', 9], ['1-RETENUE', 200],
   ];
   const LAY = {
     beton: '1-COUPE', prefa: '1-PREFA', acier: '1-CHARPENTE', acierL: '1-CHARPENTE', vu: '1-VU', axe: '1-AXES', tn: '1-TN',
     remblai: '1-REMBLAI', pieu: '1-PIEUX', app: '1-APPUIS', equip: '1-EQUIPEMENTS', trottoir: '1-EQUIPEMENTS',
-    ballast: '1-EQUIPEMENTS', texte: '1-TEXTE', titre: '1-TITRE',
+    ballast: '1-EQUIPEMENTS', texte: '1-TEXTE', titre: '1-TITRE', note: '1-TEXTE', lead: '1-TEXTE',
+    vuB: '1-VU', vuL: '1-VU', vuT: '1-VU', col: '1-COUPE', pred: '1-PREFA', perre: '1-REMBLAI', prop: '1-COUPE',
+    corn: '1-CORNICHES', cornE: '1-CORNICHES', gcF: '1-RETENUE', rev: '1-REVETEMENT', etan: '1-REVETEMENT', four: '1-EQUIPEMENTS', gc: '1-RETENUE', gcR: '1-RETENUE',
   };
 
   function enc(s) {
@@ -71,6 +73,11 @@
       } else if (p.k === 'text') {
         const hj = p.anchor === 'middle' ? 1 : p.anchor === 'end' ? 2 : 0;
         Wr.text(T([p.p[0], p.p[1] + p.dy * k]), p.ht * k, p.s, LAY[p.lay] || '1-TEXTE', hj, 0);
+      } else if (p.k === 'title') {
+        Wr.text(T(p.p), 3.5 * k, p.s, '1-TITRE', 1, 0);
+        const w = p.s.length * 3.5 * k * 0.62;
+        Wr.line(T([p.p[0] - w / 2, p.p[1] - 0.8 * k]), T([p.p[0] + w / 2, p.p[1] - 0.8 * k]), '1-TITRE');
+        Wr.text(T([p.p[0], p.p[1] - 4.5 * k]), 2.2 * k, p.sub, '1-TITRE', 1, 0);
       } else if (p.k === 'dim') {
         const L = '1-COTATION', tk = 1.2 * k, ht = 2.0 * k, ext = 1.5 * k;
         if (p.dir === 'h') {
@@ -103,6 +110,7 @@
       if (p.k === 'poly' && p.lay !== 'sol') p.pts.forEach((q) => g(q[0], q[1]));
       else if (p.k === 'dim') { g(p.a[0], p.a[1] + (p.dir === 'h' ? p.off * k : 0)); g(p.b[0] + (p.dir === 'v' ? p.off * k : 0), p.b[1]); }
       else if (p.k === 'text') g(p.p[0], p.p[1] + p.dy * k);
+      else if (p.k === 'title') { g(p.p[0], p.p[1] + 4 * k); g(p.p[0], p.p[1] - 5 * k); }
     });
     return b;
   }
@@ -114,11 +122,9 @@
     const bE = bounds(E), bS = bounds(S);
     const kE = E.ech / 1000, kS = S.ech / 1000;
     writeScene(W, E, 0, 0);
-    W.text([(bE[0] + bE[2]) / 2, bE[1] - 9 * kE], 5 * kE, E.titre, '1-TITRE', 1, 0);
     // coupe sous l'élévation, calée à gauche
     const dyS = bE[1] - 16 * kE - bS[3], dxS = bE[0] - bS[0];
     writeScene(W, S, dxS, dyS);
-    W.text([(bS[0] + bS[2]) / 2 + dxS, bS[1] + dyS - 9 * kS], 5 * kS, S.titre, '1-TITRE', 1, 0);
 
     // cartouche à droite de la coupe (à l'échelle de l'élévation)
     const P = M.S.projet, k = kE;

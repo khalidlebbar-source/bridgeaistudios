@@ -98,9 +98,10 @@
           if (g.colonnes) for (let i = 0; i < g.colonnes.n; i++) cyl(xf, -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s, g.colonnes.D, yft, ySeat - g.sommier.h);
           zr0 = ySeat - g.sommier.h + 0.3;
         } else {
-          const xin = back - o * g.mur.e;
-          box(back, xin, -W / 2, W / 2, ySeat, yft);
-          xf = (back + xin) / 2;
+          const so = g.sommier, xin = back - o * (so ? so.b : g.mur.e), ym = so ? ySeat - so.h : ySeat;
+          if (so) box(back, xin, -W / 2, W / 2, ySeat, ym);
+          box(xin, xin + o * g.mur.e, -W / 2, W / 2, ym, yft);
+          xf = xin + o * g.mur.e / 2;
           zr0 = yft + 0.6;
         }
         const er = g.retours.e, Lr = g.retours.L;

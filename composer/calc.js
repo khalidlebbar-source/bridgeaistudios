@@ -37,9 +37,9 @@
     PSIDA: {
       nom: 'PSI-DA', titre: 'Dalle en béton armé', famille: 'dalle', iso: true, cont: true, contDef: true,
       dom: { route: [6, 18], rail: [5, 15] },
-      lam: { route: { iso: 20, cont: 26 }, rail: { iso: 13, cont: 16 } },
+      lam: { route: { iso: 19, cont: 26 }, rail: { iso: 13, cont: 16 } },
       hmin: { route: 0.35, rail: 0.5 }, ratio: { route: 140, rail: 160 }, prec: { route: 0, rail: 0 },
-      ref: 'SETRA, guide PSI-DA (1989) : élancement L/20 (isostatique) à L/26 (continu).',
+      ref: 'SETRA, guide PSI-DA (1989) : L/20 (isostatique) à L/26 (continu) — plans KLE OA30 : 0,80 m pour 15 m.',
     },
     PSIDP: {
       nom: 'PSI-DP', titre: 'Dalle précontrainte', famille: 'dalle', iso: true, cont: true, contDef: true,
@@ -51,9 +51,9 @@
     VIPP: {
       nom: 'VIPP', titre: 'Poutres préfabriquées précontraintes par post-tension', famille: 'poutres', iso: true, cont: false, contDef: false,
       dom: { route: [30, 50], rail: [25, 45] },
-      lam: { route: { iso: 17 }, rail: { iso: 13 } },
+      lam: { route: { iso: 16 }, rail: { iso: 13 } },
       hmin: { route: 1.5, rail: 1.9 }, ratio: { route: 120, rail: 130 }, ratioH: { route: 160, rail: 180 }, prec: { route: 50, rail: 55 },
-      ref: 'SETRA, guide VIPP (1996) : hauteur poutre + hourdis voisine de L/16 à L/18.',
+      ref: 'SETRA, guide VIPP (1996) : L/16 à L/18 — plans KLE PRO2334 : 2,28 + 0,24 = 2,52 m pour 40 m.',
     },
     PRAD: {
       nom: 'PRAD', titre: 'Poutres précontraintes par adhérence', famille: 'poutres', iso: true, cont: false, contDef: false,
@@ -137,14 +137,14 @@
       reglement: 'EC',
       classe: 1,
       alpha: 1.33,
-      profil: { roulable: 8.0, trottoirG: 1.25, trottoirD: 1.25, nbVoiesFer: 2, entraxe: 4.5, demiLarg: 3.6, largeurForcee: 0 },
-      tablier: { type: rail ? 'PSIDP' : 'PSIDA', h: 0, continu: null, dalleContinuite: true },
-      travees: rail ? [16, 20, 16] : [12, 15, 12],
+      profil: { roulable: 8.0, trottoirG: 1.25, trottoirD: 1.25, nbVoiesFer: 2, entraxe: 4.5, demiLarg: 2.75, largeurForcee: 0 },
+      tablier: { type: rail ? 'PRP' : 'VIPP', h: 0, continu: null, dalleContinuite: true },
+      travees: rail ? [19.4] : [30, 40, 40, 30],
       biais: 100,
-      piles: { type: 'voile', hauteurs: [6, 6] },
-      culees: { type: 'enterree', hauteurs: [3.5, 3.5], dalleTransition: !rail },
-      fond: { piles: 'superficielle', culees: 'superficielle', sigma: 0.30, diam: 1.0, long: 15, qadm: 3.0 },
-      equip: { retenue: rail ? 'GC' : 'BN4', corniches: true, etancheite: true, revetement: 0.08, gargouilles: !rail },
+      piles: { type: 'colonnes', hauteurs: rail ? [] : [7.5, 7.5, 7.5] },
+      culees: { type: 'enterree', hauteurs: rail ? [5.5, 5.5] : [7.5, 7.5], dalleTransition: !rail },
+      fond: { piles: 'superficielle', culees: rail ? 'pieux' : 'superficielle', sigma: 0.25, diam: 1.0, long: 15, qadm: 3.0 },
+      equip: { retenue: rail ? 'GC' : 'BN4', corniches: true, etancheite: true, revetement: 0.06, gargouilles: !rail },
       prix: Object.fromEntries(Object.keys(PRIX).map((k) => [k, PRIX[k].pu])),
       devise: 'MAD',
     };
@@ -188,7 +188,7 @@
     p.trottoirD = clamp(num(p.trottoirD, 1.25), 0, 5);
     p.nbVoiesFer = clamp(Math.round(num(p.nbVoiesFer, 2)), 1, 4);
     p.entraxe = clamp(num(p.entraxe, 4.5), 3.5, 6);
-    p.demiLarg = clamp(num(p.demiLarg, 3.6), 2.5, 6);
+    p.demiLarg = clamp(num(p.demiLarg, 2.75), 2.5, 6);
     p.largeurForcee = Math.max(0, num(p.largeurForcee, 0));
     out.biais = clamp(num(out.biais, 100), 40, 100);
     const f = out.fond;
@@ -200,7 +200,7 @@
     f.qadm = clamp(num(f.qadm, 3), 0.3, 20);
     const e = out.equip;
     if (!['BN4', 'GBA', 'GC'].includes(e.retenue)) e.retenue = 'BN4';
-    e.revetement = clamp(num(e.revetement, 0.08), 0, 0.2);
+    e.revetement = clamp(num(e.revetement, 0.06), 0, 0.2);
     e.corniches = !!e.corniches; e.etancheite = !!e.etancheite; e.gargouilles = !!e.gargouilles;
     return out;
   }
@@ -280,7 +280,7 @@
     let Abet = 0, Aprefa = 0, coff = 0, coffPrefa = 0, kgCharp = 0, kgProf = 0, bear = [], nbPoutres = 0, entraxe = 0;
     if (T.famille === 'dalle') {
       const lc = h >= 0.5 ? clamp(r05(0.15 * W), 0.5, Math.min(2.5, W * 0.25)) : 0;
-      const et = rail ? 0.25 : 0.20, er = clamp(r05(0.6 * h), et + 0.05, h);
+      const et = rail ? 0.25 : 0.20, er = clamp(r05(0.45 * h + 0.02), et + 0.10, h);
       const Bn = W - 2 * lc;
       const pts = lc > 0
         ? [[-W / 2, 0], [W / 2, 0], [W / 2, -et], [Bn / 2, -er], [Bn / 2, -h], [-Bn / 2, -h], [-Bn / 2, -er], [-W / 2, -et]]
@@ -312,23 +312,27 @@
       for (let i = 0; i < nb; i++) bear.push(-(W - 1.0) / 2 + i * spb);
     } else if (T.famille === 'poutres') {
       const vipp = S.tablier.type === 'VIPP';
-      const eh = vipp ? (rail ? 0.22 : 0.18) : (rail ? 0.25 : 0.22);
-      const n = vipp ? Math.max(2, Math.round(W / 3.0)) : Math.max(3, Math.ceil(W / 1.4));
-      const b = W / n, hb = h - eh;
-      const b0 = vipp ? (rail ? 0.22 : 0.20) : 0.22, bt = vipp ? (rail ? 0.70 : 0.60) : 0.70, ht = vipp ? 0.25 : 0.20, gs = vipp ? 0.10 : 0.08;
+      const eh = vipp ? (rail ? 0.25 : 0.24) : (rail ? 0.25 : 0.22);
+      const rive = vipp ? 0.75 : 0.40;
+      const n = vipp ? Math.max(2, Math.round((W - 2 * rive) / 3.0) + 1) : Math.max(3, Math.ceil(W / 1.4));
+      const b = vipp ? (W - 2 * rive) / (n - 1) : W / n, x0 = vipp ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
+      // VIPP : table 1,50, âme 0,24, talon 0,80 (rail 0,90) ; PRAD : poutre en I compacte
+      const b0 = vipp ? 0.24 : 0.22, bt = vipp ? (rail ? 0.90 : 0.80) : 0.70, ht = vipp ? 0.25 : 0.20, gs = vipp ? 0.20 : 0.10;
+      const btab = vipp ? Math.min(1.50, b - 0.30) : Math.min(b - 0.05, 1.20), etab = vipp ? 0.12 : 0.10, gtab = vipp ? 0.10 : 0.06;
       const ptsH = [[-W / 2, 0], [W / 2, 0], [W / 2, -eh], [-W / 2, -eh]];
       add(ptsH, 'beton', 'hourdis');
       let Ab = 0, cb = 0;
       for (let i = 0; i < n; i++) {
-        const x = -W / 2 + b * (i + 0.5), y0 = -eh, y1 = -(h - ht - gs), y2 = -(h - ht), y3 = -h;
-        const pts = [[x - b0 / 2, y0], [x + b0 / 2, y0], [x + b0 / 2, y1], [x + bt / 2, y2], [x + bt / 2, y3], [x - bt / 2, y3], [x - bt / 2, y2], [x - b0 / 2, y1]];
+        const x = x0 + b * i, y0 = -eh, ya = y0 - etab, yb = ya - gtab, y1 = -(h - ht - gs), y2 = -(h - ht), y3 = -h;
+        const pts = [[x - btab / 2, y0], [x + btab / 2, y0], [x + btab / 2, ya], [x + b0 / 2, yb], [x + b0 / 2, y1], [x + bt / 2, y2], [x + bt / 2, y3],
+          [x - bt / 2, y3], [x - bt / 2, y2], [x - b0 / 2, y1], [x - b0 / 2, yb], [x - btab / 2, ya]];
         add(pts, 'beton', 'poutre');
         Ab += area(pts); cb += coffLen(pts, y0);
         bear.push(x);
       }
-      Abet = W * eh; Aprefa = Ab; coff = (W - n * b0) + 2 * eh; coffPrefa = cb;
+      Abet = W * eh; Aprefa = Ab; coff = (W - n * btab) + 2 * eh; coffPrefa = cb;
       nbPoutres = n; entraxe = b;
-      Object.assign(info, { eh, hb, b0, bt, ht, Bn: W - b + bt });
+      Object.assign(info, { eh, hb, b0, bt, ht, btab, etab, x0, rive, Bn: W - 2 * rive + bt });
     } else { // mixte
       const hs = rail ? 0.35 : 0.28, te = rail ? 0.30 : 0.25;
       const a = Math.max(2.5, Math.round(0.55 * W * 10) / 10);
@@ -482,9 +486,9 @@
   }
 
   /* ───────── Appuis : géométrie ───────── */
-  function pileGeom(S, H, Lsup, iso) {
+  function pileGeom(S, H, Lsup, iso, W) {
     const rail = S.usage === 'rail', t = S.piles.type;
-    const bt = (iso ? 1.8 : 0.8) + (rail ? 0.2 : 0);
+    const bt = (iso ? 2.6 : 1.2) + (rail ? 0.2 : 0);
     const parts = [];
     let lx, ly, ch = null, fut;
     if (t === 'voile') {
@@ -496,15 +500,16 @@
       parts.push({ des: 'Fût en voile ' + fr(ev, 2) + ' × ' + fr(Lsup, 2) + ' m', V: ev * Lsup * Hf, coff: 2 * (ev + Lsup) * Hf, ratio: 100 });
       lx = ev; ly = Lsup;
     } else if (t === 'colonnes') {
-      const D = Math.min(1.8, clamp(r10(0.8 + H / 40), 0.8, 1.5) + (rail ? 0.2 : 0));
-      const nc = Math.max(2, Math.round((Lsup - 1) / 4.0) + 1);
-      const s = nc > 1 ? (Lsup - D - 0.6) / (nc - 1) : 0;
-      const hch = Math.max(1.0, r10(Math.max(s, 3) / 4));
-      ch = { b: Math.max(bt, D + 0.3), h: hch, L: Lsup, kind: 'chevetre' };
+      const D = H > 15 ? 1.50 : (rail ? 1.40 : 1.20);
+      const Lc = Math.max(W, Lsup), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
+      const nc = Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1);
+      const s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0;
+      const hch = r10(Math.max(1.2, 0.14 * Lc));
+      ch = { b: Math.max(bt, D + 0.6), h: hch, L: Lc, kind: 'chevetre' };
       const Hf = Math.max(0.5, H - hch);
       fut = { kind: 'colonnes', D, n: nc, s, H: Hf };
       parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m', V: nc * Math.PI * D * D / 4 * Hf, coff: nc * Math.PI * D * Hf, ratio: 160 });
-      lx = D; ly = Lsup;
+      lx = D; ly = Lc;
     } else {
       const a = Math.max(rail ? 1.5 : 1.2, r05(H / 12));
       const bf = clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0));
@@ -531,37 +536,39 @@
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
     const rail = S.usage === 'rail', t = S.culees.type, parts = [];
     const egg = rail ? 0.40 : 0.30, hgg = h + 0.30;
-    const bt = (iso ? 1.6 : 1.4) + (rail ? 0.2 : 0);
+    const bt = (iso ? 2.6 : 1.6) + (rail ? 0.2 : 0);
     const dab = 0.6;
     parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
     const Ht = H + hgg;
     let lx, ly = W, sommier = null, mur = null, colonnes = null, retours;
     if (t === 'enterree') {
-      const bs = Math.max(bt, dab + 0.05 + egg + 0.6), hs = 1.2;
+      const bs = Math.max(bt, dab + 0.05 + egg + 0.6), hs = r10(Math.max(1.2, 0.14 * W));
       sommier = { b: bs, h: hs, L: W };
       parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 });
       const Hc = H - hs;
       if (Hc > 0.5) {
-        const D = rail ? 1.2 : 1.0, nc = Math.max(2, Math.round((Lsup - 1) / 4.0) + 1);
-        colonnes = { D, n: nc, H: Hc, s: (Lsup - D - 0.6) / (nc - 1) };
+        const D = rail ? 1.40 : 1.20, nc = Math.max(2, Math.round((W - 2 * D) / 2.7) + 1);
+        colonnes = { D, n: nc, H: Hc, s: (W - 2 * D) / (nc - 1) };
         parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m (enterrées)', V: nc * Math.PI * D * D / 4 * Hc, coff: nc * Math.PI * D * Hc, ratio: 160 });
-        lx = D; ly = Lsup;
+        lx = D; ly = W;
       } else lx = bs;
-      const Lmr = rail ? 4.0 : 3.0, hmr = (hgg + hs) * 0.75;
-      retours = { L: Lmr, h: hmr, e: 0.30 };
-      parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m', V: 2 * Lmr * hmr * 0.30, coff: 4 * Lmr * hmr, ratio: 90 });
+      const Lmr = clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5), hmr = hgg + hs, em = rail ? 0.60 : 0.50;
+      retours = { L: Lmr, h: hmr, e: em, h2: 0.9 };
+      parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
     } else {
-      const ef = Math.max(r05(H / 10), 0.8, bt, dab + 0.05 + egg + 0.4);
-      mur = { e: ef, H, L: W };
-      parts.push({ des: 'Mur de front ' + fr(ef, 2) + ' × ' + fr(H, 2) + ' m', V: ef * H * W, coff: 2 * H * W + 2 * ef * H, ratio: 90 });
+      const ef = Math.max(r05(H / 10), 0.80);
+      const bs = Math.max(bt, dab + 0.05 + egg + 0.6, ef), hs = bs > ef + 0.05 ? 1.0 : 0;
+      mur = { e: ef, H: H - hs, L: W };
+      if (hs) { sommier = { b: bs, h: hs, L: W }; parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 }); }
+      parts.push({ des: 'Mur de front ' + fr(ef, 2) + ' × ' + fr(H - hs, 2) + ' m', V: ef * (H - hs) * W, coff: 2 * (H - hs) * W + 2 * ef * (H - hs), ratio: 90 });
       const Lmr = r05(0.8 * Ht + 1.0), em = Math.max(0.4, r05(Ht / 12)), hm = 0.7 * Ht;
       retours = { L: Lmr, h: hm, e: em };
       parts.push({ des: 'Murs en retour 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * hm * em, coff: 4 * Lmr * hm, ratio: 90 });
-      lx = ef;
+      lx = Math.max(ef, hs ? bs : 0);
     }
     let dt = null;
     if (S.culees.dalleTransition && !rail) {
-      const Ldt = clamp(r05(0.6 * Ht), 3, 6), Bdt = PT.roulable || W;
+      const Ldt = Ht > 9 ? 5.0 : 4.0, Bdt = PT.roulable || W;
       dt = { L: Ldt, e: 0.30, B: Bdt };
       parts.push({ des: 'Dalle de transition ' + fr(Ldt, 2) + ' m × 0,30', V: Ldt * 0.30 * Bdt, coff: 2 * 0.30 * Ldt + 0.30 * Bdt, ratio: 100 });
       parts.push({ des: 'Corbeau d’appui de dalle', V: 0.30 * 0.30 * W, coff: 0.6 * W, ratio: 120 });
@@ -579,8 +586,8 @@
       let B = Math.max(lx + 1.0, 2.5), e = 1.0;
       for (let i = 0; i < 8; i++) {
         const Ws = GB * B * L * e + 18 * 0.6 * B * L;
-        B = Math.max(lx + 1.0, 2.5, (N + Ws) / (sig * L) * (opt.excentre ? 1.25 : 1));
-        B = r10(B); e = Math.max(0.8, r05((B - lx) / 4 + 0.05));
+        B = Math.max(lx + 1.0, 2.5, opt.Bmin || 0, (N + Ws) / (sig * L) * (opt.excentre ? 1.25 : 1));
+        B = r10(B); e = Math.max(0.8, r05((B - lx) / 4 + 0.05), opt.colonnes ? Math.min(1.5, r05(0.3 * B)) : 0);
       }
       const Ws = GB * B * L * e + 18 * 0.6 * B * L, q = (N + Ws) / (B * L);
       return { mode, B, L, e, V: B * L * e, coff: 2 * (B + L) * e, ratio: 90, prop: B * L * 0.10, fouilles: (B + 1) * (L + 1) * (e + 0.6), q, Ws };
@@ -704,7 +711,7 @@
       const Q = tq.Q;
       const H = isC ? S.culees.hauteurs[j === 0 ? 0 : 1] : S.piles.hauteurs[j - 1];
       const twoLines = L_.length > 1;
-      const geo = isC ? culeeGeom(S, h, H, W, Lsup, iso, PT, j === 0 ? 'G' : 'D') : pileGeom(S, H, Lsup, twoLines);
+      const geo = isC ? culeeGeom(S, h, H, W, Lsup, iso, PT, j === 0 ? 'G' : 'D') : pileGeom(S, H, Lsup, twoLines, W);
       const Gapp = GB * geo.V;
       const N = G + Q + Gapp; // ELS caractéristique en tête de fondation
       const mode = isC ? S.fond.culees : S.fond.piles;
@@ -717,7 +724,10 @@
           sp.V *= fo.Lx / b0; sp.des = 'Sommier ' + fr(fo.Lx, 2) + ' × ' + fr(geo.sommier.h, 2) + ' m (2 rangées de pieux)';
           geo.V = sum(geo.parts.map((p) => p.V));
         }
-      } else fo = fondation(S, N, geo.lx, geo.ly, mode, { min: 4, excentre: isC && geo.type === 'remblayee' });
+      } else fo = fondation(S, N, geo.lx, geo.ly, mode, {
+        min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
+        Bmin: isC ? r10(0.65 * geo.Ht) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
+      });
       if (fo.mode === 'superficielle' && fo.B > 10) warn.push((isC ? 'Culée ' : 'Pile ') + (isC ? 'C' + j : 'P' + j) + ' : semelle de ' + fr(fo.B, 1) + ' m — fondations profondes à envisager (σ adm = ' + S.fond.sigma + ' MPa).');
       if (!isC && H > 25) warn.push('Pile P' + j + ' de ' + frn(H) + ' m : piles hautes, vérifier flambement, effets du second ordre et séisme.');
       supports.push({
