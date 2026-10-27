@@ -116,158 +116,197 @@
   }
 
 
-  /* ── mode « diapositives » : une page = un écran ── */
+  /* ── mode diaporama : diapositives 16:9 à taille fixe, ajustées à l'écran ── */
   function paginate() {
     const art = $("article");
     if (!art || document.body.dataset.paged === "no") return;
-    const secs = $$(":scope > section", art);
-    if (secs.length < 2) return;
-    document.body.classList.add("paged");
+    if (!$$(":scope > section", art).length) return;
     const chInfo = COURS[idx] || { n: "", t: document.title };
     const pdfBtn = $("[data-print]");
+    const chName = chInfo.n === "F" ? "Formulaire" : "Chapitre " + chInfo.n;
 
-    // barre supérieure : chapitre + page + points + flèches
-    const top = el("div", { class: "pager-top" });
-    top.innerHTML = `<div class="pg-row">
-        <a class="pg-ch" href="${ROOT}etudiants.html" title="Tous les chapitres">${chInfo.n === "F" ? "Formulaire" : "Ch. " + chInfo.n}</a>
-        <span class="pg-chname">${chInfo.t}</span>
-        <span class="pg-sep">›</span>
-        <span class="pg-title"></span>
-        <span class="pg-count"></span>
-        <button type="button" class="pg-arrow pg-a-prev" aria-label="Page précédente">‹</button>
-        <button type="button" class="pg-arrow pg-a-next" aria-label="Page suivante">›</button>
-        <button type="button" class="pg-pdf" title="Télécharger le chapitre en PDF">PDF</button>
-      </div><div class="pg-dots"></div>`;
-    art.prepend(top);
-    $(".pg-pdf", top).addEventListener("click", () => { if (pdfBtn) pdfBtn.click(); else window.print(); });
-    const bottom = el("div", { class: "pager-bottom" });
-    bottom.innerHTML = `<button type="button" class="pg-prev">← <span></span></button><span class="pg-mid"></span><button type="button" class="pg-next"><span></span> →</button>`;
+    // diapositive de titre (reprise de l'en-tête)
+    const head = $(".ch-head");
+    let ts = null;
+    if (head) {
+      const h1 = $("h1", head), num = $(".ch-num", head), lede = $(":scope > section .lede", art);
+      ts = el("div", { class: "title-slide" }, `
+        <div class="ts-num">${num ? num.textContent : ""}</div>
+        <div class="ts-txt"><div class="ts-kicker">Cours de ponts · ${chName}</div>
+        <h1>${h1 ? h1.innerHTML : chInfo.t}</h1>
+        ${lede ? `<p>${lede.innerHTML}</p>` : ""}
+        <div class="ts-hint">Appuyez sur <b>→</b> ou cliquez sur <b>›</b> pour commencer</div></div>`);
+      if (lede) lede.dataset.dup = 1;
+      art.prepend(ts);
+    }
+    const secs = $$(":scope > section", art);
+
+    // structure du diaporama
+    document.body.classList.add("paged", "deck-mode");
+    const deck = el("div", { class: "deck" });
+    deck.innerHTML = `
+      <div class="deck-bar">
+        <button type="button" class="db-menu" title="Sommaire">☰</button>
+        <a class="db-home" href="${ROOT}etudiants.html" title="Espace étudiants">Bridge<span>AI</span></a>
+        <span class="db-ch">${chName}</span>
+        <span class="db-title"></span>
+        <span class="db-count"></span>
+        <button type="button" class="db-prev" aria-label="Diapositive précédente">‹</button>
+        <button type="button" class="db-next" aria-label="Diapositive suivante">›</button>
+        <button type="button" class="db-full" title="Plein écran">⛶</button>
+        <button type="button" class="db-pdf" title="Télécharger le chapitre en PDF">PDF</button>
+        <div class="db-prog"><i></i></div>
+      </div>
+      <div class="deck-view">
+        <div class="slide-wrap"><div class="slide">
+          <div class="slide-head"><span class="sh-sec"></span><span class="sh-ch">${chInfo.t}</span></div>
+          <div class="slide-body"></div>
+          <div class="slide-foot"><span>BridgeAI Studios · Cours de ponts</span><span class="sf-n"></span></div>
+        </div></div>
+        <button type="button" class="deck-nav dn-prev" aria-label="Précédente">‹</button>
+        <button type="button" class="deck-nav dn-next" aria-label="Suivante">›</button>
+      </div>`;
+    document.body.append(deck);
+    const slide = $(".slide", deck), body = $(".slide-body", deck), wrap = $(".slide-wrap", deck);
+    body.append(art);
     const chNav = $(".ch-nav", art);
-    art.insertBefore(bottom, chNav || null);
+    $(".db-menu", deck).addEventListener("click", () => document.body.classList.toggle("side-open"));
+    $(".db-pdf", deck).addEventListener("click", () => { if (pdfBtn) pdfBtn.click(); else window.print(); });
+    $(".db-full", deck).addEventListener("click", () => {
+      try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {}
+    });
 
-    let pages = [], N = 0, k = 0;
+    // blocs à répartir
     const blocks = [];
+    if (ts) blocks.push({ e: ts, si: -1, alone: true });
     secs.forEach((sec, si) => Array.from(sec.children).forEach(e => {
-      // une grille de fiches se découpe fiche par fiche
+      if (e.dataset.dup) { e.dataset.pgSkip = 1; }
       if (e.matches(".fo-grid, [data-split]")) { e.dataset.pgGrid = 1; Array.from(e.children).forEach(c => blocks.push({ e: c, si, grid: e })); }
       else blocks.push({ e, si });
     }));
-    const hOf = e => {
-      const cs = getComputedStyle(e);
-      return e.getBoundingClientRect().height + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
-    };
     const isHead = e => /^H[234]$/.test(e.tagName);
-    const labelOf = (pgBlocks) => {
+    const clean = t => t.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim();
+    const secTitle = si => { const h = si >= 0 && $("h2", secs[si]); return h ? clean(h.textContent) : ""; };
+    const labelOf = pgBlocks => {
       const e0 = pgBlocks[0].e;
-      if (e0.matches(".quiz")) return "Quiz : testez-vous";
+      if (e0 === ts) return "Titre";
       if (e0.matches(".keys")) return "À retenir";
       const h = pgBlocks.map(b => b.e).find(e => /^H[23]$/.test(e.tagName));
-      if (h) return h.textContent.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim();
-      const h2 = e0.closest("section").querySelector("h2");
-      return h2 ? h2.textContent.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim() + " (suite)" : "Introduction";
+      if (h) return clean(h.textContent);
+      return secTitle(pgBlocks[0].si) || "Introduction";
     };
 
+    let W = 1280, H = 720, BH = 0, pages = [], N = 0, k = 0;
+    function dims() {
+      const vw = innerWidth, vh = innerHeight - 44;
+      if (vw < 760) { W = 400; H = Math.max(560, Math.round(W * (vh - 10) / (vw - 10))); deck.classList.add("narrow"); }
+      else { W = 1280; H = 720; deck.classList.remove("narrow"); }
+      slide.style.width = W + "px"; slide.style.height = H + "px";
+      BH = H - (deck.classList.contains("narrow") ? 62 : 92);
+      body.style.height = BH + "px";
+      slide.style.setProperty("--bh", BH + "px");
+    }
+    function fitScreen() {
+      const narrow = deck.classList.contains("narrow");
+      const mx = narrow ? 6 : 64, my = narrow ? 6 : 18;
+      const s = Math.min((innerWidth - 2 * mx) / W, (innerHeight - 44 - 2 * my) / H, 2);
+      slide.style.transform = `scale(${s})`;
+      wrap.style.width = W * s + "px"; wrap.style.height = H * s + "px";
+    }
+    function fitInner() {
+      art.style.transform = "";
+      const ch = art.offsetHeight;
+      if (ch > BH) { const f = BH / ch; art.style.transform = `scale(${f})`; }
+    }
+
     function layout() {
-      // découpage par mesure réelle : on remplit l'écran bloc par bloc
+      dims();
+      art.style.transform = "";
       const grids = $$("[data-pg-grid]", art);
       blocks.forEach(b => b.e.classList.add("pg-hide"));
       grids.forEach(g => g.classList.add("pg-hide"));
       secs.forEach(sec => sec.classList.add("pg-hide"));
+      $$("[data-pg-skip]", art).forEach(e => e.classList.add("pg-hide"));
       if (chNav) chNav.classList.add("pg-hide");
-      bottom.style.display = "";
-      $(".pg-title", top).textContent = "…";
-      const limit = innerHeight - 12;
-      const fits = () => art.getBoundingClientRect().bottom + scrollY <= limit;
-      const vis = b => { b.e.classList.remove("pg-hide"); if (b.grid) b.grid.classList.remove("pg-hide"); b.e.closest("section").classList.remove("pg-hide"); };
+      const fits = () => art.offsetHeight <= BH;
+      const vis = b => { b.e.classList.remove("pg-hide"); if (b.grid) b.grid.classList.remove("pg-hide"); if (b.si >= 0) secs[b.si].classList.remove("pg-hide"); };
       const hide = b => b.e.classList.add("pg-hide");
-      const close = pg => {
-        pg.blocks.forEach(hide);
-        grids.forEach(g => g.classList.add("pg-hide"));
-        secs.forEach(sec => sec.classList.add("pg-hide"));
-      };
+      const close = pg => { pg.blocks.forEach(hide); grids.forEach(g => g.classList.add("pg-hide")); secs.forEach(sec => sec.classList.add("pg-hide")); };
       pages = [];
       let pg = null;
-      const open = () => { if (pg) close(pg); pg = { blocks: [], si: -1 }; pages.push(pg); };
+      const open = () => { if (pg) close(pg); pg = { blocks: [], si: -2 }; pages.push(pg); };
       for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i];
-        const used = pg ? art.getBoundingClientRect().height / innerHeight : 0;
+        if (b.e.dataset.pgSkip) continue;
+        const used = pg ? art.offsetHeight / BH : 0;
         const newSec = pg && pg.blocks.length && b.si !== pg.si;
-        if (!pg || b.e.matches(".quiz,.keys") || (newSec && used > .5)) open();
+        if (!pg || b.alone || (pg.blocks[0] && pg.blocks[0].alone) || b.e.matches(".keys") || (newSec && used > .45)) open();
         pg.si = b.si;
         vis(b);
         let ok = fits();
-        // un titre ne reste jamais seul en bas de page
-        if (ok && isHead(b.e) && pg.blocks.length && blocks[i + 1] && blocks[i + 1].si === b.si) {
-          vis(blocks[i + 1]); ok = fits(); hide(blocks[i + 1]);
-        }
+        if (ok && isHead(b.e) && pg.blocks.length && blocks[i + 1] && blocks[i + 1].si === b.si) { vis(blocks[i + 1]); ok = fits(); hide(blocks[i + 1]); }
         if (!ok && pg.blocks.length) {
           hide(b);
-          // si la page se termine par un titre, on l'emporte avec nous
           const carry = [];
           while (pg.blocks.length > 1 && isHead(pg.blocks[pg.blocks.length - 1].e)) carry.unshift(pg.blocks.pop());
           open();
           carry.forEach(c => { vis(c); pg.blocks.push(c); });
-          pg.si = b.si;
-          vis(b);
+          pg.si = b.si; vis(b);
         }
         pg.blocks.push(b);
       }
       close(pg);
-      pages.forEach((p, n) => { p.label = labelOf(p.blocks); p.blocks.forEach(b => { b.e.dataset.pg = n; }); });
+      // dernière diapositive : liens vers les chapitres voisins
+      if (chNav) { pages.push({ blocks: [{ e: chNav, si: -1 }], si: -1, end: true }); }
+      pages.forEach((p, n) => { p.label = p.end ? "Suite du cours" : labelOf(p.blocks); p.blocks.forEach(b => { b.e.dataset.pg = n; }); });
       N = pages.length;
-      $(".pg-dots", top).innerHTML = pages.map((p, n) => `<button type="button" title="${(n + 1) + ". " + p.label.replace(/"/g, "&quot;")}" aria-label="Page ${n + 1}"></button>`).join("");
-      $$(".pg-dots button", top).forEach((d, i) => d.addEventListener("click", () => go(i)));
+      fitScreen();
     }
 
-    function show(n, scrollTop) {
+    function show(n) {
       k = Math.max(0, Math.min(N - 1, n));
       $$("[data-pg]", art).forEach(e => e.classList.toggle("pg-hide", +e.dataset.pg !== k));
       $$("[data-pg-grid]", art).forEach(g => g.classList.toggle("pg-hide", !Array.from(g.children).some(e => +e.dataset.pg === k)));
       secs.forEach(sec => sec.classList.toggle("pg-hide", !$$("[data-pg]", sec).some(e => +e.dataset.pg === k)));
-      $$(".pg-dots button", top).forEach((d, i) => { d.classList.toggle("on", i === k); d.classList.toggle("done", i < k); });
-      $(".pg-count", top).textContent = `${k + 1} / ${N}`;
-      $(".pg-title", top).textContent = pages[k].label;
-      $(".pg-a-prev", top).disabled = k === 0;
-      $(".pg-a-next", top).disabled = k === N - 1;
-      const pv = $(".pg-prev", bottom), nx = $(".pg-next", bottom);
-      pv.style.visibility = k ? "visible" : "hidden";
-      nx.style.display = k < N - 1 ? "" : "none";
-      if (k) $("span", pv).textContent = pages[k - 1].label;
-      if (k < N - 1) $("span", nx).textContent = pages[k + 1].label;
-      $(".pg-mid", bottom).textContent = `${k + 1} / ${N}`;
-      if (chNav) chNav.classList.toggle("pg-hide", k < N - 1);
-      document.body.classList.toggle("pg-last", k === N - 1);
-      const bar = $(".reading-bar");
-      if (bar) bar.style.width = ((k + 1) / N * 100) + "%";
+      const p = pages[k];
+      slide.classList.toggle("is-title", !!(p.blocks[0] && p.blocks[0].e === ts));
+      slide.classList.toggle("is-end", !!p.end);
+      const sec = p.blocks[0] ? secTitle(p.blocks[0].si) : "";
+      $(".sh-sec", deck).textContent = p.end ? "Fin du chapitre" : (sec || p.label);
+      $(".sf-n", deck).textContent = `${k + 1} / ${N}`;
+      $(".db-title", deck).textContent = p.label;
+      $(".db-count", deck).textContent = `${k + 1} / ${N}`;
+      $(".db-prog i", deck).style.width = ((k + 1) / N * 100) + "%";
+      $(".db-prev", deck).disabled = $(".dn-prev", deck).disabled = k === 0;
+      $(".db-next", deck).disabled = $(".dn-next", deck).disabled = k === N - 1;
       $$(".side .toc a").forEach(a => {
         const t = document.getElementById(a.getAttribute("href").slice(1));
         a.classList.toggle("on", !!t && +((t.closest("[data-pg]") || {}).dataset || {}).pg === k);
       });
       try { history.replaceState(null, "", "#p" + (k + 1)); } catch (e) {}
-      if (scrollTop) window.scrollTo({ top: 0, behavior: "auto" });
+      fitInner();
       window.dispatchEvent(new Event("resize"));
       document.dispatchEvent(new CustomEvent("cours:page", { detail: k }));
     }
-    function go(n) { show(n, true); }
-    $(".pg-prev", bottom).addEventListener("click", () => go(k - 1));
-    $(".pg-next", bottom).addEventListener("click", () => go(k + 1));
-    $(".pg-a-prev", top).addEventListener("click", () => go(k - 1));
-    $(".pg-a-next", top).addEventListener("click", () => go(k + 1));
+    const go = n => show(n);
+    ["db-prev", "dn-prev"].forEach(c => $("." + c, deck).addEventListener("click", () => go(k - 1)));
+    ["db-next", "dn-next"].forEach(c => $("." + c, deck).addEventListener("click", () => go(k + 1)));
     addEventListener("keydown", e => {
       if (e.target.closest && e.target.closest("input,select,textarea")) return;
-      if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(k + 1); }
-      if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(k - 1); }
+      if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(k + 1); }
+      else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(k - 1); }
+      else if (e.key === "Home") go(0);
+      else if (e.key === "End") go(N - 1);
+      else if (e.key === "f" || e.key === "F") $(".db-full", deck).click();
     });
-    // balayage gauche / droite sur écran tactile
     let tx = null, ty = null;
-    art.addEventListener("touchstart", e => { if (e.target.closest(".v3d,.calc,input,.seq-stage,svg")) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
-    art.addEventListener("touchend", e => {
+    deck.addEventListener("touchstart", e => { if (e.target.closest(".v3d,.calc,input,select,.seq-stage,.hotspots")) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+    deck.addEventListener("touchend", e => {
       if (tx === null) return;
       const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
-      if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) go(k + (dx < 0 ? 1 : -1));
+      if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) go(k + (dx < 0 ? 1 : -1));
       tx = null;
     }, { passive: true });
-    // liens internes
     document.addEventListener("click", e => {
       const a = e.target.closest && e.target.closest('a[href^="#"]');
       if (!a) return;
@@ -277,20 +316,20 @@
       if (!host) return;
       e.preventDefault();
       show(+host.dataset.pg);
-      requestAnimationFrame(() => window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + scrollY - 110), behavior: "smooth" }));
       document.body.classList.remove("side-open");
     });
-    // relayout si la fenêtre change nettement de taille
     let lastW = innerWidth, lastH = innerHeight, rt = null;
     addEventListener("resize", () => {
-      if (Math.abs(innerWidth - lastW) < 80 && Math.abs(innerHeight - lastH) < 120) return;
+      fitScreen();
+      const crossed = (innerWidth < 760) !== (lastW < 760);
+      if (!crossed && !(innerWidth < 760 && Math.abs(innerHeight - lastH) > 120)) return;
       clearTimeout(rt);
       rt = setTimeout(() => {
         lastW = innerWidth; lastH = innerHeight;
-        const anchor = pages[k] && pages[k].blocks[0].e;
+        const anchor = pages[k] && pages[k].blocks[0] && pages[k].blocks[0].e;
         layout();
-        show(anchor ? +anchor.dataset.pg : 0);
-      }, 350);
+        show(anchor && anchor.dataset.pg ? +anchor.dataset.pg : 0);
+      }, 300);
     });
     layout();
     let start = 0;
