@@ -12,7 +12,7 @@
   const show = (v) => (v === 0 || v ? String(v).replace('.', ',') : '');
 
   let S = load() || C.normalize(C.defaults('route'));
-  let M = null, view = 'elev', menu = 'ouvrage', selId = 'tablier', showDims = true, wire = false;
+  let M = null, view = 'elev', menu = 'resultats', selId = 'tablier', showDims = true, wire = false;
   const openT = [];
   const expanded = new Set(['projet', 'tablier', 'travees', 'appuis', 'resultats']);
   try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
@@ -110,36 +110,6 @@
         + grp('Édition', rb('undo', 'Annuler', 'undo', { dis: !undoS.length, tip: 'Annuler — Ctrl+Z' }) + rb('redo', 'Rétablir', 'redo', { dis: !redoS.length, tip: 'Rétablir — Ctrl+Y' }))
         + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan de coffrage d’ensemble (AutoCAD)' }))
         + grp('Site', rb('home', 'Accueil', 'home', { tip: 'Retour à BridgeAI Studios' }));
-    }
-    if (menu === 'ouvrage') {
-      return grp('Usage', rb('usage', 'Pont-<br>route', 'route', { arg: 'route', on: !rail }) + rb('usage', 'Pont-<br>rail', 'rail', { arg: 'rail', on: rail }))
-        + grp('Type de tablier', C.TYPE_KEYS.map((k) => {
-          const st = C.typeStatus(k, S.travees, S.usage);
-          return rb('deck', C.TYPES[k].nom, k, { arg: k, on: k === S.tablier.type, wide: true, tip: C.TYPES[k].titre + ' — ' + (st.k === 'ok' ? 'adapté aux portées' : st.k === 'lim' ? 'en limite de domaine' : 'hors domaine') });
-        }).join(''))
-        + grp('Travées', rb('addSpan', 'Ajouter<br>travée', 'addSpan', { dis: n >= 12 }) + rb('delSpan', 'Retirer<br>travée', 'delSpan', { dis: n <= 1 })
-          + col(rs('continu', 'Continues', 'box', { on: M.cont, dis: !(T.iso && T.cont && n > 1) })
-            + rs('dalleC', 'Hourdis continu', 'box', { on: S.tablier.dalleContinuite && T.famille === 'poutres' && n > 1, dis: !(T.famille === 'poutres' && n > 1) })))
-        + grp('Piles', Object.keys(C.PILES).map((k) => rb('pile', C.PILES[k].nom, k, { arg: k, on: S.piles.type === k, wide: true, dis: n <= 1, tip: C.PILES[k].desc })).join(''))
-        + grp('Culées', Object.keys(C.CULEES).map((k) => rb('culee', C.CULEES[k].nom, k, { arg: k, on: S.culees.type === k, wide: true, tip: C.CULEES[k].desc })).join(''));
-    }
-    if (menu === 'charges') {
-      let h = grp('Règlement', rb('reg', rail ? 'EN 1991-2' : 'Eurocodes', 'EN', { arg: 'EC', on: S.reglement === 'EC' }) + rb('reg', rail ? 'UIC 71' : 'Fasc. 61', 'F61', { arg: 'F61', on: S.reglement === 'F61' }));
-      h += grp(rail ? 'Trafic ferroviaire' : 'Trafic routier', col(rail
-        ? `<label class="rfield">Coefficient α <input type="text" inputmode="decimal" data-k="alpha" value="${show(S.alpha)}"></label><label class="rfield">Voies <input type="text" inputmode="decimal" data-k="profil.nbVoiesFer" value="${show(S.profil.nbVoiesFer)}"></label>`
-        : `<label class="rfield">Classe <select data-k="classe" data-sel="1">${[1, 2, 3].map((c) => `<option value="${c}"${S.classe === c ? ' selected' : ''}>${c === 1 ? '1re' : c + 'e'} classe</option>`).join('')}</select></label><label class="rfield">Chaussée (m) <input type="text" inputmode="decimal" data-k="profil.roulable" value="${show(S.profil.roulable)}"></label>`));
-      if (!rail) h += grp('Retenue', ['BN4', 'GBA', 'GC'].map((k) => rb('retenue', { BN4: 'BN4', GBA: 'GBA', GC: 'Garde-<br>corps' }[k], k, { arg: k, on: S.equip.retenue === k })).join(''));
-      h += grp('Superstructures', col(rs('toggle', 'Corniches', 'box', { arg: 'equip.corniches', on: S.equip.corniches }) + rs('toggle', 'Étanchéité', 'box', { arg: 'equip.etancheite', on: S.equip.etancheite })
-        + (rail ? '' : rs('toggle', 'Gargouilles', 'box', { arg: 'equip.gargouilles', on: S.equip.gargouilles }))));
-      return h;
-    }
-    if (menu === 'appuis') {
-      return grp('Fondation des piles', rb('fondP', 'Semelles', 'semelle', { arg: 'superficielle', on: S.fond.piles === 'superficielle', dis: n <= 1 }) + rb('fondP', 'Pieux', 'pieux', { arg: 'pieux', on: S.fond.piles === 'pieux', dis: n <= 1 }))
-        + grp('Fondation des culées', rb('fondC', 'Semelles', 'semelle', { arg: 'superficielle', on: S.fond.culees === 'superficielle' }) + rb('fondC', 'Pieux', 'pieux', { arg: 'pieux', on: S.fond.culees === 'pieux' }))
-        + grp('Sol et pieux', col(`<label class="rfield">σ adm (MPa) <input type="text" inputmode="decimal" data-k="fond.sigma" value="${show(S.fond.sigma)}"></label>`
-          + `<label class="rfield">Pieux Ø <select data-k="fond.diam" data-sel="1">${[0.6, 0.8, 1, 1.2, 1.5].map((d) => `<option value="${d}"${S.fond.diam === d ? ' selected' : ''}>${fr(d, 2)} m</option>`).join('')}</select></label>`
-          + `<label class="rfield">L pieux (m) <input type="text" inputmode="decimal" data-k="fond.long" value="${show(S.fond.long)}"></label>`))
-        + grp('Culées', rb('toggle', 'Dalles de<br>transition', 'transition', { arg: 'culees.dalleTransition', on: S.culees.dalleTransition && !rail, dis: rail }));
     }
     if (menu === 'resultats') {
       return grp('Tableaux de résultats', ['predim', 'ddc', 'appuis', 'metre', 'msg'].map((k) => rb('tab', { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' }[k], k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''))
