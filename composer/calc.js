@@ -611,12 +611,15 @@
     const F = S.fond;
     opt = opt || {};
     if (mode === 'superficielle') {
-      const sig = F.sigma * 1000, L = r10(ly + 1.0);
-      let B = Math.max(lx + 1.0, 2.5), e = 1.0;
-      for (let i = 0; i < 8; i++) {
+      const sig = F.sigma * 1000, L0 = r10(ly + 1.0);
+      let B = Math.max(lx + 1.0, 2.5), L = L0, e = 1.0;
+      for (let i = 0; i < 12; i++) {
         const Ws = GB * B * L * e + HY.gammaRemblai * 0.6 * B * L;
-        B = Math.max(lx + 1.0, 2.5, opt.Bmin || 0, (N + Ws) / (sig * L) * (opt.excentre ? 1 + HY.majCulees / 100 : 1));
-        B = r10(B); e = Math.max(0.8, r05((B - lx) / 4 + 0.05), opt.colonnes ? Math.min(1.5, r05(0.3 * B)) : 0);
+        const A = (N + Ws) / sig * (opt.excentre ? 1 + HY.majCulees / 100 : 1);
+        /* fût étroit (pile marteau, voile court) : semelle élargie dans les deux sens plutôt qu'une bande */
+        L = opt.excentre ? L0 : Math.max(L0, r10(Math.sqrt(A) * 0.9));
+        B = r10(Math.max(lx + 1.0, 2.5, opt.Bmin || 0, A / L));
+        e = Math.max(0.8, r05(Math.max(B - lx, L - ly) / 4 + 0.05), opt.colonnes ? Math.min(1.5, r05(0.3 * B)) : 0);
       }
       const Ws = GB * B * L * e + HY.gammaRemblai * 0.6 * B * L, q = (N + Ws) / (B * L);
       return { mode, B, L, e, V: B * L * e, coff: 2 * (B + L) * e, ratio: 90, prop: B * L * 0.10, fouilles: (B + 1) * (L + 1) * (e + 0.6), q, Ws };
@@ -759,7 +762,7 @@
         min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
         Bmin: isC ? r10(0.65 * geo.Ht) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
       });
-      if (fo.mode === 'superficielle' && fo.B > 10) warn.push((isC ? 'Culée ' : 'Pile ') + (isC ? 'C' + j : 'P' + j) + ' : semelle de ' + fr(fo.B, 1) + ' m — fondations profondes à envisager (σ adm = ' + S.fond.sigma + ' MPa).');
+      if (fo.mode === 'superficielle' && Math.max(fo.B, fo.L * (isC ? 0 : 0.6)) > 10) warn.push((isC ? 'Culée ' : 'Pile ') + (isC ? 'C' + j : 'P' + j) + ' : semelle de ' + fr(fo.B, 1) + ' m — fondations profondes à envisager (σ adm = ' + S.fond.sigma + ' MPa).');
       if (!isC && H > 25) warn.push('Pile P' + j + ' de ' + frn(H) + ' m : piles hautes, vérifier flambement, effets du second ordre et séisme.');
       supports.push({
         j, id: isC ? 'C' + j : 'P' + j, kind: isC ? 'culee' : 'pile', x: xs[j], Lg, Ld, H, G, Q, det: tq.det,

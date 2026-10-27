@@ -713,8 +713,12 @@
     const n = S.travees.length;
     switch (cmd) {
       case 'new':
-        if (!confirm('Nouveau projet ? La composition en cours sera remplacée (enregistrez-la d’abord si besoin).')) return;
-        S = C.normalize(C.defaults(S.usage)); selId = 'tablier'; break;
+        C.wizard(S, (ns) => {
+          S = C.normalize(ns); selId = 'tablier'; expanded.clear(); ['tablier', 'travees', 'appuis'].forEach((k) => expanded.add(k));
+          openT.length = 0; view = 'elev'; lastGraphic = 'elev';
+          recompute(true); fitView();
+        });
+        return;
       case 'open': $('#fOpen').click(); return;
       case 'save': saveJSON(); return;
       case 'pdf': buildPrint(); window.print(); return;
@@ -1112,6 +1116,10 @@
   }
   window.addEventListener('beforeprint', buildPrint);
 
+  let firstVisit = false;
+  try { firstVisit = !localStorage.getItem(KEY); } catch (e) { /* stockage indisponible */ }
   renderVtools();
   recompute(true);
+  /* première visite (ou lien …?nouveau) : on propose l’assistant de création */
+  if ((firstVisit && !/[?&]demo\b/.test(location.search)) || /[?&]nouveau\b/.test(location.search)) setTimeout(() => run('new'), 150);
 })();
