@@ -464,7 +464,7 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
       <div class="card" style="padding:14px 18px" data-a data-fx="left">
         <h3 style="font-size:19px">Hypothèses (valeurs pédagogiques)</h3>
         <ul class="b tight" style="gap:4px;margin-top:6px">
-          <li style="font-size:17px">1 travée isostatique, L = 25 m, <b>M ≈ 470 t</b></li>
+          <li style="font-size:17px">1 travée isostatique, L = 25 m, <b>M ≈ 380 t</b> (G ≈ 370 t, chapitre 6, + part de trafic)</li>
           <li style="font-size:17px">2 culées sur semelles, <b>pas de pile</b></li>
           <li style="font-size:17px">8 appareils 300 × 400, T<sub>e</sub> = 40 mm, G = 1,2 MPa</li>
           <li style="font-size:17px">a<sub>gR</sub> = 0,15 g, γ<sub>I</sub> = 1,0, sol B, q = 1</li>
@@ -472,10 +472,10 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
       </div>
       <table class="tb" style="margin-top:14px;font-size:17px">
         <tr data-b="1" data-fx="left"><td>Raideur totale K</td><td class="n">8 × 3 600 = <b>28 800 kN/m</b></td></tr>
-        <tr data-b="2" data-fx="left"><td>Période T</td><td class="n"><b>0,80 s</b> (branche en 1/T)</td></tr>
-        <tr data-b="3" data-fx="left"><td>S<sub>e</sub>(T)</td><td class="n"><b>2,75 m/s²</b> ≈ 0,28 g</td></tr>
-        <tr data-b="4" data-fx="left" class="hl"><td>Effort total F</td><td class="n"><b>≈ 1 290 kN</b> (28 % du poids)</td></tr>
-        <tr data-b="6" data-fx="left"><td>Déplacement d</td><td class="n"><b>≈ 45 mm</b></td></tr>
+        <tr data-b="2" data-fx="left"><td>Période T</td><td class="n"><b>0,72 s</b> (branche en 1/T)</td></tr>
+        <tr data-b="3" data-fx="left"><td>S<sub>e</sub>(T)</td><td class="n"><b>3,06 m/s²</b> ≈ 0,31 g</td></tr>
+        <tr data-b="4" data-fx="left" class="hl"><td>Effort total F</td><td class="n"><b>≈ 1 160 kN</b> (31 % du poids)</td></tr>
+        <tr data-b="6" data-fx="left"><td>Déplacement d</td><td class="n"><b>≈ 40 mm</b></td></tr>
       </table>
     </div>
     <div class="vis" style="flex-direction:column;gap:12px">
@@ -494,10 +494,10 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
         <g>
           <rect x="25" y="226" width="40" height="84" fill="#12a08a" data-b="5" data-fx="grow"/>
           <rect x="615" y="226" width="40" height="84" fill="#12a08a" data-b="5" data-fx="grow" data-d=".2"/>
-          <g class="lbl-b" style="font-size:17px" data-b="5" data-fx="fade" data-d=".4"><text x="76" y="276">≈ 646 kN par culée</text><text x="604" y="276" text-anchor="end">≈ 646 kN</text></g>
+          <g class="lbl-b" style="font-size:17px" data-b="5" data-fx="fade" data-d=".4"><text x="76" y="276">≈ 580 kN par culée</text><text x="604" y="276" text-anchor="end">≈ 580 kN</text></g>
         </g>
       </svg>
-      <div class="callout" style="font-size:17px;width:100%" data-b="6" data-fx="up"><span class="lab">À vérifier ensuite</span>Sans pile, les <b>culées</b> et leurs appareils reprennent tout. Distorsion d/T<sub>e</sub> ≈ 45/40 ≈ <b>1,1</b> à comparer à la limite admise ; longueur d'appui l<sub>ov</sub> ≈ 400 + 10 + 45 ≈ <b>455 mm</b>.</div>
+      <div class="callout" style="font-size:17px;width:100%" data-b="6" data-fx="up"><span class="lab">À vérifier ensuite</span>Sans pile, les <b>culées</b> et leurs appareils reprennent tout. Distorsion d/T<sub>e</sub> ≈ 40/40 ≈ <b>1,0</b> à comparer à la limite admise ; longueur d'appui l<sub>ov</sub> ≈ 400 + 10 + 40 ≈ <b>450 mm</b>.</div>
     </div>
   </div>
 </section>
@@ -625,7 +625,7 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
         <div class="c10-tile"><svg viewBox="0 0 80 40" style="width:80px;height:40px"><rect x="6" y="6" width="68" height="28" rx="3" fill="#3c4049"/><rect x="32" y="6" width="16" height="28" fill="#9aa3ae"/></svg><h3>Noyau de plomb</h3><p>le plomb plastifie et dissipe</p></div>
         <div class="c10-tile"><svg viewBox="0 0 80 40" style="width:80px;height:40px"><path d="M8 30 Q40 10 72 30" stroke="#2f6fe0" stroke-width="4" fill="none"/><rect x="30" y="8" width="20" height="12" fill="#e8a020"/></svg><h3>Pendule à friction</h3><p><span class="tex">T = 2\pi\sqrt{R/g}</span></p></div>
       </div>
-      <div class="callout t" style="margin-top:16px;font-size:18px" data-b="4" data-fx="up"><span class="lab">Bilan sur l'exemple</span>De T ≈ 0,8 s à 2,5 s avec ξ ≈ 15 % : effort ≈ <b>5 à 6 fois plus faible</b>, déplacement ≈ <b>2 fois plus grand</b>. Il faut lui faire de la place : joints et longueurs d'appui.</div>
+      <div class="callout t" style="margin-top:16px;font-size:18px" data-b="4" data-fx="up"><span class="lab">Bilan sur l'exemple</span>De T ≈ 0,7 s à 2,5 s avec ξ ≈ 15 % : effort ≈ <b>5 à 6 fois plus faible</b>, déplacement ≈ <b>2 fois plus grand</b>. Il faut lui faire de la place : joints et longueurs d'appui.</div>
     </div>
   </div>
 </section>
