@@ -20,7 +20,7 @@
   --bg:#ffffff;--chrome:#f1f3f6;--chrome2:#e6e9ee;--line:#cfd4dc;--line2:#b9c0ca;
   --txt:#1b2230;--mute:#5d6676;--acc:#1f5fd1;--acc2:#174aa6;--sel:#dbe8fd;--hov:#eaf1fd;
   --warn:#9a6700;--danger:#c92a2a;--ok:#2b8a3e;--gold:#a8842a;
-  --tree-w:310px;--dock-h:250px;
+  --tree-w:280px;--prop-w:330px;
   --ui:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 html,body{height:100%}
@@ -73,15 +73,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .rfield input{width:58px;text-align:right}
 
 /* ─── zone de travail ─── */
-.work{flex:1;min-height:0;display:grid;grid-template-columns:var(--tree-w) 5px minmax(0,1fr)}
+.work{flex:1;min-height:0;display:grid;grid-template-columns:var(--tree-w) 5px minmax(0,1fr) 5px var(--prop-w)}
 .pane{display:flex;flex-direction:column;min-height:0;min-width:0;background:#fff}
 .ph{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;height:24px;padding:0 8px;background:linear-gradient(#f7f8fa,#e9ecf1);border-bottom:1px solid var(--line);font-weight:600;font-size:11.5px;color:#2c3443;white-space:nowrap}
 .ph small{font-weight:400;color:var(--mute);overflow:hidden;text-overflow:ellipsis}
 .left{border-right:1px solid var(--line)}
-.left .tree{flex:1 1 52%;min-height:80px;overflow:auto;padding:3px 0}
-.left .props{flex:1 1 48%;min-height:80px;overflow:auto;border-top:1px solid var(--line)}
-.vsplit{cursor:col-resize;background:var(--chrome);border-right:1px solid var(--line)}
-.vsplit:hover,.hsplit:hover{background:#c9dafa}
+.left .tree{flex:1;min-height:0;overflow:auto;padding:3px 0}
+.right .props{flex:1;min-height:0;overflow:auto}
+.right{border-left:1px solid var(--line)}
+.vsplit{cursor:col-resize;background:var(--chrome);border-right:1px solid var(--line);border-left:1px solid var(--line)}
+.vsplit:hover{background:#c9dafa}
 
 /* arborescence */
 .tree ul{list-style:none}
@@ -120,8 +121,18 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .mini:disabled{opacity:.45;cursor:default}
 
 /* vue graphique */
-.center{display:grid;grid-template-rows:auto minmax(0,1fr) 5px var(--dock-h);min-width:0;min-height:0}
+.center{display:grid;grid-template-rows:auto minmax(0,1fr);min-width:0;min-height:0}
+.stage{position:relative;min-height:0;min-width:0}
+.stage>.canvas,.stage>.tpane{position:absolute;inset:0}
+.tpane{display:flex;flex-direction:column;background:#fff}
+[hidden]{display:none !important}
 .doctabs{display:flex;align-items:flex-end;gap:2px;padding:3px 6px 0;background:var(--chrome);border-bottom:1px solid var(--line);min-width:0}
+.dtl{display:flex;gap:2px;align-items:flex-end;min-width:0;overflow-x:auto;scrollbar-width:none}.dtl::-webkit-scrollbar{display:none}
+.dtab.tt{padding-right:4px}
+.dtab svg{width:14px;height:14px;stroke:#c2410c;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dtab .dx{border:none;background:none;width:18px;height:18px;border-radius:3px;cursor:pointer;color:#6b7383;font-size:14px;line-height:1}
+.dtab .dx:hover{background:#f3c9c9;color:var(--danger)}
+.dtab .bd,.ktab .bd{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:#d29b14;color:#fff;font-size:10px;font-weight:600;text-align:center}
 .dtab{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:none;background:#e9ecf1;padding:4px 12px;border-radius:3px 3px 0 0;cursor:pointer;white-space:nowrap;position:relative;top:1px;color:#3a4352}
 .dtab.on{background:#fff;color:var(--txt);font-weight:600}
 .vtools{margin-left:auto;display:flex;gap:1px;padding-bottom:3px}
@@ -129,7 +140,7 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .vt svg{width:17px;height:17px;stroke:#2c4a7a;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .vt:hover{background:var(--hov);border-color:#b5cdf3}
 .vt.on{background:var(--sel);border-color:#7da7ec}
-.canvas{position:relative;overflow:hidden;background:#fff;cursor:grab;touch-action:none}
+.canvas{position:relative;overflow:hidden;background:#fff;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .canvas.drag{cursor:grabbing}
 #svgHost svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .canvas [data-tag]{cursor:pointer}
@@ -154,6 +165,7 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .dock-b h4 small{font-weight:400;color:var(--mute);margin-left:6px}
 .dock-b .hint{color:var(--mute);line-height:1.5;margin:4px 0}
 .dock-b .hint b{color:var(--txt);font-weight:600}
+.dock-b .notes{padding-left:18px;color:var(--mute);margin-top:8px;line-height:1.55}
 table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100%}
 .t th{position:sticky;top:-8px;background:#eef1f5;font-weight:600;text-align:right;padding:3px 8px;border:1px solid var(--line);white-space:nowrap;color:#2c3443;z-index:1}
 .t td{padding:2px 8px;border:1px solid #e3e7ec;text-align:right;white-space:nowrap}
@@ -177,6 +189,18 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .msgl li.i::before{content:"i";background:#5b7db8;font-style:italic}
 .msgl li.o::before{content:"✓";background:var(--ok)}
 
+/* menu contextuel */
+.cmenu{position:fixed;z-index:500;min-width:220px;max-width:300px;background:#fff;border:1px solid #aab3c0;border-radius:4px;box-shadow:0 8px 24px -6px rgba(20,30,50,.35);padding:3px 0;font-size:12px}
+.cmenu .mh{padding:4px 12px 2px;font-size:10.5px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.cmenu button{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;padding:4px 12px 4px 8px;text-align:left;cursor:pointer;white-space:nowrap}
+.cmenu button svg{width:16px;height:16px;flex:none;stroke:#2c4a7a;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.cmenu button .ck{width:16px;flex:none;text-align:center;color:var(--acc);font-weight:700}
+.cmenu button:hover,.cmenu button:focus{background:var(--sel);outline:none}
+.cmenu button:disabled{opacity:.45;cursor:default;background:none}
+.cmenu button.danger{color:var(--danger)}
+.cmenu button kbd{margin-left:auto;font:inherit;font-size:11px;color:var(--mute)}
+.cmenu hr{border:none;border-top:1px solid var(--chrome2);margin:3px 0}
+
 /* barre d'état */
 .status{flex:none;display:flex;align-items:center;gap:0;height:23px;background:var(--chrome);border-top:1px solid var(--line);font-size:11px;color:#3a4352;overflow:hidden}
 .status span{padding:0 10px;border-right:1px solid var(--line);white-space:nowrap;line-height:23px}
@@ -192,18 +216,17 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   .titlebar .tb-doc{display:none}
   .ribbon{height:auto;min-height:88px}
   .work{display:flex;flex-direction:column}
-  .vsplit,.hsplit{display:none}
+  .vsplit{display:none}
+  .stage{height:min(72vw,460px);order:2}
+  .right{order:3;border-left:none;border-top:1px solid var(--line)}
+  .right .props{flex:none;overflow:visible}
   .center{display:contents}
-  .doctabs{order:1;flex-wrap:wrap}
-  .canvas{order:2;height:min(72vw,440px);flex:none;border-bottom:1px solid var(--line)}
-  .left{order:3;border-right:none;border-top:1px solid var(--line)}
-  .dock{order:4;border-top:1px solid var(--line)}
+  .doctabs{order:1}
+  .left{order:4;border-right:none;border-top:1px solid var(--line)}
+  .dock-b{overflow:auto}
   .left .tree{max-height:none;flex:none}
   .left .props{flex:none;max-height:none}
-  .dock{min-height:260px}
-  .dock-b{overflow:visible;max-height:none}
   .t th{position:static}
-  .dock-b{overflow-x:auto}
   .status{flex-wrap:wrap;height:auto}
   .status span{border-right:none}
   .status .grow{flex-basis:100%}
@@ -268,46 +291,42 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <div class="ribbon" id="ribbon" role="toolbar" aria-label="Commandes"></div>
 
 <div class="work" id="work">
-  <aside class="pane left" aria-label="Arborescence et propriétés">
+  <aside class="pane left" aria-label="Arborescence de l’ouvrage">
     <div class="ph">Arborescence de l’ouvrage<small id="treeSub"></small></div>
     <div class="tree" id="tree" role="tree"></div>
-    <div class="ph">Propriétés<small id="propSub"></small></div>
-    <div class="props" id="props"></div>
   </aside>
   <div class="vsplit" id="vsplit" title="Redimensionner"></div>
   <section class="center">
     <div class="doctabs">
-      <button class="dtab on" data-v="elev">Élévation</button>
-      <button class="dtab" data-v="sec">Coupe transversale</button>
+      <div class="dtl" id="dtabsList" role="tablist"></div>
       <div class="vtools" id="vtools"></div>
     </div>
-    <div class="canvas" id="cv">
-      <div id="svgHost"></div>
-      <svg class="axes" viewBox="0 0 46 46" aria-hidden="true"><path d="M8 38h30M8 38V8" stroke="#c92a2a" stroke-width="1.4" fill="none"/><path d="M38 38l-5-3v6zM8 8l-3 5h6z" fill="#c92a2a"/><text x="40" y="41" font-size="9" fill="#c92a2a">X</text><text x="11" y="9" font-size="9" fill="#c92a2a">Z</text></svg>
-      <div class="vinfo" id="vinfo"></div>
-    </div>
-    <div class="hsplit" id="hsplit" title="Redimensionner"></div>
-    <div class="dock pane">
-      <div class="dtabs" id="dtabs">
-        <button class="ktab on" data-t="predim">Prédimensionnement</button>
-        <button class="ktab" data-t="ddc">Descente de charges</button>
-        <button class="ktab" data-t="appuis">Appuis &amp; fondations</button>
-        <button class="ktab" data-t="metre">Métrés &amp; coût</button>
-        <button class="ktab" data-t="msg">Messages</button>
+    <div class="stage">
+      <div class="canvas" id="cv">
+        <div id="svgHost"></div>
+        <svg class="axes" id="axes2d" viewBox="0 0 46 46" aria-hidden="true"><path d="M8 38h30M8 38V8" stroke="#c92a2a" stroke-width="1.4" fill="none"/><path d="M38 38l-5-3v6zM8 8l-3 5h6z" fill="#c92a2a"/><text x="40" y="41" font-size="9" fill="#c92a2a">X</text><text x="11" y="9" font-size="9" fill="#c92a2a">Z</text></svg>
+        <div class="vinfo" id="vinfo"></div>
       </div>
-      <div class="dock-b" id="res"></div>
+      <div class="tpane" id="tpane" hidden><div class="dock-b" id="res"></div></div>
     </div>
   </section>
+  <div class="vsplit" id="psplit" title="Redimensionner"></div>
+  <aside class="pane right" aria-label="Propriétés">
+    <div class="ph">Propriétés<small id="propSub"></small></div>
+    <div class="props" id="props"></div>
+  </aside>
 </div>
+<div class="cmenu" id="cmenu" role="menu" hidden></div>
 
 <footer class="status" id="status"></footer>
 
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=2"></script>
-<script src="composer/draw.js?v=2"></script>
-<script src="composer/dxf.js?v=2"></script>
-<script src="composer/app.js?v=2"></script>
+<script src="composer/calc.js?v=3"></script>
+<script src="composer/draw.js?v=3"></script>
+<script src="composer/dxf.js?v=3"></script>
+<script src="composer/view3d.js?v=3"></script>
+<script src="composer/app.js?v=3"></script>
 </body>
 </html>

@@ -12,9 +12,10 @@
   const show = (v) => (v === 0 || v ? String(v).replace('.', ',') : '');
 
   let S = load() || C.normalize(C.defaults('route'));
-  let M = null, view = 'elev', tab = 'predim', menu = 'ouvrage', selId = 'tablier', showDims = true, dockOpen = true;
+  let M = null, view = 'elev', menu = 'ouvrage', selId = 'tablier', showDims = true, wire = false;
+  const openT = [];
   const expanded = new Set(['projet', 'tablier', 'travees', 'appuis', 'resultats']);
-  try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.dh) document.documentElement.style.setProperty('--dock-h', u.dh + 'px'); } catch (e) { /* préférences indisponibles */ }
+  try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
 
   function load() { try { const t = localStorage.getItem(KEY); return t ? C.normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* stockage indisponible */ } }
@@ -64,6 +65,13 @@
     zin: '<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6M7 10h6M10 7v6"/>',
     zout: '<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6M7 10h6"/>',
     dims: '<path d="M3 7v10M21 7v10M3 12h18M6 9.5L3 12l3 2.5M18 9.5l3 2.5-3 2.5"/>',
+    v3d: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    wire: '<path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10" stroke-dasharray="2 2"/>',
+    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+    redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>',
+    del: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/>',
+    dup: '<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V4H4v12h4"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     dock: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 14h18M6 17h6"/>',
     tree: '<path d="M4 4h6v4H4zM10 6h4M14 4h6v4h-6zM7 8v8h7M14 14h6v4h-6z"/>',
   };
@@ -99,6 +107,7 @@
     const rail = S.usage === 'rail', T = C.TYPES[S.tablier.type], n = S.travees.length;
     if (menu === 'fichier') {
       return grp('Projet', rb('new', 'Nouveau', 'new') + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }))
+        + grp('Édition', rb('undo', 'Annuler', 'undo', { dis: !undoS.length, tip: 'Annuler — Ctrl+Z' }) + rb('redo', 'Rétablir', 'redo', { dis: !redoS.length, tip: 'Rétablir — Ctrl+Y' }))
         + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan de coffrage d’ensemble (AutoCAD)' }))
         + grp('Site', rb('home', 'Accueil', 'home', { tip: 'Retour à BridgeAI Studios' }));
     }
@@ -133,15 +142,13 @@
         + grp('Culées', rb('toggle', 'Dalles de<br>transition', 'transition', { arg: 'culees.dalleTransition', on: S.culees.dalleTransition && !rail, dis: rail }));
     }
     if (menu === 'resultats') {
-      return grp('Tableaux', rb('tab', 'Prédimen-<br>sionnement', 'predim', { arg: 'predim', on: tab === 'predim' }) + rb('tab', 'Descente<br>de charges', 'ddc', { arg: 'ddc', on: tab === 'ddc' })
-        + rb('tab', 'Appuis &amp;<br>fondations', 'appuis', { arg: 'appuis', on: tab === 'appuis' }) + rb('tab', 'Métrés<br>&amp; coût', 'metre', { arg: 'metre', on: tab === 'metre' })
-        + rb('tab', 'Messages', 'msg', { arg: 'msg', on: tab === 'msg' }))
+      return grp('Tableaux de résultats', ['predim', 'ddc', 'appuis', 'metre', 'msg'].map((k) => rb('tab', { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' }[k], k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''))
         + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf') + rb('dxf', 'Plan<br>DXF', 'dxf'));
     }
     // affichage
-    return grp('Vue', rb('view', 'Élévation', 'elev', { arg: 'elev', on: view === 'elev' }) + rb('view', 'Coupe<br>transversale', 'sec', { arg: 'sec', on: view === 'sec' }))
+    return grp('Vue', rb('view', 'Élévation', 'elev', { arg: 'elev', on: view === 'elev' }) + rb('view', 'Coupe<br>transversale', 'sec', { arg: 'sec', on: view === 'sec' }) + rb('view', 'Vue 3D', 'v3d', { arg: '3d', on: view === '3d' }))
       + grp('Zoom', rb('fit', 'Ajuster', 'fit') + rb('zin', 'Zoom +', 'zin') + rb('zout', 'Zoom −', 'zout'))
-      + grp('Afficher', rb('dims', 'Cotes', 'dims', { on: showDims }) + rb('dock', 'Tableaux', 'dock', { on: dockOpen }));
+      + grp('Afficher', rb('dims', 'Cotes', 'dims', { on: showDims, dis: view === '3d' }) + rb('wire', 'Filaire', 'wire', { on: wire, dis: view !== '3d', tip: 'Vue 3D en fil de fer' }));
   }
   function renderRibbon() { $('#ribbon').innerHTML = ribbonHTML(); }
 
@@ -430,13 +437,37 @@
     return h;
   }
 
-  /* ───────── Vue graphique : rendu, sélection, zoom et déplacement ───────── */
+  /* ───────── Fenêtre principale : onglets (vues graphiques et tableaux), rendu, sélection, navigation ───────── */
   const cv = $('#cv');
-  let vbBase = null, vb = null, scene = null;
+  const VIEWS = [['elev', 'Élévation'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D']];
+  const TABLES = { predim: 'Prédimensionnement', ddc: 'Descente de charges', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
+  let vbBase = null, vb = null, scene = null, model3 = null;
+  const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
+  const isTable = () => view.startsWith('t:');
   const tagOf = (id) => (id === 'section' || id === 'gperm' ? 'tablier' : id);
 
+  function renderTabs() {
+    const nW = M ? M.warn.length : 0;
+    let h = VIEWS.map(([v, l]) => `<button class="dtab${view === v ? ' on' : ''}" data-cmd="view" data-arg="${v}">${l}</button>`).join('');
+    h += openT.map((k) => `<span class="dtab tt${view === 't:' + k ? ' on' : ''}" data-cmd="tab" data-arg="${k}" role="button" tabindex="0">${ico(k)}${TABLES[k]}${k === 'msg' && nW ? `<span class="bd">${nW}</span>` : ''}<button class="dx" data-cmd="closeT" data-arg="${k}" title="Fermer" aria-label="Fermer ${TABLES[k]}">×</button></span>`).join('');
+    $('#dtabsList').innerHTML = h;
+    renderVtools();
+  }
+
   function renderView() {
+    renderTabs();
+    const tp = $('#tpane');
+    if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
+    cv.hidden = false; tp.hidden = true;
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
+    if (view === '3d') {
+      model3 = C.build3D(M);
+      draw3D();
+      $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser : déplacer · molette : zoom';
+      $('#axes2d').style.display = 'none';
+      return;
+    }
+    $('#axes2d').style.display = '';
     scene = view === 'elev' ? C.elevScene(M) : C.secScene(M);
     const opt = { width: cw, id: view === 'elev' ? 've' : 'vs', kp: 3.3, pad: 18, dims: showDims };
     let svg = C.toSVG(scene, opt);
@@ -448,16 +479,25 @@
     vbBase = el.getAttribute('viewBox').split(/\s+/).map(Number);
     vb = vbBase.slice();
     applySel();
-    $$('.dtab').forEach((b) => b.classList.toggle('on', b.dataset.v === view));
     $('#vinfo').textContent = (view === 'elev' ? 'Élévation' : 'Coupe transversale') + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
-  function applyVB() { const el = $('#svgHost svg'); if (el) el.setAttribute('viewBox', vb.map((v) => v.toFixed(2)).join(' ')); }
+  function draw3D() {
+    const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
+    $('#svgHost').innerHTML = C.render3D(model3, cam3, { width: w, height: h, wire, sel: tagOf(selId) });
+  }
+  function applyVB() { const el = $('#svgHost svg'); if (el && view !== '3d') el.setAttribute('viewBox', vb.map((v) => v.toFixed(2)).join(' ')); }
   function applySel() {
+    if (isTable()) { $$('#res [data-pick]').forEach((r) => r.classList.toggle('selr', r.dataset.pick === selId)); return; }
+    if (view === '3d') { draw3D(); return; }
     $$('#svgHost .sel').forEach((e) => e.classList.remove('sel'));
-    const t = tagOf(selId);
-    $$(`#svgHost [data-tag="${t}"]`).forEach((e) => e.classList.add('sel'));
+    $$(`#svgHost [data-tag="${tagOf(selId)}"]`).forEach((e) => e.classList.add('sel'));
+  }
+  function fitView() {
+    if (view === '3d') { Object.assign(cam3, { zoom: 1, panX: 0, panY: 0 }); draw3D(); }
+    else if (vbBase) { vb = vbBase.slice(); applyVB(); }
   }
   function zoomAt(f, cx, cy) {
+    if (view === '3d') { cam3.zoom = Math.min(30, Math.max(0.2, cam3.zoom / f)); draw3D(); return; }
     const nw = Math.min(vbBase[2] * 4, Math.max(vbBase[2] / 40, vb[2] * f)), k = nw / vb[2];
     if (cx == null) { cx = vb[0] + vb[2] / 2; cy = vb[1] + vb[3] / 2; }
     vb = [cx - (cx - vb[0]) * k, cy - (cy - vb[1]) * k, vb[2] * k, vb[3] * k];
@@ -470,6 +510,7 @@
   }
   cv.addEventListener('wheel', (ev) => {
     ev.preventDefault();
+    if (view === '3d') { zoomAt(ev.deltaY > 0 ? 1.12 : 1 / 1.12); return; }
     const p = toSvgPt(ev);
     zoomAt(ev.deltaY > 0 ? 1.15 : 1 / 1.15, p.x, p.y);
   }, { passive: false });
@@ -478,14 +519,22 @@
     if (ev.button !== 0) return;
     const el = $('#svgHost svg'); if (!el) return;
     const m = el.getScreenCTM();
-    drag = { x: ev.clientX, y: ev.clientY, vb: vb.slice(), k: 1 / m.a, moved: false, tag: ev.target.closest && ev.target.closest('[data-tag]') };
+    drag = { x: ev.clientX, y: ev.clientY, vb: vb ? vb.slice() : null, k: 1 / m.a, moved: false, tag: ev.target.closest && ev.target.closest('[data-tag]'),
+      cam: Object.assign({}, cam3), pan: ev.shiftKey };
     cv.setPointerCapture(ev.pointerId);
   });
+  let raf = 0;
   cv.addEventListener('pointermove', (ev) => {
     if (!drag) return;
     const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     drag.moved = true; cv.classList.add('drag');
+    if (view === '3d') {
+      if (drag.pan) { cam3.panX = drag.cam.panX + dx; cam3.panY = drag.cam.panY + dy; }
+      else { cam3.yaw = drag.cam.yaw - dx * 0.008; cam3.pitch = Math.max(-1.45, Math.min(1.45, drag.cam.pitch + dy * 0.008)); }
+      if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw3D(); });
+      return;
+    }
     vb = [drag.vb[0] - dx * drag.k, drag.vb[1] - dy * drag.k, drag.vb[2], drag.vb[3]];
     applyVB();
   });
@@ -496,7 +545,22 @@
   };
   cv.addEventListener('pointerup', endDrag);
   cv.addEventListener('pointercancel', () => { drag = null; cv.classList.remove('drag'); });
-  cv.addEventListener('dblclick', () => { vb = vbBase.slice(); applyVB(); });
+  cv.addEventListener('dblclick', fitView);
+
+  function openTable(k) {
+    if (!TABLES[k]) return;
+    if (!openT.includes(k)) openT.push(k);
+    view = 't:' + k;
+    renderView(); renderRibbon();
+  }
+  function closeTable(k) {
+    const i = openT.indexOf(k); if (i < 0) return;
+    openT.splice(i, 1);
+    if (view === 't:' + k) view = openT.length ? 't:' + openT[Math.max(0, i - 1)] : lastGraphic;
+    renderView(); renderRibbon();
+  }
+  let lastGraphic = 'elev';
+  function setView(v) { view = v; if (!v.startsWith('t:')) lastGraphic = v; renderView(); renderRibbon(); }
 
   /* ───────── Fenêtre de tableaux ───────── */
   function tAppuis() {
@@ -528,15 +592,12 @@
     h += M.warn.map((w) => `<li class="w">${esc(w)}</li>`).join('') + M.notes.map((n) => `<li class="i">${esc(n)}</li>`).join('');
     return h + '</ul>';
   }
-  function renderDock() {
-    const f = { predim: tPredim, ddc: tDdc, appuis: tAppuis, metre: tMetre, msg: tMsg }[tab];
+  function renderTable() {
+    const k = view.slice(2);
+    const f = { predim: tPredim, ddc: tDdc, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
     const box = $('#res'), st = box.scrollTop;
     box.innerHTML = f();
     box.scrollTop = st;
-    $$('#dtabs .ktab').forEach((b) => {
-      b.classList.toggle('on', b.dataset.t === tab);
-      if (b.dataset.t === 'msg') b.innerHTML = 'Messages' + (M.warn.length ? `<span class="bd">${M.warn.length}</span>` : '');
-    });
     $$('#res [data-pick]').forEach((r) => r.classList.toggle('selr', r.dataset.pick === selId));
   }
 
@@ -554,24 +615,25 @@
   /* ───────── Calcul et rendu d'ensemble ───────── */
   function recompute(full) {
     try { M = C.compute(S); } catch (err) { console.error(err); return; }
+    if (full !== 'nohist') pushHist();
     keepFocus(() => { renderTree(); renderProps(); renderRibbon(); });
-    renderView(); renderDock(); renderStatus();
+    renderView(); renderStatus();
     save();
-    void full;
   }
   function select(id, o) {
     o = o || {};
     const v0 = view;
-    if (/^r-/.test(id)) { tab = id.slice(2); if (!dockOpen) toggleDock(); }
     selId = id;
+    if (/^r-/.test(id)) { if (!openT.includes(id.slice(2))) openT.push(id.slice(2)); view = 't:' + id.slice(2); }
     const p = parentOf(id, treeModel());
     if (p) expanded.add(p);
-    if (!o.keepView) {
+    if (!o.keepView && !/^r-/.test(id) && view !== '3d') {
       if (['section', 'profil', 'equip'].includes(id)) view = 'sec';
       else if (/^T\d+$/.test(id) || /^C\d+$/.test(id)) view = 'elev';
       else if (/^P\d+$/.test(id) && view === 'sec' && !$(`#svgHost [data-tag="${id}"]`)) view = 'elev';
+      if (!isTable()) lastGraphic = view;
     }
-    renderTree(); renderProps(); renderRibbon(); renderDock();
+    renderTree(); renderProps(); renderRibbon();
     if (view !== v0) renderView(); else applySel();
     if (o.reveal) { const n = $(`#tree [data-node="${id}"]`); if (n) n.scrollIntoView({ block: 'nearest' }); }
   }
@@ -588,12 +650,6 @@
     if (k === 'usage') return setUsage(v);
     if (k === 'tablier.type') { S.tablier.type = v; S.tablier.continu = null; S.tablier.h = 0; return; }
     setPath(S, k, v);
-  }
-  function toggleDock() {
-    dockOpen = !dockOpen;
-    const r = document.documentElement;
-    if (dockOpen) r.style.setProperty('--dock-h', (toggleDock.h || 250) + 'px');
-    else { toggleDock.h = parseFloat(getComputedStyle(r).getPropertyValue('--dock-h')) || 250; r.style.setProperty('--dock-h', '27px'); }
   }
   const slug = () => (S.projet.nom || 'ouvrage').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'ouvrage';
   function download(name, data, type) {
@@ -621,6 +677,13 @@
       case 'delSpan': if (n > 1) { S.travees.pop(); S.piles.hauteurs.pop(); } break;
       case 'insSpan': { const i = +arg; if (n < 12) { S.travees.splice(i + 1, 0, S.travees[i]); S.piles.hauteurs.splice(Math.min(i, S.piles.hauteurs.length), 0, S.piles.hauteurs[Math.min(i, S.piles.hauteurs.length - 1)] || 6); selId = 'T' + (i + 2); } break; }
       case 'rmSpan': { const i = +arg; if (n > 1) { S.travees.splice(i, 1); S.piles.hauteurs.splice(Math.min(i, S.piles.hauteurs.length - 1), 1); selId = 'travees'; } break; }
+      case 'splitSpan': { const i = +arg; if (n < 12) { const L = S.travees[i]; S.travees.splice(i, 1, L / 2, L / 2); S.piles.hauteurs.splice(i, 0, S.piles.hauteurs[Math.min(i, S.piles.hauteurs.length - 1)] || S.culees.hauteurs[0] + 2); selId = 'P' + (i + 1); } break; }
+      case 'rmPile': { const j = +arg; if (j >= 1 && j < n) { S.travees.splice(j - 1, 2, S.travees[j - 1] + S.travees[j]); S.piles.hauteurs.splice(j - 1, 1); selId = 'T' + j; } break; }
+      case 'props': {
+        if (arg && arg !== selId) select(arg, { keepView: true });
+        const f = $('#props input[type=text]:not([disabled]), #props select'); if (f) { f.focus(); if (f.select) f.select(); }
+        return;
+      }
       case 'continu': S.tablier.continu = !S.tablier.continu; break;
       case 'dalleC': S.tablier.dalleContinuite = !S.tablier.dalleContinuite; break;
       case 'pile': S.piles.type = arg; break;
@@ -630,13 +693,16 @@
       case 'toggle': setPath(S, arg, !getPath(S, arg)); break;
       case 'fondP': S.fond.piles = arg; break;
       case 'fondC': S.fond.culees = arg; break;
-      case 'tab': tab = arg; if (!dockOpen) toggleDock(); renderDock(); renderRibbon(); return;
-      case 'view': view = arg; renderView(); renderRibbon(); return;
-      case 'fit': vb = vbBase.slice(); applyVB(); return;
+      case 'tab': openTable(arg); return;
+      case 'closeT': closeTable(arg); return;
+      case 'view': setView(arg); return;
+      case 'fit': fitView(); return;
+      case 'wire': wire = !wire; if (view === '3d') draw3D(); renderRibbon(); renderVtools(); return;
+      case 'undo': undo(); return;
+      case 'redo': redo(); return;
       case 'zin': zoomAt(1 / 1.25); return;
       case 'zout': zoomAt(1.25); return;
       case 'dims': showDims = !showDims; renderView(); renderRibbon(); renderVtools(); return;
-      case 'dock': toggleDock(); renderRibbon(); renderVtools(); requestAnimationFrame(renderView); return;
       default: return;
     }
     S = C.normalize(S);
@@ -644,8 +710,9 @@
   }
 
   function renderVtools() {
-    $('#vtools').innerHTML = [['fit', 'Ajuster la vue (double-clic)'], ['zin', 'Zoom +'], ['zout', 'Zoom −'], ['dims', 'Afficher les cotes'], ['dock', 'Fenêtre de tableaux']]
-      .map(([c, t]) => `<button class="vt${(c === 'dims' && showDims) || (c === 'dock' && dockOpen) ? ' on' : ''}" data-cmd="${c}" title="${t}" aria-label="${t}">${ico(c)}</button>`).join('');
+    if (isTable()) { $('#vtools').innerHTML = ''; return; }
+    const L = [['fit', 'Ajuster la vue (double-clic)'], ['zin', 'Zoom +'], ['zout', 'Zoom −']].concat(view === '3d' ? [['wire', 'Fil de fer']] : [['dims', 'Afficher les cotes']]);
+    $('#vtools').innerHTML = L.map(([c, t]) => `<button class="vt${(c === 'dims' && showDims) || (c === 'wire' && wire) ? ' on' : ''}" data-cmd="${c}" title="${t}" aria-label="${t}">${ico(c)}</button>`).join('');
   }
 
   /* délégation des clics de commande (ruban, propriétés, outils de vue, barre d'état) */
@@ -660,8 +727,6 @@
     $$('#menubar .mtab').forEach((x) => x.classList.toggle('on', x === b));
     renderRibbon();
   });
-  $$('.dtab').forEach((b) => b.addEventListener('click', () => { view = b.dataset.v; renderView(); renderRibbon(); }));
-  $('#dtabs').addEventListener('click', (ev) => { const b = ev.target.closest('.ktab'); if (b) run('tab', b.dataset.t); });
   $('#res').addEventListener('click', (ev) => { const r = ev.target.closest('[data-pick]'); if (r) select(r.dataset.pick, { reveal: true }); });
 
   /* arborescence : clic, double-clic, clavier */
@@ -739,23 +804,175 @@
       ev.preventDefault(); el.setPointerCapture(ev.pointerId);
       const r = document.documentElement, work = $('#work').getBoundingClientRect();
       const move = (e) => {
-        if (axis === 'x') { const w = Math.min(560, Math.max(220, e.clientX - work.left)); r.style.setProperty('--tree-w', w + 'px'); }
-        else { const h = Math.min(work.height - 140, Math.max(60, work.bottom - e.clientY)); r.style.setProperty('--dock-h', h + 'px'); dockOpen = true; }
+        if (axis === 'x') { const w = Math.min(560, Math.max(180, e.clientX - work.left)); r.style.setProperty('--tree-w', w + 'px'); }
+        else { const w = Math.min(600, Math.max(220, work.right - e.clientX)); r.style.setProperty('--prop-w', w + 'px'); }
       };
       const up = () => {
         el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up);
         const cs = getComputedStyle(r);
-        saveUI('tw', parseFloat(cs.getPropertyValue('--tree-w'))); saveUI('dh', parseFloat(cs.getPropertyValue('--dock-h')));
-        renderVtools(); renderView();
+        saveUI('tw', parseFloat(cs.getPropertyValue('--tree-w'))); saveUI('pw', parseFloat(cs.getPropertyValue('--prop-w')));
+        renderView();
       };
       el.addEventListener('pointermove', move); el.addEventListener('pointerup', up);
     });
   }
-  splitter($('#vsplit'), 'x'); splitter($('#hsplit'), 'y');
+  splitter($('#vsplit'), 'x'); splitter($('#psplit'), 'p');
   let rz = null;
-  new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => { if (M) renderView(); }, 120); }).observe(cv);
+  new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => { if (M && !isTable()) renderView(); }, 120); }).observe($('.stage'));
 
-  /* ───────── Note de prédimensionnement (impression PDF) ───────── */
+
+  /* ───────── Annuler / Rétablir ───────── */
+  const undoS = [], redoS = [];
+  let histCur = null, histT = 0;
+  function pushHist() {
+    const j = JSON.stringify(S);
+    if (histCur === null) { histCur = j; return; }
+    if (j === histCur) return;
+    const now = Date.now();
+    if (now - histT > 900 || !undoS.length) { undoS.push(histCur); if (undoS.length > 100) undoS.shift(); }
+    histCur = j; histT = now; redoS.length = 0;
+  }
+  function undo() { if (!undoS.length) return; redoS.push(histCur); histCur = undoS.pop(); histT = 0; S = C.normalize(JSON.parse(histCur)); recompute('nohist'); }
+  function redo() { if (!redoS.length) return; undoS.push(histCur); histCur = redoS.pop(); histT = 0; S = C.normalize(JSON.parse(histCur)); recompute('nohist'); }
+
+  /* ───────── Menu contextuel (clic droit) ───────── */
+  const cm = $('#cmenu');
+  const H = (t) => ({ h: t });
+  const it = (l, cmd, arg, o) => Object.assign({ l, cmd, arg }, o || {});
+  function ctxItems(id) {
+    const rail = S.usage === 'rail', T = C.TYPES[S.tablier.type], n = S.travees.length, L = [];
+    const radio = (title, cmd, cur, opts) => { L.push(H(title)); opts.forEach(([v, l]) => L.push(it(l, cmd, v, { on: cur === v, radio: true }))); };
+    const props = (x) => L.push(it('Propriétés', 'props', x, { ic: 'edit', kbd: 'Entrée' }));
+    if (id === null) {
+      L.push(H('Vue')); L.push(it('Ajuster la vue', 'fit', null, { ic: 'fit' }));
+      [['elev', 'Élévation', 'elev'], ['sec', 'Coupe transversale', 'sec'], ['3d', 'Vue 3D', 'v3d']].forEach(([v, l, ic]) => L.push(it(l, 'view', v, { on: view === v, radio: true, ic })));
+      L.push('-'); if (view === '3d') L.push(it('Fil de fer', 'wire', null, { on: wire })); else L.push(it('Afficher les cotes', 'dims', null, { on: showDims }));
+      L.push('-'); L.push(it('Exporter le plan DXF', 'dxf', null, { ic: 'dxf' }));
+      return L;
+    }
+    if (/^T\d+$/.test(id)) {
+      const i = +id.slice(1) - 1;
+      L.push(H('Travée ' + (i + 1) + ' — ' + fr(S.travees[i], 2) + ' m'));
+      L.push(it('Modifier la portée…', 'props', id, { ic: 'edit', kbd: 'Entrée' }));
+      L.push(it('Dupliquer la travée', 'insSpan', i, { ic: 'dup', dis: n >= 12 }));
+      L.push(it('Couper en deux (ajouter une pile)', 'splitSpan', i, { ic: 'addSpan', dis: n >= 12 }));
+      L.push('-'); L.push(it('Supprimer la travée', 'rmSpan', i, { ic: 'del', dis: n <= 1, danger: true, kbd: 'Suppr' }));
+      return L;
+    }
+    if (/^P\d+$/.test(id)) {
+      const j = +id.slice(1);
+      L.push(H('Pile ' + id)); props(id);
+      radio('Type de pile (toutes)', 'pile', S.piles.type, Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom]));
+      radio('Fondation des piles', 'fondP', S.fond.piles, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
+      L.push('-'); L.push(it('Voir en coupe transversale', 'view', 'sec', { ic: 'sec' }));
+      L.push(it('Supprimer la pile (fusionner les travées)', 'rmPile', j, { ic: 'del', danger: true, kbd: 'Suppr' }));
+      return L;
+    }
+    if (/^C\d+$/.test(id)) {
+      L.push(H('Culée ' + id)); props(id);
+      radio('Type de culée (les deux)', 'culee', S.culees.type, Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom]));
+      radio('Fondation des culées', 'fondC', S.fond.culees, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
+      if (!rail) { L.push('-'); L.push(it('Dalles de transition', 'toggle', 'culees.dalleTransition', { on: S.culees.dalleTransition })); }
+      return L;
+    }
+    if (['tablier', 'section', 'gperm'].includes(id)) {
+      L.push(H('Tablier — ' + T.nom)); props(id);
+      radio('Type de tablier', 'deck', S.tablier.type, C.TYPE_KEYS.map((k) => [k, C.TYPES[k].nom + ' — ' + C.TYPES[k].titre]));
+      L.push('-'); L.push(it('Travées continues', 'continu', null, { on: M.cont, dis: !(T.iso && T.cont && n > 1) }));
+      L.push(it('Voir la coupe transversale', 'view', 'sec', { ic: 'sec' })); L.push(it('Vue 3D', 'view', '3d', { ic: 'v3d' }));
+      return L;
+    }
+    if (id === 'travees') {
+      L.push(H('Travées')); props(id);
+      L.push(it('Ajouter une travée', 'addSpan', null, { ic: 'addSpan', dis: n >= 12 })); L.push(it('Retirer la dernière travée', 'delSpan', null, { ic: 'delSpan', dis: n <= 1 }));
+      return L;
+    }
+    if (id === 'appuis') {
+      L.push(H('Appuis')); props(id);
+      if (n > 1) radio('Type de piles', 'pile', S.piles.type, Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom]));
+      radio('Type de culées', 'culee', S.culees.type, Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom]));
+      return L;
+    }
+    if (id === 'fond') {
+      L.push(H('Fondations')); props(id);
+      if (n > 1) radio('Piles', 'fondP', S.fond.piles, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
+      radio('Culées', 'fondC', S.fond.culees, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
+      return L;
+    }
+    if (id === 'usage' || id === 'profil') {
+      L.push(H(id === 'usage' ? 'Usage & règlement' : 'Profil en travers')); props(id);
+      radio('Usage', 'usage', S.usage, [['route', 'Pont-route'], ['rail', 'Pont-rail']]);
+      radio('Règlement', 'reg', S.reglement, rail ? [['EC', 'EN 1991-2'], ['F61', 'UIC 71 / Livret 2.01']] : [['EC', 'Eurocodes'], ['F61', 'Fascicule 61 titre II']]);
+      return L;
+    }
+    if (/^r-/.test(id) || id === 'resultats') {
+      L.push(H('Résultats'));
+      Object.keys(TABLES).forEach((k) => L.push(it('Tableau : ' + TABLES[k], 'tab', k, { ic: k })));
+      L.push('-'); L.push(it('Note de prédimensionnement (PDF)', 'pdf', null, { ic: 'pdf' }));
+      return L;
+    }
+    if (id === 'projet') {
+      L.push(H('Projet')); props(id);
+      L.push(it('Enregistrer', 'save', null, { ic: 'save', kbd: 'Ctrl+S' })); L.push(it('Note PDF', 'pdf', null, { ic: 'pdf' })); L.push(it('Plan DXF', 'dxf', null, { ic: 'dxf' }));
+      return L;
+    }
+    L.push(H({ equip: 'Équipements', prix: 'Prix unitaires' }[id] || id)); props(id);
+    return L;
+  }
+  function showMenu(id, x, y) {
+    const L = ctxItems(id);
+    cm.innerHTML = L.map((e) => {
+      if (e === '-') return '<hr>';
+      if (e.h) return `<div class="mh">${esc(e.h)}</div>`;
+      const mark = e.on != null ? `<span class="ck">${e.on ? (e.radio ? '●' : '✓') : ''}</span>` : (e.ic ? ico(e.ic) : '<span class="ck"></span>');
+      return `<button type="button" role="menuitem" class="${e.danger ? 'danger' : ''}" data-cmd="${e.cmd}"${e.arg != null ? ` data-arg="${esc(e.arg)}"` : ''}${e.dis ? ' disabled' : ''}>${mark}<span>${esc(e.l)}</span>${e.kbd ? `<kbd>${e.kbd}</kbd>` : ''}</button>`;
+    }).join('');
+    cm.hidden = false;
+    const r = cm.getBoundingClientRect();
+    cm.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
+    cm.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
+    const f = cm.querySelector('button:not(:disabled)'); if (f) f.focus();
+  }
+  const hideMenu = () => { cm.hidden = true; };
+  document.addEventListener('pointerdown', (ev) => { if (!cm.hidden && !cm.contains(ev.target)) hideMenu(); }, true);
+  cm.addEventListener('click', () => setTimeout(hideMenu, 0));
+  cm.addEventListener('keydown', (ev) => {
+    const bs = $$('#cmenu button:not(:disabled)'), i = bs.indexOf(document.activeElement);
+    if (ev.key === 'ArrowDown') { ev.preventDefault(); (bs[i + 1] || bs[0]).focus(); }
+    else if (ev.key === 'ArrowUp') { ev.preventDefault(); (bs[i - 1] || bs[bs.length - 1]).focus(); }
+    else if (ev.key === 'Escape' || ev.key === 'Tab') { ev.preventDefault(); hideMenu(); }
+  });
+  window.addEventListener('blur', hideMenu);
+  window.addEventListener('resize', hideMenu);
+
+  $('#tree').addEventListener('contextmenu', (ev) => {
+    const n = ev.target.closest('[data-node]'); if (!n) return;
+    ev.preventDefault(); select(n.dataset.node); showMenu(n.dataset.node, ev.clientX, ev.clientY);
+  });
+  cv.addEventListener('contextmenu', (ev) => {
+    ev.preventDefault(); drag = null;
+    const t = ev.target.closest('[data-tag]');
+    if (t) { select(t.dataset.tag, { reveal: true, keepView: true }); showMenu(t.dataset.tag, ev.clientX, ev.clientY); }
+    else showMenu(null, ev.clientX, ev.clientY);
+  });
+  $('#res').addEventListener('contextmenu', (ev) => {
+    const r = ev.target.closest('[data-pick]'); if (!r) return;
+    ev.preventDefault(); select(r.dataset.pick, { keepView: true }); showMenu(r.dataset.pick, ev.clientX, ev.clientY);
+  });
+  /* clavier global : annuler, rétablir, supprimer, propriétés */
+  document.addEventListener('keydown', (ev) => {
+    const typing = /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+    const k = ev.key.toLowerCase();
+    if ((ev.ctrlKey || ev.metaKey) && !typing && k === 'z' && !ev.shiftKey) { ev.preventDefault(); undo(); }
+    else if ((ev.ctrlKey || ev.metaKey) && !typing && (k === 'y' || (k === 'z' && ev.shiftKey))) { ev.preventDefault(); redo(); }
+    else if (!typing && cm.hidden && (ev.key === 'Delete' || ev.key === 'Suppr')) {
+      if (/^T\d+$/.test(selId)) run('rmSpan', +selId.slice(1) - 1); else if (/^P\d+$/.test(selId)) run('rmPile', +selId.slice(1));
+    } else if (!typing && cm.hidden && ev.key === 'Enter' && document.activeElement.closest && document.activeElement.closest('#tree')) { ev.preventDefault(); run('props', selId); }
+    else if (ev.key === 'ContextMenu' || (ev.shiftKey && ev.key === 'F10')) {
+      const n = $(`#tree [data-node="${selId}"]`); if (n) { ev.preventDefault(); const r = n.getBoundingClientRect(); showMenu(selId, r.left + 24, r.bottom); }
+    }
+  });
+
   /* ───────── Note de prédimensionnement (impression PDF) ───────── */
   function buildPrint() {
     const P = S.projet, T = M.T, dv = S.devise || 'MAD';

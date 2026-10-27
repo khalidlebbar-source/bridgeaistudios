@@ -4,7 +4,7 @@
  *  3. Prédimensionnement PSI-DA continu 12-15-12 : h = 0,60 m (L/26).
  *  4. Fondations : contrainte ≤ σ adm, effort par pieu ≤ Q adm.
  */
-const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'));
+const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'));
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) fails++; };
 const bad = (s) => /NaN|undefined|Infinity/.test(s);
@@ -30,11 +30,12 @@ for (const u of ['route', 'rail']) for (const t of C.TYPE_KEYS) for (const reg o
   const dump = JSON.stringify({ k: m.kpi, l: m.lines.map((x) => [x.G, x.Q, x.app.des]), s: m.supports.map((x) => [x.N, x.fo]) });
   const svg = C.toSVG(C.elevScene(m), { width: 900 }) + C.toSVG(C.secScene(m), { width: 600 });
   const dxf = C.buildDXF(m, { date: 'test' });
-  const good = !bad(dump) && !bad(svg) && !/nan/i.test(dxf) && m.total > 0 && m.kpi.beton > 0 && dxf.endsWith('EOF\r\n');
+  const v3 = C.render3D(C.build3D(m), { yaw: -0.6, pitch: 0.4, zoom: 1, panX: 0, panY: 0 }, { width: 800, height: 500 });
+  const good = !bad(dump) && !bad(svg) && !/nan/i.test(dxf) && m.total > 0 && m.kpi.beton > 0 && dxf.endsWith('EOF\r\n') && !bad(v3);
   if (!good) ok(false, `${u} ${t} ${reg} ${fond} ${bad(dump)} ${bad(svg)} ${/nan/i.test(dxf)}`);
   n++;
 }
-ok(fails === f0, n + ' combinaisons type × usage × règlement × fondation sans NaN, DXF complet');
+ok(fails === f0, n + ' combinaisons type × usage × règlement × fondation sans NaN, DXF et vue 3D complets');
 
 // 3. prédimensionnement
 const a = C.compute(C.defaults('route'));
