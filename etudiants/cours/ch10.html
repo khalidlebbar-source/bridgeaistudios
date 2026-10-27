@@ -41,6 +41,8 @@
 @keyframes c10-wob{0%,100%{transform:none}20%{transform:translateX(8px)}40%{transform:translateX(-10px)}60%{transform:translateX(6px)}80%{transform:translateX(-4px)}}
 @keyframes c10-wob2{0%,100%{transform:translateX(-14px)}50%{transform:translateX(14px)}}
 .c10-hint{font-size:15px;color:var(--mute)}
+.formula .tex{white-space:nowrap}
+.c10-ctl label>span:first-child{display:block}
 </style>
 </head>
 <body data-ch="ch10">
@@ -72,7 +74,7 @@
     </g>
     <rect x="520" y="140" width="40" height="90" fill="#3b4a6b"/><rect x="1180" y="140" width="40" height="90" fill="#3b4a6b"/>
   </svg>
-  <div class="plan" data-a data-fx="up" data-d=".6" style="bottom:20px;left:72px;max-width:470px;flex-direction:column;align-items:flex-start">
+  <div class="plan" data-a data-fx="up" data-d=".6" style="bottom:auto;top:428px;left:72px">
     <span>01 · Le pont face au séisme</span><span>02 · Dimensionner les sections</span><span>03 · Faire durer un pont 100 ans</span>
   </div>
 </section>
@@ -257,8 +259,8 @@
   <h2 class="t">Une masse, un ressort : <em>la période propre</em></h2>
   <div class="cols c2" style="gap:26px">
     <div class="card" data-a data-fx="left" style="padding:16px">
-      <svg class="full" viewBox="0 0 520 250" aria-label="Oscillateur à un degré de liberté">
-        <rect width="520" height="250" rx="12" fill="#eef4fc"/>
+      <svg class="full" viewBox="0 0 520 300" aria-label="Oscillateur à un degré de liberté">
+        <rect width="520" height="300" rx="12" fill="#eef4fc"/><g transform="translate(0 40)">
         <rect x="20" y="200" width="480" height="20" fill="#ead7bd"/>
         <path d="M60 200 V70" stroke="#6e7884" stroke-width="10"/>
         <g><animateTransform attributeName="transform" type="translate" values="0 0;70 0;0 0;-70 0;0 0" keyTimes="0;.25;.5;.75;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="2.2s" repeatCount="indefinite"/>
@@ -268,23 +270,24 @@
         </g>
         <path d="M65 130 h20 l10 -14 l16 28 l16 -28 l16 28 l16 -28 l16 28 l16 -28 l16 28 l10 -14 h30" stroke="#2f6fe0" stroke-width="3" fill="none"><animate attributeName="d" values="M65 130 h20 l10 -14 l16 28 l16 -28 l16 28 l16 -28 l16 28 l16 -28 l16 28 l10 -14 h30;M65 130 h20 l14 -14 l24 28 l24 -28 l24 28 l24 -28 l24 28 l24 -28 l24 28 l14 -14 h30;M65 130 h20 l10 -14 l16 28 l16 -28 l16 28 l16 -28 l16 28 l16 -28 l16 28 l10 -14 h30;M65 130 h20 l6 -14 l8 28 l8 -28 l8 28 l8 -28 l8 28 l8 -28 l8 28 l6 -14 h30;M65 130 h20 l10 -14 l16 28 l16 -28 l16 28 l16 -28 l16 28 l16 -28 l16 28 l10 -14 h30" keyTimes="0;.25;.5;.75;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="2.2s" repeatCount="indefinite"/></path>
         <text x="130" y="100" class="lbl" style="fill:#2f6fe0">raideur K (piles)</text>
-        <text x="300" y="40" text-anchor="middle" class="lbl-s">tablier = masse M · amortissement ξ ≈ 5 % (béton)</text>
+        <text x="300" y="40" text-anchor="middle" class="lbl-s">tablier = masse M · amortissement ξ ≈ 5 % (béton)</text></g>
+        <text x="20" y="30" class="lbl-b" style="font-size:18px">Oscillateur à un degré de liberté</text>
       </svg>
       <div class="formula" style="margin-top:12px;font-size:21px;padding:10px 18px" data-b="1" data-fx="up"><span class="tex">T = 2\pi\sqrt{M/K}</span><div class="w" style="margin-top:4px">Exemple : tablier de 300 t sur une pile de 8 m, Ø 1,20 m → K ≈ 19 100 kN/m, <b>T ≈ 0,79 s</b>.</div></div>
     </div>
     <div class="card" data-b="2" data-fx="right" style="padding:16px">
-      <svg class="full" viewBox="0 0 600 360" aria-label="Courbe de résonance">
-        <rect width="600" height="360" rx="12" fill="#fff"/>
-        <path d="M60 30 V330 H590" stroke="#9aa3ae" stroke-width="1.5" fill="none"/>
-        <path d="M230 30 V330" stroke="#dc4a2c" stroke-dasharray="5 5"/>
+      <svg class="full" viewBox="0 0 600 400" aria-label="Courbe de résonance">
+        <rect width="600" height="400" rx="12" fill="#fff"/>
+        <path d="M60 30 V370 H590" stroke="#9aa3ae" stroke-width="1.5" fill="none"/>
+        <path d="M230 30 V370" stroke="#dc4a2c" stroke-dasharray="5 5"/>
         <path id="c10s7-r20" d="" stroke="#12a08a" stroke-width="2.4" fill="none"/>
         <path id="c10s7-r10" d="" stroke="#2f6fe0" stroke-width="2.4" fill="none"/>
         <path id="c10s7-r05" d="" stroke="#dc4a2c" stroke-width="3" fill="none" data-b="2" data-fx="draw"/>
-        <g class="lbl-s" text-anchor="middle"><text x="60" y="350">0</text><text x="230" y="350">1</text><text x="400" y="350">2</text><text x="560" y="350">3</text></g>
-        <text x="590" y="320" text-anchor="end" class="lbl-s">f sol / f pont</text>
+        <g class="lbl-s" text-anchor="middle"><text x="60" y="390">0</text><text x="230" y="390">1</text><text x="400" y="390">2</text><text x="560" y="390">3</text></g>
+        <text x="590" y="360" text-anchor="end" class="lbl-s">f sol / f pont</text>
         <text x="70" y="48" class="lbl-s">amplification D</text>
         <text x="244" y="58" class="lbl-b" style="fill:#a33d22">× 10 pour ξ = 5 %</text>
-        <text x="300" y="200" class="lbl-s" style="fill:#2f6fe0">ξ = 10 %</text><text x="300" y="250" class="lbl-s" style="fill:#0b6e5c">ξ = 20 %</text>
+        <text x="300" y="220" class="lbl-s" style="fill:#2f6fe0">ξ = 10 %</text><text x="300" y="270" class="lbl-s" style="fill:#0b6e5c">ξ = 20 %</text>
       </svg>
       <p style="font-size:18px;margin:10px 0 0" data-b="3" data-fx="fade">Quand le sol pousse <b>au rythme du pont</b>, comme une balançoire : c'est la <b>résonance</b>. La période propre décide de l'effort.</p>
     </div>
@@ -394,9 +397,9 @@
         <path id="c10s10-se" d="" stroke="#2f6fe0" stroke-width="3.5" fill="none" data-a data-fx="draw"/>
         <path id="c10s10-q15" d="" stroke="#e8a020" stroke-width="3" fill="none" data-b="3" data-fx="draw"/>
         <path id="c10s10-q35" d="" stroke="#12a08a" stroke-width="3" fill="none" data-b="4" data-fx="draw"/>
-        <text x="150" y="88" class="lbl-b" style="fill:#2f6fe0">élastique (q = 1)</text>
-        <text x="150" y="190" class="lbl" style="fill:#b77a10" data-b="3" data-fx="fade">q = 1,5</text>
-        <text x="150" y="304" class="lbl" style="fill:#0b6e5c" data-b="4" data-fx="fade">q = 3,5</text>
+        <g class="lbl"><path d="M360 70 h34" stroke="#2f6fe0" stroke-width="3.5"/><text x="404" y="76" style="fill:#2f6fe0">élastique (q = 1)</text>
+        <g data-b="3" data-fx="fade"><path d="M360 104 h34" stroke="#e8a020" stroke-width="3"/><text x="404" y="110" style="fill:#b77a10">calcul, q = 1,5</text></g>
+        <g data-b="4" data-fx="fade"><path d="M360 138 h34" stroke="#12a08a" stroke-width="3"/><text x="404" y="144" style="fill:#0b6e5c">calcul, q = 3,5</text></g></g>
         <g data-b="4" data-fx="fade"><path d="M60 381 H620" stroke="#dc4a2c" stroke-dasharray="5 4"/><text x="610" y="372" text-anchor="end" class="lbl-s" style="fill:#a33d22">plancher β·a<tspan font-size="12" dy="3">g</tspan></text></g>
         <text x="620" y="452" text-anchor="end" class="lbl-s">S<tspan font-size="12" dy="3">d</tspan><tspan dy="-3"> = S</tspan><tspan font-size="12" dy="3">e</tspan><tspan dy="-3"> / q (en gros) · sol B</tspan></text>
       </svg>
@@ -436,7 +439,7 @@
           <g data-b="1" data-fx="fade"><path d="M54 405 h40 l10 -10 l20 20 l20 -20 l20 20 l20 -20 l20 20 l20 -20 l20 20 l20 -20 l20 20 l10 -10 H470" stroke="#12a08a"/></g>
         </g>
         <g data-b="3" data-fx="fade"><path d="M450 200 V430" stroke="#b8902f" stroke-width="2" stroke-dasharray="5 4"/><text x="446" y="448" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">même déplacement d : en parallèle</text></g>
-        <g data-b="4" data-fx="fade"><path d="M575 190 H520" stroke="none"/><path d="M500 186 H580" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c10s11-ar)"/><text x="500" y="178" class="lbl-b" style="fill:#a33d22">F = M·S<tspan font-size="14" dy="3">a</tspan></text></g>
+        <g data-b="4" data-fx="fade"><path d="M575 190 H520" stroke="none"/><path d="M500 186 H580" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c10s11-ar)"/><text x="470" y="172" class="lbl-b" style="fill:#a33d22">F = M·S<tspan font-size="14" dy="3">a</tspan></text></g>
       </svg>
     </div>
     <div>
@@ -606,7 +609,7 @@
         <path id="c10s15-se" d="" stroke="#2f6fe0" stroke-width="3.2" fill="none" data-a data-fx="draw"/>
         <path id="c10s15-se15" d="" stroke="#12a08a" stroke-width="3" fill="none" stroke-dasharray="7 5" data-b="2" data-fx="fade"/>
         <text x="200" y="90" class="lbl" style="fill:#2f6fe0">ξ = 5 %</text>
-        <text x="380" y="356" class="lbl" style="fill:#0b6e5c" data-b="2" data-fx="fade">ξ ≈ 15 % (isolateurs)</text>
+        <text x="480" y="330" class="lbl" style="fill:#0b6e5c" data-b="2" data-fx="fade">ξ ≈ 15 %</text>
         <circle id="c10s15-pt" cx="157" cy="186" r="11" fill="#dc4a2c" stroke="#fff" stroke-width="3"/>
         <text id="c10s15-lb" x="175" y="170" class="lbl-b" style="fill:#a33d22">pont classique</text>
         <text x="620" y="452" text-anchor="end" class="lbl-s">T (s) · sol B · pont de l'exemple</text>
@@ -703,7 +706,7 @@
         <g class="lbl-s" text-anchor="middle"><text x="151" y="272">2,17 ‰</text><text x="480" y="272">10 ‰</text></g>
         <text x="500" y="240" text-anchor="end" class="lbl-s">ε<tspan font-size="12" dy="3">s</tspan></text>
         <text x="200" y="64" class="lbl" style="fill:#2453b3">palier plastique</text>
-        <text x="64" y="190" class="lbl-s" style="fill:#2453b3" transform="rotate(-62 100 190)">E<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> = 200 GPa</tspan></text>
+        <text x="112" y="210" class="lbl-s" style="fill:#2453b3">E<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> = 200 GPa</tspan></text>
       </svg>
       <div class="formula" style="margin-top:10px;font-size:20px;padding:8px 14px" data-b="2" data-fx="up"><span class="tex">f_{su} = \dfrac{f_e}{\gamma_s} = \dfrac{500}{1{,}15} = 434{,}8\ \text{MPa}</span><div class="w" style="margin-top:2px">Barres HA Fe E500 (B500 en Eurocode). Allongement limité à 10 ‰ (BAEL).</div></div>
     </div>
@@ -739,7 +742,7 @@
       <path d="M440 60 H370 L440 143 L631 370 H440" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="3" data-b="1" data-fx="draw"/>
       <text x="300" y="66" class="lbl-s" style="fill:#2453b3">3,5 ‰</text>
       <text x="560" y="398" class="lbl-s" style="fill:#2453b3">ε<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> ≤ 10 ‰</tspan></text>
-      <text x="456" y="210" class="lbl-s">les sections planes</text><text x="456" y="230" class="lbl-s">restent planes</text>
+      <text x="430" y="270" text-anchor="end" class="lbl-s">les sections planes</text><text x="430" y="290" text-anchor="end" class="lbl-s">restent planes</text>
     </g>
     <!-- contraintes -->
     <g data-b="2" data-fx="fade">
@@ -759,6 +762,7 @@
     </g>
     <g data-b="4" data-fx="zoom"><rect x="880" y="250" width="250" height="60" rx="12" fill="#141a26"/><text x="1005" y="288" text-anchor="middle" class="lbl-w" style="font-size:22px">M<tspan font-size="15" dy="4">u</tspan><tspan dy="-4"> = F</tspan><tspan font-size="15" dy="4">b</tspan><tspan dy="-4"> × z</tspan></text></g>
   </svg>
+  <div class="callout b" style="margin-top:14px;font-size:18px" data-b="4" data-fx="up"><span class="lab">Hypothèses du calcul</span>Sections planes, béton tendu négligé, adhérence parfaite. Le diagramme pivote autour de <b>A</b> (acier à 10 ‰) ou de <b>B</b> (béton à 3,5 ‰) ; le bloc réel est remplacé par un <b>rectangle de hauteur 0,8 y</b>.</div>
 </section>
 
 <!-- ═════════ 20. FORMULES BAEL ═════════ -->
@@ -779,6 +783,7 @@
       <div><h3>Section en T</h3><p style="font-size:16px">Si <span class="tex">M_u \le M_{tu} = b\,h_0 f_{bu}(d-h_0/2)</span> : calcul en rectangle de largeur b — le cas courant en pont.</p></div>
     </div>
   </div>
+  <div class="callout t" style="margin-top:20px;font-size:18px" data-b="8" data-fx="up"><span class="lab">Exemple test</span>b = 0,30 m, d = 0,45 m, M<sub>u</sub> = 200 kN·m, f<sub>c28</sub> = 25 MPa, Fe E500 → μ = 0,2324 ; α = 0,3355 ; z = 0,390 m ; <b>A<sub>s</sub> = 11,81 cm²</b>. Vérifiez-le à la diapositive suivante.</div>
 </section>
 
 <!-- ═════════ 21. CALCULATRICE ═════════ -->
@@ -791,11 +796,11 @@
         <label>b (m) <input type="number" id="c10f-b" value="0.30" step="0.05" min="0.1"></label>
         <label>h (m) <input type="number" id="c10f-h" value="0.50" step="0.05" min="0.1"></label>
         <label>d (m) <input type="number" id="c10f-d" value="0.45" step="0.01" min="0.05"></label>
-        <label>b₀ âme (m) <input type="number" id="c10f-b0" value="0.30" step="0.05" min="0.1"></label>
-        <label>h₀ table (m) <input type="number" id="c10f-h0" value="0" step="0.02" min="0"></label>
-        <label>M<sub>u</sub> (kN·m) <input type="number" id="c10f-Mu" value="200" step="10" min="0"></label>
-        <label>M<sub>ser</sub> (kN·m) <input type="number" id="c10f-Ms" value="145" step="10" min="0"></label>
-        <label>f<sub>c28</sub> (MPa) <select id="c10f-fc"><option>25</option><option selected>30</option><option>35</option><option>40</option></select></label>
+        <label><span>b₀ âme (m)</span><input type="number" id="c10f-b0" value="0.30" step="0.05" min="0.1"></label>
+        <label><span>h₀ table (m)</span><input type="number" id="c10f-h0" value="0" step="0.02" min="0"></label>
+        <label><span>M<sub>u</sub> (kN·m)</span><input type="number" id="c10f-Mu" value="200" step="10" min="0"></label>
+        <label><span>M<sub>ser</sub> (kN·m)</span><input type="number" id="c10f-Ms" value="145" step="10" min="0"></label>
+        <label><span>f<sub>c28</sub> (MPa)</span><select id="c10f-fc"><option>25</option><option selected>30</option><option>35</option><option>40</option></select></label>
         <label>Acier <select id="c10f-fe"><option value="500">Fe E500</option><option value="400">Fe E400</option></select></label>
         <label>Fissuration <select id="c10f-fis"><option value="FPP">peu préj.</option><option value="FP" selected>préjudiciable</option><option value="FTP">très préj.</option></select></label>
       </div>
@@ -906,7 +911,7 @@
         <rect width="700" height="470" rx="16" fill="#fff"/>
         <path d="M156 30 V440" stroke="#9aa3ae"/><path d="M40 250 H680" stroke="#9aa3ae"/>
         <path d="M72.5 250 L112.4 212.7 L128.3 197.5 L144.6 182.4 L161.4 167.3 L178.8 152.2 L196.7 137.1 L215.3 121.8 L230.7 109.9 L240.5 103.7 L250.2 98 L259.9 92.8 L269.7 88.1 L279.4 83.8 L289.2 80 L298.9 76.8 L308.7 74 L318.4 71.6 L328.1 69.8 L337.9 68.5 L349 68.8 L363.9 73.2 L378.4 77.7 L392.4 82.2 L406.1 86.9 L419.5 91.8 L432.6 96.9 L445.4 102.3 L458 108 L470.4 113.9 L482.7 120.2 L494.7 126.8 L506.7 133.7 L518.4 141.1 L528.2 147.4 L544.7 159 L560.9 171.3 L576.9 184.3 L592.7 198.2 L608.2 213 L620.5 225.3 L647.5 250 L620.9 274.4 L608.2 287 L592.7 301.8 L576.9 315.7 L560.9 328.7 L544.7 341 L528.2 352.6 L518.4 358.9 L506.7 366.3 L494.7 373.2 L482.7 379.8 L470.4 386.1 L458 392 L445.4 397.7 L432.6 403.1 L419.5 408.2 L406.1 413.1 L392.4 417.8 L378.4 422.3 L363.9 426.8 L349 431.2 L337.9 431.5 L328.1 430.2 L318.4 428.4 L308.7 426 L298.9 423.2 L289.2 420 L279.4 416.2 L269.7 411.9 L259.9 407.2 L250.2 402 L240.5 396.3 L230.7 390.1 L215.3 378.2 L196.7 362.9 L178.8 347.8 L161.4 332.7 L144.6 317.6 L128.3 302.5 L112.4 287.3 Z" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="3.5" data-a data-fx="draw"/>
-        <g class="lbl-s"><text x="672" y="276" text-anchor="end">N (MN, compression →)</text><text x="166" y="44">M (MN·m)</text></g>
+        <g class="lbl-s"><text x="692" y="236" text-anchor="end">N (MN) →</text><text x="166" y="44">M (MN·m)</text></g>
         <g class="lbl-s" text-anchor="middle"><text x="156" y="268">0</text><text x="276" y="268">5</text><text x="396" y="268">10</text><text x="516" y="268">15</text><text x="636" y="268">20</text></g>
         <g data-b="2" data-fx="pop"><circle cx="276" cy="160" r="10" fill="#12a08a"/><text x="292" y="166" class="lbl-b" style="fill:#0b6e5c;font-size:17px">admissible</text></g>
         <g data-b="3" data-fx="pop"><circle cx="444" cy="86" r="10" fill="#dc4a2c"/><text x="460" y="80" class="lbl-b" style="fill:#a33d22;font-size:17px">hors domaine</text></g>
@@ -1105,28 +1110,28 @@
   <h2 class="t">Huit ennemis <em>du pont</em></h2>
   <div class="cols c4" style="gap:16px">
     <div class="c10-tile" data-b="1" data-fx="up">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="20" y="16" width="200" height="58" fill="#cfd5dc"/><circle cx="80" cy="56" r="9" fill="#a5532c"/><circle cx="160" cy="56" r="9" fill="#2f6fe0"/><path d="M80 47 L74 16 M80 47 L90 16" stroke="#6e7884" stroke-width="1.5"/><circle cx="80" cy="56" r="14" fill="none" stroke="#c46a33" stroke-width="3" class="pulse"/></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="20" y="16" width="200" height="58" fill="#cfd5dc"/><circle cx="80" cy="56" r="9" fill="#a5532c"/><circle cx="160" cy="56" r="9" fill="#2f6fe0"/><path d="M80 47 L74 16 M80 47 L90 16" stroke="#6e7884" stroke-width="1.5"/><circle cx="80" cy="56" r="14" fill="none" stroke="#c46a33" stroke-width="3" class="pulse"/></svg>
       <h3>Corrosion des armatures</h3><p>Carbonatation, chlorures du bord de mer.</p></div>
     <div class="c10-tile" data-b="1" data-fx="up" data-d=".1">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#f1ecfa"/><rect x="20" y="10" width="200" height="70" fill="#cfd5dc"/><g stroke="#7a52c7" stroke-width="1.6" fill="none"><path d="M30 30 l30 8 l20 -14 l30 12 l26 -10 l30 14 l24 -6 M40 60 l26 -16 l28 18 l30 -12 l32 16 l30 -14 M60 38 l6 22 M110 36 l-2 26 M170 34 l4 28"/></g></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#f1ecfa"/><rect x="20" y="10" width="200" height="70" fill="#cfd5dc"/><g stroke="#7a52c7" stroke-width="1.6" fill="none"><path d="M30 30 l30 8 l20 -14 l30 12 l26 -10 l30 14 l24 -6 M40 60 l26 -16 l28 18 l30 -12 l32 16 l30 -14 M60 38 l6 22 M110 36 l-2 26 M170 34 l4 28"/></g></svg>
       <h3>Alcali-réaction</h3><p>Gel gonflant, faïençage du béton.</p></div>
     <div class="c10-tile" data-b="1" data-fx="up" data-d=".2">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><path d="M20 30 Q120 46 220 30 L220 56 Q120 72 20 56 Z" fill="#cfd5dc" stroke="#6e7884"/><g stroke="#dc4a2c" stroke-width="2"><path d="M90 66 v-14 M110 68 v-16 M130 68 v-16 M150 66 v-14"/></g></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><path d="M20 30 Q120 46 220 30 L220 56 Q120 72 20 56 Z" fill="#cfd5dc" stroke="#6e7884"/><g stroke="#dc4a2c" stroke-width="2"><path d="M90 66 v-14 M110 68 v-16 M130 68 v-16 M150 66 v-14"/></g></svg>
       <h3>Fissuration</h3><p>Retrait, surcharges, défauts de ferraillage.</p></div>
     <div class="c10-tile" data-b="1" data-fx="up" data-d=".3">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#e4f0fa"/><rect y="40" width="240" height="22" fill="#bfe0f5"/><path d="M0 50 H240" stroke="#3a9ad9" stroke-width="2" class="flow"/><rect x="106" y="6" width="28" height="56" fill="#cfd5dc" stroke="#6e7884"/><path d="M80 62 Q120 92 160 62 Z" fill="#9fc6e4"/><rect x="92" y="60" width="56" height="8" fill="#9aa3ae"/></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#e4f0fa"/><rect y="40" width="240" height="22" fill="#bfe0f5"/><path d="M0 50 H240" stroke="#3a9ad9" stroke-width="2" class="flow"/><rect x="106" y="6" width="28" height="56" fill="#cfd5dc" stroke="#6e7884"/><path d="M80 62 Q120 92 160 62 Z" fill="#9fc6e4"/><rect x="92" y="60" width="56" height="8" fill="#9aa3ae"/></svg>
       <h3>Affouillement</h3><p>La crue creuse sous les fondations.</p></div>
     <div class="c10-tile" data-b="2" data-fx="up">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="0" y="14" width="240" height="18" fill="#b9c2cc" stroke="#6e7884"/><g class="drive" style="--t:3s;--from:-120px;--to:60px"><rect x="0" y="34" width="90" height="40" rx="4" fill="#e8a020"/><rect x="70" y="28" width="20" height="8" fill="#dc4a2c"/></g><path d="M150 32 l6 10 l6 -10" stroke="#dc4a2c" stroke-width="2" fill="none"/></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="0" y="14" width="240" height="18" fill="#b9c2cc" stroke="#6e7884"/><g class="drive" style="--t:3s;--from:-120px;--to:60px"><rect x="0" y="34" width="90" height="40" rx="4" fill="#e8a020"/><rect x="70" y="28" width="20" height="8" fill="#dc4a2c"/></g><path d="M150 32 l6 10 l6 -10" stroke="#dc4a2c" stroke-width="2" fill="none"/></svg>
       <h3>Chocs de véhicules</h3><p>Poids lourds hors gabarit sous un PS.</p></div>
     <div class="c10-tile" data-b="2" data-fx="up" data-d=".1">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#e9f7f3"/><rect x="10" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="130" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="10" y="14" width="100" height="6" fill="#3c4049"/><rect x="130" y="14" width="100" height="6" fill="#3c4049"/><g fill="#3a9ad9"><circle cx="120" cy="44" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" repeatCount="indefinite"/></circle><circle cx="120" cy="60" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" begin=".6s" repeatCount="indefinite"/></circle></g></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#e9f7f3"/><rect x="10" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="130" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="10" y="14" width="100" height="6" fill="#3c4049"/><rect x="130" y="14" width="100" height="6" fill="#3c4049"/><g fill="#3a9ad9"><circle cx="120" cy="44" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" repeatCount="indefinite"/></circle><circle cx="120" cy="60" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" begin=".6s" repeatCount="indefinite"/></circle></g></svg>
       <h3>Étanchéité, joints</h3><p>L'eau s'infiltre : tout commence là.</p></div>
     <div class="c10-tile" data-b="2" data-fx="up" data-d=".2">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><rect x="20" y="10" width="200" height="22" fill="#b9c2cc"/><path d="M90 32 H150 L156 52 H84 Z" fill="#3c4049"/><path d="M100 40 l8 6 l-6 4" stroke="#e2c070" stroke-width="2" fill="none"/><rect x="50" y="52" width="140" height="28" fill="#cfd5dc"/></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><rect x="20" y="10" width="200" height="22" fill="#b9c2cc"/><path d="M90 32 H150 L156 52 H84 Z" fill="#3c4049"/><path d="M100 40 l8 6 l-6 4" stroke="#e2c070" stroke-width="2" fill="none"/><rect x="50" y="52" width="140" height="28" fill="#cfd5dc"/></svg>
       <h3>Appareils d'appui</h3><p>Élastomère qui vieillit, se fend, glisse.</p></div>
     <div class="c10-tile" data-b="2" data-fx="up" data-d=".3" style="background:#f4f5f7">
-      <svg viewBox="0 0 240 90" style="width:100%;height:84px"><rect width="240" height="90" rx="10" fill="#eef1f5"/><g stroke="#8aa7c4" stroke-width="2.4"><path d="M120 18 V72 M96 32 L144 58 M96 58 L144 32"/></g></svg>
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#eef1f5"/><g stroke="#8aa7c4" stroke-width="2.4"><path d="M120 18 V72 M96 32 L144 58 M96 58 L144 32"/></g></svg>
       <h3>Gel</h3><p>Peu concerné au Maroc, sauf en montagne.</p></div>
   </div>
 </section>
@@ -1328,27 +1333,27 @@
 <section class="slide" data-title="Notre fil rouge, de la donnée au ferraillage">
   <div class="kicker">Notre fil rouge — le cours en une image</div>
   <h2 class="t">De la donnée <em>au ferraillage</em></h2>
-  <svg class="full" viewBox="0 0 1150 380" aria-label="Les étapes du projet du fil rouge">
-    <rect width="1150" height="380" rx="16" fill="#fff"/>
-    <path d="M115 95 H1035 Q1095 95 1095 155 V185 Q1095 245 1035 245 H115" stroke="#e2c070" stroke-width="5" fill="none" data-a data-fx="draw"/>
+  <svg class="full" viewBox="0 0 1150 400" aria-label="Les étapes du projet du fil rouge">
+    <rect width="1150" height="400" rx="16" fill="#fff"/>
+    <path d="M115 95 H1035 Q1095 95 1095 155 V205 Q1095 265 1035 265 H115" stroke="#e2c070" stroke-width="5" fill="none" data-a data-fx="draw"/>
     <g text-anchor="middle">
       <g data-a data-fx="pop" data-d=".1"><circle cx="115" cy="95" r="34" fill="#141a26"/><text x="115" y="103" class="lbl-w" style="font-size:22px">1</text><text x="115" y="152" class="lbl-b" style="font-size:17px">Les données</text><text x="115" y="172" class="lbl-s">voie ferrée, sol, 20 MDH</text></g>
       <g data-a data-fx="pop" data-d=".25"><circle cx="345" cy="95" r="34" fill="#b8902f"/><text x="345" y="103" class="lbl-w" style="font-size:22px">2–3</text><text x="345" y="152" class="lbl-b" style="font-size:17px">Anatomie, familles</text><text x="345" y="172" class="lbl-s">choisir le type d'ouvrage</text></g>
       <g data-a data-fx="pop" data-d=".4"><circle cx="575" cy="95" r="34" fill="#b8902f"/><text x="575" y="103" class="lbl-w" style="font-size:22px">4</text><text x="575" y="152" class="lbl-b" style="font-size:17px">Concevoir</text><text x="575" y="172" class="lbl-s">portées, gabarit, caténaire</text></g>
       <g data-a data-fx="pop" data-d=".55"><circle cx="805" cy="95" r="34" fill="#12a08a"/><text x="805" y="103" class="lbl-w" style="font-size:22px">5</text><text x="805" y="152" class="lbl-b" style="font-size:17px">Construire</text><text x="805" y="172" class="lbl-s">phasage au-dessus des voies</text></g>
       <g data-a data-fx="pop" data-d=".7"><circle cx="1035" cy="95" r="34" fill="#12a08a"/><text x="1035" y="103" class="lbl-w" style="font-size:22px">6</text><text x="1035" y="40" class="lbl-b" style="font-size:17px">Prédimensionner</text><text x="1035" y="60" class="lbl-s" style="font-size:14.5px">épaisseurs, sections</text></g>
-      <g data-a data-fx="pop" data-d=".85"><circle cx="1035" cy="245" r="34" fill="#2f6fe0"/><text x="1035" y="253" class="lbl-w" style="font-size:22px">7</text><text x="1035" y="302" class="lbl-b" style="font-size:17px">Charges</text><text x="1035" y="322" class="lbl-s">A, Bc, Mc120, combinaisons</text></g>
-      <g data-a data-fx="pop" data-d="1"><circle cx="805" cy="245" r="34" fill="#2f6fe0"/><text x="805" y="253" class="lbl-w" style="font-size:22px">8</text><text x="805" y="302" class="lbl-b" style="font-size:17px">Calculer le tablier</text><text x="805" y="322" class="lbl-s">moments, efforts tranchants</text></g>
-      <g data-a data-fx="pop" data-d="1.15"><circle cx="575" cy="245" r="34" fill="#2f6fe0"/><text x="575" y="253" class="lbl-w" style="font-size:22px">9</text><text x="575" y="302" class="lbl-b" style="font-size:17px">Appuis, fondations</text><text x="575" y="322" class="lbl-s">piles, culées, sol à −3 m</text></g>
-      <g data-a data-fx="pop" data-d="1.3"><circle cx="345" cy="245" r="34" fill="#dc4a2c"/><text x="345" y="253" class="lbl-w" style="font-size:22px">10</text><text x="345" y="302" class="lbl-b" style="font-size:17px">Séisme, sections</text><text x="345" y="322" class="lbl-s">efforts sismiques, armatures</text></g>
-      <g data-a data-fx="pop" data-d="1.45"><circle cx="115" cy="245" r="40" fill="#e2c070" class="pulse"/><text x="115" y="253" class="lbl-b" style="font-size:20px">plans</text><text x="115" y="308" class="lbl-b" style="font-size:17px">Ferraillage</text><text x="115" y="328" class="lbl-s">+ plan de surveillance</text></g>
+      <g data-a data-fx="pop" data-d=".85"><circle cx="1035" cy="265" r="34" fill="#2f6fe0"/><text x="1035" y="273" class="lbl-w" style="font-size:22px">7</text><text x="1035" y="322" class="lbl-b" style="font-size:17px">Charges</text><text x="1035" y="342" class="lbl-s">A, Bc, Mc120, combinaisons</text></g>
+      <g data-a data-fx="pop" data-d="1"><circle cx="805" cy="265" r="34" fill="#2f6fe0"/><text x="805" y="273" class="lbl-w" style="font-size:22px">8</text><text x="805" y="322" class="lbl-b" style="font-size:17px">Calculer le tablier</text><text x="805" y="342" class="lbl-s">moments, efforts tranchants</text></g>
+      <g data-a data-fx="pop" data-d="1.15"><circle cx="575" cy="265" r="34" fill="#2f6fe0"/><text x="575" y="273" class="lbl-w" style="font-size:22px">9</text><text x="575" y="322" class="lbl-b" style="font-size:17px">Appuis, fondations</text><text x="575" y="342" class="lbl-s">piles, culées, sol à −3 m</text></g>
+      <g data-a data-fx="pop" data-d="1.3"><circle cx="345" cy="265" r="34" fill="#dc4a2c"/><text x="345" y="273" class="lbl-w" style="font-size:22px">10</text><text x="345" y="322" class="lbl-b" style="font-size:17px">Séisme, sections</text><text x="345" y="342" class="lbl-s">efforts sismiques, armatures</text></g>
+      <g data-a data-fx="pop" data-d="1.45"><circle cx="115" cy="265" r="40" fill="#e2c070" class="pulse"/><text x="115" y="273" class="lbl-b" style="font-size:20px">plans</text><text x="115" y="328" class="lbl-b" style="font-size:17px">Ferraillage</text><text x="115" y="348" class="lbl-s">+ plan de surveillance</text></g>
     </g>
   </svg>
   <div class="interactive" style="display:flex;gap:14px;align-items:center;margin-top:16px;flex-wrap:wrap" data-b="1" data-fx="up">
     <span style="font-size:18px;color:var(--ink2)">Passez à la pratique avec les outils du site :</span>
-    <a class="c10-lnk" href="../../beton.html">Calculs béton BAEL / EC2 →</a>
-    <a class="c10-lnk" href="../../plans-ferraillage.html">Plans coffrage &amp; ferraillage →</a>
-    <a class="c10-lnk" href="../../handbag.html">HandBag, le formulaire →</a>
+    <a class="c10-lnk" href="../../beton.html">Calculs béton →</a>
+    <a class="c10-lnk" href="../../plans-ferraillage.html">Plans de ferraillage →</a>
+    <a class="c10-lnk" href="../../handbag.html">HandBag →</a>
   </div>
 </section>
 
@@ -1363,7 +1368,7 @@
     <li data-b="4" data-fx="left" style="font-size:20px">… <b>ferrailler une section</b> : μ → α → z → A<sub>s</sub> (μ<sub>l</sub> = 0,3717), ELS souvent dimensionnant, Ritter-Mörsch, N–M, précontrainte.</li>
     <li data-b="5" data-fx="left" style="font-size:20px">… <b>faire durer</b> : enrobage et étanchéité d'abord, puis surveiller, entretenir et réparer tôt.</li>
   </ul>
-  <p data-b="6" data-fx="up" style="margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:30px;color:#e2c070;font-style:italic;max-width:700px">Un pont se conçoit pour cent ans : chaque décision compte.</p>
+  <p data-b="6" data-fx="up" style="margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:30px;color:#e2c070;font-style:italic;max-width:900px">Un pont se conçoit pour cent ans : chaque décision compte.</p>
   <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
     <a href="../../etudiants.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Retour à l'espace étudiants →</a>
   </div>
@@ -1415,7 +1420,7 @@
     var d = "", r = 0, xi = c[1];
     for (var i = 0; r <= 3.0001; i++) {
       var D = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * xi * r, 2));
-      d += (i ? " L" : "M") + (60 + r * 170).toFixed(1) + " " + (330 - Math.min(D, 10.7) * 28).toFixed(1);
+      d += (i ? " L" : "M") + (60 + r * 170).toFixed(1) + " " + (370 - Math.min(D, 10.7) * 31.5).toFixed(1);
       r += (r > 0.8 && r < 1.2) ? 0.004 : 0.03;
     }
     setD(c[0], d);
@@ -1453,7 +1458,7 @@
     function place() {
       var p = pos(cur.T, cur.eta), pt = $("c10s15-pt"), lb = $("c10s15-lb");
       pt.setAttribute("cx", p[0].toFixed(1)); pt.setAttribute("cy", p[1].toFixed(1));
-      if (cur.T > 1.6) { lb.setAttribute("x", (p[0] - 110).toFixed(1)); lb.setAttribute("y", (p[1] - 26).toFixed(1)); lb.textContent = "pont isolé"; }
+      if (cur.T > 1.6) { lb.setAttribute("x", (p[0] - 20).toFixed(1)); lb.setAttribute("y", (p[1] - 62).toFixed(1)); lb.textContent = "pont isolé"; }
       else { lb.setAttribute("x", (p[0] + 18).toFixed(1)); lb.setAttribute("y", (p[1] - 14).toFixed(1)); lb.textContent = "pont classique"; }
     }
     function go(T1, e1) {
@@ -1668,6 +1673,20 @@
     }
     ["c10f-b", "c10f-h", "c10f-d", "c10f-b0", "c10f-h0", "c10f-Mu", "c10f-Ms", "c10f-fc", "c10f-fe", "c10f-fis"].forEach(function (id) { $(id).addEventListener("input", upd); $(id).addEventListener("change", upd); });
     upd();
+  })();
+  /* animations SMIL détachées hors de la diapositive affichée (économie de calcul) */
+  (function () {
+    var all = document.querySelectorAll(".deck .slide");
+    function sync(s) {
+      var on = s.classList.contains("on");
+      if (!on && !s._c10) {
+        s._c10 = [];
+        s.querySelectorAll("animate,animateTransform,animateMotion,set").forEach(function (a) { var c = document.createComment("a"); a.replaceWith(c); s._c10.push([c, a]); });
+      } else if (on && s._c10) {
+        s._c10.forEach(function (x) { x[0].replaceWith(x[1]); }); s._c10 = null;
+      }
+    }
+    all.forEach(function (s) { sync(s); new MutationObserver(function () { sync(s); }).observe(s, { attributes: true, attributeFilter: ["class"] }); });
   })();
   try { var cs = document.querySelectorAll(".deck .slide")[window.Slides.index]; if (cs && HOOK[cs.id]) HOOK[cs.id](window.Slides.step, cs); } catch (e) {}
 })();

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 5 — Construire un pont · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 5 : le chantier, les fondations, le coulage sur cintre, la préfabrication (pré-tension et post-tension), la pose à la grue au-dessus d'une voie ferrée, la poutre de lancement, les encorbellements successifs, le poussage, les ponts à haubans et suspendus, le ripage et le vérinage, en séquences animées.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch5.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+  .c5-mv{transition:transform 1.3s cubic-bezier(.45,0,.2,1),opacity .7s}
+  .c5-slow{transition:transform 1.8s cubic-bezier(.45,0,.2,1),opacity .8s}
+  .c5-d{transition:d 1.3s cubic-bezier(.45,0,.2,1),opacity .6s}
+  .c5-col{transition:fill 1.2s,stroke 1.2s,opacity .8s}
+  .c5-caps{display:grid;margin-top:10px}
+  .c5-caps>div{grid-area:1/1;display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-left:6px solid var(--gold);border-radius:12px;padding:9px 16px;font-size:19px;line-height:1.35;color:var(--ink2);min-height:62px}
+  .c5-caps>div b{color:var(--ink)}
+  .c5-caps>div .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;font-size:16px;font-weight:500}
+  .c5-caps.t>div{border-left-color:var(--teal)}.c5-caps.t>div .n{background:var(--teal)}
+  .c5-caps.b>div{border-left-color:var(--blue)}.c5-caps.b>div .n{background:var(--blue)}
+  .c5-caps.r>div{border-left-color:var(--red)}.c5-caps.r>div .n{background:var(--red)}
+  .c5-caps.v>div{border-left-color:var(--violet)}.c5-caps.v>div .n{background:var(--violet)}
+  ol.c5-ol{list-style:none;display:grid;gap:10px;counter-reset:c}
+  ol.c5-ol li{counter-increment:c;position:relative;padding:8px 12px 8px 50px;font-size:18px;line-height:1.38;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:12px}
+  ol.c5-ol li::before{content:counter(c);position:absolute;left:10px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:var(--gold);color:#fff;font-size:14px;font-weight:500;display:grid;place-items:center}
+  ol.c5-ol li b{color:var(--ink)}
+  ol.c5-ol.t li::before{background:var(--teal)}
+  table.tb.c5-tb td{font-size:16.5px;padding:8px 12px}
+  table.tb.c5-tb th{font-size:14.5px;padding:9px 12px}
+  svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin:center}
+  .c5-gantt text{font-family:'Outfit',sans-serif}
+</style>
+</head>
+<body data-ch="ch5">
+<div class="deck">
+
+<!-- ═════════ 1. COUVERTURE ═════════ -->
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">5</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 5</div>
+  <h1 data-a data-fx="up" data-d=".15">Construire <em>un pont</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35" style="top:250px">Du chantier aux grandes méthodes : comment un pont passe du plan à la réalité — souvent <b style="color:#e2c070">sans arrêter la vie qu'il enjambe</b>.</p>
+  <div class="plan" data-a data-fx="up" data-d=".45" style="bottom:auto;top:380px"><span>01 · Chantier et fondations</span><span>02 · Cintre ou préfabrication</span><span>03 · Sans toucher le sol</span><span>04 · Câbles et voies en exploitation</span></div>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect y="228" width="1280" height="32" fill="#132036"/>
+    <!-- piles et tablier partiel -->
+    <g fill="#46557a"><rect x="300" y="160" width="18" height="68"/><rect x="560" y="160" width="18" height="68"/><rect x="820" y="160" width="18" height="68"/></g>
+    <rect x="160" y="150" width="440" height="10" fill="#8b9bc0"/>
+    <path d="M0 150 H160" stroke="#8b9bc0" stroke-width="10"/>
+    <!-- grue à tour -->
+    <path d="M1010 228 V30 M1022 228 V30" stroke="#e2c070" stroke-width="3"/>
+    <path d="M1010 50 L1022 70 M1022 70 L1010 90 M1010 90 L1022 110 M1022 110 L1010 130 M1010 130 L1022 150 M1022 150 L1010 170 M1010 170 L1022 190 M1022 190 L1010 210" stroke="#e2c070" stroke-width="1.2"/>
+    <path d="M700 30 H1180 M700 30 L1016 8 L1180 30" stroke="#e2c070" stroke-width="2.4" fill="none"/>
+    <rect x="1120" y="30" width="44" height="22" fill="#e2c070" opacity=".7"/>
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0 0;0 0;-250 0;-250 0;-250 0;0 0;0 0" keyTimes="0;.15;.4;.55;.7;.9;1" dur="9s" repeatCount="indefinite"/>
+      <rect x="970" y="26" width="30" height="8" fill="#7fd8c8"/>
+      <line x1="985" y1="34" x2="985" y2="190" stroke="#cfd5dc" stroke-width="1.5">
+        <animate attributeName="y2" values="190;100;100;140;140;100;190" keyTimes="0;.15;.4;.55;.7;.9;1" dur="9s" repeatCount="indefinite"/></line>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0 0;0 -90;0 -90;0 -40;0 -40;0 -90;0 0" keyTimes="0;.15;.4;.55;.7;.9;1" dur="9s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;1;1;1;0;0;1" keyTimes="0;.15;.4;.55;.7;.95;1" dur="9s" repeatCount="indefinite"/>
+        <rect x="850" y="190" width="260" height="10" fill="#cfd5dc"/>
+      </g>
+    </g>
+    <rect x="600" y="150" width="0" height="10" fill="#cfd5dc">
+      <animate attributeName="width" values="0;0;260;260;0" keyTimes="0;.55;.56;.95;1" dur="9s" repeatCount="indefinite"/></rect>
+    <g class="drive" style="--t:7s;--from:-300px;--to:1400px"><rect x="0" y="206" width="220" height="20" rx="6" fill="#e8a020" opacity=".85"/><rect x="10" y="211" width="200" height="5" fill="#fff" opacity=".5"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 2. OBJECTIFS ═════════ -->
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:18px">
+    <div class="card gold" data-b="1" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><path d="M4 28h24M8 28V12h16v16M12 12V6h8v6"/><path d="M14 18h4v10h-4z"/></svg></div>
+      <h3>Organiser le chantier</h3><p>Installations, fondations, bétonnage et cure.</p></div>
+    <div class="card teal" data-b="2" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M3 10h26M6 10v18M12 10v18M18 10v18M24 10v18"/></svg></div>
+      <h3>Cintre ou préfabrication</h3><p>Coulé en place, pré-tension, post-tension, grue.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M16 28V12M4 10h24M16 12l-8-2M16 12l8-2"/></svg></div>
+      <h3>Les grandes méthodes</h3><p>Lancement, encorbellements, poussage, haubans.</p></div>
+    <div class="card red" data-b="4" data-fx="up">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><rect x="6" y="6" width="20" height="16" rx="3"/><path d="M10 26l-3 4M22 26l3 4M6 16h20"/></svg></div>
+      <h3>Travailler sous trafic</h3><p>Levages de nuit, ripage, vérinage, sécurité.</p></div>
+  </div>
+  <svg class="full" viewBox="0 0 1152 150" style="margin-top:20px" aria-hidden="true">
+    <rect width="1152" height="150" rx="16" fill="#eef4fc"/>
+    <path d="M0 134 H1152" stroke="#8a7f6b" stroke-width="5"/>
+    <g data-b="1" data-fx="grow"><rect x="120" y="96" width="70" height="38" fill="#cfd5dc" stroke="#6e7884"/></g>
+    <g data-b="2" data-fx="grow"><rect x="300" y="70" width="18" height="64" fill="#cfd5dc" stroke="#6e7884"/><path d="M240 70 H380" stroke="#b9c2cc" stroke-width="10"/></g>
+    <g data-b="3" data-fx="fade"><path d="M560 134 V40" stroke="#9aa3ae" stroke-width="14"/><path d="M480 46 H640" stroke="#b9c2cc" stroke-width="10"/><path d="M640 46 h40" stroke="#b9c2cc" stroke-width="10" stroke-dasharray="6 4"/></g>
+    <g data-b="4" data-fx="fade"><path d="M800 60 H1040" stroke="#b9c2cc" stroke-width="12"/><path d="M806 66 V134 M1034 66 V134" stroke="#9aa3ae" stroke-width="10"/>
+      <g class="drive" style="--t:4s;--from:-260px;--to:1300px"><rect x="0" y="104" width="200" height="26" rx="6" fill="#e8a020"/></g></g>
+  </svg>
+  <div class="callout t" style="margin-top:16px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Notre pont de 26 m au-dessus de la voie ferrée sera <b>construit sans arrêter les trains</b>, sauf quelques courtes nuits.</div>
+</section>
+
+<!-- ═════════ 3. LA MÉTHODE COMPTE ═════════ -->
+<section class="slide" data-title="La méthode n'est pas un détail">
+  <div class="kicker">Pourquoi ce chapitre</div>
+  <h2 class="t">La méthode de construction <em>n'est pas un détail</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b">
+        <li data-b="1" data-fx="left">Elle conditionne la <b>forme</b> du tablier et son câblage.</li>
+        <li data-b="2" data-fx="left">Elle impose le <b>phasage</b> et l'impact sur ce qui est franchi.</li>
+        <li data-b="3" data-fx="left">Les <b>phases provisoires</b> sont souvent plus défavorables que l'ouvrage en service.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 680 460" aria-label="Le même tablier change de schéma statique entre construction et service">
+        <rect width="680" height="460" rx="16" fill="#fff"/>
+        <rect x="60" y="150" width="560" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="330" y="166" width="20" height="120" fill="#cfd5dc" stroke="#6e7884"/>
+        <g><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.45;.5;.95;1" dur="6s" repeatCount="indefinite"/>
+          <path d="M60 166 l-10 16 h20z M620 166 l-10 16 h20z" fill="#6e7884"/></g>
+        <path d="M60 300 H620" stroke="#9aa3ae"/>
+        <path fill="#dc4a2c" fill-opacity=".2" stroke="#dc4a2c" stroke-width="3"
+          d="M60 300 Q200 300 340 180 Q480 300 620 300 Z">
+          <animate attributeName="d" dur="6s" repeatCount="indefinite" keyTimes="0;.45;.5;.95;1"
+            values="M60 300 Q200 300 340 180 Q480 300 620 300 Z;M60 300 Q200 300 340 180 Q480 300 620 300 Z;M60 300 Q200 400 340 250 Q480 400 620 300 Z;M60 300 Q200 400 340 250 Q480 400 620 300 Z;M60 300 Q200 300 340 180 Q480 300 620 300 Z"/></path>
+        <g text-anchor="middle">
+          <g><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.45;.5;.95;1" dur="6s" repeatCount="indefinite"/>
+            <text x="340" y="70" class="lbl-b" style="fill:#a33d22">En construction : une console</text>
+            <text x="340" y="100" class="lbl">moments négatifs sur la pile</text></g>
+          <g><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.45;.5;.95;1" dur="6s" repeatCount="indefinite"/>
+            <text x="340" y="70" class="lbl-b" style="fill:#0b6e5c">En service : une poutre continue</text>
+            <text x="340" y="100" class="lbl">moments positifs en travée</text></g>
+        </g>
+        <text x="340" y="440" text-anchor="middle" class="lbl-s">le même tablier, deux schémas statiques : il faut vérifier les deux</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 4. SECTION 01 ═════════ -->
+<section class="slide section" data-title="Partie 1 — Le chantier et les fondations">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">01</div>
+    <h2 data-a data-fx="up" data-d=".15">Le chantier et les fondations</h2>
+    <p data-a data-fx="up" data-d=".3">Tout pont commence <b style="color:#e2c070">sous la terre</b> : installations, terrassements, pieux ou semelles, puis les appuis qui montent.</p>
+  </div>
+  <svg style="position:absolute;right:70px;bottom:70px;width:340px;height:300px" viewBox="0 0 340 300" aria-hidden="true">
+    <rect x="0" y="120" width="340" height="180" fill="#3a3326" opacity=".5"/>
+    <rect x="150" y="120" width="40" height="170" fill="#8b9bc0"><animate attributeName="height" values="0;170;170" keyTimes="0;.6;1" dur="4s" repeatCount="indefinite"/></rect>
+    <rect x="100" y="80" width="140" height="40" fill="#cfd5dc"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;.6;.7;1" dur="4s" repeatCount="indefinite"/></rect>
+    <rect x="160" y="10" width="20" height="70" fill="#e2c070"><animate attributeName="y" values="-60;-60;10;10" keyTimes="0;.7;.85;1" dur="4s" repeatCount="indefinite"/></rect>
+  </svg>
+</section>
+
+<!-- ═════════ 5. LE CHANTIER TYPE ═════════ -->
+<section class="slide" data-title="Le chantier type">
+  <div class="kicker">Les installations</div>
+  <h2 class="t">Un chantier, c'est d'abord <em>une petite usine</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left"><b>Clôture et accès</b> : poids lourds, grues, secours.</li>
+        <li data-b="2" data-fx="left"><b>Base vie</b> : bureaux, vestiaires, réunions.</li>
+        <li data-b="3" data-fx="left"><b>Béton</b> : centrale sur place ou livré en toupies.</li>
+        <li data-b="4" data-fx="left"><b>Aciers</b> : stockage et façonnage des armatures.</li>
+        <li data-b="5" data-fx="left"><b>Préfabrication</b> et <b>zone de levage</b> près de l'ouvrage.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 720 470" aria-label="Plan d'installation de chantier">
+        <rect width="720" height="470" rx="16" fill="#eef1e6"/>
+        <!-- voie ferrée et pont -->
+        <rect x="450" y="0" width="90" height="470" fill="#ddd5c3"/>
+        <g stroke="#5c6470" stroke-width="3"><path d="M462 0 V470 M474 0 V470 M516 0 V470 M528 0 V470"/></g>
+        <rect x="380" y="200" width="230" height="56" fill="#b9c2cc" stroke="#6e7884" stroke-dasharray="8 5" opacity=".9"/>
+        <text x="495" y="234" text-anchor="middle" class="lbl-s">ouvrage</text>
+        <!-- route d'accès -->
+        <path d="M0 400 H200 Q240 400 240 360 V228 H380" stroke="#c8c1ad" stroke-width="26" fill="none"/>
+        <g data-b="1" data-fx="fade"><rect x="20" y="20" width="410" height="430" rx="10" fill="none" stroke="#e8a020" stroke-width="3" stroke-dasharray="10 7"/>
+          <rect x="16" y="384" width="12" height="32" fill="#e8a020"/><text x="40" y="378" class="lbl-s" style="fill:#9a6410">accès</text>
+          <circle r="7" fill="#dc4a2c"><animateMotion dur="5s" repeatCount="indefinite" path="M0 400 H200 Q240 400 240 360 V228 H370"/></circle></g>
+        <g data-b="2" data-fx="pop"><rect x="44" y="44" width="70" height="34" fill="#fff" stroke="#6e7884"/><rect x="44" y="82" width="70" height="34" fill="#fff" stroke="#6e7884"/><rect x="118" y="44" width="70" height="34" fill="#fff" stroke="#6e7884"/>
+          <text x="116" y="140" text-anchor="middle" class="lbl">base vie</text></g>
+        <g data-b="3" data-fx="pop"><circle cx="300" cy="80" r="26" fill="#cfd5dc" stroke="#6e7884"/><circle cx="350" cy="80" r="20" fill="#cfd5dc" stroke="#6e7884"/><rect x="280" y="110" width="90" height="30" fill="#9aa3ae"/>
+          <text x="325" y="164" text-anchor="middle" class="lbl">centrale à béton</text></g>
+        <g data-b="4" data-fx="pop"><g stroke="#dc4a2c" stroke-width="3"><path d="M50 200 H190 M50 210 H190 M50 220 H190 M50 230 H190 M50 250 H150 M50 260 H150"/></g>
+          <text x="120" y="290" text-anchor="middle" class="lbl">aciers</text></g>
+        <g data-b="5" data-fx="pop"><g fill="#b9c2cc" stroke="#6e7884"><rect x="270" y="300" width="140" height="14"/><rect x="270" y="324" width="140" height="14"/><rect x="270" y="348" width="140" height="14"/></g>
+          <text x="340" y="386" text-anchor="middle" class="lbl">poutres</text>
+          <circle cx="360" cy="228" r="54" fill="#e8a020" fill-opacity=".12" stroke="#e8a020" stroke-width="2" stroke-dasharray="6 5"/>
+          <rect x="340" y="214" width="40" height="28" rx="4" fill="#e8a020"/><path d="M360 228 L420 180" stroke="#9a6410" stroke-width="5"/>
+          <text x="620" y="150" text-anchor="middle" class="lbl-s">zone de levage</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 6. SEMELLES OU PIEUX ═════════ -->
+<section class="slide" data-title="Semelles ou pieux ?">
+  <div class="kicker">Les fondations</div>
+  <h2 class="t">Semelles ou pieux ? <em>Tout dépend du bon sol</em></h2>
+  <div class="cols c2" style="gap:26px">
+    <div data-b="1" data-fx="left">
+      <svg class="full" viewBox="0 0 560 330" aria-label="Fondation superficielle">
+        <rect width="560" height="330" rx="16" fill="#fdf3e2"/>
+        <rect y="90" width="560" height="110" fill="#ead7bd"/><rect y="200" width="560" height="130" fill="#c9a77a"/>
+        <path d="M0 200 H560" stroke="#7a5a3a" stroke-dasharray="8 6" stroke-width="2"/><text x="540" y="226" text-anchor="end" class="lbl-s" style="fill:#4a3520">bon sol à faible profondeur</text>
+        <path d="M200 90 L190 200 H370 L360 90 Z" fill="#fdf3e2" opacity=".85"/>
+        <rect x="200" y="170" width="160" height="30" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="262" y="40" width="36" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+        <g stroke="#dc4a2c" stroke-width="2.4"><path d="M220 210 v16 M250 210 v16 M280 210 v16 M310 210 v16 M340 210 v16"/></g>
+        <text x="24" y="36" class="lbl-b">Semelle superficielle</text>
+        <text x="380" y="190" class="lbl-s">semelle</text>
+      </svg>
+      <p style="margin-top:10px">Bon sol <b>proche</b> : on terrasse et on coule une <b>semelle</b>. C'est notre fil rouge : <b>bon sol à −3 m</b>.</p>
+    </div>
+    <div data-b="2" data-fx="right">
+      <svg class="full" viewBox="0 0 560 330" aria-label="Fondation profonde sur pieux">
+        <rect width="560" height="330" rx="16" fill="#eef4fc"/>
+        <rect y="90" width="560" height="180" fill="#e3cfa5"/><rect y="270" width="560" height="60" fill="#c9a77a"/>
+        <path d="M0 270 H560" stroke="#7a5a3a" stroke-dasharray="8 6" stroke-width="2"/><text x="540" y="296" text-anchor="end" class="lbl-s" style="fill:#4a3520">bon sol profond</text>
+        <text x="540" y="180" text-anchor="end" class="lbl-s">sol compressible</text>
+        <rect x="190" y="90" width="180" height="34" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="262" y="30" width="36" height="60" fill="#cfd5dc" stroke="#6e7884"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="205" y="124" width="26" height="176"/><rect x="267" y="124" width="26" height="176"/><rect x="329" y="124" width="26" height="176"/></g>
+        <g stroke="#2f6fe0" stroke-width="2"><path d="M218 140 V296 M280 140 V296 M342 140 V296" class="flow"/></g>
+        <text x="24" y="36" class="lbl-b">Pieux forés</text>
+      </svg>
+      <p style="margin-top:10px">Bon sol <b>profond</b>, nappe, affouillement : les <b>pieux</b> portent jusqu'au bon sol.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 7. PIEU FORÉ ═════════ -->
+<section class="slide" id="c5-pieu" data-title="Un pieu foré, pas à pas">
+  <div class="kicker">Les fondations profondes</div>
+  <h2 class="t">Un pieu foré, <em>pas à pas</em></h2>
+  <div class="split r" style="grid-template-columns:1.1fr 1fr">
+    <div class="vis">
+      <svg viewBox="0 0 640 470" aria-label="Exécution d'un pieu foré">
+        <defs><clipPath id="c5s7-hole"><rect x="290" y="150" width="60" height="290"/></clipPath><clipPath id="c5s7-top"><rect x="0" y="22" width="640" height="448"/></clipPath></defs>
+        <rect width="640" height="470" rx="16" fill="#e8f1fa"/>
+        <rect y="150" width="640" height="150" fill="#ead7bd"/><rect y="300" width="640" height="80" fill="#e3cfa5"/><rect y="380" width="640" height="90" fill="#c9a77a"/>
+        <text x="20" y="230" class="lbl-s">argile molle</text><text x="20" y="346" class="lbl-s">sable</text><text x="20" y="430" class="lbl-s" style="fill:#4a3520">bon sol</text>
+        <rect x="290" y="150" width="60" height="290" fill="#f4ecdc" id="c5p-holebg" class="c5-mv" style="opacity:0"/>
+        <rect x="290" y="150" width="60" height="290" fill="#c8a970" opacity=".55" id="c5p-boue" class="c5-mv" style="opacity:0"/>
+        <g clip-path="url(#c5s7-hole)"><rect id="c5p-beton" class="c5-slow" x="290" y="150" width="60" height="290" fill="#b9c2cc" style="transform:translateY(290px)"/></g>
+        <rect id="c5p-pol" class="c5-mv" x="290" y="150" width="60" height="22" fill="#9c8a6a" style="opacity:0"/>
+        <g id="c5p-cage" class="c5-slow" style="transform:translateY(-330px);opacity:0"><g stroke="#dc4a2c" stroke-width="2.2"><path d="M300 140 V436 M313 140 V436 M327 140 V436 M340 140 V436"/></g><g stroke="#dc4a2c" stroke-width="1.4"><path d="M298 170 H342 M298 210 H342 M298 250 H342 M298 290 H342 M298 330 H342 M298 370 H342 M298 410 H342"/></g></g>
+        <g id="c5p-tube" class="c5-mv" style="transform:translateY(-160px);opacity:0"><rect x="284" y="140" width="8" height="160" fill="#6e7884"/><rect x="348" y="140" width="8" height="160" fill="#6e7884"/></g>
+        <g id="c5p-trem" class="c5-mv" style="opacity:0"><path d="M320 40 V432" stroke="#3c4049" stroke-width="6"/><path d="M296 30 H344 L326 52 H314 Z" fill="#3c4049"/></g>
+        <!-- foreuse -->
+        <g><rect x="380" y="120" width="170" height="30" rx="8" fill="#e8a020"/><rect x="480" y="86" width="56" height="36" rx="4" fill="#e8a020"/><rect x="490" y="94" width="30" height="16" fill="#fff" opacity=".6"/>
+          <path d="M400 120 V22 H320" stroke="#9a6410" stroke-width="6" fill="none"/><circle cx="400" cy="140" r="6" fill="#3c4049"/><circle cx="530" cy="140" r="6" fill="#3c4049"/></g>
+        <g clip-path="url(#c5s7-top)"><g id="c5p-aug" class="c5-slow"><path d="M320 -300 V112" stroke="#3c4049" stroke-width="4"/><path d="M302 112 H338 V140 L320 150 L302 140 Z" fill="#6e7884"/><path d="M302 120 L338 128 M302 132 L338 140" stroke="#cfd5dc" stroke-width="2"/></g></g>
+        <ellipse id="c5p-spoil" class="c5-mv" cx="200" cy="150" rx="50" ry="22" fill="#c9a77a" style="opacity:0"/>
+        <g id="c5p-sem" class="c5-mv" style="opacity:0"><rect x="220" y="112" width="200" height="40" fill="#cfd5dc" stroke="#6e7884"/><text x="320" y="100" text-anchor="middle" class="lbl-s">semelle sur pieux</text></g>
+      </svg>
+    </div>
+    <div>
+      <ol class="c5-ol">
+        <li data-b="1" data-fx="right"><b>Forage</b> à la tarière, sous tubage ou sous boue.</li>
+        <li data-b="2" data-fx="right">Descente de la <b>cage d'armatures</b>.</li>
+        <li data-b="3" data-fx="right"><b>Bétonnage au tube plongeur</b>, du bas vers le haut : le béton chasse la boue.</li>
+        <li data-b="4" data-fx="right">Retrait du tubage, puis <b>recépage</b> : on démolit la tête polluée.</li>
+        <li data-b="5" data-fx="right">Plusieurs pieux sont liés par une <b>semelle</b>.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 8. DE LA SEMELLE AU CHEVÊTRE ═════════ -->
+<section class="slide" data-title="De la semelle au chevêtre">
+  <div class="kicker">Les appuis</div>
+  <h2 class="t">Une pile monte, <em>couche après couche</em></h2>
+  <div class="split wide-v" style="grid-template-columns:.85fr 1.35fr">
+    <div>
+      <ol class="c5-ol t">
+        <li data-b="1" data-fx="left">Fouille et <b>béton de propreté</b>.</li>
+        <li data-b="2" data-fx="left"><b>Ferraillage</b> puis bétonnage de la semelle.</li>
+        <li data-b="3" data-fx="left"><b>Fût</b> : coffrage, armatures, bétonnage.</li>
+        <li data-b="4" data-fx="left"><b>Chevêtre</b>, puis bossages.</li>
+        <li data-b="5" data-fx="left"><b>Appareils d'appui</b> calés au bon niveau.</li>
+      </ol>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 470" aria-label="Construction d'une pile">
+        <defs><pattern id="c5s8-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+        <rect width="700" height="470" rx="16" fill="#eef4fc"/>
+        <rect y="330" width="700" height="140" fill="url(#c5s8-e)"/>
+        <path d="M170 330 L190 440 H510 L530 330 Z" fill="#f3ead8" data-b="1" data-fx="fade"/>
+        <rect x="200" y="430" width="300" height="10" fill="#9aa3ae" data-b="1" data-fx="grow"/>
+        <g data-b="2" data-fx="draw"><path d="M215 424 H485 M215 376 H485 M215 424 V376 M260 424 V376 M305 424 V376 M350 424 V376 M395 424 V376 M440 424 V376 M485 424 V376" stroke="#dc4a2c" stroke-width="2.4" fill="none"/></g>
+        <rect x="210" y="370" width="280" height="60" fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="grow" data-d="1"/>
+        <g data-b="3" data-fx="grow"><rect x="320" y="150" width="60" height="220" fill="#cfd5dc" stroke="#6e7884"/></g>
+        <g data-b="3" data-only data-fx="fade"><rect x="310" y="150" width="8" height="220" fill="#c08a3a"/><rect x="382" y="150" width="8" height="220" fill="#c08a3a"/><path d="M314 160 L280 120 M386 160 L420 120" stroke="#c08a3a" stroke-width="4"/>
+          <text x="440" y="250" class="lbl-s" style="fill:#9a6410">coffrage</text></g>
+        <g data-b="4" data-fx="zoom"><path d="M220 110 H480 V150 L420 170 H280 L220 150 Z" fill="#cfd5dc" stroke="#6e7884"/></g>
+        <g data-b="4" data-fx="pop" data-d=".4"><rect x="250" y="98" width="50" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="400" y="98" width="50" height="12" fill="#b9c2cc" stroke="#6e7884"/></g>
+        <g data-b="5" data-fx="down"><rect x="255" y="86" width="40" height="12" fill="#3c4049"/><rect x="405" y="86" width="40" height="12" fill="#3c4049"/>
+          <path d="M255 90 H295 M255 94 H295 M405 90 H445 M405 94 H445" stroke="#9aa3ae"/>
+          <text x="350" y="60" text-anchor="middle" class="lbl">appareils d'appui</text></g>
+        <g class="lbl-s"><text x="510" y="406" data-b="2" data-fx="fade">semelle</text><text x="400" y="300" data-b="3" data-fx="fade">fût</text><text x="490" y="140" data-b="4" data-fx="fade">chevêtre</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 9. BÉTONNAGE ET CURE ═════════ -->
+<section class="slide" data-title="Bétonnage et cure">
+  <div class="kicker">Le béton sur chantier</div>
+  <h2 class="t">Bétonner, vibrer, <em>protéger</em></h2>
+  <div class="split r" style="grid-template-columns:1.2fr 1fr">
+    <div class="vis">
+      <svg viewBox="0 0 640 450" aria-label="Bétonnage à la pompe et cure">
+        <rect width="640" height="450" rx="16" fill="#fdf3e2"/>
+        <path d="M0 380 H640" stroke="#a37a3e" stroke-width="3"/>
+        <!-- toupie -->
+        <g><rect x="20" y="330" width="80" height="44" rx="6" fill="#e8a020"/><ellipse cx="150" cy="342" rx="54" ry="30" fill="#cfd5dc" stroke="#6e7884" class="spin"/><rect x="100" y="360" width="110" height="14" fill="#6e7884"/>
+          <circle cx="50" cy="378" r="9" fill="#141a26"/><circle cx="170" cy="378" r="9" fill="#141a26"/></g>
+        <!-- pompe -->
+        <g><rect x="240" y="320" width="120" height="54" rx="6" fill="#12a08a"/><circle cx="260" cy="378" r="9" fill="#141a26"/><circle cx="340" cy="378" r="9" fill="#141a26"/>
+          <path d="M300 320 L360 120 L520 110 L540 230" stroke="#0b6e5c" stroke-width="8" fill="none" stroke-linejoin="round"/>
+          <path d="M300 320 L360 120 L520 110 L540 230" stroke="#cfd5dc" stroke-width="3" fill="none" class="flow"/></g>
+        <!-- coffrage et béton -->
+        <rect x="460" y="230" width="150" height="150" fill="none" stroke="#c08a3a" stroke-width="6"/>
+        <rect x="463" y="300" width="144" height="80" fill="#b9c2cc"><animate attributeName="y" values="370;300;300" keyTimes="0;.7;1" dur="5s" repeatCount="indefinite"/><animate attributeName="height" values="10;80;80" keyTimes="0;.7;1" dur="5s" repeatCount="indefinite"/></rect>
+        <path d="M580 180 V330" stroke="#3c4049" stroke-width="4" data-b="1" data-fx="fade"/><circle cx="580" cy="330" r="7" fill="#3c4049" class="pulse" data-b="1" data-fx="fade"/>
+        <text x="600" y="176" text-anchor="end" class="lbl-s" data-b="1" data-fx="fade">aiguille vibrante</text>
+        <g data-b="2" data-fx="fade"><path d="M460 222 H610" stroke="#3a9ad9" stroke-width="3" stroke-dasharray="4 6" class="flow"/>
+          <g fill="#3a9ad9"><circle cx="490" cy="210" r="4"/><circle cx="530" cy="204" r="4"/><circle cx="570" cy="210" r="4"/></g>
+          <text x="535" y="196" text-anchor="middle" class="lbl-s" style="fill:#2453b3">cure humide</text></g>
+        <g data-b="2" data-fx="pop"><circle cx="560" cy="60" r="28" fill="#e8a020" opacity=".85"/><g stroke="#e8a020" stroke-width="3"><path d="M560 18 v-10 M602 60 h10 M590 30 l7 -7 M530 30 l-7 -7"/></g></g>
+        <text x="320" y="420" text-anchor="middle" class="lbl-s">toupie → pompe → coffrage</text>
+      </svg>
+    </div>
+    <div>
+      <ul class="b tight">
+        <li data-a data-fx="right">Pompe ou benne, <b>sans ségrégation</b>.</li>
+        <li data-b="1" data-fx="right"><b>Vibration</b> : chasser l'air, enrober les aciers.</li>
+        <li data-b="2" data-fx="right"><b>Cure</b> : arrosage, bâches ou produit de cure, plusieurs jours.</li>
+        <li data-b="3" data-fx="right"><b>Décoffrage</b> quand la résistance est atteinte.</li>
+      </ul>
+      <div class="callout r" style="margin-top:18px" data-b="3" data-fx="up"><span class="lab">Climat marocain</span>Soleil et vent dessèchent le béton jeune : sans cure, <b>fissures de retrait</b> assurées.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 10. SECTION 02 ═════════ -->
+<section class="slide section" data-title="Partie 2 — Sur cintre ou préfabriqué">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">02</div>
+    <h2 data-a data-fx="up" data-d=".15">Sur cintre ou préfabriqué</h2>
+    <p data-a data-fx="up" data-d=".3">Couler le tablier en place sur un échafaudage, ou le fabriquer ailleurs et le <b style="color:#e2c070">poser en quelques heures</b>.</p>
+  </div>
+  <svg style="position:absolute;right:60px;bottom:80px;width:420px;height:260px" viewBox="0 0 420 260" aria-hidden="true">
+    <g stroke="#e2c070" stroke-width="2"><path d="M60 230 V120 M100 230 V120 M140 230 V120 M180 230 V120"/></g>
+    <rect x="40" y="104" width="160" height="16" fill="#8b9bc0"/>
+    <path d="M300 230 V20 M300 20 H400" stroke="#e2c070" stroke-width="3" fill="none"/>
+    <g><animateTransform attributeName="transform" type="translate" values="0 0;0 70;0 0" dur="3.5s" repeatCount="indefinite"/><path d="M380 20 V60" stroke="#cfd5dc"/><rect x="330" y="60" width="90" height="12" fill="#cfd5dc"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 11. CINTRE ═════════ -->
+<section class="slide" data-title="Le coulage sur cintre">
+  <div class="kicker">Coulé en place</div>
+  <h2 class="t">Le coulage sur cintre : <em>un échafaudage sous le tablier</em></h2>
+  <svg class="full" viewBox="0 0 1150 320" aria-label="Coulage d'un tablier sur cintre">
+    <defs><pattern id="c5s11-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+    <rect width="1150" height="320" rx="16" fill="#eef4fc"/>
+    <rect y="270" width="1150" height="50" fill="url(#c5s11-e)"/>
+    <path d="M0 110 H120 V270 H0Z M1150 110 H1030 V270 H1150Z" fill="url(#c5s11-e)"/>
+    <rect x="110" y="120" width="20" height="150" fill="#cfd5dc" stroke="#6e7884"/><rect x="1020" y="120" width="20" height="150" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="565" y="150" width="20" height="120" fill="#cfd5dc" stroke="#6e7884"/>
+    <g data-b="1,2,3,4" data-only data-fx="fade">
+      <g stroke="#b8902f" stroke-width="5"><path d="M170 270 V156 M230 270 V156 M290 270 V156 M350 270 V156 M410 270 V156 M470 270 V156 M530 270 V156 M620 270 V156 M680 270 V156 M740 270 V156 M800 270 V156 M860 270 V156 M920 270 V156 M980 270 V156"/></g>
+      <g stroke="#d9c38a" stroke-width="2"><path d="M170 200 L230 240 M230 200 L290 240 M290 200 L350 240 M350 200 L410 240 M410 200 L470 240 M470 200 L530 240 M620 200 L680 240 M680 200 L740 240 M740 200 L800 240 M800 200 L860 240 M860 200 L920 240 M920 200 L980 240"/></g>
+      <rect x="130" y="148" width="890" height="8" fill="#c08a3a"/>
+    </g>
+    <g data-b="2" data-fx="draw"><path d="M140 142 H1010 M140 124 H1010 M160 142 V124 M220 142 V124 M280 142 V124 M340 142 V124 M400 142 V124 M460 142 V124 M520 142 V124 M580 142 V124 M640 142 V124 M700 142 V124 M760 142 V124 M820 142 V124 M880 142 V124 M940 142 V124 M1000 142 V124" stroke="#dc4a2c" stroke-width="2" fill="none"/></g>
+    <g data-b="3" data-fx="draw"><path d="M150 128 Q 345 150 575 126 Q 805 150 1000 128" stroke="#2f6fe0" stroke-width="3" fill="none"/></g>
+    <rect x="130" y="116" width="890" height="32" fill="#b9c2cc" stroke="#6e7884" data-b="4" data-fx="growx" data-d=".2" opacity=".95"/>
+    <g data-b="5" data-fx="fade"><path d="M0 112 H1150" stroke="#3c4049" stroke-width="6"/>
+      <g class="drive" style="--t:6s;--from:-60px;--to:1200px"><rect x="0" y="94" width="36" height="16" rx="4" fill="#dc4a2c"/></g></g>
+    <g class="lbl-s" text-anchor="middle">
+      <text x="575" y="40" data-b="1" data-only data-fx="fade" class="lbl-b">① étais et coffrage posés sur un sol préparé</text>
+      <text x="575" y="40" data-b="2" data-only data-fx="fade" class="lbl-b">② ferraillage du tablier</text>
+      <text x="575" y="40" data-b="3" data-only data-fx="fade" class="lbl-b">③ gaines de précontrainte (dalle précontrainte)</text>
+      <text x="575" y="40" data-b="4" data-only data-fx="fade" class="lbl-b">④ bétonnage, cure, mise en tension</text>
+      <text x="575" y="40" data-b="5" data-only data-fx="fade" class="lbl-b">⑤ décintrage : le tablier porte seul</text>
+    </g>
+  </svg>
+  <div class="cols c3" style="gap:16px;margin-top:14px">
+    <div class="callout t" data-a data-fx="up"><span class="lab">Pour</span>Formes libres : <b>biais, courbes</b>, dalles continues élancées.</div>
+    <div class="callout r" data-a data-fx="up" data-d=".1"><span class="lab">Contre</span>Le cintre <b>occupe la brèche</b> plusieurs semaines.</div>
+    <div class="callout b" data-a data-fx="up" data-d=".2"><span class="lab">Typique</span>Pont construit <b>avant</b> la voie qu'il franchit.</div>
+  </div>
+</section>
+
+<!-- ═════════ 12. PRÉ-TENSION ═════════ -->
+<section class="slide" id="c5-pre" data-title="Préfabrication : la pré-tension">
+  <div class="kicker">Préfabrication en usine · poutres PRAD</div>
+  <h2 class="t">La pré-tension : <em>tendre d'abord, couler ensuite</em></h2>
+  <svg class="full" viewBox="0 0 1150 300" aria-label="Fabrication d'une poutre précontrainte par pré-tension">
+    <defs><marker id="c5s12-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+      <marker id="c5s12-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f6fe0"/></marker></defs>
+    <rect width="1150" height="300" rx="16" fill="#f3f0e8"/>
+    <rect x="0" y="262" width="1150" height="38" fill="#cfc6ae"/>
+    <rect x="40" y="90" width="60" height="172" fill="#9aa3ae" stroke="#6e7884"/><rect x="1050" y="90" width="60" height="172" fill="#9aa3ae" stroke="#6e7884"/>
+    <text x="70" y="80" text-anchor="middle" class="lbl-s">culée du banc</text><text x="1080" y="80" text-anchor="middle" class="lbl-s">culée du banc</text>
+    <g id="c5r-beam" class="c5-mv" style="opacity:0">
+      <path id="c5r-beamp" class="c5-d" d="M200 150 Q575 150 950 150 L950 245 Q575 245 200 245 Z" fill="#cfd5dc" stroke="#6e7884" stroke-width="2"/>
+    </g>
+    <g id="c5r-in" class="c5-mv" style="opacity:0"><path id="c5r-inp" class="c5-d" d="M100 214 Q575 214 1050 214 M100 228 Q575 228 1050 228" stroke="#dc4a2c" stroke-width="3" fill="none"/></g>
+    <g id="c5r-ext" class="c5-mv" style="opacity:0"><path d="M100 214 H200 M100 228 H200 M950 214 H1050 M950 228 H1050" stroke="#dc4a2c" stroke-width="3"/></g>
+    <g id="c5r-tarr" class="c5-mv" style="opacity:0"><path d="M150 180 H40" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c5s12-r)" class="flow"/><path d="M1000 180 H1110" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c5s12-r)" class="flow"/></g>
+    <g id="c5r-carr" class="c5-mv" style="opacity:0"><path d="M240 196 H320" stroke="#2f6fe0" stroke-width="5" marker-end="url(#c5s12-b)"/><path d="M910 196 H830" stroke="#2f6fe0" stroke-width="5" marker-end="url(#c5s12-b)"/>
+      <text x="575" y="122" text-anchor="middle" class="lbl-b" style="fill:#2453b3">l'effort passe au béton par adhérence</text></g>
+    <g id="c5r-cut" class="c5-mv" style="opacity:0"><path d="M150 200 l20 40 M1000 200 l-20 40" stroke="#141a26" stroke-width="3"/><text x="160" y="196" text-anchor="middle" class="lbl-s">coupe</text><text x="990" y="196" text-anchor="middle" class="lbl-s">coupe</text></g>
+  </svg>
+  <div class="c5-caps r">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>Un <b>banc de préfabrication</b> : deux culées très rigides, à 100 m l'une de l'autre parfois.</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>On <b>tend les torons</b> entre les culées du banc, avant tout bétonnage.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span>On coffre et on <b>coule le béton autour</b> des torons déjà tendus.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>On <b>relâche</b> : l'effort passe au béton par adhérence, la poutre se cambre.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>Bilan : industriel et économique, mais <b>torons rectilignes</b> ; poutres d'environ 10 à 30 m.</div>
+  </div>
+</section>
+
+<!-- ═════════ 13. POST-TENSION ═════════ -->
+<section class="slide" id="c5-post" data-title="La post-tension">
+  <div class="kicker">Préfabrication sur aire · poutres VIPP</div>
+  <h2 class="t">La post-tension : <em>couler d'abord, tendre ensuite</em></h2>
+  <svg class="full" viewBox="0 0 1150 300" aria-label="Mise en tension d'une poutre par post-tension">
+    <rect width="1150" height="300" rx="16" fill="#eef4fc"/>
+    <rect x="0" y="262" width="1150" height="38" fill="#cfc6ae"/>
+    <path id="c5o-beam" class="c5-d" d="M120 120 Q575 120 1030 120 L1030 230 Q575 230 120 230 Z" fill="#cfd5dc" stroke="#6e7884" stroke-width="2"/>
+    <rect x="160" y="230" width="40" height="32" fill="#9aa3ae"/><rect x="950" y="230" width="40" height="32" fill="#9aa3ae"/>
+    <path d="M130 150 Q575 280 1020 150" stroke="#8a929e" stroke-width="10" fill="none" stroke-dasharray="3 3"/>
+    <path id="c5o-cab" d="M90 150 Q575 280 1060 150" stroke="#dc4a2c" stroke-width="3.5" fill="none" data-b="1" data-fx="draw"/>
+    <g id="c5o-flow" class="c5-mv" style="opacity:0"><path class="flow" d="M130 150 Q575 280 1020 150" stroke="#ffd0c4" stroke-width="2" fill="none"/></g>
+    <path id="c5o-inj" d="M130 150 Q575 280 1020 150" stroke="#6e7884" stroke-width="9" fill="none" data-b="4" data-fx="draw" opacity=".9"/>
+    <g id="c5o-jack" class="c5-mv"><rect x="1036" y="128" width="70" height="40" rx="6" fill="#e8a020" data-b="2" data-fx="fade"/><text x="1071" y="114" text-anchor="middle" class="lbl-s" data-b="2" data-fx="fade">vérin</text></g>
+    <g data-b="3" data-fx="pop"><path d="M1030 140 l-14 10 l14 10 z M120 140 l14 10 l-14 10 z" fill="#141a26"/><text x="96" y="114" text-anchor="middle" class="lbl-s">ancrage</text></g>
+    <text x="575" y="60" text-anchor="middle" class="lbl-b" data-b="1" data-fx="fade">tracé courbe : bas à mi-travée, remontant vers les appuis</text>
+  </svg>
+  <div class="c5-caps b">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>On coule la poutre avec ses <b>gaines</b> vides, au tracé parabolique.</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>Le béton a durci : on <b>enfile le câble</b> dans la gaine.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span>Le <b>vérin</b> tend le câble en prenant appui sur le béton.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>On <b>bloque</b> le câble dans ses ancrages : la poutre se cambre.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>On <b>injecte</b> la gaine (coulis) contre la corrosion. VIPP de 30 à 50 m environ.</div>
+  </div>
+</section>
+
+<!-- ═════════ 14. POSE À LA GRUE (FIL ROUGE) ═════════ -->
+<section class="slide" id="c5-grue" data-title="Fil rouge : la nuit de pose">
+  <div class="kicker">Notre fil rouge · pose à la grue au-dessus des voies</div>
+  <h2 class="t">Une nuit, une grue, <em>une poutre</em></h2>
+  <svg class="full" viewBox="0 0 1150 400" aria-label="Levage de nuit d'une poutre au-dessus d'une voie ferrée">
+    <defs><pattern id="c5s14-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+    <rect id="c5g-sky" class="c5-col" width="1150" height="400" rx="16" fill="#e8f1fa"/>
+    <g id="c5g-moon" class="c5-mv" style="opacity:0"><circle cx="560" cy="50" r="22" fill="#f4f1d0"/><circle cx="570" cy="44" r="20" fill="#1b2744"/><g fill="#fff"><circle cx="140" cy="40" r="2"/><circle cx="300" cy="70" r="1.6"/><circle cx="760" cy="30" r="2"/><circle cx="460" cy="90" r="1.5"/><circle cx="680" cy="80" r="1.5"/></g></g>
+    <rect y="350" width="1150" height="50" fill="url(#c5s14-e)"/>
+    <rect x="0" y="164" width="340" height="186" fill="url(#c5s14-e)"/><rect x="810" y="164" width="340" height="186" fill="url(#c5s14-e)"/>
+    <path d="M0 164 H340 M810 164 H1150" stroke="#3c4049" stroke-width="4"/>
+    <rect x="326" y="196" width="20" height="154" fill="#cfd5dc" stroke="#6e7884"/><rect x="804" y="196" width="20" height="154" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="330" y="190" width="14" height="6" fill="#141a26"/><rect x="806" y="190" width="14" height="6" fill="#141a26"/>
+    <!-- voies -->
+    <g fill="#5c6470"><rect x="395" y="344" width="50" height="6"/><rect x="475" y="344" width="50" height="6"/><rect x="625" y="344" width="50" height="6"/><rect x="705" y="344" width="50" height="6"/></g>
+    <path d="M375 350 V232 M775 350 V232" stroke="#7f8a96" stroke-width="3"/>
+    <path id="c5g-cat" class="c5-col" d="M375 242 H775" stroke="#dc4a2c" stroke-width="2.4"/>
+    <g id="c5g-tlive" class="c5-mv"><text x="575" y="234" text-anchor="middle" class="lbl-s" style="fill:#a33d22">caténaire sous tension</text></g>
+    <g id="c5g-toff" class="c5-mv" style="opacity:0"><rect x="480" y="214" width="190" height="26" rx="13" fill="#141a26"/><text x="575" y="232" text-anchor="middle" class="lbl-w" style="font-size:15px">consignée, hors tension</text></g>
+    <g id="c5g-train" class="c5-mv"><g class="drive" style="--t:4.5s;--from:-420px;--to:1200px"><rect x="0" y="296" width="380" height="46" rx="8" fill="#e8a020"/><rect x="12" y="304" width="356" height="12" fill="#fff" opacity=".6"/><path d="M190 296 L210 272 L190 248" stroke="#3c4049" stroke-width="2" fill="none"/></g></g>
+    <!-- remorque -->
+    <g id="c5g-trl" class="c5-mv"><rect x="-170" y="162" width="470" height="8" fill="#3c4049"/><circle cx="240" cy="172" r="7" fill="#141a26"/><circle cx="262" cy="172" r="7" fill="#141a26"/><circle cx="-60" cy="172" r="7" fill="#141a26"/></g>
+    <!-- poutre (position finale 330–820) -->
+    <g id="c5g-beam" class="c5-slow" style="transform:translate(-480px,-28px)">
+      <path d="M575 134 L420 164 M575 134 L730 164" stroke="#3c4049" stroke-width="2" class="c5g-sl"/>
+      <rect x="330" y="164" width="490" height="26" fill="#b9c2cc" stroke="#6e7884" stroke-width="2"/><path d="M330 170 H820" stroke="#9aa3ae"/>
+      <circle cx="575" cy="134" r="5" fill="#3c4049"/>
+    </g>
+    <rect id="c5g-hd" class="c5-mv" x="326" y="156" width="498" height="8" fill="#3c4049" style="opacity:0"/>
+    <!-- grue mobile sur le remblai droit -->
+    <path id="c5g-boom" class="c5-d" d="M960 132 L95 26" stroke="#e8a020" stroke-width="9" stroke-linecap="round"/>
+    <path id="c5g-cab" class="c5-d" d="M95 26 L95 106" stroke="#3c4049" stroke-width="2"/>
+    <g><rect x="900" y="132" width="150" height="26" rx="5" fill="#e8a020"/><rect x="1040" y="112" width="40" height="46" rx="5" fill="#e8a020"/><rect x="1048" y="120" width="24" height="16" fill="#fff" opacity=".6"/>
+      <rect x="940" y="116" width="60" height="18" fill="#9a6410"/><path d="M900 160 L880 164 M1050 160 L1080 164" stroke="#3c4049" stroke-width="4"/><circle cx="960" cy="132" r="7" fill="#3c4049"/></g>
+    <g id="c5g-lamp" class="c5-mv" style="opacity:0"><path d="M60 130 L330 330 L120 330 Z M1100 130 L820 330 L1030 330 Z" fill="#ffe9a8" opacity=".18"/><rect x="54" y="124" width="12" height="12" fill="#ffe9a8"/><rect x="1094" y="124" width="12" height="12" fill="#ffe9a8"/></g>
+  </svg>
+  <div class="c5-caps r">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>De jour : culées terminées, trains en circulation. La poutre de 26 m arrive sur remorque.</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span><b>Interruption de nuit</b> programmée avec l'ONCF : plus de trains, caténaire <b>consignée</b>.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span>La grue <b>lève</b> la poutre au palonnier.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>Rotation de la flèche : la poutre passe <b>au-dessus des voies</b>.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>Descente lente et <b>pose sur les appareils d'appui</b>.</div>
+    <div data-b="5" data-only data-fx="fade"><span class="n">5</span>Au matin : caténaire remise sous tension, <b>les trains repassent</b>. Les poutres suivantes, les nuits suivantes.</div>
+  </div>
+</section>
+
+<!-- ═════════ 15. FIL ROUGE : LA SUITE ═════════ -->
+<section class="slide" data-title="Fil rouge : du hourdis à la mise en service">
+  <div class="kicker">Notre fil rouge · après la pose</div>
+  <h2 class="t">Après la pose : <em>plus rien au-dessus des trains</em></h2>
+  <div class="split wide-v" style="grid-template-columns:.85fr 1.35fr">
+    <div>
+      <ol class="c5-ol">
+        <li data-b="1" data-fx="left"><b>Entretoises d'about</b> : elles lient les poutres et serviront aux vérinages.</li>
+        <li data-b="2" data-fx="left"><b>Prédalles</b> entre poutres : un coffrage perdu, sans étai.</li>
+        <li data-b="3" data-fx="left"><b>Hourdis</b> coulé par-dessus.</li>
+        <li data-b="4" data-fx="left"><b>Équipements</b> : étanchéité, enrobé, corniches, écrans anti-contact.</li>
+        <li data-b="5" data-fx="left"><b>Épreuves de chargement</b>, puis mise en service.</li>
+      </ol>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 470" aria-label="Coupe transversale du tablier en construction">
+        <rect width="700" height="470" rx="16" fill="#eef4fc"/>
+        <text x="30" y="40" class="lbl-s">coupe transversale du tablier (≈ 10 m)</text>
+        <g fill="#cfd5dc" stroke="#6e7884">
+          <path d="M90 200 h80 v14 h-28 v120 h40 v22 h-104 v-22 h40 v-120 h-28 z"/>
+          <path d="M230 200 h80 v14 h-28 v120 h40 v22 h-104 v-22 h40 v-120 h-28 z"/>
+          <path d="M370 200 h80 v14 h-28 v120 h40 v22 h-104 v-22 h40 v-120 h-28 z"/>
+          <path d="M510 200 h80 v14 h-28 v120 h40 v22 h-104 v-22 h40 v-120 h-28 z"/>
+        </g>
+        <rect x="100" y="260" width="480" height="40" fill="#9fb0c4" opacity=".8" data-b="1" data-fx="growx"/>
+        <g data-b="2" data-fx="down"><rect x="170" y="200" width="60" height="7" fill="#7f8a96"/><rect x="310" y="200" width="60" height="7" fill="#7f8a96"/><rect x="450" y="200" width="60" height="7" fill="#7f8a96"/></g>
+        <rect x="70" y="170" width="540" height="30" fill="#b9c2cc" stroke="#6e7884" data-b="3" data-fx="grow"/>
+        <g data-b="4" data-fx="fade"><rect x="95" y="160" width="490" height="10" fill="#3c4049"/>
+          <rect x="50" y="150" width="40" height="40" fill="#f4f1ea" stroke="#6e7884"/><rect x="590" y="150" width="40" height="40" fill="#f4f1ea" stroke="#6e7884"/>
+          <path d="M70 150 V90 M610 150 V90" stroke="#7a52c7" stroke-width="5"/><path d="M60 90 H80 M600 90 H620" stroke="#7a52c7" stroke-width="5"/>
+          <text x="610" y="78" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0">écran</text></g>
+        <g data-b="5" data-fx="fade"><g class="drive" style="--t:5s;--from:-120px;--to:760px"><rect x="0" y="122" width="80" height="38" rx="6" fill="#dc4a2c"/><circle cx="16" cy="162" r="6" fill="#141a26"/><circle cx="64" cy="162" r="6" fill="#141a26"/></g>
+          <path d="M140 420 H560" stroke="#8a7f6b" stroke-width="6"/><text x="350" y="452" text-anchor="middle" class="lbl-s">voies ferrées, en service</text></g>
+        <path d="M230 370 H450" stroke="#dc4a2c" stroke-width="1.8" stroke-dasharray="5 4"/><text x="460" y="376" class="lbl-s" style="fill:#a33d22">caténaire</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 16. POUTRE DE LANCEMENT ═════════ -->
+<section class="slide" id="c5-lanc" data-title="La poutre de lancement">
+  <div class="kicker">Préfabrication · viaducs multitravées</div>
+  <h2 class="t">La poutre de lancement : <em>un pont qui pose un pont</em></h2>
+  <svg class="full" viewBox="0 0 1150 380" aria-label="Pose de poutres par poutre de lancement">
+    <defs><pattern id="c5s16-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+    <rect width="1150" height="380" rx="16" fill="#eef4fc"/>
+    <path d="M0 340 Q300 300 575 345 T1150 330 V380 H0Z" fill="url(#c5s16-e)"/>
+    <rect x="0" y="224" width="100" height="156" fill="url(#c5s16-e)"/><rect x="88" y="200" width="16" height="140" fill="#cfd5dc" stroke="#6e7884"/>
+    <g fill="#cfd5dc" stroke="#6e7884"><rect x="390" y="224" width="20" height="120"/><rect x="690" y="224" width="20" height="120"/><rect x="990" y="224" width="20" height="110"/>
+      <rect x="376" y="214" width="48" height="10"/><rect x="676" y="214" width="48" height="10"/><rect x="976" y="214" width="48" height="10"/></g>
+    <!-- poutres -->
+    <g id="c5l-b1" class="c5-slow" style="transform:translate(-364px,-50px)"><path class="sl" d="M140 150 V190 M360 150 V190" stroke="#3c4049" stroke-width="2"/><rect x="104" y="190" width="292" height="24" fill="#b9c2cc" stroke="#6e7884" stroke-width="2"/></g>
+    <g id="c5l-b2" class="c5-slow" style="transform:translate(-364px,-50px);opacity:0"><path class="sl" d="M440 150 V190 M660 150 V190" stroke="#3c4049" stroke-width="2"/><rect x="404" y="190" width="292" height="24" fill="#b9c2cc" stroke="#6e7884" stroke-width="2"/></g>
+    <g id="c5l-b3" class="c5-slow" style="transform:translate(-364px,-50px);opacity:0"><path class="sl" d="M740 150 V190 M960 150 V190" stroke="#3c4049" stroke-width="2"/><rect x="704" y="190" width="292" height="24" fill="#b9c2cc" stroke="#6e7884" stroke-width="2"/></g>
+    <!-- poutre de lancement -->
+    <g id="c5l-gird" class="c5-slow">
+      <path d="M-220 70 H720 M-220 100 H720" stroke="#2f6fe0" stroke-width="5"/>
+      <path d="M-220 100 L-190 70 L-160 100 L-130 70 L-100 100 L-70 70 L-40 100 L-10 70 L20 100 L50 70 L80 100 L110 70 L140 100 L170 70 L200 100 L230 70 L260 100 L290 70 L320 100 L350 70 L380 100 L410 70 L440 100 L470 70 L500 100 L530 70 L560 100 L590 70 L620 100 L650 70 L680 100 L710 70" stroke="#2f6fe0" stroke-width="2" fill="none"/>
+      <path d="M100 100 V190 M400 100 V214 M700 100 V214" stroke="#1f4fae" stroke-width="7"/>
+    </g>
+    <g class="lbl-s" text-anchor="middle"><text x="250" y="300">travée 1</text><text x="550" y="300">travée 2</text><text x="850" y="300">travée 3</text></g>
+  </svg>
+  <div class="c5-caps b">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>La poutre de lancement repose sur la culée et les piles ; une poutre arrive par l'arrière.</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>Des chariots la <b>transportent</b> jusqu'au-dessus de la travée 1.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span><b>Descente</b> et pose sur les appareils d'appui.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>La poutre de lancement <b>avance d'une travée</b>, en prenant appui sur l'ouvrage.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>La poutre suivante roule <b>sur la travée déjà posée</b>…</div>
+    <div data-b="5" data-only data-fx="fade"><span class="n">5</span>… et se pose en travée 2. <b>Rien ne touche le sol</b> sous l'ouvrage.</div>
+    <div data-b="6" data-only data-fx="fade"><span class="n">6</span>Nouvelle avance de l'engin.</div>
+    <div data-b="7" data-only data-fx="fade"><span class="n">7</span>Transport de la poutre suivante.</div>
+    <div data-b="8" data-only data-fx="fade"><span class="n">8</span>Pose : idéal pour les <b>longs viaducs</b> à travées identiques (VIPP).</div>
+  </div>
+</section>
+
+<!-- ═════════ 17. SECTION 03 ═════════ -->
+<section class="slide section" data-title="Partie 3 — Sans toucher le sol">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">03</div>
+    <h2 data-a data-fx="up" data-d=".15">Sans toucher le sol</h2>
+    <p data-a data-fx="up" data-d=".3">Vallées profondes, rivières, grandes voies : on construit le tablier <b style="color:#e2c070">depuis les appuis</b>, en porte-à-faux ou en le poussant.</p>
+  </div>
+  <svg style="position:absolute;right:50px;bottom:90px;width:460px;height:240px" viewBox="0 0 460 240" aria-hidden="true">
+    <path d="M0 230 Q230 120 460 230" fill="#22314f"/>
+    <rect x="220" y="90" width="20" height="140" fill="#8b9bc0"/>
+    <rect x="200" y="74" width="60" height="18" fill="#cfd5dc"/>
+    <rect x="260" y="74" width="0" height="14" fill="#cfd5dc"><animate attributeName="width" values="0;150;150" keyTimes="0;.8;1" dur="5s" repeatCount="indefinite"/></rect>
+    <rect x="260" y="74" width="0" height="14" fill="#cfd5dc" transform="scale(-1 1) translate(-460 0)"><animate attributeName="width" values="0;150;150" keyTimes="0;.8;1" dur="5s" repeatCount="indefinite"/></rect>
+  </svg>
+</section>
+
+<!-- ═════════ 18. ENCORBELLEMENTS : PRINCIPE ═════════ -->
+<section class="slide" data-title="Les encorbellements : le principe">
+  <div class="kicker">Encorbellements successifs</div>
+  <h2 class="t">Le fléau : <em>une balance en béton</em></h2>
+  <div class="split wide-v" style="grid-template-columns:.8fr 1.4fr">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">On part de la pile : le <b>voussoir sur pile</b>.</li>
+        <li data-b="2" data-fx="left">On ajoute des <b>voussoirs de 3 à 5 m</b>, alternativement de chaque côté.</li>
+        <li data-b="3" data-fx="left">Un <b>équipage mobile</b> porte le coffrage en porte-à-faux.</li>
+        <li data-b="4" data-fx="left">Le fléau reste <b>en équilibre</b> : grandes portées sans cintre (60 à 200 m).</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 460" aria-label="Fléau en équilibre sur sa pile">
+        <rect width="700" height="460" rx="16" fill="#eef4fc"/>
+        <path d="M0 420 Q350 340 700 420 V460 H0Z" fill="#3a9ad9" opacity=".25"/>
+        <rect x="330" y="200" width="40" height="230" fill="#cfd5dc" stroke="#6e7884"/>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="0 350 140;1.5 350 140;0 350 140;-1.5 350 140;0 350 140" dur="5s" repeatCount="indefinite"/>
+          <path d="M320 140 H380 V210 H320 Z" fill="#9fb0c4" stroke="#6e7884" data-b="1" data-fx="zoom"/>
+          <g data-b="2" data-fx="fade"><path d="M380 140 H430 V200 H380 Z M430 140 H480 V190 H430 Z M480 140 H530 V182 H480 Z M270 140 H320 V200 H270 Z M220 140 H270 V190 H220 Z M170 140 H220 V182 H170 Z" fill="#cfd5dc" stroke="#6e7884"/></g>
+          <g data-b="3" data-fx="fade"><path d="M530 140 L578 116 V140 M530 138 H582" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M576 116 V200 H534" stroke="#2f6fe0" stroke-width="2" fill="none"/>
+            <path d="M170 140 L122 116 V140 M170 138 H118" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M124 116 V200 H166" stroke="#2f6fe0" stroke-width="2" fill="none"/></g>
+          <g data-b="2" data-fx="fade"><path d="M174 146 H526" stroke="#dc4a2c" stroke-width="2.4"/></g>
+        </g>
+        <g class="lbl-s" text-anchor="middle">
+          <text x="350" y="104" data-b="1" data-fx="fade">voussoir sur pile</text>
+          <text x="455" y="236" data-b="2" data-fx="fade">voussoirs</text>
+          <text x="590" y="236" data-b="3" data-fx="fade" style="fill:#2453b3">équipage mobile</text>
+          <text x="350" y="78" data-b="2" data-fx="fade" style="fill:#a33d22">câbles de fléau (en haut)</text>
+        </g>
+        <g data-b="4" data-fx="pop"><path d="M120 300 H580" stroke="#12a08a" stroke-width="3"/><path d="M350 300 l-16 26 h32z" fill="#12a08a"/>
+          <circle cx="160" cy="288" r="12" fill="#12a08a"/><circle cx="540" cy="288" r="12" fill="#12a08a"/><text x="350" y="356" text-anchor="middle" class="lbl" style="fill:#0b6e5c">moment de déséquilibre faible</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 19. ENCORBELLEMENTS : ANIMATION ═════════ -->
+<section class="slide" id="c5-enc" data-title="Les encorbellements pas à pas">
+  <div class="kicker">Encorbellements successifs</div>
+  <h2 class="t">Voussoir après voussoir, <em>symétriquement</em></h2>
+  <svg class="full" viewBox="0 0 1150 400" aria-label="Construction par encorbellements successifs">
+    <defs><pattern id="c5s19-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+    <rect width="1150" height="400" rx="16" fill="#eef4fc"/>
+    <path d="M0 150 H70 L240 380 H0Z M1150 150 H1080 L910 380 H1150Z" fill="url(#c5s19-e)"/>
+    <path d="M240 380 Q575 300 910 380 Z" fill="#3a9ad9" opacity=".25"/>
+    <path d="M240 380 Q575 300 910 380" stroke="#3a9ad9" stroke-width="2" fill="none" class="flow"/>
+    <rect x="52" y="120" width="16" height="40" fill="#cfd5dc" stroke="#6e7884"/><rect x="1082" y="120" width="16" height="40" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="360" y="186" width="40" height="194" fill="#cfd5dc" stroke="#6e7884"/>
+<path d="M350 120 L410 120 L410.0 178.4 L405.0 180.2 L400.0 182.0 L395.0 183.9 L390.0 185.9 L385.0 187.9 L380.0 190.0 L375.0 187.9 L370.0 185.9 L365.0 183.9 L360.0 182.0 L355.0 180.2 L350.0 178.4 Z" fill="#9fb0c4" stroke="#6e7884"/>
+<rect x="750" y="186" width="40" height="194" fill="#cfd5dc" stroke="#6e7884"/>
+<path d="M740 120 L800 120 L800.0 178.4 L795.0 180.2 L790.0 182.0 L785.0 183.9 L780.0 185.9 L775.0 187.9 L770.0 190.0 L765.0 187.9 L760.0 185.9 L755.0 183.9 L750.0 182.0 L745.0 180.2 L740.0 178.4 Z" fill="#9fb0c4" stroke="#6e7884"/>
+    <g data-b="1" data-fx="zoom"><path d="M410.0 120 L450.0 120 L450.0 166.0 L410.0 178.4 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M350.0 120 L310.0 120 L310.0 166.0 L350.0 178.4 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M314 126 H446" stroke="#dc4a2c" stroke-width="2"/><path d="M800.0 120 L840.0 120 L840.0 166.0 L800.0 178.4 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M740.0 120 L700.0 120 L700.0 166.0 L740.0 178.4 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M704 126 H836" stroke="#dc4a2c" stroke-width="2"/></g>
+<g data-b="2" data-fx="zoom"><path d="M450.0 120 L490.0 120 L490.0 157.1 L450.0 166.0 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M310.0 120 L270.0 120 L270.0 157.1 L310.0 166.0 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M274 129 H486" stroke="#dc4a2c" stroke-width="2"/><path d="M840.0 120 L880.0 120 L880.0 157.1 L840.0 166.0 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M700.0 120 L660.0 120 L660.0 157.1 L700.0 166.0 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M664 129 H876" stroke="#dc4a2c" stroke-width="2"/></g>
+<g data-b="3" data-fx="zoom"><path d="M490.0 120 L530.0 120 L530.0 151.8 L490.0 157.1 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M270.0 120 L230.0 120 L230.0 151.8 L270.0 157.1 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M234 132 H526" stroke="#dc4a2c" stroke-width="2"/><path d="M880.0 120 L920.0 120 L920.0 151.8 L880.0 157.1 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M660.0 120 L620.0 120 L620.0 151.8 L660.0 157.1 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M624 132 H916" stroke="#dc4a2c" stroke-width="2"/></g>
+<g data-b="4" data-fx="zoom"><path d="M530.0 120 L570.0 120 L570.0 150.0 L530.0 151.8 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M230.0 120 L190.0 120 L190.0 150.0 L230.0 151.8 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M194 135 H566" stroke="#dc4a2c" stroke-width="2"/><path d="M920.0 120 L960.0 120 L960.0 150.0 L920.0 151.8 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M620.0 120 L580.0 120 L580.0 150.0 L620.0 151.8 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M584 135 H956" stroke="#dc4a2c" stroke-width="2"/></g>
+    <g data-b="5" data-fx="fade"><g stroke="#b8902f" stroke-width="3"><path d="M90 150 V200 M120 150 V240 M150 150 V280 M180 150 V320 M990 150 V320 M1020 150 V280 M1050 150 V240 M1080 150 V200"/></g><path d="M60 120 H190 V150 H60 Z M960 120 H1090 V150 H960 Z" fill="#cfd5dc" stroke="#6e7884"/></g>
+    <g data-b="6" data-fx="pop"><path d="M570 120 H580 V150 H570 Z" fill="#e8a020" stroke="#9a6410"/></g>
+    <g data-b="6" data-fx="draw" data-d=".4"><path d="M450 143 Q575 147 700 143 M70 143 H260 M890 143 H1080" stroke="#2f6fe0" stroke-width="3" fill="none"/></g>
+    <g id="c5e-eq0" class="c5-mv"><path d="M410 120 L456 96 L456 120 M410 118 H460" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M454 96 V182 H414" stroke="#2f6fe0" stroke-width="2" fill="none"/></g>
+<g id="c5e-eq1" class="c5-mv"><path d="M350 120 L304 96 L304 120 M350 118 H300" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M306 96 V182 H346" stroke="#2f6fe0" stroke-width="2" fill="none"/></g>
+<g id="c5e-eq2" class="c5-mv"><path d="M800 120 L846 96 L846 120 M800 118 H850" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M844 96 V182 H804" stroke="#2f6fe0" stroke-width="2" fill="none"/></g>
+<g id="c5e-eq3" class="c5-mv"><path d="M740 120 L694 96 L694 120 M740 118 H690" stroke="#2f6fe0" stroke-width="3" fill="none"/><path d="M696 96 V182 H736" stroke="#2f6fe0" stroke-width="2" fill="none"/></g>
+    <text x="575" y="40" text-anchor="middle" class="lbl-s">deux fléaux qui avancent l'un vers l'autre</text>
+  </svg>
+  <div class="c5-caps v">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>Piles et <b>voussoirs sur pile</b>, provisoirement encastrés (cales, barres précontraintes).</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>Les équipages coulent les voussoirs n° 1 ; on tend les <b>câbles de fléau</b>, en haut.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span>Les équipages avancent : voussoirs n° 2, <b>toujours symétriques</b>.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>Voussoirs n° 3 : la hauteur du caisson <b>diminue</b> vers la clé.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>Les fléaux sont terminés.</div>
+    <div data-b="5" data-only data-fx="fade"><span class="n">5</span>Les extrémités de rive sont coulées <b>sur cintre</b>, là où le terrain le permet.</div>
+    <div data-b="6" data-only data-fx="fade"><span class="n">6</span><b>Clavage</b>, puis câbles de continuité en bas : le tablier devient une poutre continue.</div>
+  </div>
+</section>
+
+<!-- ═════════ 20. ENCORBELLEMENTS : DEUX SCHÉMAS ═════════ -->
+<section class="slide" data-title="Deux schémas, deux câblages">
+  <div class="kicker">Encorbellements successifs</div>
+  <h2 class="t">Deux schémas statiques, <em>deux familles de câbles</em></h2>
+  <div class="cols c2" style="gap:24px">
+    <div data-b="1" data-fx="left">
+      <svg class="full" viewBox="0 0 560 300" aria-label="Fléau en construction">
+        <rect width="560" height="300" rx="16" fill="#fdeee9"/>
+        <text x="24" y="38" class="lbl-b" style="fill:#a33d22">En construction : consoles</text>
+        <rect x="70" y="90" width="420" height="16" fill="#b9c2cc" stroke="#6e7884"/><rect x="270" y="106" width="20" height="90" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M74 95 H486" stroke="#dc4a2c" stroke-width="3"/>
+        <path d="M70 240 H490" stroke="#9aa3ae"/>
+        <path d="M70 240 Q200 238 280 150 Q360 238 490 240 Z" fill="#dc4a2c" fill-opacity=".2" stroke="#dc4a2c" stroke-width="2.5"/>
+        <text x="280" y="140" text-anchor="middle" class="lbl-s" style="fill:#a33d22">M &lt; 0 sur pile</text>
+        <text x="280" y="280" text-anchor="middle" class="lbl">câbles de fléau <tspan font-weight="500">en haut</tspan></text>
+      </svg>
+    </div>
+    <div data-b="2" data-fx="right">
+      <svg class="full" viewBox="0 0 560 300" aria-label="Poutre continue en service">
+        <rect width="560" height="300" rx="16" fill="#e9f7f3"/>
+        <text x="24" y="38" class="lbl-b" style="fill:#0b6e5c">En service : poutre continue</text>
+        <rect x="30" y="90" width="500" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M30 106 l-8 14 h16z M530 106 l-8 14 h16z" fill="#6e7884"/><rect x="150" y="106" width="16" height="70" fill="#cfd5dc" stroke="#6e7884"/><rect x="394" y="106" width="16" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M200 101 H360" stroke="#2f6fe0" stroke-width="3"/>
+        <path d="M30 210 H530" stroke="#9aa3ae"/>
+        <path d="M30 210 Q90 240 158 160 Q280 300 402 160 Q470 240 530 210" fill="#12a08a" fill-opacity=".18" stroke="#12a08a" stroke-width="2.5"/>
+        <text x="280" y="268" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c">M &gt; 0 en travée</text>
+        <text x="280" y="290" text-anchor="middle" class="lbl">câbles de continuité <tspan font-weight="500">en bas</tspan></text>
+      </svg>
+    </div>
+  </div>
+  <div class="callout r" style="margin-top:16px" data-b="3" data-fx="up"><span class="lab">Piège</span>Le câblage et les vérifications couvrent <b>les deux schémas</b>, plus le cas accidentel de la <b>chute d'un équipage mobile</b> ou d'un voussoir.</div>
+</section>
+
+<!-- ═════════ 21. POUSSAGE : PRINCIPE ═════════ -->
+<section class="slide" data-title="Le poussage : le principe">
+  <div class="kicker">Poussage (lançage)</div>
+  <h2 class="t">Fabriquer au même endroit, <em>puis pousser</em></h2>
+  <div class="split wide-v" style="grid-template-columns:.8fr 1.4fr">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Une <b>aire de fabrication fixe</b> derrière la culée, à l'abri.</li>
+        <li data-b="2" data-fx="left">Des <b>vérins</b> poussent le tablier sur des <b>appuis glissants</b> (PTFE).</li>
+        <li data-b="3" data-fx="left">Un <b>avant-bec</b> métallique léger réduit le porte-à-faux.</li>
+        <li data-b="4" data-fx="left">Viaducs <b>droits</b> ou à <b>courbure constante</b>.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 460" aria-label="Principe du poussage">
+        <defs><pattern id="c5s21-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c5s21-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="700" height="460" rx="16" fill="#eef4fc"/>
+        <rect y="300" width="700" height="160" fill="url(#c5s21-e)"/><rect y="226" width="200" height="74" fill="url(#c5s21-e)"/>
+        <rect x="192" y="226" width="16" height="74" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="430" y="226" width="20" height="74" fill="#cfd5dc" stroke="#6e7884"/><rect x="424" y="222" width="32" height="5" fill="#141a26" data-b="2" data-fx="fade"/>
+        <g data-b="1" data-fx="fade"><path d="M20 120 H200 M20 120 V196 M200 120 V196" stroke="#9a6410" stroke-width="4" fill="none"/><path d="M10 120 L110 90 L210 120" stroke="#9a6410" stroke-width="3" fill="none"/>
+          <text x="110" y="80" text-anchor="middle" class="lbl-s" style="fill:#9a6410">aire de fabrication</text></g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 0;120 0;120 0" keyTimes="0;.3;.85;1" dur="5s" repeatCount="indefinite"/>
+          <rect x="-180" y="196" width="380" height="30" fill="#b9c2cc" stroke="#6e7884"/>
+          <path d="M20 196 V226 M-80 196 V226" stroke="#6e7884" stroke-dasharray="4 3"/>
+          <g data-b="3" data-fx="fade"><path d="M200 198 L330 206 L330 214 L200 224 Z" fill="none" stroke="#2f6fe0" stroke-width="3"/><path d="M220 200 L240 222 L260 202 L280 220 L300 204 L320 216" stroke="#2f6fe0" stroke-width="1.6" fill="none"/></g>
+        </g>
+        <g data-b="2" data-fx="fade"><path d="M40 211 H90" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c5s21-a)" class="flow"/><text x="40" y="262" class="lbl-s" style="fill:#a33d22">vérins</text></g>
+        <text x="460" y="270" class="lbl-s" data-b="2" data-fx="fade">appui glissant</text>
+        <text x="350" y="160" class="lbl-s" data-b="3" data-fx="fade" style="fill:#2453b3">avant-bec</text>
+        <g data-b="4" data-fx="fade"><path d="M60 400 Q350 360 640 400" stroke="#12a08a" stroke-width="3" fill="none" stroke-dasharray="8 6"/><text x="350" y="430" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c">droit, ou courbure constante</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 22. POUSSAGE : ANIMATION ═════════ -->
+<section class="slide" id="c5-pous" data-title="Le poussage pas à pas">
+  <div class="kicker">Poussage (lançage)</div>
+  <h2 class="t">Couler, durcir, <em>pousser</em>… et recommencer</h2>
+  <svg class="full" viewBox="0 0 1150 360" aria-label="Poussage d'un tablier tronçon par tronçon">
+    <defs><pattern id="c5s22-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+      <marker id="c5s22-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+    <rect width="1150" height="360" rx="16" fill="#eef4fc"/>
+    <path d="M200 330 Q650 270 1100 330 V360 H200Z" fill="url(#c5s22-e)"/>
+    <rect y="226" width="208" height="134" fill="url(#c5s22-e)"/><rect x="1094" y="226" width="56" height="134" fill="url(#c5s22-e)"/>
+    <rect x="192" y="226" width="16" height="104" fill="#cfd5dc" stroke="#6e7884"/><rect x="1092" y="226" width="16" height="104" fill="#cfd5dc" stroke="#6e7884"/>
+    <g fill="#cfd5dc" stroke="#6e7884"><rect x="440" y="230" width="20" height="80"/><rect x="690" y="230" width="20" height="74"/><rect x="940" y="230" width="20" height="84"/></g>
+    <g fill="#141a26"><rect x="436" y="226" width="28" height="4"/><rect x="686" y="226" width="28" height="4"/><rect x="936" y="226" width="28" height="4"/></g>
+    <g class="lbl-s" text-anchor="middle"><text x="200" y="350">C0</text><text x="450" y="348">P1</text><text x="700" y="348">P2</text><text x="950" y="348">P3</text><text x="1100" y="350">C1</text></g>
+    <path d="M40 120 H200 M40 120 V196 M200 120 V196" stroke="#9a6410" stroke-width="4" fill="none"/><path d="M30 120 L120 92 L210 120" stroke="#9a6410" stroke-width="3" fill="none"/>
+    <text x="120" y="82" text-anchor="middle" class="lbl-s" style="fill:#9a6410">aire de fabrication</text>
+    <g id="c5u-deck" class="c5-slow">
+      <g id="c5u-t1"><rect x="50" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="125" y="217" text-anchor="middle" class="lbl-s">T1</text></g>
+      <g id="c5u-t2" class="c5-mv" style="opacity:0"><rect x="-100" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="-25" y="217" text-anchor="middle" class="lbl-s">T2</text></g>
+      <g id="c5u-t3" class="c5-mv" style="opacity:0"><rect x="-250" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="-175" y="217" text-anchor="middle" class="lbl-s">T3</text></g>
+      <g id="c5u-t4" class="c5-mv" style="opacity:0"><rect x="-400" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="-325" y="217" text-anchor="middle" class="lbl-s">T4</text></g>
+      <g id="c5u-t5" class="c5-mv" style="opacity:0"><rect x="-550" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="-475" y="217" text-anchor="middle" class="lbl-s">T5</text></g>
+      <g id="c5u-t6" class="c5-mv" style="opacity:0"><rect x="-700" y="196" width="150" height="30" fill="#b9c2cc" stroke="#6e7884"/><text x="-625" y="217" text-anchor="middle" class="lbl-s">T6</text></g>
+      <g id="c5u-bec" class="c5-mv"><path d="M200 198 L330 206 L330 214 L200 224 Z" fill="none" stroke="#2f6fe0" stroke-width="3"/><path d="M220 200 L240 222 L260 202 L280 220 L300 204 L320 216" stroke="#2f6fe0" stroke-width="1.6" fill="none"/></g>
+    </g>
+    <g id="c5u-jack" class="c5-mv"><path d="M10 211 H44" stroke="#dc4a2c" stroke-width="6" marker-end="url(#c5s22-a)" class="flow"/></g>
+  </svg>
+  <div class="c5-caps t">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>Le premier tronçon <b>T1</b> est coulé ; on fixe l'<b>avant-bec</b> à son extrémité.</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>Poussée d'un tronçon ; <b>T2</b> est coulé contre T1, dans le même coffrage.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span>L'avant-bec a atteint <b>P1</b> et s'y appuie : le porte-à-faux est soulagé.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>Le cycle se répète : couler, durcir, précontraindre, pousser — environ <b>une semaine</b> par tronçon.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>Chaque section passe tour à tour <b>sur appui</b> puis <b>en travée</b>.</div>
+    <div data-b="5" data-only data-fx="fade"><span class="n">5</span>Dernier tronçon coulé ; dernière poussée en vue.</div>
+    <div data-b="6" data-only data-fx="fade"><span class="n">6</span>Culée <b>C1</b> atteinte : avant-bec déposé, vérinage sur les appareils définitifs, précontrainte complétée.</div>
+  </div>
+</section>
+
+<!-- ═════════ 23. POUSSAGE : HAUTEUR CONSTANTE ═════════ -->
+<section class="slide" data-title="Pourquoi une hauteur constante ?">
+  <div class="kicker">Poussage (lançage)</div>
+  <h2 class="t">Chaque section voit <em>tous les moments</em></h2>
+  <div class="split">
+    <div>
+      <ul class="b">
+        <li data-b="1" data-fx="left">Une section passe sur une pile (<b>M&nbsp;&lt;&nbsp;0</b>), puis en travée (<b>M&nbsp;&gt;&nbsp;0</b>).</li>
+        <li data-b="2" data-fx="left">On lui donne une <b>précontrainte centrée</b> de poussage.</li>
+        <li data-b="3" data-fx="left">Et une <b>hauteur constante</b> : elle glisse sur les mêmes appuis.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 440" aria-label="Une section du tablier change de moment pendant le poussage">
+        <rect width="620" height="440" rx="16" fill="#fff"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="100" y="166" width="20" height="120"/><rect x="300" y="166" width="20" height="120"/><rect x="500" y="166" width="20" height="120"/></g>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="-200 0;200 0" dur="8s" repeatCount="indefinite"/>
+          <rect x="-200" y="136" width="1000" height="30" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="300" y="132" width="20" height="38" fill="#dc4a2c"/>
+        </g>
+        <path d="M0 340 H620" stroke="#9aa3ae"/>
+        <path d="M10 340 Q60 300 110 380 Q210 270 310 380 Q410 270 510 380 Q560 300 610 340" stroke="#7a52c7" stroke-width="2" fill="none" stroke-dasharray="6 5"/>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="-200 0;200 0" dur="8s" repeatCount="indefinite"/>
+          <circle cx="310" cy="300" r="10" fill="#dc4a2c"/>
+        </g>
+        <text x="310" y="40" text-anchor="middle" class="lbl">la section rouge avance avec le tablier</text>
+        <g text-anchor="middle" class="lbl-b"><text x="110" y="420" style="fill:#a33d22">M&lt;0</text><text x="210" y="420" style="fill:#0b6e5c">M&gt;0</text><text x="310" y="420" style="fill:#a33d22">M&lt;0</text><text x="410" y="420" style="fill:#0b6e5c">M&gt;0</text><text x="510" y="420" style="fill:#a33d22">M&lt;0</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 24. SECTION 04 ═════════ -->
+<section class="slide section" data-title="Partie 4 — Câbles, voies en exploitation, entretien">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">04</div>
+    <h2 data-a data-fx="up" data-d=".15">Câbles, voies en exploitation, entretien</h2>
+    <p data-a data-fx="up" data-d=".3">Les très grandes portées tiennent par des <b style="color:#e2c070">câbles</b> ; les petits ouvrages, eux, se glissent sous les voies sans arrêter le trafic.</p>
+  </div>
+  <svg style="position:absolute;right:60px;bottom:80px;width:400px;height:250px" viewBox="0 0 400 250" aria-hidden="true">
+    <path d="M200 20 V230" stroke="#cfd5dc" stroke-width="8"/>
+    <g stroke="#e2c070" stroke-width="1.6" data-a data-fx="draw" data-d=".5"><path d="M200 30 L20 170 M200 46 L70 170 M200 62 L120 170 M200 30 L380 170 M200 46 L330 170 M200 62 L280 170"/></g>
+    <rect x="10" y="170" width="380" height="10" fill="#8b9bc0"/>
+  </svg>
+</section>
+
+<!-- ═════════ 25. HAUBANS ═════════ -->
+<section class="slide" data-title="Construire un pont à haubans">
+  <div class="kicker">Ponts à haubans</div>
+  <h2 class="t">Le pylône d'abord, <em>puis un hauban par voussoir</em></h2>
+  <svg class="full" viewBox="0 0 1150 380" aria-label="Construction d'un pont à haubans">
+    <rect width="1150" height="380" rx="16" fill="#eef4fc"/>
+    <rect y="300" width="1150" height="80" fill="#bfe0f5"/>
+    <path d="M0 304 q30 -6 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0 t60 0" stroke="#3a9ad9" fill="none" class="flow"/>
+    <rect x="535" y="296" width="80" height="20" fill="#9aa3ae"/>
+    <rect x="80" y="196" width="45" height="110" fill="#cfd5dc" stroke="#6e7884"/><rect x="1025" y="196" width="45" height="110" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="563" y="200" width="24" height="96" fill="#cfd5dc" stroke="#6e7884" data-b="1" data-fx="grow"/>
+    <rect x="563" y="50" width="24" height="150" fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="grow"/>
+    <rect x="545" y="196" width="60" height="14" fill="#9fb0c4" stroke="#6e7884" data-b="2" data-fx="zoom" data-d=".5"/>
+    <g data-b="3" data-fx="fade"><rect x="605" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="475" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="675" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="405" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/></g><g data-b="3" data-fx="draw" data-d=".3"><path d="M575 130 L665 196 M575 130 L485 196" stroke="#b8902f" stroke-width="2"/><path d="M575 116 L735 196 M575 116 L415 196" stroke="#b8902f" stroke-width="2"/></g>
+    <g data-b="4" data-fx="fade"><rect x="745" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="335" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="815" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="265" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/></g><g data-b="4" data-fx="draw" data-d=".3"><path d="M575 102 L805 196 M575 102 L345 196" stroke="#b8902f" stroke-width="2"/><path d="M575 88 L875 196 M575 88 L275 196" stroke="#b8902f" stroke-width="2"/></g>
+    <g data-b="5" data-fx="fade"><rect x="885" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="195" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="955" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/><rect x="125" y="196" width="70" height="14" fill="#b9c2cc" stroke="#6e7884"/></g><g data-b="5" data-fx="draw" data-d=".3"><path d="M575 74 L945 196 M575 74 L205 196" stroke="#b8902f" stroke-width="2"/><path d="M575 60 L1015 196 M575 60 L135 196" stroke="#b8902f" stroke-width="2"/></g>
+    <g data-b="6" data-fx="fade"><path d="M0 194 H1150" stroke="#3c4049" stroke-width="4"/>
+      <g class="drive" style="--t:7s;--from:-60px;--to:1200px"><rect x="0" y="180" width="32" height="14" rx="3" fill="#dc4a2c"/></g></g>
+    <g class="lbl-b" text-anchor="middle" style="font-size:19px">
+      <text x="575" y="30" data-b="0" data-only data-fx="fade">fondations du pylône, culées</text>
+      <text x="575" y="30" data-b="1" data-only data-fx="fade">① le pylône monte (coffrage grimpant)</text>
+      <text x="300" y="80" data-b="2" data-only data-fx="fade">② pylône terminé, voussoir sur pylône</text>
+      <text x="300" y="80" data-b="3" data-only data-fx="fade">③ un voussoir de chaque côté, puis son hauban</text>
+      <text x="300" y="80" data-b="4" data-only data-fx="fade">④ chaque hauban est mis en tension</text>
+      <text x="300" y="80" data-b="5" data-only data-fx="fade">⑤ le tablier avance en équilibre</text>
+      <text x="300" y="80" data-b="6" data-only data-fx="fade">⑥ clavage sur les culées, réglage des haubans</text>
+    </g>
+  </svg>
+  <div class="callout" style="margin-top:12px" data-b="6" data-fx="up"><span class="lab">Le principe</span>Comme un encorbellement, mais chaque voussoir est <b>suspendu à son hauban</b> : on règle la tension pour obtenir la bonne géométrie.</div>
+</section>
+
+<!-- ═════════ 26. SUSPENDU ═════════ -->
+<section class="slide" data-title="Construire un pont suspendu">
+  <div class="kicker">Ponts suspendus</div>
+  <h2 class="t">Les câbles porteurs d'abord, <em>le tablier ensuite</em></h2>
+  <svg class="full" viewBox="0 0 1150 380" aria-label="Construction d'un pont suspendu">
+    <rect width="1150" height="380" rx="16" fill="#eef4fc"/>
+    <rect y="300" width="1150" height="80" fill="#bfe0f5"/>
+    <rect x="20" y="270" width="80" height="50" fill="#9aa3ae" stroke="#6e7884"/><rect x="1050" y="270" width="80" height="50" fill="#9aa3ae" stroke="#6e7884"/>
+    <text x="60" y="350" text-anchor="middle" class="lbl-s">massif d'ancrage</text><text x="1090" y="350" text-anchor="middle" class="lbl-s">massif d'ancrage</text>
+    <g data-b="1" data-fx="grow"><rect x="320" y="50" width="20" height="260" fill="#cfd5dc" stroke="#6e7884"/></g>
+    <g data-b="1" data-fx="grow" data-d=".2"><rect x="810" y="50" width="20" height="260" fill="#cfd5dc" stroke="#6e7884"/></g>
+    <path d="M60 280 L330 60 L335 65.3 L340 70.4 L345 75.4 L350 80.4 L355 85.2 L360 89.9 L365 94.5 L370 99.0 L375 103.4 L380 107.6 L385 111.8 L390 115.9 L395 119.8 L400 123.7 L405 127.4 L410 131.0 L415 134.6 L420 138.0 L425 141.3 L430 144.5 L435 147.6 L440 150.5 L445 153.4 L450 156.2 L455 158.8 L460 161.4 L465 163.8 L470 166.1 L475 168.3 L480 170.5 L485 172.5 L490 174.4 L495 176.1 L500 177.8 L505 179.4 L510 180.8 L515 182.2 L520 183.4 L525 184.6 L530 185.6 L535 186.5 L540 187.3 L545 188.1 L550 188.6 L555 189.1 L560 189.5 L565 189.8 L570 189.9 L575 190.0 L580 189.9 L585 189.8 L590 189.5 L595 189.1 L600 188.6 L605 188.1 L610 187.3 L615 186.5 L620 185.6 L625 184.6 L630 183.4 L635 182.2 L640 180.8 L645 179.4 L650 177.8 L655 176.1 L660 174.4 L665 172.5 L670 170.5 L675 168.3 L680 166.1 L685 163.8 L690 161.4 L695 158.8 L700 156.2 L705 153.4 L710 150.5 L715 147.6 L720 144.5 L725 141.3 L730 138.0 L735 134.6 L740 131.0 L745 127.4 L750 123.7 L755 119.8 L760 115.9 L765 111.8 L770 107.6 L775 103.4 L780 99.0 L785 94.5 L790 89.9 L795 85.2 L800 80.4 L805 75.4 L810 70.4 L815 65.3 L820 60.0 L1090 280" stroke="#b8902f" stroke-width="4" fill="none" data-b="2" data-fx="draw"/>
+    <path d="M365 94.5 V228 M400 123.7 V228 M435 147.6 V228 M470 166.1 V228 M505 179.4 V228 M540 187.3 V228 M575 190.0 V228 M610 187.3 V228 M645 179.4 V228 M680 166.1 V228 M715 147.6 V228 M750 123.7 V228 M785 94.5 V228" stroke="#b8902f" stroke-width="1.6" data-b="3" data-fx="draw"/>
+    <!-- voussoirs hissés -->
+    <g data-b="4" data-fx="up">
+      <rect x="540" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="470" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="610" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <rect x="520" y="300" width="110" height="16" fill="#6e7884"/>
+    </g>
+    <g data-b="5" data-fx="up"><rect x="330" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="400" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="680" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="750" y="226" width="70" height="12" fill="#b9c2cc" stroke="#6e7884"/></g>
+    <g data-b="6" data-fx="fade"><path d="M100 226 H1050" stroke="#3c4049" stroke-width="4"/><g class="drive" style="--t:7s;--from:-60px;--to:1200px"><rect x="0" y="212" width="32" height="14" rx="3" fill="#dc4a2c"/></g></g>
+    <g class="lbl-b" text-anchor="middle" style="font-size:19px">
+      <text x="575" y="30" data-b="0" data-only data-fx="fade">massifs d'ancrage et fondations des pylônes</text>
+      <text x="575" y="30" data-b="1" data-only data-fx="fade">① les pylônes</text>
+      <text x="575" y="30" data-b="2" data-only data-fx="fade">② les câbles porteurs, filés d'un ancrage à l'autre</text>
+      <text x="575" y="30" data-b="3" data-only data-fx="fade">③ les suspentes</text>
+      <text x="575" y="30" data-b="4" data-only data-fx="fade">④ les tronçons de tablier sont hissés depuis une barge</text>
+      <text x="575" y="30" data-b="5" data-only data-fx="fade">⑤ tous les tronçons accrochés</text>
+      <text x="575" y="30" data-b="6" data-only data-fx="fade">⑥ clavage, équipements, mise en service</text>
+    </g>
+  </svg>
+  <div class="callout b" style="margin-top:12px" data-b="6" data-fx="up"><span class="lab">À retenir</span>Le câble porteur prend sa forme <b>avant</b> que le tablier ne soit accroché : on calcule chaque étape pour que la géométrie finale soit la bonne.</div>
+</section>
+
+<!-- ═════════ 27. RIPAGE ═════════ -->
+<section class="slide" id="c5-rip" data-title="Le ripage sous voie ferrée">
+  <div class="kicker">Ouvrages sous voies en exploitation</div>
+  <h2 class="t">Le ripage : <em>glisser un cadre sous les voies</em></h2>
+  <svg class="full" viewBox="0 0 1150 380" aria-label="Ripage d'un cadre sous une voie ferrée">
+    <defs><pattern id="c5s27-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+      <marker id="c5s27-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+    <rect width="1150" height="380" rx="16" fill="#eef4fc"/>
+    <rect y="340" width="1150" height="40" fill="url(#c5s27-e)"/>
+    <path d="M210 340 L350 180 H650 L790 340 Z" fill="url(#c5s27-e)" stroke="#c9a77a"/>
+    <rect id="c5r2-notch" class="c5-mv" x="370" y="190" width="260" height="150" fill="#eef4fc" style="opacity:0"/>
+    <rect x="360" y="340" width="770" height="10" fill="#9aa3ae"/>
+    <g id="c5r2-cadre" class="c5-slow" style="transform:translateX(480px);opacity:0">
+      <path d="M370 200 H630 V340 H370 Z M390 220 V320 H610 V220 Z" fill="#cfd5dc" stroke="#6e7884" fill-rule="evenodd"/>
+      <rect x="400" y="312" width="200" height="8" fill="#3c4049"/>
+    </g>
+    <g id="c5r2-jack" class="c5-mv" style="opacity:0"><path d="M1120 270 H1060" stroke="#dc4a2c" stroke-width="7" marker-end="url(#c5s27-a)" class="flow"/><text x="1090" y="250" text-anchor="middle" class="lbl-s" style="fill:#a33d22">vérins</text></g>
+    <g id="c5r2-track" class="c5-mv"><path d="M380 180 L395 166 H605 L620 180 Z" fill="#b5ab95"/><rect x="420" y="160" width="160" height="6" fill="#5c6470"/><rect x="440" y="154" width="8" height="6" fill="#3c4049"/><rect x="552" y="154" width="8" height="6" fill="#3c4049"/></g>
+    <g id="c5r2-train" class="c5-mv"><rect x="430" y="66" width="140" height="88" rx="14" fill="#e8a020"/><rect x="446" y="80" width="108" height="30" rx="6" fill="#fff" opacity=".7"/><circle cx="455" cy="136" r="6" fill="#fff"/><circle cx="545" cy="136" r="6" fill="#fff"/></g>
+    <g id="c5r2-slow" class="c5-mv" style="opacity:0"><circle cx="720" cy="100" r="30" fill="#fff" stroke="#dc4a2c" stroke-width="6"/><text x="720" y="108" text-anchor="middle" class="lbl-b">40</text><text x="720" y="152" text-anchor="middle" class="lbl-s">vitesse réduite</text></g>
+    <text x="1010" y="372" text-anchor="middle" class="lbl-s">dalle de glissement</text>
+  </svg>
+  <div class="c5-caps r">
+    <div data-b="0" data-only data-fx="fade"><span class="n">0</span>La ligne est en service sur son remblai (vue en coupe, face au train).</div>
+    <div data-b="1" data-only data-fx="fade"><span class="n">1</span>On construit le <b>cadre à côté</b>, sur une dalle de glissement. Les trains circulent normalement.</div>
+    <div data-b="2" data-only data-fx="fade"><span class="n">2</span><b>Interruption</b> (souvent un week-end) : on dépose la voie et on terrasse le remblai.</div>
+    <div data-b="3" data-only data-fx="fade"><span class="n">3</span>Des vérins <b>ripent</b> le cadre jusqu'à sa place : quelques heures.</div>
+    <div data-b="4" data-only data-fx="fade"><span class="n">4</span>Remblai, voie reposée et réglée : les trains repassent, à <b>vitesse réduite</b> quelques jours.</div>
+  </div>
+</section>
+
+<!-- ═════════ 28. VÉRINAGE ═════════ -->
+<section class="slide" id="c5-ver" data-title="Le vérinage">
+  <div class="kicker">Entretien · remplacement des appareils d'appui</div>
+  <h2 class="t">Le vérinage : <em>soulever un pont de quelques millimètres</em></h2>
+  <div class="split r" style="grid-template-columns:1.25fr 1fr">
+    <div class="vis">
+      <svg viewBox="0 0 660 460" aria-label="Vérinage d'un tablier pour changer un appareil d'appui">
+        <rect width="660" height="460" rx="16" fill="#eef4fc"/>
+        <rect x="30" y="330" width="600" height="130" fill="#cfd5dc" stroke="#6e7884"/><text x="610" y="440" text-anchor="end" class="lbl-s">sommier de culée</text>
+        <rect x="140" y="312" width="110" height="18" fill="#b9c2cc" stroke="#6e7884"/>
+        <g id="c5v-old" class="c5-mv"><rect x="150" y="290" width="90" height="22" fill="#3c4049"/><path d="M150 297 H240 M150 305 H240" stroke="#9aa3ae"/><path d="M170 290 l10 22 M210 290 l-6 22" stroke="#dc4a2c" stroke-width="2"/></g>
+        <g id="c5v-new" class="c5-mv" style="transform:translateX(-260px);opacity:0"><rect x="150" y="290" width="90" height="22" fill="#2f6fe0"/><path d="M150 297 H240 M150 305 H240" stroke="#a9c4f5"/></g>
+        <g id="c5v-jack" class="c5-mv" style="opacity:0">
+          <rect x="350" y="270" width="70" height="60" rx="6" fill="#e8a020"/><rect x="480" y="270" width="70" height="60" rx="6" fill="#e8a020"/>
+          <path d="M385 330 V390 H515 V330 M450 390 V420 H600" stroke="#dc4a2c" stroke-width="3" fill="none" class="flow"/><rect x="590" y="400" width="34" height="34" rx="6" fill="#dc4a2c"/>
+          <text x="450" y="260" text-anchor="middle" class="lbl-s" style="fill:#9a6410">vérins synchronisés</text></g>
+        <g id="c5v-deck" class="c5-mv">
+          <rect x="20" y="150" width="620" height="120" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="20" y="210" width="620" height="60" fill="#9fb0c4" stroke="#6e7884"/>
+          <text x="330" y="246" text-anchor="middle" class="lbl">entretoise d'about</text>
+          <rect x="20" y="138" width="620" height="12" fill="#3c4049"/>
+          <rect x="150" y="270" width="90" height="20" fill="#9fb0c4" stroke="#6e7884"/>
+        </g>
+        <g id="c5v-gap" class="c5-mv" style="opacity:0"><path d="M300 270 V256 M300 290 V304" stroke="#12a08a" stroke-width="2"/><text x="310" y="300" class="lbl-s" style="fill:#0b6e5c">quelques mm</text></g>
+      </svg>
+    </div>
+    <div>
+      <ol class="c5-ol">
+        <li data-b="1" data-fx="right">Les <b>vérins</b> se placent sous l'entretoise.</li>
+        <li data-b="2" data-fx="right">Montée <b>synchronisée</b> de quelques millimètres.</li>
+        <li data-b="3" data-fx="right">L'ancien appareil d'appui est <b>retiré</b>…</li>
+        <li data-b="4" data-fx="right">… le neuf est <b>glissé</b> à sa place.</li>
+        <li data-b="5" data-fx="right">Redescente, contrôle, retrait des vérins.</li>
+      </ol>
+      <div class="callout t" style="margin-top:14px" data-b="5" data-fx="up"><span class="lab">Pour le concepteur</span>Un appareil d'appui se change <b>au moins une fois en 100 ans</b> : prévoir dès la conception la place des vérins et une entretoise capable de les reprendre.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 29. SÉCURITÉ FERROVIAIRE ═════════ -->
+<section class="slide" data-title="Sécurité et contraintes ferroviaires">
+  <div class="kicker">Travailler près des voies</div>
+  <h2 class="t">Près des trains, <em>la sécurité commande le planning</em></h2>
+  <div class="cols c3" style="gap:16px;margin-top:4px">
+    <div class="card red" data-b="1" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><circle cx="16" cy="16" r="12"/><path d="M16 8v8l5 4"/></svg></div>
+      <h3 style="font-size:20px">Interruptions programmées</h3><p style="font-size:17px">Quelques heures, souvent de nuit, réservées longtemps à l'avance auprès de l'ONCF.</p></div>
+    <div class="card amber" data-b="2" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#fdf0d6"><svg viewBox="0 0 32 32" fill="none" stroke="#e8a020" stroke-width="2"><path d="M18 3 L8 18 h8 l-2 11 L24 14 h-8 z"/></svg></div>
+      <h3 style="font-size:20px">Caténaire consignée</h3><p style="font-size:17px">Mise hors tension et à la terre avant tout levage au-dessus des voies.</p></div>
+    <div class="card violet" data-b="3" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#f1ecfa"><svg viewBox="0 0 32 32" fill="none" stroke="#7a52c7" stroke-width="2"><path d="M6 28V8h20v20M6 14h20M6 20h20"/></svg></div>
+      <h3 style="font-size:20px">Écrans et protections</h3><p style="font-size:17px">Écrans anti-contact, filets, platelages : rien ne doit tomber sur les voies.</p></div>
+    <div class="card blue" data-b="4" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M4 28h24M8 28V10l14-6v24"/><path d="M8 10h20"/></svg></div>
+      <h3 style="font-size:20px">Engins hors gabarit</h3><p style="font-size:17px">Grues et flèches gardent leurs distances quand les trains circulent.</p></div>
+    <div class="card teal" data-b="5" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><circle cx="16" cy="10" r="5"/><path d="M6 28c0-6 4-10 10-10s10 4 10 10"/></svg></div>
+      <h3 style="font-size:20px">Agents de sécurité</h3><p style="font-size:17px">Annonce des trains et protection du personnel, selon les prescriptions de l'exploitant.</p></div>
+    <div class="card gold" data-b="6" data-fx="up" style="padding:16px">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><rect x="6" y="4" width="20" height="24" rx="2"/><path d="M10 11h12M10 17h12M10 23h7"/></svg></div>
+      <h3 style="font-size:20px">Plan de levage</h3><p style="font-size:17px">Chaque manœuvre est calculée, répétée, minutée. Pas d'improvisation de nuit.</p></div>
+  </div>
+  <div class="callout r" style="margin-top:14px" data-b="7" data-fx="up"><span class="lab">Conséquence</span>Une interruption manquée peut décaler le chantier de <b>plusieurs semaines</b> : la méthode doit tenir dans la fenêtre.</div>
+</section>
+
+<!-- ═════════ 30. CHOIX DE LA MÉTHODE ═════════ -->
+<section class="slide" data-title="Choisir la méthode selon le site">
+  <div class="kicker">Synthèse des méthodes</div>
+  <h2 class="t">Choisir la méthode <em>selon le site</em></h2>
+  <table class="tb c5-tb">
+    <thead><tr><th>Méthode</th><th>Quand l'utiliser ?</th><th>Exemple de site</th><th>Point de vigilance</th></tr></thead>
+    <tbody>
+      <tr data-b="1" data-fx="left"><td><b>Cintre / étaiement</b></td><td>brèche libre, sol porteur</td><td>PS construit avant l'autoroute</td><td>occupe la brèche des semaines</td></tr>
+      <tr data-b="2" data-fx="left"><td><b>Préfabrication + grue</b></td><td>brèche sous trafic, accès des grues</td><td>pont au-dessus d'une voie ferrée</td><td>capacité des grues, nuits</td></tr>
+      <tr data-b="3" data-fx="left"><td><b>Poutre de lancement</b></td><td>longs viaducs, travées identiques</td><td>viaduc sur une vallée</td><td>matériel spécifique</td></tr>
+      <tr data-b="4" data-fx="left"><td><b>Encorbellements</b></td><td>60 à 200 m, sans cintre</td><td>oued profond, rivière</td><td>équilibre des fléaux</td></tr>
+      <tr data-b="5" data-fx="left"><td><b>Poussage</b></td><td>viaduc droit ou courbure constante</td><td>plaine inondable, voies</td><td>hauteur constante</td></tr>
+      <tr data-b="6" data-fx="left"><td><b>Haubans / suspendu</b></td><td>très grandes portées</td><td>grand fleuve, baie</td><td>ouvrage exceptionnel</td></tr>
+      <tr data-b="7" data-fx="left"><td><b>Ripage</b></td><td>ouvrage sous voie en exploitation</td><td>cadre sous voie ferrée</td><td>interruption très courte</td></tr>
+      <tr class="hl" data-b="8" data-fx="left"><td><b>Vérinage</b></td><td>pose, réglage, entretien</td><td>changer un appareil d'appui</td><td>prévu dès la conception</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═════════ 31. FIL ROUGE : PLANNING ═════════ -->
+<section class="slide" data-title="Fil rouge : le planning">
+  <div class="kicker">Notre fil rouge · planning schématique</div>
+  <h2 class="t">Presque tout se fait <em>à côté des voies</em></h2>
+  <svg class="full c5-gantt" viewBox="0 0 1150 440" aria-label="Planning schématique du fil rouge">
+    <rect width="1150" height="440" rx="16" fill="#fff"/>
+    <g stroke="#efe9db"><path d="M400 20 V390 M520 20 V390 M640 20 V390 M760 20 V390 M880 20 V390 M1000 20 V390 M1120 20 V390"/></g>
+    <path d="M400 395 H1120" stroke="#9aa3ae" stroke-width="2"/><text x="1120" y="425" text-anchor="end" class="lbl-s">temps →</text>
+    <g class="lbl" text-anchor="end">
+      <text x="380" y="50">Déviation des réseaux AEP, assainissement</text>
+      <text x="380" y="96">Semelles des culées (bon sol à −3 m)</text>
+      <text x="380" y="142">Murs de front, remblais d'accès</text>
+      <text x="380" y="188">Préfabrication des poutres (usine)</text>
+      <text x="380" y="234">Levage des poutres, de nuit</text>
+      <text x="380" y="280">Prédalles et hourdis</text>
+      <text x="380" y="326">Équipements, écrans, étanchéité</text>
+      <text x="380" y="372">Épreuves, mise en service</text>
+    </g>
+    <rect x="400" y="32" width="150" height="26" rx="13" fill="#7a52c7" data-b="1" data-fx="growx"/>
+    <rect x="520" y="78" width="170" height="26" rx="13" fill="#b8902f" data-b="2" data-fx="growx"/>
+    <rect x="640" y="124" width="240" height="26" rx="13" fill="#b8902f" data-b="2" data-fx="growx" data-d=".2"/>
+    <rect x="560" y="170" width="300" height="26" rx="13" fill="#2f6fe0" data-b="3" data-fx="growx"/>
+    <g data-b="4" data-fx="pop"><rect x="885" y="216" width="50" height="26" rx="13" fill="#dc4a2c"/><circle cx="955" cy="229" r="10" fill="#141a26"/><circle cx="960" cy="225" r="9" fill="#fff"/></g>
+    <rect x="935" y="262" width="110" height="26" rx="13" fill="#12a08a" data-b="5" data-fx="growx"/>
+    <rect x="1000" y="308" width="100" height="26" rx="13" fill="#12a08a" data-b="5" data-fx="growx" data-d=".2"/>
+    <rect x="1080" y="354" width="40" height="26" rx="13" fill="#e8a020" data-b="5" data-fx="growx" data-d=".4"/>
+    <g data-b="4" data-fx="fade"><path d="M910 200 V400" stroke="#dc4a2c" stroke-width="2" stroke-dasharray="6 5"/><text x="900" y="20" text-anchor="end" class="lbl-s" style="fill:#a33d22">seul impact sur les trains : quelques nuits</text></g>
+    <g data-b="3" data-fx="fade"><text x="710" y="216" text-anchor="middle" class="lbl-s" style="fill:#2453b3">en parallèle, hors site</text></g>
+  </svg>
+</section>
+
+<!-- ═════════ 32. À RETENIR ═════════ -->
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">Synthèse</div>
+  <h2 class="t">À retenir</h2>
+  <ul class="b" style="margin-top:16px;max-width:1080px;gap:12px">
+    <li data-b="1" data-fx="left">Fondations : <b>semelle</b> si le bon sol est proche, <b>pieux forés</b> sinon ; cure du béton indispensable.</li>
+    <li data-b="2" data-fx="left"><b>Cintre</b> si la brèche est libre ; sinon <b>préfabrication</b> : pré-tension (PRAD), post-tension (VIPP).</li>
+    <li data-b="3" data-fx="left">Sans toucher le sol : <b>lancement</b>, <b>encorbellements</b> (fléaux symétriques), <b>poussage</b> (hauteur constante).</li>
+    <li data-b="4" data-fx="left">Câbles : <b>pylône puis haubans</b> ; <b>câbles porteurs puis suspentes</b> et tablier.</li>
+    <li data-b="5" data-fx="left">Sous trafic : levages de nuit, <b>ripage</b>, <b>vérinage</b> — les phases provisoires se calculent aussi.</li>
+  </ul>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch6.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 6 : Prédimensionner →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  "use strict";
+  var H = window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+  function q(sl, id) { return sl.querySelector("#" + id); }
+  function set(sl, id, tr, op) { var e = q(sl, id); if (!e) return; if (tr !== null && tr !== undefined) e.style.transform = tr; if (op !== null && op !== undefined) e.style.opacity = op; }
+  function d(sl, id, path) { var e = q(sl, id); if (e) e.style.d = 'path("' + path + '")'; }
+
+  /* pieu foré */
+  H["c5-pieu"] = function (st, sl) {
+    set(sl, "c5p-aug", st === 1 ? "translateY(290px)" : "translateY(0)", st >= 5 ? 0 : 1);
+    set(sl, "c5p-holebg", null, st >= 1 ? 1 : 0);
+    set(sl, "c5p-boue", null, st >= 1 && st < 3 ? 1 : 0);
+    set(sl, "c5p-tube", st >= 1 && st < 4 ? "translateY(0)" : "translateY(-160px)", st >= 1 && st < 4 ? 1 : 0);
+    set(sl, "c5p-spoil", null, st >= 1 ? 1 : 0);
+    set(sl, "c5p-cage", st >= 2 ? "translateY(0)" : "translateY(-330px)", st >= 2 ? 1 : 0);
+    set(sl, "c5p-beton", st >= 3 ? "translateY(0)" : "translateY(290px)", null);
+    set(sl, "c5p-trem", null, st === 3 ? 1 : 0);
+    set(sl, "c5p-pol", null, st === 3 ? 1 : 0);
+    set(sl, "c5p-sem", null, st >= 5 ? 1 : 0);
+  };
+
+  /* pré-tension */
+  var BEAM0 = "M200 150 Q575 150 950 150 L950 245 Q575 245 200 245 Z", BEAM1 = "M200 156 Q575 130 950 156 L950 251 Q575 225 200 251 Z";
+  var IN0 = "M100 214 Q575 214 1050 214 M100 228 Q575 228 1050 228", IN1 = "M200 220 Q575 194 950 220 M200 234 Q575 208 950 234";
+  H["c5-pre"] = function (st, sl) {
+    set(sl, "c5r-in", null, st >= 1 ? 1 : 0);
+    set(sl, "c5r-tarr", null, st >= 1 && st < 3 ? 1 : 0);
+    set(sl, "c5r-beam", null, st >= 2 ? 1 : 0);
+    set(sl, "c5r-ext", null, st >= 1 && st < 3 ? 1 : 0);
+    set(sl, "c5r-cut", null, st === 3 ? 1 : 0);
+    set(sl, "c5r-carr", null, st >= 3 ? 1 : 0);
+    d(sl, "c5r-beamp", st >= 3 ? BEAM1 : BEAM0);
+    d(sl, "c5r-inp", st >= 3 ? IN1 : IN0);
+  };
+
+  /* post-tension */
+  H["c5-post"] = function (st, sl) {
+    set(sl, "c5o-jack", st === 2 ? "translateX(26px)" : "translateX(0)", null);
+    set(sl, "c5o-flow", null, st === 2 ? 1 : 0);
+    d(sl, "c5o-beam", st >= 3 ? "M120 124 Q575 108 1030 124 L1030 234 Q575 218 120 234 Z" : "M120 120 Q575 120 1030 120 L1030 230 Q575 230 120 230 Z");
+  };
+
+  /* grue de nuit */
+  var G = [
+    { bx: -480, by: -28, tip: [95, 26] },
+    { bx: -480, by: -28, tip: [95, 26] },
+    { bx: -480, by: -118, tip: [95, 6] },
+    { bx: 0, by: -118, tip: [575, 6] },
+    { bx: 0, by: 0, tip: [575, 40] },
+    { bx: 0, by: 0, tip: [1000, 40] }
+  ];
+  H["c5-grue"] = function (st, sl) {
+    var s = G[Math.max(0, Math.min(5, st))];
+    var night = st >= 1 && st <= 4;
+    set(sl, "c5g-beam", "translate(" + s.bx + "px," + s.by + "px)", null);
+    var hx = 575 + s.bx, hy = 134 + s.by;
+    d(sl, "c5g-boom", "M960 132 L" + s.tip[0] + " " + s.tip[1]);
+    d(sl, "c5g-cab", st >= 5 ? "M" + s.tip[0] + " " + s.tip[1] + " L" + s.tip[0] + " " + s.tip[1] : "M" + s.tip[0] + " " + s.tip[1] + " L" + hx + " " + hy);
+    sl.querySelectorAll(".c5g-sl").forEach(function (e) { e.style.opacity = st >= 5 ? 0 : 1; });
+    var sky = q(sl, "c5g-sky"); if (sky) sky.style.fill = night ? "#1b2744" : "#e8f1fa";
+    var cat = q(sl, "c5g-cat"); if (cat) cat.style.stroke = night ? "#9aa3ae" : "#dc4a2c";
+    set(sl, "c5g-moon", null, night ? 1 : 0);
+    set(sl, "c5g-lamp", null, night ? 1 : 0);
+    set(sl, "c5g-tlive", null, night ? 0 : 1);
+    set(sl, "c5g-toff", null, night ? 1 : 0);
+    set(sl, "c5g-train", null, night ? 0 : 1);
+    set(sl, "c5g-trl", st >= 3 ? "translateX(-700px)" : "translateX(0)", null);
+    set(sl, "c5g-hd", null, st >= 5 ? 1 : 0);
+  };
+
+  /* poutre de lancement */
+  H["c5-lanc"] = function (st, sl) {
+    var gx = st >= 6 ? 600 : st >= 3 ? 300 : 0;
+    set(sl, "c5l-gird", "translateX(" + gx + "px)", null);
+    [[1, 0, 1, 2], [2, 3, 4, 5], [3, 6, 7, 8]].forEach(function (b) {
+      var k = b[0], s0 = b[1], s1 = b[2], s2 = b[3];
+      var off = (300 * (k - 1) - 260) - (104 + 300 * (k - 1));
+      var tr, op = st >= s0 ? 1 : 0;
+      if (st >= s2) tr = "translate(0px,0px)"; else if (st >= s1) tr = "translate(0px,-50px)"; else tr = "translate(" + off + "px,-50px)";
+      set(sl, "c5l-b" + k, tr, op);
+      var e = q(sl, "c5l-b" + k); if (e) { var slg = e.querySelector(".sl"); if (slg) slg.style.opacity = st >= s2 ? 0 : 1; }
+    });
+  };
+
+  /* encorbellements : équipages mobiles */
+  H["c5-enc"] = function (st, sl) {
+    var dx = 40 * Math.min(st, 4);
+    var on = st <= 4 ? 1 : 0;
+    for (var i = 0; i < 4; i++) set(sl, "c5e-eq" + i, "translateX(" + (i % 2 === 0 ? dx : -dx) + "px)", on);
+  };
+
+  /* poussage */
+  H["c5-pous"] = function (st, sl) {
+    var s = Math.max(0, Math.min(6, st));
+    set(sl, "c5u-deck", "translateX(" + (150 * s) + "px)", null);
+    for (var k = 2; k <= 6; k++) set(sl, "c5u-t" + k, null, k <= s + 1 ? 1 : 0);
+    set(sl, "c5u-bec", null, s >= 6 ? 0 : 1);
+    set(sl, "c5u-jack", null, s >= 6 ? 0 : 1);
+  };
+
+  /* ripage */
+  H["c5-rip"] = function (st, sl) {
+    set(sl, "c5r2-cadre", st >= 3 ? "translateX(0)" : "translateX(480px)", st >= 1 ? 1 : 0);
+    set(sl, "c5r2-notch", null, st === 2 || st === 3 ? 1 : 0);
+    set(sl, "c5r2-track", null, st === 2 || st === 3 ? 0 : 1);
+    set(sl, "c5r2-train", null, st === 2 || st === 3 ? 0 : 1);
+    set(sl, "c5r2-jack", st === 3 ? "translateX(-420px)" : "translateX(0)", st === 3 ? 1 : 0);
+    set(sl, "c5r2-slow", null, st >= 4 ? 1 : 0);
+  };
+
+  /* vérinage */
+  H["c5-ver"] = function (st, sl) {
+    set(sl, "c5v-jack", null, st >= 1 && st < 5 ? 1 : 0);
+    set(sl, "c5v-deck", st >= 2 && st < 5 ? "translateY(-14px)" : "translateY(0)", null);
+    set(sl, "c5v-gap", null, st >= 2 && st < 5 ? 1 : 0);
+    set(sl, "c5v-old", st >= 3 ? "translateX(-260px)" : "translateX(0)", st >= 3 ? 0 : 1);
+    set(sl, "c5v-new", st >= 4 ? "translateX(0)" : "translateX(-260px)", st >= 4 ? 1 : 0);
+  };
+})();
+</script>
+</body>
+</html>

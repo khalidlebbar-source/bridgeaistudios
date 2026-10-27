@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="../../handbag/katex/katex.min.css">
 <link rel="stylesheet" href="../assets/slides.css">
 <style>
-.c6-calc{display:grid;grid-template-columns:350px 1fr;gap:22px;height:calc(100% - 92px)}
+.c6-calc{display:grid;grid-template-columns:370px 1fr;gap:22px;height:calc(100% - 92px)}
 .c6-in{display:flex;flex-direction:column;gap:9px}
 .c6-in label{display:flex;flex-direction:column;gap:3px;font-size:15px;color:var(--mute)}
 .c6-in .row{display:flex;gap:8px;align-items:center}
@@ -23,7 +23,7 @@
 .c6-res div{display:flex;justify-content:space-between;gap:10px;font-size:16px;color:var(--ink2);border-bottom:1px dashed #ece6d8;padding:3px 0}
 .c6-res div:last-child{border:none}
 .c6-res b{color:var(--ink);font-weight:500;text-align:right}
-.c6-res .tot b{color:var(--gold);font-size:19px}
+.c6-res .tot b{color:var(--gold);font-size:18px;white-space:nowrap}
 .c6-out{display:flex;flex-direction:column;gap:10px;min-width:0}
 .c6-out svg{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:#fbfaf6}
 .c6-steps{font-size:16px;line-height:1.5;color:var(--ink2);background:#fbf5e4;border-left:5px solid var(--gold);border-radius:10px;padding:9px 14px}
@@ -39,6 +39,7 @@
 .c6-chips .pill{font-size:17px;padding:7px 16px}
 table.tb.c6-rec td,table.tb.c6-rec th{padding:7px 12px;font-size:17px}
 table.tb.c6-rec th{font-size:15px}
+.c6-halo{paint-order:stroke;stroke:rgba(255,255,255,.88);stroke-width:5px;stroke-linejoin:round}
 .c6-bar{display:inline-block;height:12px;border-radius:6px;background:var(--gold);vertical-align:middle;margin-right:8px}
 </style>
 </head>
@@ -759,10 +760,11 @@ table.tb.c6-rec th{font-size:15px}
         <div><span>Structure</span><b id="c6t-gs">—</b></div>
         <div><span>Superstructures</span><b id="c6t-gq">—</b></div>
         <div class="tot"><span>Charge permanente G</span><b id="c6t-G">—</b></div>
+        <div><span>soit</span><b id="c6t-Gk">—</b></div>
       </div>
     </div>
     <div class="c6-out">
-      <svg id="c6t-svg" viewBox="0 0 760 300" aria-label="Coupe du tablier redessinée"></svg>
+      <svg id="c6t-svg" viewBox="0 0 760 350" aria-label="Coupe du tablier redessinée"></svg>
       <div class="c6-steps" id="c6t-steps"></div>
     </div>
   </div>
@@ -802,7 +804,7 @@ table.tb.c6-rec th{font-size:15px}
         <rect width="600" height="530" rx="18" fill="#eef4fc"/>
         <rect y="350" width="600" height="90" fill="url(#c6s21-e)"/>
         <rect y="440" width="600" height="90" fill="url(#c6s21-b)"/>
-        <text x="590" y="432" text-anchor="end" class="lbl-s">bon sol</text>
+        <text x="590" y="462" text-anchor="end" class="lbl-s c6-halo">bon sol</text>
         <g data-a data-fx="fade">
           <rect x="150" y="50" width="300" height="10" fill="#b9c2cc" stroke="#6e7884"/>
           <g fill="#cfd5dc" stroke="#6e7884"><rect x="173" y="60" width="20" height="35"/><rect x="251" y="60" width="20" height="35"/><rect x="329" y="60" width="20" height="35"/><rect x="407" y="60" width="20" height="35"/></g>
@@ -821,13 +823,13 @@ table.tb.c6-rec th{font-size:15px}
         </g>
         <g data-b="4" data-fx="fade">
           <path d="M250.5 494 H349.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s21-a)" marker-end="url(#c6s21-a)"/>
-          <text x="300" y="520" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">semelle ≥ 3,3 × 3 m</text>
+          <text x="300" y="520" text-anchor="middle" class="lbl-s c6-halo" style="fill:#8a6a1f">semelle ≥ 3,3 × 3 m</text>
         </g>
         <g data-b="5" data-fx="up">
           <path d="M300 4 V44" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c6s21-r)"/>
           <text x="312" y="28" class="lbl-b" style="fill:#a33d22">N</text>
           <g stroke="#dc4a2c" stroke-width="2.2"><path d="M262 474 V446" marker-end="url(#c6s21-r)"/><path d="M286 474 V446" marker-end="url(#c6s21-r)"/><path d="M310 474 V446" marker-end="url(#c6s21-r)"/><path d="M334 474 V446" marker-end="url(#c6s21-r)"/></g>
-          <text x="360" y="470" class="lbl-s" style="fill:#a33d22">σ ≤ σadm</text>
+          <text x="360" y="470" class="lbl-s c6-halo" style="fill:#a33d22">σ ≤ σadm</text>
         </g>
       </svg>
     </div>
@@ -843,7 +845,7 @@ table.tb.c6-rec th{font-size:15px}
       <label>Hauteur du fût H (m)<span class="row"><input type="range" id="c6p-Hr" min="2" max="16" step="0.1" value="7.2"><input type="number" id="c6p-H" min="0.5" max="40" step="0.1" value="7.2"></span></label>
       <label>Effort N en pied de fût (kN)<span class="row"><input type="range" id="c6p-Nr" min="500" max="20000" step="100" value="6000"><input type="number" id="c6p-N" min="0" step="100" value="6000"></span></label>
       <div class="two">
-        <label>σ<sub>adm</sub> du sol (MPa)<input type="number" id="c6p-s" value="0.4" step="0.05" min="0.05"></label>
+        <label><span>σ<sub>adm</sub> du sol (MPa)</span><input type="number" id="c6p-s" value="0.4" step="0.05" min="0.05"></label>
         <label>Épaisseur semelle (m)<input type="number" id="c6p-e" value="1" step="0.1" min="0.3"></label>
       </div>
       <div class="c6-res">
@@ -874,7 +876,7 @@ table.tb.c6-rec th{font-size:15px}
     <rect x="425" y="205" width="100" height="20" fill="#2f6fe0"/><rect x="625" y="205" width="100" height="20" fill="#2f6fe0"/>
     <g data-a data-fx="right"><rect x="60" y="50" width="502.5" height="18" fill="#b9c2cc" stroke="#6e7884"/><rect x="60" y="68" width="502.5" height="137" fill="#cfd5dc" stroke="#6e7884"/><text x="300" y="146" text-anchor="middle" class="lbl">travée 1 (about de poutre)</text></g>
     <g data-a data-fx="left"><rect x="587.5" y="50" width="502.5" height="18" fill="#b9c2cc" stroke="#6e7884"/><rect x="587.5" y="68" width="502.5" height="137" fill="#cfd5dc" stroke="#6e7884"/><text x="850" y="146" text-anchor="middle" class="lbl">travée 2</text></g>
-    <text x="1060" y="320" text-anchor="end" class="lbl-s">chevêtre</text><text x="1060" y="230" text-anchor="end" class="lbl-s" style="fill:#2453b3">appareil d'appui sur bossage</text>
+    <text x="300" y="300" text-anchor="middle" class="lbl-s">chevêtre</text><text x="365" y="236" text-anchor="end" class="lbl-s" style="fill:#2453b3">appareil d'appui sur bossage</text>
     <path d="M475 190 V392 M675 190 V392" stroke="#6e7884" stroke-dasharray="6 4" data-b="2" data-fx="fade"/>
     <g data-b="1" data-fx="fade">
       <path d="M575 40 V96" stroke="#b8902f"/><text x="575" y="30" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">jeu j ≈ 0,05 à 0,10 m</text>
@@ -894,8 +896,8 @@ table.tb.c6-rec th{font-size:15px}
     </g>
     <g data-b="5" data-fx="pop">
       <rect x="537" y="205" width="22" height="45" rx="3" fill="#7a52c7"/><rect x="591" y="205" width="22" height="45" rx="3" fill="#7a52c7"/>
-      <path d="M613 215 L790 30" stroke="#7a52c7"/><text x="796" y="30" class="lbl-b" style="fill:#5b3aa0">place des vérins</text>
-      <text x="796" y="54" class="lbl-s" style="fill:#5b3aa0">pour changer un jour les appareils</text>
+      <path d="M613 232 H790" stroke="#7a52c7"/><text x="798" y="238" class="lbl-b" style="fill:#5b3aa0">place des vérins</text>
+      <text x="798" y="262" class="lbl-s" style="fill:#5b3aa0">pour changer un jour les appareils</text>
     </g>
     <g data-b="6" data-fx="fade">
       <path d="M375 392 V412 M775 392 V412" stroke="#141a26"/>
@@ -932,21 +934,21 @@ table.tb.c6-rec th{font-size:15px}
         <!-- sol -->
         <rect y="335" width="680" height="135" fill="url(#c6s24-e)"/>
         <rect y="470" width="680" height="70" fill="url(#c6s24-b)"/>
-        <text x="20" y="500" class="lbl-s" data-a data-fx="fade">bon sol (−3 m)</text>
-        <text x="20" y="326" class="lbl-s" data-a data-fx="fade">terrain naturel</text>
+        <text x="20" y="500" class="lbl-s c6-halo" data-a data-fx="fade">bon sol (−3 m)</text>
+        <text x="20" y="326" class="lbl-s c6-halo" data-a data-fx="fade">terrain naturel</text>
         <!-- murs en retour (étape 7) -->
         <path d="M213 85 H520 V150 L213 320 Z" fill="#cfd5dc" fill-opacity=".55" stroke="#6e7884" stroke-dasharray="6 4" data-b="7" data-fx="fade"/>
-        <text x="420" y="135" class="lbl-s" data-b="7" data-fx="fade">mur en retour</text>
+        <text x="300" y="196" class="lbl-s c6-halo" data-b="7" data-fx="fade">mur en retour</text>
         <!-- semelle (1) -->
         <g data-b="1" data-fx="up"><rect x="110" y="425" width="220" height="45" fill="#9aa3ae" stroke="#5d6672"/><text x="220" y="453" text-anchor="middle" class="lbl-w">semelle</text></g>
         <!-- mur de front (2) -->
         <g data-b="2" data-fx="grow"><rect x="160" y="200" width="40" height="225" fill="#cfd5dc" stroke="#6e7884"/></g>
-        <g data-b="2" data-fx="fade" data-d=".5"><path d="M160 300 H200" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s24-a)" marker-end="url(#c6s24-a)"/><text x="150" y="306" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">&gt; 0,80 m</text></g>
+        <g data-b="2" data-fx="fade" data-d=".5"><path d="M160 300 H200" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s24-a)" marker-end="url(#c6s24-a)"/><text x="150" y="306" text-anchor="end" class="lbl-s c6-halo" style="fill:#8a6a1f">&gt; 0,80 m</text></g>
         <!-- sommier (3) -->
         <g data-b="3" data-fx="down">
           <rect x="150" y="180" width="63" height="20" fill="#cfd5dc" stroke="#6e7884"/>
           <rect x="158" y="172" width="26" height="8" fill="#dfe3e8" stroke="#6e7884"/><rect x="161" y="166" width="20" height="6" fill="#2f6fe0"/>
-          <path d="M150 190 L60 230" stroke="#6e7884"/><text x="20" y="250" class="lbl-s">sommier</text>
+          <path d="M150 190 L60 230" stroke="#6e7884"/><text x="20" y="250" class="lbl-s c6-halo">sommier</text>
         </g>
         <!-- garde-grève (4) -->
         <g data-b="4" data-fx="grow"><rect x="199.5" y="85" width="13.5" height="95" fill="#cfd5dc" stroke="#6e7884"/></g>
@@ -954,7 +956,7 @@ table.tb.c6-rec th{font-size:15px}
         <!-- corbeau (5) -->
         <g data-b="5" data-fx="pop"><path d="M213 105.5 H228 V113 L213 123 Z" fill="#cfd5dc" stroke="#6e7884"/><circle cx="220" cy="114" r="16" fill="none" stroke="#dc4a2c" stroke-width="2"/></g>
         <!-- dalle de transition (6) -->
-        <g data-b="6" data-fx="left" data-d=".2"><path d="M226 92 L451 104 V117.5 L226 105.5 Z" fill="#b9c2cc" stroke="#6e7884"/><text x="460" y="112" class="lbl-s">dalle de transition</text></g>
+        <g data-b="6" data-fx="left" data-d=".2"><path d="M226 92 L451 104 V117.5 L226 105.5 Z" fill="#b9c2cc" stroke="#6e7884"/><text x="460" y="112" class="lbl-s c6-halo">dalle de transition</text></g>
         <!-- tablier (8) -->
         <g data-b="8" data-fx="left">
           <rect x="0" y="79" width="192" height="6" fill="#3c4049"/>
@@ -1011,8 +1013,8 @@ table.tb.c6-rec th{font-size:15px}
         <path d="M60 130 H210 L360 70 H490" fill="none" stroke="#12a08a" stroke-width="3.2" data-b="2" data-fx="draw"/>
         <path d="M60 46 H490" stroke="#dc4a2c" stroke-dasharray="6 5"/>
         <text x="486" y="40" text-anchor="end" class="lbl-s" style="fill:#a33d22">6 m : plafond</text>
-        <g data-b="3" data-fx="pop"><circle cx="180" cy="130" r="7" fill="#12a08a"/><text x="180" y="116" text-anchor="middle" class="lbl-s">4 m → 3 m</text></g>
-        <g data-b="3" data-fx="pop" data-d=".2"><circle cx="315" cy="88" r="7" fill="#b8902f"/><text x="300" y="112" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">8,5 m → 5,1 → 5 m</text></g>
+        <g data-b="3" data-fx="pop"><circle cx="180" cy="130" r="7" fill="#12a08a"/><text x="160" y="156" text-anchor="middle" class="lbl-s">4 m → 3 m</text></g>
+        <g data-b="3" data-fx="pop" data-d=".2"><circle cx="315" cy="88" r="7" fill="#b8902f"/><text x="328" y="116" class="lbl-s" style="fill:#8a6a1f">8,5 m → 5,1 → 5 m</text></g>
       </svg>
       <div class="formula" style="margin-top:10px;padding:10px 16px"><span class="tex">L_{DT} \approx \min\big(6\ \text{m}\,;\ \max(3\ \text{m}\,;\ 0{,}6\,H)\big)</span></div>
     </div>
@@ -1036,8 +1038,8 @@ table.tb.c6-rec th{font-size:15px}
       <rect x="0" y="120" width="370" height="80" fill="url(#c6s26-e)"/><rect x="0" y="200" width="370" height="210" fill="url(#c6s26-b)" rx="0"/>
       <rect x="167" y="60" width="36" height="110" fill="#cfd5dc" stroke="#6e7884"/>
       <rect x="120" y="170" width="130" height="30" fill="#9aa3ae" stroke="#5d6672"/>
-      <text x="185" y="300" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">semelle superficielle</text>
-      <text x="185" y="326" text-anchor="middle" class="lbl-s">la plus économique</text>
+      <text x="185" y="300" text-anchor="middle" class="lbl-b c6-halo" style="fill:#0b6e5c">semelle superficielle</text>
+      <text x="185" y="326" text-anchor="middle" class="lbl-s c6-halo">la plus économique</text>
     </g>
     <!-- 2 : puits -->
     <g data-b="2" data-fx="up">
@@ -1047,8 +1049,8 @@ table.tb.c6-rec th{font-size:15px}
       <rect x="557" y="60" width="36" height="80" fill="#cfd5dc" stroke="#6e7884"/>
       <rect x="520" y="140" width="110" height="24" fill="#9aa3ae" stroke="#5d6672"/>
       <rect x="530" y="164" width="90" height="160" fill="#b9c2cc" stroke="#6e7884"/>
-      <text x="575" y="362" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">puits ou gros béton</text>
-      <text x="575" y="388" text-anchor="middle" class="lbl-s">descendre jusqu'au bon sol</text>
+      <text x="575" y="362" text-anchor="middle" class="lbl-b c6-halo" style="fill:#8a6a1f">puits ou gros béton</text>
+      <text x="575" y="388" text-anchor="middle" class="lbl-s c6-halo">descendre jusqu'au bon sol</text>
     </g>
     <!-- 3 : pieux -->
     <g data-b="3" data-fx="up">
@@ -1058,9 +1060,9 @@ table.tb.c6-rec th{font-size:15px}
       <rect x="947" y="60" width="36" height="70" fill="#cfd5dc" stroke="#6e7884"/>
       <rect x="880" y="130" width="170" height="30" fill="#9aa3ae" stroke="#5d6672"/>
       <g fill="#b9c2cc" stroke="#6e7884"><rect x="897" y="160" width="20" height="215"/><rect x="1013" y="160" width="20" height="215"/></g>
-      <text x="965" y="230" text-anchor="middle" class="lbl-s">Ø 0,80–1,20</text>
-      <text x="965" y="256" text-anchor="middle" class="lbl-s">entraxe ≥ 3 Ø</text>
-      <text x="965" y="300" text-anchor="middle" class="lbl-b" style="fill:#5b3aa0">pieux</text>
+      <text x="965" y="230" text-anchor="middle" class="lbl-s c6-halo">Ø 0,80–1,20</text>
+      <text x="965" y="256" text-anchor="middle" class="lbl-s c6-halo">entraxe ≥ 3 Ø</text>
+      <text x="965" y="300" text-anchor="middle" class="lbl-b c6-halo" style="fill:#5b3aa0">pieux</text>
     </g>
     <g data-b="4" data-fx="pop"><rect x="70" y="350" width="230" height="40" rx="20" fill="#12a08a"/><text x="185" y="377" text-anchor="middle" class="lbl-w" style="font-size:17px">notre pont : −3 m</text></g>
   </svg>
@@ -1082,7 +1084,7 @@ table.tb.c6-rec th{font-size:15px}
   <h2 class="t">Peser un tablier, <em>mètre par mètre</em></h2>
   <div class="split" style="grid-template-columns:1fr 1.05fr">
     <div>
-      <div class="formula" data-a data-fx="left"><span class="texd">G = \underbrace{\gamma_b\,A\,(1+k)}_{\text{structure}} + \underbrace{\textstyle\sum g_{\text{sup}}}_{\text{équipements}}</span></div>
+      <div class="formula" data-a data-fx="left"><span class="texd">G = \gamma_b\,A\,(1+k) + \sum g_{\text{sup}}</span><div class="w"><b>structure</b> porteuse + <b>superstructures</b> (enrobé, étanchéité, trottoirs, corniches, garde-corps, glissières)</div></div>
       <div class="cols c3" style="gap:12px;margin-top:18px">
         <div class="card gold" data-b="2" data-fx="up" style="padding:14px"><div class="big" style="font-size:40px">2,5</div><p style="font-size:16px">t/m³ : poids volumique du béton armé</p></div>
         <div class="card teal" data-b="3" data-fx="up" style="padding:14px"><div class="big" style="font-size:40px;color:#12a08a">3–5 %</div><p style="font-size:16px">k : entretoises d'about d'un tablier à poutres</p></div>
@@ -1224,7 +1226,7 @@ table.tb.c6-rec th{font-size:15px}
       <g fill="#a39a88"><path d="M360 310 l10 -8 h60 l10 8 z M470 310 l10 -8 h60 l10 8 z"/></g>
       <g fill="#c9c2b0" stroke="#9aa3ae" stroke-dasharray="4 3"><path d="M640 310 l10 -8 h60 l10 8 z M750 310 l10 -8 h60 l10 8 z"/></g>
       <rect x="378" y="236" width="44" height="64" rx="8" fill="#e8a020"/><rect x="386" y="246" width="28" height="16" rx="3" fill="#fff" opacity=".7"/>
-      <text x="455" y="345" text-anchor="middle" class="lbl-s">voies existantes</text><text x="735" y="345" text-anchor="middle" class="lbl-s" style="fill:#7b8191">voies futures</text>
+      <text x="455" y="345" text-anchor="middle" class="lbl-s c6-halo">voies existantes</text><text x="735" y="345" text-anchor="middle" class="lbl-s c6-halo" style="fill:#7b8191">voies futures</text>
       <g stroke="#7f8a96" stroke-width="3"><path d="M330 310 V205 M600 310 V205 M860 310 V205"/></g>
       <path d="M330 214 H860" stroke="#dc4a2c" stroke-width="1.5" stroke-dasharray="4 3"/>
     </g>
@@ -1233,7 +1235,7 @@ table.tb.c6-rec th{font-size:15px}
       <rect x="170" y="354" width="100" height="22" fill="#9aa3ae" stroke="#5d6672"/><rect x="232" y="180" width="20" height="174" fill="#cfd5dc" stroke="#6e7884"/><rect x="228" y="172" width="26" height="8" fill="#cfd5dc" stroke="#6e7884"/><rect x="228" y="120" width="6" height="52" fill="#cfd5dc" stroke="#6e7884"/>
       <rect x="880" y="354" width="100" height="22" fill="#9aa3ae" stroke="#5d6672"/><rect x="898" y="180" width="20" height="174" fill="#cfd5dc" stroke="#6e7884"/><rect x="896" y="172" width="26" height="8" fill="#cfd5dc" stroke="#6e7884"/><rect x="916" y="120" width="6" height="52" fill="#cfd5dc" stroke="#6e7884"/>
       <path d="M228 124 L118 130 V137 L228 131 Z M922 124 L1032 130 V137 L922 131 Z" fill="#b9c2cc" stroke="#6e7884"/>
-      <text x="118" y="160" class="lbl-s">dalle de transition 5 m</text>
+      <text x="118" y="160" class="lbl-s c6-halo">dalle de transition 5 m</text>
     </g>
     <!-- tablier -->
     <g data-b="1" data-fx="down">
@@ -1250,8 +1252,8 @@ table.tb.c6-rec th{font-size:15px}
     <g data-b="3" data-fx="fade">
       <path d="M560 160 V300" stroke="#12a08a" stroke-width="2" marker-start="url(#c6s31-a)" marker-end="url(#c6s31-a)"/>
       <text x="572" y="190" class="lbl-s" style="fill:#0b6e5c">tirant d'air</text><text x="572" y="208" class="lbl-s" style="fill:#0b6e5c">(prescriptions ONCF)</text>
-      <text x="20" y="300" class="lbl-s">remblai ≈ 8,5 m</text>
-      <text x="1130" y="368" text-anchor="end" class="lbl-s">semelles sur le bon sol à −3 m</text>
+      <text x="20" y="300" class="lbl-s c6-halo">remblai ≈ 8,5 m</text>
+      <text x="300" y="368" class="lbl-s c6-halo">semelles sur le bon sol à −3 m</text>
     </g>
   </svg>
   <div class="c6-chips" style="margin-top:14px">
@@ -1417,17 +1419,17 @@ table.tb.c6-rec th{font-size:15px}
     function txt(x, y, t, col, anc, cls) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + (anc || "middle") + '" class="' + (cls || "lbl-s") + '" style="fill:' + (col || "#8a6a1f") + '">' + t + "</text>"; }
     if (o.T.kind === "picf") {
       var Wt = o.L + 2 * o.h, Ht = o.H + 2 * o.h;
-      var k = Math.min(520 / Wt, 220 / Ht), x0 = 360 - Wt * k / 2, y0 = 34;
+      var k = Math.min(520 / Wt, 260 / Ht), x0 = 360 - Wt * k / 2, y0 = 34;
       s += '<rect x="' + (x0 - 40).toFixed(1) + '" y="' + (y0 - 12) + '" width="' + (Wt * k + 80).toFixed(1) + '" height="' + (Ht * k + 24).toFixed(1) + '" fill="#ead7bd" opacity=".55"/>';
       s += '<path d="M' + x0.toFixed(1) + " " + y0 + " h" + (Wt * k).toFixed(1) + " v" + (Ht * k).toFixed(1) + " h" + (-Wt * k).toFixed(1) + " Z M" + (x0 + o.h * k).toFixed(1) + " " + (y0 + o.h * k).toFixed(1) + " v" + (o.H * k).toFixed(1) + " h" + (o.L * k).toFixed(1) + " v" + (-o.H * k).toFixed(1) + ' Z" fill="#cfd5dc" stroke="#6e7884" fill-rule="evenodd"/>';
       var xi = x0 + o.h * k, yi = y0 + o.h * k, xe = xi + o.L * k;
       s += cote(xi, yi + o.H * k * 0.45, xe, yi + o.H * k * 0.45, "#12a08a") + txt((xi + xe) / 2, yi + o.H * k * 0.45 - 8, "ouverture " + fmt(o.L, 2) + " m", "#0b6e5c");
       s += txt((xi + xe) / 2, yi + o.H * k * 0.45 + 26, "hauteur libre " + fmt(o.H, 2) + " m", "#2453b3");
       s += cote(xe + o.h * k + 18, y0, xe + o.h * k + 18, yi) + txt(xe + o.h * k + 28, y0 + o.h * k / 2 + 6, "e = " + fmt(o.h, 2) + " m", "#8a6a1f", "start", "lbl-b");
-      s += txt(20, 290, "Cadre à l'échelle — piédroits et radier pris égaux à e, goussets 0,25 m", "#4d5566", "start");
+      s += txt(20, 340, "Cadre à l'échelle — piédroits et radier pris égaux à e, goussets 0,25 m", "#4d5566", "start");
     } else {
       var Wd = o.W, hmax = (o.T.kind === "bip") ? (o.hd + o.h + 0.08) : o.h;
-      var k2 = Math.min(560 / Wd, 150 / hmax), x1 = 350 - Wd * k2 / 2, y1 = 46;
+      var k2 = Math.min(560 / Wd, 175 / hmax), x1 = 350 - Wd * k2 / 2, y1 = 56;
       if (o.T.kind === "dalle") {
         var c = o.c, te = o.te;
         s += Pg([[0, 0], [Wd, 0], [Wd, te], [Wd - c, o.h], [c, o.h], [0, te]], x1, y1, k2, "#b9c2cc");
@@ -1457,10 +1459,10 @@ table.tb.c6-rec th{font-size:15px}
       var htot = (o.T.kind === "bip") ? (o.hd + o.h) : o.h;
       var ybot = y1 + htot * k2 + (o.T.kind === "bip" ? 5 : 0);
       s += cote(x1 + Wd * k2 + 22, y1, x1 + Wd * k2 + 22, ybot) + txt(x1 + Wd * k2 + 32, (y1 + ybot) / 2 + 7, fmt(htot, 2) + " m", "#8a6a1f", "start", "lbl-b");
-      s += cote(x1, 262, x1 + Wd * k2, 262, "#141a26") + txt(350, 254, "largeur " + fmt(Wd, 2) + " m", "#141a26");
+      s += cote(x1, 318, x1 + Wd * k2, 318, "#141a26") + txt(350, 310, "largeur " + fmt(Wd, 2) + " m", "#141a26");
       var Lr = Math.min(o.Lr, Wd);
       s += '<rect x="' + (350 - Lr * k2 / 2).toFixed(1) + '" y="' + (y1 - 6) + '" width="' + (Lr * k2).toFixed(1) + '" height="6" fill="#3c4049"/>';
-      s += txt(20, 290, o.T.nom + " — coupe à l'échelle" + (o.T.kind === "bip" ? " (charpente en bleu)" : ""), "#4d5566", "start");
+      s += txt(20, 344, o.T.nom + " — coupe à l'échelle" + (o.T.kind === "bip" ? " (charpente en bleu)" : ""), "#4d5566", "start");
     }
     svg.innerHTML = s;
   }
@@ -1475,7 +1477,8 @@ table.tb.c6-rec th{font-size:15px}
     set("c6t-n", o.n ? o.n + " × " + fmt(o.s, 2) + " m" : "— (tablier plein)");
     set("c6t-gs", fmt(o.gs, 2) + " t/ml");
     set("c6t-gq", o.sup ? fmt(o.sup.tot, 2) + " t/ml" : "remblai en plus");
-    set("c6t-G", fmt(o.G, 2) + " t/ml ≈ " + fmt(o.G * 9.81, 0) + " kN/m");
+    set("c6t-G", fmt(o.G, 2) + " t/ml");
+    set("c6t-Gk", "≈ " + fmt(o.G * 9.81, 0) + " kN/m");
     var st;
     if (T.kind === "picf") {
       st = "e = " + fmt(L, 2) + "/32 + 0,125 = " + fmt(o.hc, 3) + " m → arrondi au 5 cm : <b>" + fmt(o.h, 2) + " m</b>. Aire du cadre " + fmt(o.A, 2) + " m² par mètre → " + fmt(o.gs, 2) + " t/ml.";

@@ -189,7 +189,7 @@
           <path d="M80 460 H620" stroke="#b8902f" stroke-width="1.6"/><path d="M80 452 v16 M620 452 v16" stroke="#b8902f"/>
           <text x="350" y="484" text-anchor="middle" class="lbl" style="fill:#8a6a1f">L = 25 m</text>
         </g>
-        <g data-b="5" data-fx="fade"><g stroke="#dc4a2c" stroke-width="2"><path d="M230 362 V388 M290 362 V388 M350 362 V388 M410 362 V388 M470 362 V388 M530 362 V388 M590 362 V388"/></g><text x="222" y="380" text-anchor="end" class="lbl-s" style="fill:#a33d22;font-weight:500">p = 25 t/ml</text></g>
+        <g data-b="5" data-fx="fade"><g stroke="#dc4a2c" stroke-width="2"><path d="M230 362 V388 M290 362 V388 M350 362 V388 M410 362 V388 M470 362 V388 M530 362 V388 M590 362 V388"/></g><text x="410" y="354" text-anchor="middle" class="lbl-s" style="fill:#a33d22;font-weight:500">p = 25 t/ml</text></g>
       </svg>
     </div>
   </div>
@@ -585,8 +585,9 @@
     <rect x="80" y="180" width="1000" height="12" fill="#b9c2cc" stroke="#6e7884"/>
     <path d="M80 192 l-10 16 h20z M1080 192 l-10 16 h20z" fill="#6e7884"/>
     <g data-b="3" data-fx="fade">
-      <text x="545" y="40" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
-      <text x="615" y="40" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
+      <path d="M511 222 H649 M511 216 v12 M649 216 v12" stroke="#b8902f" stroke-width="1.6"/>
+      <text x="545" y="216" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
+      <text x="615" y="216" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
     </g>
     <g data-b="4" data-fx="fade">
       <polygon points="80,240 229,335.4 289,360.3 469,394.5 649,408.5 709,399.6 889,332.6 1080,240" fill="#e2c070" fill-opacity=".4"/>
@@ -1260,7 +1261,7 @@
       stop(); var p = params(), th = bestAt(p.c, p.x, p.L);
       iS.value = Math.round(th[1] / p.Smax * 1000); draw(th[1]);
     });
-    iS.value = 0; draw();
+    (function () { var p = params(), th = bestAt(p.c, p.x, p.L); iS.value = Math.round(th[1] / p.Smax * 1000); draw(th[1]); })();
   }
 
   /* ---------- Courbon interactif ---------- */

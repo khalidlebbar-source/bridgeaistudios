@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 3 — Les familles de ponts · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 3 : classer les ponts, ponts courants et non courants, sigles SETRA (PICF, PIPO, PSI-DA, PRAD, VIPP, PSI-OM…), voûtes, caissons, arcs, ponts à haubans et suspendus, domaines de portées et choix d'une famille.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch3.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+  svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin:center}
+  .c3-sdeco{position:absolute;right:56px;top:50%;transform:translateY(-50%);width:340px;height:232px}
+  .c3-fam{display:grid;grid-template-columns:672px 1fr;gap:30px;height:calc(100% - 92px)}
+  .c3-side{display:flex;flex-direction:column;gap:12px;justify-content:center;min-width:0}
+  .c3-lab{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:4px}
+  .c3-lab.t{color:var(--teal)}.c3-lab.r{color:var(--red)}
+  .c3-range{font-family:'Cormorant Garamond',serif;font-size:60px;line-height:1;color:var(--gold);margin-bottom:6px}
+  .c3-range small{font-size:28px}
+  ul.c3-ok,ul.c3-ko{list-style:none;display:grid;gap:5px}
+  ul.c3-ok li,ul.c3-ko li{position:relative;padding-left:26px;font-size:18px;line-height:1.35;color:var(--ink2)}
+  ul.c3-ok li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--teal);font-weight:500}
+  ul.c3-ko li::before{content:"✕";position:absolute;left:2px;top:0;color:var(--red);font-weight:500}
+  .c3-side .callout{font-size:17px;padding:11px 16px}
+  .c3-games{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .c3-sil{font:inherit;cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:linear-gradient(160deg,#141a26,#22314f);padding:12px 12px 10px;text-align:center;color:#fff;transition:transform .2s}
+  .c3-sil:hover{transform:translateY(-3px)}
+  .c3-sil svg{width:100%;height:118px;display:block}
+  .c3-sil .q{display:block;font-size:18px;color:#e2c070;margin-top:6px;height:26px}
+  .c3-sil .a{display:none;font-size:18px;color:#7fd8c8;margin-top:6px;height:26px}
+  .c3-sil.on .q{display:none}.c3-sil.on .a{display:block}
+  .c3-sil.on{border-color:#7fd8c8}
+  .c3-mar .card{padding:14px 16px;display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:center}
+  .c3-mar .card svg{width:250px;height:126px;display:block}
+  .c3-mar .card h3{font-size:21px;margin-bottom:4px}
+  .c3-mar .card p{font-size:18px;line-height:1.4}
+</style>
+</head>
+<body data-ch="ch3">
+<div class="deck">
+
+<!-- ═════════ 1. COUVERTURE ═════════ -->
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">3</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 3</div>
+  <h1 data-a data-fx="up" data-d=".15">Les familles <em>de ponts</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35">Du petit cadre fermé au pont suspendu de 2 km : reconnaître chaque famille, ses portées, ses atouts — et savoir laquelle choisir.</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="c3s1-w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f4f7a" stop-opacity=".9"/><stop offset="1" stop-color="#0c1a2c"/></linearGradient></defs>
+    <rect y="222" width="1280" height="38" fill="url(#c3s1-w)"/>
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#cfd5dc" stroke-width="5" data-a data-fx="draw" data-d=".4"><path d="M40 180 H140 V222 H40 Z M54 192 H126 V222"/></g>
+      <g stroke="#cfd5dc" stroke-width="5" data-a data-fx="draw" data-d=".6"><path d="M180 176 H340 M206 176 V222 M314 176 V222"/></g>
+      <g stroke="#cfd5dc" stroke-width="5" data-a data-fx="draw" data-d=".8"><path d="M380 170 H580 M380 182 H580 M480 182 V222 M392 182 V222 M568 182 V222"/></g>
+      <g stroke="#e2c070" stroke-width="5" data-a data-fx="draw" data-d="1"><path d="M620 222 Q 720 110 820 222 M610 160 H830 M670 160 V188 M720 160 V150 M770 160 V188"/></g>
+      <g stroke="#e2c070" stroke-width="3" data-a data-fx="draw" data-d="1.2"><path d="M960 60 V222 M960 76 L870 168 M960 92 L900 168 M960 76 L1050 168 M960 92 L1020 168 M860 168 H1060"/></g>
+      <g stroke="#7fd8c8" stroke-width="3" data-a data-fx="draw" data-d="1.4"><path d="M1130 70 V222 M1250 70 V222 M1090 140 Q 1130 70 1130 70 Q 1190 150 1250 70 Q 1260 90 1280 130 M1100 168 H1280 M1160 102 V168 M1190 112 V168 M1220 100 V168"/></g>
+    </g>
+    <g class="drive" style="--t:12s;--from:-80px;--to:1300px"><rect x="0" y="210" width="26" height="8" rx="2" fill="#dc4a2c"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 2. OBJECTIFS ═════════ -->
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:30px">
+    <div class="card gold" data-b="1" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><path d="M4 6h10v8H4zM18 6h10v8H18zM4 18h10v8H4zM18 18h10v8H18z"/></svg></div>
+      <h3>Classer un pont</h3><p>Par matériau, par fonctionnement, par importance.</p></div>
+    <div class="card teal" data-b="2" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M5 10h22M5 16h16M5 22h19"/></svg></div>
+      <h3>Lire les sigles</h3><p>PICF, PIPO, PSI-DA, PRAD, VIPP, PSI-OM : le langage des ponts courants.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M4 26h24M7 22v4M7 22h4v4M13 16h4v10M19 10h4v16"/></svg></div>
+      <h3>Associer portée et famille</h3><p>Chaque famille a son domaine de portées économiques.</p></div>
+    <div class="card red" data-b="4" data-fx="up">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><path d="M16 4v8M16 12l-8 8M16 12l8 8M8 20v6M24 20v6"/></svg></div>
+      <h3>Choisir</h3><p>Raisonner le choix d'une famille pour un site donné : notre fil rouge.</p></div>
+  </div>
+  <div class="callout t" style="margin-top:30px" data-b="5" data-fx="up"><span class="lab">Le fil conducteur</span>Plus la portée augmente, plus la structure <b>s'allège</b> : on passe de la <b>flexion</b> (dalles, poutres, caissons) à la <b>compression</b> (arcs) puis à la <b>traction</b> (câbles).</div>
+</section>
+
+<!-- ═════════ 3. SECTION 01 ═════════ -->
+<section class="slide section" data-title="Partie 1 — Classer les ponts">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">01</div>
+    <h2 data-a data-fx="up" data-d=".15">Classer les ponts</h2>
+    <p data-a data-fx="up" data-d=".3">Trois grilles de lecture complémentaires, et une frontière importante : <b style="color:#e2c070">pont courant</b> ou <b style="color:#e2c070">non courant</b>.</p>
+  </div>
+  <svg class="c3-sdeco" viewBox="0 0 340 232" aria-hidden="true">
+    <g stroke="#e2c070" stroke-width="3" fill="none" data-a data-fx="draw" data-d=".4"><path d="M10 40 H100 V100 H10Z M125 40 H215 V100 H125Z M240 40 H330 V100 H240Z"/></g>
+    <g stroke="#7fd8c8" stroke-width="3" fill="none" data-a data-fx="draw" data-d="1"><path d="M10 140 H330 M30 140 V200 M310 140 V200 M30 200 Q170 120 310 200"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 4. TROIS CLASSEMENTS ═════════ -->
+<section class="slide" data-title="Trois façons de classer">
+  <div class="kicker">Classification</div>
+  <h2 class="t">Trois façons de <em>classer</em> un pont</h2>
+  <div class="cols c3" style="margin-top:6px">
+    <div class="card gold" data-b="1" data-fx="up" style="padding:16px 18px">
+      <svg class="full" viewBox="0 0 330 200" aria-label="Matériaux">
+        <rect width="330" height="200" rx="12" fill="#fdf3e2"/>
+        <g data-b="1" data-fx="pop"><rect x="20" y="24" width="86" height="56" rx="8" fill="#d8bd92"/><path d="M20 52 H106 M48 24 V52 M78 52 V80" stroke="#b39468" stroke-width="2"/><text x="63" y="100" text-anchor="middle" class="lbl-s">maçonnerie</text></g>
+        <g data-b="1" data-fx="pop" data-d=".1"><rect x="122" y="24" width="86" height="56" rx="8" fill="#cfd5dc"/><g fill="#dc4a2c"><circle cx="138" cy="70" r="3"/><circle cx="154" cy="70" r="3"/><circle cx="170" cy="70" r="3"/><circle cx="186" cy="70" r="3"/></g><text x="165" y="100" text-anchor="middle" class="lbl-s">béton armé</text></g>
+        <g data-b="1" data-fx="pop" data-d=".2"><rect x="224" y="24" width="86" height="56" rx="8" fill="#cfd5dc"/><path d="M228 40 Q 267 84 306 40" stroke="#2f6fe0" stroke-width="3" fill="none"/><text x="267" y="100" text-anchor="middle" class="lbl-s">précontraint</text></g>
+        <g data-b="1" data-fx="pop" data-d=".3"><path d="M36 120 H96 M66 120 V172 M36 172 H96" stroke="#2f6fe0" stroke-width="8"/><text x="66" y="194" text-anchor="middle" class="lbl-s">acier</text></g>
+        <g data-b="1" data-fx="pop" data-d=".4"><rect x="128" y="118" width="74" height="16" fill="#cfd5dc"/><path d="M146 134 V170 M184 134 V170 M136 170 H156 M174 170 H194" stroke="#2f6fe0" stroke-width="6"/><text x="165" y="194" text-anchor="middle" class="lbl-s">mixte</text></g>
+        <g data-b="1" data-fx="pop" data-d=".5"><rect x="230" y="128" width="74" height="40" rx="6" fill="#c9915a"/><path d="M236 140 q30 -6 62 0 M236 154 q30 6 62 0" stroke="#8a5a2c" fill="none"/><text x="267" y="194" text-anchor="middle" class="lbl-s">bois</text></g>
+      </svg>
+      <h3 style="margin-top:10px">Par matériau</h3><p>Ce dont il est fait.</p>
+    </div>
+    <div class="card blue" data-b="2" data-fx="up" style="padding:16px 18px">
+      <svg class="full" viewBox="0 0 330 200" aria-label="Fonctionnement">
+        <rect width="330" height="200" rx="12" fill="#eef4fc"/>
+        <path d="M20 46 Q 60 46 100 46 L100 56 Q 60 56 20 56 Z" fill="#9aa3ae"><animate attributeName="d" values="M20 46 Q 60 46 100 46 L100 56 Q 60 56 20 56 Z;M20 46 Q 60 66 100 46 L100 56 Q 60 76 20 56 Z;M20 46 Q 60 46 100 46 L100 56 Q 60 56 20 56 Z" dur="2.4s" repeatCount="indefinite"/></path>
+        <text x="60" y="100" text-anchor="middle" class="lbl-s">flexion</text>
+        <path d="M120 80 Q 165 10 210 80" stroke="#c9a77a" stroke-width="9" fill="none"/>
+        <path d="M150 42 L128 70 M180 42 L202 70" stroke="#2f6fe0" stroke-width="2.4" class="flow"/>
+        <text x="165" y="100" text-anchor="middle" class="lbl-s">compression</text>
+        <path d="M250 20 V80 M300 20 V80" stroke="#6e7884" stroke-width="4"/><path d="M230 46 L250 22 Q 275 64 300 22 L320 46" stroke="#12a08a" stroke-width="3" fill="none" class="flow"/>
+        <text x="275" y="100" text-anchor="middle" class="lbl-s">traction</text>
+        <path d="M24 150 H306" stroke="#b8902f" stroke-width="3"/><path d="M296 142 L310 150 L296 158" fill="#b8902f"/>
+        <text x="165" y="180" text-anchor="middle" class="lbl" style="fill:#8a6a1f">la portée augmente</text>
+      </svg>
+      <h3 style="margin-top:10px">Par fonctionnement</h3><p>Comment il porte : flexion, compression, traction.</p>
+    </div>
+    <div class="card red" data-b="3" data-fx="up" style="padding:16px 18px">
+      <svg class="full" viewBox="0 0 330 200" aria-label="Importance">
+        <rect width="330" height="200" rx="12" fill="#fdeee9"/>
+        <g data-b="3" data-fx="grow"><rect x="40" y="70" width="100" height="90" rx="10" fill="#12a08a"/></g>
+        <text x="90" y="125" text-anchor="middle" class="lbl-b" style="fill:#fff;font-size:30px">≈ 3/4</text>
+        <text x="90" y="184" text-anchor="middle" class="lbl-s">courants</text>
+        <g data-b="3" data-fx="grow" data-d=".2"><rect x="190" y="130" width="100" height="30" rx="10" fill="#dc4a2c"/></g>
+        <text x="240" y="184" text-anchor="middle" class="lbl-s">non courants</text>
+        <text x="240" y="116" text-anchor="middle" class="lbl-b" style="fill:#a33d22">≈ 1/4</text>
+      </svg>
+      <h3 style="margin-top:10px">Par importance</h3><p>Ponts <b>courants</b> ou <b>non courants</b>.</p>
+    </div>
+  </div>
+  <div class="callout b" style="margin-top:16px;padding:12px 18px" data-b="4" data-fx="up"><span class="lab">Les trois se combinent</span>Un VIPP est un pont en <b>béton précontraint</b>, qui travaille en <b>flexion</b>, et c'est un pont <b>courant</b>.</div>
+</section>
+
+<!-- ═════════ 5. COURANT / NON COURANT ═════════ -->
+<section class="slide" data-title="Pont courant ou non courant ?">
+  <div class="kicker">Définition SETRA</div>
+  <h2 class="t">Pont courant <em>ou</em> non courant ?</h2>
+  <p class="lead" data-a data-fx="up">Un pont est <b class="hl-r">non courant</b> s'il présente <b>au moins une</b> de ces caractéristiques :</p>
+  <div class="cols c5" style="gap:14px;margin-top:14px">
+    <div class="card red" data-b="1" data-fx="pop" style="padding:14px;text-align:center">
+      <svg class="full" viewBox="0 0 180 110"><rect width="180" height="110" rx="10" fill="#fdeee9"/><rect x="14" y="40" width="152" height="12" fill="#b9c2cc"/><rect x="14" y="52" width="10" height="44" fill="#cfd5dc"/><rect x="156" y="52" width="10" height="44" fill="#cfd5dc"/><path d="M20 26 H160" stroke="#dc4a2c" stroke-width="2"/><path d="M20 20 v12 M160 20 v12" stroke="#dc4a2c" stroke-width="2"/></svg>
+      <div class="big" style="font-size:44px;color:#dc4a2c;margin-top:6px">&gt; 40 m</div><p>une travée</p></div>
+    <div class="card red" data-b="2" data-fx="pop" style="padding:14px;text-align:center">
+      <svg class="full" viewBox="0 0 180 110"><rect width="180" height="110" rx="10" fill="#fdeee9"/><rect x="8" y="40" width="164" height="10" fill="#b9c2cc"/><g fill="#cfd5dc"><rect x="8" y="50" width="8" height="46"/><rect x="48" y="50" width="8" height="46"/><rect x="88" y="50" width="8" height="46"/><rect x="128" y="50" width="8" height="46"/><rect x="164" y="50" width="8" height="46"/></g><path d="M10 26 H170" stroke="#dc4a2c" stroke-width="2"/></svg>
+      <div class="big" style="font-size:44px;color:#dc4a2c;margin-top:6px">&gt; 100 m</div><p>de longueur</p></div>
+    <div class="card red" data-b="3" data-fx="pop" style="padding:14px;text-align:center">
+      <svg class="full" viewBox="0 0 180 110"><rect width="180" height="110" rx="10" fill="#fdeee9"/><path d="M20 80 L60 30 H160 L120 80 Z" fill="#b9c2cc" stroke="#6e7884"/><path d="M40 70 L70 38 M70 70 L100 38 M100 70 L130 38" stroke="#fff" stroke-width="2"/></svg>
+      <div class="big" style="font-size:36px;color:#dc4a2c;margin-top:12px">&gt; 1 200 m²</div><p>de tablier</p></div>
+    <div class="card red" data-b="4" data-fx="pop" style="padding:14px;text-align:center">
+      <svg class="full" viewBox="0 0 180 110"><rect width="180" height="110" rx="10" fill="#fdeee9"/><rect x="10" y="60" width="60" height="10" fill="#b9c2cc"/><rect x="110" y="60" width="60" height="10" fill="#b9c2cc"/><g transform="translate(70 60)"><rect width="40" height="10" fill="#b9c2cc"><animateTransform attributeName="transform" type="rotate" values="0 0 10;-35 0 10;0 0 10" dur="3s" repeatCount="indefinite"/></rect></g><rect x="0" y="86" width="180" height="24" fill="#bfe0f5"/></svg>
+      <div class="big" style="font-size:34px;color:#dc4a2c;margin-top:6px;line-height:1.1">mobile<br>ou canal</div><p>pont mobile, pont-canal</p></div>
+    <div class="card red" data-b="5" data-fx="pop" style="padding:14px;text-align:center">
+      <svg class="full" viewBox="0 0 180 110"><rect width="180" height="110" rx="10" fill="#fdeee9"/><path d="M90 18 L150 92 H30 Z" fill="#e8a020"/><text x="90" y="82" text-anchor="middle" class="lbl-b" style="fill:#fff;font-size:40px">!</text></svg>
+      <div class="big" style="font-size:34px;color:#dc4a2c;margin-top:6px;line-height:1.1">difficultés<br>particulières</div><p>conception, réalisation</p></div>
+  </div>
+  <div class="callout t" style="margin-top:18px;padding:12px 18px" data-b="6" data-fx="up"><span class="lab">Tous les autres sont courants</span>Environ <b>trois ouvrages sur quatre</b>. Ils suivent des solutions éprouvées : les <b>dossiers-pilotes</b> du SETRA.</div>
+</section>
+
+<!-- ═════════ 6. LIRE UN SIGLE ═════════ -->
+<section class="slide" id="c3-sigle" data-title="Lire un sigle SETRA">
+  <div class="kicker">Les dossiers-pilotes SETRA</div>
+  <h2 class="t">Lire un sigle <em>sans se tromper</em></h2>
+  <svg class="full" viewBox="0 0 1152 420" aria-label="Décomposition des sigles PSI-DA, PICF et VIPP">
+    <g font-family="Outfit" text-anchor="middle">
+      <!-- PSI-DA -->
+      <g data-a data-fx="up">
+        <rect x="20" y="10" width="1112" height="120" rx="16" fill="#fff" stroke="#e3dccb"/>
+        <g class="serif" style="font-size:64px" fill="#141a26"><text x="110" y="92">P</text><text x="190" y="92" fill="#2f6fe0">S</text><text x="250" y="92" fill="#2f6fe0">I</text><text x="300" y="92" fill="#9aa3ae">-</text><text x="350" y="92" fill="#12a08a">D</text><text x="420" y="92" fill="#dc4a2c">A</text></g>
+      </g>
+      <g data-b="1" data-fx="fade" style="font-size:18px">
+        <text x="560" y="58" text-anchor="start" class="lbl"><tspan fill="#141a26" font-weight="500">P</tspan>assage <tspan fill="#2453b3" font-weight="500">S</tspan>upérieur ou <tspan fill="#2453b3" font-weight="500">I</tspan>nférieur</text>
+        <text x="560" y="92" text-anchor="start" class="lbl">en <tspan fill="#0b6e5c" font-weight="500">D</tspan>alle <tspan fill="#a33d22" font-weight="500">A</tspan>rmée · variantes : DP (précontrainte), DN (nervurée)</text>
+      </g>
+      <!-- PICF -->
+      <g data-b="2" data-fx="up">
+        <rect x="20" y="148" width="1112" height="120" rx="16" fill="#fff" stroke="#e3dccb"/>
+        <g class="serif" style="font-size:64px"><text x="110" y="230" fill="#141a26">P</text><text x="190" y="230" fill="#2f6fe0">I</text><text x="270" y="230" fill="#12a08a">C</text><text x="350" y="230" fill="#dc4a2c">F</text></g>
+        <text x="560" y="196" text-anchor="start" class="lbl"><tspan font-weight="500">P</tspan>assage <tspan fill="#2453b3" font-weight="500">I</tspan>nférieur en <tspan fill="#0b6e5c" font-weight="500">C</tspan>adre <tspan fill="#a33d22" font-weight="500">F</tspan>ermé</text>
+        <text x="560" y="230" text-anchor="start" class="lbl">cousins : PIPO (Portique Ouvert), POD (Portique Ouvert Double)</text>
+      </g>
+      <!-- VIPP -->
+      <g data-b="3" data-fx="up">
+        <rect x="20" y="286" width="1112" height="120" rx="16" fill="#fff" stroke="#e3dccb"/>
+        <g class="serif" style="font-size:64px"><text x="110" y="368" fill="#141a26">V</text><text x="190" y="368" fill="#2f6fe0">I</text><text x="270" y="368" fill="#12a08a">P</text><text x="350" y="368" fill="#dc4a2c">P</text></g>
+        <text x="560" y="334" text-anchor="start" class="lbl"><tspan font-weight="500">V</tspan>iaduc à travées <tspan fill="#2453b3" font-weight="500">I</tspan>ndépendantes à <tspan fill="#0b6e5c" font-weight="500">P</tspan>outres <tspan fill="#a33d22" font-weight="500">P</tspan>récontraintes</text>
+        <text x="560" y="368" text-anchor="start" class="lbl">cousins : PRAD (pré-tension), PSI-OM (mixte)</text>
+      </g>
+    </g>
+  </svg>
+  <div class="callout" style="margin-top:12px;padding:12px 18px" data-b="4" data-fx="up"><span class="lab">Une référence au Maroc</span>Pour chaque type courant, le SETRA (aujourd'hui Cerema) a publié un <b>dossier-pilote</b> de conception et de calcul, toujours utilisé pour les ouvrages routiers et autoroutiers.</div>
+</section>
+
+<!-- ═════════ 7. SECTION 02 ═════════ -->
+<section class="slide section" data-title="Partie 2 — Les ponts courants">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">02</div>
+    <h2 data-a data-fx="up" data-d=".15">Les ponts courants</h2>
+    <p data-a data-fx="up" data-d=".3">Cadres, portiques, voûtes, dalles, poutres, mixtes : neuf familles qui couvrent l'essentiel des ouvrages, de <b style="color:#e2c070">2 à 80 m</b>.</p>
+  </div>
+  <svg class="c3-sdeco" viewBox="0 0 340 232" aria-hidden="true">
+    <g stroke="#e2c070" stroke-width="3" fill="none" data-a data-fx="draw" data-d=".4"><path d="M10 90 H120 V170 H10Z M24 104 H106 V170 M150 90 H330 M150 104 H330 M180 104 V170 M300 104 V170"/></g>
+    <g stroke="#7fd8c8" stroke-width="3" fill="none" data-a data-fx="draw" data-d="1"><path d="M10 200 H330"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 8. PICF ═════════ -->
+<section class="slide" data-title="PICF — le cadre fermé">
+  <div class="kicker">Cadres et portiques</div>
+  <h2 class="t">PICF — <em>le cadre fermé</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Cadre fermé sous remblai, et ripage sous voie ferrée">
+        <defs>
+          <pattern id="c3s8-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s8-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+        </defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">VUE DE FACE</text>
+        <path d="M0 110 H672 V300 H0 Z" fill="url(#c3s8-e)"/>
+        <rect y="104" width="672" height="6" fill="#3c4049"/>
+        <g class="drive" style="--t:5s;--from:-60px;--to:700px"><rect x="0" y="86" width="44" height="18" rx="4" fill="#2f6fe0"/></g>
+        <text x="20" y="96" class="lbl-s">autoroute sur remblai</text>
+        <path fill-rule="evenodd" d="M226 136 H446 V280 H226 Z M248 158 V258 H424 V158 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="248" y="158" width="176" height="100" fill="#f3efe3"/>
+        <rect x="256" y="250" width="160" height="8" fill="#3c4049"/>
+        <g transform="translate(312 214)"><rect width="48" height="36" rx="6" fill="#dc4a2c"/><rect x="6" y="6" width="36" height="12" rx="3" fill="#fff" opacity=".6"/></g>
+        <g data-b="1" data-fx="fade">
+          <text x="462" y="146" class="lbl">traverse</text><path d="M458 141 L440 141" stroke="#6e7884"/>
+          <text x="462" y="210" class="lbl">piédroit</text><path d="M458 205 L440 205" stroke="#6e7884"/>
+          <text x="462" y="276" class="lbl">radier</text><path d="M458 271 L440 271" stroke="#6e7884"/>
+        </g>
+        <g data-b="2" data-fx="fade" stroke="#dc4a2c" stroke-width="2.4"><path d="M246 298 V286 M286 298 V286 M326 298 V286 M366 298 V286 M406 298 V286 M436 298 V286" class="flow" marker-end="url(#c3s8-a)"/></g>
+        <!-- ripage -->
+        <rect y="314" width="672" height="206" rx="14" fill="#fdf3e2"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">LE RIPAGE SOUS VOIE FERRÉE</text>
+        <path d="M0 400 H672 V520 H0Z" fill="url(#c3s8-e)" opacity=".9"/>
+        <rect x="380" y="394" width="200" height="6" fill="#5c6470"/>
+        <path d="M60 492 H600" stroke="#9aa3ae" stroke-width="4"/>
+        <g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;320 0;320 0;0 0" keyTimes="0;.15;.6;.9;1" dur="7s" repeatCount="indefinite"/>
+          <path fill-rule="evenodd" d="M70 410 H220 V490 H70 Z M84 424 V476 H206 V424 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        </g>
+        <text x="80" y="378" class="lbl" style="fill:#8a6a1f">construit à côté, puis ripé en une nuit</text>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">2 – 12 <small>m</small></div><span class="pill">épaisseur e ≈ L/32 + 0,125 m</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Le plus simple et le plus économique.</li><li>Le radier <b>répartit</b> la charge : bon sur sols médiocres.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Petites ouvertures seulement.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Où le trouve-t-on ?</span>Sous les autoroutes et voies ferrées : pistes, petites routes, petits oueds.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 9. PIPO / POD ═════════ -->
+<section class="slide" data-title="PIPO et POD — les portiques">
+  <div class="kicker">Cadres et portiques</div>
+  <h2 class="t">PIPO et POD — <em>les portiques ouverts</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Portique ouvert simple et double">
+        <defs><pattern id="c3s9-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s9-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">PIPO — PORTIQUE OUVERT</text>
+        <path d="M0 100 H672 V300 H0 Z" fill="url(#c3s9-e)"/>
+        <rect y="94" width="672" height="6" fill="#3c4049"/>
+        <g class="drive" style="--t:5s;--from:700px;--to:-60px"><rect x="0" y="76" width="44" height="18" rx="4" fill="#12a08a"/></g>
+        <rect x="186" y="124" width="300" height="26" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="186" y="150" width="24" height="110" fill="#cfd5dc" stroke="#6e7884"/><rect x="462" y="150" width="24" height="110" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="210" y="150" width="252" height="110" fill="#f3efe3"/>
+        <rect x="160" y="260" width="76" height="22" fill="#9aa3ae" stroke="#5d6672"/><rect x="436" y="260" width="76" height="22" fill="#9aa3ae" stroke="#5d6672"/>
+        <rect x="210" y="254" width="252" height="6" fill="#3c4049"/>
+        <g data-b="1" data-fx="fade">
+          <text x="524" y="276" class="lbl">semelles</text><path d="M520 272 L512 272" stroke="#6e7884"/>
+          <text x="336" y="200" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">pas de radier</text>
+          <g stroke="#dc4a2c" stroke-width="2.4"><path d="M198 300 V288 M474 300 V288" marker-end="url(#c3s9-a)" class="flow"/></g>
+        </g>
+        <rect y="314" width="672" height="206" rx="14" fill="#e9f7f3"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">POD — PORTIQUE OUVERT DOUBLE</text>
+        <g data-b="2" data-fx="up">
+          <path d="M0 380 H672 V520 H0Z" fill="url(#c3s9-e)" opacity=".9"/>
+          <rect x="96" y="388" width="480" height="20" fill="#cfd5dc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884"><rect x="96" y="408" width="18" height="84"/><rect x="327" y="408" width="18" height="84"/><rect x="558" y="408" width="18" height="84"/></g>
+          <rect x="114" y="408" width="213" height="84" fill="#f3efe3"/><rect x="345" y="408" width="213" height="84" fill="#f3efe3"/>
+          <rect x="114" y="486" width="213" height="6" fill="#3c4049"/><rect x="345" y="486" width="213" height="6" fill="#3c4049"/>
+          <g transform="translate(196 456)"><rect width="44" height="30" rx="5" fill="#2f6fe0"/></g>
+          <g transform="translate(430 456)"><rect width="44" height="30" rx="5" fill="#e8a020"/></g>
+          <text x="336" y="374" text-anchor="middle" class="lbl" style="fill:#0b6e5c">deux ouvertures, un piédroit central</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">8 – 20 <small>m</small></div><span class="pill t">POD : 2 × 8 à 2 × 18 m</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Simple, robuste, portée plus grande que le cadre.</li></ul></div>
+      <div data-b="1" data-fx="right" data-d=".15"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Sans radier, il <b>sollicite davantage le sol</b> : semelles sur bon sol, ou pieux.</li></ul></div>
+      <div class="callout t" data-b="2" data-fx="up"><span class="lab">Où le trouve-t-on ?</span>Passages inférieurs sous autoroute ; le POD franchit une route à deux chaussées séparées.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 10. VOÛTES ═════════ -->
+<section class="slide" data-title="Les voûtes">
+  <div class="kicker">Sous les grands remblais</div>
+  <h2 class="t">Les voûtes — <em>la compression au service du remblai</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Voûte sous un grand remblai">
+        <defs><pattern id="c3s10-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s10-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f6fe0"/></marker></defs>
+        <rect width="672" height="520" rx="14" fill="#eef4fc"/>
+        <path d="M0 70 H672 V520 H0 Z" fill="url(#c3s10-e)"/>
+        <rect y="64" width="672" height="6" fill="#3c4049"/>
+        <g class="drive" style="--t:5s;--from:-60px;--to:700px"><rect x="0" y="46" width="44" height="18" rx="4" fill="#dc4a2c"/></g>
+        <g class="drive" style="--t:7s;--from:700px;--to:-60px"><rect x="0" y="40" width="64" height="24" rx="4" fill="#e8a020"/></g>
+        <text x="20" y="106" class="lbl-b" style="fill:#6b5521">grande hauteur de remblai</text>
+        <path fill-rule="evenodd" d="M150 470 V360 A 186 150 0 0 1 522 360 V470 H490 V362 A 154 120 0 0 0 182 362 V470 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M182 470 V362 A 154 120 0 0 1 490 362 V470 Z" fill="#f3efe3"/>
+        <rect x="190" y="462" width="292" height="8" fill="#3c4049"/>
+        <rect x="120" y="470" width="432" height="26" fill="#9aa3ae" stroke="#5d6672"/>
+        <g data-b="1" data-fx="fade" stroke="#2f6fe0" stroke-width="3" fill="none">
+          <path d="M260 130 V200" class="flow" marker-end="url(#c3s10-a)"/><path d="M336 130 V196" class="flow" marker-end="url(#c3s10-a)"/><path d="M412 130 V200" class="flow" marker-end="url(#c3s10-a)"/>
+          <path d="M300 222 Q 200 250 170 360" class="flow" marker-end="url(#c3s10-a)"/><path d="M372 222 Q 472 250 502 360" class="flow" marker-end="url(#c3s10-a)"/>
+        </g>
+        <text x="336" y="300" text-anchor="middle" class="lbl-b" data-b="1" data-fx="fade" style="fill:#2453b3">la voûte est comprimée</text>
+        <g data-b="2" data-fx="fade">
+          <g stroke="#b8902f" stroke-width="2.4"><path d="M160 300 L196 324 M512 300 L476 324 M222 240 L246 270 M450 240 L426 270 M300 214 L306 246 M372 214 L366 246"/></g>
+          <rect x="420" y="400" width="232" height="34" rx="8" fill="#fff"/>
+          <text x="536" y="423" text-anchor="middle" class="lbl" style="fill:#8a6a1f">éléments préfabriqués</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Domaine</div><div class="c3-range" style="font-size:40px;line-height:1.1">petites ouvertures, grands remblais</div></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>La forme en arc travaille en <b>compression</b> : idéale sous de fortes hauteurs de terre.</li><li>Coulée en place ou <b>préfabriquée</b>.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Ouverture limitée, exige un appui stable aux naissances.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Au Maroc</span>On en voit de nombreuses sous les grands remblais, par exemple sur l'autoroute Marrakech–Agadir.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 11. PONTS-DALLES ═════════ -->
+<section class="slide" data-title="PSI-DA, DP, DN — les ponts-dalles">
+  <div class="kicker">Ponts-dalles</div>
+  <h2 class="t">PSI-DA, DP, DN — <em>les ponts-dalles</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont-dalle coulé sur cintre et trois coupes">
+        <defs><pattern id="c3s11-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">ÉLÉVATION — PASSAGE SUPÉRIEUR</text>
+        <path d="M0 110 H70 V300 H0Z M602 110 H672 V300 H602Z" fill="url(#c3s11-e)"/>
+        <rect y="262" width="672" height="38" fill="url(#c3s11-e)"/>
+        <rect x="76" y="254" width="250" height="8" fill="#3c4049"/><rect x="346" y="254" width="250" height="8" fill="#3c4049"/>
+        <g class="drive" style="--t:4s;--from:-60px;--to:700px"><rect x="0" y="234" width="40" height="20" rx="4" fill="#2f6fe0"/></g>
+        <g class="drive" style="--t:5s;--from:700px;--to:-60px"><rect x="0" y="230" width="56" height="24" rx="4" fill="#e8a020"/></g>
+        <rect x="64" y="110" width="544" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="64" y="104" width="544" height="6" fill="#3c4049"/>
+        <rect x="326" y="130" width="20" height="132" fill="#cfd5dc" stroke="#6e7884"/>
+        <g data-b="1" data-only data-fx="fade">
+          <g stroke="#b8902f" stroke-width="3"><path d="M100 130 V254 M140 130 V254 M180 130 V254 M220 130 V254 M260 130 V254 M300 130 V254 M372 130 V254 M412 130 V254 M452 130 V254 M492 130 V254 M532 130 V254 M572 130 V254"/></g>
+          <rect x="200" y="160" width="272" height="34" rx="8" fill="#fff"/>
+          <text x="336" y="183" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">coulé sur cintre</text>
+        </g>
+        <text x="336" y="90" text-anchor="middle" class="lbl" data-b="2" data-fx="fade">dalle mince et continue</text>
+        <rect y="314" width="672" height="206" rx="14" fill="#fff" stroke="#e3dccb"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">TROIS COUPES</text>
+        <g data-b="2" data-fx="up">
+          <path d="M20 390 H200 V398 L180 402 V430 H40 V402 L20 398 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <g fill="#dc4a2c"><circle cx="60" cy="424" r="2.6"/><circle cx="80" cy="424" r="2.6"/><circle cx="100" cy="424" r="2.6"/><circle cx="120" cy="424" r="2.6"/><circle cx="140" cy="424" r="2.6"/><circle cx="160" cy="424" r="2.6"/></g>
+          <text x="110" y="470" text-anchor="middle" class="lbl-b">DA</text><text x="110" y="494" text-anchor="middle" class="lbl-s">armée · 8 – 20 m</text>
+        </g>
+        <g data-b="3" data-fx="up">
+          <path d="M240 390 H430 V398 L410 402 V436 H260 V402 L240 398 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <path d="M268 410 Q 335 438 402 410" stroke="#2f6fe0" stroke-width="3" fill="none"/>
+          <text x="335" y="470" text-anchor="middle" class="lbl-b">DP</text><text x="335" y="494" text-anchor="middle" class="lbl-s">précontrainte · 15 – 30 m</text>
+        </g>
+        <g data-b="4" data-fx="up">
+          <path d="M466 386 H656 V396 L630 400 V412 L620 446 H584 L578 412 H544 L538 446 H502 L492 412 V400 L466 396 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <text x="561" y="470" text-anchor="middle" class="lbl-b">DN</text><text x="561" y="494" text-anchor="middle" class="lbl-s">nervurée · 20 – 35 m</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">8 – 35 <small>m</small></div><span class="pill">élancement DA ≈ L/20 (isostatique)</span></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Minces, robustes, faciles à ferrailler.</li><li>S'adaptent au <b>biais</b> et aux <b>courbes</b>.</li></ul></div>
+      <div data-b="3" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li><b>Cintre au sol</b> obligatoire pendant le coulage.</li></ul></div>
+      <div class="callout t" data-b="4" data-fx="up"><span class="lab">Où le trouve-t-on ?</span>Le passage supérieur d'autoroute par excellence, souvent à 2, 3 ou 4 travées.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 12. PRAD ═════════ -->
+<section class="slide" data-title="PRAD — poutres par adhérence">
+  <div class="kicker">Ponts à poutres</div>
+  <h2 class="t">PRAD — <em>poutres précontraintes en usine</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pose de poutres PRAD et banc de pré-tension">
+        <defs><pattern id="c3s12-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s12-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">POSE À LA GRUE, SANS CINTRE</text>
+        <path d="M0 180 H130 V300 H0Z M542 180 H672 V300 H542Z" fill="url(#c3s12-e)"/>
+        <rect y="280" width="672" height="20" fill="url(#c3s12-e)"/>
+        <rect x="130" y="196" width="22" height="84" fill="#cfd5dc" stroke="#6e7884"/><rect x="520" y="196" width="22" height="84" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="152" y="272" width="368" height="8" fill="#3c4049"/>
+        <g class="drive" style="--t:4s;--from:-60px;--to:700px"><rect x="0" y="252" width="40" height="20" rx="4" fill="#2f6fe0"/></g>
+        <!-- grue -->
+        <rect x="40" y="150" width="60" height="30" rx="4" fill="#e8a020"/>
+        <path d="M70 150 L330 50" stroke="#e8a020" stroke-width="6"/>
+        <path d="M330 50 V120" stroke="#141a26" stroke-width="2"><animate attributeName="d" values="M330 50 V120;M330 50 V166;M330 50 V166;M330 50 V120" keyTimes="0;.45;.8;1" dur="5s" repeatCount="indefinite"/></path>
+        <rect x="140" y="120" width="392" height="22" fill="#b9c2cc" stroke="#6e7884"><animate attributeName="y" values="120;166;166;120" keyTimes="0;.45;.8;1" dur="5s" repeatCount="indefinite"/></rect>
+        <text x="336" y="230" text-anchor="middle" class="lbl-b" data-b="1" data-fx="fade" style="fill:#8a6a1f">la route reste ouverte</text>
+        <!-- banc -->
+        <rect y="314" width="672" height="206" rx="14" fill="#fdf3e2"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">LE BANC DE PRÉ-TENSION, EN USINE</text>
+        <rect x="30" y="380" width="40" height="100" fill="#6e7884"/><rect x="602" y="380" width="40" height="100" fill="#6e7884"/>
+        <g data-b="1" data-fx="fade">
+          <path d="M70 448 H602 M70 458 H602" stroke="#dc4a2c" stroke-width="2.4"/>
+          <path d="M100 420 H40 M572 420 H632" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c3s12-a)"/>
+          <text x="336" y="374" text-anchor="middle" class="lbl" style="fill:#a33d22">① on tend les fils</text>
+        </g>
+        <g data-b="2" data-fx="grow">
+          <path d="M110 430 H562 V470 H110 Z" fill="#cfd5dc" stroke="#6e7884" opacity=".95"/>
+        </g>
+        <g data-b="2" data-only data-fx="fade"><text x="336" y="404" text-anchor="middle" class="lbl">② on coule le béton</text></g>
+        <g data-b="3" data-fx="fade">
+          <rect x="108" y="418" width="456" height="54" fill="#fdf3e2"/>
+          <path d="M110 436 Q 336 410 562 436 V470 Q 336 446 110 470 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <path d="M110 456 Q 336 432 562 456" stroke="#dc4a2c" stroke-width="2.4" fill="none"/>
+          <text x="336" y="404" text-anchor="middle" class="lbl" style="fill:#0b6e5c">③ on relâche : l'adhérence comprime le béton</text>
+          <text x="336" y="502" text-anchor="middle" class="lbl-s">la poutre se cambre légèrement vers le haut</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">10 – 30 <small>m</small></div><span class="pill">élancement L/20 à L/22</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li><b>Pas de cintre</b> : on franchit route, oued ou voie ferrée sans les bloquer.</li><li>Qualité d'usine, chantier rapide.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Transport des poutres, tablier plus épais qu'une dalle.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Pré-tension</span>Les fils sont tendus <b>avant</b> le bétonnage et ancrés par simple <b>adhérence</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 13. VIPP ═════════ -->
+<section class="slide" data-title="VIPP — poutres post-tendues">
+  <div class="kicker">Ponts à poutres</div>
+  <h2 class="t">VIPP — <em>travées indépendantes, poutres post-tendues</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Viaduc VIPP et câble de post-tension">
+        <defs><pattern id="c3s13-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s13-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">VIADUC À TRAVÉES INDÉPENDANTES</text>
+        <path d="M0 240 Q 336 200 672 240 V300 H0 Z" fill="url(#c3s13-e)"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="176" y="146" width="20" height="90"/><rect x="336" y="146" width="20" height="78"/><rect x="496" y="146" width="20" height="90"/></g>
+        <g fill="#dfe3e8" stroke="#6e7884"><rect x="166" y="138" width="40" height="8"/><rect x="326" y="138" width="40" height="8"/><rect x="486" y="138" width="40" height="8"/></g>
+        <g fill="#b9c2cc" stroke="#6e7884"><rect x="20" y="112" width="162" height="26"/><rect x="190" y="112" width="152" height="26"/><rect x="350" y="112" width="152" height="26"/><rect x="510" y="112" width="152" height="26"/></g>
+        <g fill="#e8a020"><rect x="183" y="108" width="6" height="8"/><rect x="343" y="108" width="6" height="8"/><rect x="503" y="108" width="6" height="8"/></g>
+        <g data-b="1" data-fx="fade"><text x="346" y="96" text-anchor="middle" class="lbl" style="fill:#a06a10">un joint à chaque pile</text></g>
+        <!-- poutre de lancement -->
+        <g><animateTransform attributeName="transform" type="translate" values="0 0;160 0;160 0;0 0" keyTimes="0;.5;.8;1" dur="7s" repeatCount="indefinite"/>
+          <path d="M60 58 H330 M60 80 H330 M60 58 L80 80 L100 58 L120 80 L140 58 L160 80 L180 58 L200 80 L220 58 L240 80 L260 58 L280 80 L300 58 L320 80" stroke="#2f6fe0" stroke-width="2.4" fill="none"/>
+        </g>
+        <text x="20" y="220" class="lbl-s" style="fill:#2453b3">poutre de lancement</text>
+        <!-- poutre post-tendue -->
+        <rect y="314" width="672" height="206" rx="14" fill="#fdf3e2"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">UNE POUTRE EN ÉLÉVATION</text>
+        <rect x="50" y="380" width="572" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+        <g data-b="2" data-fx="draw"><path d="M50 396 Q 336 486 622 396" stroke="#2f6fe0" stroke-width="4" fill="none"/></g>
+        <g data-b="2" data-fx="fade"><text x="336" y="374" text-anchor="middle" class="lbl" style="fill:#2453b3">câble dans une gaine, en courbe</text></g>
+        <g data-b="3" data-fx="fade">
+          <path d="M44 396 H10 M628 396 H662" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c3s13-a)"/>
+          <rect x="46" y="388" width="8" height="16" fill="#dc4a2c"/><rect x="618" y="388" width="8" height="16" fill="#dc4a2c"/>
+          <text x="336" y="490" text-anchor="middle" class="lbl" style="fill:#a33d22">tendu au vérin <tspan font-weight="500">après</tspan> durcissement du béton</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">30 – 50 <small>m</small></div><span class="pill">élancement L/16 à L/18</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Pas de cintre ; poutres coulées sur une <b>aire</b> voisine.</li><li>Aussi pour les longs viaducs (poutre de lancement).</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Tablier épais, levages lourds, nombreux joints.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Post-tension</span>Le câble est tendu <b>après</b> le bétonnage, puis ancré aux extrémités.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 14. BIPOUTRE MIXTE ═════════ -->
+<section class="slide" data-title="PSI-OM — le bipoutre mixte">
+  <div class="kicker">Ponts mixtes acier-béton</div>
+  <h2 class="t">PSI-OM — <em>le bipoutre mixte</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Bipoutre mixte : élévation et coupe">
+        <defs><pattern id="c3s14-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">ÉLÉVATION — TRAVÉES CONTINUES</text>
+        <path d="M0 250 Q 336 190 672 250 V300 H0 Z" fill="url(#c3s14-e)"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="216" y="150" width="22" height="80"/><rect x="434" y="150" width="22" height="80"/></g>
+        <g data-a data-fx="growx"><rect x="20" y="124" width="632" height="26" fill="#2f6fe0"/></g>
+        <g data-b="1" data-fx="down"><rect x="20" y="108" width="632" height="16" fill="#cfd5dc" stroke="#6e7884"/><rect x="20" y="102" width="632" height="6" fill="#3c4049"/></g>
+        <g data-b="1" data-fx="fade"><g class="drive" style="--t:6s;--from:-60px;--to:700px"><rect x="0" y="86" width="40" height="16" rx="3" fill="#dc4a2c"/></g></g>
+        <text x="40" y="196" class="lbl" style="fill:#2453b3">poutres en acier</text>
+        <rect y="314" width="672" height="206" rx="14" fill="#fff" stroke="#e3dccb"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">COUPE TRANSVERSALE</text>
+        <g data-b="1" data-fx="down"><path d="M110 372 H562 V392 L520 398 H152 L110 392 Z" fill="#cfd5dc" stroke="#6e7884"/><text x="336" y="388" text-anchor="middle" class="lbl-s">dalle en béton armé</text></g>
+        <g fill="#2f6fe0"><rect x="196" y="398" width="40" height="7"/><rect x="212" y="405" width="8" height="84"/><rect x="186" y="489" width="60" height="9"/>
+          <rect x="436" y="398" width="40" height="7"/><rect x="452" y="405" width="8" height="84"/><rect x="426" y="489" width="60" height="9"/></g>
+        <path d="M220 440 H452" stroke="#2f6fe0" stroke-width="5"/>
+        <text x="336" y="432" text-anchor="middle" class="lbl-s" style="fill:#2453b3">entretoise</text>
+        <g data-b="2" data-fx="pop"><g fill="#e8a020" class="pulse"><rect x="202" y="388" width="4" height="10"/><rect x="214" y="388" width="4" height="10"/><rect x="226" y="388" width="4" height="10"/><rect x="442" y="388" width="4" height="10"/><rect x="454" y="388" width="4" height="10"/><rect x="466" y="388" width="4" height="10"/></g></g>
+        <g data-b="2" data-fx="fade"><text x="540" y="460" class="lbl" style="fill:#a06a10">goujons</text><path d="M536 454 L480 398" stroke="#e8a020" stroke-width="1.5"/>
+          <text x="40" y="460" class="lbl-s" style="fill:#a06a10">acier + béton</text><text x="40" y="482" class="lbl-s" style="fill:#a06a10">travaillent ensemble</text></g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">25 – 80 <small>m</small></div><span class="pill b">élancement L/25 à L/28</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li><b>Léger</b> : bien adapté aux sols médiocres.</li><li>Charpente levée ou lancée, rapide.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Coût de l'acier, entretien de la peinture.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Le principe</span>Deux poutres en I et une dalle « participante », liées par des <b>goujons</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 15. POUTRELLES ENROBÉES ═════════ -->
+<section class="slide" data-title="Les poutrelles enrobées">
+  <div class="kicker">Ponts mixtes acier-béton</div>
+  <h2 class="t">Les poutrelles enrobées — <em>mince et robuste</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont-rail à poutrelles enrobées">
+        <defs><pattern id="c3s15-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+        <rect width="672" height="300" rx="14" fill="#eef4fc"/>
+        <text x="18" y="30" class="lbl-s" style="letter-spacing:.12em">UN PONT-RAIL DE FAIBLE ÉPAISSEUR</text>
+        <path d="M0 120 H150 V300 H0Z M522 120 H672 V300 H522Z" fill="url(#c3s15-e)"/>
+        <rect y="270" width="672" height="30" fill="url(#c3s15-e)"/>
+        <rect x="150" y="140" width="22" height="130" fill="#cfd5dc" stroke="#6e7884"/><rect x="500" y="140" width="22" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="160" y="120" width="352" height="20" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="0" y="108" width="672" height="12" fill="#a99f8c"/><rect x="0" y="104" width="672" height="4" fill="#5c6470"/>
+        <rect x="172" y="262" width="328" height="8" fill="#3c4049"/>
+        <g class="drive" style="--t:4.5s;--from:-420px;--to:700px"><rect x="0" y="66" width="380" height="38" rx="8" fill="#e8a020"/><rect x="10" y="74" width="360" height="10" fill="#fff" opacity=".7"/></g>
+        <text x="336" y="200" text-anchor="middle" class="lbl-b" data-b="1" data-fx="fade" style="fill:#8a6a1f">tablier très mince</text>
+        <rect y="314" width="672" height="206" rx="14" fill="#fff" stroke="#e3dccb"/>
+        <text x="18" y="342" class="lbl-s" style="letter-spacing:.12em">COUPE</text>
+        <rect x="80" y="372" width="512" height="18" fill="#a99f8c"/>
+        <g fill="#5c6470"><rect x="200" y="362" width="10" height="10"/><rect x="250" y="362" width="10" height="10"/><rect x="412" y="362" width="10" height="10"/><rect x="462" y="362" width="10" height="10"/></g>
+        <rect x="80" y="390" width="512" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+        <g data-b="2" data-fx="fade" fill="#2f6fe0">
+          <g id="c3s15-i"><rect x="106" y="398" width="28" height="6"/><rect x="117" y="404" width="6" height="42"/><rect x="106" y="446" width="28" height="6"/></g>
+          <use href="#c3s15-i" x="56"/><use href="#c3s15-i" x="112"/><use href="#c3s15-i" x="168"/><use href="#c3s15-i" x="224"/><use href="#c3s15-i" x="280"/><use href="#c3s15-i" x="336"/><use href="#c3s15-i" x="392"/>
+        </g>
+        <g data-b="2" data-fx="fade"><text x="336" y="494" text-anchor="middle" class="lbl" style="fill:#2453b3">poutrelles laminées noyées dans le béton</text></g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Domaine</div><div class="c3-range" style="font-size:44px;line-height:1.1">petites portées</div><span class="pill">quand la hauteur disponible est faible</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Épaisseur très réduite, grande robustesse.</li><li>Les poutrelles portent le coffrage : <b>pas de cintre</b>.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Beaucoup d'acier, portées limitées.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Où le trouve-t-on ?</span>Surtout en <b>ponts-rails</b> : passages sous voie ferrée.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 16. BÉQUILLES ═════════ -->
+<section class="slide" data-title="PS-BQ — le pont à béquilles">
+  <div class="kicker">Portiques</div>
+  <h2 class="t">PS-BQ — <em>le pont à béquilles</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont à béquilles au-dessus d'une autoroute en déblai">
+        <defs><pattern id="c3s16-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+          <marker id="c3s16-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+          <marker id="c3s16-g" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="672" height="520" rx="14" fill="#eef4fc"/>
+        <path d="M0 150 H80 L240 400 H432 L592 150 H672 V520 H0 Z" fill="url(#c3s16-e)"/>
+        <rect x="240" y="392" width="192" height="8" fill="#3c4049"/>
+        <g class="drive" style="--t:4s;--from:-60px;--to:700px"><rect x="0" y="372" width="40" height="20" rx="4" fill="#2f6fe0"/></g>
+        <rect x="40" y="128" width="592" height="22" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="0" y="122" width="672" height="6" fill="#3c4049"/>
+        <path d="M150 150 L196 330 L218 330 L176 150 Z M522 150 L476 330 L454 330 L496 150 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="176" y="330" width="60" height="20" fill="#9aa3ae" stroke="#5d6672"/><rect x="436" y="330" width="60" height="20" fill="#9aa3ae" stroke="#5d6672"/>
+        <g data-b="1" data-fx="fade">
+          <text x="80" y="260" class="lbl-b">béquilles</text><path d="M166 254 L184 254" stroke="#6e7884"/>
+          <path d="M163 90 H509" stroke="#b8902f" stroke-width="2.4" marker-start="url(#c3s16-g)" marker-end="url(#c3s16-g)"/>
+          <text x="336" y="80" text-anchor="middle" class="lbl" style="fill:#8a6a1f">la travée centrale est raccourcie</text>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M206 340 L150 340 M466 340 L522 340" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c3s16-a)" class="pulse"/>
+          <rect x="216" y="430" width="240" height="34" rx="8" fill="#fff"/>
+          <text x="336" y="453" text-anchor="middle" class="lbl-b" style="fill:#a33d22">forte poussée au sol</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">30 – 80 <small>m</small></div><span class="pill">coulé sur cintre</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Très <b>esthétique</b>, aucune pile sur la voie franchie.</li><li>Idéal pour les brèches profondes.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Poussée horizontale : <b>bon sol</b> indispensable.</li><li>Cintre lourd.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 17. SECTION 03 ═════════ -->
+<section class="slide section" data-title="Partie 3 — Les grands ouvrages">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">03</div>
+    <h2 data-a data-fx="up" data-d=".15">Les grands ouvrages</h2>
+    <p data-a data-fx="up" data-d=".3">Au-delà de 60 à 80 m, place aux caissons, aux arcs et aux câbles : la structure <b style="color:#e2c070">s'allège</b> à mesure que la portée grandit.</p>
+  </div>
+  <svg class="c3-sdeco" viewBox="0 0 340 232" aria-hidden="true">
+    <g stroke="#e2c070" stroke-width="3" fill="none" data-a data-fx="draw" data-d=".4"><path d="M170 20 V200 M170 36 L30 160 M170 56 L70 160 M170 76 L110 160 M170 36 L310 160 M170 56 L270 160 M170 76 L230 160 M10 160 H330"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 18. CAISSON ═════════ -->
+<section class="slide" id="c3-caisson" data-title="Le caisson construit par encorbellements">
+  <div class="kicker">Ponts en caisson</div>
+  <h2 class="t">Le caisson, construit <em>par encorbellements</em></h2>
+  <svg class="full" viewBox="0 0 1152 330" aria-label="Construction d'un caisson par encorbellements successifs">
+    <defs><pattern id="c3s18-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern></defs>
+    <rect width="1152" height="330" rx="16" fill="#eef4fc"/>
+    <rect y="270" width="1152" height="60" fill="#bfe0f5"/>
+    <path d="M0 284 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#3a9ad9" fill="none" class="flow"/>
+    <path d="M0 80 H60 V330 H0Z M1092 80 H1152 V330 H1092Z" fill="url(#c3s18-e)"/>
+    <rect x="356" y="150" width="40" height="180" fill="#cfd5dc" stroke="#6e7884"/><rect x="756" y="150" width="40" height="180" fill="#cfd5dc" stroke="#6e7884"/>
+    <!-- voussoirs sur piles -->
+    <g fill="#b9c2cc" stroke="#6e7884">
+      <g data-a data-fx="pop"><path d="M346 80 H406 V150 H346 Z"/><path d="M746 80 H806 V150 H746 Z"/></g>
+      <g data-b="1" data-fx="fade"><path d="M306 80 H346 V146 L306 140 Z M406 80 H446 V140 L406 146 Z M706 80 H746 V146 L706 140 Z M806 80 H846 V140 L806 146 Z"/></g>
+      <g data-b="2" data-fx="fade"><path d="M266 80 H306 V140 L266 128 Z M446 80 H486 V128 L446 140 Z M666 80 H706 V140 L666 128 Z M846 80 H886 V128 L846 140 Z"/></g>
+      <g data-b="3" data-fx="fade"><path d="M226 80 H266 V128 L226 116 Z M486 80 H526 V116 L486 128 Z M626 80 H666 V128 L626 116 Z M886 80 H926 V116 L886 128 Z"/></g>
+      <g data-b="4" data-fx="fade"><path d="M186 80 H226 V116 L186 108 Z M526 80 H566 V108 L526 116 Z M586 80 H626 V116 L586 108 Z M926 80 H966 V108 L926 116 Z"/></g>
+      <g data-b="5" data-fx="fade"><path d="M60 80 H186 V108 L60 104 Z M966 80 H1092 V104 L966 108 Z"/></g>
+    </g>
+    <g data-b="5" data-fx="pop"><path d="M566 80 H586 V108 H566 Z" fill="#e8a020" stroke="#a06a10"/></g>
+    <!-- équipages mobiles -->
+    <g data-b="1" data-only data-fx="fade" fill="#e8a020"><path d="M296 60 L316 60 L316 80 L296 80Z M436 60 L456 60 L456 80 L436 80Z M696 60 L716 60 L716 80 L696 80Z M836 60 L856 60 L856 80 L836 80Z"/></g>
+    <g data-b="2,3,4" data-only data-fx="fade"><text x="576" y="44" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">voussoir après voussoir, symétriquement : le fléau reste en équilibre</text></g>
+    <g data-b="5" data-fx="fade"><text x="576" y="44" text-anchor="middle" class="lbl-b" style="fill:#a06a10">le clavage relie les deux fléaux</text></g>
+    <g data-b="1" data-only data-fx="fade"><text x="576" y="44" text-anchor="middle" class="lbl-b" style="fill:#a06a10">un équipage mobile coule (ou pose) un voussoir de chaque côté</text></g>
+    <text x="376" y="200" text-anchor="middle" class="lbl-s" transform="rotate(-90 376 200)">pile</text>
+  </svg>
+  <div class="cols c3" style="margin-top:16px;gap:16px">
+    <div class="card gold" data-a data-fx="up" data-d=".2" style="padding:12px 16px"><div class="c3-lab">Portées usuelles</div><div class="big" style="font-size:52px">60 – 200 <small>m</small></div></div>
+    <div class="card blue" data-b="6" data-fx="up" style="padding:12px 16px;display:flex;gap:14px;align-items:center">
+      <svg viewBox="0 0 150 100" style="width:130px;flex:none"><path d="M5 10 H145 V22 L118 24 L106 92 H44 L32 24 L5 22 Z" fill="#cfd5dc" stroke="#6e7884"/><path d="M52 30 H98 L92 80 H58 Z" fill="#fff" stroke="#6e7884"/></svg>
+      <p><b>Caisson</b> creux : très rigide en torsion ; béton, acier ou mixte.</p></div>
+    <div class="card red" data-b="6" data-fx="up" data-d=".15" style="padding:12px 16px"><p><b>Hauteur variable</b> : L/16 à L/18 sur pile, L/30 à L/40 à la clé. <b>Sans cintre</b> ; ouvrage non courant.</p></div>
+  </div>
+</section>
+
+<!-- ═════════ 19. ARC ═════════ -->
+<section class="slide" data-title="Le pont en arc">
+  <div class="kicker">Compression</div>
+  <h2 class="t">Le pont en arc — <em>tout en compression</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont en arc dans une gorge rocheuse">
+        <defs>
+          <pattern id="c3s19-r" width="18" height="12" patternUnits="userSpaceOnUse"><rect width="18" height="12" fill="#c9ad85"/><path d="M0 12 L6 4 L12 12 M9 0 L15 8" stroke="#9c7d52" stroke-width=".9" fill="none"/></pattern>
+          <marker id="c3s19-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+          <linearGradient id="c3s19-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dcebf9"/><stop offset="1" stop-color="#f6f2e8"/></linearGradient>
+        </defs>
+        <rect width="672" height="520" rx="14" fill="url(#c3s19-s)"/>
+        <path d="M0 150 H70 L130 420 L240 500 H432 L542 420 L602 150 H672 V520 H0 Z" fill="url(#c3s19-r)"/>
+        <rect x="290" y="480" width="92" height="20" fill="#bfe0f5"/>
+        <path d="M118 380 Q 336 40 554 380" stroke="#cfd5dc" stroke-width="24" fill="none"/>
+        <path d="M118 380 Q 336 40 554 380" stroke="#6e7884" stroke-width="1.5" fill="none" transform="translate(0 -12)"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="160" y="150" width="12" height="160"/><rect x="216" y="150" width="12" height="92"/><rect x="272" y="150" width="12" height="52"/><rect x="388" y="150" width="12" height="52"/><rect x="444" y="150" width="12" height="92"/><rect x="500" y="150" width="12" height="160"/></g>
+        <rect x="50" y="128" width="572" height="22" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="0" y="122" width="672" height="6" fill="#3c4049"/>
+        <g class="drive" style="--t:5s;--from:-60px;--to:700px"><rect x="0" y="104" width="44" height="18" rx="4" fill="#dc4a2c"/></g>
+        <g data-b="1" data-fx="fade" stroke="#2f6fe0" stroke-width="3" fill="none">
+          <path d="M300 230 Q 230 264 170 344" class="flow" marker-end="url(#c3s19-a)" style="stroke:#2f6fe0"/>
+          <path d="M372 230 Q 442 264 502 344" class="flow" style="stroke:#2f6fe0"/>
+          <text x="336" y="330" text-anchor="middle" class="lbl-b" style="fill:#2453b3;stroke:none">l'arc est comprimé</text>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M118 392 L58 432" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c3s19-a)" class="pulse"/>
+          <path d="M554 392 L614 432" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c3s19-a)" class="pulse"/>
+          <rect x="200" y="420" width="272" height="34" rx="8" fill="#fff"/>
+          <text x="336" y="443" text-anchor="middle" class="lbl-b" style="fill:#a33d22">poussée sur le rocher</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">50 – 500 <small>m</small></div><span class="pill">arc sous tablier ou au-dessus</span></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Le béton ou la pierre travaillent en <b>compression</b>, ce qu'ils font le mieux.</li><li>Silhouette élégante.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Forte poussée : <b>rocher sain</b> nécessaire.</li><li>Construction délicate (cintre ou haubanage provisoire).</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Repère</span>Le pont de Gladesville (Australie, 1964) a longtemps détenu le record des arcs en béton : 305 m.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 20. HAUBANS ═════════ -->
+<section class="slide" data-title="Le pont à haubans">
+  <div class="kicker">Traction</div>
+  <h2 class="t">Le pont à haubans — <em>des câbles tendus en droite ligne</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont à haubans en harpe et en éventail">
+        <defs><linearGradient id="c3s20-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe2bd"/><stop offset=".7" stop-color="#f8c79c"/><stop offset="1" stop-color="#eab08a"/></linearGradient></defs>
+        <rect width="672" height="520" rx="14" fill="url(#c3s20-s)"/>
+        <circle cx="560" cy="110" r="40" fill="#fff4dc" opacity=".8"/>
+        <rect y="420" width="672" height="100" fill="#3d6d8f"/>
+        <path d="M0 440 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#8ab8d8" fill="none" class="flow"/>
+        <path d="M336 60 V420" stroke="#f4f1ea" stroke-width="16"/>
+        <!-- éventail -->
+        <g data-b="0,1" data-only data-fx="fade" stroke="#141a26" stroke-width="1.6">
+          <path d="M336 70 L40 330 M336 76 L90 330 M336 82 L140 330 M336 88 L190 330 M336 94 L240 330 M336 100 L290 330 M336 70 L632 330 M336 76 L582 330 M336 82 L532 330 M336 88 L482 330 M336 94 L432 330 M336 100 L382 330"/>
+        </g>
+        <!-- harpe -->
+        <g data-b="2,3" data-only data-fx="fade" stroke="#141a26" stroke-width="1.6">
+          <path d="M336 80 L40 330 M336 120 L90 330 M336 160 L140 330 M336 200 L190 330 M336 240 L240 330 M336 280 L290 330 M336 80 L632 330 M336 120 L582 330 M336 160 L532 330 M336 200 L482 330 M336 240 L432 330 M336 280 L382 330"/>
+        </g>
+        <rect x="0" y="330" width="672" height="16" fill="#f4f1ea"/>
+        <g class="drive" style="--t:6s;--from:-40px;--to:700px"><rect x="0" y="320" width="30" height="10" rx="2" fill="#dc4a2c"/></g>
+        <rect x="326" y="346" width="20" height="74" fill="#f4f1ea"/>
+        <g data-b="1" data-only data-fx="fade"><rect x="18" y="20" width="160" height="34" rx="8" fill="#fff"/><text x="98" y="43" text-anchor="middle" class="lbl-b">en éventail</text></g>
+        <g data-b="2,3" data-only data-fx="fade"><rect x="18" y="20" width="160" height="34" rx="8" fill="#fff"/><text x="98" y="43" text-anchor="middle" class="lbl-b">en harpe</text></g>
+        <g data-b="3" data-fx="fade">
+          <rect x="378" y="380" width="276" height="34" rx="8" fill="#fff"/>
+          <text x="516" y="403" text-anchor="middle" class="lbl" style="fill:#2453b3">pylône comprimé, haubans tendus</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">150 – 1 000 <small>m et +</small></div></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Avantages</div><ul class="c3-ok"><li>Le tablier est tenu <b>directement</b> par les haubans, ancrés sur les pylônes.</li><li>Construction en encorbellement, sans cintre.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Ouvrage non courant : vent, vibrations, entretien des câbles.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Exemples</span>Viaduc de Millau (France, 2004) ; au Maroc, le <b>pont Mohammed VI</b> sur le Bouregreg (2016) : travée centrale de 376 m.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 21. SUSPENDU ═════════ -->
+<section class="slide" data-title="Le pont suspendu">
+  <div class="kicker">Traction</div>
+  <h2 class="t">Le pont suspendu — <em>la famille des records</em></h2>
+  <div class="c3-fam">
+    <div class="vis">
+      <svg viewBox="0 0 672 520" aria-label="Pont suspendu avec câbles porteurs et massifs d'ancrage">
+        <defs><linearGradient id="c3s21-s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3f6"/><stop offset="1" stop-color="#f3efe6"/></linearGradient>
+          <marker id="c3s21-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="672" height="520" rx="14" fill="url(#c3s21-s)"/>
+        <rect y="400" width="672" height="120" fill="#5c8fb3"/>
+        <path d="M0 420 q20 -5 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" stroke="#a7cbe4" fill="none" class="flow"/>
+        <path d="M150 90 V400 M522 90 V400" stroke="#9aa3ae" stroke-width="14"/>
+        <path d="M150 140 H522 M150 240 H522" stroke="#9aa3ae" stroke-width="6" opacity=".6"/>
+        <g data-a data-fx="draw" data-d=".3"><path d="M30 300 L150 90 Q 336 400 522 90 L642 300" stroke="#b8902f" stroke-width="5" fill="none"/></g>
+        <g data-b="1" data-fx="fade" stroke="#b8902f" stroke-width="1.6">
+          <path d="M190 166 V320 M230 222 V320 M270 260 V320 M310 280 V320 M350 284 V320 M390 270 V320 M430 242 V320 M470 198 V320 M510 124 V320 M110 160 V320 M70 230 V320 M562 160 V320 M602 230 V320"/>
+        </g>
+        <rect x="0" y="320" width="672" height="14" fill="#cfd5dc" stroke="#6e7884"/>
+        <g class="drive" style="--t:6s;--from:-40px;--to:700px"><rect x="0" y="310" width="30" height="10" rx="2" fill="#dc4a2c"/></g>
+        <g data-b="2" data-fx="pop"><rect x="6" y="290" width="54" height="40" fill="#6e7884" class="pulse"/><rect x="612" y="290" width="54" height="40" fill="#6e7884" class="pulse"/></g>
+        <g data-b="2" data-fx="fade"><text x="20" y="372" class="lbl-b">massif d'ancrage</text></g>
+        <g data-b="1" data-fx="fade"><rect x="250" y="160" width="172" height="34" rx="8" fill="#fff"/><text x="336" y="183" text-anchor="middle" class="lbl">suspentes</text></g>
+        <g data-b="3" data-fx="fade">
+          <rect x="196" y="440" width="280" height="56" rx="10" fill="#fff"/>
+          <text x="336" y="466" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">record : 2 023 m</text>
+          <text x="336" y="488" text-anchor="middle" class="lbl-s">pont 1915 Çanakkale (Turquie, 2022)</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c3-side">
+      <div data-a data-fx="right"><div class="c3-lab">Portées usuelles</div><div class="c3-range">300 – 2 000 <small>m</small></div></div>
+      <div data-b="1" data-fx="right"><div class="c3-lab t">Le principe</div><ul class="c3-ok"><li><b>Câbles porteurs</b> paraboliques sur les pylônes.</li><li>Le tablier y est accroché par des <b>suspentes</b>.</li></ul></div>
+      <div data-b="2" data-fx="right"><div class="c3-lab r">Limites</div><ul class="c3-ko"><li>Énormes <b>massifs d'ancrage</b> ; sensible au vent.</li></ul></div>
+      <div class="callout t" data-b="3" data-fx="up"><span class="lab">Records</span>Akashi (Japon) : 1 991 m. Pont 1915 Çanakkale (Turquie, 2022) : <b>2 023 m</b>, record actuel.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 22. SECTION 04 ═════════ -->
+<section class="slide section" data-title="Partie 4 — Comparer et choisir">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">04</div>
+    <h2 data-a data-fx="up" data-d=".15">Comparer et choisir</h2>
+    <p data-a data-fx="up" data-d=".3">Domaines de portées, maquettes 3D, reconnaissance des silhouettes — puis le choix pour <b style="color:#e2c070">notre fil rouge</b>.</p>
+  </div>
+  <svg class="c3-sdeco" viewBox="0 0 340 232" aria-hidden="true">
+    <g stroke="#e2c070" stroke-width="10" stroke-linecap="round" fill="none" data-a data-fx="draw" data-d=".4"><path d="M20 40 H120 M60 80 H180 M110 120 H240 M170 160 H320"/></g>
+    <g stroke="#7fd8c8" stroke-width="2" fill="none" data-a data-fx="draw" data-d="1"><path d="M10 200 H330"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 23. DOMAINES DE PORTÉES ═════════ -->
+<section class="slide" data-title="Domaines de portées">
+  <div class="kicker">Chaque famille a son domaine</div>
+  <h2 class="t">Domaines de <em>portées</em> usuelles</h2>
+  <svg class="full" viewBox="0 0 1152 460" aria-label="Domaines de portées des familles de ponts, échelle logarithmique">
+    <rect width="1152" height="460" rx="16" fill="#fff"/>
+    <g stroke="#ebe5d6"><path d="M230 26 V426 M344 26 V426 M431 26 V426 M517 26 V426 M632 26 V426 M718 26 V426 M805 26 V426 M919 26 V426 M1006 26 V426 M1092 26 V426"/></g>
+    <g class="lbl-s" text-anchor="middle"><text x="230" y="448">2 m</text><text x="344" y="448">5</text><text x="431" y="448">10</text><text x="517" y="448">20</text><text x="632" y="448">50</text><text x="718" y="448">100</text><text x="805" y="448">200</text><text x="919" y="448">500</text><text x="1006" y="448">1 000</text><text x="1092" y="448">2 000 m</text></g>
+    <g class="lbl" text-anchor="end" style="font-size:17px">
+      <text x="216" y="48">PICF</text><text x="216" y="76">PIPO</text><text x="216" y="104">POD (par travée)</text><text x="216" y="132">PSI-DA</text><text x="216" y="160">PSI-DP</text><text x="216" y="188">PSI-DN</text><text x="216" y="216">PRAD</text><text x="216" y="244">VIPP</text><text x="216" y="272">PSI-OM (mixte)</text><text x="216" y="300">PS-BQ (béquilles)</text><text x="216" y="328">Caisson</text><text x="216" y="356">Arc</text><text x="216" y="384">Haubans</text><text x="216" y="412">Suspendu</text>
+    </g>
+    <g data-b="1" data-fx="growx">
+      <rect x="230" y="34" width="224" height="18" rx="9" fill="#c9a77a"/>
+      <rect x="403" y="62" width="114" height="18" rx="9" fill="#c9a77a"/>
+      <rect x="403" y="90" width="101" height="18" rx="9" fill="#c9a77a"/>
+      <rect x="403" y="118" width="114" height="18" rx="9" fill="#9aa3ae"/>
+      <rect x="481" y="146" width="87" height="18" rx="9" fill="#9aa3ae"/>
+      <rect x="517" y="174" width="70" height="18" rx="9" fill="#9aa3ae"/>
+      <rect x="431" y="202" width="137" height="18" rx="9" fill="#2f6fe0"/>
+      <rect x="568" y="230" width="64" height="18" rx="9" fill="#2f6fe0"/>
+      <rect x="545" y="258" width="145" height="18" rx="9" fill="#12a08a"/>
+      <rect x="568" y="286" width="122" height="18" rx="9" fill="#7a52c7"/>
+    </g>
+    <g data-b="2" data-fx="growx">
+      <rect x="654" y="314" width="150" height="18" rx="9" fill="#4a5b78"/>
+      <rect x="632" y="342" width="287" height="18" rx="9" fill="#e8a020"/>
+    </g>
+    <g data-b="3" data-fx="growx">
+      <rect x="769" y="370" width="249" height="18" rx="9" fill="#dc4a2c"/>
+      <rect x="855" y="398" width="238" height="18" rx="9" fill="#a33d22"/>
+    </g>
+    <g data-b="3" data-fx="pop"><circle cx="1093" cy="407" r="11" fill="none" stroke="#b8902f" stroke-width="3" class="pulse"/></g>
+    <g data-b="3" data-fx="fade"><text x="1140" y="362" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">record 2 023 m ↓</text></g>
+    <g data-b="4" data-fx="fade">
+      <path d="M550 20 V426" stroke="#dc4a2c" stroke-width="2.4" stroke-dasharray="6 5"/>
+      <rect x="556" y="20" width="148" height="28" rx="8" fill="#fbe5df"/>
+      <text x="630" y="40" text-anchor="middle" class="lbl-s" style="fill:#a33d22">fil rouge ≈ 26 m</text>
+    </g>
+  </svg>
+  <p class="small" style="margin-top:10px" data-b="4" data-fx="fade">Échelle logarithmique. Les plages se recouvrent : c'est la conception (chapitre 4) qui tranche selon le site, les délais, le budget et l'esthétique.</p>
+</section>
+
+<!-- ═════════ 24. GALERIE 3D ═════════ -->
+<section class="slide" data-title="Galerie 3D des familles">
+  <div class="kicker">Maquettes 3D interactives</div>
+  <h2 class="t">Faites le tour <em>des familles</em></h2>
+  <div class="v3d" data-model="familles" data-start="vipp" style="height:540px"><div class="stage"></div></div>
+</section>
+
+<!-- ═════════ 25. JEU ═════════ -->
+<section class="slide" data-title="Reconnaître une silhouette">
+  <div class="kicker">À vous de jouer</div>
+  <h2 class="t">Quelle est <em>cette famille</em> ? <span style="font-size:22px;color:var(--mute);font-family:Outfit">— cliquez pour révéler</span></h2>
+  <div class="c3-games interactive">
+    <button type="button" class="c3-sil" data-a data-fx="pop"><svg viewBox="0 0 240 118"><path d="M60 30 H180 V100 H60 Z M74 44 V100 M166 44 V100 M74 44 H166 M60 100 H180" stroke="#e2c070" stroke-width="5" fill="none"/><path d="M0 30 H240" stroke="#7fd8c8" stroke-width="3"/></svg><span class="q">?</span><span class="a">Cadre fermé (PICF)</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".05"><svg viewBox="0 0 240 118"><path d="M20 40 H220 M20 52 H220 M120 52 V106 M90 106 H150" stroke="#e2c070" stroke-width="5" fill="none"/><path d="M20 40 V30 M220 40 V30" stroke="#7fd8c8" stroke-width="3"/></svg><span class="q">?</span><span class="a">Pont-dalle (PSI-DA)</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".1"><svg viewBox="0 0 240 118"><path d="M10 40 H230 M10 66 H230 M20 66 V106 M220 66 V106 M115 66 V106 M125 66 V106" stroke="#e2c070" stroke-width="5" fill="none"/><path d="M40 46 V62 M70 46 V62 M100 46 V62 M140 46 V62 M170 46 V62 M200 46 V62" stroke="#e2c070" stroke-width="2"/></svg><span class="q">?</span><span class="a">Poutres (VIPP)</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".15"><svg viewBox="0 0 240 118"><path d="M10 30 H230 M30 30 L60 106 M210 30 L180 106" stroke="#e2c070" stroke-width="5" fill="none"/></svg><span class="q">?</span><span class="a">Béquilles (PS-BQ)</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".2"><svg viewBox="0 0 240 118"><path d="M10 26 H230 M10 26 Q 60 26 100 70 V106 M230 26 Q 180 26 140 70 V106 M100 70 Q 120 64 140 70" stroke="#e2c070" stroke-width="5" fill="none"/></svg><span class="q">?</span><span class="a">Caisson (encorbellements)</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".25"><svg viewBox="0 0 240 118"><path d="M10 30 H230 M30 106 Q 120 -20 210 106 M60 30 V64 M90 30 V40 M150 30 V40 M180 30 V64" stroke="#e2c070" stroke-width="5" fill="none"/></svg><span class="q">?</span><span class="a">Arc</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".3"><svg viewBox="0 0 240 118"><path d="M120 6 V112 M10 86 H230" stroke="#e2c070" stroke-width="5" fill="none"/><path d="M120 14 L20 86 M120 22 L50 86 M120 30 L80 86 M120 14 L220 86 M120 22 L190 86 M120 30 L160 86" stroke="#e2c070" stroke-width="2"/></svg><span class="q">?</span><span class="a">Haubans</span></button>
+    <button type="button" class="c3-sil" data-a data-fx="pop" data-d=".35"><svg viewBox="0 0 240 118"><path d="M60 10 V112 M180 10 V112 M0 90 H240" stroke="#e2c070" stroke-width="5" fill="none"/><path d="M0 60 L60 12 Q 120 100 180 12 L240 60" stroke="#e2c070" stroke-width="3" fill="none"/><path d="M90 50 V90 M120 66 V90 M150 50 V90" stroke="#e2c070" stroke-width="2"/></svg><span class="q">?</span><span class="a">Suspendu</span></button>
+  </div>
+  <div class="callout v" style="margin-top:18px;padding:12px 18px" data-b="1" data-fx="up"><span class="lab">Astuce</span>Regardez d'abord <b>comment la charge descend</b> : par flexion (dalle, poutres, caisson), par compression (arc, béquilles) ou par des câbles tendus.</div>
+</section>
+
+<!-- ═════════ 26. COMMENT CHOISIR ═════════ -->
+<section class="slide" data-title="Un arbre pour choisir">
+  <div class="kicker">Aide à la réflexion</div>
+  <h2 class="t">Un arbre simple <em>pour choisir</em></h2>
+  <svg class="full" viewBox="0 0 1152 470" aria-label="Arbre de décision simplifié pour un pont">
+    <defs><marker id="c3s26-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#9aa3ae"/></marker></defs>
+    <g data-b="4" data-fx="fade" stroke="#dc4a2c" stroke-width="10" stroke-linecap="round" fill="none" opacity=".35">
+      <path d="M576 60 L440 146 M440 190 V236 M500 288 L555 344"/>
+    </g>
+    <g data-a data-fx="zoom"><rect x="426" y="10" width="300" height="56" rx="14" fill="#141a26"/><text x="576" y="45" text-anchor="middle" class="lbl-b" style="fill:#e2c070">Quelle portée ?</text></g>
+    <g data-b="1" data-fx="fade" stroke="#9aa3ae" stroke-width="2.2" fill="none">
+      <path d="M576 66 L150 140" marker-end="url(#c3s26-a)"/><path d="M576 66 L440 140" marker-end="url(#c3s26-a)"/><path d="M576 66 L730 140" marker-end="url(#c3s26-a)"/><path d="M576 66 L1000 140" marker-end="url(#c3s26-a)"/>
+    </g>
+    <g data-b="1" data-fx="up" text-anchor="middle">
+      <rect x="40" y="140" width="220" height="50" rx="12" fill="#fff" stroke="#c9a77a" stroke-width="2"/><text x="150" y="172" class="lbl-b">moins de 12 m</text>
+      <rect x="330" y="140" width="220" height="50" rx="12" fill="#fff" stroke="#2f6fe0" stroke-width="2"/><text x="440" y="172" class="lbl-b">12 à 35 m</text>
+      <rect x="620" y="140" width="220" height="50" rx="12" fill="#fff" stroke="#12a08a" stroke-width="2"/><text x="730" y="172" class="lbl-b">35 à 80 m</text>
+      <rect x="890" y="140" width="220" height="50" rx="12" fill="#fff" stroke="#dc4a2c" stroke-width="2"/><text x="1000" y="172" class="lbl-b">au-delà</text>
+    </g>
+    <g data-b="2" data-fx="up" text-anchor="middle">
+      <path d="M440 190 V232" stroke="#9aa3ae" stroke-width="2.2" marker-end="url(#c3s26-a)"/>
+      <rect x="320" y="232" width="240" height="56" rx="14" fill="#141a26"/><text x="440" y="266" class="lbl-b" style="fill:#e2c070">Cintre possible ?</text>
+      <path d="M380 288 L365 340" stroke="#9aa3ae" stroke-width="2.2" marker-end="url(#c3s26-a)"/><path d="M500 288 L555 340" stroke="#9aa3ae" stroke-width="2.2" marker-end="url(#c3s26-a)"/>
+      <text x="352" y="318" class="lbl-s">oui</text><text x="548" y="312" class="lbl-s">non</text>
+    </g>
+    <g data-b="3" data-fx="up" text-anchor="middle">
+      <path d="M150 190 V340 M730 190 V340 M1000 190 V340" stroke="#9aa3ae" stroke-width="2.2" fill="none" marker-end="url(#c3s26-a)"/>
+      <rect x="40" y="340" width="220" height="104" rx="14" fill="#fdf3e2"/><text x="150" y="374" class="lbl-b">Cadre, portique</text><text x="150" y="400" class="lbl-s">PICF, PIPO, POD</text><text x="150" y="422" class="lbl-s">voûte sous remblai</text>
+      <rect x="276" y="340" width="178" height="104" rx="14" fill="#eef4fc"/><text x="365" y="374" class="lbl-b">Pont-dalle</text><text x="365" y="400" class="lbl-s">PSI-DA, DP, DN</text>
+      <rect x="466" y="340" width="178" height="104" rx="14" fill="#eef4fc" stroke="#dc4a2c" stroke-width="0"/><text x="555" y="372" class="lbl-b">Poutres</text><text x="555" y="396" class="lbl-b">préfabriquées</text><text x="555" y="422" class="lbl-s">PRAD, VIPP, mixte</text>
+      <rect x="656" y="340" width="200" height="104" rx="14" fill="#e9f7f3"/><text x="756" y="374" class="lbl-b">VIPP, mixte,</text><text x="756" y="400" class="lbl-b">béquilles</text>
+      <rect x="890" y="340" width="220" height="104" rx="14" fill="#fdeee9"/><text x="1000" y="374" class="lbl-b">Caisson, arc,</text><text x="1000" y="400" class="lbl-b">câbles</text><text x="1000" y="424" class="lbl-s">(non courant)</text>
+    </g>
+    <g data-b="4" data-fx="pop"><rect x="466" y="340" width="178" height="104" rx="14" fill="none" stroke="#dc4a2c" stroke-width="3"/>
+      <rect x="470" y="450" width="170" height="20" rx="6" fill="#fbe5df"/><text x="555" y="465" text-anchor="middle" class="lbl-s" style="fill:#a33d22;font-size:15px">notre fil rouge</text></g>
+  </svg>
+</section>
+
+<!-- ═════════ 27. FIL ROUGE ═════════ -->
+<section class="slide" data-title="Notre fil rouge : quelle famille ?">
+  <div class="kicker">Le fil rouge</div>
+  <h2 class="t">Au-dessus des voies : <em>des poutres préfabriquées</em></h2>
+  <div class="split wide-v">
+    <div style="display:grid;gap:12px">
+      <div class="card" data-b="1" data-fx="left" style="padding:12px 16px"><h3 style="font-size:19px">Comment construire ?</h3><p style="font-size:17px">Ligne électrifiée en service : <b>pas de cintre</b> sur les voies, interruptions courtes de nuit.</p></div>
+      <div class="card" data-b="2" data-fx="left" style="padding:12px 16px"><h3 style="font-size:19px">Où mettre les appuis ?</h3><p style="font-size:17px">Pas de pile entre les voies : <b>une seule travée</b> d'environ 26 m.</p></div>
+      <div class="card gold" data-b="3" data-fx="left" style="padding:12px 16px"><h3 style="font-size:19px">Quel tablier ?</h3><p style="font-size:17px"><b>Poutres précontraintes préfabriquées</b> (PRAD ou VIPP), posées à la grue ; repli : bipoutre mixte.</p></div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 705 520" aria-label="Levage de nuit d'une poutre au-dessus des voies">
+        <defs><linearGradient id="c3s27-n" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1626"/><stop offset="1" stop-color="#2a3a5c"/></linearGradient>
+          <pattern id="c3s27-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#6d5c45"/><circle cx="3" cy="4" r="1.2" fill="#5a4a36"/></pattern></defs>
+        <rect width="705" height="520" rx="16" fill="url(#c3s27-n)"/>
+        <circle cx="610" cy="70" r="30" fill="#f4ecd0"/><circle cx="598" cy="62" r="30" fill="#141e33"/>
+        <g fill="#fff" opacity=".7"><circle cx="80" cy="50" r="1.5"/><circle cx="200" cy="90" r="1.2"/><circle cx="330" cy="40" r="1.5"/><circle cx="460" cy="110" r="1.2"/><circle cx="520" cy="30" r="1.4"/></g>
+        <path d="M0 260 H130 V520 H0Z M575 260 H705 V520 H575Z" fill="url(#c3s27-e)"/>
+        <rect y="440" width="705" height="80" fill="url(#c3s27-e)"/>
+        <rect x="130" y="290" width="26" height="150" fill="#9aa3ae"/><rect x="549" y="290" width="26" height="150" fill="#9aa3ae"/>
+        <g fill="#5c6470"><rect x="190" y="432" width="60" height="8"/><rect x="270" y="432" width="60" height="8"/></g>
+        <g fill="#7b7466"><rect x="380" y="432" width="60" height="8"/><rect x="460" y="432" width="60" height="8"/></g>
+        <g stroke="#7f8a96" stroke-width="2"><path d="M174 440 V340 M532 440 V340"/></g>
+        <path d="M174 352 H532" stroke="#9aa3ae" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <g data-b="1" data-fx="fade"><rect x="220" y="360" width="266" height="30" rx="8" fill="#12a08a" opacity=".9"/><text x="353" y="381" text-anchor="middle" class="lbl-w">caténaire hors tension</text></g>
+        <!-- grues -->
+        <rect x="20" y="226" width="80" height="34" rx="5" fill="#e8a020"/><rect x="605" y="226" width="80" height="34" rx="5" fill="#e8a020"/>
+        <path d="M60 226 L230 90 M645 226 L475 90" stroke="#e8a020" stroke-width="7"/>
+        <g data-b="3" data-fx="fade">
+          <path d="M230 90 V150 M475 90 V150" stroke="#e2c070" stroke-width="2"><animate attributeName="d" values="M230 90 V150 M475 90 V150;M230 90 V264 M475 90 V264;M230 90 V264 M475 90 V264;M230 90 V150 M475 90 V150" keyTimes="0;.5;.85;1" dur="6s" repeatCount="indefinite"/></path>
+          <rect x="140" y="150" width="425" height="26" fill="#cfd5dc" stroke="#6e7884"><animate attributeName="y" values="150;264;264;150" keyTimes="0;.5;.85;1" dur="6s" repeatCount="indefinite"/></rect>
+          <text x="353" y="60" text-anchor="middle" class="lbl-b" style="fill:#e2c070">levage de nuit</text>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M143 482 H562" stroke="#e2c070" stroke-width="2.4"/><path d="M143 472 V492 M562 472 V492" stroke="#e2c070" stroke-width="2.4"/>
+          <text x="353" y="508" text-anchor="middle" class="lbl-b" style="fill:#e2c070">une travée ≈ 26 m</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 28. MAROC ═════════ -->
+<section class="slide" data-title="Les familles au Maroc">
+  <div class="kicker">Sur le terrain</div>
+  <h2 class="t">Les familles de ponts <em>au Maroc</em></h2>
+  <div class="cols c2 c3-mar" style="gap:18px">
+    <div class="card gold" data-b="1" data-fx="up"><svg viewBox="0 0 240 110"><rect width="240" height="110" rx="10" fill="#fdf3e2"/><rect y="40" width="240" height="70" fill="#ead7bd"/><rect y="36" width="240" height="4" fill="#3c4049"/><path fill-rule="evenodd" d="M80 58 H160 V104 H80Z M90 66 V104 H150 V66Z" fill="#cfd5dc" stroke="#6e7884"/><g class="drive" style="--t:4s;--from:-40px;--to:260px"><rect x="0" y="24" width="30" height="12" rx="3" fill="#2f6fe0"/></g></svg><div><h3>Autoroutes</h3><p>Cadres, portiques, ponts-dalles et VIPP par centaines.</p></div></div>
+    <div class="card teal" data-b="2" data-fx="up"><svg viewBox="0 0 240 110"><rect width="240" height="110" rx="10" fill="#e9f7f3"/><rect y="20" width="240" height="90" fill="#ead7bd"/><rect y="16" width="240" height="4" fill="#3c4049"/><path fill-rule="evenodd" d="M70 104 V80 A 50 40 0 0 1 170 80 V104 H158 V82 A 38 30 0 0 0 82 82 V104 Z" fill="#cfd5dc" stroke="#6e7884"/></svg><div><h3>Voûtes</h3><p>Sous les grands remblais, par exemple sur l'autoroute Marrakech–Agadir.</p></div></div>
+    <div class="card blue" data-b="3" data-fx="up"><svg viewBox="0 0 240 110"><rect width="240" height="110" rx="10" fill="#eef4fc"/><rect x="0" y="40" width="240" height="10" fill="#cfd5dc"/><rect x="0" y="50" width="240" height="8" fill="#2f6fe0"/><g fill="#cfd5dc"><rect x="40" y="58" width="10" height="52"/><rect x="115" y="58" width="10" height="52"/><rect x="190" y="58" width="10" height="52"/></g><g class="drive" style="--t:3s;--from:-160px;--to:260px"><rect x="0" y="22" width="140" height="18" rx="5" fill="#e8a020"/></g></svg><div><h3>Viaducs ferroviaires</h3><p>Lignes ONCF et LGV : poutres précontraintes, tabliers mixtes…</p></div></div>
+    <div class="card red" data-b="4" data-fx="up"><svg viewBox="0 0 240 110"><rect width="240" height="110" rx="10" fill="#fdeee9"/><rect y="90" width="240" height="20" fill="#3d6d8f"/><path d="M120 6 V90" stroke="#6e7884" stroke-width="5"/><g stroke="#141a26" stroke-width="1"><path d="M120 12 L20 70 M120 20 L50 70 M120 28 L80 70 M120 12 L220 70 M120 20 L190 70 M120 28 L160 70"/></g><rect x="0" y="70" width="240" height="6" fill="#cfd5dc"/></svg><div><h3>Ouvrages exceptionnels</h3><p>Pont haubané Mohammed VI (2016), environ 950 m, travée de 376 m.</p></div></div>
+  </div>
+  <div class="callout b" style="margin-top:18px" data-b="5" data-fx="up"><span class="lab">Un choix guidé par le site</span>Le viaduc de l'oued Moulouya (autoroute Taza–Oujda) a été conçu en <b>mixte</b>, notamment à cause de fondations difficiles : un tablier léger soulage le sol.</div>
+</section>
+
+<!-- ═════════ 29. À RETENIR ═════════ -->
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">Synthèse</div>
+  <h2 class="t">À retenir</h2>
+  <ul class="b" style="margin-top:16px;max-width:1080px">
+    <li data-b="1" data-fx="left">On classe par <b>matériau</b>, par <b>fonctionnement</b> (flexion, compression, traction) et par <b>importance</b>.</li>
+    <li data-b="2" data-fx="left"><b>Non courant</b> : travée &gt; 40 m, longueur &gt; 100 m, surface &gt; 1 200 m², pont mobile ou pont-canal, ou difficultés particulières.</li>
+    <li data-b="3" data-fx="left">Ponts courants : <b>PICF</b> 2–12 m, <b>PIPO</b> 8–20 m, <b>PSI-DA/DP/DN</b> 8–35 m, <b>PRAD</b> 10–30 m, <b>VIPP</b> 30–50 m, <b>PSI-OM</b> 25–80 m.</li>
+    <li data-b="4" data-fx="left">Grands ouvrages : <b>caisson</b> 60–200 m, <b>arc</b> 50–500 m, <b>haubans</b> 150 à plus de 1 000 m, <b>suspendu</b> jusqu'à 2 023 m.</li>
+    <li data-b="5" data-fx="left">Fil rouge : pas de cintre au-dessus des voies → <b>poutres précontraintes préfabriquées</b>, une travée d'environ 26 m.</li>
+  </ul>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch4.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 4 : Concevoir un pont →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  document.querySelectorAll(".c3-sil").forEach(function (b) {
+    b.addEventListener("click", function () { b.classList.toggle("on"); });
+  });
+})();
+</script>
+</body>
+</html>
