@@ -299,37 +299,95 @@ details.sol .sol-b{padding:4px 18px 14px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* ─── PAGES COURTES ─── */
-@media screen{.pg-hide{display:none!important}}
-.pager-top{position:sticky;top:60px;z-index:50;margin:-6px 0 26px;padding:10px 14px 12px;background:rgba(247,245,239,.94);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px -18px rgba(20,23,31,.35)}
-.pager-top .pg-info{display:flex;align-items:baseline;gap:12px;margin-bottom:8px;min-width:0}
-.pager-top .pg-count{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
-.pager-top .pg-title{font-size:14px;color:var(--ink);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pager-top .pg-dots{display:flex;gap:4px}
-.pager-top .pg-dots button{flex:1;height:7px;border-radius:4px;border:none;padding:0;background:#e2ddd0;cursor:pointer;transition:background .2s,transform .2s}
-.pager-top .pg-dots button:hover{transform:scaleY(1.6)}
+/* ─── MODE DIAPOSITIVES ─── */
+@media screen{
+  .pg-hide{display:none!important}
+  body.paged .ch-head{display:none}
+  body.paged .site-nav .in{height:48px}
+  body.paged .reading-bar{top:48px}
+  body.paged{font-size:15.5px;line-height:1.6}
+  body.paged .layout{padding-top:10px;padding-bottom:16px;gap:36px}
+  body.paged .side{top:58px;max-height:calc(100vh - 66px)}
+  body.paged .site-foot{display:none}
+  body.paged article > section{margin-bottom:0}
+  body.paged article h2{font-size:clamp(24px,2.4vw,32px);margin-bottom:10px}
+  body.paged article h3{margin:14px 0 6px}
+  body.paged .lede{font-size:17px}
+  body.paged figure.fig{margin:12px 0 14px;padding:12px}
+  body.paged figure.fig svg{max-height:calc(100vh - 230px)}
+  body.paged figure.fig figcaption{margin-top:6px;font-size:13px}
+  body.paged .seq{margin:12px 0 14px}
+  body.paged .seq .seq-stage svg{max-height:calc(100vh - 330px)}
+  body.paged .seq .seq-cap{min-height:0;padding:9px 16px}
+  body.paged .v3d{margin:12px 0}
+  body.paged .v3d .stage{height:calc(100vh - 290px);min-height:300px}
+  body.paged .calc{margin:12px 0}
+  body.paged .calc .calc-fig svg{max-height:calc(100vh - 420px);min-height:160px}
+  body.paged .box{margin:12px 0}
+  body.paged .formula{margin:10px 0}
+  body.paged .tbl-wrap{margin:10px 0 12px}
+  body.paged .keys{margin:10px 0}
+  body.paged .quiz{margin:10px 0}
+}
+.pager-top{position:sticky;top:48px;z-index:50;margin:0 0 12px;padding:8px 12px 9px;background:rgba(247,245,239,.95);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px -18px rgba(20,23,31,.35)}
+.pager-top .pg-row{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:7px}
+.pager-top .pg-ch{flex:none;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--gold);padding:3px 9px;border-radius:7px;text-decoration:none}
+.pager-top .pg-chname{flex:none;max-width:30%;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pager-top .pg-sep{color:#c9b682}
+.pager-top .pg-title{flex:1;min-width:0;font-size:14px;color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pager-top .pg-count{flex:none;font-size:12px;color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.pager-top .pg-arrow{flex:none;width:30px;height:28px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;cursor:pointer;color:var(--ink)}
+.pager-top .pg-arrow:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.pager-top .pg-arrow:disabled{opacity:.35;cursor:default}
+.pager-top .pg-pdf{flex:none;font:inherit;font-size:11.5px;font-weight:500;padding:5px 9px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--gold);cursor:pointer}
+.pager-top .pg-pdf:hover{background:var(--gold);color:#fff}
+.pager-top .pg-dots{display:flex;gap:3px}
+.pager-top .pg-dots button{flex:1;height:5px;border-radius:3px;border:none;padding:0;background:#e2ddd0;cursor:pointer;transition:background .2s,transform .2s}
+.pager-top .pg-dots button:hover{transform:scaleY(1.8)}
 .pager-top .pg-dots button.done{background:#c9b682}
 .pager-top .pg-dots button.on{background:var(--teal)}
-.pager-bottom{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:34px 0 10px}
-.pager-bottom button{font:inherit;font-size:14.5px;padding:13px 18px;border-radius:12px;cursor:pointer;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pager-bottom{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:16px 0 4px}
+.pager-bottom button{font:inherit;font-size:14px;padding:10px 16px;border-radius:11px;cursor:pointer;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pager-bottom .pg-prev{justify-self:start;max-width:100%;background:#fff;border:1px solid var(--line);color:var(--ink-soft)}
 .pager-bottom .pg-next{justify-self:end;max-width:100%;background:var(--ink);border:1px solid var(--ink);color:#fff}
 .pager-bottom .pg-next:hover{background:#26304a}
 .pager-bottom .pg-prev:hover{border-color:var(--gold)}
 .pager-bottom .pg-mid{font-size:12px;color:var(--mute);letter-spacing:.08em}
-body.paged article > section{margin-bottom:28px}
-body.paged .ch-nav{margin-top:14px}
+/* quiz : une question à la fois */
+.quiz.one .q{display:none}
+.quiz.one .q.q-cur{display:block}
+.quiz .q-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;border-top:1px solid var(--line);background:#fafaf7}
+.quiz .q-nav button{font:inherit;font-size:13.5px;padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink-soft)}
+.quiz .q-nav button.q-next{background:var(--teal);border-color:var(--teal);color:#fff}
+.quiz .q-nav button:disabled{opacity:.35;cursor:default}
+.quiz .q-pos{font-size:12.5px;color:var(--mute)}
+@media(max-width:980px){
+  .pager-top .pg-chname,.pager-top .pg-sep{display:none}
+  body.paged .side{top:48px;max-height:none}
+}
 @media(max-width:640px){
-  .pager-top{top:60px;margin:-4px -4px 18px;padding:8px 10px 10px}
+  .pager-top{margin:0 -4px 10px;padding:7px 9px 8px}
+  .pager-top .pg-pdf{display:none}
   .pager-bottom{grid-template-columns:1fr 1fr;gap:10px}
   .pager-bottom .pg-mid{display:none}
-  .pager-bottom button{font-size:13.5px;padding:12px 12px}
+  .pager-bottom button{font-size:13px;padding:11px 11px}
+  body.paged figure.fig svg{max-height:none}
 }
-@media print{.pager-top,.pager-bottom{display:none!important}}
-
-/* en-tête de chapitre compact */
-.ch-head{padding:30px 3vw 26px}
-.ch-num{font-size:clamp(64px,8vw,104px)}
-.ch-head h1{font-size:clamp(30px,3.6vw,46px)}
-.ch-art{width:min(440px,40vw)}
-.layout{padding-top:24px}
+@media print{.pager-top,.pager-bottom,.q-nav{display:none!important}.quiz.one .q{display:block!important}}
+/* calculatrices en diapositive : saisie | résultats | schéma côte à côte */
+@media screen and (min-width:1200px){
+  body.paged .calc .calc-b{grid-template-columns:minmax(0,.95fr) minmax(0,1fr) minmax(0,1.15fr)}
+  body.paged .calc .calc-fig{grid-column:auto;border-top:none;border-left:1px solid var(--line);display:flex;align-items:center}
+  body.paged .calc .calc-fig svg{max-height:calc(100vh - 250px);min-height:0}
+  body.paged .calc .inputs{padding:12px 14px;gap:8px 10px}
+  body.paged .calc .out{padding:12px 14px;font-size:13.5px;border-right:1px solid var(--line)}
+  body.paged .calc .calc-b > .out:last-child{border-right:none}
+  body.paged .calc .res{padding:4px 0}
+  body.paged .calc input,body.paged .calc select{padding:5px 8px;font-size:14px}
+  body.paged .calc .steps{max-height:calc(100vh - 470px);min-height:90px;overflow:auto}
+}
+@media screen and (min-width:981px){
+  body.paged .layout{grid-template-columns:220px minmax(0,1fr);max-width:1500px}
+  body.paged article{max-width:1180px}
+  body.paged .side{font-size:12.5px}
+}

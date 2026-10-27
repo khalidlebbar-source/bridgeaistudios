@@ -116,77 +116,92 @@
   }
 
 
-  /* ── découpage en pages courtes (≈ 2 écrans) ── */
+  /* ── mode « diapositives » : une page = un écran ── */
   function paginate() {
     const art = $("article");
     if (!art || document.body.dataset.paged === "no") return;
     const secs = $$(":scope > section", art);
     if (secs.length < 2) return;
-    const target = Math.max(1100, Math.min(1700, innerHeight * 1.9));
-    // 1. morceaux : chaque h2 et chaque h3 « de premier niveau » ouvre un morceau
-    const chunks = [];
-    secs.forEach((sec, si) => {
-      let cur = null;
-      Array.from(sec.children).forEach(ch => {
-        const isQuiz = ch.matches(".quiz");
-        const head = ch.tagName === "H2" || ch.tagName === "H3" || isQuiz;
-        if (!cur || (head && cur.els.length)) {
-          cur = { sec: si, els: [], h2: ch.tagName === "H2", title: head && !isQuiz ? ch : null, force: isQuiz, quiz: isQuiz };
-          chunks.push(cur);
-        }
-        cur.els.push(ch);
-      });
-    });
-    chunks.forEach(c => {
-      c.h = c.els.reduce((a, e) => a + e.offsetHeight + 16, 0);
-      if (!c.title) c.title = c.els[0].closest("section").querySelector("h2");
-    });
-    // 2. regroupement : nouvelle page à chaque section, et à un h3 si la page devient trop longue
-    const pages = [];
-    let pg = null;
-    chunks.forEach(c => {
-      const newSec = !pg || c.sec !== pg.sec;
-      const small = pg && pg.h < 420;
-      if (!pg || c.force || (newSec && !small) || (!newSec && pg.h + c.h > target && pg.h > 380)) {
-        pg = { sec: c.sec, h: 0, chunks: [], title: c.title, quiz: c.quiz };
-        pages.push(pg);
-      }
-      if (newSec) pg.sec = c.sec;
-      pg.chunks.push(c); pg.h += c.h;
-    });
-    if (pages.length < 2) return;
-    pages.forEach((p, k) => p.chunks.forEach(c => c.els.forEach(e => { e.dataset.pg = k; })));
-    const N = pages.length;
-    const label = p => {
-      const h = p.title;
-      if (!h) return "Introduction";
-      if (h.closest(".keys")) return "À retenir";
-      return h.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim();
-    };
-    pages.forEach((p, k) => {
-      const e0 = p.chunks[0].els[0];
-      p.label = p.quiz ? "Quiz : testez-vous" : e0.matches(".keys") ? "À retenir" : (k === 0 && !e0.matches("h2,h3")) ? "Introduction" : label(p);
-    });
-
-    // 3. interface : bandeau de progression + boutons
     document.body.classList.add("paged");
+    const chInfo = COURS[idx] || { n: "", t: document.title };
+    const pdfBtn = $("[data-print]");
+
+    // barre supérieure : chapitre + page + points + flèches
     const top = el("div", { class: "pager-top" });
-    top.innerHTML = `<div class="pg-info"><span class="pg-count"></span><span class="pg-title"></span></div>
-      <div class="pg-dots">${pages.map((p, k) => `<button type="button" title="${(k + 1) + ". " + p.label.replace(/"/g, "&quot;")}" aria-label="Page ${k + 1}"></button>`).join("")}</div>`;
+    top.innerHTML = `<div class="pg-row">
+        <a class="pg-ch" href="${ROOT}etudiants.html" title="Tous les chapitres">${chInfo.n === "F" ? "Formulaire" : "Ch. " + chInfo.n}</a>
+        <span class="pg-chname">${chInfo.t}</span>
+        <span class="pg-sep">›</span>
+        <span class="pg-title"></span>
+        <span class="pg-count"></span>
+        <button type="button" class="pg-arrow pg-a-prev" aria-label="Page précédente">‹</button>
+        <button type="button" class="pg-arrow pg-a-next" aria-label="Page suivante">›</button>
+        <button type="button" class="pg-pdf" title="Télécharger le chapitre en PDF">PDF</button>
+      </div><div class="pg-dots"></div>`;
     art.prepend(top);
+    $(".pg-pdf", top).addEventListener("click", () => { if (pdfBtn) pdfBtn.click(); else window.print(); });
     const bottom = el("div", { class: "pager-bottom" });
     bottom.innerHTML = `<button type="button" class="pg-prev">← <span></span></button><span class="pg-mid"></span><button type="button" class="pg-next"><span></span> →</button>`;
     const chNav = $(".ch-nav", art);
     art.insertBefore(bottom, chNav || null);
-    const dots = $$(".pg-dots button", top);
-    let k = 0;
-    function show(n, scrollTo) {
+
+    let pages = [], N = 0, k = 0;
+    const blocks = [];
+    secs.forEach((sec, si) => Array.from(sec.children).forEach(e => blocks.push({ e, si })));
+    const hOf = e => {
+      const cs = getComputedStyle(e);
+      return e.getBoundingClientRect().height + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+    };
+    const isHead = e => /^H[234]$/.test(e.tagName);
+    const labelOf = (pgBlocks) => {
+      const e0 = pgBlocks[0].e;
+      if (e0.matches(".quiz")) return "Quiz : testez-vous";
+      if (e0.matches(".keys")) return "À retenir";
+      const h = pgBlocks.map(b => b.e).find(e => /^H[23]$/.test(e.tagName));
+      if (h) return h.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim();
+      const h2 = e0.closest("section").querySelector("h2");
+      return h2 ? h2.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim() + " (suite)" : "Introduction";
+    };
+
+    function layout() {
+      // tout afficher pour mesurer
+      $$(".pg-hide", art).forEach(e => e.classList.remove("pg-hide"));
+      bottom.style.display = "none";
+      const avail = innerHeight - (innerWidth < 980 ? 150 : 160);
+      const T = Math.max(460, avail);
+      blocks.forEach(b => { b.h = hOf(b.e); });
+      pages = [];
+      let pg = null;
+      for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        // un titre reste collé au bloc suivant
+        let h = b.h;
+        if (isHead(b.e) && blocks[i + 1] && blocks[i + 1].si === b.si) h += Math.min(blocks[i + 1].h, T * .6);
+        const newSec = pg && b.si !== pg.si;
+        const force = b.e.matches(".quiz,.keys") || (newSec && pg.h > T * .45) || (newSec && b.e.tagName === "H2" && pg.h + h > T * .8);
+        if (!pg || force || (pg.h + h > T && pg.h > T * .2)) {
+          pg = { si: b.si, h: 0, blocks: [] };
+          pages.push(pg);
+        }
+        pg.si = b.si;
+        pg.blocks.push(b); pg.h += b.h;
+      }
+      pages.forEach((p, n) => { p.label = labelOf(p.blocks); p.blocks.forEach(b => { b.e.dataset.pg = n; }); });
+      N = pages.length;
+      $(".pg-dots", top).innerHTML = pages.map((p, n) => `<button type="button" title="${(n + 1) + ". " + p.label.replace(/"/g, "&quot;")}" aria-label="Page ${n + 1}"></button>`).join("");
+      $$(".pg-dots button", top).forEach((d, i) => d.addEventListener("click", () => go(i)));
+      bottom.style.display = "";
+    }
+
+    function show(n, scrollTop) {
       k = Math.max(0, Math.min(N - 1, n));
       $$("[data-pg]", art).forEach(e => e.classList.toggle("pg-hide", +e.dataset.pg !== k));
       secs.forEach(sec => sec.classList.toggle("pg-hide", !$$(":scope > [data-pg]", sec).some(e => +e.dataset.pg === k)));
-      dots.forEach((d, i) => { d.classList.toggle("on", i === k); d.classList.toggle("done", i < k); });
-      $(".pg-count", top).textContent = `Page ${k + 1} / ${N}`;
+      $$(".pg-dots button", top).forEach((d, i) => { d.classList.toggle("on", i === k); d.classList.toggle("done", i < k); });
+      $(".pg-count", top).textContent = `${k + 1} / ${N}`;
       $(".pg-title", top).textContent = pages[k].label;
+      $(".pg-a-prev", top).disabled = k === 0;
+      $(".pg-a-next", top).disabled = k === N - 1;
       const pv = $(".pg-prev", bottom), nx = $(".pg-next", bottom);
       pv.style.visibility = k ? "visible" : "hidden";
       nx.style.display = k < N - 1 ? "" : "none";
@@ -194,31 +209,38 @@
       if (k < N - 1) $("span", nx).textContent = pages[k + 1].label;
       $(".pg-mid", bottom).textContent = `${k + 1} / ${N}`;
       if (chNav) chNav.classList.toggle("pg-hide", k < N - 1);
+      document.body.classList.toggle("pg-last", k === N - 1);
       const bar = $(".reading-bar");
       if (bar) bar.style.width = ((k + 1) / N * 100) + "%";
-      // sommaire latéral
       $$(".side .toc a").forEach(a => {
         const t = document.getElementById(a.getAttribute("href").slice(1));
         a.classList.toggle("on", !!t && +((t.closest("[data-pg]") || {}).dataset || {}).pg === k);
       });
       try { history.replaceState(null, "", "#p" + (k + 1)); } catch (e) {}
-      if (scrollTo) {
-        const y = art.getBoundingClientRect().top + scrollY - 70;
-        if (scrollY > y) window.scrollTo({ top: y, behavior: "auto" });
-      }
+      if (scrollTop) window.scrollTo({ top: 0, behavior: "auto" });
       window.dispatchEvent(new Event("resize"));
       document.dispatchEvent(new CustomEvent("cours:page", { detail: k }));
     }
-    const go = n => { show(n, true); };
+    function go(n) { show(n, true); }
     $(".pg-prev", bottom).addEventListener("click", () => go(k - 1));
     $(".pg-next", bottom).addEventListener("click", () => go(k + 1));
-    dots.forEach((d, i) => d.addEventListener("click", () => go(i)));
+    $(".pg-a-prev", top).addEventListener("click", () => go(k - 1));
+    $(".pg-a-next", top).addEventListener("click", () => go(k + 1));
     addEventListener("keydown", e => {
       if (e.target.closest && e.target.closest("input,select,textarea")) return;
-      if (e.key === "ArrowRight") go(k + 1);
-      if (e.key === "ArrowLeft") go(k - 1);
+      if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); go(k + 1); }
+      if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(k - 1); }
     });
-    // liens internes (sommaire, renvois) : ouvrir la bonne page
+    // balayage gauche / droite sur écran tactile
+    let tx = null, ty = null;
+    art.addEventListener("touchstart", e => { if (e.target.closest(".v3d,.calc,input,.seq-stage,svg")) { tx = null; return; } tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+    art.addEventListener("touchend", e => {
+      if (tx === null) return;
+      const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) go(k + (dx < 0 ? 1 : -1));
+      tx = null;
+    }, { passive: true });
+    // liens internes
     document.addEventListener("click", e => {
       const a = e.target.closest && e.target.closest('a[href^="#"]');
       if (!a) return;
@@ -228,16 +250,28 @@
       if (!host) return;
       e.preventDefault();
       show(+host.dataset.pg);
-      requestAnimationFrame(() => window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }));
+      requestAnimationFrame(() => window.scrollTo({ top: Math.max(0, t.getBoundingClientRect().top + scrollY - 110), behavior: "smooth" }));
       document.body.classList.remove("side-open");
     });
-    // page de départ
+    // relayout si la fenêtre change nettement de taille
+    let lastW = innerWidth, lastH = innerHeight, rt = null;
+    addEventListener("resize", () => {
+      if (Math.abs(innerWidth - lastW) < 80 && Math.abs(innerHeight - lastH) < 120) return;
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        lastW = innerWidth; lastH = innerHeight;
+        const anchor = pages[k] && pages[k].blocks[0].e;
+        layout();
+        show(anchor ? +anchor.dataset.pg : 0);
+      }, 350);
+    });
+    layout();
     let start = 0;
     const h = location.hash.slice(1);
     if (/^p\d+$/.test(h)) start = +h.slice(1) - 1;
     else if (h && document.getElementById(h)) { const host = document.getElementById(h).closest("[data-pg]"); if (host) start = +host.dataset.pg; }
     show(start);
-    window.Cours.page = { show, count: N };
+    window.Cours.page = { show, get count() { return N; } };
   }
 
   /* ── précédent / suivant ── */
@@ -310,9 +344,26 @@
             if (i === good) { b.classList.add("ok"); score++; }
             else { b.classList.add("ko"); btns[good].classList.add("ok"); }
             $(".score", head).textContent = `${score} / ${qs.length}` + (answered === qs.length ? (score === qs.length ? " — parfait !" : score >= qs.length * .6 ? " — bien" : " — à revoir") : "");
+            if (nav) upd();
           });
         });
       });
+      // une question à la fois
+      let nav = null, qi = 0;
+      if (qs.length > 2) {
+        qz.classList.add("one");
+        nav = el("div", { class: "q-nav" }, `<button type="button" class="q-prev">← Précédente</button><span class="q-pos"></span><button type="button" class="q-next">Question suivante →</button>`);
+        qz.append(nav);
+        $(".q-prev", nav).addEventListener("click", () => { qi = Math.max(0, qi - 1); upd(); });
+        $(".q-next", nav).addEventListener("click", () => { qi = Math.min(qs.length - 1, qi + 1); upd(); });
+      }
+      function upd() {
+        qs.forEach((q, i) => q.classList.toggle("q-cur", i === qi));
+        $(".q-pos", nav).textContent = `Question ${qi + 1} / ${qs.length}`;
+        $(".q-prev", nav).disabled = qi === 0;
+        $(".q-next", nav).disabled = qi === qs.length - 1;
+      }
+      if (nav) upd();
     });
   }
 
