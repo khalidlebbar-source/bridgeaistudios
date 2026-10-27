@@ -87,7 +87,7 @@
     $$("h2, h3", art).forEach(h => {
       if (h.closest(".keys,.quiz,.calc,.box,details")) return;
       if (!h.id) h.id = "s" + (++k) + "-" + h.textContent.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").slice(0, 40);
-      const txt = h.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim();
+      const txt = h.textContent.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim();
       html += `<li><a href="#${h.id}" class="${h.tagName === "H3" ? "sub" : ""}">${txt}</a></li>`;
     });
     html += `</ul>`;
@@ -147,7 +147,11 @@
 
     let pages = [], N = 0, k = 0;
     const blocks = [];
-    secs.forEach((sec, si) => Array.from(sec.children).forEach(e => blocks.push({ e, si })));
+    secs.forEach((sec, si) => Array.from(sec.children).forEach(e => {
+      // une grille de fiches se découpe fiche par fiche
+      if (e.matches(".fo-grid, [data-split]")) { e.dataset.pgGrid = 1; Array.from(e.children).forEach(c => blocks.push({ e: c, si, grid: e })); }
+      else blocks.push({ e, si });
+    }));
     const hOf = e => {
       const cs = getComputedStyle(e);
       return e.getBoundingClientRect().height + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
@@ -158,45 +162,68 @@
       if (e0.matches(".quiz")) return "Quiz : testez-vous";
       if (e0.matches(".keys")) return "À retenir";
       const h = pgBlocks.map(b => b.e).find(e => /^H[23]$/.test(e.tagName));
-      if (h) return h.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim();
+      if (h) return h.textContent.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim();
       const h2 = e0.closest("section").querySelector("h2");
-      return h2 ? h2.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim() + " (suite)" : "Introduction";
+      return h2 ? h2.textContent.replace(/^\s*F?\d+(\.\d+)*\s*/, "").trim() + " (suite)" : "Introduction";
     };
 
     function layout() {
-      // tout afficher pour mesurer
-      $$(".pg-hide", art).forEach(e => e.classList.remove("pg-hide"));
-      bottom.style.display = "none";
-      const avail = innerHeight - (innerWidth < 980 ? 150 : 160);
-      const T = Math.max(460, avail);
-      blocks.forEach(b => { b.h = hOf(b.e); });
+      // découpage par mesure réelle : on remplit l'écran bloc par bloc
+      const grids = $$("[data-pg-grid]", art);
+      blocks.forEach(b => b.e.classList.add("pg-hide"));
+      grids.forEach(g => g.classList.add("pg-hide"));
+      secs.forEach(sec => sec.classList.add("pg-hide"));
+      if (chNav) chNav.classList.add("pg-hide");
+      bottom.style.display = "";
+      $(".pg-title", top).textContent = "…";
+      const limit = innerHeight - 12;
+      const fits = () => art.getBoundingClientRect().bottom + scrollY <= limit;
+      const vis = b => { b.e.classList.remove("pg-hide"); if (b.grid) b.grid.classList.remove("pg-hide"); b.e.closest("section").classList.remove("pg-hide"); };
+      const hide = b => b.e.classList.add("pg-hide");
+      const close = pg => {
+        pg.blocks.forEach(hide);
+        grids.forEach(g => g.classList.add("pg-hide"));
+        secs.forEach(sec => sec.classList.add("pg-hide"));
+      };
       pages = [];
       let pg = null;
+      const open = () => { if (pg) close(pg); pg = { blocks: [], si: -1 }; pages.push(pg); };
       for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i];
-        // un titre reste collé au bloc suivant
-        let h = b.h;
-        if (isHead(b.e) && blocks[i + 1] && blocks[i + 1].si === b.si) h += Math.min(blocks[i + 1].h, T * .6);
-        const newSec = pg && b.si !== pg.si;
-        const force = b.e.matches(".quiz,.keys") || (newSec && pg.h > T * .45) || (newSec && b.e.tagName === "H2" && pg.h + h > T * .8);
-        if (!pg || force || (pg.h + h > T && pg.h > T * .2)) {
-          pg = { si: b.si, h: 0, blocks: [] };
-          pages.push(pg);
-        }
+        const used = pg ? art.getBoundingClientRect().height / innerHeight : 0;
+        const newSec = pg && pg.blocks.length && b.si !== pg.si;
+        if (!pg || b.e.matches(".quiz,.keys") || (newSec && used > .5)) open();
         pg.si = b.si;
-        pg.blocks.push(b); pg.h += b.h;
+        vis(b);
+        let ok = fits();
+        // un titre ne reste jamais seul en bas de page
+        if (ok && isHead(b.e) && pg.blocks.length && blocks[i + 1] && blocks[i + 1].si === b.si) {
+          vis(blocks[i + 1]); ok = fits(); hide(blocks[i + 1]);
+        }
+        if (!ok && pg.blocks.length) {
+          hide(b);
+          // si la page se termine par un titre, on l'emporte avec nous
+          const carry = [];
+          while (pg.blocks.length > 1 && isHead(pg.blocks[pg.blocks.length - 1].e)) carry.unshift(pg.blocks.pop());
+          open();
+          carry.forEach(c => { vis(c); pg.blocks.push(c); });
+          pg.si = b.si;
+          vis(b);
+        }
+        pg.blocks.push(b);
       }
+      close(pg);
       pages.forEach((p, n) => { p.label = labelOf(p.blocks); p.blocks.forEach(b => { b.e.dataset.pg = n; }); });
       N = pages.length;
       $(".pg-dots", top).innerHTML = pages.map((p, n) => `<button type="button" title="${(n + 1) + ". " + p.label.replace(/"/g, "&quot;")}" aria-label="Page ${n + 1}"></button>`).join("");
       $$(".pg-dots button", top).forEach((d, i) => d.addEventListener("click", () => go(i)));
-      bottom.style.display = "";
     }
 
     function show(n, scrollTop) {
       k = Math.max(0, Math.min(N - 1, n));
       $$("[data-pg]", art).forEach(e => e.classList.toggle("pg-hide", +e.dataset.pg !== k));
-      secs.forEach(sec => sec.classList.toggle("pg-hide", !$$(":scope > [data-pg]", sec).some(e => +e.dataset.pg === k)));
+      $$("[data-pg-grid]", art).forEach(g => g.classList.toggle("pg-hide", !Array.from(g.children).some(e => +e.dataset.pg === k)));
+      secs.forEach(sec => sec.classList.toggle("pg-hide", !$$("[data-pg]", sec).some(e => +e.dataset.pg === k)));
       $$(".pg-dots button", top).forEach((d, i) => { d.classList.toggle("on", i === k); d.classList.toggle("done", i < k); });
       $(".pg-count", top).textContent = `${k + 1} / ${N}`;
       $(".pg-title", top).textContent = pages[k].label;
@@ -246,7 +273,7 @@
       if (!a) return;
       const id = decodeURIComponent(a.getAttribute("href").slice(1));
       const t = id && document.getElementById(id);
-      const host = t && t.closest("[data-pg]");
+      const host = t && (t.closest("[data-pg]") || t.querySelector("[data-pg]"));
       if (!host) return;
       e.preventDefault();
       show(+host.dataset.pg);

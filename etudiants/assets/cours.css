@@ -391,3 +391,8 @@ details.sol .sol-b{padding:4px 18px 14px}
   body.paged article{max-width:1180px}
   body.paged .side{font-size:12.5px}
 }
+
+/* recherche dans le formulaire : tout réafficher */
+@media screen{body.pg-search .pg-hide:not(.hide){display:revert!important}body.pg-search .pager-top,body.pg-search .pager-bottom{display:none!important}}
+body.paged .fo-tools{position:static;padding:6px 0 8px}
+body.paged article{align-self:start}

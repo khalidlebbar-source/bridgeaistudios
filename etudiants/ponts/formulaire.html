@@ -61,7 +61,7 @@
   }
 </style>
 </head>
-<body data-ch="formulaire" data-paged="no">
+<body data-ch="formulaire">
 
 <header class="ch-head">
   <div class="in">
@@ -691,6 +691,17 @@
   q.addEventListener("keydown", function (e) { if (e.key === "Escape") { q.value = ""; filter(); } });
   addEventListener("beforeprint", function () { if (q.value) { q.value = ""; filter(); } });
   filter();
+})();
+</script>
+<script>
+(function () {
+  var inp = document.querySelector(".fo-tools input");
+  if (!inp) return;
+  inp.addEventListener("input", function () {
+    var on = inp.value.trim().length > 0;
+    document.body.classList.toggle("pg-search", on);
+    if (!on && window.Cours && Cours.page) Cours.page.show(0);
+  });
 })();
 </script>
 </body>
