@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 7 — Charges et règlements · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 7 : charges sur les ponts et règlements. Fascicule 61 titre II (largeur chargeable, classes, A(l), Bc, Bt, Br, δ, Mc80, Mc120, Me80, Me120, convois D et E, trottoirs, freinage, vent, température), ferroviaire LM71, Eurocode LM1, combinaisons ELU et ELS, exemple complet et calculatrice de δ.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch7.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+[data-fx="drivein"]{--fx:c7-drivein}
+.slide.on [data-fx="drivein"].go{animation-duration:1.6s;animation-timing-function:cubic-bezier(.25,.7,.3,1)}
+@keyframes c7-drivein{from{opacity:1;transform:translateX(-760px)}to{opacity:1;transform:none}}
+.c7-brake{animation:c7-brake 4.5s cubic-bezier(.2,.7,.3,1) infinite}
+@keyframes c7-brake{0%{transform:translateX(-520px)}55%{transform:none}100%{transform:none}}
+.c7-halo{paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:5px;stroke-linejoin:round}
+.c7-calc{display:grid;grid-template-columns:370px 1fr;gap:22px;height:calc(100% - 92px)}
+.c7-in{display:flex;flex-direction:column;gap:9px}
+.c7-in label{display:flex;flex-direction:column;gap:3px;font-size:15px;color:var(--mute)}
+.c7-in .row{display:flex;gap:8px;align-items:center}
+.c7-in select,.c7-in input[type=number]{font:inherit;font-size:16px;color:var(--ink);padding:6px 9px;border:1px solid #d9d3c3;border-radius:9px;background:#fff;width:100%}
+.c7-in .row input[type=number]{width:96px;flex:none}
+.c7-in input[type=range]{flex:1;accent-color:var(--gold)}
+.c7-in .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.c7-res{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:3px}
+.c7-res div{display:flex;justify-content:space-between;gap:10px;font-size:16px;color:var(--ink2);border-bottom:1px dashed #ece6d8;padding:3px 0}
+.c7-res div:last-child{border:none}
+.c7-res b{color:var(--ink);font-weight:500;text-align:right}
+.c7-res .tot b{color:var(--gold);font-size:24px}
+.c7-out{display:flex;flex-direction:column;gap:10px;min-width:0}
+.c7-out svg{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:#fbfaf6}
+.c7-steps{font-size:16px;line-height:1.5;color:var(--ink2);background:#fbf5e4;border-left:5px solid var(--gold);border-radius:10px;padding:9px 14px}
+.c7-steps .w{color:#a33d22;display:block;margin-top:3px}
+.c7-hide{display:none!important}
+.c7-stk{position:relative}
+.c7-stk>div{position:absolute;left:0;right:0;top:0}
+table.tb.c7-t td,table.tb.c7-t th{padding:8px 12px;font-size:17px}
+table.tb.c7-t th{font-size:15px}
+table.tb.c7-t td.c{text-align:center}
+.c7-chips{display:flex;gap:10px;flex-wrap:wrap}
+.c7-chips .pill{font-size:17px;padding:7px 16px}
+</style>
+</head>
+<body data-ch="ch7">
+<div class="deck">
+
+<!-- ═════════ 1. COUVERTURE ═════════ -->
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">7</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 7</div>
+  <h1 data-a data-fx="up" data-d=".15">Charges et <em>règlements</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35">Embouteillages, camions, chars, convois, freinage, vent, trains : ce qu'un pont doit porter pendant un siècle, et comment le règlement le décrit.</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="c7s1-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22314f"/><stop offset="1" stop-color="#0c1424"/></linearGradient>
+      <marker id="c7s1-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+    <rect y="222" width="1280" height="38" fill="url(#c7s1-g)"/>
+    <rect x="0" y="150" width="1280" height="18" fill="#b9c2cc"/>
+    <rect x="0" y="144" width="1280" height="6" fill="#3c4049"/>
+    <g fill="#8b95a3"><rect x="300" y="168" width="22" height="54"/><rect x="700" y="168" width="22" height="54"/><rect x="1100" y="168" width="22" height="54"/></g>
+    <!-- charge répartie A(l) -->
+    <g data-a data-fx="down" data-d=".6" stroke="#dc4a2c" stroke-width="2">
+      <path d="M760 74 H1060" />
+      <path d="M770 76 V136 M800 76 V136 M830 76 V136 M860 76 V136 M890 76 V136 M920 76 V136 M950 76 V136 M980 76 V136 M1010 76 V136 M1040 76 V136" marker-end="url(#c7s1-r)" class="flow"/>
+    </g>
+    <text x="910" y="62" text-anchor="middle" class="lbl-s" style="fill:#f0a08c" data-a data-fx="fade" data-d=".9">A(l)</text>
+    <!-- camion Bc -->
+    <g class="drive" style="--t:9s;--from:-200px;--to:1300px">
+      <rect x="0" y="112" width="70" height="26" rx="3" fill="#e9eef3"/><path d="M72 138 V120 q0 -6 6 -6 h14 q8 0 10 10 V138 Z" fill="#dc4a2c"/>
+      <circle cx="18" cy="140" r="5" fill="#141a26"/><circle cx="32" cy="140" r="5" fill="#141a26"/><circle cx="88" cy="140" r="5" fill="#141a26"/>
+    </g>
+    <!-- char -->
+    <g class="drive" style="--t:16s;--from:-500px;--to:1300px">
+      <rect x="0" y="126" width="80" height="16" rx="8" fill="#5b3aa0"/><rect x="16" y="112" width="44" height="16" rx="4" fill="#7a52c7"/><rect x="58" y="117" width="40" height="5" fill="#7a52c7"/>
+    </g>
+  </svg>
+</section>
+
+<!-- ═════════ 2. OBJECTIFS ═════════ -->
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:34px">
+    <div class="card gold" data-b="1" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><circle cx="16" cy="16" r="5"/><path d="M16 4v7M16 21v7M4 16h7M21 16h7"/></svg></div>
+      <h3>Inventorier</h3><p>Permanentes, variables, différées, exceptionnelles : rien n'est oublié.</p></div>
+    <div class="card teal" data-b="2" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M4 22h24M8 22V12M24 22V12M12 17h8"/></svg></div>
+      <h3>Lire la chaussée</h3><p>Largeur roulable, chargeable, nombre de voies, classe du pont.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><rect x="3" y="11" width="18" height="9" rx="1"/><path d="M21 13h5l3 4v3h-8z"/><circle cx="9" cy="23" r="2.5"/><circle cx="24" cy="23" r="2.5"/></svg></div>
+      <h3>Placer les charges</h3><p>A(l), Bc, Bt, Br, chars, convois, avec le coefficient δ.</p></div>
+    <div class="card red" data-b="4" data-fx="up">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><path d="M6 8h20M6 16h20M6 24h12"/><path d="M22 21l3 3 5-6"/></svg></div>
+      <h3>Combiner</h3><p>Pondérer aux ELU et aux ELS, trouver le cas qui dimensionne.</p></div>
+  </div>
+  <div class="callout t" style="margin-top:34px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Après l'avoir prédimensionné au chapitre 6, nous dressons l'<b>inventaire des charges</b> de notre pont routier sur la voie ferrée.</div>
+</section>
+
+<!-- ═════════ 3. SECTION 01 ═════════ -->
+<section class="slide section" data-title="Partie 1 — L'inventaire et les règlements">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">01</div>
+    <h2 data-a data-fx="up" data-d=".15">L'inventaire et les règlements</h2>
+    <p data-a data-fx="up" data-d=".3">Les charges ne s'inventent pas : elles sont fixées par un <b style="color:#e2c070">règlement de charges</b>. Au Maroc, pour les ponts-routes, c'est encore très souvent le fascicule 61 titre II.</p>
+  </div>
+</section>
+
+<!-- ═════════ 4. CARTE MENTALE ═════════ -->
+<section class="slide" data-title="La famille des charges">
+  <div class="kicker">L'inventaire</div>
+  <h2 class="t">La grande famille <em>des actions</em></h2>
+  <svg class="full" viewBox="0 0 1150 500" aria-label="Carte mentale des actions sur un pont">
+    <g stroke-width="3" fill="none">
+      <path d="M500 220 L380 110" stroke="#b8902f" data-b="1" data-fx="draw"/>
+      <path d="M650 220 L800 110" stroke="#dc4a2c" data-b="2" data-fx="draw"/>
+      <path d="M500 290 L380 380" stroke="#12a08a" data-b="3" data-fx="draw"/>
+      <path d="M650 290 L800 380" stroke="#7a52c7" data-b="4" data-fx="draw"/>
+    </g>
+    <g data-a data-fx="zoom">
+      <circle cx="575" cy="255" r="92" fill="#141a26"/>
+      <path d="M520 290 H630 M528 290 V306 M622 290 V306 M528 306 Q575 280 622 306" stroke="#e2c070" stroke-width="3" fill="none"/>
+      <text x="575" y="236" text-anchor="middle" class="lbl-b" style="fill:#e2c070">Actions</text>
+      <text x="575" y="262" text-anchor="middle" class="lbl-w">sur un pont</text>
+    </g>
+    <!-- G -->
+    <g data-b="1" data-fx="pop">
+      <rect x="160" y="40" width="240" height="66" rx="16" fill="#b8902f"/>
+      <text x="280" y="70" text-anchor="middle" class="lbl-w" style="font-size:19px;font-weight:500">Permanentes G</text>
+      <text x="280" y="93" text-anchor="middle" class="lbl-w" style="font-size:15px">toujours là</text>
+    </g>
+    <g data-b="1" data-fx="up" data-d=".2" class="lbl-s" style="fill:#6b5521">
+      <rect x="20" y="126" width="190" height="36" rx="18" fill="#fbf1d8"/><text x="115" y="150" text-anchor="middle">poids propre</text>
+      <rect x="220" y="126" width="200" height="36" rx="18" fill="#fbf1d8"/><text x="320" y="150" text-anchor="middle">superstructures</text>
+      <rect x="20" y="170" width="190" height="36" rx="18" fill="#fbf1d8"/><text x="115" y="194" text-anchor="middle">poussée des terres</text>
+      <rect x="220" y="170" width="200" height="36" rx="18" fill="#fbf1d8"/><text x="320" y="194" text-anchor="middle">précontrainte</text>
+    </g>
+    <!-- Q -->
+    <g data-b="2" data-fx="pop">
+      <rect x="760" y="40" width="240" height="66" rx="16" fill="#dc4a2c"/>
+      <text x="880" y="70" text-anchor="middle" class="lbl-w" style="font-size:19px;font-weight:500">Variables Q</text>
+      <text x="880" y="93" text-anchor="middle" class="lbl-w" style="font-size:15px">varient sans cesse</text>
+    </g>
+    <g data-b="2" data-fx="up" data-d=".2" class="lbl-s" style="fill:#a33d22">
+      <rect x="700" y="126" width="140" height="36" rx="18" fill="#fbe5df"/><text x="770" y="150" text-anchor="middle">système A</text>
+      <rect x="850" y="126" width="140" height="36" rx="18" fill="#fbe5df"/><text x="920" y="150" text-anchor="middle">systèmes B</text>
+      <rect x="1000" y="126" width="140" height="36" rx="18" fill="#fbe5df"/><text x="1070" y="150" text-anchor="middle">trottoirs</text>
+      <rect x="700" y="170" width="140" height="36" rx="18" fill="#fbe5df"/><text x="770" y="194" text-anchor="middle">militaires</text>
+      <rect x="850" y="170" width="140" height="36" rx="18" fill="#fbe5df"/><text x="920" y="194" text-anchor="middle">freinage</text>
+      <rect x="1000" y="170" width="140" height="36" rx="18" fill="#fbe5df"/><text x="1070" y="194" text-anchor="middle">vent</text>
+      <rect x="850" y="214" width="140" height="36" rx="18" fill="#fbe5df"/><text x="920" y="238" text-anchor="middle">température</text>
+    </g>
+    <!-- différées -->
+    <g data-b="3" data-fx="pop">
+      <rect x="160" y="350" width="240" height="66" rx="16" fill="#12a08a"/>
+      <text x="280" y="380" text-anchor="middle" class="lbl-w" style="font-size:19px;font-weight:500">Différées</text>
+      <text x="280" y="403" text-anchor="middle" class="lbl-w" style="font-size:15px">déformations du béton</text>
+    </g>
+    <g data-b="3" data-fx="up" data-d=".2" class="lbl-s" style="fill:#0b6e5c">
+      <rect x="40" y="436" width="170" height="36" rx="18" fill="#dcf2ed"/><text x="125" y="460" text-anchor="middle">retrait</text>
+      <rect x="220" y="436" width="170" height="36" rx="18" fill="#dcf2ed"/><text x="305" y="460" text-anchor="middle">fluage</text>
+    </g>
+    <!-- exceptionnelles -->
+    <g data-b="4" data-fx="pop">
+      <rect x="760" y="350" width="270" height="66" rx="16" fill="#7a52c7"/>
+      <text x="895" y="380" text-anchor="middle" class="lbl-w" style="font-size:19px;font-weight:500">Exceptionnelles</text>
+      <text x="895" y="403" text-anchor="middle" class="lbl-w" style="font-size:15px">et accidentelles</text>
+    </g>
+    <g data-b="4" data-fx="up" data-d=".2" class="lbl-s" style="fill:#5b3aa0">
+      <rect x="690" y="436" width="150" height="36" rx="18" fill="#efe6fb"/><text x="765" y="460" text-anchor="middle">convois D, E</text>
+      <rect x="850" y="436" width="130" height="36" rx="18" fill="#efe6fb"/><text x="915" y="460" text-anchor="middle">séisme</text>
+      <rect x="990" y="436" width="150" height="36" rx="18" fill="#efe6fb"/><text x="1065" y="460" text-anchor="middle">chocs</text>
+    </g>
+  </svg>
+</section>
+
+<!-- ═════════ 5. RÈGLEMENTS AU MAROC ═════════ -->
+<section class="slide" data-title="Le cadre réglementaire au Maroc">
+  <div class="kicker">Les règlements</div>
+  <h2 class="t">Au Maroc, <em>c'est le CPS qui décide</em></h2>
+  <table class="tb c7-t">
+    <thead><tr><th>Domaine</th><th>Texte de référence</th><th>En pratique</th></tr></thead>
+    <tbody>
+      <tr data-b="1" data-fx="left"><td><b>Ponts-routes</b> (charges)</td><td>Fascicule 61 titre II (CPC, 1971)</td><td>encore largement imposé (Direction des Routes, ADM)</td></tr>
+      <tr data-b="2" data-fx="left"><td><b>Ponts-routes</b> (Eurocodes)</td><td>EN 1990 + EN 1991-2 (LM1, LM2…)</td><td>de plus en plus utilisés, financements internationaux</td></tr>
+      <tr data-b="3" data-fx="left"><td><b>Ponts-rails</b></td><td>UIC 71 / LM71 (EN 1991-2)</td><td>complétés par les prescriptions de l'ONCF</td></tr>
+      <tr data-b="4" data-fx="left"><td><b>Calcul du béton</b></td><td>BAEL 91 / BPEL 91, ou Eurocode 2</td><td>cohérent avec le règlement de charges</td></tr>
+      <tr data-b="5" data-fx="left"><td><b>Séisme</b></td><td>selon le CPS : Eurocode 8-2, guide AFPS/SETRA…</td><td>chapitre 10</td></tr>
+    </tbody>
+  </table>
+  <div class="cols c2" style="margin-top:20px;gap:20px">
+    <div class="callout t" data-b="6" data-fx="up"><span class="lab">Réflexe</span>Lisez <b>toujours le CPS en premier</b> : il fixe le règlement, les charges militaires, le convoi exceptionnel.</div>
+    <div class="callout r" data-b="7" data-fx="up"><span class="lab">Piège</span>Ne mélangez pas les charges du fascicule 61 avec les coefficients des Eurocodes (ou l'inverse) sans justification.</div>
+  </div>
+</section>
+
+<!-- ═════════ 6. SECTION 02 ═════════ -->
+<section class="slide section" data-title="Partie 2 — La chaussée réglementaire">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">02</div>
+    <h2 data-a data-fx="up" data-d=".15">La chaussée réglementaire</h2>
+    <p data-a data-fx="up" data-d=".3">Avant de placer la moindre charge, on mesure la chaussée « au sens du règlement » : <b style="color:#e2c070">largeurs, voies et classe</b>.</p>
+  </div>
+</section>
+
+<!-- ═════════ 7. COUPE Lr / Lc / VOIES ═════════ -->
+<section class="slide" data-title="Largeur roulable, chargeable, voies">
+  <div class="kicker">Fascicule 61 titre II</div>
+  <h2 class="t">De la largeur roulable <em>aux voies</em></h2>
+  <svg class="full" viewBox="0 0 1150 270" aria-label="Coupe transversale : Lr, Lc et voies">
+    <defs>
+      <marker id="c7s7-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#141a26"/></marker>
+      <marker id="c7s7-t" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12a08a"/></marker>
+      <pattern id="c7s7-h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#fbe5df"/><path d="M0 0V8" stroke="#dc4a2c" stroke-width="3"/></pattern>
+    </defs>
+    <rect width="1150" height="270" rx="16" fill="#eef4fc"/>
+    <g data-a data-fx="fade">
+      <rect x="135" y="150" width="880" height="30" fill="#b9c2cc" stroke="#6e7884"/>
+      <g fill="#cfd5dc" stroke="#6e7884"><rect x="230" y="180" width="34" height="62"/><rect x="450" y="180" width="34" height="62"/><rect x="666" y="180" width="34" height="62"/><rect x="886" y="180" width="34" height="62"/></g>
+      <rect x="135" y="136" width="120" height="14" fill="#dfe3e8" stroke="#6e7884"/><rect x="895" y="136" width="120" height="14" fill="#dfe3e8" stroke="#6e7884"/>
+      <rect x="255" y="144" width="640" height="6" fill="#3c4049"/>
+      <g fill="#9aa3ae"><rect x="259" y="108" width="7" height="36"/><rect x="884" y="108" width="7" height="36"/><rect x="250" y="112" width="24" height="10" rx="2"/><rect x="876" y="112" width="24" height="10" rx="2"/></g>
+      <text x="195" y="128" text-anchor="middle" class="lbl-s">trottoir</text><text x="955" y="128" text-anchor="middle" class="lbl-s">trottoir</text>
+    </g>
+    <g data-b="1" data-fx="fade">
+      <path d="M262.5 30 V104 M887.5 30 V104" stroke="#141a26" stroke-dasharray="3 3"/>
+      <path d="M262.5 40 H887.5" stroke="#141a26" stroke-width="2" marker-start="url(#c7s7-a)" marker-end="url(#c7s7-a)"/>
+      <text x="575" y="32" text-anchor="middle" class="lbl-b">Lr = 8,00 m entre glissières</text>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <rect x="262.5" y="122" width="40" height="22" fill="url(#c7s7-h)"/><rect x="847.5" y="122" width="40" height="22" fill="url(#c7s7-h)"/>
+      <text x="282" y="214" text-anchor="middle" class="lbl-s" style="fill:#a33d22">− 0,50</text><text x="868" y="214" text-anchor="middle" class="lbl-s" style="fill:#a33d22">− 0,50</text>
+      <path d="M302.5 82 H847.5" stroke="#12a08a" stroke-width="2" marker-start="url(#c7s7-t)" marker-end="url(#c7s7-t)"/>
+      <text x="575" y="74" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">Lc = 8,00 − 2 × 0,50 = 7,00 m</text>
+    </g>
+    <g data-b="3" data-fx="fade">
+      <rect x="302.5" y="122" width="272.5" height="22" fill="#12a08a" opacity=".35"/><rect x="575" y="122" width="272.5" height="22" fill="#7a52c7" opacity=".3"/>
+      <path d="M575 118 V144" stroke="#fff" stroke-width="3" stroke-dasharray="6 4"/>
+      <text x="438" y="138" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c;font-weight:500">voie 1 · 3,50 m</text>
+      <text x="711" y="138" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0;font-weight:500">voie 2 · 3,50 m</text>
+    </g>
+  </svg>
+  <div class="cols c3" style="margin-top:16px;gap:18px">
+    <div class="card" data-b="1" data-fx="up" style="padding:14px 18px"><h3>Largeur roulable L<sub>r</sub></h3><p>Entre dispositifs de retenue (glissières, barrières) ou bordures.</p></div>
+    <div class="card teal" data-b="2" data-fx="up" style="padding:14px 18px"><h3>Largeur chargeable L<sub>c</sub></h3><p>L<sub>r</sub> − 0,50 m <b>par dispositif de retenue</b>. Bordures seules : L<sub>c</sub> = L<sub>r</sub>.</p></div>
+    <div class="card violet" data-b="3" data-fx="up" style="padding:14px 18px"><h3>Voies n<sub>v</sub> et largeur V</h3><p>n<sub>v</sub> = partie entière de L<sub>c</sub>/3 (2 voies si 5 ≤ L<sub>c</sub> ≤ 6 m) ; V = L<sub>c</sub>/n<sub>v</sub>.</p></div>
+  </div>
+</section>
+
+<!-- ═════════ 8. CLASSES ═════════ -->
+<section class="slide" data-title="Les trois classes de ponts">
+  <div class="kicker">Fascicule 61 titre II</div>
+  <h2 class="t">La classe se lit sur <em>la largeur roulable</em></h2>
+  <svg class="full" viewBox="0 0 1150 170" aria-label="Classes de pont selon la largeur roulable">
+    <rect width="1150" height="170" rx="16" fill="#eef4fc"/>
+    <rect x="100" y="70" width="270" height="44" rx="8" fill="#dc4a2c" opacity=".85" data-b="3" data-fx="growx"/>
+    <rect x="370" y="70" width="270" height="44" fill="#e8a020" opacity=".9" data-b="2" data-fx="growx"/>
+    <rect x="640" y="70" width="410" height="44" rx="8" fill="#12a08a" data-b="1" data-fx="growx"/>
+    <g class="lbl-w" style="font-size:18px;font-weight:500" text-anchor="middle">
+      <text x="235" y="98" data-b="3" data-fx="fade">3e classe</text><text x="505" y="98" data-b="2" data-fx="fade">2e classe</text><text x="845" y="98" data-b="1" data-fx="fade">1re classe</text>
+    </g>
+    <g class="lbl-s" text-anchor="middle"><text x="100" y="142">4 m</text><text x="280" y="142">5 m</text><text x="370" y="142">5,50</text><text x="460" y="142">6 m</text><text x="640" y="142">7 m</text><text x="820" y="142">8 m</text><text x="1000" y="142">9 m</text></g>
+    <path d="M100 120 V128 M280 120 V128 M370 120 V128 M460 120 V128 M640 120 V128 M820 120 V128 M1000 120 V128" stroke="#141a26"/>
+    <g data-a data-fx="fade"><path d="M0 0 l-10 -16 h20 z" fill="#141a26"><animateTransform attributeName="transform" type="translate" dur="7s" repeatCount="indefinite" values="140 66;1000 66;140 66" keyTimes="0;.5;1"/></path></g>
+    <text x="1060" y="44" text-anchor="end" class="lbl-s">largeur roulable L<tspan font-size="12" dy="3">r</tspan></text>
+  </svg>
+  <div class="cols c3" style="margin-top:16px;gap:18px">
+    <div class="card teal" data-b="1" data-fx="up" style="padding:14px 18px"><h3>1re classe</h3><p><b>L<sub>r</sub> ≥ 7 m</b>, plus les bretelles et les ponts désignés par le CPS.</p><p style="margin-top:6px">V<sub>0</sub> = <b>3,50 m</b></p></div>
+    <div class="card amber" data-b="2" data-fx="up" style="padding:14px 18px"><h3>2e classe</h3><p><b>5,50 m &lt; L<sub>r</sub> &lt; 7 m</b>.</p><p style="margin-top:6px">V<sub>0</sub> = <b>3,00 m</b></p></div>
+    <div class="card red" data-b="3" data-fx="up" style="padding:14px 18px"><h3>3e classe</h3><p><b>L<sub>r</sub> ≤ 5,50 m</b>.</p><p style="margin-top:6px">V<sub>0</sub> = <b>2,75 m</b></p></div>
+  </div>
+  <div class="callout r" style="margin-top:16px" data-b="4" data-fx="up"><span class="lab">Piège</span>Classe avec <b>L<sub>r</sub></b>, voies avec <b>L<sub>c</sub></b>. L<sub>r</sub> = 7,00 m entre deux barrières : 1re classe, mais L<sub>c</sub> = 6,00 m → <b>2 voies de 3,00 m</b> (exception 5–6 m).</div>
+</section>
+
+<!-- ═════════ 9. SECTION 03 ═════════ -->
+<section class="slide section" data-title="Partie 3 — Le système A">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">03</div>
+    <h2 data-a data-fx="up" data-d=".15">Le système A : l'embouteillage</h2>
+    <p data-a data-fx="up" data-d=".3">Une file continue de véhicules arrêtés ou roulant au pas : une <b style="color:#e2c070">charge répartie</b> qui diminue quand la longueur chargée augmente.</p>
+  </div>
+</section>
+
+<!-- ═════════ 10. COURBE A(l) ═════════ -->
+<section class="slide" data-title="La courbe A(l)">
+  <div class="kicker">Système A</div>
+  <h2 class="t">A(l) : <em>plus c'est long, moins c'est lourd</em></h2>
+  <div class="split wide-v">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">A(l) = 230 + \frac{36\,000}{l + 12}</span><div class="w">en kg/m² ; l = longueur chargée (m).</div></div>
+      <ul class="b tight" style="margin-top:18px">
+        <li data-b="1" data-fx="left">Sur une grande longueur, il est peu probable que <b>tous</b> les véhicules soient lourds.</li>
+        <li data-b="2" data-fx="left">On charge les zones où la ligne d'influence est <b>de même signe</b>.</li>
+        <li data-b="3" data-fx="left">A inclut déjà les effets dynamiques : <b>jamais de δ</b>.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 705 520" aria-label="Courbe A(l)">
+        <rect width="705" height="520" rx="18" fill="#fff"/>
+        <g stroke="#ece6d8"><path d="M80 310 H680 M80 180 H680 M80 50 H680 M230 50 V440 M380 50 V440 M530 50 V440"/></g>
+        <path d="M80 440 H680 M80 440 V40" stroke="#141a26" stroke-width="1.5"/>
+        <g class="lbl-s" text-anchor="end"><text x="72" y="445">0</text><text x="72" y="315">1 000</text><text x="72" y="185">2 000</text><text x="72" y="55">3 000</text></g>
+        <g class="lbl-s" text-anchor="middle"><text x="80" y="464">0</text><text x="230" y="464">50</text><text x="380" y="464">100</text><text x="530" y="464">150</text><text x="680" y="464">200 m</text></g>
+        <text x="96" y="36" class="lbl-s">kg/m²</text>
+        <path d="M83.0 50.1 L86.0 75.8 L89.0 98.1 L92.0 117.6 L95.0 134.8 L98.0 150.1 L101.0 163.8 L104.0 176.1 L107.0 187.2 L110.0 197.4 L113.0 206.6 L116.0 215.1 L119.0 222.9 L122.0 230.1 L125.0 236.8 L128.0 243.0 L131.0 248.7 L134.0 254.1 L137.0 259.1 L140.0 263.9 L146.0 272.5 L152.0 280.1 L158.0 286.9 L164.0 293.1 L170.0 298.7 L176.0 303.7 L182.0 308.4 L188.0 312.6 L194.0 316.5 L200.0 320.1 L206.0 323.4 L212.0 326.5 L218.0 329.4 L224.0 332.1 L230.0 334.6 L236.0 337.0 L242.0 339.2 L248.0 341.3 L254.0 343.2 L260.0 345.1 L275.0 349.3 L290.0 353.0 L305.0 356.3 L320.0 359.2 L335.0 361.9 L350.0 364.2 L365.0 366.4 L380.0 368.3 L395.0 370.1 L410.0 371.7 L425.0 373.2 L440.0 374.6 L455.0 375.9 L470.0 377.1 L485.0 378.3 L500.0 379.3 L515.0 380.3 L530.0 381.2 L545.0 382.1 L560.0 382.9 L575.0 383.7 L590.0 384.4 L605.0 385.1 L620.0 385.7 L635.0 386.3 L650.0 386.9 L665.0 387.5 L680.0 388.0" fill="none" stroke="#2f6fe0" stroke-width="3.5" data-a data-fx="draw" data-d=".3"/>
+        <g data-b="2" data-fx="fade"><path d="M80 388 L680 393.2" stroke="#dc4a2c" stroke-width="2" stroke-dasharray="7 5"/><text x="670" y="418" text-anchor="end" class="lbl-s" style="fill:#a33d22">minimum A₁ ≥ 400 − 0,2 l</text></g>
+        <g data-b="1" data-fx="pop"><circle cx="110" cy="197.4" r="7" fill="#2f6fe0"/><text x="126" y="192" class="lbl-s" style="fill:#2453b3">A(10) ≈ 1 866</text></g>
+        <g data-b="1" data-fx="pop" data-d=".2"><path d="M155 440 V283.6" stroke="#b8902f" stroke-dasharray="4 4"/><circle cx="155" cy="283.6" r="8" fill="#b8902f"/><text x="172" y="276" class="lbl-b" style="fill:#8a6a1f">A(25) = 1 203 kg/m²</text></g>
+        <g data-b="1" data-fx="pop" data-d=".4"><circle cx="380" cy="368.3" r="7" fill="#2f6fe0"/><text x="380" y="352" text-anchor="middle" class="lbl-s" style="fill:#2453b3">A(100) ≈ 551</text></g>
+        <g class="drive" style="--t:22s;--from:-300px;--to:760px">
+          <rect x="0" y="482" width="30" height="14" rx="3" fill="#dc4a2c"/><rect x="36" y="478" width="52" height="18" rx="3" fill="#e8a020"/><rect x="94" y="482" width="26" height="14" rx="3" fill="#2f6fe0"/><rect x="126" y="482" width="30" height="14" rx="3" fill="#12a08a"/><rect x="162" y="478" width="56" height="18" rx="3" fill="#7a52c7"/><rect x="224" y="482" width="28" height="14" rx="3" fill="#dc4a2c"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 11. a1 et a2 ═════════ -->
+<section class="slide" data-title="Les coefficients a1 et a2">
+  <div class="kicker">Système A</div>
+  <h2 class="t">On ajuste A avec <em>a₁ et a₂</em></h2>
+  <div class="split even">
+    <div>
+      <table class="tb c7-t" data-b="1" data-fx="up">
+        <thead><tr><th>a₁</th><th>1 voie</th><th>2 voies</th><th>3 voies</th><th>4 voies</th><th>≥ 5</th></tr></thead>
+        <tbody>
+          <tr class="hl"><td><b>1re classe</b></td><td class="c">1</td><td class="c"><b>1</b></td><td class="c">0,9</td><td class="c">0,75</td><td class="c">0,7</td></tr>
+          <tr><td><b>2e classe</b></td><td class="c">1</td><td class="c">0,9</td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+          <tr><td><b>3e classe</b></td><td class="c">0,9</td><td class="c">0,8</td><td class="c">—</td><td class="c">—</td><td class="c">—</td></tr>
+        </tbody>
+      </table>
+      <table class="tb c7-t" style="margin-top:16px" data-b="2" data-fx="up">
+        <thead><tr><th>Classe</th><th>1re</th><th>2e</th><th>3e</th></tr></thead>
+        <tbody><tr><td><b>V₀</b></td><td class="c">3,50 m</td><td class="c">3,00 m</td><td class="c">2,75 m</td></tr></tbody>
+      </table>
+      <p class="small" style="margin-top:12px" data-b="1" data-fx="fade">Plus il y a de voies chargées, moins il est probable qu'elles soient toutes pleines.</p>
+    </div>
+    <div>
+      <div class="formula" data-b="1" data-fx="right"><span class="texd">A_1 = a_1\,A(l) \;\ge\; 400 - 0{,}2\,l</span></div>
+      <div class="formula" style="margin-top:14px" data-b="2" data-fx="right"><span class="texd">A_2 = a_2\,A_1 \qquad a_2 = \frac{V_0}{V}</span><div class="w">A₂ s'applique sur toute la largeur des voies chargées.</div></div>
+      <div class="callout" style="margin-top:16px" data-b="3" data-fx="up"><span class="lab">On cherche le pire</span>On charge 1 voie, puis 2 voies… et on garde le cas qui donne <b>l'effet le plus défavorable</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 12. EXEMPLE A ═════════ -->
+<section class="slide" data-title="Exemple : A(l) sur le pont de référence">
+  <div class="kicker">Exemple · pont de référence L = 25 m, L<sub>c</sub> = 7 m</div>
+  <h2 class="t">Le système A <em>en cinq lignes</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">L<sub>c</sub> = 7 m → <b>n<sub>v</sub> = 2</b>, V = 3,50 m ; L<sub>r</sub> ≥ 7 m → <b>1re classe</b>.</li>
+        <li data-b="2" data-fx="left">Mi-travée : la ligne d'influence est positive partout → <b>l = 25 m</b>.</li>
+        <li data-b="3" data-fx="left"><b>A(25)</b> = 230 + 36 000/37 = <b>1 203 kg/m²</b>.</li>
+        <li data-b="4" data-fx="left">a₁ = 1 (2 voies), a₂ = 3,50/3,50 = 1 → <b>q = 1,203 × 7 = 8,42 t/ml</b>.</li>
+        <li data-b="5" data-fx="left"><b>M<sub>A</sub> = qL²/8 ≈ 657,9 t·m</b> à mi-travée.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 705 500" aria-label="Charge A sur une travée de 25 m et moment">
+        <defs><marker id="c7s12-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+          <pattern id="c7s12-h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#fbe5df"/><path d="M0 0V10" stroke="#dc4a2c" stroke-width="2"/></pattern></defs>
+        <rect width="705" height="500" rx="18" fill="#fdf3e2"/>
+        <text x="60" y="26" class="lbl-s">vue en plan</text>
+        <rect x="60" y="34" width="580" height="64" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M60 66 H640" stroke="#fff" stroke-width="2" stroke-dasharray="10 8"/>
+        <g data-b="4" data-fx="fade"><rect x="60" y="34" width="580" height="64" fill="url(#c7s12-h)" opacity=".9"/><text x="350" y="72" text-anchor="middle" class="lbl-b c7-halo" style="fill:#a33d22">2 voies chargées × 3,50 m</text></g>
+        <rect x="60" y="180" width="580" height="20" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M60 200 l-10 18 h20z M640 200 l-10 18 h20z" fill="#6e7884"/>
+        <g data-b="4" data-fx="down" stroke="#dc4a2c" stroke-width="2">
+          <path d="M60 124 H640"/>
+          <path d="M72 126 V174 M110 126 V174 M148 126 V174 M186 126 V174 M224 126 V174 M262 126 V174 M300 126 V174 M338 126 V174 M376 126 V174 M414 126 V174 M452 126 V174 M490 126 V174 M528 126 V174 M566 126 V174 M604 126 V174 M630 126 V174" marker-end="url(#c7s12-r)"/>
+        </g>
+        <text x="650" y="128" class="lbl-s" style="fill:#a33d22" data-b="4" data-fx="fade">q</text>
+        <g data-b="2" data-fx="fade"><path d="M60 236 H640" stroke="#b8902f" stroke-width="2"/><text x="350" y="232" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">l = L = 25 m</text></g>
+        <path d="M60 262 H640" stroke="#6e7884"/>
+        <path d="M60 262 Q350 562 640 262" fill="#dc4a2c" fill-opacity=".12" stroke="#dc4a2c" stroke-width="2.6" data-b="5" data-fx="draw"/>
+        <text x="350" y="380" text-anchor="middle" class="lbl-b" style="fill:#a33d22" data-b="5" data-fx="fade" data-d=".8">M = 657,9 t·m</text>
+        <text x="350" y="460" text-anchor="middle" class="lbl-s" data-b="5" data-fx="fade" data-d=".8">avec une seule voie chargée : la moitié → 2 voies dimensionnent</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 13. SECTION 04 ═════════ -->
+<section class="slide section" data-title="Partie 4 — Les systèmes B et le coefficient δ">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">04</div>
+    <h2 data-a data-fx="up" data-d=".15">Les systèmes B et le coefficient δ</h2>
+    <p data-a data-fx="up" data-d=".3">Des véhicules lourds isolés : le <b style="color:#e2c070">camion Bc</b>, le <b style="color:#e2c070">tandem Bt</b>, la <b style="color:#e2c070">roue Br</b>. Plus agressifs que A pour les petites portées et les éléments locaux.</p>
+  </div>
+</section>
+
+<!-- ═════════ 14. CAMION Bc ═════════ -->
+<section class="slide" data-title="Le camion Bc">
+  <div class="kicker">Système Bc</div>
+  <h2 class="t">Le camion Bc : <em>30 tonnes, à connaître par cœur</em></h2>
+  <svg class="full" viewBox="0 0 1150 450" aria-label="Camion Bc coté en élévation et en plan">
+    <defs>
+      <marker id="c7s14-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+      <marker id="c7s14-k" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#141a26"/></marker>
+      <marker id="c7s14-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+    </defs>
+    <rect width="1150" height="450" rx="16" fill="#fbfaf6"/>
+    <text x="24" y="34" class="lbl-b">Élévation</text>
+    <path d="M20 168 H700" stroke="#8a6d45" stroke-width="2"/>
+    <g data-a data-fx="drivein">
+      <rect x="60" y="70" width="440" height="58" rx="4" fill="#e9eef3" stroke="#9aa3ae"/>
+      <path d="M505 128 V92 Q505 82 515 82 H605 Q632 82 637 108 V128 Z" fill="#dc4a2c"/>
+      <rect x="588" y="88" width="34" height="18" rx="3" fill="#cfe7f7"/>
+      <rect x="60" y="128" width="577.5" height="10" fill="#5d6672"/>
+      <g fill="#141a26"><circle cx="183.75" cy="150" r="17"/><circle cx="266.25" cy="150" r="17"/><circle cx="513.75" cy="150" r="17"/></g>
+      <g fill="#9aa3ae"><circle cx="183.75" cy="150" r="6"/><circle cx="266.25" cy="150" r="6"/><circle cx="513.75" cy="150" r="6"/></g>
+    </g>
+    <g data-b="1" data-fx="down">
+      <g stroke="#dc4a2c" stroke-width="3"><path d="M183.75 14 V60" marker-end="url(#c7s14-r)"/><path d="M266.25 14 V60" marker-end="url(#c7s14-r)"/><path d="M513.75 30 V60" marker-end="url(#c7s14-r)"/></g>
+      <text x="176" y="34" text-anchor="end" class="lbl-b" style="fill:#a33d22">12 t</text><text x="276" y="34" class="lbl-b" style="fill:#a33d22">12 t</text><text x="524" y="44" class="lbl-b" style="fill:#a33d22">6 t</text>
+    </g>
+    <g data-b="1" data-fx="fade" data-d=".3">
+      <path d="M183.75 176 V198 M266.25 176 V198 M513.75 176 V198" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <path d="M183.75 192 H266.25 M266.25 192 H513.75" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s14-a)" marker-end="url(#c7s14-a)"/>
+      <text x="225" y="214" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">1,50</text><text x="390" y="214" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">4,50</text>
+      <path d="M60 236 H637.5" stroke="#141a26" stroke-width="1.6" marker-start="url(#c7s14-k)" marker-end="url(#c7s14-k)"/>
+      <text x="348" y="230" text-anchor="middle" class="lbl-s">encombrement 10,50 m</text>
+    </g>
+    <g data-b="2" data-fx="up">
+      <text x="24" y="270" class="lbl-b">Plan</text>
+      <rect x="60" y="282" width="577.5" height="137.5" fill="#f1f3f7" stroke="#9aa3ae" stroke-dasharray="6 4"/>
+      <path d="M183.75 295.75 V405.75 M266.25 295.75 V405.75 M513.75 295.75 V405.75" stroke="#6e7884" stroke-width="2"/>
+      <g fill="#dc4a2c"><rect x="176.9" y="288.9" width="13.75" height="13.75"/><rect x="176.9" y="398.9" width="13.75" height="13.75"/><rect x="259.4" y="288.9" width="13.75" height="13.75"/><rect x="259.4" y="398.9" width="13.75" height="13.75"/><rect x="508.25" y="290.25" width="11" height="11"/><rect x="508.25" y="400.25" width="11" height="11"/></g>
+      <text x="225" y="345" text-anchor="middle" class="lbl-s c7-halo" style="fill:#a33d22">roues arrière 6 t</text><text x="225" y="368" text-anchor="middle" class="lbl-s c7-halo" style="fill:#a33d22">impact 0,25 × 0,25</text>
+      <text x="400" y="345" text-anchor="middle" class="lbl-s" style="fill:#a33d22">roues avant 3 t</text><text x="400" y="368" text-anchor="middle" class="lbl-s" style="fill:#a33d22">impact 0,20 × 0,20</text>
+      <path d="M560 352 H610" stroke="#6e7884" stroke-width="2" marker-end="url(#c7s14-k)"/><text x="585" y="340" text-anchor="middle" class="lbl-s">sens</text>
+      <path d="M637.5 295.75 H668 M637.5 405.75 H668" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <path d="M660 295.75 V405.75" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s14-a)" marker-end="url(#c7s14-a)"/><text x="668" y="356" class="lbl-s" style="fill:#8a6a1f">2,00</text>
+      <path d="M637.5 282 H722 M637.5 419.5 H722" stroke="#141a26" stroke-dasharray="3 3"/>
+      <path d="M715 282 V419.5" stroke="#141a26" stroke-width="1.6" marker-start="url(#c7s14-k)" marker-end="url(#c7s14-k)"/><text x="723" y="356" class="lbl-s">2,50</text>
+      <text x="348" y="442" text-anchor="middle" class="lbl-s">poids total 30 t : 6 + 12 + 12</text>
+    </g>
+    <g data-b="3" data-fx="left">
+      <rect x="790" y="20" width="340" height="410" rx="16" fill="#fff" stroke="#e3dfd4"/>
+      <text x="810" y="56" class="lbl-b">Coefficient bc</text>
+      <g class="lbl-s" style="fill:#141a26">
+        <text x="810" y="92">files</text><text x="915" y="92" text-anchor="middle">1re cl.</text><text x="995" y="92" text-anchor="middle">2e cl.</text><text x="1075" y="92" text-anchor="middle">3e cl.</text>
+        <path d="M806 102 H1114" stroke="#e3dfd4"/>
+        <rect x="806" y="108" width="308" height="30" fill="#fff3d6"/>
+        <text x="810" y="129">1</text><text x="915" y="129" text-anchor="middle">1,20</text><text x="995" y="129" text-anchor="middle">1,00</text><text x="1075" y="129" text-anchor="middle">1,00</text>
+        <rect x="806" y="140" width="308" height="30" fill="#fff3d6"/>
+        <text x="810" y="161">2</text><text x="915" y="161" text-anchor="middle">1,10</text><text x="995" y="161" text-anchor="middle">1,00</text><text x="1075" y="161" text-anchor="middle">0,80</text>
+        <text x="810" y="193">3</text><text x="915" y="193" text-anchor="middle">0,95</text><text x="995" y="193" text-anchor="middle">—</text><text x="1075" y="193" text-anchor="middle">—</text>
+        <text x="810" y="225">4</text><text x="915" y="225" text-anchor="middle">0,80</text><text x="995" y="225" text-anchor="middle">—</text><text x="1075" y="225" text-anchor="middle">—</text>
+        <text x="810" y="257">≥ 5</text><text x="915" y="257" text-anchor="middle">0,70</text><text x="995" y="257" text-anchor="middle">—</text><text x="1075" y="257" text-anchor="middle">—</text>
+      </g>
+      <g class="lbl-s"><text x="810" y="310">files ≤ nombre de voies</text><text x="810" y="336">2 camions au plus par file</text><text x="810" y="362">roue à ≥ 0,25 m du bord de Lc</text><text x="810" y="388">(0,50 m d'une glissière)</text><text x="810" y="414">effets × bc × δ</text></g>
+    </g>
+  </svg>
+</section>
+
+<!-- ═════════ 15. PLACER LES FILES ═════════ -->
+<section class="slide" data-title="Placer les camions Bc">
+  <div class="kicker">Système Bc · disposition</div>
+  <h2 class="t">On range les camions <em>en files</em></h2>
+  <svg class="full" viewBox="0 0 1150 380" aria-label="Placement des camions Bc sur un tablier de 25 m">
+    <defs>
+      <marker id="c7s15-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+      <marker id="c7s15-k" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#141a26"/></marker>
+    </defs>
+    <rect width="1150" height="380" rx="16" fill="#eef4fc"/>
+    <rect x="0" y="70" width="370" height="210" fill="#dfe3e8"/>
+    <rect x="370" y="70" width="750" height="210" fill="#b9c2cc"/>
+    <path d="M370 70 H1120 M370 280 H1120" stroke="#6e7884" stroke-width="4"/>
+    <path d="M370 62 V288 M1120 62 V288" stroke="#141a26" stroke-width="2"/>
+    <path d="M0 175 H1120" stroke="#fff" stroke-width="2" stroke-dasharray="14 10"/>
+    <text x="360" y="300" text-anchor="end" class="lbl-s">culée</text>
+    <path d="M370 330 H1120" stroke="#141a26" stroke-width="1.6" marker-start="url(#c7s15-k)" marker-end="url(#c7s15-k)"/>
+    <text x="745" y="356" text-anchor="middle" class="lbl-s">tablier de 25 m · L<tspan font-size="12" dy="3">c</tspan><tspan dy="-3"> = 7 m, 2 voies, 1re classe</tspan></text>
+    <g data-b="1" data-fx="drivein"><rect x="695.0" y="70.0" width="237.0" height="75.0" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="935.0" y="73.0" width="75.0" height="69.0" rx="8" fill="#dc4a2c"/><path d="M762.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="757.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="757.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M807.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="802.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="802.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M942.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="938.5" y="73.5" width="8.0" height="8.0" fill="#141a26"/><rect x="938.5" y="133.5" width="8.0" height="8.0" fill="#141a26"/></g>
+    <text x="852" y="304" text-anchor="middle" class="lbl-s" style="fill:#a33d22" data-b="1" data-fx="fade" data-d="1.4">roues à 0,25 m du bord</text>
+    <g data-b="2" data-fx="drivein"><rect x="380.0" y="70.0" width="237.0" height="75.0" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="620.0" y="73.0" width="75.0" height="69.0" rx="8" fill="#dc4a2c"/><path d="M447.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="442.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="442.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M492.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="487.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="487.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M627.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="623.5" y="73.5" width="8.0" height="8.0" fill="#141a26"/><rect x="623.5" y="133.5" width="8.0" height="8.0" fill="#141a26"/></g>
+    <g data-b="2" data-fx="fade" data-d="1.4">
+      <path d="M627.5 40 V66 M762.5 40 V66" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <path d="M627.5 48 H762.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s15-a)" marker-end="url(#c7s15-a)"/>
+      <text x="695" y="38" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">4,50 m entre essieux</text>
+    </g>
+    <g data-b="3" data-fx="drivein"><rect x="40.0" y="70.0" width="237.0" height="75.0" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="280.0" y="73.0" width="75.0" height="69.0" rx="8" fill="#dc4a2c"/><path d="M107.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="102.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="102.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M152.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="147.8" y="72.8" width="9.5" height="9.5" fill="#141a26"/><rect x="147.8" y="132.8" width="9.5" height="9.5" fill="#141a26"/><path d="M287.5 77.5 V137.5" stroke="#141a26" stroke-width="2"/><rect x="283.5" y="73.5" width="8.0" height="8.0" fill="#141a26"/><rect x="283.5" y="133.5" width="8.0" height="8.0" fill="#141a26"/></g>
+    <g data-b="3" data-fx="pop" data-d="1.3">
+      <path d="M120 80 L280 135 M280 80 L120 135" stroke="#dc4a2c" stroke-width="7" stroke-linecap="round"/>
+      <rect x="40" y="16" width="300" height="38" rx="19" fill="#dc4a2c"/><text x="190" y="41" text-anchor="middle" class="lbl-w" style="font-size:17px">3e camion dans la file : interdit</text>
+    </g>
+    <g data-b="4" data-fx="drivein"><rect x="695.0" y="145.0" width="237.0" height="75.0" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="935.0" y="148.0" width="75.0" height="69.0" rx="8" fill="#dc4a2c"/><path d="M762.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="757.8" y="147.8" width="9.5" height="9.5" fill="#141a26"/><rect x="757.8" y="207.8" width="9.5" height="9.5" fill="#141a26"/><path d="M807.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="802.8" y="147.8" width="9.5" height="9.5" fill="#141a26"/><rect x="802.8" y="207.8" width="9.5" height="9.5" fill="#141a26"/><path d="M942.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="938.5" y="148.5" width="8.0" height="8.0" fill="#141a26"/><rect x="938.5" y="208.5" width="8.0" height="8.0" fill="#141a26"/><rect x="380.0" y="145.0" width="237.0" height="75.0" rx="4" fill="#e9eef3" stroke="#9aa3ae"/><rect x="620.0" y="148.0" width="75.0" height="69.0" rx="8" fill="#dc4a2c"/><path d="M447.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="442.8" y="147.8" width="9.5" height="9.5" fill="#141a26"/><rect x="442.8" y="207.8" width="9.5" height="9.5" fill="#141a26"/><path d="M492.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="487.8" y="147.8" width="9.5" height="9.5" fill="#141a26"/><rect x="487.8" y="207.8" width="9.5" height="9.5" fill="#141a26"/><path d="M627.5 152.5 V212.5" stroke="#141a26" stroke-width="2"/><rect x="623.5" y="148.5" width="8.0" height="8.0" fill="#141a26"/><rect x="623.5" y="208.5" width="8.0" height="8.0" fill="#141a26"/></g>
+  </svg>
+  <div class="cols c2" style="margin-top:12px;gap:20px">
+    <div class="callout" data-b="5" data-fx="up"><span class="lab">2 files, 1re classe</span>bc = <b>1,10</b> ; charge pour δ : S = 4 × 30 × 1,10 = <b>132 t</b> (1 file : 2 × 30 × 1,20 = 72 t).</div>
+    <div class="callout b" data-b="6" data-fx="up"><span class="lab">Moment à mi-travée</span>Une file de 2 camions, essieu lourd au sommet : 217,5 t·m → <span class="tex">M_{Bc} = 2 \times 217{,}5 \times 1{,}10 \times 1{,}0968 \approx 524{,}8</span> t·m.</div>
+  </div>
+</section>
+
+<!-- ═════════ 16. Bt ET Br ═════════ -->
+<section class="slide" data-title="Le tandem Bt et la roue Br">
+  <div class="kicker">Systèmes Bt et Br</div>
+  <h2 class="t">Le tandem et la roue : <em>pour le hourdis</em></h2>
+  <div class="cols c2" style="gap:24px">
+    <div class="card blue" data-b="1" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 540 300" aria-label="Deux tandems Bt de front">
+        <defs><marker id="c7s16-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="540" height="300" rx="12" fill="#eef4fc"/>
+        <rect x="40" y="30" width="460" height="120" fill="#2f6fe0" opacity=".08"/><rect x="40" y="150" width="460" height="120" fill="#12a08a" opacity=".1"/>
+        <path d="M40 150 H500" stroke="#fff" stroke-width="2" stroke-dasharray="10 8"/>
+        <g fill="#2f6fe0"><rect x="215" y="38" width="10" height="24"/><rect x="215" y="118" width="10" height="24"/><rect x="269" y="38" width="10" height="24"/><rect x="269" y="118" width="10" height="24"/></g>
+        <g fill="#12a08a"><rect x="215" y="158" width="10" height="24"/><rect x="215" y="238" width="10" height="24"/><rect x="269" y="158" width="10" height="24"/><rect x="269" y="238" width="10" height="24"/></g>
+        <path d="M220 62 V118 M274 62 V118 M220 182 V238 M274 182 V238" stroke="#6e7884" stroke-width="2"/>
+        <path d="M220 20 H274" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s16-a)" marker-end="url(#c7s16-a)"/><text x="247" y="14" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">1,35</text>
+        <path d="M300 50 V130" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s16-a)" marker-end="url(#c7s16-a)"/><text x="310" y="96" class="lbl-s" style="fill:#8a6a1f">2,00</text>
+        <text x="360" y="84" class="lbl-s" style="fill:#2453b3">bande de 3 m</text><text x="360" y="206" class="lbl-s" style="fill:#0b6e5c">bande de 3 m</text>
+        <text x="360" y="108" class="lbl-s">2 essieux de 16 t</text><text x="360" y="230" class="lbl-s">impact 0,60 × 0,25</text>
+      </svg>
+      <h3 style="margin-top:10px">Bt : tandem de 32 t</h3>
+      <p>2 tandems de front au plus. bt = <b>1,0</b> (1re classe), <b>0,9</b> (2e) ; pas de Bt en 3e classe.</p>
+    </div>
+    <div class="card red" data-b="2" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 540 300" aria-label="Roue isolée Br">
+        <defs><marker id="c7s16-b" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+          <marker id="c7s16-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="540" height="300" rx="12" fill="#fdf3e2"/>
+        <rect x="80" y="150" width="380" height="110" fill="#b9c2cc" opacity=".5"/>
+        <rect x="225" y="160" width="45" height="90" fill="#dc4a2c" opacity=".85" class="pulse"/>
+        <path d="M247 40 V146" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c7s16-r)"/>
+        <text x="262" y="80" class="lbl-b" style="fill:#a33d22">10 t</text>
+        <path d="M225 276 H270" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s16-b)" marker-end="url(#c7s16-b)"/><text x="290" y="282" class="lbl-s" style="fill:#8a6a1f">0,30 (sens de la marche)</text>
+        <path d="M200 160 V250" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s16-b)" marker-end="url(#c7s16-b)"/><text x="190" y="210" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">0,60</text>
+        <text x="390" y="130" text-anchor="middle" class="lbl-s">hourdis</text>
+      </svg>
+      <h3 style="margin-top:10px">Br : roue isolée de 10 t</h3>
+      <p>Impact <b>0,60 × 0,30 m</b>. Elle vérifie le <b>poinçonnement</b> local du hourdis.</p>
+    </div>
+  </div>
+  <div class="callout b" style="margin-top:14px" data-b="3" data-fx="up"><span class="lab">Où sont-ils dimensionnants ?</span>Bt et Br ne servent presque jamais pour la flexion générale ; ils <b>dimensionnent le hourdis</b> entre poutres et les zones locales.</div>
+</section>
+
+<!-- ═════════ 17. δ ═════════ -->
+<section class="slide" data-title="Le coefficient de majoration dynamique δ">
+  <div class="kicker">Coefficient dynamique</div>
+  <h2 class="t">Un camion qui roule <em>pèse plus</em> qu'à l'arrêt</h2>
+  <div class="split even">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">\delta = 1 + \frac{0{,}4}{1 + 0{,}2\,L} + \frac{0{,}6}{1 + 4\,\dfrac{G}{S}}</span><div class="w">L = portée (m) ; G = charge permanente de la travée (t) ; S = charge B maximale qu'on peut y placer, avec bc ou bt.</div></div>
+      <div class="cols c2" style="gap:12px;margin-top:14px">
+        <div class="card blue" data-b="1" data-fx="up" style="padding:12px 14px"><h3 style="font-size:18px">Terme de portée</h3><p style="font-size:16px">Sur une grande travée, le choc d'un camion <b>se dilue</b>.</p></div>
+        <div class="card red" data-b="2" data-fx="up" style="padding:12px 14px"><h3 style="font-size:18px">Terme de masse</h3><p style="font-size:16px">Un tablier <b>lourd</b> devant la charge est peu excité.</p></div>
+      </div>
+      <div class="callout r" style="margin-top:14px" data-b="4" data-fx="up"><span class="lab">Jamais de δ pour</span>le système A, les convois D et E, le freinage.</div>
+    </div>
+    <div>
+      <svg class="full" viewBox="0 0 600 360" aria-label="δ en fonction de la portée" style="border-radius:16px;background:#fff">
+        <g stroke="#ece6d8"><path d="M60 240 H570 M60 190 H570 M60 140 H570 M60 90 H570"/></g>
+        <path d="M60 290 H570 M60 290 V60" stroke="#141a26" stroke-width="1.5"/>
+        <g class="lbl-s" text-anchor="end"><text x="52" y="295">1,0</text><text x="52" y="245">1,1</text><text x="52" y="195">1,2</text><text x="52" y="145">1,3</text><text x="52" y="95">1,4</text></g>
+        <g class="lbl-s" text-anchor="middle"><text x="60" y="314">0</text><text x="145" y="314">10</text><text x="230" y="314">20</text><text x="315" y="314">30</text><text x="400" y="314">40</text><text x="485" y="314">50</text><text x="570" y="314">60</text></g>
+        <text x="570" y="342" text-anchor="end" class="lbl-s">portée L (m)</text>
+        <text x="80" y="40" class="lbl-s">tablier de 25 t/ml, Bc 2 files, 1re classe</text>
+        <path d="M77.0 147.1 L85.5 165.0 L94.0 178.9 L102.5 190.0 L111.0 199.1 L119.5 206.7 L128.0 213.1 L136.5 218.6 L145.0 223.3 L153.5 227.5 L162.0 231.2 L170.5 234.4 L179.0 237.4 L187.5 240.0 L196.0 242.4 L204.5 244.5 L213.0 246.5 L221.5 248.3 L230.0 250.0 L238.5 251.5 L247.0 253.0 L255.5 254.3 L264.0 255.5 L272.5 256.7 L281.0 257.7 L289.5 258.8 L298.0 259.7 L306.5 260.6 L315.0 261.4 L323.5 262.2 L332.0 263.0 L340.5 263.7 L349.0 264.4 L357.5 265.0 L366.0 265.6 L374.5 266.2 L383.0 266.7 L391.5 267.3 L400.0 267.8 L408.5 268.3 L417.0 268.7 L425.5 269.2 L434.0 269.6 L442.5 270.0 L451.0 270.4 L459.5 270.8 L468.0 271.1 L476.5 271.5 L485.0 271.8 L493.5 272.1 L502.0 272.5 L510.5 272.8 L519.0 273.1 L527.5 273.3 L536.0 273.6 L544.5 273.9 L553.0 274.1 L561.5 274.4 L570.0 274.6" fill="none" stroke="#2f6fe0" stroke-width="2.4" stroke-dasharray="7 5" data-b="1" data-fx="fade"/>
+        <path d="M77.0 84.5 L85.5 120.1 L94.0 143.9 L102.5 161.3 L111.0 169.4 L119.5 180.8 L128.0 190.2 L136.5 198.1 L145.0 204.8 L153.5 204.3 L162.0 204.2 L170.5 209.3 L179.0 213.9 L187.5 218.0 L196.0 221.6 L204.5 222.9 L213.0 226.0 L221.5 228.8 L230.0 231.4 L238.5 233.8 L247.0 236.0 L255.5 238.0 L264.0 239.9 L272.5 241.6 L281.0 243.2 L289.5 244.8 L298.0 246.2 L306.5 247.5 L315.0 248.8 L323.5 250.0 L332.0 251.1 L340.5 252.1 L349.0 253.1 L357.5 254.1 L366.0 255.0 L374.5 255.9 L383.0 256.7 L391.5 257.5 L400.0 258.2 L408.5 258.9 L417.0 259.6 L425.5 260.2 L434.0 260.9 L442.5 261.5 L451.0 262.0 L459.5 262.6 L468.0 263.1 L476.5 263.6 L485.0 264.1 L493.5 264.6 L502.0 265.0 L510.5 265.5 L519.0 265.9 L527.5 266.3 L536.0 266.7 L544.5 267.1 L553.0 267.5 L561.5 267.8 L570.0 268.2" fill="none" stroke="#dc4a2c" stroke-width="3.2" data-a data-fx="draw" data-d=".3"/>
+        <text x="110" y="100" class="lbl-s" style="fill:#a33d22">δ ≈ 1,26 à 5 m</text>
+        <text x="420" y="250" class="lbl-s" style="fill:#2453b3" data-b="1" data-fx="fade">1 + terme de portée</text>
+        <g data-b="3" data-fx="pop"><circle cx="272.5" cy="241.6" r="7" fill="#b8902f"/><text x="282" y="226" class="lbl-b" style="fill:#8a6a1f">25 m : 1,0968</text></g>
+      </svg>
+      <div class="c7-chips" style="margin-top:12px" data-b="3" data-fx="up">
+        <span class="pill">Bc 1 file · S = 72 t → 1,0835</span><span class="pill r">Bc 2 files · 132 t → 1,0968</span><span class="pill b">Mc120 · 110 t → 1,0920</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 18. CALCULATRICE δ ═════════ -->
+<section class="slide" id="c7-calc" data-title="Calculez δ">
+  <div class="kicker">À vous de jouer</div>
+  <h2 class="t">Calculez <em>votre δ</em></h2>
+  <div class="c7-calc interactive">
+    <div class="c7-in">
+      <label>Portée L (m)<span class="row"><input type="range" id="c7d-Lr" min="2" max="80" step="0.5" value="25"><input type="number" id="c7d-L" min="0.5" step="0.5" value="25"></span></label>
+      <label>Charge permanente G de la travée (t)<span class="row"><input type="range" id="c7d-Gr" min="20" max="3000" step="5" value="625"><input type="number" id="c7d-G" min="0.1" step="5" value="625"></span></label>
+      <label>Système
+        <select id="c7d-sys">
+          <option value="bc" selected>Bc — camions de 30 t</option>
+          <option value="bt">Bt — tandems de 32 t</option>
+          <option value="br">Br — roue de 10 t</option>
+          <option value="mc80">Mc80 — char de 72 t</option>
+          <option value="mc120">Mc120 — char de 110 t</option>
+          <option value="me80">Me80 — 2 × 22 t</option>
+          <option value="me120">Me120 — 2 × 33 t</option>
+          <option value="man">Saisie manuelle de S</option>
+        </select></label>
+      <div class="two">
+        <label>Classe<select id="c7d-cl"><option value="1" selected>1re</option><option value="2">2e</option><option value="3">3e</option></select></label>
+        <label id="c7d-nl"><span>Files / tandems</span><input type="number" id="c7d-n" value="2" min="1" max="6" step="1"></label>
+        <label id="c7d-Sl" class="c7-hide"><span>S saisie (t)</span><input type="number" id="c7d-S" value="100" min="1" step="1"></label>
+      </div>
+      <div class="c7-res">
+        <div><span>Charge S</span><b id="c7d-Sv">—</b></div>
+        <div><span>0,4 / (1 + 0,2 L)</span><b id="c7d-t1">—</b></div>
+        <div><span>0,6 / (1 + 4 G/S)</span><b id="c7d-t2">—</b></div>
+        <div class="tot"><span>δ</span><b id="c7d-d">—</b></div>
+      </div>
+    </div>
+    <div class="c7-out">
+      <svg id="c7d-svg" viewBox="0 0 760 330" aria-label="δ en fonction de la portée à G/L constant"></svg>
+      <div class="c7-steps" id="c7d-steps"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 19. SECTION 05 ═════════ -->
+<section class="slide section" data-title="Partie 5 — Militaires, exceptionnels, trottoirs">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">05</div>
+    <h2 data-a data-fx="up" data-d=".15">Chars, convois et trottoirs</h2>
+    <p data-a data-fx="up" data-d=".3">Sur les itinéraires désignés par le CPS : <b style="color:#e2c070">charges militaires</b> et <b style="color:#e2c070">convois exceptionnels</b>. Partout : les <b style="color:#e2c070">trottoirs</b>.</p>
+  </div>
+</section>
+
+<!-- ═════════ 20. MILITAIRES ═════════ -->
+<section class="slide" data-title="Les charges militaires">
+  <div class="kicker">Charges militaires</div>
+  <h2 class="t">Chenilles et essieux : <em>Mc et Me</em></h2>
+  <svg class="full" viewBox="0 0 1150 450" style="max-height:420px" aria-label="Plans cotés des véhicules militaires">
+    <defs><marker id="c7s20-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+    <g data-b="1" data-fx="up">
+      <rect x="0" y="0" width="565" height="215" rx="14" fill="#f1ecfa"/>
+      <text x="20" y="34" class="lbl-b">Mc80 — char de 72 t</text>
+      <g fill="#7a52c7"><rect x="176.5" y="55.25" width="147" height="25.5" rx="4"/><rect x="176.5" y="139.25" width="147" height="25.5" rx="4"/></g>
+      <rect x="196" y="84" width="108" height="52" rx="6" fill="#ddd0f5"/>
+      <text x="250" y="116" text-anchor="middle" class="lbl-s">36 t / chenille</text>
+      <path d="M176.5 186 H323.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="250" y="206" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">4,90 m</text>
+      <path d="M350 68 V152" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="362" y="104" class="lbl-s" style="fill:#8a6a1f">entraxe</text><text x="362" y="126" class="lbl-s" style="fill:#8a6a1f">2,80 m</text>
+      <text x="166" y="74" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">0,85</text>
+    </g>
+    <g data-b="2" data-fx="up">
+      <rect x="585" y="0" width="565" height="215" rx="14" fill="#f1ecfa"/>
+      <text x="605" y="34" class="lbl-b">Mc120 — char de 110 t</text>
+      <g fill="#5b3aa0"><rect x="775.5" y="45.5" width="183" height="30" rx="4"/><rect x="775.5" y="144.5" width="183" height="30" rx="4"/></g>
+      <rect x="800" y="80" width="133" height="60" rx="6" fill="#ddd0f5"/>
+      <text x="867" y="116" text-anchor="middle" class="lbl-s">55 t / chenille</text>
+      <path d="M775.5 194 H958.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="867" y="212" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">6,10 m</text>
+      <path d="M985 60.5 V159.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="997" y="104" class="lbl-s" style="fill:#8a6a1f">entraxe</text><text x="997" y="126" class="lbl-s" style="fill:#8a6a1f">3,30 m</text>
+      <text x="765" y="66" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">1,00</text>
+    </g>
+    <g data-b="3" data-fx="up">
+      <rect x="0" y="235" width="565" height="215" rx="14" fill="#eef4fc"/>
+      <text x="20" y="269" class="lbl-b">Me80 — 2 essieux de 22 t</text>
+      <g fill="#2f6fe0"><rect x="225" y="292.5" width="6" height="105"/><rect x="269" y="292.5" width="6" height="105"/></g>
+      <path d="M228 418 H272" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="284" y="424" class="lbl-s" style="fill:#8a6a1f">1,50 m</text>
+      <path d="M300 292.5 V397.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="312" y="342" class="lbl-s" style="fill:#8a6a1f">3,50 m</text>
+      <text x="200" y="336" text-anchor="end" class="lbl-s">impact</text><text x="200" y="358" text-anchor="end" class="lbl-s">3,50 × 0,12</text>
+      <text x="440" y="342" text-anchor="middle" class="lbl-s">44 t au total</text>
+    </g>
+    <g data-b="4" data-fx="up">
+      <rect x="585" y="235" width="565" height="215" rx="14" fill="#eef4fc"/>
+      <text x="605" y="269" class="lbl-b">Me120 — 2 essieux de 33 t</text>
+      <g fill="#2453b3"><rect x="837" y="285" width="7" height="120"/><rect x="891" y="285" width="7" height="120"/></g>
+      <path d="M840.5 426 H894.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="906" y="432" class="lbl-s" style="fill:#8a6a1f">1,80 m</text>
+      <path d="M922 285 V405" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s20-a)" marker-end="url(#c7s20-a)"/><text x="934" y="342" class="lbl-s" style="fill:#8a6a1f">4,00 m</text>
+      <text x="815" y="336" text-anchor="end" class="lbl-s">impact</text><text x="815" y="358" text-anchor="end" class="lbl-s">4,00 × 0,15</text>
+      <text x="1055" y="342" text-anchor="middle" class="lbl-s">66 t au total</text>
+    </g>
+  </svg>
+  <div class="callout v" style="margin-top:10px;padding:10px 18px" data-b="5" data-fx="up"><span class="lab">Règles d'emploi</span>Avec <b>δ</b>, <b>sans</b> charges de trottoirs. Convoi de chars : distance libre d'au moins <b>30,50 m</b> entre deux véhicules ; un seul convoi en largeur.</div>
+</section>
+
+<!-- ═════════ 21. Mc120 QUI TRAVERSE ═════════ -->
+<section class="slide" id="c7-mc" data-title="Un char Mc120 traverse le pont">
+  <div class="kicker">Charges militaires · ligne d'influence en action</div>
+  <h2 class="t">Le Mc120 traverse : <em>le moment se trace</em></h2>
+  <svg class="full" viewBox="0 0 1150 420" aria-label="Un char Mc120 traverse une travée de 25 m et le moment au milieu évolue">
+    <rect width="1150" height="420" rx="16" fill="#eef4fc"/>
+    <rect x="0" y="100" width="150" height="22" fill="#dfe3e8"/><rect x="1000" y="100" width="150" height="22" fill="#dfe3e8"/>
+    <rect x="150" y="100" width="850" height="22" fill="#b9c2cc" stroke="#6e7884"/>
+    <path d="M150 122 l-12 20 h24z M1000 122 l-12 20 h24z" fill="#6e7884"/>
+    <path d="M575 52 V392" stroke="#b8902f" stroke-width="2" stroke-dasharray="6 5"/>
+    <text x="585" y="160" class="lbl-s" style="fill:#8a6a1f">mi-travée</text>
+    <g id="c7mc-tank">
+      <rect x="-103.7" y="80" width="207.4" height="20" rx="10" fill="#5b3aa0"/>
+      <g fill="#ddd0f5"><circle cx="-85" cy="90" r="6"/><circle cx="-50" cy="90" r="6"/><circle cx="-15" cy="90" r="6"/><circle cx="20" cy="90" r="6"/><circle cx="55" cy="90" r="6"/><circle cx="88" cy="90" r="6"/></g>
+      <rect x="-80" y="58" width="150" height="24" rx="6" fill="#7a52c7"/>
+      <rect x="-40" y="40" width="70" height="20" rx="8" fill="#7a52c7"/>
+      <rect x="28" y="46" width="90" height="7" rx="3" fill="#7a52c7"/>
+    </g>
+    <path d="M40 392 H1110" stroke="#6e7884"/>
+    <path d="M40 223 H1110" stroke="#dc4a2c" stroke-dasharray="4 6" opacity=".5"/>
+    <text x="40" y="214" class="lbl-s" style="fill:#a33d22">603,6 t·m</text>
+    <text x="1110" y="414" text-anchor="end" class="lbl-s">position du char →</text>
+    <path id="c7mc-curve" d="M46 392" fill="none" stroke="#dc4a2c" stroke-width="3.2"/>
+    <circle id="c7mc-dot" cx="46" cy="392" r="7" fill="#dc4a2c"/>
+    <text id="c7mc-val" x="1120" y="44" text-anchor="end" class="lbl-b" style="font-size:28px;fill:#a33d22">M = 0 t·m</text>
+  </svg>
+  <div class="c7-stk" style="margin-top:12px">
+    <div data-b="0" data-only><div class="callout v">Un char <b>Mc120</b> (110 t sur deux chenilles de 6,10 m) arrive sur une travée de 25 m. On suit le moment <b>à mi-travée</b>.</div></div>
+    <div data-b="1" data-only><div class="callout v">La chenille entre à moitié : le moment au milieu commence à croître (≈ <b>168 t·m</b>).</div></div>
+    <div data-b="2" data-only><div class="callout v">Chenille entière sur la travée, au quart de la portée : M ≈ <b>344 t·m</b>.</div></div>
+    <div data-b="3" data-only><div class="callout v">Le char approche du milieu : M ≈ <b>495 t·m</b>. Chaque mètre gagné compte de moins en moins.</div></div>
+    <div data-b="4" data-only><div class="callout v">Chenille centrée : <b>maximum</b>, <span class="tex">M = \tfrac{P}{2}\left(\tfrac{L}{2} - \tfrac{c}{4}\right) = 110\,(6{,}25 - 0{,}7625) \approx 603{,}6</span> t·m.</div></div>
+    <div data-b="5" data-only><div class="callout v">Le char s'éloigne : le moment redescend symétriquement (≈ <b>344 t·m</b> aux trois quarts).</div></div>
+    <div data-b="6" data-only><div class="callout v">On retient le maximum × δ : 603,6 × 1,0920 ≈ <b>659,2 t·m</b>. Un second char ne peut pas être sur la travée (30,50 m de distance libre).</div></div>
+  </div>
+</section>
+
+<!-- ═════════ 22. CONVOIS D ET E ═════════ -->
+<section class="slide" data-title="Les convois exceptionnels D et E">
+  <div class="kicker">Charges exceptionnelles</div>
+  <h2 class="t">Les convois D et E : <em>lourds, lents, seuls</em></h2>
+  <svg class="full" viewBox="0 0 1150 340" aria-label="Convois exceptionnels D et E cotés">
+    <defs><marker id="c7s22-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+    <rect width="1150" height="340" rx="16" fill="#fbfaf6"/>
+    <g data-b="1" data-fx="drivein">
+      <text x="30" y="40" class="lbl-b">Convoi D</text><text x="30" y="64" class="lbl-s">2 × 140 t</text>
+      <rect x="150" y="50" width="198" height="59.4" rx="5" fill="#e8a020"/><rect x="492" y="50" width="198" height="59.4" rx="5" fill="#e8a020"/>
+      <path d="M348 80 H492" stroke="#8a6d45" stroke-width="4"/>
+      <rect x="700" y="58" width="44" height="44" rx="8" fill="#5d6672"/>
+      <text x="249" y="86" text-anchor="middle" class="lbl-w" style="font-size:19px">140 t</text><text x="591" y="86" text-anchor="middle" class="lbl-w" style="font-size:19px">140 t</text>
+    </g>
+    <g data-b="1" data-fx="fade" data-d="1.4">
+      <path d="M150 124 H348" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s22-a)" marker-end="url(#c7s22-a)"/><text x="249" y="146" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">11,00 × 3,30 m</text>
+      <path d="M249 112 V162 M591 112 V162" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <path d="M249 156 H591" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s22-a)" marker-end="url(#c7s22-a)"/><text x="420" y="150" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">19 m entre centres</text>
+      <text x="800" y="76" class="lbl-s">≈ 3,86 t/m² sous</text><text x="800" y="98" class="lbl-s">chaque remorque</text>
+    </g>
+    <g data-b="2" data-fx="drivein">
+      <text x="30" y="210" class="lbl-b">Convoi E</text><text x="30" y="234" class="lbl-s">2 × 200 t</text>
+      <rect x="150" y="200" width="270" height="59.4" rx="5" fill="#dc4a2c"/><rect x="744" y="200" width="270" height="59.4" rx="5" fill="#dc4a2c"/>
+      <path d="M420 230 H744" stroke="#8a6d45" stroke-width="4"/>
+      <rect x="1024" y="208" width="44" height="44" rx="8" fill="#5d6672"/>
+      <text x="285" y="236" text-anchor="middle" class="lbl-w" style="font-size:19px">200 t</text><text x="879" y="236" text-anchor="middle" class="lbl-w" style="font-size:19px">200 t</text>
+    </g>
+    <g data-b="2" data-fx="fade" data-d="1.4">
+      <path d="M150 274 H420" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s22-a)" marker-end="url(#c7s22-a)"/><text x="285" y="296" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">15,00 × 3,30 m</text>
+      <path d="M285 262 V318 M879 262 V318" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <path d="M285 312 H879" stroke="#b8902f" stroke-width="2" marker-start="url(#c7s22-a)" marker-end="url(#c7s22-a)"/><text x="582" y="304" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">33 m entre centres · ≈ 4,04 t/m²</text>
+    </g>
+  </svg>
+  <div class="cols c3" style="margin-top:14px;gap:16px">
+    <div class="card amber" data-b="3" data-fx="up" style="padding:14px 18px"><h3>Un seul convoi</h3><p>Seul sur le pont, roulant au pas (<b>10 km/h</b>).</p></div>
+    <div class="card red" data-b="3" data-fx="up" data-d=".1" style="padding:14px 18px"><h3>Sans δ</h3><p>Ni majoration dynamique, <b>ni freinage</b>.</p></div>
+    <div class="card" data-b="3" data-fx="up" data-d=".2" style="padding:14px 18px"><h3>Si le CPS le prévoit</h3><p>Transformateurs, cuves : itinéraires de <b>convois</b>.</p></div>
+  </div>
+</section>
+
+<!-- ═════════ 23. TROTTOIRS ═════════ -->
+<section class="slide" data-title="Les charges de trottoirs">
+  <div class="kicker">Trottoirs</div>
+  <h2 class="t">Les trottoirs : <em>trois charges, trois usages</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 600 470" aria-label="Charges sur un trottoir">
+        <defs><marker id="c7s23-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+          <marker id="c7s23-o" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#e8a020"/></marker></defs>
+        <rect width="600" height="470" rx="18" fill="#eef4fc"/>
+        <rect x="40" y="300" width="540" height="34" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="45" y="270" width="210" height="30" fill="#dfe3e8" stroke="#6e7884"/>
+        <path d="M30 262 H45 V350 H36 L30 340 Z" fill="#e2c070" stroke="#b8902f"/>
+        <rect x="255" y="294" width="325" height="6" fill="#3c4049"/>
+        <path d="M60 270 V170 M60 176 H140 M100 270 V176" stroke="#5c6470" stroke-width="3" fill="none"/>
+        <rect x="320" y="334" width="40" height="90" fill="#cfd5dc" stroke="#6e7884"/>
+        <text x="150" y="294" text-anchor="middle" class="lbl-s">trottoir 1,50 m</text>
+        <text x="420" y="360" text-anchor="middle" class="lbl-s">chaussée</text>
+        <g data-b="1" data-fx="down" stroke="#dc4a2c" stroke-width="2.2">
+          <path d="M110 200 H220"/><path d="M118 202 V264 M136 202 V264 M154 202 V264 M172 202 V264 M190 202 V264 M208 202 V264" marker-end="url(#c7s23-r)"/>
+        </g>
+        <text x="165" y="190" text-anchor="middle" class="lbl-b" style="fill:#a33d22" data-b="1" data-fx="fade">450 kg/m²</text>
+        <g data-b="2" data-fx="down" stroke="#e8a020" stroke-width="2">
+          <path d="M45 130 H255"/><path d="M60 132 V160 M90 132 V160 M120 132 V160 M150 132 V160 M180 132 V160 M210 132 V160 M240 132 V160" marker-end="url(#c7s23-o)"/>
+        </g>
+        <text x="150" y="120" text-anchor="middle" class="lbl-b" style="fill:#a8700f" data-b="2" data-fx="fade">150 kg/m²</text>
+        <g data-b="3" data-fx="pop"><path d="M420 50 V258" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c7s23-r)"/><rect x="408" y="262" width="24" height="8" fill="#dc4a2c"/><text x="436" y="110" class="lbl-b" style="fill:#a33d22">roue 6 t</text><text x="436" y="134" class="lbl-s">impact 0,25 × 0,25</text></g>
+      </svg>
+    </div>
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="right"><b>450 kg/m² locale</b> : dalles du trottoir, hourdis, encorbellements.</li>
+        <li data-b="2" data-fx="right"><b>150 kg/m² générale</b> : poutres principales, sur toute la largeur, cumulée avec A ou B.</li>
+        <li data-b="3" data-fx="right"><b>Roue de 6 t</b> : un véhicule monte sur le trottoir ; éléments locaux, à l'ELU.</li>
+      </ul>
+      <div class="callout r" style="margin-top:18px" data-b="4" data-fx="up"><span class="lab">Piège</span>Trottoirs cumulés avec <b>A et B</b>, mais <b>pas</b> avec les charges militaires ni les convois exceptionnels.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 24. SECTION 06 ═════════ -->
+<section class="slide section" data-title="Partie 6 — Efforts horizontaux, rail et combinaisons">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">06</div>
+    <h2 data-a data-fx="up" data-d=".15">Efforts horizontaux, rail et combinaisons</h2>
+    <p data-a data-fx="up" data-d=".3">Freinage, vent, température ; le <b style="color:#e2c070">train LM71</b> ; puis on <b style="color:#e2c070">combine</b> tout pour trouver le cas qui dimensionne.</p>
+  </div>
+</section>
+
+<!-- ═════════ 25. FREINAGE ═════════ -->
+<section class="slide" data-title="Le freinage">
+  <div class="kicker">Efforts horizontaux</div>
+  <h2 class="t">Un camion freine : <em>le pont est poussé</em></h2>
+  <svg class="full" viewBox="0 0 1150 300" aria-label="Effort de freinage transmis aux appuis">
+    <defs>
+      <marker id="c7s25-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+      <pattern id="c7s25-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+    </defs>
+    <rect width="1150" height="300" rx="16" fill="#eef4fc"/>
+    <rect y="270" width="1150" height="30" fill="url(#c7s25-e)"/>
+    <rect x="90" y="184" width="40" height="86" fill="#cfd5dc" stroke="#6e7884"/><rect x="1020" y="184" width="40" height="86" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="100" y="150" width="950" height="26" fill="#b9c2cc" stroke="#6e7884"/><rect x="100" y="144" width="950" height="6" fill="#3c4049"/>
+    <rect x="104" y="176" width="22" height="8" fill="#2f6fe0"/><rect x="1024" y="176" width="22" height="8" fill="#2f6fe0"/>
+    <g class="c7-brake">
+      <rect x="430" y="88" width="210" height="42" rx="3" fill="#e9eef3" stroke="#9aa3ae"/>
+      <path d="M644 130 V100 q0 -8 8 -8 h38 q20 0 24 20 V130 Z" fill="#dc4a2c"/>
+      <rect x="430" y="130" width="284" height="6" fill="#5d6672"/>
+      <g fill="#141a26"><circle cx="490" cy="138" r="8"/><circle cx="520" cy="138" r="8"/><circle cx="676" cy="138" r="8"/></g>
+    </g>
+    <g data-b="1" data-fx="fade">
+      <path d="M480 160 H800" stroke="#dc4a2c" stroke-width="4" marker-end="url(#c7s25-r)"/>
+      <text x="820" y="120" class="lbl-b" style="fill:#a33d22">H de freinage</text>
+      <text x="820" y="144" class="lbl-s" style="fill:#a33d22">appliqué au niveau de la chaussée</text>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <path d="M200 196 H140" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c7s25-r)" class="flow"/>
+      <path d="M110 196 V262" stroke="#dc4a2c" stroke-width="2" stroke-dasharray="6 5"/>
+      <text x="210" y="216" class="lbl-s" style="fill:#a33d22">repris par les appareils d'appui, puis par les appuis et le sol</text>
+    </g>
+  </svg>
+  <div class="cols c2" style="margin-top:14px;gap:20px">
+    <div class="formula" data-b="3" data-fx="up"><span class="texd">F_A = \frac{A_2 \cdot S}{20 + 0{,}0035\,S}</span><div class="w">Pont de référence : S = 7 × 25 = 175 m², A₂ = 1 203 kg/m² → <b>F<sub>A</sub> ≈ 10,2 t</b>.</div></div>
+    <div class="callout" data-b="4" data-fx="up"><span class="lab">Système Bc</span>Un <b>seul camion freine</b> : effort = <b>30 t</b>. On retient le plus défavorable des deux, <b>sans δ</b>. Le partage entre appuis se fait selon leurs raideurs (chapitre 9).</div>
+  </div>
+</section>
+
+<!-- ═════════ 26. VENT ET TEMPÉRATURE ═════════ -->
+<section class="slide" data-title="Le vent et la température">
+  <div class="kicker">Efforts horizontaux et déformations</div>
+  <h2 class="t">Le vent pousse, <em>la chaleur allonge</em></h2>
+  <div class="cols c2" style="gap:24px">
+    <div class="card blue" data-b="1" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 540 250" aria-label="Vent sur un tablier">
+        <defs><marker id="c7s26-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f6fe0"/></marker></defs>
+        <rect width="540" height="250" rx="12" fill="#eef4fc"/>
+        <g stroke="#2f6fe0" stroke-width="3" class="flow"><path d="M20 70 H170" marker-end="url(#c7s26-b)"/><path d="M40 110 H170" marker-end="url(#c7s26-b)"/><path d="M20 150 H170" marker-end="url(#c7s26-b)"/><path d="M40 190 H170" marker-end="url(#c7s26-b)"/></g>
+        <rect x="190" y="96" width="320" height="18" fill="#b9c2cc" stroke="#6e7884"/><rect x="250" y="90" width="200" height="6" fill="#3c4049"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="215" y="114" width="20" height="70"/><rect x="295" y="114" width="20" height="70"/><rect x="385" y="114" width="20" height="70"/><rect x="465" y="114" width="20" height="70"/></g>
+        <path d="M190 60 H510 V96" fill="none" stroke="#9aa3ae" stroke-dasharray="5 4"/>
+        <text x="350" y="50" text-anchor="middle" class="lbl-s">surface exposée (+ véhicules)</text>
+        <text x="350" y="222" text-anchor="middle" class="lbl-s">coupe transversale</text>
+      </svg>
+      <h3 style="margin-top:8px">Vent (fascicule 61)</h3>
+      <p><b>2 000 N/m²</b> en service ; <b>1 250 N/m²</b> en construction. Pas cumulé avec le trafic maximal.</p>
+    </div>
+    <div class="card amber" data-b="2" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 540 250" aria-label="Dilatation thermique d'un tablier">
+        <rect width="540" height="250" rx="12" fill="#fdf3e2"/>
+        <rect x="40" y="110" width="400" height="26" fill="#e8a020" fill-opacity=".35" stroke="#b8902f">
+          <animate attributeName="width" dur="3s" repeatCount="indefinite" values="380;430;380"/>
+        </rect>
+        <path d="M40 136 l-10 18 h20z" fill="#6e7884"/>
+        <rect x="460" y="104" width="50" height="40" fill="#cfd5dc" stroke="#6e7884"/>
+        <text x="455" y="94" text-anchor="middle" class="lbl-s">joint</text>
+        <text x="240" y="80" text-anchor="middle" class="lbl-b" style="fill:#a8700f">ΔL = α · ΔT · L</text>
+        <text x="240" y="186" text-anchor="middle" class="lbl-s">α = 10⁻⁵ /°C · 50 m, +30 °C → 15 mm</text>
+        <text x="240" y="214" text-anchor="middle" class="lbl-s">(dessin très exagéré)</text>
+      </svg>
+      <h3 style="margin-top:8px">Température, retrait, fluage</h3>
+      <p>ΔT uniforme de l'ordre de <b>±20 à ±30 °C</b> selon le CPS, plus un <b>gradient</b>. Ils fixent le <b>souffle des joints</b> et la distorsion des appareils.</p>
+    </div>
+  </div>
+  <div class="callout t" style="margin-top:14px" data-b="3" data-fx="up"><span class="lab">Forces ou déformations ?</span>Freinage et vent sont des <b>forces</b>. Température, retrait et fluage sont des <b>déformations imposées</b> : elles ne pèsent rien, mais créent des efforts si on les empêche.</div>
+</section>
+
+<!-- ═════════ 27. LM71 ═════════ -->
+<section class="slide" data-title="Le train LM71">
+  <div class="kicker">Ponts-rails</div>
+  <h2 class="t">Les ponts-rails : <em>le schéma UIC 71 / LM71</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 600 470" aria-label="Schéma de charges LM71">
+        <defs>
+          <marker id="c7s27-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+          <marker id="c7s27-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+        </defs>
+        <rect width="600" height="470" rx="18" fill="#eef4fc"/>
+        <g class="drive" style="--t:7s;--from:-420px;--to:640px">
+          <rect x="0" y="52" width="110" height="46" rx="8" fill="#e8a020"/><rect x="10" y="60" width="26" height="16" rx="3" fill="#fff" opacity=".8"/>
+          <rect x="116" y="56" width="120" height="42" rx="6" fill="#2f6fe0"/><rect x="242" y="56" width="120" height="42" rx="6" fill="#2f6fe0"/>
+          <g fill="#141a26"><circle cx="20" cy="102" r="6"/><circle cx="90" cy="102" r="6"/><circle cx="136" cy="102" r="6"/><circle cx="216" cy="102" r="6"/><circle cx="262" cy="102" r="6"/><circle cx="342" cy="102" r="6"/></g>
+        </g>
+        <path d="M0 108 H600" stroke="#5c6470" stroke-width="3"/>
+        <rect x="20" y="330" width="560" height="10" fill="#b9c2cc"/>
+        <path d="M20 326 H580" stroke="#5c6470" stroke-width="5"/>
+        <g data-b="1" data-fx="down" stroke="#dc4a2c" stroke-width="4">
+          <path d="M252 168 V318" marker-end="url(#c7s27-r)"/><path d="M316 168 V318" marker-end="url(#c7s27-r)"/><path d="M380 168 V318" marker-end="url(#c7s27-r)"/><path d="M444 168 V318" marker-end="url(#c7s27-r)"/>
+        </g>
+        <g data-b="1" data-fx="fade"><path d="M252 160 V150 H444 V160" fill="none" stroke="#a33d22" stroke-width="1.5"/><text x="348" y="140" text-anchor="middle" class="lbl-b" style="fill:#a33d22">4 × 250 kN</text></g>
+        <g data-b="2" data-fx="down" stroke="#dc4a2c" stroke-width="2">
+          <path d="M20 256 H220 M476 256 H580"/>
+          <path d="M30 258 V318 M60 258 V318 M90 258 V318 M120 258 V318 M150 258 V318 M180 258 V318 M210 258 V318 M486 258 V318 M516 258 V318 M546 258 V318 M574 258 V318" marker-end="url(#c7s27-r)"/>
+        </g>
+        <g data-b="2" data-fx="fade"><text x="120" y="244" text-anchor="middle" class="lbl-b" style="fill:#a33d22">80 kN/m</text><text x="528" y="244" text-anchor="middle" class="lbl-b" style="fill:#a33d22">80 kN/m</text><text x="120" y="220" text-anchor="middle" class="lbl-s">← sans limite</text><text x="528" y="220" text-anchor="middle" class="lbl-s">sans limite →</text></g>
+        <g data-b="3" data-fx="fade">
+          <path d="M220 362 H252 M252 362 H316 M316 362 H380 M380 362 H444 M444 362 H476" stroke="#b8902f" stroke-width="1.8" marker-start="url(#c7s27-a)" marker-end="url(#c7s27-a)"/>
+          <g class="lbl-s" text-anchor="middle" style="fill:#8a6a1f"><text x="284" y="386">1,60</text><text x="348" y="386">1,60</text><text x="412" y="386">1,60</text><text x="236" y="410">0,80</text><text x="460" y="410">0,80</text></g>
+          <text x="300" y="448" text-anchor="middle" class="lbl-s">effets × α (classification) × Φ (dynamique)</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <div class="formula" data-b="4" data-fx="right"><span class="texd">\Phi_2 = \frac{1{,}44}{\sqrt{L_\Phi} - 0{,}2} + 0{,}82</span><div class="w">voie soigneusement entretenue ; 1,00 ≤ Φ₂ ≤ 1,67</div></div>
+      <div class="formula" style="margin-top:12px" data-b="4" data-fx="right" data-d=".15"><span class="texd">\Phi_3 = \frac{2{,}16}{\sqrt{L_\Phi} - 0{,}2} + 0{,}73</span><div class="w">entretien normal ; 1,00 ≤ Φ₃ ≤ 2,00</div></div>
+      <ul class="b tight" style="margin-top:16px">
+        <li data-b="5" data-fx="right">L<sub>Φ</sub> = 25 m → <b>Φ₂ = 1,12</b> ; <b>Φ₃ = 1,18</b>.</li>
+        <li data-b="5" data-fx="right" data-d=".1">α souvent <b>1,21</b> sur LGV ; choix fixés par l'<b>ONCF</b>.</li>
+        <li data-b="5" data-fx="right" data-d=".2">SW/0 et SW/2 : schémas complémentaires (continus, charges lourdes).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 28. LM1 ═════════ -->
+<section class="slide" data-title="Pour la culture : l'Eurocode LM1">
+  <div class="kicker">Pour la culture · EN 1991-2</div>
+  <h2 class="t">L'Eurocode routier : <em>le modèle LM1</em></h2>
+  <svg class="full" viewBox="0 0 1150 350" aria-label="Modèle de charge LM1 sur trois voies">
+    <rect width="1150" height="350" rx="16" fill="#eef4fc"/>
+    <rect x="60" y="20" width="1030" height="310" fill="#b9c2cc"/>
+    <g data-b="1" data-fx="fade">
+      <rect x="60" y="20" width="1030" height="90" fill="#dc4a2c" opacity=".38"/>
+      <g fill="#141a26"><rect x="634" y="34" width="12" height="12"/><rect x="634" y="94" width="12" height="12"/><rect x="670" y="34" width="12" height="12"/><rect x="670" y="94" width="12" height="12"/></g>
+      <path d="M640 40 V100 M676 40 V100" stroke="#141a26" stroke-width="2"/>
+      <text x="80" y="60" class="lbl-b">Voie 1 · 3 m</text><text x="80" y="88" class="lbl">TS 2 × 300 kN · UDL 9 kN/m²</text>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <rect x="60" y="110" width="1030" height="90" fill="#e8a020" opacity=".25"/>
+      <g fill="#141a26"><rect x="634" y="124" width="12" height="12"/><rect x="634" y="184" width="12" height="12"/><rect x="670" y="124" width="12" height="12"/><rect x="670" y="184" width="12" height="12"/></g>
+      <path d="M640 130 V190 M676 130 V190" stroke="#141a26" stroke-width="2"/>
+      <text x="80" y="150" class="lbl-b">Voie 2 · 3 m</text><text x="80" y="178" class="lbl">TS 2 × 200 kN · UDL 2,5 kN/m²</text>
+    </g>
+    <g data-b="3" data-fx="fade">
+      <rect x="60" y="200" width="1030" height="90" fill="#e8a020" opacity=".18"/>
+      <g fill="#141a26"><rect x="634" y="214" width="12" height="12"/><rect x="634" y="274" width="12" height="12"/><rect x="670" y="214" width="12" height="12"/><rect x="670" y="274" width="12" height="12"/></g>
+      <path d="M640 220 V280 M676 220 V280" stroke="#141a26" stroke-width="2"/>
+      <text x="80" y="240" class="lbl-b">Voie 3 · 3 m</text><text x="80" y="268" class="lbl">TS 2 × 100 kN · UDL 2,5 kN/m²</text>
+    </g>
+    <g data-b="4" data-fx="fade"><rect x="60" y="290" width="1030" height="40" fill="#9aa3ae" opacity=".35"/><text x="80" y="317" class="lbl">aire résiduelle · 2,5 kN/m²</text></g>
+    <path d="M60 110 H1090 M60 200 H1090 M60 290 H1090" stroke="#fff" stroke-width="2" stroke-dasharray="14 10"/>
+    <text x="760" y="70" class="lbl-s" data-b="1" data-fx="fade">tandem : essieux à 1,20 m, roues à 2,00 m</text>
+  </svg>
+  <div class="callout b" style="margin-top:14px" data-b="5" data-fx="up"><span class="lab">À savoir</span>Ces valeurs incluent l'amplification dynamique et sont pondérées par des coefficients d'ajustement fixés par l'annexe nationale ou le CPS. Au Maroc, c'est le <b>CPS</b> qui dit si l'on applique LM1 ou le fascicule 61.</div>
+</section>
+
+<!-- ═════════ 29. COMBINAISONS ═════════ -->
+<section class="slide" data-title="Les combinaisons ELU et ELS">
+  <div class="kicker">Combiner les actions</div>
+  <h2 class="t">ELU et ELS : <em>pondérer avant d'additionner</em></h2>
+  <table class="tb c7-t">
+    <thead><tr><th>Charges d'exploitation</th><th>ELU fondamental</th><th>ELS</th></tr></thead>
+    <tbody>
+      <tr data-b="1" data-fx="left" class="hl"><td><b>A(l) ou B</b> (avec δ) + trottoirs</td><td><b>1,35 G + 1,6 Q</b></td><td><b>G + 1,2 Q</b></td></tr>
+      <tr data-b="2" data-fx="left"><td><b>Militaires</b> Mc, Me (avec δ)</td><td>1,35 G + 1,35 Q</td><td>G + Q</td></tr>
+      <tr data-b="2" data-fx="left" data-d=".1"><td><b>Exceptionnels</b> D, E (sans δ)</td><td>1,35 G + 1,35 Q</td><td>G + Q</td></tr>
+      <tr data-b="3" data-fx="left"><td><b>Eurocode</b> (EN 1990, annexe A2)</td><td>1,35 G + 1,35 (TS + UDL)</td><td>G + (TS + UDL)</td></tr>
+    </tbody>
+  </table>
+  <div class="cols c3" style="margin-top:20px;gap:18px">
+    <div class="card red" data-b="4" data-fx="up" style="padding:14px 18px"><h3>ELU</h3><p>Sécurité vis-à-vis de la <b>rupture</b> : grands coefficients.</p></div>
+    <div class="card teal" data-b="4" data-fx="up" data-d=".1" style="padding:14px 18px"><h3>ELS</h3><p><b>Fissuration</b>, contraintes de service, <b>flèches</b>.</p></div>
+    <div class="card gold" data-b="5" data-fx="up" style="padding:14px 18px"><h3>G favorable ?</h3><p>Soulèvement, stabilité : on prend <b>1,0 G</b> au lieu de 1,35 G.</p></div>
+  </div>
+  <p class="small" style="margin-top:14px" data-b="5" data-fx="fade">Pratique BAEL/BPEL associée au fascicule 61 ; le CPS précise les combinaisons avec le vent, la température et le séisme.</p>
+</section>
+
+<!-- ═════════ 30. EXEMPLE COMPLET ═════════ -->
+<section class="slide" data-title="Exemple complet : le pont de référence">
+  <div class="kicker">Exemple · L = 25 m, G = 20 + 5 = 25 t/ml, L<sub>c</sub> = 7 m</div>
+  <h2 class="t">Quel cas <em>dimensionne</em> ?</h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">M<sub>G</sub> = 25 × 25²/8 = <b>1 953,1 t·m</b>.</li>
+        <li data-b="2" data-fx="left">A : <b>657,9</b> ; Bc 2 files : 2 × 217,5 × 1,10 × 1,0968 = <b>524,8</b>.</li>
+        <li data-b="3" data-fx="left">Mc120 : 603,6 × 1,0920 = <b>659,2 t·m</b>.</li>
+        <li data-b="4" data-fx="left">Br : 10 × 25/4 = 62,5 t·m, <b>local</b> seulement.</li>
+      </ul>
+      <div class="callout" style="margin-top:16px" data-b="6" data-fx="up"><span class="lab">Lecture</span>A et Mc120 sont voisins avant pondération, mais <b>1,6</b> et <b>1,2</b> font de <b>A</b> le cas dimensionnant. Bc reviendra pour l'effort tranchant et le hourdis.</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 705 520" aria-label="Comparaison des moments à mi-travée">
+        <rect width="705" height="520" rx="18" fill="#fff"/>
+        <text x="30" y="40" class="lbl-b">Moments à mi-travée (t·m)</text>
+        <g class="lbl" text-anchor="end"><text x="140" y="87">G</text><text x="140" y="127">A(l)</text><text x="140" y="167">Bc</text><text x="140" y="207">Mc120</text><text x="140" y="297">ELU · A</text><text x="140" y="337">ELU · Mc120</text><text x="140" y="417">ELS · A</text><text x="140" y="457">ELS · Mc120</text></g>
+        <rect x="150" y="68" width="273" height="26" rx="5" fill="#9aa3ae" data-b="1" data-fx="growx"/>
+        <rect x="150" y="108" width="92" height="26" rx="5" fill="#dc4a2c" data-b="2" data-fx="growx"/>
+        <rect x="150" y="148" width="73" height="26" rx="5" fill="#e8a020" data-b="2" data-fx="growx" data-d=".15"/>
+        <rect x="150" y="188" width="92" height="26" rx="5" fill="#7a52c7" data-b="3" data-fx="growx"/>
+        <g class="lbl-s" style="fill:#141a26">
+          <text x="431" y="87" data-b="1" data-fx="fade">1 953,1</text><text x="250" y="127" data-b="2" data-fx="fade">657,9</text><text x="231" y="167" data-b="2" data-fx="fade">524,8</text><text x="250" y="207" data-b="3" data-fx="fade">659,2</text>
+        </g>
+        <path d="M30 242 H680" stroke="#ece6d8" stroke-width="2"/>
+        <g data-b="5" data-fx="growx">
+          <rect x="150" y="278" width="369" height="26" fill="#9aa3ae"/><rect x="519" y="278" width="147" height="26" fill="#dc4a2c"/>
+          <rect x="150" y="318" width="369" height="26" fill="#9aa3ae"/><rect x="519" y="318" width="125" height="26" fill="#7a52c7"/>
+        </g>
+        <g data-b="5" data-fx="growx" data-d=".2">
+          <rect x="150" y="398" width="273" height="26" fill="#9aa3ae"/><rect x="423" y="398" width="111" height="26" fill="#dc4a2c"/>
+          <rect x="150" y="438" width="273" height="26" fill="#9aa3ae"/><rect x="423" y="438" width="92" height="26" fill="#7a52c7"/>
+        </g>
+        <g data-b="5" data-fx="fade" data-d=".5">
+          <text x="672" y="270" text-anchor="end" class="lbl-b" style="fill:#a33d22">3 689,3</text><text x="638" y="337" text-anchor="end" class="lbl-s" style="fill:#fff">3 526,6</text>
+          <text x="542" y="417" class="lbl-b" style="fill:#a33d22">2 742,6</text><text x="523" y="457" class="lbl-s">2 612,3</text>
+          <text x="30" y="500" class="lbl-s">gris : part des charges permanentes (1,35 G à l'ELU, G à l'ELS)</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 31. FIL ROUGE ═════════ -->
+<section class="slide" data-title="Notre fil rouge : l'inventaire des charges">
+  <div class="kicker">Notre fil rouge</div>
+  <h2 class="t">Les charges de <em>notre pont</em></h2>
+  <div class="split even">
+    <div class="vis">
+      <svg viewBox="0 0 600 470" aria-label="Chaussée du fil rouge : largeurs et voies">
+        <defs><marker id="c7s31-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#141a26"/></marker>
+          <marker id="c7s31-t" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12a08a"/></marker></defs>
+        <rect width="600" height="470" rx="18" fill="#e9f7f3"/>
+        <rect x="27" y="212" width="546" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="85" y="224" width="12" height="80"/><rect x="224" y="224" width="12" height="80"/><rect x="364" y="224" width="12" height="80"/><rect x="503" y="224" width="12" height="80"/></g>
+        <rect x="40" y="200" width="78" height="12" fill="#dfe3e8" stroke="#6e7884"/><rect x="482" y="200" width="78" height="12" fill="#dfe3e8" stroke="#6e7884"/>
+        <path d="M27 192 H40 V240 H32 L27 232 Z M573 192 H560 V240 H568 L573 232 Z" fill="#e2c070" stroke="#b8902f"/>
+        <rect x="118" y="206" width="364" height="6" fill="#3c4049"/>
+        <text x="79" y="190" text-anchor="middle" class="lbl-s">1,50</text><text x="521" y="190" text-anchor="middle" class="lbl-s">1,50</text>
+        <g data-b="1" data-fx="fade">
+          <path d="M118 120 V200 M482 120 V200" stroke="#141a26" stroke-dasharray="3 3"/>
+          <path d="M118 128 H482" stroke="#141a26" stroke-width="1.8" marker-start="url(#c7s31-a)" marker-end="url(#c7s31-a)"/>
+          <text x="300" y="118" text-anchor="middle" class="lbl-b">Lr = Lc = 7,00 m</text>
+          <text x="300" y="80" text-anchor="middle" class="lbl-s">bordures de trottoir, pas de glissière sur la chaussée</text>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <rect x="118" y="168" width="182" height="38" fill="#12a08a" opacity=".3"/><rect x="300" y="168" width="182" height="38" fill="#7a52c7" opacity=".25"/>
+          <text x="209" y="193" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c;font-weight:500">voie 1 · 3,50</text><text x="391" y="193" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0;font-weight:500">voie 2 · 3,50</text>
+          <rect x="70" y="340" width="460" height="44" rx="22" fill="#12a08a"/>
+          <text x="300" y="368" text-anchor="middle" class="lbl-w" style="font-size:18px">1re classe · n<tspan font-size="13" dy="3">v</tspan><tspan dy="-3"> = 2 · a₂ = 3,50/3,50 = 1</tspan></text>
+        </g>
+        <text x="300" y="430" text-anchor="middle" class="lbl-s">coupe du tablier prédimensionné au chapitre 6</text>
+      </svg>
+    </div>
+    <div>
+      <ul class="b tight">
+        <li data-b="3" data-fx="right"><b>g</b> ≈ 14,8 t/ml (chapitre 6) ; L = 25 m → <b>G = 14,8 × 25 ≈ 370 t</b>.</li>
+        <li data-b="4" data-fx="right"><b>A(25)</b> = 230 + 36 000/37 = <b>1 203 kg/m²</b> → q = 8,42 t/ml.</li>
+        <li data-b="5" data-fx="right"><b>Bc</b> 2 files : S = 132 t → <b>δ ≈ 1,116</b> (1 file : 1,094) ; Bt et Br pour le hourdis.</li>
+        <li data-b="6" data-fx="right"><b>Mc120</b> si le CPS l'exige : S = 110 t → δ ≈ 1,108.</li>
+        <li data-b="7" data-fx="right">Trottoirs <b>150 kg/m²</b>, freinage, vent, température.</li>
+      </ul>
+      <div class="callout t" style="margin-top:14px" data-b="8" data-fx="up"><span class="lab">La suite</span>Ces charges deviennent des <b>moments et efforts tranchants</b> dans les poutres : c'est le chapitre 8.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 32. À RETENIR ═════════ -->
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">Synthèse</div>
+  <h2 class="t">À retenir</h2>
+  <ul class="b" style="margin-top:14px;max-width:1090px">
+    <li data-b="1" data-fx="left"><b>L<sub>c</sub> = L<sub>r</sub> − 0,50 m</b> par dispositif de retenue ; n<sub>v</sub> = E(L<sub>c</sub>/3) ; la <b>classe</b> se lit sur L<sub>r</sub> (≥ 7 m : 1re classe).</li>
+    <li data-b="2" data-fx="left"><b>A(l) = 230 + 36 000/(l + 12)</b> kg/m², × a₁ (≥ 400 − 0,2 l) × a₂ = V₀/V ; <b>jamais de δ</b>.</li>
+    <li data-b="3" data-fx="left"><b>Bc</b> 30 t, 2 camions par file, files ≤ n<sub>v</sub>, × bc × δ ; <b>Bt</b> 2 × 16 t ; <b>Br</b> 10 t.</li>
+    <li data-b="4" data-fx="left"><b>δ = 1 + 0,4/(1 + 0,2 L) + 0,6/(1 + 4G/S)</b> ; Mc/Me avec δ, sans trottoirs ; D/E seuls, sans δ.</li>
+    <li data-b="5" data-fx="left">Ponts-rails : <b>LM71</b> (4 × 250 kN + 80 kN/m) × α × Φ. ELU <b>1,35 G + 1,6 Q</b> ; ELS <b>G + 1,2 Q</b>.</li>
+  </ul>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch8.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 8 : Calculer le tablier →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) {
+    if (!isFinite(x)) return "—";
+    var s = (+x).toFixed(d), neg = s.charAt(0) === "-"; if (neg) s = s.slice(1);
+    var p = s.split("."), i = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return (neg ? "−" : "") + i + (p[1] ? "," + p[1] : "");
+  }
+  function num(id, def) { var e = $(id); if (!e) return def; var v = parseFloat(String(e.value).replace(",", ".")); return isFinite(v) ? v : def; }
+  function set(id, html) { var e = $(id); if (e) e.innerHTML = html; }
+  window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+
+  /* ── règlement : fonctions de calcul (fascicule 61 titre II) ── */
+  var R = {
+    bc: function (cl, n) {
+      var t = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1.0, 1.0], 3: [1.0, 0.8] }[cl];
+      if (n > t.length) return { v: t[t.length - 1], over: true };
+      return { v: t[Math.max(1, n) - 1], over: false };
+    },
+    win: function (pos, w, L) {
+      var b = 0;
+      for (var i = 0; i < pos.length; i++) { var s = 0; for (var j = i; j < pos.length; j++) if (pos[j] - pos[i] <= L + 1e-9) s += w[j]; if (s > b) b = s; }
+      return b;
+    },
+    track: function (P, c, g, L) {
+      var per = c + g, q = P / c, best = 0;
+      for (var t = 0; t <= per; t += per / 600) {
+        var cov = 0;
+        for (var k = 0; k < 8; k++) { var a = k * per - t, bb = a + c; cov += Math.max(0, Math.min(bb, L) - Math.max(a, 0)); }
+        if (cov * q > best) best = cov * q;
+      }
+      return Math.min(best, P * Math.ceil(L / per + 1));
+    },
+    S: function (sys, L, cl, n, Sman) {
+      var o = { S: 0, txt: "", warn: [] };
+      if (sys === "bc") {
+        var w1 = R.win([0, 4.5, 6, 10.5, 15, 16.5], [6, 12, 12, 6, 12, 12], L), b = R.bc(cl, n);
+        if (b.over) o.warn.push("Plus de files que le tableau bc de cette classe : vérifiez n ≤ nv.");
+        o.S = n * w1 * b.v;
+        o.txt = n + " file(s) × " + fmt(w1, 0) + " t (essieux tenant sur " + fmt(L, 1) + " m) × bc " + fmt(b.v, 2);
+      } else if (sys === "bt") {
+        var bt = cl === 1 ? 1.0 : (cl === 2 ? 0.9 : 0), w2 = L >= 1.35 ? 32 : 16, nn = Math.min(n, 2);
+        if (cl === 3) o.warn.push("Le système Bt ne s'applique pas en 3e classe.");
+        if (n > 2) o.warn.push("Au plus 2 tandems de front : n ramené à 2.");
+        o.S = nn * w2 * bt;
+        o.txt = nn + " tandem(s) × " + fmt(w2, 0) + " t × bt " + fmt(bt, 1);
+      } else if (sys === "br") { o.S = 10; o.txt = "roue isolée de 10 t"; }
+      else if (sys === "mc80") { o.S = R.track(72, 4.9, 30.5, L); o.txt = "Mc80, 72 t sur 4,90 m, 30,50 m de distance libre"; }
+      else if (sys === "mc120") { o.S = R.track(110, 6.1, 30.5, L); o.txt = "Mc120, 110 t sur 6,10 m, 30,50 m de distance libre"; }
+      else if (sys === "me80") { o.S = L >= 1.5 ? 44 : 22; o.txt = "Me80, 2 essieux de 22 t à 1,50 m"; }
+      else if (sys === "me120") { o.S = L >= 1.8 ? 66 : 33; o.txt = "Me120, 2 essieux de 33 t à 1,80 m"; }
+      else { o.S = Sman; o.txt = "valeur saisie"; }
+      return o;
+    },
+    delta: function (L, G, S) {
+      var t1 = 0.4 / (1 + 0.2 * L), t2 = S > 0 ? 0.6 / (1 + 4 * G / S) : 0;
+      return { t1: t1, t2: t2, d: 1 + t1 + t2 };
+    }
+  };
+  window.__c7 = R;
+
+  /* ── Calculatrice δ ── */
+  function updD() {
+    var L = Math.max(0.5, num("c7d-L", 25)), G = Math.max(0.1, num("c7d-G", 625)), sys = ($("c7d-sys") || {}).value || "bc";
+    var cl = parseInt(($("c7d-cl") || {}).value || "1", 10), n = Math.max(1, Math.round(num("c7d-n", 2))), Sm = Math.max(0.01, num("c7d-S", 100));
+    var nl = $("c7d-nl"), sl = $("c7d-Sl");
+    if (nl) nl.classList.toggle("c7-hide", !(sys === "bc" || sys === "bt"));
+    if (sl) sl.classList.toggle("c7-hide", sys !== "man");
+    var So = R.S(sys, L, cl, n, Sm), d = R.delta(L, G, So.S);
+    set("c7d-Sv", fmt(So.S, 1) + " t");
+    set("c7d-t1", fmt(d.t1, 4));
+    set("c7d-t2", fmt(d.t2, 4));
+    set("c7d-d", fmt(d.d, 4));
+    var st = "S : " + So.txt + " = <b>" + fmt(So.S, 1) + " t</b>. ";
+    st += "δ = 1 + " + fmt(d.t1, 4) + " + " + fmt(d.t2, 4) + " = <b>" + fmt(d.d, 4) + "</b> (G/L = " + fmt(G / L, 2) + " t/ml).";
+    if (So.warn.length) st += '<span class="w">' + So.warn.join(" ") + "</span>";
+    set("c7d-steps", st);
+    drawD(L, G, sys, cl, n, Sm, d.d);
+  }
+  function drawD(L, G, sys, cl, n, Sm, dcur) {
+    var svg = $("c7d-svg"); if (!svg) return;
+    var g = G / L, Lmax = Math.max(60, Math.ceil(L / 10) * 10);
+    var X = function (x) { return 70 + 650 * x / Lmax; }, Y = function (v) { return 280 - 600 * (v - 1); };
+    var s = '<g stroke="#ece6d8">';
+    [1.1, 1.2, 1.3, 1.4].forEach(function (v) { s += '<path d="M70 ' + Y(v) + ' H720"/>'; });
+    s += '</g><path d="M70 280 H720 M70 280 V30" stroke="#141a26" stroke-width="1.4"/>';
+    [1.0, 1.1, 1.2, 1.3, 1.4].forEach(function (v) { s += '<text x="62" y="' + (Y(v) + 5) + '" text-anchor="end" class="lbl-s">' + fmt(v, 1) + "</text>"; });
+    for (var t = 0; t <= Lmax + 1e-9; t += Lmax / 6) s += '<text x="' + X(t).toFixed(1) + '" y="304" text-anchor="middle" class="lbl-s">' + fmt(t, 0) + "</text>";
+    s += '<text x="720" y="326" text-anchor="end" class="lbl-s">portée L (m) — G/L constant = ' + fmt(g, 2) + " t/ml</text>";
+    var p = "";
+    for (var x = 2; x <= Lmax; x += 0.5) {
+      var S = R.S(sys, x, cl, n, Sm).S, dv = R.delta(x, g * x, S).d;
+      p += (p ? " L" : "M") + X(x).toFixed(1) + " " + Math.max(24, Y(dv)).toFixed(1);
+    }
+    s += '<path d="' + p + '" stroke="#dc4a2c" stroke-width="3" fill="none"/>';
+    var cx = X(L), cy = Math.max(24, Y(dcur));
+    s += '<path d="M' + cx.toFixed(1) + ' 280 V' + cy.toFixed(1) + '" stroke="#b8902f" stroke-dasharray="4 4"/>';
+    s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="7" fill="#b8902f"/>';
+    var tx = cx + 14, an = "start"; if (tx > 560) { tx = cx - 14; an = "end"; }
+    s += '<text x="' + tx.toFixed(1) + '" y="' + Math.max(44, cy - 12).toFixed(1) + '" text-anchor="' + an + '" class="lbl-b" style="fill:#8a6a1f">δ = ' + fmt(dcur, 4) + "</text>";
+    svg.innerHTML = s;
+  }
+  function pair(a, b, fn) {
+    var ea = $(a), eb = $(b); if (!ea || !eb) return;
+    ea.addEventListener("input", function () { eb.value = ea.value; fn(); });
+    eb.addEventListener("input", function () { var v = parseFloat(eb.value); if (isFinite(v)) ea.value = v; fn(); });
+  }
+  pair("c7d-Lr", "c7d-L", updD); pair("c7d-Gr", "c7d-G", updD);
+  ["c7d-sys", "c7d-cl", "c7d-n", "c7d-S"].forEach(function (id) { var e = $(id); if (e) { e.addEventListener("input", updD); e.addEventListener("change", updD); } });
+  try { updD(); } catch (e) { console.warn(e); }
+
+  /* ── Le Mc120 traverse : moment à mi-travée ── */
+  var MC = { L: 25, c: 6.1, P: 110, x0: 150, k: 34, cur: -3.05, raf: 0 };
+  function Mmid(cpos) {
+    var L = MC.L, a = Math.max(0, cpos - MC.c / 2), b = Math.min(L, cpos + MC.c / 2), q = MC.P / MC.c, h = L / 2;
+    if (b <= a) return 0;
+    function F1(x) { return x * x / 4; }
+    function F2(x) { return (L * x - x * x / 2) / 2; }
+    var M = 0;
+    if (a < h) M += F1(Math.min(b, h)) - F1(a);
+    if (b > h) M += F2(b) - F2(Math.max(a, h));
+    return q * M;
+  }
+  function yM(m) { return 392 - m * 0.28; }
+  function drawMc(cpos) {
+    var tank = $("c7mc-tank"), curve = $("c7mc-curve"), dot = $("c7mc-dot"), val = $("c7mc-val");
+    var x = MC.x0 + MC.k * cpos;
+    if (tank) { tank.setAttribute("transform", "translate(" + x.toFixed(1) + " 0)"); tank.style.opacity = cpos > 26 ? Math.max(0, (28.05 - cpos) / 2.05) : 1; tank.style.display = cpos >= 28 ? "none" : ""; }
+    var d = "";
+    for (var c = -3.05; c <= cpos + 1e-6; c += 0.25) d += (d ? " L" : "M") + (MC.x0 + MC.k * c).toFixed(1) + " " + yM(Mmid(c)).toFixed(1);
+    d += (d ? " L" : "M") + x.toFixed(1) + " " + yM(Mmid(cpos)).toFixed(1);
+    if (curve) curve.setAttribute("d", d);
+    var m = Mmid(cpos);
+    if (dot) { dot.setAttribute("cx", x.toFixed(1)); dot.setAttribute("cy", yM(m).toFixed(1)); }
+    if (val) val.textContent = "M = " + fmt(m, 1) + " t·m";
+  }
+  var POS = [-3.05, 3.05, 6.25, 9.0, 12.5, 18.75, 28.05];
+  window.SLIDE_HOOK["c7-mc"] = function (step) {
+    var target = POS[Math.max(0, Math.min(POS.length - 1, step))];
+    var from = MC.cur, t0 = null, dur = 1400;
+    cancelAnimationFrame(MC.raf);
+    if (!window.requestAnimationFrame || Math.abs(target - from) < 1e-6) { MC.cur = target; drawMc(target); return; }
+    function stp(ts) {
+      if (t0 === null) t0 = ts;
+      var u = Math.min(1, (ts - t0) / dur), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+      MC.cur = from + (target - from) * e; drawMc(MC.cur);
+      if (u < 1) MC.raf = requestAnimationFrame(stp);
+    }
+    MC.raf = requestAnimationFrame(stp);
+  };
+  window.__c7.Mmid = Mmid;
+  try { drawMc(-3.05); } catch (e) { }
+})();
+
+</script>
+</body>
+</html>
