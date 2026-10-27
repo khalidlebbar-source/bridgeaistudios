@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 8 — Calculer le tablier · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 8 : calcul longitudinal d'un tablier isostatique, lignes d'influence, position la plus défavorable des convois, théorème de Barré, enveloppes, répartition transversale (Courbon, Guyon-Massonnet), flexion locale du hourdis, continuité et combinaisons.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch8.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+/* ── styles propres au chapitre 8 ── */
+.c8-stack{display:grid}
+.c8-stack>*{grid-area:1/1}
+.c8-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:0 10px 30px -22px rgba(20,26,38,.35);display:flex;flex-direction:column;gap:11px}
+.c8-panel .lab{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.c8-row{display:flex;align-items:center;gap:10px;font-size:16px;color:var(--ink2)}
+.c8-row input[type=range]{flex:1;accent-color:var(--gold)}
+.c8-row output,.c8-row b.v{min-width:70px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500}
+.c8-seg{display:flex;flex-wrap:wrap;gap:6px}
+.c8-seg button,.c8-btn{font:inherit;font-size:15px;padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:#f7f5ef;color:var(--ink2);cursor:pointer}
+.c8-seg button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.c8-btn.main{background:var(--navy2);border-color:var(--navy2);color:#f1e3bd}
+.c8-btn:hover,.c8-seg button:hover{border-color:var(--gold)}
+.c8-res{display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:16px;border-top:1px solid var(--line);padding-top:10px}
+.c8-res span{color:var(--mute)}
+.c8-res b{font-variant-numeric:tabular-nums;text-align:right;color:var(--ink)}
+.c8-res b.big2{font-size:22px;color:var(--red)}
+.c8-chip{display:inline-flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 6px;min-width:76px}
+.c8-chip i{font-style:normal;font-size:14px;color:var(--mute)}
+.c8-chip b{font-size:21px;color:var(--ink);font-variant-numeric:tabular-nums}
+.slide.on .c8-slidein{animation:c8-slidein 2.6s cubic-bezier(.45,0,.3,1) .4s both}
+@keyframes c8-slidein{from{transform:translateX(-150px)}to{transform:none}}
+.c8-mv{transition:transform 1.1s cubic-bezier(.45,0,.3,1)}
+</style>
+</head>
+<body data-ch="ch8">
+<div class="deck">
+
+<!-- ═════════ 1. COUVERTURE ═════════ -->
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">8</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 8</div>
+  <h1 data-a data-fx="up" data-d=".15">Calculer <em>le tablier</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35">Où placer les camions pour obtenir le pire effet, puis comment partager cet effet entre les poutres : le cœur du calcul d'un pont.</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <path d="M150 128 Q640 360 1130 128 Z" fill="#e2c070" fill-opacity=".16"/>
+    <path d="M150 128 Q640 360 1130 128" stroke="#e2c070" stroke-width="3" fill="none" data-a data-fx="draw" data-d=".6"/>
+    <rect x="130" y="108" width="1020" height="18" fill="#b9c2cc"/>
+    <rect x="130" y="102" width="1020" height="7" fill="#3c4049"/>
+    <path d="M150 126 l-14 22 h28 z M1130 126 l-14 22 h28 z" fill="#8b95a3"/>
+    <g stroke="#dc4a2c" stroke-width="2" opacity=".8"><path d="M300 40 V92 M460 40 V92 M640 40 V92 M820 40 V92 M980 40 V92"/></g>
+    <text x="640" y="30" text-anchor="middle" class="lbl-s" style="fill:#e2c070">M(x) = p x (L − x) / 2</text>
+    <g class="drive" style="--t:9s;--from:-120px;--to:1300px"><rect x="0" y="80" width="64" height="22" rx="4" fill="#dc4a2c"/><rect x="50" y="72" width="18" height="30" rx="3" fill="#b8392a"/><circle cx="12" cy="103" r="5" fill="#0f1626"/><circle cx="44" cy="103" r="5" fill="#0f1626"/><circle cx="60" cy="103" r="5" fill="#0f1626"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 2. OBJECTIFS ═════════ -->
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:30px">
+    <div class="card gold" data-b="1" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><path d="M3 8h26M5 8v3M27 8v3M5 14Q16 30 27 14"/></svg></div>
+      <h3>Tracer M et T</h3><p>Poutre isostatique sous charge répartie et sous charges concentrées.</p></div>
+    <div class="card teal" data-b="2" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M3 10h26M3 10L12 24L29 10"/><path d="M12 2v6"/></svg></div>
+      <h3>Lignes d'influence</h3><p>Lire l'effet d'une charge mobile dans une section fixe.</p></div>
+    <div class="card red" data-b="3" data-fx="up">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><rect x="4" y="10" width="18" height="10" rx="2"/><path d="M22 13h5l2 4v3h-7"/><circle cx="9" cy="23" r="2.5"/><circle cx="24" cy="23" r="2.5"/></svg></div>
+      <h3>Trouver le pire cas</h3><p>Position la plus défavorable, théorème de Barré, enveloppes.</p></div>
+    <div class="card blue" data-b="4" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M3 9h26M7 9v12M13 9v12M19 9v12M25 9v12"/><path d="M24 3v4"/></svg></div>
+      <h3>Répartir</h3><p>Partager la charge entre les poutres : Courbon, Guyon-Massonnet.</p></div>
+  </div>
+  <div class="cols c3" style="margin-top:26px;gap:16px">
+    <div class="callout" data-b="5" data-fx="up"><span class="lab">Puis</span>La <b>flexion locale du hourdis</b> sous les roues.</div>
+    <div class="callout b" data-b="5" data-fx="up" data-d=".12"><span class="lab">Et</span>L'effet de la <b>continuité</b> des travées.</div>
+    <div class="callout t" data-b="5" data-fx="up" data-d=".24"><span class="lab">Enfin</span>Les <b>combinaisons</b> ELU / ELS du tablier.</div>
+  </div>
+  <div class="callout v" style="margin-top:22px" data-b="6" data-fx="up"><span class="lab">Notre fil rouge</span>On calcule pas à pas le tablier de notre pont routier sur voie ferrée : travées de 25 m, 4 poutres, chaussée de 7 m.</div>
+</section>
+
+<!-- ═════════ 3. LA DÉMARCHE ═════════ -->
+<section class="slide" data-title="La démarche de calcul">
+  <div class="kicker">Méthode</div>
+  <h2 class="t">Le calcul d'un tablier, <em>toujours la même chaîne</em></h2>
+  <svg class="full" viewBox="0 0 1150 300" style="margin-top:20px" aria-label="Chaîne de calcul d'un tablier">
+    <defs><marker id="c8s3-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+    <g stroke="#b8902f" stroke-width="3" fill="none">
+      <path d="M205 120 H245" marker-end="url(#c8s3-ar)" data-b="2" data-fx="fade"/>
+      <path d="M435 120 H475" marker-end="url(#c8s3-ar)" data-b="3" data-fx="fade"/>
+      <path d="M665 120 H705" marker-end="url(#c8s3-ar)" data-b="4" data-fx="fade"/>
+      <path d="M895 120 H935" marker-end="url(#c8s3-ar)" data-b="5" data-fx="fade"/>
+    </g>
+    <g data-b="1" data-fx="pop">
+      <rect x="15" y="20" width="190" height="200" rx="18" fill="#eef4fc"/>
+      <rect x="40" y="96" width="140" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M48 108 l-9 15 h18z M172 108 l-9 15 h18z" fill="#6e7884"/>
+      <text x="110" y="168" text-anchor="middle" class="lbl-b">1. Modéliser</text>
+      <text x="110" y="194" text-anchor="middle" class="lbl-s">appuis, portées</text>
+    </g>
+    <g data-b="2" data-fx="pop">
+      <rect x="245" y="20" width="190" height="200" rx="18" fill="#fdf3e2"/>
+      <rect x="270" y="96" width="140" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <g class="drive" style="--t:4s;--from:0px;--to:90px"><rect x="272" y="72" width="40" height="18" rx="3" fill="#dc4a2c"/><circle cx="281" cy="92" r="4" fill="#141a26"/><circle cx="303" cy="92" r="4" fill="#141a26"/></g>
+      <text x="340" y="168" text-anchor="middle" class="lbl-b">2. Charger</text>
+      <text x="340" y="194" text-anchor="middle" class="lbl-s">G, A(l), Bc, Mc… (ch. 7)</text>
+    </g>
+    <g data-b="3" data-fx="pop">
+      <rect x="475" y="20" width="190" height="200" rx="18" fill="#fbe5df"/>
+      <rect x="500" y="60" width="140" height="10" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M500 74 Q570 150 640 74 Z" fill="#e2c070" fill-opacity=".7" stroke="#b8902f"/>
+      <text x="570" y="168" text-anchor="middle" class="lbl-b">3. Sollicitations</text>
+      <text x="570" y="194" text-anchor="middle" class="lbl-s">M, T au pire endroit</text>
+    </g>
+    <g data-b="4" data-fx="pop">
+      <rect x="705" y="20" width="190" height="200" rx="18" fill="#e3ecfc"/>
+      <rect x="725" y="66" width="150" height="9" fill="#b9c2cc" stroke="#6e7884"/>
+      <g fill="#cfd5dc" stroke="#6e7884"><rect x="735" y="75" width="12" height="34"/><rect x="772" y="75" width="12" height="34"/><rect x="809" y="75" width="12" height="34"/><rect x="846" y="75" width="12" height="34"/></g>
+      <g fill="#2f6fe0"><rect x="735" y="132" width="12" height="8"/><rect x="772" y="126" width="12" height="14"/><rect x="809" y="118" width="12" height="22"/><rect x="846" y="108" width="12" height="32"/></g>
+      <text x="800" y="168" text-anchor="middle" class="lbl-b">4. Répartir</text>
+      <text x="800" y="194" text-anchor="middle" class="lbl-s">part de chaque poutre</text>
+    </g>
+    <g data-b="5" data-fx="pop">
+      <rect x="935" y="20" width="200" height="200" rx="18" fill="#141a26"/>
+      <text x="1035" y="105" text-anchor="middle" class="serif" style="font-size:52px;fill:#e2c070">Σ γ·Q</text>
+      <text x="1035" y="168" text-anchor="middle" class="lbl-b" style="fill:#fff">5. Combiner</text>
+      <text x="1035" y="194" text-anchor="middle" class="lbl-s" style="fill:#c9d0dc">ELU, ELS</text>
+    </g>
+    <path d="M20 262 H1130" stroke="#e2d6b8" stroke-width="3" class="flow"/>
+  </svg>
+  <div class="callout r" style="margin-top:30px" data-b="6" data-fx="up"><span class="lab">Le vrai but</span>Pas « un » moment, mais le moment <b>le plus défavorable dans chaque section</b>, pour <b>chaque combinaison</b> du règlement : c'est lui qui sert à ferrailler ou à câbler.</div>
+</section>
+
+<!-- ═════════ 4. FIL ROUGE ═════════ -->
+<section class="slide" data-title="Notre fil rouge : le tablier à calculer">
+  <div class="kicker">Notre fil rouge</div>
+  <h2 class="t">Le tablier de notre pont <em>sur voie ferrée</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left"><b>Travées isostatiques</b> de portée L ≈ 25 m.</li>
+        <li data-b="2" data-fx="left"><b>4 poutres</b> espacées de 2,50 m, hauteur ≈ L/14 ≈ 1,80 m.</li>
+        <li data-b="3" data-fx="left"><b>Hourdis</b> de 20 à 25 cm.</li>
+        <li data-b="4" data-fx="left">Chaussée Lc = 7 m → <b>2 voies</b>, pont de <b>1re classe</b>.</li>
+        <li data-b="5" data-fx="left">Charges permanentes : G = 20 t/ml + superstructures 5 t/ml = <b>p = 25 t/ml</b>.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 500" aria-label="Coupe transversale du tablier du fil rouge">
+        <rect width="700" height="500" rx="16" fill="#eef4fc"/>
+        <text x="350" y="40" text-anchor="middle" class="lbl-b">Coupe transversale</text>
+        <!-- 10 m = 600 px → 60 px/m, x0 = 50 -->
+        <g data-a data-fx="fade">
+          <rect x="50" y="150" width="600" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="50" y="128" width="90" height="22" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="560" y="128" width="90" height="22" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="140" y="143" width="420" height="7" fill="#3c4049"/>
+        </g>
+        <g fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="down">
+          <path d="M112 166 h26 v86 h14 v22 h-54 v-22 h14z"/><path d="M262 166 h26 v86 h14 v22 h-54 v-22 h14z"/>
+          <path d="M412 166 h26 v86 h14 v22 h-54 v-22 h14z"/><path d="M562 166 h26 v86 h14 v22 h-54 v-22 h14z"/>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M125 306 H575" stroke="#2f6fe0" stroke-width="1.6"/>
+          <path d="M125 298 v16 M275 298 v16 M425 298 v16 M575 298 v16" stroke="#2f6fe0" stroke-width="1.6"/>
+          <text x="200" y="330" text-anchor="middle" class="lbl-s" style="fill:#2453b3">2,50</text>
+          <text x="350" y="330" text-anchor="middle" class="lbl-s" style="fill:#2453b3">2,50</text>
+          <text x="500" y="330" text-anchor="middle" class="lbl-s" style="fill:#2453b3">2,50</text>
+          <path d="M628 166 V274" stroke="#7a52c7" stroke-width="1.6"/><path d="M620 166 h16 M620 274 h16" stroke="#7a52c7"/>
+          <text x="622" y="292" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0">1,80 m</text>
+        </g>
+        <g data-b="1" data-fx="fade">
+          <path d="M50 92 H650" stroke="#6e7884" stroke-width="1.4"/><path d="M50 84 v16 M140 84 v16 M560 84 v16 M650 84 v16" stroke="#6e7884"/>
+          <text x="95" y="80" text-anchor="middle" class="lbl-s">1,50</text><text x="350" y="80" text-anchor="middle" class="lbl-s">7,00</text><text x="605" y="80" text-anchor="middle" class="lbl-s">1,50</text>
+        </g>
+        <g data-b="4" data-fx="up">
+          <rect x="205" y="115" width="80" height="26" rx="4" fill="#dc4a2c"/><rect x="415" y="115" width="80" height="26" rx="4" fill="#2f6fe0"/>
+          <text x="245" y="108" text-anchor="middle" class="lbl-s" style="fill:#a33d22">voie 1</text><text x="455" y="108" text-anchor="middle" class="lbl-s" style="fill:#2453b3">voie 2</text>
+        </g>
+        <!-- élévation -->
+        <g data-b="1" data-fx="up">
+          <text x="60" y="372" class="lbl-b">Élévation</text>
+          <rect x="70" y="392" width="560" height="26" fill="#b9c2cc" stroke="#6e7884"/>
+          <path d="M80 418 l-11 18 h22z M620 418 l-11 18 h22z" fill="#6e7884"/>
+          <path d="M80 460 H620" stroke="#b8902f" stroke-width="1.6"/><path d="M80 452 v16 M620 452 v16" stroke="#b8902f"/>
+          <text x="350" y="484" text-anchor="middle" class="lbl" style="fill:#8a6a1f">L = 25 m</text>
+        </g>
+        <g data-b="5" data-fx="fade"><g stroke="#dc4a2c" stroke-width="2"><path d="M230 362 V388 M290 362 V388 M350 362 V388 M410 362 V388 M470 362 V388 M530 362 V388 M590 362 V388"/></g><text x="222" y="380" text-anchor="end" class="lbl-s" style="fill:#a33d22;font-weight:500">p = 25 t/ml</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 5. SECTION 01 ═════════ -->
+<section class="slide section" data-title="Partie 1 — La poutre isostatique">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">01</div>
+    <h2 data-a data-fx="up" data-d=".15">La poutre isostatique</h2>
+    <p data-a data-fx="up" data-d=".3">Une travée indépendante se calcule comme une poutre sur deux appuis simples. Deux formules pour la charge répartie, une pour la charge concentrée : <b style="color:#e2c070">c'est tout</b>.</p>
+  </div>
+</section>
+
+<!-- ═════════ 6. CHARGE RÉPARTIE ═════════ -->
+<section class="slide" data-title="Charge répartie : M et T">
+  <div class="kicker">Charge uniformément répartie p</div>
+  <h2 class="t">Une parabole pour M, <em>une droite pour T</em></h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">M(x) = \frac{p\,x\,(L-x)}{2} \qquad T(x) = p\left(\frac{L}{2}-x\right)</span></div>
+      <ul class="b tight" style="margin-top:20px">
+        <li data-b="1" data-fx="left"><b>M maximal à mi-travée</b> : M<sub>max</sub> = pL²/8.</li>
+        <li data-b="2" data-fx="left"><b>T maximal sur appui</b> : T(0) = pL/2.</li>
+        <li data-b="3" data-fx="left">M est maximal là où T s'annule : <b>T = dM/dx</b>.</li>
+      </ul>
+      <p class="small" style="margin-top:14px" data-b="3" data-fx="fade">Convention : M &gt; 0 tend la fibre inférieure ; on le dessine sous la poutre.</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 520" aria-label="Diagrammes M et T sous charge répartie">
+        <rect width="620" height="520" rx="16" fill="#fff"/>
+        <rect x="60" y="44" width="500" height="14" fill="#fbe5df" stroke="#dc4a2c"/>
+        <g stroke="#dc4a2c" stroke-width="2" data-a data-fx="down"><path d="M80 58 V96 M130 58 V96 M180 58 V96 M230 58 V96 M280 58 V96 M330 58 V96 M380 58 V96 M430 58 V96 M480 58 V96 M530 58 V96"/></g>
+        <text x="310" y="34" text-anchor="middle" class="lbl-b" style="fill:#a33d22">p</text>
+        <rect x="60" y="100" width="500" height="14" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M60 114 l-11 18 h22z M560 114 l-11 18 h22z" fill="#6e7884"/>
+        <!-- M -->
+        <text x="18" y="200" class="lbl-b" style="fill:#8a6a1f">M</text>
+        <path d="M60 160 H560" stroke="#141a26"/>
+        <path d="M60 160 Q310 420 560 160 Z" fill="#e2c070" fill-opacity=".45" data-b="1" data-fx="fade"/>
+        <path d="M60 160 Q310 420 560 160" stroke="#b8902f" stroke-width="3" fill="none" data-b="1" data-fx="draw"/>
+        <text x="310" y="316" text-anchor="middle" class="lbl-b" data-b="1" data-fx="pop" style="fill:#8a6a1f">pL²/8</text>
+        <!-- T -->
+        <text x="18" y="420" class="lbl-b" style="fill:#2453b3">T</text>
+        <path d="M60 420 H560" stroke="#141a26"/>
+        <path d="M60 420 V360 L310 420 Z M310 420 L560 480 V420 Z" fill="#2f6fe0" fill-opacity=".25" data-b="2" data-fx="fade"/>
+        <path d="M60 420 V360 L560 480 V420" stroke="#2f6fe0" stroke-width="3" fill="none" data-b="2" data-fx="draw"/>
+        <text x="72" y="352" class="lbl-b" data-b="2" data-fx="pop" style="fill:#2453b3">+pL/2</text>
+        <text x="548" y="504" text-anchor="end" class="lbl-b" data-b="2" data-fx="pop" style="fill:#2453b3">−pL/2</text>
+        <path d="M310 150 V490" stroke="#12a08a" stroke-width="1.6" stroke-dasharray="5 5" data-b="3" data-fx="fade"/>
+        <text x="318" y="446" class="lbl-s" data-b="3" data-fx="fade" style="fill:#0b6e5c">T = 0 → M max</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 7. EXEMPLE ═════════ -->
+<section class="slide" data-title="Exemple : p = 25 t/ml, L = 25 m">
+  <div class="kicker">Exemple chiffré · fil rouge</div>
+  <h2 class="t">p = 25 t/ml sur L = 25 m : <em>section par section</em></h2>
+  <div class="split even" style="gap:36px">
+    <div>
+      <table class="tb">
+        <tr><th>Section</th><th style="text-align:right">x (m)</th><th style="text-align:right">M (t.m)</th><th style="text-align:right">T (t)</th></tr>
+        <tr data-b="1" data-fx="fade"><td>0</td><td class="n">0</td><td class="n">0</td><td class="n">312,5</td></tr>
+        <tr data-b="1" data-fx="fade" data-d=".1"><td>0,1 L</td><td class="n">2,5</td><td class="n">703,1</td><td class="n">250,0</td></tr>
+        <tr data-b="1" data-fx="fade" data-d=".2"><td>0,2 L</td><td class="n">5,0</td><td class="n">1 250,0</td><td class="n">187,5</td></tr>
+        <tr data-b="1" data-fx="fade" data-d=".3"><td>0,3 L</td><td class="n">7,5</td><td class="n">1 640,6</td><td class="n">125,0</td></tr>
+        <tr data-b="1" data-fx="fade" data-d=".4"><td>0,4 L</td><td class="n">10,0</td><td class="n">1 875,0</td><td class="n">62,5</td></tr>
+        <tr class="hl" data-b="1" data-fx="fade" data-d=".5"><td>0,5 L</td><td class="n">12,5</td><td class="n"><b>1 953,1</b></td><td class="n">0</td></tr>
+      </table>
+      <div class="callout t" style="margin-top:18px" data-b="2" data-fx="up"><span class="lab">Vérification</span>pL²/8 = 25 × 25² / 8 = <b>1 953,1 t.m</b> et pL/2 = <b>312,5 t</b>. Par symétrie, inutile d'aller au-delà de 0,5 L.</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 500" aria-label="Moments le long de la travée">
+        <rect width="600" height="500" rx="16" fill="#fdf3e2"/>
+        <text x="300" y="38" text-anchor="middle" class="lbl-b">M (t.m) le long de la travée</text>
+        <path d="M40 440 H580" stroke="#141a26"/>
+        <g fill="#b8902f">
+          <rect x="85" y="332" width="30" height="108" data-b="1" data-fx="grow" data-d=".1"/>
+          <rect x="135" y="248" width="30" height="192" data-b="1" data-fx="grow" data-d=".2"/>
+          <rect x="185" y="188" width="30" height="252" data-b="1" data-fx="grow" data-d=".3"/>
+          <rect x="235" y="152" width="30" height="288" data-b="1" data-fx="grow" data-d=".4"/>
+          <rect x="285" y="140" width="30" height="300" data-b="1" data-fx="grow" data-d=".5" fill="#dc4a2c"/>
+          <rect x="335" y="152" width="30" height="288" data-b="1" data-fx="grow" data-d=".6" opacity=".5"/>
+          <rect x="385" y="188" width="30" height="252" data-b="1" data-fx="grow" data-d=".7" opacity=".5"/>
+          <rect x="435" y="248" width="30" height="192" data-b="1" data-fx="grow" data-d=".8" opacity=".5"/>
+          <rect x="485" y="332" width="30" height="108" data-b="1" data-fx="grow" data-d=".9" opacity=".5"/>
+        </g>
+        <g class="lbl-s" text-anchor="middle" data-b="1" data-fx="fade" data-d="1">
+          <text x="100" y="322">703</text><text x="150" y="238">1 250</text><text x="200" y="178">1 641</text><text x="250" y="142">1 875</text><text x="300" y="128" style="fill:#a33d22;font-weight:500">1 953</text>
+        </g>
+        <path d="M50 440 Q300 -160 550 440" stroke="#141a26" stroke-width="2" stroke-dasharray="6 5" fill="none" data-b="2" data-fx="draw"/>
+        <g class="lbl-s" text-anchor="middle"><text x="50" y="466">0</text><text x="150" y="466">0,2L</text><text x="250" y="466">0,4L</text><text x="350" y="466">0,6L</text><text x="450" y="466">0,8L</text><text x="550" y="466">L</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 8. CHARGE CONCENTRÉE ═════════ -->
+<section class="slide" data-title="Charge concentrée : le triangle">
+  <div class="kicker">Charge concentrée P</div>
+  <h2 class="t">Sous une charge P, le moment est <em>un triangle</em></h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">M(a) = \frac{P\,a\,b}{L} \quad\Rightarrow\quad M_{\max}(x) = \frac{P\,x\,(L-x)}{L}</span></div>
+      <ul class="b tight" style="margin-top:18px">
+        <li data-b="1" data-fx="left">Le sommet du triangle est <b>sous la charge</b>.</li>
+        <li data-b="2" data-fx="left">Pour une charge unique, le pire en x : <b>la charge dans la section</b>.</li>
+      </ul>
+      <p style="margin:16px 0 8px;font-size:18px" data-b="3" data-fx="fade">Roue Br de 10 t sur 25 m (t.m) :</p>
+      <div style="display:flex;gap:8px" data-b="3" data-fx="up">
+        <div class="c8-chip"><i>0</i><b>0</b></div><div class="c8-chip"><i>0,1L</i><b>22,5</b></div><div class="c8-chip"><i>0,2L</i><b>40</b></div><div class="c8-chip"><i>0,3L</i><b>52,5</b></div><div class="c8-chip"><i>0,4L</i><b>60</b></div><div class="c8-chip" style="border-color:#dc4a2c"><i>0,5L</i><b style="color:#dc4a2c">62,5</b></div>
+      </div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 500" aria-label="Moment sous une charge mobile">
+        <rect width="620" height="500" rx="16" fill="#eef4fc"/>
+        <g>
+          <animateTransform attributeName="transform" type="translate" dur="6s" repeatCount="indefinite" values="0 0;400 0;0 0" keyTimes="0;.5;1" calcMode="linear"/>
+          <path d="M110 40 V112" stroke="#dc4a2c" stroke-width="4"/><path d="M101 104 L110 120 L119 104 Z" fill="#dc4a2c"/>
+          <text x="110" y="30" text-anchor="middle" class="lbl-b" style="fill:#a33d22">P</text>
+        </g>
+        <rect x="60" y="122" width="500" height="14" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M60 136 l-11 18 h22z M560 136 l-11 18 h22z" fill="#6e7884"/>
+        <path d="M60 210 H560" stroke="#141a26"/>
+        <path d="M60 210 L110 264 L560 210 Z" fill="#e2c070" fill-opacity=".55" stroke="#b8902f" stroke-width="2.5">
+          <animate attributeName="d" dur="6s" repeatCount="indefinite" calcMode="linear" keyTimes="0;.125;.25;.375;.5;.625;.75;.875;1"
+            values="M60 210 L110 264 L560 210 Z;M60 210 L210 336 L560 210 Z;M60 210 L310 360 L560 210 Z;M60 210 L410 336 L560 210 Z;M60 210 L510 264 L560 210 Z;M60 210 L410 336 L560 210 Z;M60 210 L310 360 L560 210 Z;M60 210 L210 336 L560 210 Z;M60 210 L110 264 L560 210 Z"/>
+        </path>
+        <text x="20" y="250" class="lbl-b" style="fill:#8a6a1f">M</text>
+        <g data-b="2" data-fx="fade">
+          <path d="M60 210 Q310 510 560 210" stroke="#dc4a2c" stroke-width="2.4" stroke-dasharray="7 6" fill="none"/>
+          <text x="310" y="392" text-anchor="middle" class="lbl" style="fill:#a33d22">sommets : M<tspan font-size="13" dy="4">max</tspan><tspan dy="-4">(x) = P x (L − x)/L</tspan></text>
+          <text x="310" y="416" text-anchor="middle" class="lbl-s">une parabole, maximum PL/4 au milieu</text>
+        </g>
+        <text x="310" y="470" text-anchor="middle" class="lbl-s" data-b="1" data-fx="fade">Le triangle suit la charge : son sommet est toujours sous P.</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 9. SECTION 02 ═════════ -->
+<section class="slide section" data-title="Partie 2 — Les lignes d'influence">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">02</div>
+    <h2 data-a data-fx="up" data-d=".15">Les lignes d'influence</h2>
+    <p data-a data-fx="up" data-d=".3">Les camions bougent, la section étudiée ne bouge pas. On renverse la question : <b style="color:#e2c070">que vaut M ici, quand la charge est là ?</b></p>
+  </div>
+</section>
+
+<!-- ═════════ 10. CONSTRUIRE UNE LI ═════════ -->
+<section class="slide" id="c8-li" data-title="Construire une ligne d'influence">
+  <div class="kicker">Ligne d'influence, point par point</div>
+  <h2 class="t">Une charge de 1 t avance… <em>on note M(4)</em></h2>
+  <div class="split wide-v">
+    <div>
+      <div class="callout b" data-a data-fx="left"><span class="lab">Définition</span>La <b>ligne d'influence</b> d'un effet dans une section <b>fixe</b> donne cet effet quand une <b>charge unité</b> se déplace. Son abscisse est la position de la charge.</div>
+      <div class="c8-stack" style="margin-top:18px">
+        <div class="card" data-b="0" data-only data-fx="fade"><h3>α = 0 : sur l'appui</h3><p>La charge descend directement dans l'appui : <b>M(4) = 0</b>.</p></div>
+        <div class="card" data-b="1" data-only data-fx="fade"><h3>α = 2 m</h3><p>R<sub>B</sub> = 1 × 2/10 = 0,2 t, donc M(4) = 0,2 × 6 = <b>1,20 t.m</b>.</p></div>
+        <div class="card" data-b="2" data-only data-fx="fade"><h3>α = 4 m : dans la section</h3><p>M(4) = 1 × 4 × 6 / 10 = <b>2,40 t.m</b> — le maximum.</p></div>
+        <div class="card" data-b="3" data-only data-fx="fade"><h3>α = 6 m</h3><p>R<sub>A</sub> = 0,4 t, donc M(4) = 0,4 × 4 = <b>1,60 t.m</b>.</p></div>
+        <div class="card" data-b="4" data-only data-fx="fade"><h3>α = 8 m</h3><p>R<sub>A</sub> = 0,2 t, donc M(4) = <b>0,80 t.m</b>. Les points sont alignés.</p></div>
+        <div class="card" data-b="5" data-only data-fx="fade"><h3>α = 10 m : appui droit</h3><p>M(4) = 0. On relie les points…</p></div>
+        <div class="card gold" data-b="6" data-fx="fade"><h3>Un triangle !</h3><p>Sommet x(L − x)/L = 4 × 6/10 = 2,40 m sous la section. Ce n'est <b>pas</b> un diagramme de moment.</p></div>
+      </div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 660 500" aria-label="Construction de la ligne d'influence du moment">
+        <rect width="660" height="500" rx="16" fill="#fff"/>
+        <!-- poutre 10 m : x 80..580, 50 px/m -->
+        <g class="c8-mv" id="c8-li-load">
+          <path d="M80 38 V96" stroke="#dc4a2c" stroke-width="4"/><path d="M71 88 L80 104 L89 88 Z" fill="#dc4a2c"/>
+          <text x="80" y="28" text-anchor="middle" class="lbl-b" style="fill:#a33d22">1 t</text>
+        </g>
+        <rect x="80" y="106" width="500" height="14" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M80 120 l-11 18 h22z M580 120 l-11 18 h22z" fill="#6e7884"/>
+        <path d="M280 60 V470" stroke="#12a08a" stroke-width="1.8" stroke-dasharray="6 5"/>
+        <text x="288" y="160" class="lbl-s" style="fill:#0b6e5c">section x = 4 m</text>
+        <g class="lbl-s" text-anchor="middle"><text x="80" y="160">0</text><text x="580" y="160">10 m</text></g>
+        <text x="20" y="306" class="lbl-b" style="fill:#2453b3">LI</text>
+        <path d="M80 300 H580" stroke="#141a26"/>
+        <polygon points="80,300 280,444 580,300" fill="#2f6fe0" fill-opacity=".14" data-b="6" data-fx="fade"/>
+        <polyline points="80,300 280,444 580,300" stroke="#2f6fe0" stroke-width="3" fill="none" data-b="6" data-fx="draw"/>
+        <g fill="#dc4a2c">
+          <circle cx="80" cy="300" r="7" data-a data-fx="pop"/>
+          <g data-b="1" data-fx="pop"><path d="M180 300 V372" stroke="#dc4a2c" stroke-dasharray="4 4"/><circle cx="180" cy="372" r="7"/><text x="180" y="398" text-anchor="middle" class="lbl-s" style="fill:#a33d22">1,20</text></g>
+          <g data-b="2" data-fx="pop"><path d="M280 300 V444" stroke="#dc4a2c" stroke-dasharray="4 4"/><circle cx="280" cy="444" r="8"/><text x="280" y="476" text-anchor="middle" class="lbl-b" style="fill:#a33d22">2,40</text></g>
+          <g data-b="3" data-fx="pop"><path d="M380 300 V396" stroke="#dc4a2c" stroke-dasharray="4 4"/><circle cx="380" cy="396" r="7"/><text x="380" y="422" text-anchor="middle" class="lbl-s" style="fill:#a33d22">1,60</text></g>
+          <g data-b="4" data-fx="pop"><path d="M480 300 V348" stroke="#dc4a2c" stroke-dasharray="4 4"/><circle cx="480" cy="348" r="7"/><text x="480" y="374" text-anchor="middle" class="lbl-s" style="fill:#a33d22">0,80</text></g>
+          <circle cx="580" cy="300" r="7" data-b="5" data-fx="pop"/>
+        </g>
+        <text x="600" y="296" class="lbl-s">α</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 11. LES TROIS LI ═════════ -->
+<section class="slide" data-title="Les trois lignes d'influence à connaître">
+  <div class="kicker">À connaître par cœur</div>
+  <h2 class="t">Les trois LI de la <em>poutre sur deux appuis</em></h2>
+  <div class="cols c3" style="gap:18px">
+    <div class="card" data-b="1" data-fx="up" style="padding:14px 16px">
+      <h3>Réaction R<sub>A</sub></h3>
+      <svg class="full" viewBox="0 0 340 200" aria-label="LI de la réaction">
+        <rect width="340" height="200" rx="12" fill="#eef4fc"/>
+        <rect x="30" y="30" width="280" height="9" fill="#b9c2cc" stroke="#6e7884"/><path d="M30 39 l-8 12 h16z M310 39 l-8 12 h16z" fill="#6e7884"/>
+        <path d="M30 90 H310" stroke="#141a26"/>
+        <path d="M30 90 V170 L310 90" stroke="#2f6fe0" stroke-width="3" fill="#2f6fe0" fill-opacity=".15" data-b="1" data-fx="draw" data-d=".3"/>
+        <text x="40" y="160" class="lbl-b" style="fill:#2453b3">1</text>
+      </svg>
+      <p style="margin-top:10px;font-size:19px"><span class="tex">1-\dfrac{\alpha}{L}</span></p>
+    </div>
+    <div class="card" data-b="2" data-fx="up" style="padding:14px 16px">
+      <h3>Effort tranchant T(x)</h3>
+      <svg class="full" viewBox="0 0 340 200" aria-label="LI de l'effort tranchant">
+        <rect width="340" height="200" rx="12" fill="#e9f7f3"/>
+        <rect x="30" y="20" width="280" height="9" fill="#b9c2cc" stroke="#6e7884"/><path d="M30 29 l-8 12 h16z M310 29 l-8 12 h16z" fill="#6e7884"/>
+        <path d="M130 14 V190" stroke="#12a08a" stroke-dasharray="5 4"/>
+        <path d="M30 110 H310" stroke="#141a26"/>
+        <path d="M30 110 L130 138 V58 L310 110" stroke="#12a08a" stroke-width="3" fill="none" data-b="2" data-fx="draw" data-d=".3"/>
+        <text x="140" y="74" class="lbl-s" style="fill:#0b6e5c">saut de 1</text>
+        <text x="90" y="166" class="lbl-s" style="fill:#0b6e5c">−x/L</text>
+      </svg>
+      <p style="margin-top:10px;font-size:19px">saut de <b>1</b> dans la section</p>
+    </div>
+    <div class="card" data-b="3" data-fx="up" style="padding:14px 16px">
+      <h3>Moment M(x)</h3>
+      <svg class="full" viewBox="0 0 340 200" aria-label="LI du moment">
+        <rect width="340" height="200" rx="12" fill="#fdf3e2"/>
+        <rect x="30" y="20" width="280" height="9" fill="#b9c2cc" stroke="#6e7884"/><path d="M30 29 l-8 12 h16z M310 29 l-8 12 h16z" fill="#6e7884"/>
+        <path d="M130 14 V190" stroke="#b8902f" stroke-dasharray="5 4"/>
+        <path d="M30 80 H310" stroke="#141a26"/>
+        <path d="M30 80 L130 170 L310 80" stroke="#b8902f" stroke-width="3" fill="#e2c070" fill-opacity=".3" data-b="3" data-fx="draw" data-d=".3"/>
+        <text x="140" y="178" class="lbl-s" style="fill:#8a6a1f">x(L − x)/L</text>
+      </svg>
+      <p style="margin-top:10px;font-size:19px">triangle de sommet <b>x(L − x)/L</b></p>
+    </div>
+  </div>
+  <div class="callout v" style="margin-top:18px" data-b="4" data-fx="up"><span class="lab">Propriété</span>Structure <b>isostatique</b> → LI faites de <b>droites</b>. Structure <b>hyperstatique</b> (travées continues) → LI <b>courbes</b>.</div>
+</section>
+
+<!-- ═════════ 12. UTILISER UNE LI ═════════ -->
+<section class="slide" data-title="Utiliser une ligne d'influence">
+  <div class="kicker">Superposition</div>
+  <h2 class="t">Lire la LI sous chaque essieu, <em>et additionner</em></h2>
+  <div class="split wide-v">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">E = \sum_i P_i\,y_i \qquad E = p \times \text{aire}</span><div class="w">y<sub>i</sub> = ordonnée de la LI sous la charge P<sub>i</sub> ; « aire » = aire de la LI sous la zone chargée.</div></div>
+      <div class="card gold" style="margin-top:18px" data-b="3" data-fx="up">
+        <h3>Camion Bc, L = 25 m, mi-travée</h3>
+        <p style="font-size:19px">M = 6 × 4,00 + 12 × 6,25 + 12 × 5,50<br>= <b style="color:#dc4a2c;font-size:24px">165 t.m</b></p>
+      </div>
+      <p class="small" style="margin-top:12px" data-b="4" data-fx="fade">Charge répartie sur toute la travée : p × (L × L/4)/2 = pL²/8. On retrouve la formule.</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 660 480" aria-label="Lecture de la LI sous un camion Bc">
+        <rect width="660" height="480" rx="16" fill="#fff"/>
+        <!-- 25 m : x 60..560 (20 px/m) -->
+        <g data-b="1" data-fx="left">
+          <rect x="262" y="70" width="158" height="40" rx="5" fill="#dc4a2c"/><rect x="388" y="58" width="32" height="52" rx="4" fill="#b8392a"/>
+          <circle cx="280" cy="118" r="9" fill="#141a26"/><circle cx="310" cy="118" r="9" fill="#141a26"/><circle cx="400" cy="118" r="9" fill="#141a26"/>
+          <g class="lbl-s" text-anchor="middle" style="fill:#a33d22;font-weight:500"><text x="280" y="50">12 t</text><text x="318" y="50">12 t</text><text x="404" y="44">6 t</text></g>
+        </g>
+        <rect x="60" y="128" width="500" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M60 140 l-10 16 h20z M560 140 l-10 16 h20z" fill="#6e7884"/>
+        <path d="M60 250 H560" stroke="#141a26"/>
+        <polygon points="60,250 310,400 560,250" fill="#e2c070" fill-opacity=".3" stroke="#b8902f" stroke-width="2.5"/>
+        <polygon points="60,250 310,400 560,250" fill="url(#c8s12-h)" data-b="4" data-fx="fade"/>
+        <defs><pattern id="c8s12-h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V10" stroke="#7a52c7" stroke-width="2.4"/></pattern></defs>
+        <text x="20" y="256" class="lbl-b" style="fill:#8a6a1f">LI</text>
+        <text x="320" y="428" class="lbl-s" style="fill:#8a6a1f">L/4 = 6,25</text>
+        <g data-b="2" data-fx="fade">
+          <g stroke="#dc4a2c" stroke-width="2" stroke-dasharray="4 4"><path d="M280 128 V382 M310 128 V400 M400 128 V346"/></g>
+          <g fill="#dc4a2c"><circle cx="280" cy="382" r="6"/><circle cx="310" cy="400" r="6"/><circle cx="400" cy="346" r="6"/></g>
+          <g class="lbl-b" style="fill:#a33d22;font-size:18px"><text x="230" y="372" text-anchor="end">5,50</text><text x="300" y="460" text-anchor="middle">6,25</text><text x="412" y="340">4,00</text></g>
+          <path d="M250 368 L274 380" stroke="#a33d22"/><path d="M304 446 L309 410" stroke="#a33d22"/>
+        </g>
+        <text x="560" y="276" text-anchor="end" class="lbl-s" data-b="4" data-fx="fade" style="fill:#5b3aa0">aire sous la charge répartie</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 13. SIMULATEUR ═════════ -->
+<section class="slide" id="c8-sim" data-title="Simulateur : faites rouler un convoi">
+  <div class="kicker">Simulateur interactif</div>
+  <h2 class="t" style="margin-bottom:14px">Faites rouler un convoi <em>sur la poutre</em></h2>
+  <div class="interactive" style="display:grid;grid-template-columns:330px 1fr;gap:22px;height:548px">
+    <div class="c8-panel">
+      <div class="lab">Convoi</div>
+      <div class="c8-seg" id="c8-sim-conv">
+        <button type="button" data-k="br">Roue Br</button><button type="button" data-k="bc" class="on">Bc 30 t</button><button type="button" data-k="bc2">2 Bc</button><button type="button" data-k="bt">Tandem Bt</button><button type="button" data-k="mc">Mc120</button>
+      </div>
+      <div class="c8-row">L <input type="range" id="c8-sim-L" min="10" max="40" step="1" value="25"><output id="c8-sim-Lv">25 m</output></div>
+      <div class="c8-row">x/L <input type="range" id="c8-sim-x" min="0.05" max="0.5" step="0.05" value="0.5"><output id="c8-sim-xv">0,50</output></div>
+      <div class="c8-row">Tête <input type="range" id="c8-sim-s" min="0" max="1000" step="1" value="0"><output id="c8-sim-sv">0 m</output></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="c8-btn main" id="c8-sim-play">▶ Animer</button><button type="button" class="c8-btn" id="c8-sim-best">Au maximum</button><button type="button" class="c8-btn" id="c8-sim-reset">Effacer</button>
+      </div>
+      <div class="c8-res">
+        <span>M(x) courant</span><b class="big2" id="c8-sim-M">—</b>
+        <span>Maximum de la trace</span><b id="c8-sim-max">—</b>
+        <span>Maximum théorique</span><b id="c8-sim-th">—</b>
+      </div>
+      <p class="small" style="margin:0;font-size:14.5px;line-height:1.4">Valeurs hors coefficients (bc, δ). Essais : Bc, L = 25, x = 0,5 → 165 t.m ; Mc120, L = 20, x = 0,5 → 466,1 t.m.</p>
+    </div>
+    <svg id="c8-sim-svg" viewBox="0 0 800 540" style="width:100%;height:100%;background:#fff;border-radius:16px;border:1px solid var(--line)" aria-label="Simulateur de convoi"></svg>
+  </div>
+</section>
+
+<!-- ═════════ 14. SECTION 03 ═════════ -->
+<section class="slide section" data-title="Partie 3 — Trouver le pire cas">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">03</div>
+    <h2 data-a data-fx="up" data-d=".15">Trouver le pire cas</h2>
+    <p data-a data-fx="up" data-d=".3">Faire rouler le convoi marche, mais à la main on veut <b style="color:#e2c070">une règle</b>. Deux résultats classiques suffisent pour la poutre isostatique.</p>
+  </div>
+</section>
+
+<!-- ═════════ 15. CHARGE RÉPARTIE PARTIELLE ═════════ -->
+<section class="slide" data-title="Charge répartie : position la plus défavorable">
+  <div class="kicker">Charge répartie de longueur c (char Mc, convois D/E…)</div>
+  <h2 class="t">La section partage la charge <em>comme elle partage la travée</em></h2>
+  <div class="split even" style="gap:30px">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">\frac{c_1}{c_2} = \frac{x}{L-x} \;\Rightarrow\; c_1 = \frac{c\,x}{L}</span><div class="w">Les deux extrémités de la charge « voient » la <b>même ordonnée</b> de LI : l'aire chargée est alors maximale.</div></div>
+      <div class="callout" style="margin-top:16px" data-b="1" data-fx="up"><span class="lab">Exemple : Mc120 sur L = 20 m</span>q = 110 / 6,10 = 18,03 t/m. Au milieu : aire = 6,10 × 5 − 6,10²/8 = 25,85 m², d'où <b>M = 466,12 t.m</b> (hors δ) ; avec δ = 1,1205 : <b>522,3 t.m</b>.</div>
+    </div>
+    <div class="vis" style="flex-direction:column;gap:12px">
+      <svg viewBox="0 0 580 280" style="height:auto" aria-label="Position la plus défavorable d'une charge répartie">
+        <rect width="580" height="280" rx="16" fill="#f1ecfa"/>
+        <!-- L=20 m : x 40..540 (25 px/m), section x = 6 m → 190 -->
+        <g class="c8-slidein">
+          <rect x="144" y="34" width="152.5" height="22" rx="4" fill="#7a52c7" fill-opacity=".85"/>
+          <text x="220" y="26" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0">chenille 6,10 m</text>
+          <polygon points="144,140 144,227.6 190,266 296.5,227.6 296.5,140" fill="#7a52c7" fill-opacity=".3"/>
+        </g>
+        <rect x="40" y="60" width="500" height="10" fill="#b9c2cc" stroke="#6e7884"/><path d="M40 70 l-9 14 h18z M540 70 l-9 14 h18z" fill="#6e7884"/>
+        <path d="M190 20 V275" stroke="#12a08a" stroke-dasharray="5 4"/>
+        <text x="198" y="104" class="lbl-s" style="fill:#0b6e5c">x = 0,3 L</text>
+        <path d="M40 140 H540" stroke="#141a26"/>
+        <polyline points="40,140 190,266 540,140" stroke="#b8902f" stroke-width="2.5" fill="none"/>
+        <g data-b="1" data-fx="fade"><path d="M120 227.6 H330" stroke="#dc4a2c" stroke-width="2" stroke-dasharray="6 4"/><text x="336" y="232" class="lbl-s" style="fill:#a33d22">ordonnées égales</text></g>
+      </svg>
+      <svg viewBox="0 0 580 230" style="height:auto" aria-label="Moments maximaux sous Mc120">
+        <rect width="580" height="230" rx="16" fill="#fff"/>
+        <text x="20" y="30" class="lbl-b" style="font-size:17px">Mc120, L = 20 m : M<tspan font-size="13" dy="4">max</tspan><tspan dy="-4"> (t.m, hors δ)</tspan></text>
+        <g fill="#7a52c7">
+          <rect x="60" y="167" width="64" height="33" data-b="2" data-fx="grow"/>
+          <rect x="160" y="141" width="64" height="59" data-b="2" data-fx="grow" data-d=".1"/>
+          <rect x="260" y="122" width="64" height="78" data-b="2" data-fx="grow" data-d=".2"/>
+          <rect x="360" y="111" width="64" height="89" data-b="2" data-fx="grow" data-d=".3"/>
+          <rect x="460" y="107" width="64" height="93" data-b="2" data-fx="grow" data-d=".4" fill="#dc4a2c"/>
+        </g>
+        <g class="lbl-s" text-anchor="middle" data-b="2" data-fx="fade" data-d=".5"><text x="92" y="158">167,81</text><text x="192" y="132">298,32</text><text x="292" y="113">391,55</text><text x="392" y="102">447,48</text><text x="492" y="98" style="fill:#a33d22;font-weight:500">466,12</text></g>
+        <path d="M40 200 H550" stroke="#141a26"/>
+        <g class="lbl-s" text-anchor="middle"><text x="92" y="222">0,1L</text><text x="192" y="222">0,2L</text><text x="292" y="222">0,3L</text><text x="392" y="222">0,4L</text><text x="492" y="222">0,5L</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 16. BARRÉ ═════════ -->
+<section class="slide" id="c8-barre" data-title="Le théorème de Barré">
+  <div class="kicker">Convoi de charges concentrées</div>
+  <h2 class="t" style="margin-bottom:10px">Le théorème de <em>Barré</em> : le maximum des maximums</h2>
+  <svg class="full" viewBox="0 0 1150 440" aria-label="Théorème de Barré">
+    <defs><marker id="c8s16-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7a52c7"/></marker></defs>
+    <rect width="1150" height="440" rx="16" fill="#fff"/>
+    <!-- 25 m : x 80..1080 (40 px/m) ; milieu 580 -->
+    <path d="M580 18 V430" stroke="#b8902f" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="588" y="436" class="lbl-s" style="fill:#8a6a1f">milieu</text>
+    <g class="c8-mv" id="c8-barre-conv">
+      <!-- camion 1 : essieux 820 (6 t), 640, 580 (12 t) -->
+      <rect x="556" y="122" width="244" height="40" rx="5" fill="#dc4a2c"/><rect x="796" y="108" width="40" height="54" rx="4" fill="#b8392a"/>
+      <!-- camion 2 : essieux 400 (6 t), 220, 160 (12 t) -->
+      <rect x="136" y="122" width="244" height="40" rx="5" fill="#e8a020"/><rect x="376" y="108" width="40" height="54" rx="4" fill="#c7861a"/>
+      <g fill="#141a26"><circle cx="820" cy="170" r="9"/><circle cx="640" cy="170" r="9"/><circle cx="580" cy="170" r="9"/><circle cx="400" cy="170" r="9"/><circle cx="220" cy="170" r="9"/><circle cx="160" cy="170" r="9"/></g>
+      <g class="lbl-w" text-anchor="middle" style="font-size:15px"><text x="580" y="148">12 t</text><text x="640" y="148">12 t</text><text x="780" y="148">6 t</text><text x="160" y="148">12 t</text><text x="220" y="148">12 t</text><text x="360" y="148">6 t</text></g>
+      <circle cx="580" cy="170" r="16" fill="none" stroke="#12a08a" stroke-width="3" class="pulse" data-b="2" data-fx="fade"/>
+      <g data-b="1" data-fx="down">
+        <path d="M442 22 V100" stroke="#7a52c7" stroke-width="5" marker-end="url(#c8s16-ar)"/>
+        <text x="434" y="44" text-anchor="end" class="lbl-b" style="fill:#5b3aa0">R = 60 t</text>
+      </g>
+      <g data-b="2" data-fx="fade">
+        <path d="M446 82 H576" stroke="#12a08a" stroke-width="2" marker-start="url(#c8s16-ar)" marker-end="url(#c8s16-ar)"/>
+        <text x="511" y="74" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c;font-weight:500">3,45 m</text>
+      </g>
+    </g>
+    <rect x="80" y="180" width="1000" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+    <path d="M80 192 l-10 16 h20z M1080 192 l-10 16 h20z" fill="#6e7884"/>
+    <g data-b="3" data-fx="fade">
+      <text x="545" y="40" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
+      <text x="615" y="40" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f;font-weight:500">1,725</text>
+    </g>
+    <g data-b="4" data-fx="fade">
+      <polygon points="80,240 229,335.4 289,360.3 469,394.5 649,408.5 709,399.6 889,332.6 1080,240" fill="#e2c070" fill-opacity=".4"/>
+    </g>
+    <polyline points="80,240 229,335.4 289,360.3 469,394.5 649,408.5 709,399.6 889,332.6 1080,240" stroke="#b8902f" stroke-width="3" fill="none" data-b="4" data-fx="draw"/>
+    <path d="M80 240 H1080" stroke="#141a26"/>
+    <text x="664" y="426" class="lbl-b" data-b="4" data-fx="pop" style="fill:#a33d22">224,6 t.m</text>
+  </svg>
+  <div class="c8-stack" style="margin-top:10px">
+    <div class="callout" data-b="0" data-only data-fx="fade">Deux camions <b>Bc en file</b> sur 25 m. Un essieu de 12 t est exactement à mi-travée : est-ce vraiment le pire ?</div>
+    <div class="callout v" data-b="1" data-only data-fx="fade"><span class="lab">Étape 1</span>Résultante du convoi : <b>R = 60 t</b>, à Σ P·d / Σ P = 567 / 60 = <b>9,45 m</b> derrière l'essieu avant.</div>
+    <div class="callout t" data-b="2" data-only data-fx="fade"><span class="lab">Étape 2</span>On choisit l'essieu lourd voisin de R : le 2<sup>e</sup> essieu arrière du 1<sup>er</sup> camion, à <b>3,45 m</b> de R.</div>
+    <div class="callout" data-b="3" data-only data-fx="fade"><span class="lab">Étape 3 — Barré</span>Le milieu de la travée partage en deux la distance essieu–R : l'essieu passe en x = 12,5 + 1,725 = <b>14,225 m</b>.</div>
+    <div class="callout r" data-b="4" data-only data-fx="fade"><span class="lab">Résultat</span>Le diagramme culmine sous l'essieu : <b>224,6 t.m</b>, contre 217,5 t.m au mieux à mi-travée (+3 %). Tout le convoi doit rester sur la travée.</div>
+  </div>
+</section>
+
+<!-- ═════════ 17. ENVELOPPES ═════════ -->
+<section class="slide" data-title="Les courbes enveloppes">
+  <div class="kicker">Pour ferrailler chaque section</div>
+  <h2 class="t">Les <em>courbes enveloppes</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Dans chaque section : la valeur <b>extrême</b>, toutes positions confondues.</li>
+        <li data-b="2" data-fx="left">M max presque <b>constant</b> dans la zone centrale.</li>
+        <li data-b="3" data-fx="left">T ne s'annule <b>pas</b> au milieu (± 14 t) : <b>étriers</b> jusqu'à mi-travée.</li>
+      </ul>
+      <div class="callout t" style="margin-top:18px" data-b="4" data-fx="up"><span class="lab">Organisation</span>Un tableau : sections 0 → 0,5 L en lignes, cas de charge (G, A, Bc, Bt, Mc…) en colonnes. Les logiciels le font avec leurs « charges mobiles ».</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 660 520" aria-label="Enveloppes de M et T, 2 camions Bc en file, L = 25 m">
+        <rect width="660" height="520" rx="16" fill="#fff"/>
+        <text x="330" y="30" text-anchor="middle" class="lbl-s">2 camions Bc en file, L = 25 m (hors coefficients)</text>
+        <!-- x : 60..620 (22,4 px/m) -->
+        <rect x="60" y="50" width="560" height="10" fill="#b9c2cc" stroke="#6e7884"/>
+        <text x="20" y="150" class="lbl-b" style="fill:#8a6a1f">M</text>
+        <path d="M60 72 H620" stroke="#141a26"/>
+        <polygon points="60,72 116,146.2 172,196.3 228,231.1 284,250.6 340,246 396,250.6 452,231.1 508,196.3 564,146.2 620,72" fill="#e2c070" fill-opacity=".45" data-b="1" data-fx="fade"/>
+        <polyline points="60,72 116,146.2 172,196.3 228,231.1 284,250.6 340,246 396,250.6 452,231.1 508,196.3 564,146.2 620,72" stroke="#b8902f" stroke-width="3" fill="none" data-b="1" data-fx="draw"/>
+        <g data-b="2" data-fx="fade"><text x="284" y="276" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">223</text><text x="340" y="232" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">217,5</text><text x="396" y="276" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">223</text></g>
+        <text x="20" y="410" class="lbl-b" style="fill:#2453b3">T</text>
+        <path d="M60 400 H620" stroke="#141a26"/>
+        <polyline points="60,305.2 116,318.4 172,331.6 228,344.8 284,357.2 340,369.1 396,378.4 452,385 508,391 564,396.3 620,400" stroke="#2f6fe0" stroke-width="3" fill="none" data-b="3" data-fx="draw"/>
+        <polyline points="60,400 116,403.7 172,409 228,415 284,421.6 340,430.9 396,442.8 452,455.2 508,468.4 564,481.6 620,494.8" stroke="#dc4a2c" stroke-width="3" fill="none" data-b="3" data-fx="draw"/>
+        <g data-b="3" data-fx="fade"><text x="70" y="296" class="lbl-s" style="fill:#2453b3">43,1 t</text><text x="340" y="362" text-anchor="middle" class="lbl-s" style="fill:#2453b3">+14</text><text x="340" y="452" text-anchor="middle" class="lbl-s" style="fill:#a33d22">−14</text>
+          <path d="M340 372 V428" stroke="#12a08a" stroke-width="3"/></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 18. SECTION 04 ═════════ -->
+<section class="slide section" data-title="Partie 4 — Répartir entre les poutres">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">04</div>
+    <h2 data-a data-fx="up" data-d=".15">Répartir entre les poutres</h2>
+    <p data-a data-fx="up" data-d=".3">Jusqu'ici, le tablier était une seule poutre. Mais un camion qui roule près du trottoir charge surtout <b style="color:#e2c070">la poutre de rive</b>.</p>
+  </div>
+</section>
+
+<!-- ═════════ 19. RÉPARTITION TRANSVERSALE ═════════ -->
+<section class="slide" data-title="Le coefficient de répartition transversale">
+  <div class="kicker">Répartition transversale</div>
+  <h2 class="t">Qui porte le camion ? <em>Surtout la poutre d'à côté</em></h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">M_i = \eta_i \times M_{\text{tablier}}</span><div class="w">η<sub>i</sub> = <b>coefficient de répartition transversale</b> (CRT) de la poutre i : la fraction de la charge qu'elle reprend.</div></div>
+      <ul class="b tight" style="margin-top:18px">
+        <li data-b="2" data-fx="left">Partage équitable : η = 1/n (ici 0,25).</li>
+        <li data-b="3" data-fx="left">Charge excentrée : <b>η<sub>rive</sub> &gt; 1/n</b>.</li>
+        <li data-b="4" data-fx="left">Plus le tablier est <b>raide transversalement</b> (hourdis, entretoises), plus le partage est égal.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 640 500" aria-label="Répartition d'une charge excentrée">
+        <rect width="640" height="500" rx="16" fill="#eef4fc"/>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values="0 320 120;3 320 120;3 320 120;0 320 120" keyTimes="0;.35;.75;1" dur="4s" repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 14;0 14;0 0" keyTimes="0;.35;.75;1" dur="4s" repeatCount="indefinite"/>
+          <rect x="70" y="110" width="500" height="16" fill="#b9c2cc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884"><rect x="115" y="126" width="22" height="70"/><rect x="242" y="126" width="22" height="70"/><rect x="376" y="126" width="22" height="70"/><rect x="503" y="126" width="22" height="70"/></g>
+          <rect x="420" y="70" width="110" height="34" rx="5" fill="#dc4a2c" data-b="1" data-fx="down"/>
+          <g fill="#141a26" data-b="1" data-fx="down"><rect x="428" y="102" width="20" height="8" rx="2"/><rect x="502" y="102" width="20" height="8" rx="2"/></g>
+        </g>
+        <path d="M320 40 V230" stroke="#9aa3ae" stroke-dasharray="5 5"/><text x="326" y="54" class="lbl-s">axe</text>
+        <text x="475" y="56" text-anchor="middle" class="lbl-s" style="fill:#a33d22" data-b="1" data-fx="fade">charge excentrée</text>
+        <path d="M70 430 H570" stroke="#141a26"/>
+        <path d="M70 330 H570" stroke="#141a26" stroke-dasharray="6 5" stroke-opacity=".5" data-b="2" data-fx="fade"/>
+        <text x="575" y="334" class="lbl-s" data-b="2" data-fx="fade">1/n</text>
+        <g data-b="3">
+          <rect x="106" y="406" width="40" height="24" fill="#2f6fe0" data-b="3" data-fx="grow"/>
+          <rect x="233" y="322" width="40" height="108" fill="#2f6fe0" data-b="3" data-fx="grow" data-d=".1"/>
+          <rect x="367" y="238" width="40" height="192" fill="#2f6fe0" data-b="3" data-fx="grow" data-d=".2"/>
+          <rect x="494" y="154" width="40" height="276" fill="#dc4a2c" data-b="3" data-fx="grow" data-d=".3"/>
+        </g>
+        <g class="lbl-b" text-anchor="middle" style="font-size:18px" data-b="3" data-fx="fade" data-d=".4"><text x="126" y="398">0,04</text><text x="253" y="314">0,18</text><text x="387" y="230">0,32</text><text x="514" y="146" style="fill:#a33d22">0,46</text></g>
+        <text x="320" y="468" text-anchor="middle" class="lbl-s">part de chaque poutre (exemple : 4 poutres, charge à 1,75 m de l'axe)</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 20. COURBON : PRINCIPE ═════════ -->
+<section class="slide" data-title="La méthode de Courbon">
+  <div class="kicker">Entretoises infiniment rigides</div>
+  <h2 class="t">Courbon : la section <em>descend et tourne</em> d'un bloc</h2>
+  <div class="split wide-v">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">R_i = P\left[\frac{1}{n} + \frac{e\,y_i}{\sum_j y_j^2}\right]</span><div class="w">n poutres identiques ; y<sub>i</sub> = position de la poutre i ; e = excentricité de la charge.</div></div>
+      <ul class="b tight" style="margin-top:16px">
+        <li data-b="1" data-fx="left"><b>1/n</b> : translation (charge centrée).</li>
+        <li data-b="2" data-fx="left"><b>e y<sub>i</sub>/Σy²</b> : rotation (excentricité).</li>
+        <li data-b="3" data-fx="left">Σ R<sub>i</sub> = P puisque Σ y<sub>i</sub> = 0.</li>
+      </ul>
+      <p class="small" style="margin-top:10px" data-b="3" data-fx="fade">Valable si le tablier est entretoisé et étroit (largeur/portée &lt; ≈ 1/2).</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 500" aria-label="Translation et rotation dans la méthode de Courbon">
+        <rect width="700" height="500" rx="16" fill="#fff"/>
+        <!-- poutres en x = 140, 290, 440, 590 (y_i = -3,75 ; -1,25 ; 1,25 ; 3,75 → 60 px/m, axe 365) -->
+        <g>
+          <rect x="110" y="50" width="510" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884"><rect x="130" y="62" width="20" height="40"/><rect x="280" y="62" width="20" height="40"/><rect x="430" y="62" width="20" height="40"/><rect x="580" y="62" width="20" height="40"/></g>
+          <path d="M520 14 V44" stroke="#dc4a2c" stroke-width="4"/><path d="M512 36 L520 50 L528 36Z" fill="#dc4a2c"/>
+          <text x="530" y="28" class="lbl-b" style="fill:#a33d22">P</text>
+          <path d="M365 40 V120" stroke="#9aa3ae" stroke-dasharray="5 4"/>
+          <path d="M365 112 H520" stroke="#a33d22" stroke-width="1.6"/><text x="442" y="134" text-anchor="middle" class="lbl-s" style="fill:#a33d22">e</text>
+        </g>
+        <!-- translation -->
+        <g data-b="1" data-fx="fade">
+          <text x="24" y="196" class="lbl-b" style="fill:#2453b3">1/n</text>
+          <path d="M110 230 H620" stroke="#141a26"/>
+          <g fill="#2f6fe0"><rect x="125" y="190" width="30" height="40"/><rect x="275" y="190" width="30" height="40"/><rect x="425" y="190" width="30" height="40"/><rect x="575" y="190" width="30" height="40"/></g>
+        </g>
+        <text x="365" y="260" text-anchor="middle" class="lbl-b" data-b="2" data-fx="fade" style="fill:#5b3aa0">+</text>
+        <g data-b="2" data-fx="fade">
+          <text x="24" y="320" class="lbl-b" style="fill:#5b3aa0">rot.</text>
+          <path d="M110 320 H620" stroke="#141a26"/>
+          <path d="M140 368 L590 272" stroke="#7a52c7" stroke-width="2" stroke-dasharray="6 4"/>
+          <g fill="#7a52c7"><rect x="125" y="320" width="30" height="45"/><rect x="275" y="320" width="30" height="15"/><rect x="425" y="305" width="30" height="15"/><rect x="575" y="275" width="30" height="45"/></g>
+        </g>
+        <text x="365" y="388" text-anchor="middle" class="lbl-b" data-b="3" data-fx="fade">=</text>
+        <g data-b="3" data-fx="fade">
+          <text x="24" y="440" class="lbl-b">R<tspan font-size="14" dy="4">i</tspan></text>
+          <path d="M110 470 H620" stroke="#141a26"/>
+          <g fill="#141a26"><rect x="125" y="465" width="30" height="5"/><rect x="275" y="445" width="30" height="25"/><rect x="425" y="415" width="30" height="55"/></g>
+          <rect x="575" y="385" width="30" height="85" fill="#dc4a2c"/>
+          <text x="590" y="378" text-anchor="middle" class="lbl-s" style="fill:#a33d22">rive</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 21. COURBON INTERACTIF ═════════ -->
+<section class="slide" id="c8-cb" data-title="Courbon interactif">
+  <div class="kicker">À vous de jouer</div>
+  <h2 class="t" style="margin-bottom:14px">Déplacez la charge : <em>qui reprend quoi ?</em></h2>
+  <div class="interactive" style="display:grid;grid-template-columns:330px 1fr;gap:22px;height:548px">
+    <div class="c8-panel">
+      <div class="lab">Tablier</div>
+      <div class="c8-row">Poutres n <span class="c8-seg" id="c8-cb-n" style="margin-left:auto"><button type="button" data-n="3">3</button><button type="button" data-n="4" class="on">4</button><button type="button" data-n="5">5</button><button type="button" data-n="6">6</button></span></div>
+      <div class="c8-row">Entraxe b <input type="range" id="c8-cb-b" min="1.5" max="3.5" step="0.1" value="2.5"><output id="c8-cb-bv">2,50 m</output></div>
+      <div class="lab" style="margin-top:6px">Charge P = 1</div>
+      <div class="c8-row">Excentricité e <input type="range" id="c8-cb-e" min="-1" max="1" step="0.01" value="0.6"><output id="c8-cb-ev">—</output></div>
+      <div class="c8-res" style="margin-top:6px">
+        <span>Σ y²</span><b id="c8-cb-S">—</b>
+        <span>CRT de la poutre de rive</span><b class="big2" id="c8-cb-rive">—</b>
+        <span>Poutre la moins chargée</span><b id="c8-cb-min">—</b>
+        <span>Contrôle Σ R<sub>i</sub></span><b id="c8-cb-sum">—</b>
+      </div>
+      <div class="callout r" style="font-size:15.5px;padding:10px 14px" id="c8-cb-warn"><span class="lab">Attention</span>Courbon peut prédire un <b>soulèvement</b> de la poutre opposée : c'est l'effet de la rigidité infinie supposée.</div>
+    </div>
+    <svg id="c8-cb-svg" viewBox="0 0 800 540" style="width:100%;height:100%;background:#fff;border-radius:16px;border:1px solid var(--line)" aria-label="Répartition de Courbon"></svg>
+  </div>
+</section>
+
+<!-- ═════════ 22. COURBON FIL ROUGE ═════════ -->
+<section class="slide" data-title="Fil rouge : la poutre de rive par Courbon">
+  <div class="kicker">Notre fil rouge</div>
+  <h2 class="t">La poutre de rive prend <em>50 % de plus</em> que la moyenne</h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Poutres en y = ± 1,25 et ± 3,75 m : <b>Σy² = 31,25 m²</b>.</li>
+        <li data-b="2" data-fx="left">LI transversale de la rive : <b>η(e) = 0,25 + 0,12 e</b>.</li>
+        <li data-b="3" data-fx="left">2 files Bc au plus près du bord : roues en 3,25 / 1,25 / 0,75 / −1,25 m.</li>
+      </ul>
+      <div class="formula" style="margin-top:16px;font-size:20px" data-b="4" data-fx="up"><span class="tex">\eta = \tfrac{1}{2}\cdot\tfrac{0{,}64+0{,}40+0{,}34+0{,}10}{2} = 0{,}37</span><div class="w">contre 0,25 si la charge était partagée également.</div></div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 500" aria-label="Ligne d'influence transversale de la poutre de rive">
+        <rect width="700" height="500" rx="16" fill="#e9f7f3"/>
+        <!-- y de -5 à +5 m → x = 350 + 60 y -->
+        <rect x="50" y="160" width="600" height="14" fill="#b9c2cc" stroke="#6e7884"/>
+        <g fill="#cfd5dc" stroke="#6e7884"><rect x="115" y="174" width="20" height="50"/><rect x="265" y="174" width="20" height="50"/><rect x="415" y="174" width="20" height="50"/><rect x="565" y="174" width="20" height="50"/></g>
+        <rect x="575" y="174" width="0" height="0"/>
+        <text x="575" y="250" text-anchor="middle" class="lbl-s" style="fill:#a33d22;font-weight:500">rive</text>
+        <path d="M140 150 H560" stroke="#3c4049" stroke-width="5"/>
+        <g data-b="3" data-fx="down">
+          <rect x="415" y="100" width="150" height="36" rx="5" fill="#dc4a2c"/><rect x="295" y="100" width="150" height="36" rx="5" fill="#e8a020" opacity=".92"/>
+          <g fill="#141a26"><rect x="537" y="136" width="16" height="11"/><rect x="417" y="136" width="16" height="11"/><rect x="387" y="136" width="16" height="11"/><rect x="267" y="136" width="16" height="11"/></g>
+          <text x="490" y="92" text-anchor="middle" class="lbl-s" style="fill:#a33d22">file 1</text><text x="370" y="92" text-anchor="middle" class="lbl-s" style="fill:#9a6a10">file 2</text>
+        </g>
+        <path d="M350 60 V480" stroke="#9aa3ae" stroke-dasharray="5 5"/>
+        <text x="356" y="490" class="lbl-s">axe (e = 0)</text>
+        <!-- LI : η = 0,25 + 0,12 e ; y = 330 + 180 η -->
+        <path d="M50 330 H650" stroke="#141a26"/>
+        <g data-b="2" data-fx="fade">
+          <polygon points="225,330 650,330 650,483" fill="#12a08a" fill-opacity=".15"/>
+          <polyline points="50,267 650,483" stroke="#12a08a" stroke-width="3" fill="none"/>
+          <text x="640" y="318" text-anchor="end" class="lbl-s" style="fill:#0b6e5c;font-weight:500">η(e) = 0,25 + 0,12 e</text>
+          <circle cx="350" cy="375" r="5" fill="#12a08a"/><text x="342" y="369" text-anchor="end" class="lbl-s" style="fill:#0b6e5c">0,25</text>
+        </g>
+        <g data-b="4" data-fx="fade">
+          <g stroke="#dc4a2c" stroke-dasharray="4 4" stroke-width="1.6"><path d="M545 147 V445 M425 147 V402 M395 147 V391 M275 147 V348"/></g>
+          <g fill="#dc4a2c"><circle cx="545" cy="445" r="6"/><circle cx="425" cy="402" r="6"/><circle cx="395" cy="391" r="6"/><circle cx="275" cy="348" r="6"/></g>
+          <g class="lbl-b" style="fill:#a33d22;font-size:17px"><text x="556" y="466">0,64</text><text x="434" y="426">0,40</text><text x="386" y="414" text-anchor="end">0,34</text><text x="264" y="368" text-anchor="end">0,10</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 23. GUYON-MASSONNET ═════════ -->
+<section class="slide" data-title="Guyon-Massonnet">
+  <div class="kicker">Tablier « dalle orthotrope »</div>
+  <h2 class="t">Guyon-Massonnet : <em>deux paramètres</em> suffisent</h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">\theta = \frac{b}{L}\sqrt[4]{\frac{\rho_p}{\rho_e}} \qquad \alpha = \frac{\gamma_p+\gamma_e}{2\sqrt{\rho_p\,\rho_e}}</span><div class="w">ρ = rigidités de flexion, γ = rigidités de torsion (p : poutres, e : entretoises) ; b = demi-largeur.</div></div>
+      <ul class="b tight" style="margin-top:16px">
+        <li data-b="1" data-fx="left"><b>θ petit</b> : tablier raide en travers → on tend vers Courbon.</li>
+        <li data-b="2" data-fx="left"><b>θ grand</b> : la charge reste sous la poutre chargée.</li>
+        <li data-b="3" data-fx="left">Tables : coefficient <b>K</b>, puis <b>η = K̄ / n</b>.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 640 480" aria-label="Allure des coefficients K de Guyon-Massonnet">
+        <rect width="640" height="480" rx="16" fill="#f1ecfa"/>
+        <text x="320" y="36" text-anchor="middle" class="lbl-b">K de la poutre de rive selon la position e de la charge</text>
+        <path d="M60 400 H600 M60 400 V70" stroke="#141a26"/>
+        <text x="600" y="424" text-anchor="end" class="lbl-s">e → rive</text>
+        <text x="60" y="424" class="lbl-s">rive opposée</text>
+        <path d="M60 340 H600" stroke="#9aa3ae" stroke-dasharray="5 5"/><text x="66" y="332" class="lbl-s">K = 1 (partage égal)</text>
+        <path d="M60 400 L600 190" stroke="#12a08a" stroke-width="3" fill="none" data-b="1" data-fx="draw"/>
+        <text x="150" y="296" class="lbl-s" style="fill:#0b6e5c" data-b="1" data-fx="fade">θ petit ≈ Courbon</text>
+        <path d="M60 392 C 300 392, 420 360, 600 90" stroke="#7a52c7" stroke-width="3" fill="none" data-b="2" data-fx="draw"/>
+        <text x="420" y="110" class="lbl-s" style="fill:#5b3aa0" data-b="2" data-fx="fade">θ grand</text>
+        <text x="320" y="460" text-anchor="middle" class="lbl-s">allure qualitative : valeurs à lire dans les tables de Massonnet</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 24. GRILLAGE / EF ═════════ -->
+<section class="slide" data-title="Grillage de poutres et éléments finis">
+  <div class="kicker">Aujourd'hui, sur ordinateur</div>
+  <h2 class="t">Grillage de poutres <em>et éléments finis</em></h2>
+  <div class="cols c2" style="gap:26px">
+    <div class="card teal" data-b="1" data-fx="up" style="padding:16px">
+      <svg class="full" viewBox="0 0 520 250" aria-label="Grillage de poutres">
+        <rect width="520" height="250" rx="12" fill="#e9f7f3"/>
+        <g stroke="#12a08a" stroke-width="4"><path d="M40 60 H480 M40 105 H480 M40 150 H480 M40 195 H480"/></g>
+        <g stroke="#6e7884" stroke-width="2"><path d="M40 60 V195 M128 60 V195 M216 60 V195 M304 60 V195 M392 60 V195 M480 60 V195"/></g>
+        <g fill="#141a26"><circle cx="40" cy="60" r="4"/><circle cx="128" cy="60" r="4"/><circle cx="216" cy="60" r="4"/><circle cx="304" cy="60" r="4"/><circle cx="392" cy="60" r="4"/><circle cx="480" cy="60" r="4"/><circle cx="40" cy="195" r="4"/><circle cx="128" cy="195" r="4"/><circle cx="216" cy="195" r="4"/><circle cx="304" cy="195" r="4"/><circle cx="392" cy="195" r="4"/><circle cx="480" cy="195" r="4"/><circle cx="216" cy="105" r="4"/><circle cx="216" cy="150" r="4"/><circle cx="304" cy="105" r="4"/><circle cx="304" cy="150" r="4"/></g>
+        <text x="260" y="36" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c">poutres principales + bandes de hourdis</text>
+        <text x="260" y="232" text-anchor="middle" class="lbl-s">nœuds à 3 degrés de liberté</text>
+      </svg>
+      <h3 style="margin-top:10px">Grillage de poutres</h3>
+      <p>Simple, rapide, résultats directement par poutre. Le modèle de base des tabliers à poutres et des ponts biais.</p>
+    </div>
+    <div class="card violet" data-b="2" data-fx="up" style="padding:16px">
+      <svg class="full" viewBox="0 0 520 250" aria-label="Maillage en éléments finis">
+        <defs><linearGradient id="c8s24-g" x1="0" x2="1"><stop offset="0" stop-color="#2f6fe0"/><stop offset=".5" stop-color="#e2c070"/><stop offset="1" stop-color="#dc4a2c"/></linearGradient></defs>
+        <rect width="520" height="250" rx="12" fill="#f1ecfa"/>
+        <path d="M60 70 L440 40 L470 170 L90 200 Z" fill="url(#c8s24-g)" opacity=".75"/>
+        <g stroke="#fff" stroke-width="1.2" opacity=".85">
+          <path d="M67.5 96 L446 66 M75 122 L452 92 M82.5 148 L458 118 M90 174 L464 144"/>
+          <path d="M98 62 L128 192 M136 59 L166 189 M174 56 L204 186 M212 53 L242 183 M250 50 L280 180 M288 47 L318 177 M326 44 L356 174 M364 41 L394 171 M402 38 L432 168"/>
+        </g>
+        <text x="260" y="232" text-anchor="middle" class="lbl-s">coques ou volumes : dalles, caissons, biais, abouts</text>
+      </svg>
+      <h3 style="margin-top:10px">Éléments finis</h3>
+      <p>Pour les dalles, caissons, zones d'about et biais prononcés : Midas Civil, Robot, Effel, SAP2000…</p>
+    </div>
+  </div>
+  <div class="callout r" style="margin-top:16px" data-b="3" data-fx="up"><span class="lab">Bon réflexe</span>Le logiciel ne dispense pas du calcul à la main : vérifiez toujours l'<b>ordre de grandeur</b> (pL²/8, Courbon) avant de croire un modèle.</div>
+</section>
+
+<!-- ═════════ 25. SECTION 05 ═════════ -->
+<section class="slide section" data-title="Partie 5 — Hourdis, continuité, combinaisons">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">05</div>
+    <h2 data-a data-fx="up" data-d=".15">Hourdis, continuité, combinaisons</h2>
+    <p data-a data-fx="up" data-d=".3">Le hourdis porte directement les roues ; la continuité change les moments ; les combinaisons assemblent le tout en <b style="color:#e2c070">une seule valeur de calcul</b>.</p>
+  </div>
+</section>
+
+<!-- ═════════ 26. DIFFUSION 45° ═════════ -->
+<section class="slide" data-title="Diffusion d'une roue dans le hourdis">
+  <div class="kicker">Flexion locale du hourdis</div>
+  <h2 class="t">La roue se diffuse <em>à 45°</em> jusqu'au plan moyen</h2>
+  <div class="split wide-v">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">u = u_0 + 2\,h_r + h_d</span><div class="w">h<sub>r</sub> = revêtement (45° de chaque côté) ; h<sub>d</sub> = hourdis (h<sub>d</sub>/2 de chaque côté jusqu'au plan moyen). Idem pour v.</div></div>
+      <div class="card gold" style="margin-top:18px" data-b="4" data-fx="up"><h3>Roue arrière Bc</h3><p style="font-size:19px">u = 0,25 + 2 × 0,08 + 0,20 = <b style="color:#dc4a2c;font-size:23px">0,61 m</b></p></div>
+      <p class="small" style="margin-top:12px" data-b="4" data-fx="fade">Certains règlements réduisent la diffusion dans un revêtement souple : suivre le CPS.</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 680 480" aria-label="Diffusion à 45 degrés d'une charge de roue">
+        <rect width="680" height="480" rx="16" fill="#fff"/>
+        <!-- 6 px/cm : u0 = 25 cm = 150 px centré en 340 -->
+        <g data-a data-fx="down">
+          <rect x="250" y="40" width="180" height="130" rx="40" fill="#3c4049"/>
+          <rect x="265" y="150" width="150" height="26" rx="6" fill="#141a26"/>
+          <path d="M340 60 V140" stroke="#dc4a2c" stroke-width="5"/><path d="M330 130 L340 146 L350 130Z" fill="#dc4a2c"/>
+        </g>
+        <rect x="20" y="178" width="640" height="48" fill="#5a5f6a"/>
+        <rect x="20" y="226" width="640" height="120" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M20 286 H660" stroke="#2f6fe0" stroke-width="1.6" stroke-dasharray="8 6"/>
+        <text x="28" y="208" class="lbl-w">revêtement 8 cm</text>
+        <text x="28" y="256" class="lbl">hourdis 20 cm</text>
+        <text x="28" y="306" class="lbl-s" style="fill:#2453b3">plan moyen</text>
+        <polygon points="265,178 415,178 523,286 157,286" fill="#dc4a2c" fill-opacity=".22" data-b="2" data-fx="fade"/>
+        <g stroke="#dc4a2c" stroke-width="2.6" data-b="1" data-fx="draw"><path d="M265 178 L217 226"/><path d="M415 178 L463 226"/></g>
+        <g stroke="#dc4a2c" stroke-width="2.6" data-b="2" data-fx="draw"><path d="M217 226 L157 286"/><path d="M463 226 L523 286"/></g>
+        <g data-b="1" data-fx="fade"><path d="M265 196 A20 20 0 0 0 251 192" stroke="#a33d22" fill="none" stroke-width="1.5"/><text x="226" y="200" class="lbl-s" style="fill:#fff">45°</text></g>
+        <g data-b="3" data-fx="fade">
+          <path d="M265 120 V176 M415 120 V176" stroke="#141a26" stroke-width="1" stroke-dasharray="3 3"/>
+          <path d="M157 300 V400 M523 300 V400" stroke="#141a26" stroke-width="1" stroke-dasharray="3 3"/>
+          <path d="M157 384 H523" stroke="#dc4a2c" stroke-width="2.4"/><path d="M157 376 v16 M523 376 v16" stroke="#dc4a2c" stroke-width="2.4"/>
+          <text x="340" y="420" text-anchor="middle" class="lbl-b" style="fill:#a33d22">u = 0,61 m</text>
+          <text x="440" y="110" class="lbl-s">u<tspan font-size="12" dy="4">0</tspan><tspan dy="-4"> = 0,25 m</tspan></text>
+        </g>
+        <text x="340" y="460" text-anchor="middle" class="lbl-s" data-b="4" data-fx="fade">la charge locale s'applique sur un carré de 0,61 × 0,61 m</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 27. PANNEAU DE DALLE ═════════ -->
+<section class="slide" data-title="Le panneau de hourdis">
+  <div class="kicker">Flexion locale du hourdis</div>
+  <h2 class="t">Un panneau de dalle <em>appuyé sur ses 4 côtés</em></h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">M_{0x} = (M_1 + \nu M_2)\,P \qquad M_{0y} = (M_2 + \nu M_1)\,P</span><div class="w">Abaques de <b>Pigeaud</b> : M<sub>1</sub>, M<sub>2</sub> selon l<sub>x</sub>/l<sub>y</sub>, u/l<sub>x</sub>, v/l<sub>y</sub>. ν = 0 à l'ELU, 0,2 à l'ELS.</div></div>
+      <ul class="b tight" style="margin-top:16px">
+        <li data-b="2" data-fx="left">Continuité forfaitaire : <b>0,8 M<sub>0</sub></b> en travée, <b>−0,5 M<sub>0</sub></b> sur appui (pratique BAEL).</li>
+        <li data-b="3" data-fx="left">Plusieurs roues : rectangles fictifs ajoutés puis retranchés.</li>
+      </ul>
+      <div class="callout r" style="margin-top:14px" data-b="4" data-fx="up"><span class="lab">Piège</span>Pour le hourdis, ce sont les <b>systèmes B</b> et militaires qui dimensionnent, jamais A(l).</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 480" aria-label="Panneau de hourdis entre poutres et entretoises">
+        <rect width="620" height="480" rx="16" fill="#eef4fc"/>
+        <rect x="60" y="80" width="500" height="320" fill="#e7ebf0" stroke="#6e7884"/>
+        <rect x="40" y="60" width="540" height="22" fill="#cfd5dc" stroke="#6e7884"/><rect x="40" y="398" width="540" height="22" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="40" y="82" width="22" height="316" fill="#b9c2cc" stroke="#6e7884"/><rect x="558" y="82" width="22" height="316" fill="#b9c2cc" stroke="#6e7884"/>
+        <text x="310" y="52" text-anchor="middle" class="lbl-s">poutre</text><text x="310" y="444" text-anchor="middle" class="lbl-s">poutre</text>
+        <text x="30" y="246" text-anchor="middle" class="lbl-s" transform="rotate(-90 30 246)">entretoise</text>
+        <path d="M600 82 V398" stroke="#2f6fe0" stroke-width="1.6"/><text x="604" y="246" class="lbl-s" style="fill:#2453b3">l<tspan font-size="12" dy="4">x</tspan></text>
+        <path d="M62 466 H558" stroke="#2f6fe0" stroke-width="1.6"/><text x="310" y="462" text-anchor="middle" class="lbl-s" style="fill:#2453b3">l<tspan font-size="12" dy="4">y</tspan></text>
+        <rect x="262" y="192" width="96" height="96" fill="#dc4a2c" fill-opacity=".75" data-b="1" data-fx="pop"/>
+        <text x="310" y="246" text-anchor="middle" class="lbl-w" data-b="1" data-fx="pop">u × v</text>
+        <g data-b="1" data-fx="fade" stroke="#dc4a2c" stroke-width="2" fill="none" opacity=".6"><circle cx="310" cy="240" r="70"/><circle cx="310" cy="240" r="98"/><circle cx="310" cy="240" r="122"/></g>
+        <g data-b="2" data-fx="fade">
+          <path d="M90 92 Q 310 132 530 92" stroke="#b8902f" stroke-width="3" fill="none" class="flow"/>
+          <text x="310" y="106" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">−0,5 M<tspan font-size="12" dy="4">0</tspan><tspan dy="-4"> sur appui</tspan></text>
+          <text x="310" y="384" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">0,8 M<tspan font-size="12" dy="4">0</tspan><tspan dy="-4"> en travée</tspan></text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 28. ISO VS CONTINU ═════════ -->
+<section class="slide" data-title="Isostatique ou continu ?">
+  <div class="kicker">Tabliers hyperstatiques</div>
+  <h2 class="t">La continuité <em>soulage les travées</em></h2>
+  <div class="split even">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left"><b>Isostatique</b> : chaque travée fléchit seule, M = pL²/8.</li>
+        <li data-b="2" data-fx="left"><b>Continu</b> : moment négatif sur la pile <b>−pL²/8</b>, travée réduite à <b>0,070 pL²</b> (−44 %).</li>
+        <li data-b="3" data-fx="left">Pour M max en travée : charger <b>une travée sur deux</b> ; sur appui : les deux travées voisines.</li>
+      </ul>
+      <div class="formula" style="margin-top:14px;font-size:16px;padding:12px 14px" data-b="3" data-fx="up"><span class="tex">M_{i-1}L_i + 2M_i(L_i+L_{i+1}) + M_{i+1}L_{i+1} = -\tfrac{p_iL_i^3+p_{i+1}L_{i+1}^3}{4}</span><div class="w">Théorème des trois moments (Clapeyron).</div></div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 640 500" aria-label="Comparaison isostatique et continu">
+        <rect width="640" height="500" rx="16" fill="#fff"/>
+        <text x="20" y="34" class="lbl-b">2 travées isostatiques</text>
+        <path d="M40 66 Q180 66 320 66 M320 66 Q460 66 600 66" stroke="#9aa3ae" stroke-width="10" fill="none">
+          <animate attributeName="d" dur="3s" repeatCount="indefinite" values="M40 66 Q180 66 320 66 M320 66 Q460 66 600 66;M40 66 Q180 106 320 66 M320 66 Q460 106 600 66;M40 66 Q180 66 320 66 M320 66 Q460 66 600 66"/>
+        </path>
+        <path d="M40 72 l-9 14 h18z M600 72 l-9 14 h18z M313 72 h14 l-7 14z" fill="#6e7884"/>
+        <path d="M40 110 H600" stroke="#141a26"/>
+        <path d="M40 110 Q180 270 320 110 Q460 270 600 110" fill="#e2c070" fill-opacity=".45" stroke="#b8902f" stroke-width="2.5" data-b="1" data-fx="fade"/>
+        <text x="180" y="216" text-anchor="middle" class="lbl-b" data-b="1" data-fx="pop" style="fill:#8a6a1f">0,125 pL²</text>
+        <text x="460" y="216" text-anchor="middle" class="lbl-b" data-b="1" data-fx="pop" style="fill:#8a6a1f">0,125 pL²</text>
+        <text x="20" y="266" class="lbl-b">Travées continues</text>
+        <path d="M40 296 C 140 296, 240 296, 320 296 C 400 296, 500 296, 600 296" stroke="#9aa3ae" stroke-width="10" fill="none">
+          <animate attributeName="d" dur="3s" repeatCount="indefinite" values="M40 296 C 140 296, 240 296, 320 296 C 400 296, 500 296, 600 296;M40 296 C 110 330, 250 318, 320 296 C 390 318, 530 330, 600 296;M40 296 C 140 296, 240 296, 320 296 C 400 296, 500 296, 600 296"/>
+        </path>
+        <path d="M40 302 l-9 14 h18z M600 302 l-9 14 h18z M313 302 h14 l-7 14z" fill="#6e7884"/>
+        <path d="M40 410 H600" stroke="#141a26"/>
+        <g data-b="2" data-fx="fade">
+          <polygon points="40,410 68,430.8 96,445.2 124,453.2 152,454.8 180,450 208,438.8 236,421.2 250,410" fill="#e2c070" fill-opacity=".45" stroke="#b8902f" stroke-width="2.5"/>
+          <polygon points="390,410 404,421.2 432,438.8 460,450 488,454.8 516,453.2 544,445.2 572,430.8 600,410" fill="#e2c070" fill-opacity=".45" stroke="#b8902f" stroke-width="2.5"/>
+          <polygon points="250,410 264,397.2 292,366.8 320,330 348,366.8 376,397.2 390,410" fill="#dc4a2c" fill-opacity=".3" stroke="#dc4a2c" stroke-width="2.5"/>
+          <text x="152" y="484" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">0,070 pL²</text>
+          <text x="488" y="484" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">0,070 pL²</text>
+          <text x="342" y="346" class="lbl-b" style="fill:#a33d22">−0,125 pL²</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 29. COMBINAISONS ═════════ -->
+<section class="slide" data-title="Les combinaisons">
+  <div class="kicker">Combiner</div>
+  <h2 class="t">Les combinaisons usuelles <em>ELU et ELS</em></h2>
+  <div class="formula" data-a data-fx="up" style="font-size:22px"><span class="texd">\begin{aligned}\text{ELU} &: 1{,}35\,G + 1{,}6\,(Q_{A\text{ ou }B} + Q_{tr}) \quad\text{ou}\quad 1{,}35\,G + 1{,}35\,Q_{Mc}\\ \text{ELS} &: G + 1{,}2\,(Q_{A\text{ ou }B} + Q_{tr}) \quad\text{ou}\quad G + Q_{Mc}\end{aligned}</span><div class="w">Pratique BAEL/BPEL avec le fascicule 61 titre II ; les coefficients exacts sont ceux du CPS. En Eurocode : 1,35 G + 1,35 (TS + UDL) à l'ELU.</div></div>
+  <div class="split even" style="height:auto;margin-top:18px;gap:30px;align-items:start">
+    <svg class="full" viewBox="0 0 560 250" aria-label="Composition de l'ELU et de l'ELS">
+      <rect width="560" height="250" rx="16" fill="#fff"/>
+      <text x="20" y="34" class="lbl-s">Fil rouge, M(L/2) avec A(l) (t.m)</text>
+      <text x="20" y="92" class="lbl-b">ELU</text>
+      <rect x="80" y="70" width="316.4" height="34" fill="#9aa3ae" data-b="1" data-fx="growx"/>
+      <rect x="396.4" y="70" width="133" height="34" fill="#dc4a2c" data-b="1" data-fx="growx" data-d=".4"/>
+      <text x="238" y="93" text-anchor="middle" class="lbl-w" data-b="1" data-fx="fade">1,35 G = 2 637</text>
+      <text x="463" y="93" text-anchor="middle" class="lbl-w" data-b="1" data-fx="fade" data-d=".4">1 109</text>
+      <text x="530" y="130" text-anchor="end" class="lbl-b" style="fill:#a33d22" data-b="1" data-fx="fade" data-d=".6">3 745,6</text>
+      <text x="20" y="182" class="lbl-b">ELS</text>
+      <rect x="80" y="160" width="234.4" height="34" fill="#9aa3ae" data-b="2" data-fx="growx"/>
+      <rect x="314.4" y="160" width="99.8" height="34" fill="#e8a020" data-b="2" data-fx="growx" data-d=".4"/>
+      <text x="197" y="183" text-anchor="middle" class="lbl-w" data-b="2" data-fx="fade">G = 1 953</text>
+      <text x="364" y="183" text-anchor="middle" class="lbl-w" data-b="2" data-fx="fade" data-d=".4">832</text>
+      <text x="414" y="220" text-anchor="end" class="lbl-b" style="fill:#9a6a10" data-b="2" data-fx="fade" data-d=".6">2 784,8</text>
+    </svg>
+    <div style="display:grid;gap:12px">
+      <div class="callout r" data-b="3" data-fx="left" style="padding:12px 16px"><b>A(l) et B ne se cumulent pas</b> : on retient le plus défavorable.</div>
+      <div class="callout v" data-b="4" data-fx="left" style="padding:12px 16px"><b>δ</b> s'applique aux systèmes B et militaires, pas à A(l) ni aux trottoirs.</div>
+      <div class="callout t" data-b="5" data-fx="left" style="padding:12px 16px">Ne pas oublier <b>bc / bt</b> (classe du pont, nombre de files).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 30. RÉCAPITULATIF FIL ROUGE ═════════ -->
+<section class="slide" data-title="Fil rouge : le récapitulatif">
+  <div class="kicker">Notre fil rouge · L = 25 m, 1re classe, 2 voies</div>
+  <h2 class="t">Le récapitulatif du tablier : <em>qui gouverne ?</em></h2>
+  <div class="split even" style="gap:30px;height:405px">
+    <table class="tb" style="font-size:17px">
+      <tr><th>Cas de charge</th><th style="text-align:right">M(L/2) t.m</th><th style="text-align:right">T(0) t</th></tr>
+      <tr data-b="1" data-fx="fade"><td>Permanentes G</td><td class="n">1 953,1</td><td class="n">312,5</td></tr>
+      <tr data-b="1" data-fx="fade" data-d=".08"><td>A(l) : 8,42 t/ml</td><td class="n">657,9</td><td class="n">105,3</td></tr>
+      <tr data-b="1" data-fx="fade" data-d=".16"><td>Trottoirs</td><td class="n">35,2</td><td class="n">5,6</td></tr>
+      <tr data-b="1" data-fx="fade" data-d=".24"><td>Bc, 2 files (bc, δ)</td><td class="n">524,8</td><td class="n">103,9</td></tr>
+      <tr data-b="1" data-fx="fade" data-d=".32"><td>Bt, 2 tandems (δ)</td><td class="n">409,3</td><td class="n">67,3</td></tr>
+      <tr data-b="1" data-fx="fade" data-d=".40"><td>Mc120 (δ)</td><td class="n">659,1</td><td class="n">105,5</td></tr>
+    </table>
+    <div class="vis">
+      <svg viewBox="0 0 580 470" aria-label="Combinaisons du fil rouge">
+        <rect width="580" height="470" rx="16" fill="#fff"/>
+        <text x="20" y="34" class="lbl-b">Combinaisons, M(L/2) en t.m</text>
+        <!-- échelle : 3 745,6 → 400 px -->
+        <g class="lbl-s"><text x="20" y="80">ELU  A + tr</text><text x="20" y="140">ELU  Bc + tr</text><text x="20" y="200">ELU  Mc120</text><text x="20" y="290">ELS  A + tr</text><text x="20" y="350">ELS  Bc + tr</text><text x="20" y="410">ELS  Mc120</text></g>
+        <rect x="20" y="88" width="400" height="22" rx="5" fill="#dc4a2c" data-b="2" data-fx="growx"/>
+        <rect x="20" y="148" width="377.3" height="22" rx="5" fill="#e8a020" data-b="2" data-fx="growx" data-d=".1"/>
+        <rect x="20" y="208" width="376.6" height="22" rx="5" fill="#7a52c7" data-b="2" data-fx="growx" data-d=".2"/>
+        <rect x="20" y="298" width="297.4" height="22" rx="5" fill="#dc4a2c" data-b="3" data-fx="growx"/>
+        <rect x="20" y="358" width="280.3" height="22" rx="5" fill="#e8a020" data-b="3" data-fx="growx" data-d=".1"/>
+        <rect x="20" y="418" width="278.9" height="22" rx="5" fill="#7a52c7" data-b="3" data-fx="growx" data-d=".2"/>
+        <g class="lbl-b" style="font-size:18px">
+          <text x="430" y="105" data-b="2" data-fx="fade" style="fill:#a33d22">3 745,6</text><text x="407" y="165" data-b="2" data-fx="fade">3 532,6</text><text x="406" y="225" data-b="2" data-fx="fade">3 526,5</text>
+          <text x="327" y="315" data-b="3" data-fx="fade" style="fill:#a33d22">2 784,8</text><text x="310" y="375" data-b="3" data-fx="fade">2 625,1</text><text x="309" y="435" data-b="3" data-fx="fade">2 612,2</text>
+        </g>
+        <text x="560" y="80" text-anchor="end" class="lbl-s" data-b="4" data-fx="pop" style="fill:#a33d22;font-weight:500">dimensionnant</text>
+      </svg>
+    </div>
+  </div>
+  <div class="callout t" style="margin-top:14px" data-b="4" data-fx="up"><span class="lab">Lecture</span>Ici <b>A(l) gouverne</b> la flexion générale (fréquent au-delà de ≈ 20 m) ; pour une poutre, on multiplie la part d'exploitation par son <b>CRT</b> et G par ≈ 1/n.</div>
+</section>
+
+<!-- ═════════ 31. À RETENIR ═════════ -->
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">Synthèse</div>
+  <h2 class="t">À retenir</h2>
+  <ul class="b" style="margin-top:16px;max-width:1080px;gap:12px">
+    <li data-b="1" data-fx="left">Poutre isostatique : <b>M = p x (L − x)/2</b>, <b>T = p (L/2 − x)</b>, M<sub>max</sub> = pL²/8 ; charge P dans la section : P x (L − x)/L.</li>
+    <li data-b="2" data-fx="left">Une <b>ligne d'influence</b> : effet dans une section fixe d'une charge unité mobile ; E = Σ P<sub>i</sub> y<sub>i</sub> ou p × aire.</li>
+    <li data-b="3" data-fx="left">Pire cas : charge répartie partagée comme la travée ; convoi : maximum sous une charge, maximum absolu par <b>Barré</b>.</li>
+    <li data-b="4" data-fx="left">Répartition : <b>Courbon</b> R<sub>i</sub> = P [1/n + e y<sub>i</sub>/Σy²] ; Guyon-Massonnet (θ, α, K) ; grillage ou éléments finis.</li>
+    <li data-b="5" data-fx="left">Hourdis : diffusion à 45° puis Pigeaud ; la <b>continuité</b> crée −pL²/8 sur pile et soulage les travées ; combiner en ELU / ELS.</li>
+  </ul>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch9.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 9 : Appuis et fondations →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+/* ═══ Chapitre 8 : animations sur mesure, simulateur de convoi, Courbon ═══ */
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function F(x, d) {
+    if (!isFinite(x)) return "—";
+    var s = Math.abs(x).toFixed(d).split(".");
+    s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return (x < -1e-12 ? "−" : "") + s.join(",");
+  }
+  var H = window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+
+  /* ligne d'influence point par point : la charge avance de 2 m par clic */
+  H["c8-li"] = function (st) {
+    var g = $("c8-li-load"); if (!g) return;
+    var a = [0, 2, 4, 6, 8, 10, 10][Math.min(st, 6)];
+    g.style.transform = "translateX(" + (a * 50) + "px)";
+  };
+  /* Barré : décalage du convoi de 1,725 m (69 px) à l'étape 3 */
+  H["c8-barre"] = function (st) {
+    var g = $("c8-barre-conv"); if (!g) return;
+    g.style.transform = st >= 3 ? "translateX(69px)" : "none";
+  };
+
+  /* ---------- simulateur de convoi ---------- */
+  var CONV = {
+    br: { nom: "Roue Br 10 t", P: [[10, 0]], D: [] },
+    bc: { nom: "Camion Bc 30 t", P: [[6, 0], [12, 4.5], [12, 6]], D: [] },
+    bc2: { nom: "2 camions Bc en file", P: [[6, 0], [12, 4.5], [12, 6], [6, 10.5], [12, 15], [12, 16.5]], D: [] },
+    bt: { nom: "Tandem Bt", P: [[16, 0], [16, 1.35]], D: [] },
+    mc: { nom: "Char Mc120", P: [], D: [[110 / 6.1, 0, 6.1]] }
+  };
+  function convLen(c) { var m = 0; c.P.forEach(function (p) { m = Math.max(m, p[1]); }); c.D.forEach(function (d) { m = Math.max(m, d[2]); }); return m; }
+  function yM(a, x, L) { if (a < 0 || a > L) return 0; return a <= x ? a * (L - x) / L : x * (L - a) / L; }
+  function aireLI(a1, a2, x, L) {
+    a1 = Math.max(0, a1); a2 = Math.min(L, a2); if (a2 <= a1) return 0;
+    var pts = [a1]; if (x > a1 && x < a2) pts.push(x); pts.push(a2);
+    var s = 0; for (var i = 0; i < pts.length - 1; i++) s += (yM(pts[i], x, L) + yM(pts[i + 1], x, L)) / 2 * (pts[i + 1] - pts[i]);
+    return s;
+  }
+  function momentAt(c, s, x, L) {
+    var m = 0;
+    c.P.forEach(function (p) { m += p[0] * yM(s - p[1], x, L); });
+    c.D.forEach(function (d) { m += d[0] * aireLI(s - d[2], s - d[1], x, L); });
+    return m;
+  }
+  function bestAt(c, x, L) {
+    var len = convLen(c), cand = [], best = -1, bs = 0, i;
+    for (i = 0; i <= 1500; i++) cand.push(i * (L + len) / 1500);
+    c.P.forEach(function (p) { cand.push(x + p[1]); });
+    c.D.forEach(function (d) { var cl = d[2] - d[1]; cand.push(x - cl * x / L + d[2]); });
+    cand.forEach(function (s) { if (s < 0 || s > L + len) return; var m = momentAt(c, s, x, L); if (m > best + 1e-9) { best = m; bs = s; } });
+    return [best, bs];
+  }
+
+  function initSim() {
+    var svg = $("c8-sim-svg"); if (!svg) return;
+    var iL = $("c8-sim-L"), iX = $("c8-sim-x"), iS = $("c8-sim-s"), seg = $("c8-sim-conv");
+    var conv = "bc", trace = {}, maxT = { m: -1, s: 0 }, anim = null;
+    function params() {
+      var L = +iL.value, c = CONV[conv], xr = +iX.value, len = convLen(c), Smax = L + len;
+      return { L: L, c: c, xr: xr, x: xr * L, len: len, Smax: Smax, s: +iS.value / 1000 * Smax };
+    }
+    function reset() { trace = {}; maxT = { m: -1, s: 0 }; }
+    function draw(exactS) {
+      var p = params(), L = p.L, x = p.x, c = p.c, s = exactS != null ? exactS : p.s;
+      var X = function (m) { return 70 + m / L * 660; };
+      var M = momentAt(c, s, x, L);
+      trace[iS.value] = [s, M];
+      if (M > maxT.m) maxT = { m: M, s: s };
+      var th = bestAt(c, x, L), h = [];
+      /* poutre */
+      h.push('<rect x="70" y="118" width="660" height="12" fill="#b9c2cc" stroke="#6e7884"/>');
+      h.push('<path d="M70 130 l-9 15 h18z M730 130 l-9 15 h18z" fill="#6e7884"/>');
+      h.push('<text x="70" y="166" text-anchor="middle" class="lbl-s">0</text><text x="730" y="166" text-anchor="middle" class="lbl-s">L = ' + F(L, 0) + ' m</text>');
+      var xs = X(x);
+      h.push('<path d="M' + xs + ' 36 V300" stroke="#12a08a" stroke-width="1.6" stroke-dasharray="5 4"/>');
+      h.push('<text x="' + (xs + 6) + '" y="166" class="lbl-s" style="fill:#0b6e5c">x = ' + F(x, 2) + ' m</text>');
+      /* LI */
+      var base = 200, kLI = 80 / (L / 4), yTop = x * (L - x) / L;
+      h.push('<text x="14" y="' + (base + 5) + '" class="lbl-s" style="fill:#8a6a1f;font-weight:500">LI</text>');
+      h.push('<path d="M70 ' + base + ' H730" stroke="#141a26"/>');
+      h.push('<path d="M70 ' + base + ' L' + xs + ' ' + (base + yTop * kLI) + ' L730 ' + base + ' Z" fill="#e2c070" fill-opacity=".3" stroke="#b8902f" stroke-width="2"/>');
+      /* convoi */
+      var len = convLen(c);
+      if (c.P.length > 1) {
+        var x1 = Math.max(4, X(s - len - 0.6)), x2 = Math.min(796, X(s + 0.6));
+        if (x2 > x1) h.push('<rect x="' + x1 + '" y="66" width="' + (x2 - x1) + '" height="22" rx="5" fill="#fbe5df" stroke="#dc4a2c" stroke-opacity=".4"/>');
+      }
+      c.P.forEach(function (pp, i) {
+        var a = s - pp[1], px = X(a);
+        if (px < 4 || px > 796) return;
+        var on = a >= 0 && a <= L, col = on ? "#dc4a2c" : "#9aa3ae";
+        h.push('<path d="M' + px + ' 70 V110" stroke="' + col + '" stroke-width="3"/><path d="M' + (px - 6) + ' 104 L' + px + ' 115 L' + (px + 6) + ' 104 Z" fill="' + col + '"/>');
+        h.push('<text x="' + px + '" y="' + (i % 2 ? 58 : 42) + '" text-anchor="middle" class="lbl-s" style="fill:' + col + '">' + F(pp[0], 0) + ' t</text>');
+        if (on) {
+          var y = yM(a, x, L), py = base + y * kLI;
+          h.push('<path d="M' + px + ' ' + base + ' V' + py + '" stroke="#dc4a2c" stroke-dasharray="3 3"/><circle cx="' + px + '" cy="' + py + '" r="5" fill="#dc4a2c"/>');
+        }
+      });
+      c.D.forEach(function (d) {
+        var a1 = s - d[2], a2 = s - d[1], p1 = Math.max(4, X(a1)), p2 = Math.min(796, X(a2));
+        if (p2 > p1) {
+          h.push('<rect x="' + p1 + '" y="86" width="' + (p2 - p1) + '" height="24" rx="4" fill="#7a52c7" fill-opacity=".85"/>');
+          h.push('<text x="' + ((p1 + p2) / 2) + '" y="56" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0">' + F(d[0], 2) + ' t/m</text>');
+        }
+        var b1 = Math.max(0, a1), b2 = Math.min(L, a2);
+        if (b2 > b1) {
+          var pts = [[b1, 0], [b1, yM(b1, x, L)]]; if (x > b1 && x < b2) pts.push([x, yM(x, x, L)]); pts.push([b2, yM(b2, x, L)], [b2, 0]);
+          h.push('<path d="M' + pts.map(function (q) { return X(q[0]).toFixed(1) + " " + (base + q[1] * kLI).toFixed(1); }).join(" L") + ' Z" fill="#7a52c7" fill-opacity=".35" stroke="#7a52c7"/>');
+        }
+      });
+      /* graphe M(s) */
+      var gB = 500, gT = 352, kM = th[0] > 0 ? (gB - gT) / th[0] : 1, G = function (v) { return 70 + v / p.Smax * 660; };
+      h.push('<text x="14" y="' + (gT - 44) + '" class="lbl-s" style="fill:#141a26;font-weight:500">M(x) selon la position de la tête du convoi</text>');
+      h.push('<path d="M70 ' + gB + ' H730 M70 ' + gB + ' V' + (gT - 10) + '" stroke="#141a26"/>');
+      var stp = p.Smax > 45 ? 10 : 5;
+      for (var t = 0; t <= p.Smax + 1e-6; t += stp) h.push('<path d="M' + G(t) + ' ' + gB + ' v5" stroke="#141a26"/><text x="' + G(t) + '" y="' + (gB + 22) + '" text-anchor="middle" class="lbl-s">' + t + '</text>');
+      h.push('<text x="790" y="' + (gB + 22) + '" text-anchor="end" class="lbl-s">s (m)</text>');
+      var full = []; for (var k = 0; k <= 240; k++) { var sv = k / 240 * p.Smax; full.push(G(sv).toFixed(1) + " " + (gB - momentAt(c, sv, x, L) * kM).toFixed(1)); }
+      h.push('<path d="M' + full.join(" L") + '" fill="none" stroke="#cdc6b4" stroke-width="1.6" stroke-dasharray="5 4"/>');
+      var tr = Object.keys(trace).map(function (q) { return trace[q]; }).sort(function (u, v) { return u[0] - v[0]; });
+      if (tr.length > 1) h.push('<path d="M' + tr.map(function (q) { return G(q[0]).toFixed(1) + " " + (gB - q[1] * kM).toFixed(1); }).join(" L") + '" fill="none" stroke="#b8902f" stroke-width="3"/>');
+      h.push('<path d="M70 ' + (gB - th[0] * kM) + ' H730" stroke="#12a08a" stroke-dasharray="2 4"/>');
+      var right = th[1] / p.Smax < 0.5;
+      h.push('<text x="' + (right ? 726 : 76) + '" y="' + (gB - th[0] * kM - 8) + '" text-anchor="' + (right ? "end" : "start") + '" class="lbl-s" style="fill:#0b6e5c">max ' + F(th[0], 1) + ' t.m</text>');
+      h.push('<circle cx="' + G(s) + '" cy="' + (gB - M * kM) + '" r="7" fill="#dc4a2c" stroke="#fff" stroke-width="2"/>');
+      svg.innerHTML = h.join("");
+      $("c8-sim-Lv").textContent = F(L, 0) + " m";
+      $("c8-sim-xv").textContent = F(p.xr, 2);
+      $("c8-sim-sv").textContent = F(s, 1) + " m";
+      $("c8-sim-M").textContent = F(M, 1) + " t.m";
+      $("c8-sim-max").textContent = maxT.m >= 0 ? F(maxT.m, 1) + " t.m" : "—";
+      $("c8-sim-th").textContent = F(th[0], 1) + " t.m";
+    }
+    var btn = $("c8-sim-play");
+    function stop() { if (anim) cancelAnimationFrame(anim); anim = null; btn.textContent = "▶ Animer"; }
+    function play() {
+      if (anim) { stop(); return; }
+      if (+iS.value >= 1000) { iS.value = 0; reset(); }
+      btn.textContent = "❚❚ Pause";
+      var last = null, sl = svg.closest(".slide");
+      var tick = function (ts) {
+        if (!sl.classList.contains("on")) { stop(); return; }
+        if (last === null) last = ts;
+        var v = Math.min(1000, +iS.value + Math.max(1, Math.round((ts - last) / 7000 * 1000))); last = ts;
+        iS.value = v; draw();
+        if (v < 1000) anim = requestAnimationFrame(tick); else stop();
+      };
+      anim = requestAnimationFrame(tick);
+    }
+    seg.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      seg.querySelectorAll("button").forEach(function (q) { q.classList.toggle("on", q === b); });
+      conv = b.dataset.k; stop(); reset(); iS.value = 0; draw();
+    });
+    [iL, iX].forEach(function (e) { e.addEventListener("input", function () { stop(); reset(); draw(); }); });
+    iS.addEventListener("input", function () { draw(); });
+    btn.addEventListener("click", play);
+    $("c8-sim-reset").addEventListener("click", function () { stop(); reset(); draw(); });
+    $("c8-sim-best").addEventListener("click", function () {
+      stop(); var p = params(), th = bestAt(p.c, p.x, p.L);
+      iS.value = Math.round(th[1] / p.Smax * 1000); draw(th[1]);
+    });
+    iS.value = 0; draw();
+  }
+
+  /* ---------- Courbon interactif ---------- */
+  function initCourbon() {
+    var svg = $("c8-cb-svg"); if (!svg) return;
+    var seg = $("c8-cb-n"), iB = $("c8-cb-b"), iE = $("c8-cb-e"), n = 4;
+    function draw() {
+      var b = +iB.value, W = n * b, half = (n - 1) * b / 2, e = +iE.value * (half + b / 2 - 1);
+      var ys = [], S = 0, i;
+      for (i = 0; i < n; i++) { var y = (i - (n - 1) / 2) * b; ys.push(y); S += y * y; }
+      var k = ys.map(function (y) { return 1 / n + e * y / S; });
+      var ir = e >= 0 ? n - 1 : 0, kmin = Math.min.apply(null, k), imin = k.indexOf(kmin);
+      var kx = 620 / Math.max(W, 6), X = function (y) { return 400 + y * kx; }, h = [];
+      var rot = Math.max(-6, Math.min(6, e * 1.6)), drop = 10;
+      h.push('<text x="20" y="34" class="lbl-b" style="font-size:18px">Coupe transversale</text>');
+      h.push('<path d="M400 46 V250" stroke="#9aa3ae" stroke-dasharray="5 5"/>');
+      h.push('<g transform="translate(0 ' + drop + ') rotate(' + rot.toFixed(2) + ' 400 120)">');
+      h.push('<rect x="' + X(-W / 2) + '" y="110" width="' + (W * kx) + '" height="14" fill="#b9c2cc" stroke="#6e7884"/>');
+      ys.forEach(function (y, j) { h.push('<rect x="' + (X(y) - 10) + '" y="124" width="20" height="56" fill="' + (j === ir ? "#f3c9bd" : "#cfd5dc") + '" stroke="#6e7884"/>'); });
+      h.push('<rect x="' + (X(e) - 40) + '" y="74" width="80" height="30" rx="5" fill="#dc4a2c"/><path d="M' + X(e) + ' 40 V70" stroke="#dc4a2c" stroke-width="4"/><path d="M' + (X(e) - 7) + ' 62 L' + X(e) + ' 74 L' + (X(e) + 7) + ' 62Z" fill="#dc4a2c"/>');
+      h.push('</g>');
+      h.push('<text x="' + X(e) + '" y="34" text-anchor="middle" class="lbl-b" style="fill:#a33d22">P</text>');
+      /* barres */
+      var base = 400, kb = 260;
+      h.push('<text x="20" y="262" class="lbl-b" style="font-size:18px">R<tspan font-size="14" dy="4">i</tspan><tspan dy="-4"> / P par poutre</tspan></text>');
+      h.push('<path d="M60 ' + base + ' H740" stroke="#141a26"/>');
+      h.push('<path d="M60 ' + (base - kb / n) + ' H740" stroke="#9aa3ae" stroke-dasharray="6 5"/><text x="744" y="' + (base - kb / n + 5) + '" class="lbl-s">1/n</text>');
+      ys.forEach(function (y, j) {
+        var v = k[j], hh = v * kb, col = v < 0 ? "#7a52c7" : (j === ir ? "#dc4a2c" : "#2f6fe0");
+        var yy = v >= 0 ? base - hh : base;
+        h.push('<rect x="' + (X(y) - 22) + '" y="' + yy.toFixed(1) + '" width="44" height="' + Math.abs(hh).toFixed(1) + '" rx="4" fill="' + col + '"/>');
+        h.push('<text x="' + X(y) + '" y="' + (v >= 0 ? yy - 8 : base + Math.abs(hh) + 20).toFixed(1) + '" text-anchor="middle" class="lbl-s" style="fill:' + col + ';font-weight:500">' + F(v, 3) + '</text>');
+        h.push('<text x="' + X(y) + '" y="' + (base + (v < 0 ? Math.abs(hh) + 42 : 24)).toFixed(1) + '" text-anchor="middle" class="lbl-s">n° ' + (j + 1) + '</text>');
+      });
+      h.push('<text x="400" y="520" text-anchor="middle" class="lbl-s">e = ' + F(e, 2) + ' m · la poutre de rive côté charge est en rouge</text>');
+      svg.innerHTML = h.join("");
+      $("c8-cb-bv").textContent = F(b, 2) + " m";
+      $("c8-cb-ev").textContent = F(e, 2) + " m";
+      $("c8-cb-S").textContent = F(S, 2) + " m²";
+      $("c8-cb-rive").textContent = F(k[ir], 3);
+      $("c8-cb-min").textContent = "n° " + (imin + 1) + " : " + F(kmin, 3);
+      $("c8-cb-sum").textContent = F(k.reduce(function (a, v) { return a + v; }, 0), 3);
+      $("c8-cb-warn").style.opacity = kmin < 0 ? 1 : 0.25;
+    }
+    seg.addEventListener("click", function (ev) {
+      var bt = ev.target.closest("button"); if (!bt) return;
+      seg.querySelectorAll("button").forEach(function (q) { q.classList.toggle("on", q === bt); });
+      n = +bt.dataset.n; draw();
+    });
+    iB.addEventListener("input", draw); iE.addEventListener("input", draw);
+    draw();
+  }
+  initSim(); initCourbon();
+})();
+</script>
+</body>
+</html>

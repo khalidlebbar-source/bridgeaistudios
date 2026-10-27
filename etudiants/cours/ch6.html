@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 6 — Prédimensionner · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 6 : prédimensionner un pont. Élancement h/L, règles par famille de tablier (PICF, PSI-DA, PSI-DP, poutres BA, PRAD, VIPP, bipoutre, caisson), piles, culées, fondations, métré du poids propre et application au fil rouge, avec deux calculatrices.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch6.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+.c6-calc{display:grid;grid-template-columns:350px 1fr;gap:22px;height:calc(100% - 92px)}
+.c6-in{display:flex;flex-direction:column;gap:9px}
+.c6-in label{display:flex;flex-direction:column;gap:3px;font-size:15px;color:var(--mute)}
+.c6-in .row{display:flex;gap:8px;align-items:center}
+.c6-in select,.c6-in input[type=number]{font:inherit;font-size:16px;color:var(--ink);padding:6px 9px;border:1px solid #d9d3c3;border-radius:9px;background:#fff;width:100%}
+.c6-in input[type=number]{width:96px;flex:none}
+.c6-in input[type=range]{flex:1;accent-color:var(--gold)}
+.c6-in .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.c6-res{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:3px}
+.c6-res div{display:flex;justify-content:space-between;gap:10px;font-size:16px;color:var(--ink2);border-bottom:1px dashed #ece6d8;padding:3px 0}
+.c6-res div:last-child{border:none}
+.c6-res b{color:var(--ink);font-weight:500;text-align:right}
+.c6-res .tot b{color:var(--gold);font-size:19px}
+.c6-out{display:flex;flex-direction:column;gap:10px;min-width:0}
+.c6-out svg{width:100%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);background:#fbfaf6}
+.c6-steps{font-size:16px;line-height:1.5;color:var(--ink2);background:#fbf5e4;border-left:5px solid var(--gold);border-radius:10px;padding:9px 14px}
+.c6-steps .w{color:#a33d22;display:block;margin-top:3px}
+.c6-steps .ok{color:#0b6e5c;display:block;margin-top:3px}
+.c6-hide{display:none!important}
+.c6-stk{position:relative;height:100%}
+.c6-stk>div{position:absolute;left:0;right:0;top:0}
+.c6-stk .card h3{font-size:22px}
+.c6-stk .card p{font-size:19px;line-height:1.45}
+.c6-stk .k{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#fff;font-weight:500;font-size:16px;margin-right:8px;vertical-align:middle}
+.c6-chips{display:flex;gap:10px;flex-wrap:wrap}
+.c6-chips .pill{font-size:17px;padding:7px 16px}
+table.tb.c6-rec td,table.tb.c6-rec th{padding:7px 12px;font-size:17px}
+table.tb.c6-rec th{font-size:15px}
+.c6-bar{display:inline-block;height:12px;border-radius:6px;background:var(--gold);vertical-align:middle;margin-right:8px}
+</style>
+</head>
+<body data-ch="ch6">
+<div class="deck">
+
+<!-- ═════════ 1. COUVERTURE ═════════ -->
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">6</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 6</div>
+  <h1 data-a data-fx="up" data-d=".15">Prédimensionner <em>avant de calculer</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35">Fixer une géométrie plausible avec des règles d'expérience — élancements, piles, culées, poids propre — que le calcul viendra ensuite confirmer.</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs><linearGradient id="c6s1-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#22314f"/><stop offset="1" stop-color="#0c1424"/></linearGradient></defs>
+    <rect y="222" width="1280" height="38" fill="url(#c6s1-g)"/>
+    <path d="M0 132 H1280" stroke="#3c4049" stroke-width="6"/>
+    <!-- trois travées de portée croissante : la hauteur suit L/n -->
+    <g data-a data-fx="up" data-d=".5">
+      <rect x="40" y="135" width="200" height="12" fill="#b9c2cc"/>
+      <rect x="230" y="147" width="18" height="75" fill="#8b95a3"/>
+      <text x="140" y="172" text-anchor="middle" class="lbl-s" style="fill:#c9d0dc">L</text>
+    </g>
+    <g data-a data-fx="up" data-d=".75">
+      <rect x="248" y="135" width="360" height="22" fill="#b9c2cc"/>
+      <rect x="598" y="157" width="22" height="65" fill="#8b95a3"/>
+      <text x="428" y="186" text-anchor="middle" class="lbl-s" style="fill:#c9d0dc">2 L</text>
+    </g>
+    <g data-a data-fx="up" data-d="1">
+      <rect x="620" y="135" width="600" height="36" fill="#b9c2cc"/>
+      <rect x="1212" y="171" width="26" height="51" fill="#8b95a3"/>
+      <text x="920" y="200" text-anchor="middle" class="lbl-s" style="fill:#c9d0dc">3,5 L</text>
+    </g>
+    <g data-a data-fx="fade" data-d="1.3"><path d="M1230 135 V171" stroke="#e2c070" stroke-width="2"/><text x="1190" y="120" text-anchor="end" class="lbl-b" style="fill:#e2c070">h = L / n</text></g>
+    <g class="drive" style="--t:10s;--from:-80px;--to:1300px"><rect x="0" y="117" width="30" height="12" rx="3" fill="#dc4a2c"/></g>
+    <g class="drive" style="--t:14s;--from:-400px;--to:1300px"><rect x="0" y="119" width="20" height="10" rx="2" fill="#7fd8c8"/></g>
+  </svg>
+</section>
+
+<!-- ═════════ 2. OBJECTIFS ═════════ -->
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:34px">
+    <div class="card gold" data-b="1" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><path d="M3 12h26v6H3zM29 8v14"/><path d="M3 26h26"/></svg></div>
+      <h3>Lire un élancement</h3><p>h = L/n : la hauteur d'un tablier se déduit de sa portée.</p></div>
+    <div class="card teal" data-b="2" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M3 9h26M7 9v12M16 9v12M25 9v12M4 21h6M13 21h6M22 21h6"/></svg></div>
+      <h3>Dessiner un tablier</h3><p>Cadre, dalle, poutres, bipoutre, caisson : une règle par famille.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M9 6h14v4H9zM14 10h4v14h-4zM7 24h18v4H7z"/></svg></div>
+      <h3>Dimensionner les appuis</h3><p>Fût, chevêtre, semelle, culée pièce par pièce, fondations.</p></div>
+    <div class="card red" data-b="4" data-fx="up">
+      <div class="ico" style="background:#fbe5df"><svg viewBox="0 0 32 32" fill="none" stroke="#dc4a2c" stroke-width="2"><path d="M8 26h16M10 26V20h12v6M12 20v-5h8v5M14 15v-4h4v4"/></svg></div>
+      <h3>Faire le métré</h3><p>Poids propre et superstructures, en t/ml et en kN/m.</p></div>
+  </div>
+  <div class="callout t" style="margin-top:34px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>On donnera ses <b>premières dimensions</b> à notre pont routier sur la voie ferrée : hauteur du tablier, culées, et le <b>poids propre</b> qui servira à tous les calculs suivants.</div>
+</section>
+
+<!-- ═════════ 3. SECTION 01 ═════════ -->
+<section class="slide section" data-title="Partie 1 — Pourquoi prédimensionner ?">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">01</div>
+    <h2 data-a data-fx="up" data-d=".15">Pourquoi prédimensionner ?</h2>
+    <p data-a data-fx="up" data-d=".3">Pour calculer un pont, il faut déjà l'avoir dessiné. Les <b style="color:#e2c070">règles d'élancement</b> donnent ce premier dessin.</p>
+  </div>
+</section>
+
+<!-- ═════════ 4. LE CERCLE ═════════ -->
+<section class="slide" data-title="Un cercle à casser">
+  <div class="kicker">Le principe</div>
+  <h2 class="t">Le poids dépend des dimensions… <em>qu'on cherche</em></h2>
+  <div class="split">
+    <div>
+      <div class="card gold" data-a data-fx="left" style="padding:18px 22px">
+        <div class="big" style="font-size:84px">60–75 %</div>
+        <p style="font-size:19px;margin-top:6px">des charges verticales d'un pont courant en béton viennent de son <b>poids propre</b>.</p>
+      </div>
+      <ul class="b tight" style="margin-top:22px">
+        <li data-b="1" data-fx="left">Pour dimensionner, il faut le poids ; pour le poids, il faut les dimensions.</li>
+        <li data-b="2" data-fx="left">On casse le cercle avec des <b>règles d'expérience</b> : dossiers-pilotes SETRA, ouvrages existants.</li>
+        <li data-b="5" data-fx="left">Un bon prédimensionnement converge en <b>une ou deux itérations</b>.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 520" aria-label="Boucle du prédimensionnement">
+        <defs>
+          <marker id="c6s4-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+          <marker id="c6s4-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+        </defs>
+        <rect width="620" height="520" rx="18" fill="#fdf3e2"/>
+        <circle cx="310" cy="262" r="84" fill="#fff" stroke="#e8dcc0" stroke-width="2"/>
+        <text x="310" y="252" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">1 à 2</text>
+        <text x="310" y="280" text-anchor="middle" class="lbl-s">itérations</text>
+        <!-- flèches -->
+        <g fill="none" stroke-width="3">
+          <path d="M420 92 Q 520 120 520 190" stroke="#b8902f" marker-end="url(#c6s4-a)" class="flow" data-b="2" data-fx="fade"/>
+          <path d="M520 336 Q 520 404 420 432" stroke="#b8902f" marker-end="url(#c6s4-a)" class="flow" data-b="3" data-fx="fade"/>
+          <path d="M200 432 Q 100 404 100 336" stroke="#b8902f" marker-end="url(#c6s4-a)" class="flow" data-b="4" data-fx="fade"/>
+          <path d="M100 190 Q 100 120 200 92" stroke="#dc4a2c" marker-end="url(#c6s4-r)" class="flow" data-b="5" data-fx="fade"/>
+        </g>
+        <g data-b="1" data-fx="pop">
+          <rect x="200" y="40" width="220" height="92" rx="16" fill="#141a26"/>
+          <text x="310" y="78" text-anchor="middle" class="lbl-b" style="fill:#e2c070">1 · Géométrie</text>
+          <text x="310" y="106" text-anchor="middle" class="lbl-w">règles d'élancement</text>
+        </g>
+        <g data-b="2" data-fx="pop">
+          <rect x="420" y="200" width="185" height="126" rx="16" fill="#fff" stroke="#b8902f" stroke-width="2"/>
+          <text x="512" y="244" text-anchor="middle" class="lbl-b">2 · Métré</text>
+          <text x="512" y="272" text-anchor="middle" class="lbl-s">poids propre</text>
+          <text x="512" y="294" text-anchor="middle" class="lbl-s">superstructures</text>
+        </g>
+        <g data-b="3" data-fx="pop">
+          <rect x="200" y="392" width="220" height="92" rx="16" fill="#fff" stroke="#2f6fe0" stroke-width="2"/>
+          <text x="310" y="430" text-anchor="middle" class="lbl-b" style="fill:#2453b3">3 · Calcul</text>
+          <text x="310" y="458" text-anchor="middle" class="lbl-s">efforts M, V, N</text>
+        </g>
+        <g data-b="4" data-fx="pop">
+          <rect x="15" y="200" width="185" height="126" rx="16" fill="#fff" stroke="#12a08a" stroke-width="2"/>
+          <text x="107" y="244" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">4 · Vérifier</text>
+          <text x="107" y="272" text-anchor="middle" class="lbl-s">contraintes</text>
+          <text x="107" y="294" text-anchor="middle" class="lbl-s">flèches, acier</text>
+        </g>
+        <text x="70" y="128" text-anchor="middle" class="lbl-s" style="fill:#a33d22" data-b="5" data-fx="fade">si échec :</text>
+        <text x="70" y="148" text-anchor="middle" class="lbl-s" style="fill:#a33d22" data-b="5" data-fx="fade">on corrige</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 5. PORTÉE / OUVERTURE ═════════ -->
+<section class="slide" data-title="Portée ou ouverture ?">
+  <div class="kicker">Piège classique</div>
+  <h2 class="t">Portée ou ouverture ? <em>Pas la même chose</em></h2>
+  <svg class="full" viewBox="0 0 1150 330" aria-label="Portée et ouverture d'une travée">
+    <defs>
+      <pattern id="c6s5-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+      <marker id="c6s5-g" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+      <marker id="c6s5-t" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12a08a"/></marker>
+    </defs>
+    <rect width="1150" height="330" rx="16" fill="#eef4fc"/>
+    <path d="M0 96 H120 V300 H0 Z M1150 96 H1030 V300 H1150 Z" fill="url(#c6s5-e)"/>
+    <rect y="300" width="1150" height="30" fill="url(#c6s5-e)"/>
+    <rect x="120" y="128" width="30" height="172" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="1000" y="128" width="30" height="172" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="110" y="96" width="930" height="26" fill="#b9c2cc" stroke="#6e7884"/>
+    <rect x="110" y="90" width="930" height="6" fill="#3c4049"/>
+    <rect x="128" y="122" width="14" height="6" fill="#2f6fe0"/><rect x="1008" y="122" width="14" height="6" fill="#2f6fe0"/>
+    <g class="drive" style="--t:7s;--from:120px;--to:1000px"><rect x="0" y="74" width="34" height="16" rx="3" fill="#dc4a2c"/></g>
+    <g data-b="1" data-fx="fade">
+      <path d="M150 250 H1000" stroke="#12a08a" stroke-width="2.2" marker-start="url(#c6s5-t)" marker-end="url(#c6s5-t)"/>
+      <text x="575" y="240" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">ouverture : 28 m (entre parements)</text>
+      <text x="575" y="276" text-anchor="middle" class="lbl-s">règle des cadres et portiques</text>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <path d="M135 128 V44 M1015 128 V44" stroke="#b8902f" stroke-dasharray="5 4"/>
+      <path d="M135 52 H1015" stroke="#b8902f" stroke-width="2.2" marker-start="url(#c6s5-g)" marker-end="url(#c6s5-g)"/>
+      <text x="575" y="40" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">portée L : ≈ 29 m (entre axes d'appareils d'appui)</text>
+      <text x="236" y="160" class="lbl-s">appareil d'appui</text>
+    </g>
+  </svg>
+  <div class="cols c2" style="margin-top:16px;gap:22px">
+    <div class="formula" data-b="3" data-fx="up"><span class="texd">M_G = \frac{p\,L^2}{8} \;\Rightarrow\; \left(\frac{29}{28}\right)^2 \approx 1{,}07</span><div class="w">Le moment de poids propre varie comme <b>L²</b> : 1 m d'écart = <b>+7 %</b>.</div></div>
+    <div class="callout r" data-b="4" data-fx="up"><span class="lab">À retenir</span>Les élancements des tabliers s'appliquent à la <b>portée</b> (axes d'appareils d'appui) ; pour les cadres et portiques, on raisonne sur l'<b>ouverture</b>.</div>
+  </div>
+</section>
+
+<!-- ═════════ 6. RÈGLE DU POUCE ═════════ -->
+<section class="slide" id="c6-pouce" data-title="La règle du pouce : h = L/n">
+  <div class="kicker">L'élancement</div>
+  <h2 class="t">La règle du pouce : <em>h = L / n</em></h2>
+  <div class="split wide-v">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">\lambda = \frac{h}{L} \quad\Longleftrightarrow\quad h = \frac{L}{n}</span><div class="w">h = hauteur de la section résistante ; L = portée (la plus grande, si continu) ; n = coefficient d'élancement.</div></div>
+      <div style="display:grid;gap:10px;margin-top:18px">
+        <div class="pill b" style="font-size:18px;padding:8px 16px">n ≈ 17 · poutres précontraintes VIPP</div>
+        <div class="pill r" style="font-size:18px;padding:8px 16px" data-b="1" data-fx="left">n ≈ 14 · poutres en béton armé</div>
+        <div class="pill t" style="font-size:18px;padding:8px 16px" data-b="2" data-fx="left">n ≈ 20 · dalle armée isostatique</div>
+        <div class="pill" style="font-size:18px;padding:8px 16px;background:#efe6fb;color:#5b3aa0" data-b="3" data-fx="left">n ≈ 28 à 33 · dalle précontrainte continue</div>
+      </div>
+      <p class="small" style="margin-top:16px" data-b="3" data-fx="fade">Plus n est grand, plus le tablier est <b>mince</b>… et <b>souple</b>.</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 700 500" aria-label="La poutre s'épaissit quand la portée grandit">
+        <defs><marker id="c6s6-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="700" height="500" rx="18" fill="#eef4fc"/>
+        <text x="30" y="52" class="lbl-b" id="c6p-L" style="font-size:30px">L = 25,0 m</text>
+        <text x="30" y="92" class="lbl-b" id="c6p-h" style="font-size:26px;fill:#2f6fe0">h = L/17 = 1,47 m</text>
+        <text x="670" y="52" text-anchor="end" class="lbl" id="c6p-nm" style="fill:#2f6fe0">VIPP</text>
+        <path d="M0 440 H700" stroke="#c9a77a" stroke-width="2"/>
+        <rect y="440" width="700" height="60" fill="#ead7bd" opacity=".6"/>
+        <rect id="c6p-beam" x="50" y="150" width="375" height="88" rx="2" fill="#2f6fe0" fill-opacity=".22" stroke="#2f6fe0" stroke-width="2.5"/>
+        <rect x="50" y="144" width="375" height="6" fill="#3c4049" id="c6p-road"/>
+        <path id="c6p-s1" d="M50 238 l-14 26 h28 z" fill="#6e7884"/>
+        <path id="c6p-s2" d="M425 238 l-14 26 h28 z" fill="#6e7884"/>
+        <rect id="c6p-p1" x="40" y="264" width="20" height="176" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect id="c6p-p2" x="415" y="264" width="20" height="176" fill="#cfd5dc" stroke="#6e7884"/>
+        <path id="c6p-dL" d="M50 300 H425" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s6-a)" marker-end="url(#c6s6-a)"/>
+        <path id="c6p-dh" d="M445 150 V238" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s6-a)" marker-end="url(#c6s6-a)"/>
+        <text id="c6p-th" x="456" y="200" class="lbl-b" style="fill:#8a6a1f">h</text>
+        <text id="c6p-tL" x="237" y="326" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">L</text>
+        <text x="670" y="480" text-anchor="end" class="lbl-s">hauteurs dessinées × 4 pour la lisibilité</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 7. CONTINUITÉ ═════════ -->
+<section class="slide" data-title="La continuité amincit le tablier">
+  <div class="kicker">Pourquoi n change</div>
+  <h2 class="t">À portée égale, le tablier continu est <em>plus mince</em></h2>
+  <div class="cols c2" style="gap:24px">
+    <div class="card" data-b="1" data-fx="up" style="padding:14px 16px">
+      <svg class="full" viewBox="0 0 540 330" aria-label="Deux travées isostatiques">
+        <rect width="540" height="330" rx="12" fill="#eef4fc"/>
+        <rect x="50" y="28" width="218" height="12" fill="#b9c2cc" stroke="#6e7884"/><rect x="272" y="28" width="218" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M50 40 l-10 18 h20z M266 40 l-8 18 h16z M274 40 l-8 18 h16z M490 40 l-10 18 h20z" fill="#6e7884"/>
+        <path d="M50 200 H490" stroke="#6e7884"/>
+        <path d="M50 200 Q160 450 270 200 Q380 450 490 200" fill="#dc4a2c" fill-opacity=".14" stroke="#dc4a2c" stroke-width="2.5" data-b="1" data-fx="draw"/>
+        <text x="160" y="290" text-anchor="middle" class="lbl-b" style="fill:#a33d22">0,125 pL²</text>
+        <text x="380" y="290" text-anchor="middle" class="lbl-b" style="fill:#a33d22">0,125 pL²</text>
+        <text x="270" y="100" text-anchor="middle" class="lbl-s">moment (fibre tendue en bas)</text>
+      </svg>
+      <h3 style="margin-top:10px">2 travées isostatiques</h3>
+      <p>Moment maximal <b>pL²/8</b> au milieu de chaque travée.</p>
+    </div>
+    <div class="card" data-b="2" data-fx="up" style="padding:14px 16px">
+      <svg class="full" viewBox="0 0 540 330" aria-label="Poutre continue à deux travées">
+        <rect width="540" height="330" rx="12" fill="#e9f7f3"/>
+        <rect x="50" y="28" width="440" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M50 40 l-10 18 h20z M270 40 l-10 18 h20z M490 40 l-10 18 h20z" fill="#6e7884"/>
+        <path d="M50 200 H490" stroke="#6e7884"/>
+        <path d="M50 200 L72 232.5 L94 255 L116 267.5 L132.5 270.3 L138 270 L160 262.5 L182 245 L204 217.5 L226 180 L248 132.5 L270 75 L292 132.5 L314 180 L336 217.5 L358 245 L380 262.5 L402 270 L407.5 270.3 L424 267.5 L446 255 L468 232.5 L490 200" fill="#12a08a" fill-opacity=".14" stroke="#12a08a" stroke-width="2.5" data-b="2" data-fx="draw"/>
+        <text x="135" y="300" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">≈ 0,070 pL²</text>
+        <text x="405" y="300" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">≈ 0,070 pL²</text>
+        <text x="300" y="92" class="lbl-s" style="fill:#0b6e5c">− 0,125 pL² sur appui</text>
+      </svg>
+      <h3 style="margin-top:10px">Poutre continue à 2 travées</h3>
+      <p>Moment en travée réduit ; flèche <b>≈ 2,4 fois plus faible</b>.</p>
+    </div>
+  </div>
+  <div class="callout t" style="margin-top:16px" data-b="3" data-fx="up"><span class="lab">Conséquence</span>Un tablier continu peut être <b>20 à 40 % plus mince</b>. La <b>précontrainte</b>, qui comprime le béton et l'empêche de se fissurer, permet elle aussi d'augmenter n.</div>
+</section>
+
+<!-- ═════════ 8. TROP MINCE ═════════ -->
+<section class="slide" data-title="Trop mince, ce n'est pas mieux">
+  <div class="kicker">Piège</div>
+  <h2 class="t">Trop mince, <em>ce n'est pas mieux</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 600 500" aria-label="Tablier trop élancé qui vibre">
+        <rect width="600" height="500" rx="18" fill="#fdf3e2"/>
+        <text x="30" y="50" class="lbl-b" style="fill:#a33d22">Trop élancé (n trop grand)</text>
+        <path d="M60 150 l-12 22 h24z M540 150 l-12 22 h24z" fill="#6e7884"/>
+        <path d="M60 140 Q300 140 540 140 L540 150 Q300 150 60 150 Z" fill="#dc4a2c" fill-opacity=".3" stroke="#dc4a2c" stroke-width="2">
+          <animate attributeName="d" dur="1.1s" repeatCount="indefinite" values="M60 140 Q300 140 540 140 L540 150 Q300 150 60 150 Z;M60 140 Q300 230 540 140 L540 150 Q300 240 60 150 Z;M60 140 Q300 110 540 140 L540 150 Q300 120 60 150 Z;M60 140 Q300 140 540 140 L540 150 Q300 150 60 150 Z"/>
+        </path>
+        <g class="lbl-s" style="fill:#a33d22"><text x="300" y="250" text-anchor="middle">flèche et vibrations : inconfort, fissures</text></g>
+        <path d="M0 280 H600" stroke="#e3d6b8" stroke-dasharray="6 6"/>
+        <text x="30" y="330" class="lbl-b" style="fill:#0b6e5c">Élancement économique</text>
+        <path d="M60 420 l-12 22 h24z M540 420 l-12 22 h24z" fill="#6e7884"/>
+        <path d="M60 380 Q300 380 540 380 L540 420 Q300 420 60 420 Z" fill="#12a08a" fill-opacity=".25" stroke="#12a08a" stroke-width="2">
+          <animate attributeName="d" dur="2.4s" repeatCount="indefinite" values="M60 380 Q300 380 540 380 L540 420 Q300 420 60 420 Z;M60 380 Q300 392 540 380 L540 420 Q300 432 60 420 Z;M60 380 Q300 380 540 380 L540 420 Q300 420 60 420 Z"/>
+        </path>
+        <text x="300" y="476" text-anchor="middle" class="lbl-s" style="fill:#0b6e5c">rigide, confortable, durable</text>
+      </svg>
+    </div>
+    <div>
+      <p class="lead" data-a data-fx="right">Un tablier trop mince peut <b>résister</b>… et pourtant mal se comporter.</p>
+      <ul class="b" style="margin-top:16px">
+        <li data-b="1" data-fx="right"><b>Flèches et vibrations</b> : inconfort des usagers et des piétons.</li>
+        <li data-b="2" data-fx="right"><b>Fissuration</b>, fatigue des joints de chaussée.</li>
+        <li data-b="3" data-fx="right">Il faut <b>plus d'acier</b> ou de précontrainte : le béton gagné coûte en armatures.</li>
+      </ul>
+      <div class="callout r" style="margin-top:18px" data-b="4" data-fx="up"><span class="lab">À retenir</span>L'élancement <b>économique</b> n'est pas l'élancement <b>maximal</b> possible.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 9. SECTION 02 ═════════ -->
+<section class="slide section" data-title="Partie 2 — Les tabliers, famille par famille">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">02</div>
+    <h2 data-a data-fx="up" data-d=".15">Les tabliers, famille par famille</h2>
+    <p data-a data-fx="up" data-d=".3">Cadre, dalles, poutres, bipoutre, caisson : chaque famille a sa règle. Ce sont des <b style="color:#e2c070">ordres de grandeur</b> pour dessiner, pas des dispenses de calcul.</p>
+  </div>
+</section>
+
+<!-- ═════════ 10. PICF ═════════ -->
+<section class="slide" data-title="Le cadre fermé (PICF)">
+  <div class="kicker">Famille 1 · Cadre fermé</div>
+  <h2 class="t">Le cadre fermé : <em>un anneau rigide</em></h2>
+  <div class="split">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">e \approx \frac{L}{32} + 0{,}125\ \text{m}</span><div class="w">L = <b>ouverture</b> en mètres (dossier-pilote SETRA PICF) ; domaine usuel 2 à 12 m.</div></div>
+      <ul class="b tight" style="margin-top:20px">
+        <li data-b="2" data-fx="left"><b>Exemple</b> : L = 8 m → e ≈ 0,25 + 0,125 = 0,375 m, arrondi à <b>0,40 m</b>.</li>
+        <li data-b="3" data-fx="left">Piédroits et radier : <b>même épaisseur</b> (le radier un peu plus).</li>
+        <li data-b="4" data-fx="left"><b>Goussets</b> de 0,20 à 0,30 m aux angles, là où les moments sont maximaux.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 520" aria-label="Coupe cotée d'un cadre fermé de 8 m">
+        <defs>
+          <pattern id="c6s10-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+          <marker id="c6s10-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+          <marker id="c6s10-t" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#12a08a"/></marker>
+        </defs>
+        <rect width="600" height="520" rx="18" fill="#eef4fc"/>
+        <rect x="0" y="100" width="600" height="420" fill="url(#c6s10-e)"/>
+        <rect x="0" y="94" width="600" height="6" fill="#3c4049"/>
+        <path d="M50 120 H490 V410 H50 Z M70 140 V390 H470 V140 Z" fill="#cfd5dc" fill-rule="evenodd" data-a data-fx="fade" data-d="1.2"/>
+        <rect x="70" y="140" width="400" height="250" fill="#f6f2e8" data-a data-fx="fade" data-d="1.2"/>
+        <g fill="#cfd5dc" data-a data-fx="fade" data-d="1.2"><path d="M70 140 h13 L70 153 Z M470 140 h-13 L470 153 Z M70 390 h13 L70 377 Z M470 390 h-13 L470 377 Z"/></g>
+        <g fill="none" stroke="#6e7884" stroke-width="2.5" data-a data-fx="draw"><path d="M50 120 H490 V410 H50 Z"/><path d="M83 140 H457 L470 153 V377 L457 390 H83 L70 377 V153 Z"/></g>
+        <rect x="76" y="384" width="388" height="6" fill="#3c4049" data-a data-fx="fade" data-d="1.2"/>
+        <g data-a data-fx="up" data-d="1.4"><rect x="236" y="342" width="68" height="40" rx="8" fill="#2f6fe0"/><rect x="246" y="350" width="48" height="14" rx="3" fill="#cfe3ff"/><rect x="240" y="370" width="10" height="6" fill="#ffd27a"/><rect x="290" y="370" width="10" height="6" fill="#ffd27a"/></g>
+        <g data-b="1" data-fx="fade">
+          <path d="M70 250 H470" stroke="#12a08a" stroke-width="2.2" marker-start="url(#c6s10-t)" marker-end="url(#c6s10-t)"/>
+          <text x="270" y="238" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">ouverture L = 8,00 m</text>
+          <text x="270" y="300" text-anchor="middle" class="lbl-s" style="fill:#2453b3">hauteur libre</text>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M490 120 H540 M490 140 H540" stroke="#b8902f" stroke-dasharray="3 3"/>
+          <path d="M530 106 V120 M530 154 V140" stroke="#b8902f" stroke-width="2" marker-end="url(#c6s10-a)"/>
+          <text x="512" y="182" class="lbl-b" style="fill:#8a6a1f">e = 0,40</text>
+        </g>
+        <g data-b="3" data-fx="fade"><text x="40" y="270" text-anchor="end" class="lbl-s">e</text><path d="M50 444 H490" stroke="#6e7884" stroke-dasharray="4 4"/><text x="270" y="470" text-anchor="middle" class="lbl-s">piédroits et radier ≈ e</text></g>
+        <g data-b="4" data-fx="pop"><circle cx="76" cy="146" r="22" fill="none" stroke="#dc4a2c" stroke-width="2.5"/><circle cx="464" cy="146" r="22" fill="none" stroke="#dc4a2c" stroke-width="2.5"/><text x="110" y="182" class="lbl-s" style="fill:#a33d22">goussets</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 11. PSI-DA ═════════ -->
+<section class="slide" data-title="Le pont-dalle armé (PSI-DA)">
+  <div class="kicker">Famille 2 · Pont-dalle en béton armé</div>
+  <h2 class="t">La dalle armée : <em>L/20, L/26, L/28</em></h2>
+  <svg class="full" viewBox="0 0 1150 190" aria-label="Coupe d'un pont-dalle à encorbellements">
+    <defs><marker id="c6s11-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+    <rect width="1150" height="190" rx="16" fill="#eef4fc"/>
+    <path d="M260 60 H890 V75 L789 105 H361 L260 75 Z" fill="#b9c2cc" data-a data-fx="fade" data-d="1.1"/>
+    <path d="M260 60 H890 V75 L789 105 H361 L260 75 Z" fill="none" stroke="#6e7884" stroke-width="2.5" data-a data-fx="draw"/>
+    <rect x="365" y="54" width="420" height="6" fill="#3c4049" data-a data-fx="fade" data-d="1.1"/>
+    <text x="575" y="88" text-anchor="middle" class="lbl-s" data-a data-fx="fade" data-d="1.2">nervure</text>
+    <g data-a data-fx="fade" data-d="1.3">
+      <path d="M260 128 H361" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s11-a)" marker-end="url(#c6s11-a)"/>
+      <text x="310" y="152" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">encorbellement 1,5 à 2,5 m</text>
+      <path d="M910 60 V105" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s11-a)" marker-end="url(#c6s11-a)"/>
+      <text x="922" y="88" class="lbl-b" style="fill:#8a6a1f">e</text>
+      <text x="240" y="72" text-anchor="end" class="lbl-s">coulée en place sur cintre</text>
+    </g>
+  </svg>
+  <div class="cols c3" style="margin-top:16px;gap:18px">
+    <div class="card gold" data-b="1" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 340 70" aria-hidden="true"><rect x="30" y="20" width="280" height="16" fill="#b9c2cc" stroke="#6e7884"/><path d="M30 36 l-9 16 h18z M310 36 l-9 16 h18z" fill="#6e7884"/></svg>
+      <h3 style="margin-top:6px">Isostatique</h3>
+      <div class="big" style="font-size:56px">L/20</div>
+      <p style="margin-top:6px">L = 15 m → e = <b>0,75 m</b></p>
+    </div>
+    <div class="card teal" data-b="2" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 340 70" aria-hidden="true"><rect x="20" y="22" width="300" height="12" fill="#b9c2cc" stroke="#6e7884"/><path d="M20 34 l-9 16 h18z M170 34 l-9 16 h18z M320 34 l-9 16 h18z" fill="#6e7884"/></svg>
+      <h3 style="margin-top:6px">Continue, 2 travées</h3>
+      <div class="big" style="font-size:56px;color:#12a08a">L/26</div>
+      <p style="margin-top:6px">L = 15 m → 0,58 → <b>0,60 m</b></p>
+    </div>
+    <div class="card blue" data-b="3" data-fx="up" style="padding:14px 18px">
+      <svg class="full" viewBox="0 0 340 70" aria-hidden="true"><rect x="12" y="23" width="316" height="11" fill="#b9c2cc" stroke="#6e7884"/><path d="M12 34 l-8 15 h16z M104 34 l-8 15 h16z M236 34 l-8 15 h16z M328 34 l-8 15 h16z" fill="#6e7884"/></svg>
+      <h3 style="margin-top:6px">Continue, ≥ 3 travées</h3>
+      <div class="big" style="font-size:56px;color:#2f6fe0">L/28</div>
+      <p style="margin-top:6px">L = 15 m → 0,54 → <b>0,55 m</b></p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px" data-b="3" data-fx="fade">Pour une dalle continue, L est la <b>plus grande portée</b>. Domaine usuel : 8 à 20 m.</p>
+</section>
+
+<!-- ═════════ 12. PSI-DP ═════════ -->
+<section class="slide" data-title="Le pont-dalle précontraint (PSI-DP)">
+  <div class="kicker">Famille 3 · Pont-dalle précontraint</div>
+  <h2 class="t">La dalle précontrainte : <em>plus mince, plus loin</em></h2>
+  <div class="split">
+    <div>
+      <ul class="b">
+        <li data-b="1" data-fx="left">Des <b>câbles</b> comprimés dans la dalle compensent une partie du poids propre.</li>
+        <li data-b="2" data-fx="left">Isostatique : <b>e ≈ L/25</b> ; continue : <b>e ≈ L/28 à L/33</b>.</li>
+        <li data-b="3" data-fx="left">Domaine usuel : <b>15 à 30 m</b> de portée.</li>
+      </ul>
+      <div class="callout" style="margin-top:20px" data-b="4" data-fx="up"><span class="lab">Exemple</span>Dalle continue, L = 25 m : e = 25/33 à 25/28, soit <b>0,76 à 0,89 m</b>.</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 520" aria-label="Dalle précontrainte continue et comparaison des épaisseurs">
+        <rect width="600" height="520" rx="18" fill="#eef4fc"/>
+        <rect x="40" y="80" width="520" height="24" fill="#b9c2cc" stroke="#6e7884"/>
+        <path d="M40 104 l-10 18 h20z M560 104 l-10 18 h20z" fill="#6e7884"/>
+        <rect x="192" y="104" width="16" height="96" fill="#cfd5dc" stroke="#6e7884"/><rect x="392" y="104" width="16" height="96" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M0 200 H600" stroke="#c9a77a" stroke-width="2"/>
+        <path d="M40 92 Q120 112 200 84 Q300 116 400 84 Q480 112 560 92" fill="none" stroke="#2f6fe0" stroke-width="3" data-a data-fx="draw" data-d=".3"/>
+        <text x="300" y="60" text-anchor="middle" class="lbl-s" style="fill:#2453b3" data-a data-fx="fade" data-d="1">câble : bas en travée, haut sur appui</text>
+        <text x="300" y="232" text-anchor="middle" class="lbl-b">Épaisseur pour L = 20 m</text>
+        <g class="lbl-s">
+          <text x="20" y="282">DA isostatique</text><text x="20" y="332">DA ≥ 3 travées</text><text x="20" y="382">DP isostatique</text><text x="20" y="432">DP continue</text>
+        </g>
+        <rect x="170" y="266" width="320" height="22" rx="6" fill="#9aa3ae" data-b="2" data-fx="growx"/>
+        <rect x="170" y="316" width="229" height="22" rx="6" fill="#9aa3ae" data-b="2" data-fx="growx" data-d=".1"/>
+        <rect x="170" y="366" width="256" height="22" rx="6" fill="#2f6fe0" data-b="2" data-fx="growx" data-d=".2"/>
+        <rect x="170" y="416" width="227" height="22" rx="6" fill="#2f6fe0" opacity=".35" data-b="2" data-fx="growx" data-d=".3"/>
+        <rect x="170" y="416" width="194" height="22" rx="6" fill="#2f6fe0" data-b="2" data-fx="growx" data-d=".3"/>
+        <g class="lbl-s" style="fill:#141a26" data-b="2" data-fx="fade" data-d=".5">
+          <text x="498" y="283">1,00 m</text><text x="407" y="333">0,71 m</text><text x="434" y="383">0,80 m</text><text x="405" y="433">0,61–0,71</text>
+        </g>
+        <text x="300" y="490" text-anchor="middle" class="lbl-s" data-b="3" data-fx="fade">la précontrainte et la continuité amincissent la dalle</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 13. POUTRES BA ═════════ -->
+<section class="slide" data-title="Le tablier à poutres en béton armé">
+  <div class="kicker">Famille 4 · Poutres en béton armé</div>
+  <h2 class="t">Les poutres en béton armé : <em>h ≈ L/14</em></h2>
+  <div class="split">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Hauteur totale (poutre + hourdis) : <b>h ≈ L/14</b>.</li>
+        <li data-b="2" data-fx="left">Espacement des poutres : <b>au plus 2,50 m</b>, sinon le hourdis s'alourdit.</li>
+        <li data-b="3" data-fx="left">Âme : <b>≈ 40 cm</b> ; hourdis : <b>20 à 25 cm</b>.</li>
+        <li data-b="4" data-fx="left">Un <b>talon</b> élargi loge les aciers tendus (largeur ≤ 1,25 m environ).</li>
+      </ul>
+      <div class="callout" style="margin-top:18px" data-b="5" data-fx="up"><span class="lab">Exemple</span>L = 16 m → h = 16/14 = 1,14 → <b>1,15 m</b>. Ces ponts sont devenus rares face à la précontrainte, mais la règle reste la base du raisonnement.</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 530" aria-label="Coupe d'un tablier à poutres en béton armé">
+        <defs><marker id="c6s13-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="600" height="530" rx="18" fill="#fdf3e2"/>
+        <g data-a data-fx="fade">
+          <rect x="107" y="58" width="386" height="6" fill="#3c4049"/>
+          <rect x="25" y="64" width="550" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884">
+            <path d="M82.75 76 h22 v35 l5.5 3 v14 h-33 v-14 l5.5 -3 z"/>
+            <path d="M220.25 76 h22 v35 l5.5 3 v14 h-33 v-14 l5.5 -3 z"/>
+            <path d="M357.75 76 h22 v35 l5.5 3 v14 h-33 v-14 l5.5 -3 z"/>
+            <path d="M495.25 76 h22 v35 l5.5 3 v14 h-33 v-14 l5.5 -3 z"/>
+          </g>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M93.75 150 H231.25" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s13-a)" marker-end="url(#c6s13-a)"/>
+          <text x="162" y="176" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">≤ 2,50 m</text>
+        </g>
+        <text x="300" y="214" text-anchor="middle" class="lbl-b" data-a data-fx="fade" data-d=".4">Détail d'une poutre</text>
+        <g data-a data-fx="fade" data-d=".5">
+          <rect x="125" y="250" width="350" height="31" fill="#b9c2cc"/>
+          <path d="M272 281 H328 V369 L342 376 V411 H258 V376 L272 369 Z" fill="#cfd5dc"/>
+        </g>
+        <g fill="none" stroke="#6e7884" stroke-width="2.2" data-a data-fx="draw" data-d=".4">
+          <path d="M125 250 H475 V281 H328 V369 L342 376 V411 H258 V376 L272 369 V281 H125 Z"/>
+        </g>
+        <g data-b="1" data-fx="fade">
+          <path d="M500 250 V411" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s13-a)" marker-end="url(#c6s13-a)"/>
+          <text x="512" y="326" class="lbl-b" style="fill:#8a6a1f">h ≈</text><text x="512" y="350" class="lbl-b" style="fill:#8a6a1f">L/14</text>
+        </g>
+        <g data-b="3" data-fx="fade">
+          <path d="M272 320 H328" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s13-a)" marker-end="url(#c6s13-a)"/>
+          <text x="345" y="326" class="lbl-s" style="fill:#8a6a1f">âme ≈ 0,40 m</text>
+          <text x="125" y="240" class="lbl-s" style="fill:#8a6a1f">hourdis 0,20 à 0,25 m</text>
+        </g>
+        <g data-b="4" data-fx="fade">
+          <g fill="#dc4a2c"><circle cx="270" cy="398" r="4.5"/><circle cx="286" cy="398" r="4.5"/><circle cx="300" cy="398" r="4.5"/><circle cx="314" cy="398" r="4.5"/><circle cx="330" cy="398" r="4.5"/><circle cx="278" cy="386" r="4.5"/><circle cx="322" cy="386" r="4.5"/></g>
+          <path d="M258 434 H342" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s13-a)" marker-end="url(#c6s13-a)"/>
+          <text x="300" y="462" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">talon : aciers tendus</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 14. PRAD ═════════ -->
+<section class="slide" data-title="Les poutres PRAD">
+  <div class="kicker">Famille 5 · Poutres précontraintes par adhérence</div>
+  <h2 class="t">Les PRAD : <em>basses, serrées, fabriquées en usine</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 600 530" aria-label="Tablier PRAD et banc de pré-tension">
+        <defs><marker id="c6s14-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>
+        <rect width="600" height="530" rx="18" fill="#eef4fc"/>
+        <g data-a data-fx="fade">
+          <rect x="25" y="64" width="550" height="11" fill="#b9c2cc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884">
+            <path d="M43 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M111.75 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M180.5 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M249.25 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M318 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M386.75 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M455.5 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+            <path d="M524.25 75 h33 v4 l-12 4 v27 l11 3 v6 h-30 v-6 l11 -3 v-27 l-12 -4 z"/>
+          </g>
+          <text x="300" y="44" text-anchor="middle" class="lbl-s">poutres serrées, ≈ 1 à 1,5 m d'entraxe</text>
+        </g>
+        <text x="300" y="186" text-anchor="middle" class="lbl-b" data-b="3" data-fx="fade">En usine : le banc de pré-tension</text>
+        <g data-b="3" data-fx="up">
+          <rect x="30" y="230" width="60" height="140" rx="4" fill="#8b95a3"/><rect x="510" y="230" width="60" height="140" rx="4" fill="#8b95a3"/>
+          <rect x="90" y="330" width="420" height="40" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="120" y="300" width="160" height="30" fill="#b9c2cc" stroke="#6e7884"/><rect x="320" y="300" width="160" height="30" fill="#b9c2cc" stroke="#6e7884"/>
+          <g stroke="#2f6fe0" stroke-width="2.4"><path d="M90 316 H510"/><path d="M90 324 H510"/></g>
+          <path d="M20 320 H-0" stroke="#dc4a2c"/>
+          <path d="M60 320 H8" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c6s14-r)" class="flow"/>
+          <path d="M540 320 H592" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c6s14-r)" class="flow"/>
+          <text x="300" y="404" text-anchor="middle" class="lbl-s" style="fill:#2453b3">1 · torons tendus entre deux culées d'ancrage</text>
+          <text x="300" y="430" text-anchor="middle" class="lbl-s">2 · béton coulé autour des torons</text>
+          <text x="300" y="456" text-anchor="middle" class="lbl-s" style="fill:#a33d22">3 · torons relâchés : l'effort passe par adhérence</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="right">Hauteur totale : <b>h ≈ L/20 à L/22</b>.</li>
+        <li data-b="1" data-fx="right" data-d=".1">Portées usuelles : <b>10 à 30 m</b>.</li>
+        <li data-b="2" data-fx="right">Âme <b>0,15–0,20 m</b> ; talon <b>0,50–0,60 m</b> ; dalle <b>0,18–0,20 m</b>.</li>
+        <li data-b="2" data-fx="right" data-d=".1">Espacement selon le <b>catalogue</b> du fabricant.</li>
+      </ul>
+      <div class="callout t" style="margin-top:18px" data-b="4" data-fx="up"><span class="lab">Exemple</span>L = 20 m → h = 20/21 ≈ <b>0,95 m</b>. Idéal quand la hauteur disponible sous l'ouvrage est faible.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 15. VIPP ═════════ -->
+<section class="slide" data-title="Les poutres VIPP">
+  <div class="kicker">Famille 6 · Poutres précontraintes par post-tension</div>
+  <h2 class="t">La VIPP : <em>h ≈ L/16 à L/18</em></h2>
+  <div class="split">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Hauteur totale : <b>h ≈ L/16 à L/18</b> ; portées <b>30 à 50 m</b>.</li>
+        <li data-b="2" data-fx="left">Espacement des poutres : <b>2,50 à 4,00 m</b>.</li>
+        <li data-b="3" data-fx="left">Âme <b>0,20–0,25 m</b> ; talon <b>0,60–0,80 m</b> ; hourdis <b>0,18–0,22 m</b>.</li>
+        <li data-b="4" data-fx="left">Préfabriquées sur aire de chantier, tendues, puis posées ; <b>entretoises d'about</b> pour le vérinage.</li>
+      </ul>
+      <div class="c6-chips" style="margin-top:20px" data-b="5" data-fx="up">
+        <span class="pill b">L = 30 m</span><span class="pill">h = L/17 → 1,80 m</span><span class="pill t">notre fil rouge</span>
+      </div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 530" aria-label="Coupe cotée d'une poutre VIPP">
+        <defs><marker id="c6s15-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="600" height="530" rx="18" fill="#eef4fc"/>
+        <g data-a data-fx="fade" data-d="1.2">
+          <rect x="64" y="80" width="472" height="36" fill="#b9c2cc"/>
+          <path d="M210 116 H390 V137.6 L318 152 V332 L354 359 V404 H246 V359 L282 332 V152 L210 137.6 Z" fill="#cfd5dc"/>
+        </g>
+        <g fill="none" stroke="#6e7884" stroke-width="2.4" data-a data-fx="draw">
+          <path d="M64 80 H536 M64 116 H210 M390 116 H536"/>
+          <path d="M210 116 H390 V137.6 L318 152 V332 L354 359 V404 H246 V359 L282 332 V152 L210 137.6 Z"/>
+        </g>
+        <path d="M58 72 l12 16 M58 108 l12 16 M530 72 l12 16 M530 108 l12 16" stroke="#6e7884"/>
+        <g data-b="1" data-fx="fade">
+          <path d="M560 80 V404" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s15-a)" marker-end="url(#c6s15-a)"/>
+          <text x="548" y="250" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">h = 1,80 m</text>
+        </g>
+        <g data-b="3" data-fx="fade">
+          <path d="M210 112 V48 M390 112 V48" stroke="#b8902f" stroke-dasharray="3 3"/>
+          <path d="M210 56 H390" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s15-a)" marker-end="url(#c6s15-a)"/>
+          <text x="300" y="44" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">table 1,00 m</text>
+          <text x="70" y="146" class="lbl-s" style="fill:#8a6a1f">hourdis 0,20</text>
+          <path d="M282 280 H318" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s15-a)" marker-end="url(#c6s15-a)"/>
+          <text x="330" y="286" class="lbl-s" style="fill:#8a6a1f">âme 0,20</text>
+          <path d="M246 432 H354" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s15-a)" marker-end="url(#c6s15-a)"/>
+          <text x="300" y="460" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">talon 0,60</text>
+        </g>
+        <g data-b="4" data-fx="pop">
+          <g fill="#2f6fe0"><circle cx="270" cy="384" r="7"/><circle cx="300" cy="384" r="7"/><circle cx="330" cy="384" r="7"/><circle cx="300" cy="300" r="7" opacity=".6"/></g>
+          <text x="372" y="390" class="lbl-s" style="fill:#2453b3">gaines de câbles</text>
+          <text x="300" y="500" text-anchor="middle" class="lbl-s">les câbles remontent vers les appuis</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 16. BIPOUTRE ═════════ -->
+<section class="slide" data-title="Le bipoutre mixte">
+  <div class="kicker">Famille 7 · Bipoutre mixte acier-béton</div>
+  <h2 class="t">Le bipoutre mixte : <em>l'élancement porte sur l'acier</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 600 530" aria-label="Coupe et élévation d'un bipoutre mixte">
+        <defs><marker id="c6s16-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="600" height="530" rx="18" fill="#eef4fc"/>
+        <g data-a data-fx="fade">
+          <rect x="125" y="94" width="350" height="6" fill="#3c4049"/>
+          <rect x="37" y="100" width="525" height="14" fill="#b9c2cc" stroke="#6e7884"/>
+        </g>
+        <g data-b="1" data-fx="down">
+          <g fill="#2f6fe0">
+            <rect x="140.5" y="120" width="30" height="5"/><rect x="154" y="125" width="3" height="80"/><rect x="135.5" y="205" width="40" height="6"/>
+            <rect x="429.5" y="120" width="30" height="5"/><rect x="443" y="125" width="3" height="80"/><rect x="424.5" y="205" width="40" height="6"/>
+          </g>
+          <g stroke="#2f6fe0" stroke-width="2.2"><path d="M157 150 H443"/><path d="M157 150 L300 190 L443 150" fill="none"/></g>
+          <g stroke="#6e7884" stroke-width="2"><path d="M148 114 V120 M155 114 V120 M162 114 V120 M437 114 V120 M444 114 V120 M451 114 V120"/></g>
+        </g>
+        <g data-b="2" data-fx="fade">
+          <path d="M500 120 V211" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s16-a)" marker-end="url(#c6s16-a)"/>
+          <text x="512" y="160" class="lbl-b" style="fill:#8a6a1f">hₐ</text><text x="512" y="186" class="lbl-s" style="fill:#8a6a1f">L/25–L/28</text>
+        </g>
+        <g data-b="3" data-fx="fade">
+          <text x="300" y="80" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">dalle BA connectée : 0,25 à 0,35 m</text>
+          <text x="300" y="242" text-anchor="middle" class="lbl-s" style="fill:#2453b3">entretoise</text>
+        </g>
+        <text x="300" y="300" text-anchor="middle" class="lbl-b" data-b="4" data-fx="fade">En élévation</text>
+        <g data-b="4" data-fx="up">
+          <rect x="30" y="330" width="540" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="30" y="344" width="540" height="40" fill="#2f6fe0" fill-opacity=".85"/>
+          <g stroke="#fff" stroke-width="1.5" opacity=".7"><path d="M90 344 V384 M150 344 V384 M210 344 V384 M270 344 V384 M330 344 V384 M390 344 V384 M450 344 V384 M510 344 V384"/></g>
+          <path d="M30 384 l-10 18 h20z M570 384 l-10 18 h20z" fill="#6e7884"/>
+          <rect x="292" y="384" width="16" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+          <text x="300" y="490" text-anchor="middle" class="lbl-s">charpente lancée ou grutée, puis dalle coulée</text>
+        </g>
+      </svg>
+    </div>
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="right">Deux poutres en I en <b>acier</b>, une dalle en <b>béton armé</b> connectée.</li>
+        <li data-b="2" data-fx="right">Charpente seule : <b>hₐ ≈ L/25</b> (isostatique), <b>L/28</b> (continu).</li>
+        <li data-b="3" data-fx="right">Dalle de <b>0,25 à 0,35 m</b>, plus épaisse si l'entraxe augmente.</li>
+        <li data-b="4" data-fx="right">Portées usuelles : <b>25 à 80 m</b>.</li>
+      </ul>
+      <div class="callout b" style="margin-top:18px" data-b="5" data-fx="up"><span class="lab">Exemple</span>Bipoutre continu, L = 50 m → hₐ = 50/28 ≈ <b>1,80 m</b> d'acier, plus la dalle.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 17. CAISSON ═════════ -->
+<section class="slide" data-title="Le caisson à hauteur variable">
+  <div class="kicker">Famille 8 · Caisson construit par encorbellements</div>
+  <h2 class="t">Le caisson <em>épouse le moment</em></h2>
+  <svg class="full" viewBox="0 0 1150 430" aria-label="Caisson à hauteur variable et diagramme des moments">
+    <defs>
+      <pattern id="c6s17-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/></pattern>
+      <marker id="c6s17-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+    </defs>
+    <rect width="1150" height="430" rx="16" fill="#eef4fc"/>
+    <rect x="0" y="240" width="1150" height="14" fill="url(#c6s17-e)"/>
+    <rect x="315" y="144" width="20" height="96" fill="#cfd5dc" stroke="#6e7884"/><rect x="815" y="144" width="20" height="96" fill="#cfd5dc" stroke="#6e7884"/>
+    <path d="M40 50 H1110 V100 Q910 100 825 144 Q575 56 325 144 Q240 100 40 100 Z" fill="#b9c2cc" data-a data-fx="fade" data-d="1"/>
+    <path d="M40 50 H1110 V100 Q910 100 825 144 Q575 56 325 144 Q240 100 40 100 Z" fill="none" stroke="#6e7884" stroke-width="2.4" data-a data-fx="draw"/>
+    <g stroke="#6e7884" stroke-width="1.2" opacity=".7" data-b="1" data-fx="fade">
+      <path d="M345 50 V138 M365 50 V131 M385 50 V125 M405 50 V119 M425 50 V114 M445 50 V110 M465 50 V106 M485 50 V104 M505 50 V102 M525 50 V101 M545 50 V100 M305 50 V138 M285 50 V132 M265 50 V126 M245 50 V120"/>
+      <path d="M805 50 V138 M785 50 V131 M765 50 V125 M745 50 V119 M725 50 V114 M705 50 V110 M685 50 V106 M665 50 V104 M645 50 V102 M625 50 V101 M605 50 V100 M845 50 V138 M865 50 V132 M885 50 V126 M905 50 V120"/>
+    </g>
+    <text x="575" y="36" text-anchor="middle" class="lbl-s" data-b="1" data-fx="fade">voussoirs coulés ou posés de part et d'autre des piles</text>
+    <g data-b="2" data-fx="fade">
+      <path d="M350 50 V140" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s17-a)" marker-end="url(#c6s17-a)"/>
+      <text x="362" y="190" class="lbl-b" style="fill:#8a6a1f">L/16 à L/18 sur pile</text>
+      <path d="M575 50 V100" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s17-a)" marker-end="url(#c6s17-a)"/>
+      <text x="575" y="128" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">L/30 à L/40 à la clé</text>
+    </g>
+    <path d="M40 340 H1110" stroke="#6e7884"/>
+    <path d="M40 340 C120 375 200 370 260 335 C290 305 310 275 325 275 C340 275 380 320 420 340 C480 380 670 380 730 340 C770 320 810 275 825 275 C840 275 860 305 890 335 C950 370 1030 375 1110 340" fill="#dc4a2c" fill-opacity=".12" stroke="#dc4a2c" stroke-width="2.6" data-b="3" data-fx="draw"/>
+    <g data-b="3" data-fx="fade" data-d=".8">
+      <text x="280" y="300" text-anchor="end" class="lbl" style="fill:#a33d22">M &lt; 0 sur pile</text>
+      <text x="575" y="408" text-anchor="middle" class="lbl" style="fill:#a33d22">M &gt; 0 à la clé, plus faible</text>
+    </g>
+    <text x="1110" y="226" text-anchor="end" class="lbl-s">hauteurs exagérées</text>
+  </svg>
+  <div class="callout" style="margin-top:8px" data-b="4" data-fx="up"><span class="lab">Exemple · portée de 100 m</span>Hauteur <b>5,6 à 6,3 m</b> sur pile, <b>2,5 à 3,3 m</b> à la clé. Domaine : 60 à 200 m. La matière est placée là où le moment est le plus fort.</div>
+</section>
+
+<!-- ═════════ 18. RÉCAPITULATIF ═════════ -->
+<section class="slide" data-title="Récapitulatif des élancements">
+  <div class="kicker">Synthèse</div>
+  <h2 class="t">Les élancements <em>en un tableau</em></h2>
+  <table class="tb c6-rec">
+    <thead><tr><th>Type de tablier</th><th>Portées usuelles</th><th>Hauteur ou épaisseur</th><th>Autres règles</th></tr></thead>
+    <tbody>
+      <tr data-b="1" data-fx="left"><td><b>PICF</b> (cadre)</td><td>2 à 12 m (ouverture)</td><td><b>e ≈ L/32 + 0,125 m</b></td><td>piédroits, radier ≈ e ; goussets</td></tr>
+      <tr data-b="1" data-fx="left" data-d=".08"><td><b>PSI-DA</b> isostatique</td><td>8 à 15 m</td><td><span class="c6-bar" style="width:40px"></span><b>L/20</b></td><td>encorbellements 1,5–2,5 m</td></tr>
+      <tr data-b="1" data-fx="left" data-d=".16"><td><b>PSI-DA</b> continu 2 / ≥ 3 travées</td><td>10 à 20 m</td><td><span class="c6-bar" style="width:52px"></span><b>L/26 · L/28</b></td><td>L = plus grande portée</td></tr>
+      <tr data-b="1" data-fx="left" data-d=".24"><td><b>PSI-DP</b></td><td>15 à 30 m</td><td><span class="c6-bar" style="width:60px"></span><b>L/25 · L/28–L/33</b></td><td>isostatique · continu</td></tr>
+      <tr data-b="2" data-fx="left"><td><b>Poutres BA</b></td><td>10 à 20 m</td><td><span class="c6-bar" style="width:28px;background:#dc4a2c"></span><b>L/14</b></td><td>espacement ≤ 2,5 m ; âme 0,40 ; hourdis 0,20–0,25</td></tr>
+      <tr data-b="2" data-fx="left" data-d=".08"><td><b>PRAD</b></td><td>10 à 30 m</td><td><span class="c6-bar" style="width:42px;background:#dc4a2c"></span><b>L/20–L/22</b></td><td>poutres serrées</td></tr>
+      <tr data-b="2" data-fx="left" data-d=".16" class="hl"><td><b>VIPP</b></td><td>30 à 50 m</td><td><span class="c6-bar" style="width:34px;background:#dc4a2c"></span><b>L/16–L/18</b></td><td>espacement 2,5–4 m ; talon 0,60–0,80</td></tr>
+      <tr data-b="3" data-fx="left"><td><b>Bipoutre mixte</b></td><td>25 à 80 m</td><td><span class="c6-bar" style="width:52px;background:#2f6fe0"></span><b>L/25–L/28</b></td><td>charpente seule ; dalle 0,25–0,35</td></tr>
+      <tr data-b="3" data-fx="left" data-d=".08"><td><b>Caisson</b> (encorbellements)</td><td>60 à 200 m</td><td><span class="c6-bar" style="width:34px;background:#2f6fe0"></span><b>L/16–L/18 · L/30–L/40</b></td><td>sur pile · à la clé</td></tr>
+    </tbody>
+  </table>
+  <p class="small" style="margin-top:12px" data-b="4" data-fx="fade">La barre illustre n : plus elle est longue, plus le tablier est <b>élancé</b>. Ligne surlignée : la famille de notre fil rouge.</p>
+</section>
+
+<!-- ═════════ 19. CALCULATRICE TABLIER ═════════ -->
+<section class="slide" id="c6-calc1" data-title="Prédimensionnez votre tablier">
+  <div class="kicker">À vous de jouer</div>
+  <h2 class="t">Prédimensionnez <em>votre tablier</em></h2>
+  <div class="c6-calc interactive">
+    <div class="c6-in">
+      <label>Type de tablier
+        <select id="c6t-type">
+          <option value="picf">PICF — cadre fermé (L = ouverture)</option>
+          <option value="da1">PSI-DA — dalle armée isostatique</option>
+          <option value="da2">PSI-DA — dalle armée, 2 travées</option>
+          <option value="da3">PSI-DA — dalle armée, ≥ 3 travées</option>
+          <option value="dp1">PSI-DP — dalle précontrainte isostatique</option>
+          <option value="dp2">PSI-DP — dalle précontrainte continue</option>
+          <option value="ppba">Poutres en béton armé</option>
+          <option value="prad">PRAD — précontrainte par adhérence</option>
+          <option value="vipp" selected>VIPP — précontrainte par post-tension</option>
+          <option value="bp1">Bipoutre mixte isostatique</option>
+          <option value="bp2">Bipoutre mixte continu</option>
+        </select></label>
+      <label>Portée L (m)<span class="row"><input type="range" id="c6t-Lr" min="2" max="80" step="0.5" value="30"><input type="number" id="c6t-L" min="1" max="200" step="0.5" value="30"></span></label>
+      <div class="two">
+        <label>Largeur totale (m)<input type="number" id="c6t-W" value="10.5" step="0.1" min="2"></label>
+        <label>Chaussée (m)<input type="number" id="c6t-Lc" value="7" step="0.1" min="1"></label>
+      </div>
+      <label id="c6t-Hl" class="c6-hide">Hauteur libre du cadre (m)<input type="number" id="c6t-H" value="5" step="0.1" min="1" style="width:100%"></label>
+      <div class="c6-res">
+        <div><span>Fourchette h</span><b id="c6t-rng">—</b></div>
+        <div><span>Hauteur adoptée</span><b id="c6t-h">—</b></div>
+        <div><span>Poutres</span><b id="c6t-n">—</b></div>
+        <div><span>Structure</span><b id="c6t-gs">—</b></div>
+        <div><span>Superstructures</span><b id="c6t-gq">—</b></div>
+        <div class="tot"><span>Charge permanente G</span><b id="c6t-G">—</b></div>
+      </div>
+    </div>
+    <div class="c6-out">
+      <svg id="c6t-svg" viewBox="0 0 760 300" aria-label="Coupe du tablier redessinée"></svg>
+      <div class="c6-steps" id="c6t-steps"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 20. SECTION 03 ═════════ -->
+<section class="slide section" data-title="Partie 3 — Piles, culées et fondations">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">03</div>
+    <h2 data-a data-fx="up" data-d=".15">Piles, culées et fondations</h2>
+    <p data-a data-fx="up" data-d=".3">Les appuis aussi se prédimensionnent avec quelques règles simples : <b style="color:#e2c070">stabilité</b> du fût, <b style="color:#e2c070">portance</b> du sol, place pour poser et soulever les poutres.</p>
+  </div>
+</section>
+
+<!-- ═════════ 21. PILE ═════════ -->
+<section class="slide" data-title="Prédimensionner une pile">
+  <div class="kicker">Les piles</div>
+  <h2 class="t">Une pile : <em>stabilité et portance</em></h2>
+  <div class="split">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left">Fût circulaire : <b>Ø 0,80 à 1,50 m</b>.</li>
+        <li data-b="2" data-fx="left">Stabilité : <b>Ø &gt; H/7,5</b>. Un fût de 9 m demande au moins <b>1,20 m</b>.</li>
+        <li data-b="3" data-fx="left">Au-delà de 1,50 m : <b>plusieurs fûts</b>, un <b>voile</b> (0,80 à 1,20 m) ou une section creuse.</li>
+        <li data-b="4" data-fx="left">Semelle d'au moins <b>3,3 × 3 m</b> environ, puis on vérifie le sol :</li>
+      </ul>
+      <div class="formula" style="margin-top:14px" data-b="5" data-fx="up"><span class="texd">\sigma = \frac{N + P_{\text{semelle}}}{B \cdot L} \;\le\; \sigma_{\text{adm}}</span><div class="w">σ<sub>adm</sub> vient du rapport géotechnique. Charge excentrée (freinage, vent, séisme) : chapitre 9.</div></div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 530" aria-label="Pile cotée : fût, chevêtre, semelle">
+        <defs>
+          <pattern id="c6s21-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+          <pattern id="c6s21-b" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#d5bd96"/><circle cx="4" cy="4" r="1.6" fill="#a8875a"/></pattern>
+          <marker id="c6s21-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+          <marker id="c6s21-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+        </defs>
+        <rect width="600" height="530" rx="18" fill="#eef4fc"/>
+        <rect y="350" width="600" height="90" fill="url(#c6s21-e)"/>
+        <rect y="440" width="600" height="90" fill="url(#c6s21-b)"/>
+        <text x="590" y="432" text-anchor="end" class="lbl-s">bon sol</text>
+        <g data-a data-fx="fade">
+          <rect x="150" y="50" width="300" height="10" fill="#b9c2cc" stroke="#6e7884"/>
+          <g fill="#cfd5dc" stroke="#6e7884"><rect x="173" y="60" width="20" height="35"/><rect x="251" y="60" width="20" height="35"/><rect x="329" y="60" width="20" height="35"/><rect x="407" y="60" width="20" height="35"/></g>
+          <g fill="#2f6fe0"><rect x="172" y="95" width="22" height="6"/><rect x="250" y="95" width="22" height="6"/><rect x="328" y="95" width="22" height="6"/><rect x="406" y="95" width="22" height="6"/></g>
+          <path d="M160 101 H440 V116 L318 140 H282 L160 116 Z" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="250.5" y="410" width="99" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+        </g>
+        <rect x="282" y="140" width="36" height="270" fill="#cfd5dc" stroke="#6e7884" data-b="1" data-fx="grow"/>
+        <text x="455" y="126" class="lbl-s" data-a data-fx="fade">chevêtre</text>
+        <g data-b="2" data-fx="fade">
+          <path d="M480 140 V410" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s21-a)" marker-end="url(#c6s21-a)"/>
+          <text x="490" y="270" class="lbl-b" style="fill:#8a6a1f">H</text>
+          <path d="M282 230 H318" stroke="#12a08a" stroke-width="2" marker-start="url(#c6s21-a)" marker-end="url(#c6s21-a)"/>
+          <text x="270" y="226" text-anchor="end" class="lbl-b" style="fill:#0b6e5c">Ø &gt; H/7,5</text>
+          <text x="270" y="252" text-anchor="end" class="lbl-s" style="fill:#0b6e5c">0,80 à 1,50 m</text>
+        </g>
+        <g data-b="4" data-fx="fade">
+          <path d="M250.5 494 H349.5" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s21-a)" marker-end="url(#c6s21-a)"/>
+          <text x="300" y="520" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">semelle ≥ 3,3 × 3 m</text>
+        </g>
+        <g data-b="5" data-fx="up">
+          <path d="M300 4 V44" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c6s21-r)"/>
+          <text x="312" y="28" class="lbl-b" style="fill:#a33d22">N</text>
+          <g stroke="#dc4a2c" stroke-width="2.2"><path d="M262 474 V446" marker-end="url(#c6s21-r)"/><path d="M286 474 V446" marker-end="url(#c6s21-r)"/><path d="M310 474 V446" marker-end="url(#c6s21-r)"/><path d="M334 474 V446" marker-end="url(#c6s21-r)"/></g>
+          <text x="360" y="470" class="lbl-s" style="fill:#a33d22">σ ≤ σadm</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 22. CALCULATRICE PILE ═════════ -->
+<section class="slide" id="c6-calc2" data-title="Dimensionnez votre pile">
+  <div class="kicker">À vous de jouer</div>
+  <h2 class="t">Dimensionnez <em>votre pile</em></h2>
+  <div class="c6-calc interactive">
+    <div class="c6-in">
+      <label>Hauteur du fût H (m)<span class="row"><input type="range" id="c6p-Hr" min="2" max="16" step="0.1" value="7.2"><input type="number" id="c6p-H" min="0.5" max="40" step="0.1" value="7.2"></span></label>
+      <label>Effort N en pied de fût (kN)<span class="row"><input type="range" id="c6p-Nr" min="500" max="20000" step="100" value="6000"><input type="number" id="c6p-N" min="0" step="100" value="6000"></span></label>
+      <div class="two">
+        <label>σ<sub>adm</sub> du sol (MPa)<input type="number" id="c6p-s" value="0.4" step="0.05" min="0.05"></label>
+        <label>Épaisseur semelle (m)<input type="number" id="c6p-e" value="1" step="0.1" min="0.3"></label>
+      </div>
+      <div class="c6-res">
+        <div><span>H / 7,5</span><b id="c6p-r">—</b></div>
+        <div><span>Diamètre adopté</span><b id="c6p-D">—</b></div>
+        <div><span>Surface nécessaire</span><b id="c6p-A">—</b></div>
+        <div><span>Semelle B × L</span><b id="c6p-BL">—</b></div>
+        <div class="tot"><span>Contrainte σ</span><b id="c6p-sig">—</b></div>
+      </div>
+    </div>
+    <div class="c6-out">
+      <svg id="c6p-svg" viewBox="0 0 760 330" aria-label="Pile et semelle redessinées"></svg>
+      <div class="c6-steps" id="c6p-steps"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 23. CHEVÊTRE ═════════ -->
+<section class="slide" id="c6-chev" data-title="La largeur du chevêtre">
+  <div class="kicker">Les piles · le chevêtre</div>
+  <h2 class="t">Le chevêtre se construit <em>pièce par pièce</em></h2>
+  <svg class="full" viewBox="0 0 1150 420" aria-label="Largeur d'un chevêtre entre deux travées indépendantes">
+    <defs><marker id="c6s23-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+    <rect width="1150" height="420" rx="16" fill="#eef4fc"/>
+    <rect x="545" y="380" width="60" height="40" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="375" y="250" width="400" height="130" fill="#cfd5dc" stroke="#6e7884"/>
+    <rect x="415" y="225" width="120" height="25" fill="#dfe3e8" stroke="#6e7884"/><rect x="615" y="225" width="120" height="25" fill="#dfe3e8" stroke="#6e7884"/>
+    <rect x="425" y="205" width="100" height="20" fill="#2f6fe0"/><rect x="625" y="205" width="100" height="20" fill="#2f6fe0"/>
+    <g data-a data-fx="right"><rect x="60" y="50" width="502.5" height="18" fill="#b9c2cc" stroke="#6e7884"/><rect x="60" y="68" width="502.5" height="137" fill="#cfd5dc" stroke="#6e7884"/><text x="300" y="146" text-anchor="middle" class="lbl">travée 1 (about de poutre)</text></g>
+    <g data-a data-fx="left"><rect x="587.5" y="50" width="502.5" height="18" fill="#b9c2cc" stroke="#6e7884"/><rect x="587.5" y="68" width="502.5" height="137" fill="#cfd5dc" stroke="#6e7884"/><text x="850" y="146" text-anchor="middle" class="lbl">travée 2</text></g>
+    <text x="1060" y="320" text-anchor="end" class="lbl-s">chevêtre</text><text x="1060" y="230" text-anchor="end" class="lbl-s" style="fill:#2453b3">appareil d'appui sur bossage</text>
+    <path d="M475 190 V392 M675 190 V392" stroke="#6e7884" stroke-dasharray="6 4" data-b="2" data-fx="fade"/>
+    <g data-b="1" data-fx="fade">
+      <path d="M575 40 V96" stroke="#b8902f"/><text x="575" y="30" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">jeu j ≈ 0,05 à 0,10 m</text>
+      <path d="M562.5 110 H587.5" stroke="#b8902f" stroke-width="2"/>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <path d="M475 290 H562.5 M587.5 290 H675" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s23-a)" marker-end="url(#c6s23-a)"/>
+      <text x="518" y="280" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">d ≈ 0,35</text>
+    </g>
+    <g data-b="3" data-fx="fade">
+      <path d="M425 325 H525 M625 325 H725" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s23-a)" marker-end="url(#c6s23-a)"/>
+      <text x="475" y="317" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">a ≈ 0,40</text>
+    </g>
+    <g data-b="4" data-fx="fade">
+      <path d="M375 360 H425 M725 360 H775" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s23-a)" marker-end="url(#c6s23-a)"/>
+      <text x="400" y="352" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">c ≈ 0,20</text>
+    </g>
+    <g data-b="5" data-fx="pop">
+      <rect x="537" y="205" width="22" height="45" rx="3" fill="#7a52c7"/><rect x="591" y="205" width="22" height="45" rx="3" fill="#7a52c7"/>
+      <path d="M613 215 L790 30" stroke="#7a52c7"/><text x="796" y="30" class="lbl-b" style="fill:#5b3aa0">place des vérins</text>
+      <text x="796" y="54" class="lbl-s" style="fill:#5b3aa0">pour changer un jour les appareils</text>
+    </g>
+    <g data-b="6" data-fx="fade">
+      <path d="M375 392 V412 M775 392 V412" stroke="#141a26"/>
+      <path d="M375 402 H545 M605 402 H775" stroke="#141a26" stroke-width="2.4"/>
+      <text x="360" y="408" text-anchor="end" class="lbl-b">B ≈ 1,60 m</text>
+    </g>
+  </svg>
+  <div class="cols c2" style="margin-top:12px;gap:20px">
+    <div class="formula" data-b="6" data-fx="up"><span class="texd">B \approx j + 2\left(d + \tfrac{a}{2} + c\right)</span></div>
+    <div class="callout" data-b="6" data-fx="up" data-d=".15"><span class="lab">Exemple</span>0,10 + 2 × (0,35 + 0,20 + 0,20) = <b>1,60 m</b>. Vérifiez sur plan que les vérins tiennent.</div>
+  </div>
+</section>
+
+<!-- ═════════ 24. CULÉE PIÈCE PAR PIÈCE ═════════ -->
+<section class="slide" data-title="La culée, pièce par pièce">
+  <div class="kicker">Les culées</div>
+  <h2 class="t">La culée remblayée, <em>pièce par pièce</em></h2>
+  <div class="split" style="grid-template-columns:1.5fr 1fr;gap:30px">
+    <div class="vis">
+      <svg viewBox="0 0 680 540" aria-label="Culée remblayée construite pièce par pièce">
+        <defs>
+          <pattern id="c6s24-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+          <pattern id="c6s24-b" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#d5bd96"/><circle cx="4" cy="4" r="1.6" fill="#a8875a"/></pattern>
+          <pattern id="c6s24-r" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#f0e2c8"/><circle cx="4" cy="5" r="1.4" fill="#c9a77a"/><circle cx="11" cy="11" r="1" fill="#c9a77a"/></pattern>
+          <marker id="c6s24-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+        </defs>
+        <rect width="680" height="540" rx="18" fill="#eef4fc"/>
+        <!-- remblai et dalle de transition (étape 6) -->
+        <g data-b="6" data-fx="fade">
+          <path d="M200 79 H680 V335 H200 Z" fill="url(#c6s24-r)"/>
+          <g stroke="#c9a77a" stroke-dasharray="8 6"><path d="M213 130 H680 M213 170 H680 M200 210 H680 M200 250 H680 M200 290 H680"/></g>
+          <rect x="200" y="79" width="480" height="6" fill="#3c4049"/>
+        </g>
+        <!-- sol -->
+        <rect y="335" width="680" height="135" fill="url(#c6s24-e)"/>
+        <rect y="470" width="680" height="70" fill="url(#c6s24-b)"/>
+        <text x="20" y="500" class="lbl-s" data-a data-fx="fade">bon sol (−3 m)</text>
+        <text x="20" y="326" class="lbl-s" data-a data-fx="fade">terrain naturel</text>
+        <!-- murs en retour (étape 7) -->
+        <path d="M213 85 H520 V150 L213 320 Z" fill="#cfd5dc" fill-opacity=".55" stroke="#6e7884" stroke-dasharray="6 4" data-b="7" data-fx="fade"/>
+        <text x="420" y="135" class="lbl-s" data-b="7" data-fx="fade">mur en retour</text>
+        <!-- semelle (1) -->
+        <g data-b="1" data-fx="up"><rect x="110" y="425" width="220" height="45" fill="#9aa3ae" stroke="#5d6672"/><text x="220" y="453" text-anchor="middle" class="lbl-w">semelle</text></g>
+        <!-- mur de front (2) -->
+        <g data-b="2" data-fx="grow"><rect x="160" y="200" width="40" height="225" fill="#cfd5dc" stroke="#6e7884"/></g>
+        <g data-b="2" data-fx="fade" data-d=".5"><path d="M160 300 H200" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s24-a)" marker-end="url(#c6s24-a)"/><text x="150" y="306" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">&gt; 0,80 m</text></g>
+        <!-- sommier (3) -->
+        <g data-b="3" data-fx="down">
+          <rect x="150" y="180" width="63" height="20" fill="#cfd5dc" stroke="#6e7884"/>
+          <rect x="158" y="172" width="26" height="8" fill="#dfe3e8" stroke="#6e7884"/><rect x="161" y="166" width="20" height="6" fill="#2f6fe0"/>
+          <path d="M150 190 L60 230" stroke="#6e7884"/><text x="20" y="250" class="lbl-s">sommier</text>
+        </g>
+        <!-- garde-grève (4) -->
+        <g data-b="4" data-fx="grow"><rect x="199.5" y="85" width="13.5" height="95" fill="#cfd5dc" stroke="#6e7884"/></g>
+        <g data-b="4" data-fx="fade" data-d=".4"><path d="M213 95 L300 40" stroke="#6e7884"/><text x="306" y="40" class="lbl-s">garde-grève</text></g>
+        <!-- corbeau (5) -->
+        <g data-b="5" data-fx="pop"><path d="M213 105.5 H228 V113 L213 123 Z" fill="#cfd5dc" stroke="#6e7884"/><circle cx="220" cy="114" r="16" fill="none" stroke="#dc4a2c" stroke-width="2"/></g>
+        <!-- dalle de transition (6) -->
+        <g data-b="6" data-fx="left" data-d=".2"><path d="M226 92 L451 104 V117.5 L226 105.5 Z" fill="#b9c2cc" stroke="#6e7884"/><text x="460" y="112" class="lbl-s">dalle de transition</text></g>
+        <!-- tablier (8) -->
+        <g data-b="8" data-fx="left">
+          <rect x="0" y="79" width="192" height="6" fill="#3c4049"/>
+          <rect x="0" y="85" width="192" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+          <rect x="0" y="97" width="192" height="69" fill="#cfd5dc" stroke="#6e7884"/>
+          <text x="96" y="138" text-anchor="middle" class="lbl-s">tablier</text>
+        </g>
+      </svg>
+    </div>
+    <div class="c6-stk">
+      <div data-b="0" data-only><div class="card"><h3><span class="k">0</span>On part du sol</h3><p>Le <b>bon sol</b> est à −3 m : une <b>fondation superficielle</b> suffit.</p></div></div>
+      <div data-b="1" data-only data-fx="right"><div class="card gold"><h3><span class="k">1</span>La semelle</h3><p>Largeur ≈ <b>0,5 à 0,7 fois</b> la hauteur de la culée ; débord avant plus court que le talon arrière.</p></div></div>
+      <div data-b="2" data-only data-fx="right"><div class="card gold"><h3><span class="k">2</span>Le mur de front</h3><p>Il porte le tablier et retient les terres. Règle : épaisseur <b>&gt; 0,80 m</b> (souvent 0,80 à 1,20 m).</p></div></div>
+      <div data-b="3" data-only data-fx="right"><div class="card gold"><h3><span class="k">3</span>Le sommier</h3><p>Il reçoit <b>bossages et appareils d'appui</b>. Assez large pour poser les poutres et pour le vérinage.</p></div></div>
+      <div data-b="4" data-only data-fx="right"><div class="card gold"><h3><span class="k">4</span>Le garde-grève</h3><p>Il retient le remblai au-dessus du sommier. Épaisseur <b>0,25 à 0,30 m</b> ; sa hauteur se calcule.</p></div></div>
+      <div data-b="5" data-only data-fx="right"><div class="card gold"><h3><span class="k">5</span>Le corbeau</h3><p>Petite console de <b>≈ 0,30 m</b> à l'arrière du garde-grève : l'appui articulé de la dalle de transition.</p></div></div>
+      <div data-b="6" data-only data-fx="right"><div class="card teal"><h3><span class="k" style="background:#12a08a">6</span>La dalle de transition</h3><p><b>0,30 à 0,35 m</b> d'épaisseur, <b>3 à 6 m</b> de long : elle adoucit la marche due au tassement du remblai.</p></div></div>
+      <div data-b="7" data-only data-fx="right"><div class="card teal"><h3><span class="k" style="background:#12a08a">7</span>Les murs en retour</h3><p>Parallèles à l'axe, épaisseur <b>≈ 0,30 à 0,50 m</b> : ils tiennent latéralement le remblai d'accès.</p></div></div>
+      <div data-b="8" data-only data-fx="right"><div class="card blue"><h3><span class="k" style="background:#2f6fe0">✓</span>Le bilan</h3><p>Chaque pièce a sa règle ; ensemble, elles forment une culée cohérente que l'on vérifiera au <b>chapitre 9</b> : glissement, renversement, portance.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 25. DEUX RÈGLES ═════════ -->
+<section class="slide" data-title="Deux dimensions qui se calculent">
+  <div class="kicker">Les culées</div>
+  <h2 class="t">Deux dimensions <em>qui se calculent</em></h2>
+  <div class="cols c2" style="gap:26px">
+    <div class="card gold" data-b="1" data-fx="up" style="padding:16px 18px">
+      <h3>La hauteur du garde-grève</h3>
+      <svg class="full" viewBox="0 0 520 260" aria-label="Hauteur du garde-grève">
+        <defs><marker id="c6s25-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="520" height="260" rx="12" fill="#fdf3e2"/>
+        <rect x="20" y="40" width="250" height="6" fill="#3c4049"/>
+        <rect x="20" y="46" width="250" height="126" fill="#cfd5dc" stroke="#6e7884"/>
+        <text x="145" y="114" text-anchor="middle" class="lbl">tablier 1,80</text>
+        <rect x="225" y="172" width="34" height="8" fill="#2f6fe0"/><rect x="220" y="180" width="44" height="10" fill="#dfe3e8" stroke="#6e7884"/>
+        <rect x="190" y="190" width="120" height="50" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="282" y="46" width="22" height="144" fill="#e2c070" stroke="#b8902f"/>
+        <path d="M330 46 V190" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s25-a)" marker-end="url(#c6s25-a)"/>
+        <g class="lbl-s"><text x="345" y="100">tablier 1,80</text><text x="345" y="124">+ appareil 0,08</text><text x="345" y="148">+ bossage 0,10</text></g>
+        <text x="345" y="180" class="lbl-b" style="fill:#8a6a1f">≈ 2,00 m</text>
+      </svg>
+      <div class="formula" style="margin-top:10px;padding:10px 16px"><span class="tex">h_{GG} = h_{\text{tablier}} + e_{\text{appareil}} + h_{\text{bossage}}</span></div>
+    </div>
+    <div class="card teal" data-b="2" data-fx="up" style="padding:16px 18px">
+      <h3>La longueur de la dalle de transition</h3>
+      <svg class="full" viewBox="0 0 520 260" aria-label="Longueur de la dalle de transition selon la hauteur du remblai">
+        <rect width="520" height="260" rx="12" fill="#e9f7f3"/>
+        <g stroke="#cfe5de"><path d="M60 70 H490 M60 130 H490 M60 190 H490"/></g>
+        <path d="M60 220 H490 M60 220 V30" stroke="#141a26"/>
+        <g class="lbl-s" text-anchor="end"><text x="52" y="226">0</text><text x="52" y="136">3 m</text><text x="52" y="76">5 m</text></g>
+        <g class="lbl-s" text-anchor="middle"><text x="60" y="244">0</text><text x="210" y="244">5</text><text x="360" y="244">10</text><text x="470" y="244">H remblai (m)</text></g>
+        <path d="M60 130 H210 L360 70 H490" fill="none" stroke="#12a08a" stroke-width="3.2" data-b="2" data-fx="draw"/>
+        <path d="M60 46 H490" stroke="#dc4a2c" stroke-dasharray="6 5"/>
+        <text x="486" y="40" text-anchor="end" class="lbl-s" style="fill:#a33d22">6 m : plafond</text>
+        <g data-b="3" data-fx="pop"><circle cx="180" cy="130" r="7" fill="#12a08a"/><text x="180" y="116" text-anchor="middle" class="lbl-s">4 m → 3 m</text></g>
+        <g data-b="3" data-fx="pop" data-d=".2"><circle cx="315" cy="88" r="7" fill="#b8902f"/><text x="300" y="112" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">8,5 m → 5,1 → 5 m</text></g>
+      </svg>
+      <div class="formula" style="margin-top:10px;padding:10px 16px"><span class="tex">L_{DT} \approx \min\big(6\ \text{m}\,;\ \max(3\ \text{m}\,;\ 0{,}6\,H)\big)</span></div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px" data-b="3" data-fx="fade">Épaisseur de la dalle de transition : 0,30 à 0,35 m. La longueur est une règle d'usage, à confirmer par le CPS ou le guide du maître d'ouvrage.</p>
+</section>
+
+<!-- ═════════ 26. FONDATIONS ═════════ -->
+<section class="slide" data-title="Choisir les fondations">
+  <div class="kicker">Les fondations</div>
+  <h2 class="t">Le bon sol <em>décide</em> de la fondation</h2>
+  <svg class="full" viewBox="0 0 1150 410" aria-label="Trois types de fondations selon la profondeur du bon sol">
+    <defs>
+      <pattern id="c6s26-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+      <pattern id="c6s26-b" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#d5bd96"/><circle cx="4" cy="4" r="1.6" fill="#a8875a"/></pattern>
+    </defs>
+    <!-- 1 : semelle -->
+    <g data-b="1" data-fx="up">
+      <rect x="0" y="0" width="370" height="410" rx="16" fill="#eef4fc"/>
+      <text x="185" y="36" text-anchor="middle" class="lbl-b">Bon sol à moins de 3 m</text>
+      <rect x="0" y="120" width="370" height="80" fill="url(#c6s26-e)"/><rect x="0" y="200" width="370" height="210" fill="url(#c6s26-b)" rx="0"/>
+      <rect x="167" y="60" width="36" height="110" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="120" y="170" width="130" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+      <text x="185" y="300" text-anchor="middle" class="lbl-b" style="fill:#0b6e5c">semelle superficielle</text>
+      <text x="185" y="326" text-anchor="middle" class="lbl-s">la plus économique</text>
+    </g>
+    <!-- 2 : puits -->
+    <g data-b="2" data-fx="up">
+      <rect x="390" y="0" width="370" height="410" rx="16" fill="#fdf3e2"/>
+      <text x="575" y="36" text-anchor="middle" class="lbl-b">Bon sol entre 3 et 8 m</text>
+      <rect x="390" y="120" width="370" height="200" fill="url(#c6s26-e)"/><rect x="390" y="320" width="370" height="90" fill="url(#c6s26-b)"/>
+      <rect x="557" y="60" width="36" height="80" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="520" y="140" width="110" height="24" fill="#9aa3ae" stroke="#5d6672"/>
+      <rect x="530" y="164" width="90" height="160" fill="#b9c2cc" stroke="#6e7884"/>
+      <text x="575" y="362" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">puits ou gros béton</text>
+      <text x="575" y="388" text-anchor="middle" class="lbl-s">descendre jusqu'au bon sol</text>
+    </g>
+    <!-- 3 : pieux -->
+    <g data-b="3" data-fx="up">
+      <rect x="780" y="0" width="370" height="410" rx="16" fill="#f1ecfa"/>
+      <text x="965" y="36" text-anchor="middle" class="lbl-b">Bon sol à plus de 8 m</text>
+      <rect x="780" y="120" width="370" height="230" fill="url(#c6s26-e)"/><rect x="780" y="350" width="370" height="60" fill="url(#c6s26-b)"/>
+      <rect x="947" y="60" width="36" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="880" y="130" width="170" height="30" fill="#9aa3ae" stroke="#5d6672"/>
+      <g fill="#b9c2cc" stroke="#6e7884"><rect x="897" y="160" width="20" height="215"/><rect x="1013" y="160" width="20" height="215"/></g>
+      <text x="965" y="230" text-anchor="middle" class="lbl-s">Ø 0,80–1,20</text>
+      <text x="965" y="256" text-anchor="middle" class="lbl-s">entraxe ≥ 3 Ø</text>
+      <text x="965" y="300" text-anchor="middle" class="lbl-b" style="fill:#5b3aa0">pieux</text>
+    </g>
+    <g data-b="4" data-fx="pop"><rect x="70" y="350" width="230" height="40" rx="20" fill="#12a08a"/><text x="185" y="377" text-anchor="middle" class="lbl-w" style="font-size:17px">notre pont : −3 m</text></g>
+  </svg>
+  <div class="callout b" style="margin-top:12px" data-b="5" data-fx="up"><span class="lab">Au Maroc</span>Le <b>rapport géotechnique</b> fixe la contrainte admissible ; les CPS (ONCF, ADM) imposent en général le fascicule 62 titre V ou l'Eurocode 7. Près d'une voie ferrée en service, on limite les travaux dans l'emprise des voies.</div>
+</section>
+
+<!-- ═════════ 27. SECTION 04 ═════════ -->
+<section class="slide section" data-title="Partie 4 — Le métré et le fil rouge">
+  <div class="sin">
+    <div class="snum" data-a data-fx="zoom">04</div>
+    <h2 data-a data-fx="up" data-d=".15">Le métré et le fil rouge</h2>
+    <p data-a data-fx="up" data-d=".3">Une fois la géométrie dessinée, on la <b style="color:#e2c070">pèse</b> : c'est la première charge du chapitre 7. Puis on applique tout à notre pont.</p>
+  </div>
+</section>
+
+<!-- ═════════ 28. FORMULE DU MÉTRÉ ═════════ -->
+<section class="slide" data-title="Le métré du poids propre">
+  <div class="kicker">Le métré</div>
+  <h2 class="t">Peser un tablier, <em>mètre par mètre</em></h2>
+  <div class="split" style="grid-template-columns:1fr 1.05fr">
+    <div>
+      <div class="formula" data-a data-fx="left"><span class="texd">G = \underbrace{\gamma_b\,A\,(1+k)}_{\text{structure}} + \underbrace{\textstyle\sum g_{\text{sup}}}_{\text{équipements}}</span></div>
+      <div class="cols c3" style="gap:12px;margin-top:18px">
+        <div class="card gold" data-b="2" data-fx="up" style="padding:14px"><div class="big" style="font-size:40px">2,5</div><p style="font-size:16px">t/m³ : poids volumique du béton armé</p></div>
+        <div class="card teal" data-b="3" data-fx="up" style="padding:14px"><div class="big" style="font-size:40px;color:#12a08a">3–5 %</div><p style="font-size:16px">k : entretoises d'about d'un tablier à poutres</p></div>
+        <div class="card blue" data-b="4" data-fx="up" style="padding:14px"><div class="big" style="font-size:40px;color:#2f6fe0">9,81</div><p style="font-size:16px">kN/m pour 1 t/ml (souvent arrondi à 10)</p></div>
+      </div>
+      <p style="margin-top:16px;font-size:19px" data-b="5" data-fx="fade">A = aire de béton de la section, en m² par mètre linéaire.</p>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 600 470" aria-label="Section du tablier du fil rouge : aire de béton">
+        <rect width="600" height="470" rx="18" fill="#fdf3e2"/>
+        <text x="300" y="60" text-anchor="middle" class="lbl-b">Tablier du fil rouge (VIPP)</text>
+        <g data-a data-fx="fade">
+          <rect x="16" y="150" width="567" height="10.8" fill="#b9c2cc" stroke="#6e7884"/>
+          <path d="M59.9 160.8 L113.9 160.8 L113.9 167.3 L92.3 171.6 L92.3 225.6 L103.1 233.7 L103.1 247.2 L70.7 247.2 L70.7 233.7 L81.5 225.6 L81.5 171.6 L59.9 167.3 Z M201.6 160.8 L255.6 160.8 L255.6 167.3 L234.0 171.6 L234.0 225.6 L244.8 233.7 L244.8 247.2 L212.4 247.2 L212.4 233.7 L223.2 225.6 L223.2 171.6 L201.6 167.3 Z M343.4 160.8 L397.4 160.8 L397.4 167.3 L375.8 171.6 L375.8 225.6 L386.6 233.7 L386.6 247.2 L354.2 247.2 L354.2 233.7 L365.0 225.6 L365.0 171.6 L343.4 167.3 Z M485.1 160.8 L539.1 160.8 L539.1 167.3 L517.5 171.6 L517.5 225.6 L528.3 233.7 L528.3 247.2 L495.9 247.2 L495.9 233.7 L506.7 225.6 L506.7 171.6 L485.1 167.3 Z" fill="#cfd5dc" stroke="#6e7884"/>
+        </g>
+        <g data-b="1" data-fx="fade">
+          <rect x="16" y="150" width="567" height="10.8" fill="#e8a020" opacity=".75"/>
+          <path d="M59.9 160.8 L113.9 160.8 L113.9 167.3 L92.3 171.6 L92.3 225.6 L103.1 233.7 L103.1 247.2 L70.7 247.2 L70.7 233.7 L81.5 225.6 L81.5 171.6 L59.9 167.3 Z M201.6 160.8 L255.6 160.8 L255.6 167.3 L234.0 171.6 L234.0 225.6 L244.8 233.7 L244.8 247.2 L212.4 247.2 L212.4 233.7 L223.2 225.6 L223.2 171.6 L201.6 167.3 Z M343.4 160.8 L397.4 160.8 L397.4 167.3 L375.8 171.6 L375.8 225.6 L386.6 233.7 L386.6 247.2 L354.2 247.2 L354.2 233.7 L365.0 225.6 L365.0 171.6 L343.4 167.3 Z M485.1 160.8 L539.1 160.8 L539.1 167.3 L517.5 171.6 L517.5 225.6 L528.3 233.7 L528.3 247.2 L495.9 247.2 L495.9 233.7 L506.7 225.6 L506.7 171.6 L485.1 167.3 Z" fill="#e8a020" opacity=".75"/>
+          <g class="lbl"><text x="300" y="300" text-anchor="middle">hourdis : 10,50 × 0,20 = 2,100 m²</text><text x="300" y="330" text-anchor="middle">4 poutres × 0,578 = 2,312 m²</text></g>
+          <text x="300" y="370" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">A = 4,412 m²/ml</text>
+        </g>
+        <g data-b="5" data-fx="up">
+          <rect x="70" y="395" width="460" height="50" rx="12" fill="#141a26"/>
+          <text x="300" y="427" text-anchor="middle" class="lbl-w" style="font-size:18px">4,412 × 2,5 × 1,05 = 11,58 t/ml</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 29. EMPILEMENT ═════════ -->
+<section class="slide" data-title="Les couches qui s'empilent">
+  <div class="kicker">Le métré · superstructures</div>
+  <h2 class="t">Couche après couche, <em>le tablier s'alourdit</em></h2>
+  <svg class="full" viewBox="0 0 1150 540" aria-label="Empilement des charges permanentes du fil rouge">
+    <rect width="1150" height="540" rx="16" fill="#eef4fc"/>
+    <!-- section -->
+    <g data-a data-fx="fade">
+      <rect x="30" y="200" width="630" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+      <path d="M78.8 212.0 L138.8 212.0 L138.8 219.2 L114.8 224.0 L114.8 284.0 L126.8 293.0 L126.8 308.0 L90.8 308.0 L90.8 293.0 L102.8 284.0 L102.8 224.0 L78.8 219.2 Z M236.2 212.0 L296.2 212.0 L296.2 219.2 L272.2 224.0 L272.2 284.0 L284.2 293.0 L284.2 308.0 L248.2 308.0 L248.2 293.0 L260.2 284.0 L260.2 224.0 L236.2 219.2 Z M393.8 212.0 L453.8 212.0 L453.8 219.2 L429.8 224.0 L429.8 284.0 L441.8 293.0 L441.8 308.0 L405.8 308.0 L405.8 293.0 L417.8 284.0 L417.8 224.0 L393.8 219.2 Z M551.2 212.0 L611.2 212.0 L611.2 219.2 L587.2 224.0 L587.2 284.0 L599.2 293.0 L599.2 308.0 L563.2 308.0 L563.2 293.0 L575.2 284.0 L575.2 224.0 L551.2 219.2 Z" fill="#cfd5dc" stroke="#6e7884"/>
+    </g>
+    <rect x="135" y="194" width="420" height="6" fill="#7a52c7" data-b="2" data-fx="down"/>
+    <rect x="135" y="184" width="420" height="10" fill="#3c4049" data-b="3" data-fx="down"/>
+    <g data-b="4" data-fx="down"><rect x="45" y="186" width="90" height="14" fill="#dfe3e8" stroke="#6e7884"/><rect x="555" y="186" width="90" height="14" fill="#dfe3e8" stroke="#6e7884"/></g>
+    <g data-b="5" data-fx="down"><path d="M30 178 H45 V230 H36 L30 222 Z M660 178 H645 V230 H654 L660 222 Z" fill="#e2c070" stroke="#b8902f"/></g>
+    <g data-b="6" data-fx="down" stroke="#5c6470" stroke-width="2.5" fill="none"><path d="M50 186 V132 M100 186 V132 M50 132 H130 M640 186 V132 M590 186 V132 M640 132 H560"/><path d="M142 184 V164 M548 184 V164" stroke-width="3"/><path d="M136 166 H150 M542 166 H556" stroke="#9aa3ae" stroke-width="6"/></g>
+    <text x="345" y="372" text-anchor="middle" class="lbl" data-b="1" data-fx="fade">structure : 4,412 m² × 2,5 t/m³ × 1,05</text>
+    <text x="345" y="414" text-anchor="middle" class="lbl-s" data-b="1" data-fx="fade">(épaisseurs des couches exagérées sur le dessin)</text>
+    <!-- barre empilée -->
+    <path d="M800 470 H920 M810 470 V50" stroke="#141a26"/>
+    <g class="lbl-s" text-anchor="end"><text x="800" y="475">0</text><text x="800" y="345">5</text><text x="800" y="215">10</text><text x="800" y="85">15</text><text x="800" y="40">t/ml</text></g>
+    <g stroke="#e3e6ec"><path d="M810 340 H910 M810 210 H910 M810 80 H910"/></g>
+    <rect x="820" y="168.9" width="80" height="301.1" fill="#9aa3ae" data-b="1" data-fx="grow"/>
+    <rect x="820" y="156.9" width="80" height="12" fill="#7a52c7" data-b="2" data-fx="grow"/>
+    <rect x="820" y="126.2" width="80" height="30.7" fill="#3c4049" data-b="3" data-fx="grow"/>
+    <rect x="820" y="87.2" width="80" height="39" fill="#c3cad3" data-b="4" data-fx="grow"/>
+    <rect x="820" y="71.6" width="80" height="15.6" fill="#e2c070" data-b="5" data-fx="grow"/>
+    <rect x="820" y="63.3" width="80" height="8.3" fill="#5c6470" data-b="6" data-fx="grow"/>
+    <g class="lbl-s" style="fill:#141a26">
+      <g data-b="1" data-fx="left"><path d="M900 320 H912" stroke="#141a26"/><text x="918" y="325"><tspan font-weight="500">Structure</tspan> 11,58</text></g>
+      <g data-b="2" data-fx="left"><path d="M900 163 L912 178" stroke="#141a26"/><text x="918" y="184">Étanchéité 0,46</text></g>
+      <g data-b="3" data-fx="left"><path d="M900 141 L912 150" stroke="#141a26"/><text x="918" y="155">Enrobé (7 cm) 1,18</text></g>
+      <g data-b="4" data-fx="left"><path d="M900 107 L912 122" stroke="#141a26"/><text x="918" y="127">Trottoirs 1,50</text></g>
+      <g data-b="5" data-fx="left"><path d="M900 79 L912 92" stroke="#141a26"/><text x="918" y="98">Corniches 0,60</text></g>
+      <g data-b="6" data-fx="left"><path d="M900 67 L912 64" stroke="#141a26"/><text x="918" y="69">Garde-corps + glissières 0,32</text></g>
+    </g>
+    <g data-b="7" data-fx="up">
+      <text x="860" y="505" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">G ≈ 15,64 t/ml ≈ 153 kN/m</text>
+      <rect x="140" y="440" width="410" height="64" rx="14" fill="#141a26"/>
+      <text x="345" y="466" text-anchor="middle" class="lbl-w" style="font-size:17px">Superstructures : 4,06 t/ml</text>
+      <text x="345" y="490" text-anchor="middle" class="lbl-w" style="font-size:17px;fill:#e2c070">= 26 % de G : ne jamais les oublier</text>
+    </g>
+  </svg>
+</section>
+
+<!-- ═════════ 30. FIL ROUGE — COUPE ═════════ -->
+<section class="slide" data-title="Notre fil rouge : le tablier">
+  <div class="kicker">Notre fil rouge</div>
+  <h2 class="t">Notre pont : <em>une travée VIPP de 30 m</em></h2>
+  <div class="split wide-v">
+    <div>
+      <ul class="b tight">
+        <li data-b="1" data-fx="left"><b>Portée</b> : franchir les 4 voies (2 + 2 futures) sans appui entre les voies → <b>L ≈ 30 m</b>.</li>
+        <li data-b="2" data-fx="left"><b>VIPP</b> : L/18 à L/16 = 1,67 à 1,88 m → L/17 : <b>h = 1,80 m</b> (poutre 1,60 + hourdis 0,20).</li>
+        <li data-b="3" data-fx="left"><b>Coupe</b> : 10,50 m, <b>4 poutres à 2,625 m</b> (dans la plage 2,5–4 m).</li>
+        <li data-b="4" data-fx="left">La hauteur s'ajoute au <b>tirant d'air</b> sous la caténaire : elle fixe la hauteur des remblais.</li>
+      </ul>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 705 470" aria-label="Coupe transversale du tablier du fil rouge">
+        <defs><marker id="c6s30-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker></defs>
+        <rect width="705" height="470" rx="18" fill="#e9f7f3"/>
+        <g data-a data-fx="fade">
+          <rect x="145" y="164" width="420" height="6" fill="#3c4049"/>
+          <rect x="55" y="158" width="90" height="12" fill="#dfe3e8" stroke="#6e7884"/><rect x="565" y="158" width="90" height="12" fill="#dfe3e8" stroke="#6e7884"/>
+          <path d="M40 150 H55 V200 H46 L40 192 Z M670 150 H655 V200 H664 L670 192 Z" fill="#e2c070" stroke="#b8902f"/>
+          <rect x="40" y="170" width="630" height="12" fill="#b9c2cc" stroke="#6e7884"/>
+          <g stroke="#b8902f" stroke-width="1.6"><path d="M55 104 V150 M145 104 V158 M565 104 V158 M655 104 V150" stroke-dasharray="3 3"/>
+          <path d="M55 112 H145 M145 112 H565 M565 112 H655" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/></g>
+          <g class="lbl-s" text-anchor="middle" style="fill:#8a6a1f"><text x="100" y="100">1,50</text><text x="355" y="100">chaussée 7,00</text><text x="610" y="100">1,50</text></g>
+          <g class="drive" style="--t:7s;--from:-20px;--to:20px"><rect x="300" y="138" width="56" height="26" rx="6" fill="#2f6fe0"/><rect x="308" y="143" width="40" height="9" rx="2" fill="#cfe3ff"/></g>
+        </g>
+        <path d="M88.8 182.0 L148.8 182.0 L148.8 189.2 L124.8 194.0 L124.8 254.0 L136.8 263.0 L136.8 278.0 L100.8 278.0 L100.8 263.0 L112.8 254.0 L112.8 194.0 L88.8 189.2 Z M246.2 182.0 L306.2 182.0 L306.2 189.2 L282.2 194.0 L282.2 254.0 L294.2 263.0 L294.2 278.0 L258.2 278.0 L258.2 263.0 L270.2 254.0 L270.2 194.0 L246.2 189.2 Z M403.8 182.0 L463.8 182.0 L463.8 189.2 L439.8 194.0 L439.8 254.0 L451.8 263.0 L451.8 278.0 L415.8 278.0 L415.8 263.0 L427.8 254.0 L427.8 194.0 L403.8 189.2 Z M561.2 182.0 L621.2 182.0 L621.2 189.2 L597.2 194.0 L597.2 254.0 L609.2 263.0 L609.2 278.0 L573.2 278.0 L573.2 263.0 L585.2 254.0 L585.2 194.0 L561.2 189.2 Z" fill="#cfd5dc" stroke="#6e7884" data-b="2" data-fx="down"/>
+        <g data-b="2" data-fx="fade" data-d=".3">
+          <path d="M688 170 V278" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
+          <text x="680" y="304" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">h = 1,80 m</text>
+        </g>
+        <g data-b="3" data-fx="fade">
+          <path d="M118.75 285 V340 M276.25 285 V340" stroke="#b8902f" stroke-dasharray="3 3"/>
+          <path d="M118.75 332 H276.25" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
+          <text x="197" y="360" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">2,625 m</text>
+          <path d="M40 210 V405 M670 210 V405" stroke="#6e7884" stroke-dasharray="3 3"/>
+          <path d="M40 396 H670" stroke="#141a26" stroke-width="2" marker-start="url(#c6s30-a)" marker-end="url(#c6s30-a)"/>
+          <text x="355" y="388" text-anchor="middle" class="lbl-b">largeur 10,50 m</text>
+        </g>
+        <g data-b="4" data-fx="up"><rect x="160" y="420" width="390" height="38" rx="19" fill="#12a08a"/><text x="355" y="445" text-anchor="middle" class="lbl-w" style="font-size:17px">h + tirant d'air = hauteur des remblais</text></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ 31. FIL ROUGE — ÉLÉVATION ═════════ -->
+<section class="slide" data-title="Notre fil rouge : l'ouvrage complet">
+  <div class="kicker">Notre fil rouge</div>
+  <h2 class="t">L'ouvrage complet <em>prédimensionné</em></h2>
+  <svg class="full" viewBox="0 0 1150 400" aria-label="Coupe longitudinale du fil rouge">
+    <defs>
+      <pattern id="c6s31-e" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#ead7bd"/><circle cx="3" cy="4" r="1.2" fill="#c9a77a"/><circle cx="9" cy="9" r="1" fill="#c9a77a"/></pattern>
+      <pattern id="c6s31-b" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#d5bd96"/><circle cx="4" cy="4" r="1.6" fill="#a8875a"/></pattern>
+      <pattern id="c6s31-r" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#f0e2c8"/><circle cx="4" cy="5" r="1.4" fill="#c9a77a"/></pattern>
+      <marker id="c6s31-a" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+    </defs>
+    <rect width="1150" height="400" rx="16" fill="#eef4fc"/>
+    <rect y="310" width="1150" height="66" fill="url(#c6s31-e)"/><rect y="376" width="1150" height="24" fill="url(#c6s31-b)"/>
+    <path d="M0 120 H228 V310 H0 Z M1150 120 H922 V310 H1150 Z" fill="url(#c6s31-r)"/>
+    <rect x="0" y="114" width="236" height="6" fill="#3c4049"/><rect x="914" y="114" width="236" height="6" fill="#3c4049"/>
+    <!-- voies ferrées -->
+    <g data-a data-fx="fade">
+      <g fill="#a39a88"><path d="M360 310 l10 -8 h60 l10 8 z M470 310 l10 -8 h60 l10 8 z"/></g>
+      <g fill="#c9c2b0" stroke="#9aa3ae" stroke-dasharray="4 3"><path d="M640 310 l10 -8 h60 l10 8 z M750 310 l10 -8 h60 l10 8 z"/></g>
+      <rect x="378" y="236" width="44" height="64" rx="8" fill="#e8a020"/><rect x="386" y="246" width="28" height="16" rx="3" fill="#fff" opacity=".7"/>
+      <text x="455" y="345" text-anchor="middle" class="lbl-s">voies existantes</text><text x="735" y="345" text-anchor="middle" class="lbl-s" style="fill:#7b8191">voies futures</text>
+      <g stroke="#7f8a96" stroke-width="3"><path d="M330 310 V205 M600 310 V205 M860 310 V205"/></g>
+      <path d="M330 214 H860" stroke="#dc4a2c" stroke-width="1.5" stroke-dasharray="4 3"/>
+    </g>
+    <!-- culées -->
+    <g data-b="2" data-fx="up">
+      <rect x="170" y="354" width="100" height="22" fill="#9aa3ae" stroke="#5d6672"/><rect x="232" y="180" width="20" height="174" fill="#cfd5dc" stroke="#6e7884"/><rect x="228" y="172" width="26" height="8" fill="#cfd5dc" stroke="#6e7884"/><rect x="228" y="120" width="6" height="52" fill="#cfd5dc" stroke="#6e7884"/>
+      <rect x="880" y="354" width="100" height="22" fill="#9aa3ae" stroke="#5d6672"/><rect x="898" y="180" width="20" height="174" fill="#cfd5dc" stroke="#6e7884"/><rect x="896" y="172" width="26" height="8" fill="#cfd5dc" stroke="#6e7884"/><rect x="916" y="120" width="6" height="52" fill="#cfd5dc" stroke="#6e7884"/>
+      <path d="M228 124 L118 130 V137 L228 131 Z M922 124 L1032 130 V137 L922 131 Z" fill="#b9c2cc" stroke="#6e7884"/>
+      <text x="118" y="160" class="lbl-s">dalle de transition 5 m</text>
+    </g>
+    <!-- tablier -->
+    <g data-b="1" data-fx="down">
+      <rect x="236" y="114" width="678" height="6" fill="#3c4049"/>
+      <rect x="237" y="120" width="676" height="40" fill="#b9c2cc" stroke="#6e7884"/>
+      <text x="575" y="146" text-anchor="middle" class="lbl-s" style="fill:#141a26">VIPP · h = 1,80 m</text>
+      <rect x="241" y="160" width="8" height="12" fill="#2f6fe0"/><rect x="901" y="160" width="8" height="12" fill="#2f6fe0"/>
+    </g>
+    <g class="drive" style="--t:8s;--from:-60px;--to:1160px"><rect x="0" y="98" width="34" height="16" rx="3" fill="#dc4a2c"/></g>
+    <g data-b="1" data-fx="fade" data-d=".3">
+      <path d="M245 64 H905" stroke="#b8902f" stroke-width="2" marker-start="url(#c6s31-a)" marker-end="url(#c6s31-a)"/><path d="M245 60 V160 M905 60 V160" stroke="#b8902f" stroke-dasharray="3 3"/>
+      <text x="575" y="54" text-anchor="middle" class="lbl-b" style="fill:#8a6a1f">L = 30 m</text>
+    </g>
+    <g data-b="3" data-fx="fade">
+      <path d="M560 160 V300" stroke="#12a08a" stroke-width="2" marker-start="url(#c6s31-a)" marker-end="url(#c6s31-a)"/>
+      <text x="572" y="190" class="lbl-s" style="fill:#0b6e5c">tirant d'air</text><text x="572" y="208" class="lbl-s" style="fill:#0b6e5c">(prescriptions ONCF)</text>
+      <text x="20" y="300" class="lbl-s">remblai ≈ 8,5 m</text>
+      <text x="1130" y="368" text-anchor="end" class="lbl-s">semelles sur le bon sol à −3 m</text>
+    </g>
+  </svg>
+  <div class="c6-chips" style="margin-top:14px">
+    <span class="pill" data-b="4" data-fx="pop" style="font-size:18px">G ≈ 15,6 t/ml ≈ 153 kN/m</span>
+    <span class="pill r" data-b="4" data-fx="pop" data-d=".1" style="font-size:18px">M<sub>G</sub> = G L²/8 ≈ 1 760 t·m</span>
+    <span class="pill t" data-b="5" data-fx="pop" style="font-size:18px">mur de front 0,90 · garde-grève 2,00 × 0,30</span>
+    <span class="pill b" data-b="5" data-fx="pop" data-d=".1" style="font-size:18px">sommier 1,40 · dalle de transition 5,00 × 0,30</span>
+  </div>
+</section>
+
+<!-- ═════════ 32. À RETENIR ═════════ -->
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">Synthèse</div>
+  <h2 class="t">À retenir</h2>
+  <ul class="b" style="margin-top:16px;max-width:1080px">
+    <li data-b="1" data-fx="left">Le prédimensionnement fixe une <b>géométrie</b> avant le calcul ; le calcul la valide (boucle courte).</li>
+    <li data-b="2" data-fx="left"><b>h = L/n</b> : 14 (poutres BA), 16–18 (VIPP), 20–22 (PRAD), 20/26/28 (PSI-DA), 25–33 (PSI-DP), 25–28 (bipoutre) ; PICF : e ≈ L/32 + 0,125.</li>
+    <li data-b="3" data-fx="left">Piles : <b>Ø 0,80–1,50 m et Ø &gt; H/7,5</b> ; chevêtre = poutres + appareils + débord + vérins ; semelle ≥ 3,3 × 3 m.</li>
+    <li data-b="4" data-fx="left">Culées : mur de front <b>&gt; 0,80 m</b> ; garde-grève = tablier + appareil + bossage ; dalle de transition <b>0,30–0,35 m</b>.</li>
+    <li data-b="5" data-fx="left">Métré : <b>G = 2,5 × A × (1 + k) + superstructures</b> (20 à 30 % de G). Fil rouge : h = 1,80 m, G ≈ 15,6 t/ml.</li>
+  </ul>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch7.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 7 : Charges et règlements →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) {
+    if (!isFinite(x)) return "—";
+    var s = (+x).toFixed(d), neg = s.charAt(0) === "-"; if (neg) s = s.slice(1);
+    var p = s.split("."), i = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return (neg ? "−" : "") + i + (p[1] ? "," + p[1] : "");
+  }
+  function num(id, def) { var e = $(id); if (!e) return def; var v = parseFloat(String(e.value).replace(",", ".")); return isFinite(v) ? v : def; }
+  function set(id, html) { var e = $(id); if (e) e.innerHTML = html; }
+  function up05(x) { return Math.ceil(x / 0.05 - 1e-9) * 0.05; }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+  window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+
+  /* ── La règle du pouce : la poutre s'épaissit avec la portée ── */
+  var NS = [[17, "#2f6fe0", "VIPP"], [14, "#dc4a2c", "poutres BA"], [20, "#12a08a", "dalle armée iso."], [30, "#7a52c7", "dalle précontrainte cont."]];
+  var P = { n: 17, col: "#2f6fe0", nm: "VIPP", run: false, sl: null };
+  function drawPouce(t) {
+    var L = 25 + 15 * Math.sin(t / 1300), h = L / P.n, x0 = 50, k = 15, vk = 60, y0 = 150;
+    var w = L * k, hh = h * vk, xr = x0 + w, yb = y0 + hh;
+    var b = $("c6p-beam"); if (!b) return;
+    b.setAttribute("width", w.toFixed(1)); b.setAttribute("height", hh.toFixed(1));
+    b.setAttribute("fill", P.col); b.setAttribute("stroke", P.col);
+    $("c6p-road").setAttribute("width", w.toFixed(1));
+    $("c6p-s1").setAttribute("d", "M" + x0 + " " + yb.toFixed(1) + " l-14 26 h28 z");
+    $("c6p-s2").setAttribute("d", "M" + xr.toFixed(1) + " " + yb.toFixed(1) + " l-14 26 h28 z");
+    $("c6p-p1").setAttribute("y", (yb + 26).toFixed(1)); $("c6p-p1").setAttribute("height", (440 - yb - 26).toFixed(1));
+    $("c6p-p2").setAttribute("x", (xr - 10).toFixed(1)); $("c6p-p2").setAttribute("y", (yb + 26).toFixed(1)); $("c6p-p2").setAttribute("height", (440 - yb - 26).toFixed(1));
+    $("c6p-dL").setAttribute("d", "M" + x0 + " " + (yb + 50).toFixed(1) + " H" + xr.toFixed(1));
+    $("c6p-tL").setAttribute("x", ((x0 + xr) / 2).toFixed(1)); $("c6p-tL").setAttribute("y", (yb + 76).toFixed(1));
+    $("c6p-dh").setAttribute("d", "M" + (xr + 20).toFixed(1) + " " + y0 + " V" + yb.toFixed(1));
+    $("c6p-th").setAttribute("x", (xr + 30).toFixed(1)); $("c6p-th").setAttribute("y", ((y0 + yb) / 2 + 7).toFixed(1));
+    $("c6p-L").textContent = "L = " + fmt(L, 1) + " m";
+    var hl = $("c6p-h"); hl.textContent = "h = L/" + P.n + " = " + fmt(h, 2) + " m"; hl.style.fill = P.col;
+    var nm = $("c6p-nm"); nm.textContent = P.nm; nm.style.fill = P.col;
+  }
+  function loopPouce(ts) {
+    if (!P.sl || !P.sl.classList.contains("on")) { P.run = false; return; }
+    drawPouce(ts); requestAnimationFrame(loopPouce);
+  }
+  window.SLIDE_HOOK["c6-pouce"] = function (step, sl) {
+    var v = NS[Math.max(0, Math.min(NS.length - 1, step))];
+    P.n = v[0]; P.col = v[1]; P.nm = v[2]; P.sl = sl;
+    drawPouce(performance.now());
+    if (!P.run) { P.run = true; requestAnimationFrame(loopPouce); }
+  };
+
+  /* ── Calculatrice 1 : tablier ── */
+  var TYPES = {
+    picf: { nom: "PICF", kind: "picf" },
+    da1: { nom: "PSI-DA isostatique", kind: "dalle", nmin: 22, nc: 20, nmax: 18, txt: "L/20", lmax: 22 },
+    da2: { nom: "PSI-DA 2 travées", kind: "dalle", nmin: 28, nc: 26, nmax: 24, txt: "L/26", lmax: 22 },
+    da3: { nom: "PSI-DA ≥ 3 travées", kind: "dalle", nmin: 30, nc: 28, nmax: 26, txt: "L/28", lmax: 22 },
+    dp1: { nom: "PSI-DP isostatique", kind: "dalle", nmin: 27, nc: 25, nmax: 23, txt: "L/25", lmax: 35 },
+    dp2: { nom: "PSI-DP continu", kind: "dalle", nmin: 33, nc: 30, nmax: 28, txt: "L/28 à L/33", lmax: 35 },
+    ppba: { nom: "Poutres BA", kind: "ppba", nmin: 15, nc: 14, nmax: 13, txt: "L/14" },
+    prad: { nom: "PRAD", kind: "prad", nmin: 22, nc: 21, nmax: 20, txt: "L/20 à L/22" },
+    vipp: { nom: "VIPP", kind: "vipp", nmin: 18, nc: 17, nmax: 16, txt: "L/16 à L/18" },
+    bp1: { nom: "Bipoutre isostatique", kind: "bip", nmin: 27, nc: 25, nmax: 23, txt: "L/25 (charpente)" },
+    bp2: { nom: "Bipoutre continu", kind: "bip", nmin: 30, nc: 28, nmax: 26, txt: "L/28 (charpente)" }
+  };
+  function ibeam(bt, tf, g1, bw, g2, hf, bf, hp) {
+    return [[-bt / 2, 0], [bt / 2, 0], [bt / 2, tf], [bw / 2, tf + g1], [bw / 2, hp - hf - g2], [bf / 2, hp - hf], [bf / 2, hp], [-bf / 2, hp], [-bf / 2, hp - hf], [-bw / 2, hp - hf - g2], [-bw / 2, tf + g1], [-bt / 2, tf]];
+  }
+  function area(Pt) { var a = 0; for (var i = 0; i < Pt.length; i++) { var p = Pt[i], q = Pt[(i + 1) % Pt.length]; a += p[0] * q[1] - q[0] * p[1]; } return Math.abs(a) / 2; }
+  function superstr(W, Lr) {
+    var tr = Math.max(0, W - Lr - 0.5);
+    var r = { rev: 0.07 * Lr * 2.4, eta: 0.03 * Lr * 2.2, tro: tr * 0.20 * 2.5, cor: 2 * 0.30, gc: 2 * 0.10, gl: 2 * 0.06 };
+    r.tot = r.rev + r.eta + r.tro + r.cor + r.gc + r.gl;
+    return r;
+  }
+  function tablier(type, L, W, Lr, H) {
+    var T = TYPES[type] || TYPES.vipp;
+    var o = { T: T, L: L, W: W, Lr: Lr, n: 0, s: 0, warn: [] };
+    if (T.kind === "picf") {
+      var e = L / 32 + 0.125;
+      o.hmin = e; o.hc = e; o.hmax = e; o.h = up05(e); o.H = H;
+      o.A = (L + 2 * o.h) * (H + 2 * o.h) - L * H + 4 * 0.5 * 0.25 * 0.25;
+      if (L < 2 || L > 12) o.warn.push("Ouverture hors du domaine usuel des PICF (2 à 12 m).");
+    } else {
+      o.hmin = L / T.nmin; o.hc = L / T.nc; o.hmax = L / T.nmax; o.h = up05(o.hc);
+      if (T.kind === "dalle") {
+        var c = clamp(0.16 * W, 0, 2.5), te = Math.min(0.25, o.h);
+        if (o.h < 0.45) c = 0;
+        o.c = c; o.te = te;
+        o.A = (W - 2 * c) * o.h + 2 * c * (o.h + te) / 2;
+        if (L > T.lmax) o.warn.push("Portée au-delà du domaine usuel de ce type de dalle.");
+      } else if (T.kind === "ppba") {
+        o.hd = 0.22; o.n = Math.max(2, Math.ceil(W / 2.5)); o.s = W / o.n;
+        var hp = o.h - o.hd;
+        o.beam = [[-0.2, 0], [0.2, 0], [0.2, hp - 0.30], [0.3, hp - 0.25], [0.3, hp], [-0.3, hp], [-0.3, hp - 0.25], [-0.2, hp - 0.30]];
+        o.A = W * o.hd + o.n * area(o.beam);
+        if (L > 22) o.warn.push("Au-delà d'environ 20 m, les poutres BA deviennent lourdes : préférer la précontrainte.");
+      } else if (T.kind === "prad") {
+        o.hd = 0.20; o.n = Math.max(2, Math.ceil(W / 1.5)); o.s = W / o.n;
+        var bt = Math.min(0.6, o.s - 0.25);
+        o.beam = ibeam(bt, 0.08, 0.04, 0.16, 0.08, 0.12, 0.55, o.h - o.hd);
+        o.A = W * o.hd + o.n * area(o.beam);
+        if (L > 32) o.warn.push("Portée au-delà du domaine usuel des PRAD (10 à 30 m).");
+      } else if (T.kind === "vipp") {
+        o.hd = 0.20; o.n = Math.max(2, Math.ceil(W / 3.0)); o.s = W / o.n;
+        var bw = o.h > 2.0 ? 0.22 : 0.20, bf = o.h > 1.8 ? 0.70 : 0.60, btv = o.s < 3 ? 1.0 : 1.2;
+        o.beam = ibeam(btv, 0.12, 0.08, bw, 0.15, 0.25, bf, o.h - o.hd);
+        o.A = W * o.hd + o.n * area(o.beam);
+        if (o.s < 2.5 || o.s > 4) o.warn.push("Espacement hors de la plage 2,5–4 m : ajustez la largeur.");
+        if (L < 25 || L > 50) o.warn.push("Portée hors du domaine usuel des VIPP (30 à 50 m).");
+      } else if (T.kind === "bip") {
+        o.n = 2; o.s = 0.55 * W; o.hd = Math.round(clamp(0.18 + 0.02 * o.s, 0.25, 0.35) * 100) / 100;
+        o.steel = o.h * 0.02 + 0.6 * 0.04 + 0.8 * 0.06;
+        o.Ac = W * o.hd; o.A = o.Ac;
+        if (L < 25) o.warn.push("Bipoutre peu compétitif en dessous de 25 m environ.");
+      }
+    }
+    if (T.kind === "bip") o.gs = o.Ac * 2.5 + 2 * o.steel * 7.85 * 1.15;
+    else if (T.kind === "picf" || T.kind === "dalle") o.gs = o.A * 2.5;
+    else o.gs = o.A * 2.5 * 1.05;
+    if (T.kind === "picf") { o.sup = null; o.G = o.gs; }
+    else { o.sup = superstr(W, Lr); o.G = o.gs + o.sup.tot; }
+    if (Lr > W) o.warn.push("La chaussée dépasse la largeur totale.");
+    return o;
+  }
+
+  function drawSection(o) {
+    var svg = $("c6t-svg"); if (!svg) return;
+    var s = '<defs><marker id="c6t-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b8902f"/></marker></defs>';
+    function Pg(pts, x0, y0, k, fill) {
+      return '<polygon points="' + pts.map(function (p) { return (x0 + p[0] * k).toFixed(1) + "," + (y0 + p[1] * k).toFixed(1); }).join(" ") + '" fill="' + fill + '" stroke="#6e7884"/>';
+    }
+    function cote(x1, y1, x2, y2, col) {
+      return '<path d="M' + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) + '" stroke="' + (col || "#b8902f") + '" stroke-width="1.6" marker-start="url(#c6t-ar)" marker-end="url(#c6t-ar)"/>';
+    }
+    function txt(x, y, t, col, anc, cls) { return '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" text-anchor="' + (anc || "middle") + '" class="' + (cls || "lbl-s") + '" style="fill:' + (col || "#8a6a1f") + '">' + t + "</text>"; }
+    if (o.T.kind === "picf") {
+      var Wt = o.L + 2 * o.h, Ht = o.H + 2 * o.h;
+      var k = Math.min(520 / Wt, 220 / Ht), x0 = 360 - Wt * k / 2, y0 = 34;
+      s += '<rect x="' + (x0 - 40).toFixed(1) + '" y="' + (y0 - 12) + '" width="' + (Wt * k + 80).toFixed(1) + '" height="' + (Ht * k + 24).toFixed(1) + '" fill="#ead7bd" opacity=".55"/>';
+      s += '<path d="M' + x0.toFixed(1) + " " + y0 + " h" + (Wt * k).toFixed(1) + " v" + (Ht * k).toFixed(1) + " h" + (-Wt * k).toFixed(1) + " Z M" + (x0 + o.h * k).toFixed(1) + " " + (y0 + o.h * k).toFixed(1) + " v" + (o.H * k).toFixed(1) + " h" + (o.L * k).toFixed(1) + " v" + (-o.H * k).toFixed(1) + ' Z" fill="#cfd5dc" stroke="#6e7884" fill-rule="evenodd"/>';
+      var xi = x0 + o.h * k, yi = y0 + o.h * k, xe = xi + o.L * k;
+      s += cote(xi, yi + o.H * k * 0.45, xe, yi + o.H * k * 0.45, "#12a08a") + txt((xi + xe) / 2, yi + o.H * k * 0.45 - 8, "ouverture " + fmt(o.L, 2) + " m", "#0b6e5c");
+      s += txt((xi + xe) / 2, yi + o.H * k * 0.45 + 26, "hauteur libre " + fmt(o.H, 2) + " m", "#2453b3");
+      s += cote(xe + o.h * k + 18, y0, xe + o.h * k + 18, yi) + txt(xe + o.h * k + 28, y0 + o.h * k / 2 + 6, "e = " + fmt(o.h, 2) + " m", "#8a6a1f", "start", "lbl-b");
+      s += txt(20, 290, "Cadre à l'échelle — piédroits et radier pris égaux à e, goussets 0,25 m", "#4d5566", "start");
+    } else {
+      var Wd = o.W, hmax = (o.T.kind === "bip") ? (o.hd + o.h + 0.08) : o.h;
+      var k2 = Math.min(560 / Wd, 150 / hmax), x1 = 350 - Wd * k2 / 2, y1 = 46;
+      if (o.T.kind === "dalle") {
+        var c = o.c, te = o.te;
+        s += Pg([[0, 0], [Wd, 0], [Wd, te], [Wd - c, o.h], [c, o.h], [0, te]], x1, y1, k2, "#b9c2cc");
+      } else {
+        var hd = o.hd;
+        s += '<rect x="' + x1.toFixed(1) + '" y="' + y1 + '" width="' + (Wd * k2).toFixed(1) + '" height="' + (hd * k2).toFixed(1) + '" fill="#b9c2cc" stroke="#6e7884"/>';
+        for (var i = 0; i < o.n; i++) {
+          var xc = x1 + (o.s / 2 + i * o.s) * k2;
+          if (o.T.kind === "bip") {
+            var yt = y1 + hd * k2 + 5, hs = o.h * k2, tf = Math.max(3, 0.05 * k2);
+            s += '<rect x="' + (xc - 0.3 * k2).toFixed(1) + '" y="' + yt.toFixed(1) + '" width="' + (0.6 * k2).toFixed(1) + '" height="' + tf.toFixed(1) + '" fill="#2f6fe0"/>';
+            s += '<rect x="' + (xc - 1.5).toFixed(1) + '" y="' + yt.toFixed(1) + '" width="3" height="' + hs.toFixed(1) + '" fill="#2f6fe0"/>';
+            s += '<rect x="' + (xc - 0.4 * k2).toFixed(1) + '" y="' + (yt + hs - tf).toFixed(1) + '" width="' + (0.8 * k2).toFixed(1) + '" height="' + tf.toFixed(1) + '" fill="#2f6fe0"/>';
+          } else {
+            s += Pg(o.beam, xc, y1 + hd * k2, k2, "#cfd5dc");
+          }
+        }
+        if (o.T.kind === "bip") {
+          var xa = x1 + (o.s / 2) * k2, xb = xa + o.s * k2, ym = y1 + hd * k2 + 5 + o.h * k2 * 0.5;
+          s += '<path d="M' + xa.toFixed(1) + " " + ym.toFixed(1) + " H" + xb.toFixed(1) + '" stroke="#2f6fe0" stroke-width="2.5"/>';
+        }
+        if (o.n >= 2) {
+          var xA = x1 + (o.s / 2) * k2, xB = xA + o.s * k2, yy = y1 + hmax * k2 + 24;
+          s += cote(xA, yy, xB, yy) + txt((xA + xB) / 2, yy + 20, "espacement " + fmt(o.s, 2) + " m");
+        }
+      }
+      var htot = (o.T.kind === "bip") ? (o.hd + o.h) : o.h;
+      var ybot = y1 + htot * k2 + (o.T.kind === "bip" ? 5 : 0);
+      s += cote(x1 + Wd * k2 + 22, y1, x1 + Wd * k2 + 22, ybot) + txt(x1 + Wd * k2 + 32, (y1 + ybot) / 2 + 7, fmt(htot, 2) + " m", "#8a6a1f", "start", "lbl-b");
+      s += cote(x1, 262, x1 + Wd * k2, 262, "#141a26") + txt(350, 254, "largeur " + fmt(Wd, 2) + " m", "#141a26");
+      var Lr = Math.min(o.Lr, Wd);
+      s += '<rect x="' + (350 - Lr * k2 / 2).toFixed(1) + '" y="' + (y1 - 6) + '" width="' + (Lr * k2).toFixed(1) + '" height="6" fill="#3c4049"/>';
+      s += txt(20, 290, o.T.nom + " — coupe à l'échelle" + (o.T.kind === "bip" ? " (charpente en bleu)" : ""), "#4d5566", "start");
+    }
+    svg.innerHTML = s;
+  }
+
+  function updTab() {
+    var type = ($("c6t-type") || {}).value || "vipp";
+    var L = Math.max(1, num("c6t-L", 30)), W = Math.max(2, num("c6t-W", 10.5)), Lr = Math.max(1, num("c6t-Lc", 7)), H = Math.max(1, num("c6t-H", 5));
+    var hl = $("c6t-Hl"); if (hl) hl.classList.toggle("c6-hide", type !== "picf");
+    var o = tablier(type, L, W, Lr, H), T = o.T;
+    set("c6t-rng", T.kind === "picf" ? "L/32 + 0,125 = " + fmt(o.hc, 3) + " m" : fmt(o.hmin, 2) + " – " + fmt(o.hmax, 2) + " m");
+    set("c6t-h", fmt(o.h, 2) + " m" + (T.kind === "picf" ? "" : " (L/" + fmt(L / o.h, 1) + ")"));
+    set("c6t-n", o.n ? o.n + " × " + fmt(o.s, 2) + " m" : "— (tablier plein)");
+    set("c6t-gs", fmt(o.gs, 2) + " t/ml");
+    set("c6t-gq", o.sup ? fmt(o.sup.tot, 2) + " t/ml" : "remblai en plus");
+    set("c6t-G", fmt(o.G, 2) + " t/ml ≈ " + fmt(o.G * 9.81, 0) + " kN/m");
+    var st;
+    if (T.kind === "picf") {
+      st = "e = " + fmt(L, 2) + "/32 + 0,125 = " + fmt(o.hc, 3) + " m → arrondi au 5 cm : <b>" + fmt(o.h, 2) + " m</b>. Aire du cadre " + fmt(o.A, 2) + " m² par mètre → " + fmt(o.gs, 2) + " t/ml.";
+    } else {
+      st = "Élancement " + T.txt + " : " + fmt(o.hc, 3) + " m → <b>" + fmt(o.h, 2) + " m</b>. ";
+      st += T.kind === "bip" ? "Dalle " + fmt(o.hd, 2) + " m + acier estimé " + fmt(2 * o.steel * 7.85 * 1.15, 2) + " t/ml. " : "Structure " + fmt(o.A, 3) + " m² × 2,5" + (T.kind === "dalle" ? "" : " × 1,05") + " = " + fmt(o.gs, 2) + " t/ml. ";
+      st += "Superstructures = " + fmt(100 * o.sup.tot / o.G, 0) + " % de G ; G L²/8 ≈ " + fmt(o.G * L * L / 8, 0) + " t·m.";
+    }
+    if (o.warn.length) st += '<span class="w">' + o.warn.join(" ") + "</span>";
+    set("c6t-steps", st);
+    drawSection(o);
+  }
+
+  /* ── Calculatrice 2 : pile et semelle ── */
+  function pile(H, N, sadm, es) {
+    var r = H / 7.5, D = clamp(Math.ceil(r * 10 - 1e-9) / 10, 0.8, 1.5);
+    var q = sadm * 1000 - 25 * es, Areq = q > 0 ? N / q : Infinity, B = 3.3, Ls = 3.0;
+    if (Areq > B * Ls) { var f = Math.sqrt(Areq / (B * Ls)); B = Math.ceil(B * f * 10 - 1e-9) / 10; Ls = Math.ceil(Ls * f * 10 - 1e-9) / 10; }
+    var sig = (N + 25 * es * B * Ls) / (B * Ls) / 1000;
+    return { r: r, D: D, over: r > 1.5, Areq: Areq, B: B, Ls: Ls, sig: sig, ok: sig <= sadm + 1e-9 };
+  }
+  function drawPile(H, o, es) {
+    var svg = $("c6p-svg"); if (!svg) return;
+    var k = Math.min(230 / (H + es + 1.0), 40), yg = 300, xc = 230;
+    var s = '<defs><pattern id="c6pc-e" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#ead7bd"/><circle cx="3" cy="3" r="1" fill="#c9a77a"/></pattern><marker id="c6pc-ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b8902f"/></marker><marker id="c6pc-r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker></defs>';
+    var ys = yg - es * k, yf = ys - H * k, bc = Math.max(1.6, o.D + 0.6);
+    s += '<rect x="0" y="' + (ys - 10).toFixed(1) + '" width="470" height="' + (330 - ys + 10).toFixed(1) + '" fill="url(#c6pc-e)"/>';
+    s += '<rect x="' + (xc - o.B * k / 2).toFixed(1) + '" y="' + ys.toFixed(1) + '" width="' + (o.B * k).toFixed(1) + '" height="' + (es * k).toFixed(1) + '" fill="#9aa3ae" stroke="#5d6672"/>';
+    s += '<rect x="' + (xc - o.D * k / 2).toFixed(1) + '" y="' + yf.toFixed(1) + '" width="' + (o.D * k).toFixed(1) + '" height="' + (H * k).toFixed(1) + '" fill="#cfd5dc" stroke="#6e7884"/>';
+    s += '<rect x="' + (xc - bc * k / 2).toFixed(1) + '" y="' + (yf - 0.8 * k).toFixed(1) + '" width="' + (bc * k).toFixed(1) + '" height="' + (0.8 * k).toFixed(1) + '" fill="#dfe3e8" stroke="#6e7884"/>';
+    var xr = xc + Math.max(o.B, bc) * k / 2 + 22;
+    s += '<path d="M' + xr.toFixed(1) + " " + yf.toFixed(1) + " V" + ys.toFixed(1) + '" stroke="#b8902f" stroke-width="1.6" marker-start="url(#c6pc-ar)" marker-end="url(#c6pc-ar)"/>';
+    s += '<text x="' + (xr + 10).toFixed(1) + '" y="' + ((yf + ys) / 2 + 6).toFixed(1) + '" class="lbl-b" style="fill:#8a6a1f">H = ' + fmt(H, 2) + " m</text>";
+    s += '<text x="' + (xc - o.D * k / 2 - 10).toFixed(1) + '" y="' + ((yf + ys) / 2).toFixed(1) + '" text-anchor="end" class="lbl-b" style="fill:#0b6e5c">Ø ' + fmt(o.D, 2) + " m</text>";
+    s += '<path d="M' + (xc - o.B * k / 2).toFixed(1) + " " + (ys + es * k + 12).toFixed(1) + " H" + (xc + o.B * k / 2).toFixed(1) + '" stroke="#b8902f" stroke-width="1.6" marker-start="url(#c6pc-ar)" marker-end="url(#c6pc-ar)"/>';
+    s += '<text x="' + xc + '" y="' + Math.min(324, ys + es * k + 32).toFixed(1) + '" text-anchor="middle" class="lbl-s" style="fill:#8a6a1f">B = ' + fmt(o.B, 2) + " m</text>";
+    s += '<path d="M' + xc + " " + (yf - 0.8 * k - 40).toFixed(1) + " V" + (yf - 0.8 * k - 4).toFixed(1) + '" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c6pc-r)"/>';
+    s += '<text x="' + (xc + 12) + '" y="' + (yf - 0.8 * k - 22).toFixed(1) + '" class="lbl-b" style="fill:#a33d22">N</text>';
+    var kp = Math.min(200 / Math.max(o.B, o.Ls), 46), xp = 620, yp = 160;
+    s += '<text x="' + xp + '" y="34" text-anchor="middle" class="lbl-b">Semelle en plan</text>';
+    s += '<rect x="' + (xp - o.B * kp / 2).toFixed(1) + '" y="' + (yp - o.Ls * kp / 2).toFixed(1) + '" width="' + (o.B * kp).toFixed(1) + '" height="' + (o.Ls * kp).toFixed(1) + '" fill="' + (o.ok ? "#9aa3ae" : "#e9a08f") + '" stroke="#5d6672"/>';
+    s += '<circle cx="' + xp + '" cy="' + yp + '" r="' + (o.D * kp / 2).toFixed(1) + '" fill="#cfd5dc" stroke="#6e7884"/>';
+    s += '<text x="' + xp + '" y="' + (yp + o.Ls * kp / 2 + 26).toFixed(1) + '" text-anchor="middle" class="lbl-s">' + fmt(o.B, 2) + " × " + fmt(o.Ls, 2) + " m</text>";
+    s += '<text x="' + xp + '" y="' + (yp + o.Ls * kp / 2 + 50).toFixed(1) + '" text-anchor="middle" class="lbl-b" style="fill:' + (o.ok ? "#0b6e5c" : "#a33d22") + '">σ = ' + fmt(o.sig, 3) + " MPa</text>";
+    svg.innerHTML = s;
+  }
+  function updPile() {
+    var H = Math.max(0.5, num("c6p-H", 7.2)), N = Math.max(0, num("c6p-N", 6000)), sa = Math.max(0.01, num("c6p-s", 0.4)), es = Math.max(0.3, num("c6p-e", 1));
+    var o = pile(H, N, sa, es);
+    set("c6p-r", fmt(o.r, 3) + " m");
+    set("c6p-D", fmt(o.D, 2) + " m");
+    set("c6p-A", isFinite(o.Areq) ? fmt(o.Areq, 2) + " m²" : "impossible");
+    set("c6p-BL", fmt(o.B, 2) + " × " + fmt(o.Ls, 2) + " m");
+    set("c6p-sig", fmt(o.sig, 3) + " MPa");
+    var st = "Fût : H/7,5 = " + fmt(o.r, 3) + " m → arrondi au 10 cm, borné à 0,80–1,50 m : <b>Ø " + fmt(o.D, 2) + " m</b>. ";
+    st += "Semelle : A ≥ N/(σ<sub>adm</sub> − 25 e) = " + (isFinite(o.Areq) ? fmt(o.Areq, 2) : "∞") + " m² (minimum 3,3 × 3,0 = 9,90 m²) ; σ = " + fmt(o.sig * 1000, 0) + " kPa " + (o.ok ? "≤ " : "&gt; ") + fmt(sa * 1000, 0) + " kPa.";
+    if (o.over) st += '<span class="w">H/7,5 dépasse 1,50 m : prévoir plusieurs fûts, un voile ou une section creuse.</span>';
+    else st += '<span class="ok">Fût dans la plage usuelle 0,80–1,50 m.</span>';
+    if (o.B > 8) st += '<span class="w">Semelle très grande : envisager des fondations profondes.</span>';
+    set("c6p-steps", st);
+    drawPile(H, o, es);
+  }
+
+  function bind(ids, fn) { ids.forEach(function (id) { var e = $(id); if (e) { e.addEventListener("input", fn); e.addEventListener("change", fn); } }); }
+  function pair(a, b, fn) {
+    var ea = $(a), eb = $(b); if (!ea || !eb) return;
+    ea.addEventListener("input", function () { eb.value = ea.value; fn(); });
+    eb.addEventListener("input", function () { var v = parseFloat(eb.value); if (isFinite(v)) ea.value = v; fn(); });
+  }
+  pair("c6t-Lr", "c6t-L", updTab);
+  var DEF = { picf: 8, da1: 15, da2: 15, da3: 15, dp1: 25, dp2: 25, ppba: 16, prad: 20, vipp: 30, bp1: 50, bp2: 50 };
+  var ty = $("c6t-type");
+  if (ty) ty.addEventListener("change", function () { var v = DEF[ty.value]; if (v) { $("c6t-L").value = v; $("c6t-Lr").value = v; } updTab(); });
+  bind(["c6t-type", "c6t-W", "c6t-Lc", "c6t-H"], updTab);
+  pair("c6p-Hr", "c6p-H", updPile); pair("c6p-Nr", "c6p-N", updPile);
+  bind(["c6p-s", "c6p-e"], updPile);
+  try { updTab(); } catch (e) { console.warn(e); }
+  try { updPile(); } catch (e) { console.warn(e); }
+  window.__c6 = { tablier: tablier, pile: pile };
+})();
+</script>
+</body>
+</html>
