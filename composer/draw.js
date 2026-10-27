@@ -23,6 +23,8 @@
   const text = (P, p, s, o) => P.push(Object.assign({ k: 'text', p, s, ht: 2.5, anchor: 'middle', lay: 'texte', dy: 0 }, o || {}));
   const dim = (P, a, b, dir, off, s) => P.push({ k: 'dim', a, b, dir, off, s });
 
+  /* étiquette de sélection (data-tag) des primitives ajoutées depuis l'indice i */
+  const tagFrom = (P, i, t) => { for (let k = i; k < P.length; k++) if (!P[k].tag) P[k].tag = t; };
   const pickScale = (len, maxmm, list) => list.find((e) => len / e * 1000 <= maxmm) || list[list.length - 1];
 
   /* ───────── Élévation longitudinale ───────── */
@@ -66,6 +68,7 @@
     });
 
     // ── tablier ──
+    const i0 = P.length;
     const deckPiece = (x0, x1, y0, y1, lay) => rect(P, x0, y0, x1, y1, lay);
     if (M.cont) {
       if (fam === 'mixte') { deckPiece(-dab, Ltot + dab, 0, yInner, 'beton'); deckPiece(-dab + 0.2, Ltot + dab - 0.2, yInner, -h, 'acier'); }
@@ -84,6 +87,7 @@
       }
     }
 
+    tagFrom(P, i0, 'tablier');
     // appareils d'appui
     M.lines.forEach((l) => {
       rect(P, l.x - 0.22, -h, l.x + 0.22, -h - 0.12, 'app');
@@ -92,7 +96,7 @@
 
     // ── appuis ──
     M.supports.forEach((s) => {
-      const g = s.geo, yft = ySeat - s.H;
+      const g = s.geo, yft = ySeat - s.H, i1 = P.length;
       let xf = s.x;
       if (s.kind === 'pile') {
         let yTopFut = ySeat;
@@ -138,10 +142,11 @@
       // axe et repère
       line(P, [s.x, 1.2 + mm(4)], [s.x, yft - (f.mode === 'pieux' ? 0 : f.e + 0.3)], 'axe');
       text(P, [s.x, 1.2 + mm(6)], s.id, { ht: 3, lay: 'titre', bold: true });
+      tagFrom(P, i1, s.id);
     });
 
     // ── cotes ──
-    for (let i = 0; i < n; i++) dim(P, [xs[i], 0], [xs[i + 1], 0], 'h', 9, frn(xs[i + 1] - xs[i]));
+    for (let i = 0; i < n; i++) { dim(P, [xs[i], 0], [xs[i + 1], 0], 'h', 9, frn(xs[i + 1] - xs[i])); P[P.length - 1].tag = 'T' + (i + 1); }
     if (n > 1) dim(P, [0, 0], [Ltot, 0], 'h', 17, frn(Ltot));
     dim(P, [xs[1] * 0.25, 0], [xs[1] * 0.25, -h], 'v', 4, frn(h));
     M.supports.filter((s) => s.kind === 'pile').forEach((s) => {
@@ -161,6 +166,7 @@
     const ech = pickScale(W + 4, 190, [20, 25, 50, 75, 100, 200]);
     const mm = (v) => v * ech / 1000;
     sec.polys.forEach((p) => poly(P, p.pts, p.mat === 'acier' ? 'acier' : (p.role === 'poutre' ? 'prefa' : 'beton')));
+    tagFrom(P, 0, 'tablier');
     if (M.T.famille === 'poutres') {
       const b = sec.entraxe, x0 = -W / 2 + b / 2;
       for (let i = 0; i < sec.nbPoutres - 1; i++) {
@@ -173,6 +179,7 @@
       rect(P, -a / 2 + 0.02, yt, a / 2 - 0.02, yt - Math.max(0.4, (yt - yb) * 0.55), 'vu');
     }
     // équipements
+    const iEq = P.length;
     let top = 0;
     if (rail) {
       const ax = M.PT.axesVoies, xa = Math.min.apply(null, ax) - 2.3, xb = Math.max.apply(null, ax) + 2.3;
@@ -223,6 +230,7 @@
     dim(P, [W / 2, 0], [W / 2, -h], 'v', 8, frn(h));
     // appareils sur la pile
     const ySeat = -(h + 0.30);
+    tagFrom(P, iEq, 'equip');
     sec.bear.forEach((x) => { rect(P, x - 0.20, -h, x + 0.20, -h - 0.12, 'app'); rect(P, x - 0.3, -h - 0.12, x + 0.3, ySeat, 'beton'); });
 
     // pile la plus haute vue de face
@@ -230,6 +238,7 @@
     let ref = null;
     if (piles.length) {
       ref = piles.reduce((a, b) => (b.H > a.H ? b : a));
+      var iP = P.length;
       const g = ref.geo, hch = g.ch ? g.ch.h : 0;
       const cut = ref.H - hch > 7.5;                 // fût tronqué au dessin
       const Hd = cut ? hch + 5.0 : ref.H, yft = ySeat - Hd;
@@ -277,6 +286,7 @@
       const xr = Math.max(xd, g.ch ? g.ch.L / 2 : 0) + 0.4;
       g.parts.forEach((pt, i) => text(P, [xr, ySeat - hch - 0.6], pt.des, { ht: 2.1, anchor: 'start', dy: -i * 4.2 }));
     }
+    if (ref) tagFrom(P, iP, ref.id);
     // le sol se dessine sous le reste
     P.sort((a, b) => (a.lay === 'sol' ? -1 : 0) - (b.lay === 'sol' ? -1 : 0));
     const titre = 'COUPE TRANSVERSALE' + (ref ? ' SUR PILE ' + ref.id : '') + ' — échelle 1/' + ech;
@@ -285,20 +295,20 @@
 
   /* ───────── Rendu SVG ───────── */
   const STY = {
-    beton: 'fill:#ece6d6;stroke:#2b2e36;stroke-width:1',
-    prefa: 'fill:#e3dcc8;stroke:#2b2e36;stroke-width:1',
-    acier: 'fill:#9db2c9;stroke:#24364c;stroke-width:1',
-    acierL: 'fill:none;stroke:#24364c;stroke-width:1.4;stroke-dasharray:6 3',
+    beton: 'fill:#e4e8ee;stroke:#2a3240;stroke-width:1',
+    prefa: 'fill:#d9e1ec;stroke:#2a3240;stroke-width:1',
+    acier: 'fill:#9fb7d6;stroke:#1f3a5f;stroke-width:1',
+    acierL: 'fill:none;stroke:#1f3a5f;stroke-width:1.4;stroke-dasharray:6 3',
     vu: 'fill:none;stroke:#7d8494;stroke-width:.8;stroke-dasharray:4 2.5',
-    axe: 'fill:none;stroke:#b3261e;stroke-width:.7;stroke-dasharray:12 3 2 3',
-    tn: 'fill:none;stroke:#6b4f12;stroke-width:1.3',
+    axe: 'fill:none;stroke:#c92a2a;stroke-width:.7;stroke-dasharray:12 3 2 3',
+    tn: 'fill:none;stroke:#7a5a1e;stroke-width:1.3',
     sol: 'fill:url(#HATCH);stroke:none',
-    remblai: 'fill:#f2ead4;stroke:#a88a4a;stroke-width:.8',
-    pieu: 'fill:#efe9da;stroke:#2b2e36;stroke-width:.9;stroke-dasharray:5 2',
+    remblai: 'fill:#f3eedf;stroke:#a89060;stroke-width:.8',
+    pieu: 'fill:#eef1f5;stroke:#2a3240;stroke-width:.9;stroke-dasharray:5 2',
     app: 'fill:#1f2430;stroke:#1f2430;stroke-width:.6',
-    equip: 'fill:#d9dde4;stroke:#454b58;stroke-width:.8',
-    trottoir: 'fill:#e1dccd;stroke:#454b58;stroke-width:.8',
-    ballast: 'fill:#cfc6b4;stroke:#6e6455;stroke-width:.8',
+    equip: 'fill:#cfd8e3;stroke:#3d4a5c;stroke-width:.8',
+    trottoir: 'fill:#dde3ea;stroke:#3d4a5c;stroke-width:.8',
+    ballast: 'fill:#cdc6b8;stroke:#6e6455;stroke-width:.8',
   };
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -329,11 +339,12 @@
         if (p.k === 'poly') {
           const d = p.pts.map((q, i) => (i ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1)).join('') + (p.closed && p.pts.length > 2 ? 'Z' : '');
           if (p.lay !== 'sol') p.pts.forEach((q) => g(X(q[0]), Y(q[1])));
-          out.push(`<path d="${d}" style="${(STY[p.lay] || STY.vu).replace('#HATCH', '#' + id + '-h')}${p.pts.length === 2 || !p.closed ? ';fill:none' : ''}"/>`);
+          out.push(`<path${p.tag ? ` data-tag="${p.tag}"` : ''} d="${d}" style="${(STY[p.lay] || STY.vu).replace('#HATCH', '#' + id + '-h')}${p.pts.length === 2 || !p.closed ? ';fill:none' : ''}"/>`);
         } else if (p.k === 'text') {
           const fs = p.ht * kp;
-          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="600"' : '') + (p.lay === 'titre' ? ' fill="#8a6b1f"' : ''));
+          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="600"' : '') + (p.lay === 'titre' ? ' fill="#1f4fa8"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
         } else if (p.k === 'dim') {
+          if (opt.dims === false) return;
           const off = p.off * kp, fs = 2.2 * kp, tk = 3;
           if (p.dir === 'h') {
             const ya = Y(Math.max(p.a[1], p.b[1])) - off, x1 = X(p.a[0]), x2 = X(p.b[0]);
@@ -363,8 +374,8 @@
     const geoW = bw * s, extra = (r.ext[2] - r.ext[0]) - geoW;
     if (extra > 0) { s = Math.max(0.5, (Wpx - 2 * pad - extra) / bw); r = render(s); }
     const e = r.ext, vw = e[2] - e[0] + 2 * pad, vh = e[3] - e[1] + 2 * pad;
-    const defs = `<defs><pattern id="${id}-h" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f6f1e4"/><line x1="0" y1="0" x2="0" y2="7" stroke="#c9b98f" stroke-width="1"/></pattern>`
-      + `<style>text{font-family:Outfit,Arial,sans-serif;fill:#14171f}.dx{stroke:#8a6b1f;stroke-width:.5;fill:none}.dl{stroke:#8a6b1f;stroke-width:.8;fill:none}.dt{fill:#6b4f12}</style></defs>`;
+    const defs = `<defs><pattern id="${id}-h" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f7f4ec"/><line x1="0" y1="0" x2="0" y2="7" stroke="#c9b98f" stroke-width="1"/></pattern>`
+      + `<style>text{font-family:'Segoe UI',Outfit,Arial,sans-serif;fill:#14171f}.dx{stroke:#2f6f3e;stroke-width:.5;fill:none}.dl{stroke:#2f6f3e;stroke-width:.8;fill:none}.dt{fill:#1f5a2e}</style></defs>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(e[0] - pad).toFixed(1)} ${(e[1] - pad).toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(0)}" height="${vh.toFixed(0)}" role="img">${defs}${r.out.join('')}</svg>`;
   }
 
