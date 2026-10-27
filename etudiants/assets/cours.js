@@ -17,7 +17,6 @@
     { id: "ch6", n: "6", t: "Calcul des appuis & fondations" },
     { id: "ch7", n: "7", t: "Analyse sismique des ponts" },
     { id: "ch8", n: "8", t: "Dimensionnement & ferraillage" },
-    { id: "td", n: "TD", t: "TD & examens corrigés" },
     { id: "formulaire", n: "F", t: "Formulaire de poche" }
   ];
   const ROOT = "../../";            // racine du site depuis /etudiants/ponts/
@@ -69,7 +68,7 @@
     if ($(".site-foot")) return;
     document.body.append(el("footer", { class: "site-foot" }, `
       <div class="in">
-        <p><span class="logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; Espace étudiants — Cours de ponts, K. Lebbar</p>
+        <p><span class="logo">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; Espace étudiants — Cours de ponts</p>
         <p><a href="${ROOT}etudiants.html">Tous les cours</a> &nbsp;·&nbsp; <a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; © 2026 BridgeAI Studios</p>
       </div>`));
   }
@@ -81,7 +80,7 @@
     if (!side || !art) return;
     let html = `<h4>Cours de ponts</h4><ul class="chapters">`;
     COURS.forEach(c => {
-      html += `<li><a href="${c.id}.html" class="${c.id === cur ? "cur" : ""}"><small>${c.n === "TD" || c.n === "F" ? c.n : "Chapitre " + c.n}</small>${c.t}</a></li>`;
+      html += `<li><a href="${c.id}.html" class="${c.id === cur ? "cur" : ""}"><small>${c.n === "F" ? c.n : "Chapitre " + c.n}</small>${c.t}</a></li>`;
     });
     html += `</ul><h4>Dans ce chapitre</h4><ul class="toc">`;
     let k = 0;
@@ -120,7 +119,7 @@
     const art = $("article");
     if (!art || idx < 0 || $(".ch-nav")) return;
     const p = COURS[idx - 1], n = COURS[idx + 1];
-    const lab = c => (c.n === "TD" || c.n === "F") ? c.n : "Chapitre " + c.n;
+    const lab = c => (c.n === "F") ? c.n : "Chapitre " + c.n;
     art.append(el("div", { class: "ch-nav" },
       (p ? `<a href="${p.id}.html" class="prev"><small>← ${lab(p)}</small><span>${p.t}</span></a>` : `<a href="${ROOT}etudiants.html" class="prev"><small>← Retour</small><span>Espace étudiants</span></a>`) +
       (n ? `<a href="${n.id}.html" class="next"><small>${lab(n)} →</small><span>${n.t}</span></a>` : `<a href="${ROOT}etudiants.html" class="next"><small>Fin du cours →</small><span>Espace étudiants</span></a>`)));

@@ -329,7 +329,7 @@
     <div class="calc-fig"><svg id="c4a-svg" viewBox="0 0 960 250" role="img" aria-label="Position sur la courbe A(l)"></svg></div>
   </div></div>
 
-  <div class="box ex"><span class="t">Exemple chiffré : pont du TD (L = 25 m, L<sub>c</sub> = 7 m)</span>
+  <div class="box ex"><span class="t">Exemple chiffré : pont de référence (L = 25 m, L<sub>c</sub> = 7 m)</span>
     <p>1re classe, n<sub>v</sub> = 2, V = 3,50 m. Pour le moment à mi-travée d'une travée isostatique, la ligne d'influence est positive sur toute la portée : l = 25 m.</p>
     <p><span class="tex">A(25) = 230 + 36\,000/37</span> = <span class="tex">1\,203\ \text{kg/m}^2</span> ; deux voies chargées : a<sub>1</sub> = 1 → A<sub>1</sub> = 1 203 kg/m² (&gt; 400 − 5 = 395) ; a<sub>2</sub> = 3,50/3,50 = 1 → A<sub>2</sub> = 1 203 kg/m² ≈ 11,8 kN/m².</p>
     <p>Charge linéique : <span class="tex">q_A = 1\,203 \times 7{,}00</span> = <span class="tex">8\,421\ \text{kg/m} \approx 8{,}42\ \text{t/ml}</span>, d'où <span class="tex">M_A = q_A L^2/8 \approx 657{,}9\ \text{t·m}</span> à mi-travée. Avec une seule voie chargée (a<sub>1</sub> = 1) on obtiendrait la moitié : le cas 2 voies est le plus défavorable pour la flexion générale.</p>
@@ -571,7 +571,7 @@
       <circle cx="427.5" cy="241.9" r="5" fill="#d9472b"/><circle cx="427.5" cy="244.8" r="4" fill="#7a52c7"/>
       <path d="M427.5 236 L470 160" stroke="#14171f" stroke-width=".8"/>
       <rect x="472" y="118" width="250" height="60" rx="8" fill="#fff" stroke="#e3dfd4"/>
-      <text x="484" y="140" class="svg-small">L = 25 m, G = 625 t (pont du TD)</text>
+      <text x="484" y="140" class="svg-small">L = 25 m, G = 625 t (pont de référence)</text>
       <text x="484" y="158" class="svg-small" style="fill:#d9472b">Bc 2 files : δ = 1,0968</text>
       <text x="484" y="174" class="svg-small" style="fill:#7a52c7">Mc120 : δ = 1,0920</text>
       <g class="svg-small"><text x="640" y="88" style="fill:#d9472b">— Bc, 2 files (bc = 1,10)</text><text x="640" y="104" style="fill:#7a52c7">— Mc120 (S = 110 t)</text><text x="640" y="72" style="fill:#a8842a">- - 1er terme seul : 0,4/(1 + 0,2 L)</text></g>
@@ -609,7 +609,7 @@
     <div class="calc-fig"><svg id="c4d-svg" viewBox="0 0 960 240" role="img" aria-label="Courbe de delta en fonction de la portée"></svg></div>
   </div></div>
 
-  <div class="box tip"><span class="t">Vérifiez la calculatrice sur le TD</span>
+  <div class="box tip"><span class="t">Vérifiez la calculatrice sur le pont de référence</span>
     L = 25 m, G = 625 t : Bc 1 file → S = 72 t, δ = 1,0835 ; Bc 2 files → S = 132 t, δ = 1,0968 ; Mc120 → S = 110 t, δ = 1,0920.
   </div>
   <div class="box warn"><span class="t">Piège : δ et le système A</span>
@@ -825,7 +825,7 @@
   </figure>
   <div class="formula"><span class="lbl">Freinage du système A (fascicule 61)</span>
     <span class="texd">F_A = \frac{A_2 \cdot S}{20 + 0{,}0035\,S}</span>
-    <div class="where">S = surface chargée (m²), A<sub>2</sub> en kg/m² (ou t/m²). Pour le pont du TD : S = 7 × 25 = 175 m², A<sub>2</sub> = 1 203 kg/m² → F<sub>A</sub> = 1 203 × 175 / 20,61 ≈ 10 200 kg ≈ <b>10,2 t</b>. Système Bc : <b>30 t</b> (un seul camion freine). On retient le plus défavorable des deux, sans δ.</div>
+    <div class="where">S = surface chargée (m²), A<sub>2</sub> en kg/m² (ou t/m²). Pour le pont de référence : S = 7 × 25 = 175 m², A<sub>2</sub> = 1 203 kg/m² → F<sub>A</sub> = 1 203 × 175 / 20,61 ≈ 10 200 kg ≈ <b>10,2 t</b>. Système Bc : <b>30 t</b> (un seul camion freine). On retient le plus défavorable des deux, sans δ.</div>
   </div>
   <p>La <b>force centrifuge</b> n'existe que pour les ponts <b>courbes en plan</b> : le règlement la définit à partir du système Bc et du rayon de courbure ; elle est négligeable pour les grands rayons. Les <b>gradients thermiques</b> (face supérieure plus chaude que la face inférieure) créent des moments dans les ouvrages hyperstatiques ; ils sont définis par le règlement de calcul (BPEL ou Eurocode 1-5).</p>
 </section>
@@ -893,7 +893,7 @@
   </table></div>
   <p>Lorsque la charge permanente est favorable (soulèvement, stabilité), on la prend avec un coefficient 1,0 au lieu de 1,35. Le CPS et le règlement de calcul précisent les combinaisons avec le vent, la température et le séisme. En <b>Eurocode</b> (EN 1990, annexe A2) : ELU <span class="tex">1{,}35\,G + 1{,}35\,(TS + UDL)</span> ; ELS caractéristique <span class="tex">G + (TS + UDL)</span>.</p>
 
-  <h3>Exemple complet : le pont du TD</h3>
+  <h3>Exemple complet : le pont de référence</h3>
   <p>Données : pont isostatique de portée <b>L = 25 m</b>, G = 20 t/ml de structure + 5 t/ml de superstructures (p = 25 t/ml), <b>L<sub>c</sub> = 7 m</b> (bordures), on cherche le moment à mi-travée.</p>
   <div class="tbl-wrap"><table class="tbl">
     <tr><th>Étape</th><th>Calcul</th><th class="num">Résultat</th></tr>

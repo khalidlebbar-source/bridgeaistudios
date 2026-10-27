@@ -103,7 +103,7 @@
     <figcaption><b>Figure 5.1 —</b> La chaîne du calcul d'un tablier. Les étapes 3 et 5 font l'objet de ce chapitre ; l'étape 2 a été vue au chapitre 4, le dimensionnement final au chapitre 8.</figcaption>
   </figure>
   <div class="box tip"><span class="t">Le fil rouge du cours</span>
-    Pour notre <b>pont routier sur voie ferrée</b> (voie portée 1,5 + 7 + 1,5 = 10 m), le prédimensionnement a retenu un tablier à poutres de portée L ≈ 25 m, de hauteur ≈ L/14 ≈ 1,80 m, avec 4 poutres espacées de 2,50 m et un hourdis de 20 à 25 cm. C'est exactement le cas du <b>TD n° 1</b>, que nous déroulons dans tout le chapitre.
+    Pour notre <b>pont routier sur voie ferrée</b> (voie portée 1,5 + 7 + 1,5 = 10 m), le prédimensionnement a retenu un tablier à poutres de portée L ≈ 25 m, de hauteur ≈ L/14 ≈ 1,80 m, avec 4 poutres espacées de 2,50 m et un hourdis de 20 à 25 cm. C'est ce tablier que nous déroulons comme exemple dans tout le chapitre.
   </div>
 </section>
 
@@ -188,7 +188,7 @@
     <figcaption><b>Figure 5.3 —</b> Sous une charge concentrée, le moment est un triangle et l'effort tranchant fait un <b>saut égal à P</b> au droit de la charge. Pour plusieurs charges, on superpose : le diagramme devient une ligne brisée dont les sommets sont sous les charges.</figcaption>
   </figure>
 
-  <div class="box ex"><span class="t">Exemple du TD n° 1 — charge permanente p = 25 t/ml, L = 25 m</span>
+  <div class="box ex"><span class="t">Exemple — charge permanente p = 25 t/ml, L = 25 m</span>
     Le tablier pèse G = 20 t/ml et les superstructures (revêtement, trottoirs, corniches, dispositifs de retenue) Q<sub>sup</sub> = 5 t/ml, soit une charge permanente totale p = 25 t/ml. On calcule M et T dans les sections usuelles 0 ; 0,1L ; … ; 0,5L (par symétrie, inutile d'aller plus loin).
     <div class="tbl-wrap"><table class="tbl">
       <tr><th>Section</th><th class="num">x (m)</th><th class="num">M = p x (L−x)/2 (t.m)</th><th class="num">T = p (L/2 − x) (t)</th><th class="num">Roue Br 10 t : P x (L−x)/L (t.m)</th></tr>
@@ -417,9 +417,9 @@
       <text x="600" y="250" class="svg-label">c₁ / c₂ = x / (L − x)</text>
       <text x="600" y="272" class="svg-small">ici : c₁ = 6,10 × 0,3 = 1,83 m</text>
     </svg>
-    <figcaption><b>Figure 5.6 —</b> Position la plus défavorable d'une charge répartie de longueur c : les deux extrémités « voient » la même ordonnée de LI. C'est la règle utilisée dans l'examen 2016 pour le char Mc120 (L = 20 m).</figcaption>
+    <figcaption><b>Figure 5.6 —</b> Position la plus défavorable d'une charge répartie de longueur c : les deux extrémités « voient » la même ordonnée de LI. Exemple d'application : le char Mc120 sur L = 20 m.</figcaption>
   </figure>
-  <div class="box ex"><span class="t">Mc120 sur L = 20 m (examen du 19/02/2016)</span>
+  <div class="box ex"><span class="t">Exemple : Mc120 sur L = 20 m</span>
     q = 110 / 6,10 = 18,03 t/m. En x = 0,5L = 10 m, la chenille est centrée ; le sommet de la LI vaut L/4 = 5 m et ses pentes ± 1/2, donc aire = c × y<sub>sommet</sub> − c²/8 = 6,10 × 5 − 6,10²/8 = 25,85 m², d'où M = 18,033 × 25,85 = <b>466,12 t.m</b> (hors δ). Avec δ = 1,1205 : <b>522,3 t.m</b>. En appliquant la règle dans les autres sections : 167,81 (0,1L) ; 298,32 (0,2L) ; 391,55 (0,3L) ; 447,48 (0,4L) t.m.
   </div>
 
@@ -765,13 +765,13 @@
 
 <!-- ═══════════════════════ 5.9 ═══════════════════════ -->
 <section>
-  <h2><span class="n">5.9</span>Combinaisons et récapitulatif du TD</h2>
+  <h2><span class="n">5.9</span>Combinaisons et récapitulatif</h2>
   <p>Les sollicitations de chaque cas de charge, multipliées par leurs coefficients (a1, a2, bc, bt, δ), sont combinées selon le règlement. Pour notre tablier (règlement de charges du fascicule 61 titre II et calcul BAEL/BPEL), les combinaisons usuelles sont :</p>
   <div class="formula"><span class="lbl">Combinaisons usuelles (pratique BAEL/BPEL)</span>
     <span class="texd">\text{ELU} : 1{,}35\,G + 1{,}6\,(Q_{A\ \text{ou}\ B} + Q_{\text{tr}}) \quad\text{ou}\quad 1{,}35\,G + 1{,}35\,Q_{\text{Mc}} \qquad \text{ELS} : G + 1{,}2\,(Q_{A\ \text{ou}\ B} + Q_{\text{tr}}) \quad\text{ou}\quad G + Q_{\text{Mc}}</span>
     <div class="where">Q<sub>tr</sub> = trottoirs (non cumulés avec les charges militaires). Les coefficients exacts sont ceux du CPS du projet ; en Eurocode, on prend 1,35 G + 1,35 (TS + UDL) à l'ELU.</div>
   </div>
-  <div class="box ex"><span class="t">Récapitulatif du TD n° 1 — tablier complet, L = 25 m, 1<sup>re</sup> classe, 2 voies (Lc = 7 m)</span>
+  <div class="box ex"><span class="t">Récapitulatif — tablier complet, L = 25 m, 1<sup>re</sup> classe, 2 voies (Lc = 7 m)</span>
     <p>Hypothèses : G + Q<sub>sup</sub> = 25 t/ml ; A(25) = 1 203 kg/m², a1 = 1 (2 voies, 1<sup>re</sup> classe), a2 = 3,50/3,50 = 1, soit 1,203 × 7 = 8,42 t/ml ; trottoirs 2 × 1,50 m × 150 kg/m² = 0,45 t/ml ; Bc 2 files : bc = 1,10, δ = 1,0968 ; Bt 2 tandems : bt = 1,0, S = 64 t, δ = 1,0816 ; Mc120 : δ = 1,0920.</p>
     <div class="tbl-wrap"><table class="tbl c5-tbl-small">
       <tr><th>Cas de charge</th><th class="num">M(L/2) (t.m)</th><th class="num">T(0) (t)</th><th>Détail</th></tr>
@@ -801,31 +801,8 @@
 
 <!-- ═══════════════════════ Exercices ═══════════════════════ -->
 <section>
-  <h2><span class="n">5.10</span>Exercices corrigés</h2>
-  <h3>Exercice 1 — TD n° 1 (15/01/2015) : sollicitations isostatiques</h3>
-  <p>Un pont isostatique de portée L = 25 m supporte une charge permanente G = 20 t/ml et des superstructures Q<sub>sup</sub> = 5 t/ml. (a) Calculer M(x) et T(x) dans les sections 0 à 0,5L. (b) Calculer le moment maximal produit par la roue Br de 10 t dans ces mêmes sections.</p>
-  <details class="sol"><summary>Voir la solution</summary><div class="sol-b">
-    <p>(a) p = 25 t/ml ; M(x) = 12,5 x (25 − x) ; T(x) = 25 (12,5 − x).</p>
-    <p>M : 0 ; 703,1 ; 1 250 ; 1 640,6 ; 1 875 ; <b>1 953,1 t.m</b>. T : <b>312,5</b> ; 250 ; 187,5 ; 125 ; 62,5 ; 0 t.</p>
-    <p>(b) La roue est placée dans la section : M = 10 x (25 − x)/25 = 0 ; 22,5 ; 40 ; 52,5 ; 60 ; <b>62,5 t.m</b>.</p>
-  </div></details>
-  <h3>Exercice 2 — TD n° 1 : classe du pont et coefficients de majoration dynamique</h3>
-  <p>La largeur chargeable est Lc = 7 m (bordures, Lr ≥ 7 m). Déterminer le nombre de voies, la classe du pont, puis δ pour Bc à 1 file, Bc à 2 files et Mc120.</p>
-  <details class="sol"><summary>Voir la solution</summary><div class="sol-b">
-    <p>nv = E(7/3) = 2 voies ; Lr ≥ 7 m → <b>1<sup>re</sup> classe</b>. G = 25 × 25 = 625 t ; 0,4/(1 + 0,2 × 25) = 0,0667.</p>
-    <ul>
-      <li>Bc 1 file : S = 2 camions × 30 t × bc (1,2) = 72 t → δ = 1 + 0,0667 + 0,6/(1 + 4 × 625/72) = <b>1,0835</b>.</li>
-      <li>Bc 2 files : S = 4 × 30 × 1,1 = 132 t → δ = <b>1,0968</b>.</li>
-      <li>Mc120 : S = 110 t → δ = <b>1,0920</b>.</li>
-    </ul>
-  </div></details>
-  <h3>Exercice 3 — Examen du 19/02/2016 : char Mc120 sur L = 20 m</h3>
-  <p>Pour un pont de 20 m (G = 19 t/ml, 1<sup>re</sup> classe, 2 voies), calculer le moment maximal du char Mc120 dans les sections 0,1L à 0,5L, puis le moment majoré à mi-travée.</p>
-  <details class="sol"><summary>Voir la solution</summary><div class="sol-b">
-    <p>q = 110/6,10 = 18,03 t/m ; on place la chenille de sorte que la section la partage dans le rapport x/(L − x) : a = x − 6,10·x/20.</p>
-    <p>M = 167,81 ; 298,32 ; 391,55 ; 447,48 ; <b>466,12 t.m</b> (hors δ). G = 380 t ; δ = 1 + 0,08 + 0,6/(1 + 4 × 380/110) = 1,1205 → M(L/2) = <b>522,3 t.m</b>. Vérifiez au simulateur (L = 20, x = 0,50, Mc120).</p>
-  </div></details>
-  <h3>Exercice 4 — Courbon</h3>
+  <h2><span class="n">5.10</span>Exercice d'application</h2>
+  <h3>Répartition transversale par Courbon</h3>
   <p>Un tablier à 5 poutres d'entraxe 2,20 m porte une charge excentrée de e = 3,0 m. Quelle part reprend la poutre de rive ? Y a-t-il soulèvement de la poutre opposée ?</p>
   <details class="sol"><summary>Voir la solution</summary><div class="sol-b">
     <p>Formule de la poutre de rive : η = (1/5) [1 + 6 × 3,0 / (6 × 2,20)] = 0,2 × (1 + 1,364) = <b>0,473</b>. Poutre opposée : η = 0,2 × (1 − 1,364) = <b>−0,073</b> &lt; 0 : Courbon prédit un léger soulèvement (traduit l'hypothèse de rigidité infinie). Vérifiez avec la calculatrice.</p>
