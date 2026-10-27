@@ -18,14 +18,15 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const GB = 25;              // béton armé, kN/m³
+  let GB = 25;                // béton armé, kN/m³ (hypothèse modifiable, fixée à chaque calcul)
+  let HY = null;              // hypothèses du calcul en cours
   const RHO_S = 7850;         // acier, kg/m³
   const r05 = (v) => Math.ceil(v / 0.05 - 1e-6) * 0.05;
   const r10 = (v) => Math.ceil(v / 0.10 - 1e-6) * 0.10;
   const rnd = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const sum = (a) => a.reduce((s, v) => s + v, 0);
-  const fr = (v, d) => (+v).toFixed(d).replace('.', ',');
+  const fr = (v, d) => (+v).toFixed(d).replace(/^-(0[.,]?0*)$/, '$1').replace('.', ',');
   const frn = (v) => String(rnd(+v, 2)).replace('.', ',');
   const num = (v, def) => (Number.isFinite(+v) && v !== '' && v !== null ? +v : def);
 
@@ -128,6 +129,23 @@
     aleas: { des: 'Aléas et imprévus', u: '%', pu: 10 },
   };
 
+  /* ───────── Hypothèses (zone « Hypothèses ») ───────── */
+  const CLASSES_BETON = ['C25/30', 'C30/37', 'C35/45', 'C40/50', 'C45/55', 'C50/60'];
+  function hypDefaults(usage, type) {
+    const rail = usage === 'rail', pre = ['PSIDP', 'VIPP', 'PRAD'].includes(type);
+    return {
+      betonTab: pre ? 'C40/50' : 'C35/45', betonApp: 'C30/37', betonFond: 'C30/37', betonPieux: 'C30/37',
+      acier: 'B500B', precontrainte: 'T15S — Y1860', charpente: 'S355',
+      enrobTab: 3, enrobApp: 4, enrobFond: 5,
+      gammaB: 25, gammaEnrobes: 24, gammaBallast: 20, gammaRemblai: 20,
+      qTrottoir: 0,              // kN/m² ; 0 = valeur du règlement (EC 3,0 ; Fasc. 61 1,5)
+      dT: 35, retrait: rail ? 3.0 : 3.0, kExc: 0, majCulees: 25,
+      seismeA: 0.10, seismeClasse: 'courant',
+      dureeVie: 100, exposition: 'XC4 / XF1',
+      notes: '',
+    };
+  }
+
   /* ───────── Données par défaut ───────── */
   function defaults(usage) {
     const rail = usage === 'rail';
@@ -147,6 +165,7 @@
       equip: { retenue: rail ? 'GC' : 'BN4', corniches: true, etancheite: true, revetement: 0.06, gargouilles: !rail },
       prix: Object.fromEntries(Object.keys(PRIX).map((k) => [k, PRIX[k].pu])),
       devise: 'MAD',
+      hyp: hypDefaults(rail ? 'rail' : 'route', rail ? 'PRP' : 'VIPP'),
     };
   }
 
@@ -157,6 +176,16 @@
     const out = Object.assign({}, D, S);
     ['projet', 'profil', 'tablier', 'piles', 'culees', 'fond', 'equip'].forEach((k) => { out[k] = Object.assign({}, D[k], S[k] || {}); });
     out.prix = Object.assign({}, D.prix, S.prix || {});
+    const HD = hypDefaults(out.usage, (S.tablier || {}).type);
+    const h = out.hyp = Object.assign({}, HD, S.hyp || {});
+    ['betonTab', 'betonApp', 'betonFond', 'betonPieux'].forEach((k) => { if (!CLASSES_BETON.includes(h[k])) h[k] = HD[k]; });
+    const nb = (k, a, b) => { h[k] = clamp(num(h[k], HD[k]), a, b); };
+    nb('enrobTab', 1, 10); nb('enrobApp', 1, 10); nb('enrobFond', 1, 10);
+    nb('gammaB', 20, 30); nb('gammaEnrobes', 18, 26); nb('gammaBallast', 15, 25); nb('gammaRemblai', 15, 24);
+    nb('qTrottoir', 0, 10); nb('dT', 0, 80); nb('retrait', 0, 10); nb('kExc', 0, 3); nb('majCulees', 0, 100);
+    nb('seismeA', 0, 1); nb('dureeVie', 10, 150);
+    if (!['strategique', 'important', 'courant'].includes(h.seismeClasse)) h.seismeClasse = 'courant';
+    ['acier', 'precontrainte', 'charpente', 'exposition', 'notes'].forEach((k) => { h[k] = String(h[k] == null ? HD[k] : h[k]).slice(0, k === 'notes' ? 4000 : 60); });
     Object.keys(out.prix).forEach((k) => { out.prix[k] = Math.max(0, num(out.prix[k], D.prix[k])); });
     out.usage = out.usage === 'rail' ? 'rail' : 'route';
     out.reglement = out.reglement === 'F61' ? 'F61' : 'EC';
@@ -428,7 +457,7 @@
       const E2 = axleMax([[0, 1], [1.2, 1]], Lg, Ld);
       let ts = 0; for (let i = 0; i < Math.min(3, nl); i++) ts += aQ[i] * Qk[i];
       const qUDL = 3 * 9 * aq1 + (nl - 1) * 3 * 2.5 * aqi + res * 2.5 * aqi;
-      const R_TS = E2 * ts, R_UDL = qUDL * l / 2 * kc, R_tr = 3 * trot * l / 2 * kc;
+      const R_TS = E2 * ts, R_UDL = qUDL * l / 2 * kc, R_tr = (HY.qTrottoir || 3) * trot * l / 2 * kc;
       Object.assign(det, { voies: nl, TS: R_TS, UDL: R_UDL, trottoirs: R_tr, mod: 'LM1' });
       return { Q: R_TS + R_UDL + R_tr, det };
     }
@@ -451,7 +480,7 @@
     const Ls = Math.max(Lg, Ld), G = g * Ls, Sb = kBc * 600;
     const delta = 1 + 0.4 / (1 + 0.2 * Ls) + 0.6 / (1 + 4 * G / Sb);
     const RBc = delta * kBc * EBc;
-    const R_tr = 1.5 * trot * l / 2 * kc;
+    const R_tr = (HY.qTrottoir || 1.5) * trot * l / 2 * kc;
     Object.assign(det, { voies: n, A: RA, Bc: RBc, delta, trottoirs: R_tr, mod: RA >= RBc ? 'A(l)' : 'Bc', nfA, nfB });
     return { Q: Math.max(RA, RBc) + R_tr, det };
   }
@@ -468,14 +497,14 @@
     const e = S.equip, W = PT.W, rows = [];
     if (S.usage === 'rail') {
       const Wb = Math.max(0, W - 2.4);
-      rows.push(['Ballast 20 kN/m³ × 0,60 m × ' + fr(Wb, 2) + ' m', 20 * 0.60 * Wb]);
+      rows.push(['Ballast ' + frn(HY.gammaBallast) + ' kN/m³ × 0,60 m × ' + fr(Wb, 2) + ' m', HY.gammaBallast * 0.60 * Wb]);
       rows.push(['Voies (rails, attaches) 1,5 kN/m × ' + PT.voiesFer, 1.5 * PT.voiesFer]);
       rows.push(['Corniches-caniveaux 2 × 5,0 kN/m', 10]);
       if (e.etancheite) rows.push(['Étanchéité 0,7 kN/m²', 0.7 * W]);
       rows.push(['Garde-corps 2 × 0,5 kN/m', 1]);
     } else {
       const w = PT.roulable;
-      if (e.revetement > 0) rows.push(['Enrobés ' + fr((e.revetement * 100), 0) + ' cm × 23 kN/m³ × ' + fr(w, 2) + ' m', 23 * e.revetement * w]);
+      if (e.revetement > 0) rows.push(['Enrobés ' + fr((e.revetement * 100), 0) + ' cm × ' + frn(HY.gammaEnrobes) + ' kN/m³ × ' + fr(w, 2) + ' m', HY.gammaEnrobes * e.revetement * w]);
       if (e.etancheite) rows.push(['Étanchéité 0,7 kN/m²', 0.7 * W]);
       if (PT.trottoirs > 0) rows.push(['Trottoirs (remplissage 0,20 m)', 24 * 0.20 * Math.max(0, PT.trottoirs - 1.0)]);
       if (e.corniches) rows.push(['Corniches 2 × 2,5 kN/m', 5]);
@@ -585,11 +614,11 @@
       const sig = F.sigma * 1000, L = r10(ly + 1.0);
       let B = Math.max(lx + 1.0, 2.5), e = 1.0;
       for (let i = 0; i < 8; i++) {
-        const Ws = GB * B * L * e + 18 * 0.6 * B * L;
-        B = Math.max(lx + 1.0, 2.5, opt.Bmin || 0, (N + Ws) / (sig * L) * (opt.excentre ? 1.25 : 1));
+        const Ws = GB * B * L * e + HY.gammaRemblai * 0.6 * B * L;
+        B = Math.max(lx + 1.0, 2.5, opt.Bmin || 0, (N + Ws) / (sig * L) * (opt.excentre ? 1 + HY.majCulees / 100 : 1));
         B = r10(B); e = Math.max(0.8, r05((B - lx) / 4 + 0.05), opt.colonnes ? Math.min(1.5, r05(0.3 * B)) : 0);
       }
-      const Ws = GB * B * L * e + 18 * 0.6 * B * L, q = (N + Ws) / (B * L);
+      const Ws = GB * B * L * e + HY.gammaRemblai * 0.6 * B * L, q = (N + Ws) / (B * L);
       return { mode, B, L, e, V: B * L * e, coff: 2 * (B + L) * e, ratio: 90, prop: B * L * 0.10, fouilles: (B + 1) * (L + 1) * (e + 0.6), q, Ws };
     }
     const D = F.diam, Q = F.qadm * 1000, s = 3 * D;
@@ -634,6 +663,7 @@
   /* ───────── Calcul complet ───────── */
   function compute(src) {
     const S = normalize(src);
+    HY = S.hyp; GB = HY.gammaB;
     const T = TYPES[S.tablier.type], rail = S.usage === 'rail', u = S.usage;
     const warn = [], notes = [];
     const PT = profilEnTravers(S);
@@ -679,9 +709,10 @@
 
     // lignes d'appui
     const indep = iso && !S.tablier.dalleContinuite && n > 1;
-    const xFix = Ltot / 2, epsU = T.famille === 'mixte' ? 5.0e-4 : 6.5e-4;
+    // déplacement horizontal : dilatation ΔT × 1e-5 + retrait et fluage (béton) ou retrait de la dalle seule (mixte)
+    const xFix = Ltot / 2, epsU = HY.dT * 1e-5 + (T.famille === 'mixte' ? 0.5 : 1) * HY.retrait * 1e-4;
     const lines = [];
-    const kExc = T.famille === 'poutres' || T.famille === 'mixte' ? 1.5 : 1.3;
+    const kExc = HY.kExc > 0 ? HY.kExc : (T.famille === 'poutres' || T.famille === 'mixte' ? 1.5 : 1.3);
     const nbB = sec.bear.length;
     const Lsup = Math.max(2.5, (Math.max.apply(null, sec.bear) - Math.min.apply(null, sec.bear)) + 1.2);
     const mkLine = (j, side, x, Lg, Ld) => {
@@ -844,7 +875,8 @@
 
     notes.push('Descente de charges estimée : lignes d’influence triangulaires, coefficients de continuité forfaitaires (rive 0,8 ; 1er appui intermédiaire 1,12 à 1,25).');
     notes.push('Effort par appareil d’appui majoré de ×' + fr(kExc, 1) + ' sur la part d’exploitation (excentrement transversal).');
-    notes.push('Non pris en compte à ce stade : séisme (RPOA 2005), freinage, vent, poussée des terres, effets thermiques différentiels, phasage.');
+    notes.push('Déplacements des appareils et souffle des joints : ΔT = ±' + frn(HY.dT) + ' °C, retrait et fluage ' + frn(HY.retrait) + '×10⁻⁴.');
+    notes.push('Non pris en compte à ce stade : séisme (RPOA 2005, a = ' + fr(HY.seismeA, 2) + ' g, ouvrage ' + { strategique: 'stratégique', important: 'important', courant: 'courant' }[HY.seismeClasse] + '), freinage, vent, poussée des terres, gradient thermique, phasage.');
 
     return {
       S, T, PT, W, h, hAuto, pd, sec, st, xs, Ltot, Ldeck, dab, cont, iso, surf, g, gStruct, gEnt, sup, cb, LPhi,
@@ -853,7 +885,7 @@
   }
 
   return {
-    fr, frn, TYPES, TYPE_KEYS, PILES, CULEES, PRIX, HEB, ELASTO,
+    fr, frn, TYPES, TYPE_KEYS, CLASSES_BETON, hypDefaults, PILES, CULEES, PRIX, HEB, ELASTO,
     defaults, normalize, compute, typeStatus, predimH, profilEnTravers,
     _int: { eta, etaInt, axleMax, lm71, sw2, area, coffLen, appareil, kCont },
   };

@@ -6,15 +6,15 @@
   const C = window.COMP, $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => [...(r || document).querySelectorAll(s)];
   const KEY = 'bas-composer-v1', UIKEY = 'bas-composer-ui';
   const fr = C.fr;
-  const f0 = (v) => Math.round(v).toLocaleString('fr-FR');
-  const fx = (v, d) => (+v).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const f0 = (v) => (Math.round(v) || 0).toLocaleString('fr-FR');
+  const fx = (v, d) => ((Math.abs(+v) < 0.5 * 10 ** -d) ? 0 : +v).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const show = (v) => (v === 0 || v ? String(v).replace('.', ',') : '');
 
   let S = load() || C.normalize(C.defaults('route'));
-  let M = null, view = 'elev', menu = 'resultats', selId = 'tablier', showDims = true, wire = false;
+  let M = null, view = 'elev', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
   const openT = [];
-  const expanded = new Set(['projet', 'tablier', 'travees', 'appuis', 'resultats']);
+  const expanded = new Set(['tablier', 'travees', 'appuis']);
   try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
 
   function load() { try { const t = localStorage.getItem(KEY); return t ? C.normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
@@ -72,6 +72,11 @@
     del: '<path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/>',
     dup: '<rect x="8" y="8" width="12" height="12" rx="1"/><path d="M16 8V4H4v12h4"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    diagM: '<path d="M2 6h20"/><path d="M3 6q4 13 9 0q5 13 9 0" fill="rgba(28,91,217,.15)"/>',
+    diagV: '<path d="M2 12h20"/><path d="M3 12V5l9 7v7l9-7V5" />',
+    diagS: '<path d="M4 3v18M20 3v18"/><path d="M4 7l16 10M4 7h6M14 17h6"/>',
+    diagR: '<path d="M3 20h18"/><path d="M6 20V9M12 20V5M18 20V11"/><path d="M4 11l2-2 2 2M10 7l2-2 2 2M16 13l2-2 2 2"/>',
+    efforts: '<path d="M2 6h20"/><path d="M3 6q4 13 9 0q5 13 9 0"/>',
     dock: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 14h18M6 17h6"/>',
     tree: '<path d="M4 4h6v4H4zM10 6h4M14 4h6v4h-6zM7 8v8h7M14 14h6v4h-6z"/>',
   };
@@ -104,21 +109,16 @@
   const col = (inner) => `<div class="rcol">${inner}</div>`;
 
   function ribbonHTML() {
-    const rail = S.usage === 'rail', T = C.TYPES[S.tablier.type], n = S.travees.length;
     if (menu === 'fichier') {
-      return grp('Projet', rb('new', 'Nouveau', 'new') + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }))
+      return grp('Projet', rb('new', 'Nouveau', 'new', { tip: 'Assistant de création d’un nouveau pont' }) + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }))
         + grp('Édition', rb('undo', 'Annuler', 'undo', { dis: !undoS.length, tip: 'Annuler — Ctrl+Z' }) + rb('redo', 'Rétablir', 'redo', { dis: !redoS.length, tip: 'Rétablir — Ctrl+Y' }))
-        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan de coffrage d’ensemble (AutoCAD)' }))
-        + grp('Site', rb('home', 'Accueil', 'home', { tip: 'Retour à BridgeAI Studios' }));
+        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan de coffrage d’ensemble (AutoCAD)' }));
     }
-    if (menu === 'resultats') {
-      return grp('Tableaux de résultats', ['predim', 'ddc', 'appuis', 'metre', 'msg'].map((k) => rb('tab', { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' }[k], k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''))
-        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf') + rb('dxf', 'Plan<br>DXF', 'dxf'));
-    }
-    // affichage
-    return grp('Vue', rb('view', 'Élévation', 'elev', { arg: 'elev', on: view === 'elev' }) + rb('view', 'Coupe<br>transversale', 'sec', { arg: 'sec', on: view === 'sec' }) + rb('view', 'Vue 3D', 'v3d', { arg: '3d', on: view === '3d' }))
-      + grp('Zoom', rb('fit', 'Ajuster', 'fit') + rb('zin', 'Zoom +', 'zin') + rb('zout', 'Zoom −', 'zout'))
-      + grp('Afficher', rb('dims', 'Cotes', 'dims', { on: showDims, dis: view === '3d' }) + rb('wire', 'Filaire', 'wire', { on: wire, dis: view !== '3d', tip: 'Vue 3D en fil de fer' }));
+    const lab = { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', efforts: 'Efforts<br>longitudinaux', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' };
+    return grp('Diagrammes', rb('diag', 'Moments<br>M', 'diagM', { arg: 'M', on: view === 'diag' && diagK === 'M', tip: 'Enveloppe des moments fléchissants le long de l’ouvrage' })
+        + rb('diag', 'Tranchant<br>V', 'diagV', { arg: 'V', on: view === 'diag' && diagK === 'V' }) + rb('diag', 'Contraintes<br>ELS', 'diagS', { arg: 'S', on: view === 'diag' && diagK === 'S', tip: 'Contraintes normales en fibres extrêmes (section brute, sans précontrainte)' })
+        + rb('diag', 'Réactions', 'diagR', { arg: 'R', on: view === 'diag' && diagK === 'R' }))
+      + grp('Tableaux', Object.keys(lab).map((k) => rb('tab', lab[k], k === 'efforts' ? 'diagM' : k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''));
   }
   function renderRibbon() { $('#ribbon').innerHTML = ribbonHTML(); }
 
@@ -138,39 +138,32 @@
     fond: ['#6b4fa0', '<path d="M6 2h4v6H6zM2 8h12v3H2zM4 11v4M8 11v4M12 11v4"/>'],
     equip: ['#5d6676', '<path d="M2 14V4M14 14V4M1 7h14M1 10h14"/>'],
     prix: ['#5d6676', '<circle cx="8" cy="8" r="6"/><path d="M10 5.5H7a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H6M8 4v8"/>'],
+    hyp: ['#c2410c', '<path d="M3 2h10v12H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/>'],
     resultats: ['#c2410c', '<rect x="2" y="2" width="12" height="12"/><path d="M2 6h12M2 10h12M6 2v12"/>'],
     res: ['#c2410c', '<path d="M2 3h12M2 7h12M2 11h8"/>'],
   };
   const tico = (k) => `<span class="ti"><svg viewBox="0 0 16 16" stroke="${TI[k][0]}">${TI[k][1]}</svg></span>`;
 
+  function regLabel() {
+    const rail = S.usage === 'rail';
+    return S.reglement === 'EC' ? (rail ? 'EN 1991-2 — LM71/SW2' : 'EN 1991-2 — LM1') : (rail ? 'UIC 71 — Livret 2.01' : 'Fascicule 61 titre II');
+  }
   function treeModel() {
     const rail = S.usage === 'rail', T = C.TYPES[S.tablier.type], n = S.travees.length;
-    const nW = M.warn.length;
     return [
-      { id: 'projet', ic: 'projet', l: S.projet.nom || 'Ouvrage', v: S.projet.ouvrage, kids: [
-        { id: 'usage', ic: 'usage', l: 'Usage & règlement', v: (rail ? 'Rail' : 'Route') + ' · ' + (S.reglement === 'EC' ? 'EC' : (rail ? 'UIC 71' : 'F61')) },
-        { id: 'profil', ic: 'profil', l: 'Profil en travers', v: 'W = ' + fr(M.W, 2) + ' m' },
-      ] },
+      { id: 'projet', ic: 'projet', l: S.projet.nom || 'Ouvrage', v: S.projet.ouvrage },
+      { id: 'hyp', ic: 'hyp', l: 'Hypothèses', v: (S.reglement === 'EC' ? 'EC' : (rail ? 'UIC 71' : 'F61')) + ' · ' + S.hyp.betonTab + ' · σ ' + fr(S.fond.sigma, 2) },
+      { id: 'profil', ic: 'profil', l: 'Profil en travers', v: (rail ? 'rail' : 'route') + ' · W = ' + fr(M.W, 2) + ' m' },
       { id: 'tablier', ic: 'tablier', l: 'Tablier', v: T.nom + ' · h ' + fr(M.h, 2) + ' m', warn: M.st.k !== 'ok', kids: [
         { id: 'section', ic: 'section', l: 'Coupe transversale', v: fr(M.sec.Abet + M.sec.Aprefa, 2) + ' m²' },
         { id: 'gperm', ic: 'gperm', l: 'Charges permanentes', v: 'g = ' + fx(M.g, 1) + ' kN/m' },
       ] },
       { id: 'travees', ic: 'travees', l: 'Travées', v: n + ' · ' + fr(M.Ltot, 2) + ' m', kids: S.travees.map((L, i) => ({ id: 'T' + (i + 1), ic: 'travee', l: 'Travée ' + (i + 1), v: fr(L, 2) + ' m' })) },
-      { id: 'appuis', ic: 'appuis', l: 'Appuis', v: String(M.supports.length), kids: M.supports.map((s) => ({
-        id: s.id, ic: s.kind === 'culee' ? 'culee' : 'pile', l: s.id,
-        v: (s.kind === 'culee' ? C.CULEES[s.geo.type].nom : C.PILES[s.geo.type].nom) + ' · H ' + fr(s.H, 2),
+      { id: 'appuis', ic: 'appuis', l: 'Appuis', v: (n > 1 ? C.PILES[S.piles.type].nom.toLowerCase() + ' · ' : '') + C.CULEES[S.culees.type].nom.toLowerCase(), kids: M.supports.map((s) => ({
+        id: s.id, ic: s.kind === 'culee' ? 'culee' : 'pile', l: s.id, v: 'H ' + fr(s.H, 2) + ' · ' + (s.fo.mode === 'pieux' ? s.fo.n + ' pieux' : 'semelle'),
         warn: s.fo.mode === 'superficielle' ? s.fo.B > 10 : false,
       })) },
-      { id: 'fond', ic: 'fond', l: 'Fondations', v: n > 1 ? (S.fond.piles === 'pieux' ? 'pieux' : 'semelles') + ' / ' + (S.fond.culees === 'pieux' ? 'pieux' : 'semelles') : (S.fond.culees === 'pieux' ? 'pieux' : 'semelles') },
       { id: 'equip', ic: 'equip', l: 'Équipements', v: rail ? 'ballast' : ({ BN4: 'BN4', GBA: 'GBA', GC: 'garde-corps' }[S.equip.retenue]) },
-      { id: 'prix', ic: 'prix', l: 'Prix unitaires', v: S.devise || 'MAD' },
-      { id: 'resultats', ic: 'resultats', l: 'Résultats', v: fx(M.total / 1e6, 2) + ' M' + (S.devise || 'MAD'), kids: [
-        { id: 'r-predim', ic: 'res', l: 'Prédimensionnement' },
-        { id: 'r-ddc', ic: 'res', l: 'Descente de charges' },
-        { id: 'r-appuis', ic: 'res', l: 'Appuis & fondations' },
-        { id: 'r-metre', ic: 'res', l: 'Métrés & coût', v: f0(M.kpi.parM2) + ' /m²' },
-        { id: 'r-msg', ic: 'res', l: 'Messages', v: nW ? nW + ' alerte' + (nW > 1 ? 's' : '') : 'aucune alerte', warn: nW > 0 },
-      ] },
     ];
   }
   const allIds = (nodes, out) => { nodes.forEach((x) => { out.push(x.id); if (x.kids) allIds(x.kids, out); }); return out; };
@@ -235,93 +228,71 @@
     let h = '', sub = '';
     if (id === 'projet') {
       sub = 'Projet';
-      h = G('Identification') + pTxt('Nom de l’ouvrage', 'projet.nom') + pTxt('Repère', 'projet.ouvrage') + pTxt('Référence', 'projet.ref') + pTxt('Maître d’ouvrage', 'projet.moa') + pTxt('Lieu', 'projet.lieu')
-        + G('Synthèse') + pRO('Longueur', fr(m.Ltot, 2) + ' m') + pRO('Largeur', fr(m.W, 2) + ' m') + pRO('Surface de tablier', f0(m.surf) + ' m²') + pRO('Béton', f0(m.kpi.beton) + ' m³')
-        + pRO('Aciers HA', fx(m.kpi.acier / 1000, 1) + ' t') + (m.kpi.prec > 0 ? pRO('Précontrainte', fx(m.kpi.prec / 1000, 1) + ' t') : '') + (m.kpi.metal > 0 ? pRO(T.famille === 'prp' ? 'Poutrelles' : 'Charpente', fx(m.kpi.metal / 1000, 0) + ' t') : '')
-        + pRO('Coût HT', '<b>' + f0(m.total) + ' ' + esc(S.devise) + '</b>') + pRO('Ratio', f0(m.kpi.parM2) + ' ' + esc(S.devise) + '/m²');
-    } else if (id === 'usage') {
-      sub = 'Usage & règlement';
-      h = G('Usage') + pSel('Type d’ouvrage', 'usage', [['route', 'Pont-route'], ['rail', 'Pont-rail']])
-        + pSel('Règlement de charges', 'reglement', rail ? [['EC', 'EN 1991-2 (LM71, SW/2)'], ['F61', 'UIC 71 / Livret 2.01']] : [['EC', 'Eurocodes (LM1)'], ['F61', 'Fascicule 61 titre II']]);
-      h += rail ? pNum('Coefficient α (LM71)', 'alpha', '') : pSel('Classe du pont', 'classe', [[1, '1re classe'], [2, '2e classe'], [3, '3e classe']]);
-      h += G('Combinaisons') + pNote(esc(m.cb.lab)) + pNote(esc(trafLabel()));
+      h = G('Identification') + pTxt('Nom de l’ouvrage', 'projet.nom') + pTxt('Repère', 'projet.ouvrage') + pTxt('Référence', 'projet.ref') + pTxt('Maître d’ouvrage', 'projet.moa') + pTxt('Lieu', 'projet.lieu');
+    } else if (id === 'hyp') {
+      sub = 'Hypothèses';
+      h = G('Hypothèses de calcul') + pRO('Règlement', esc(regLabel())) + pRO('Béton tablier / appuis', S.hyp.betonTab + ' / ' + S.hyp.betonApp) + pRO('σ sol admissible', fr(S.fond.sigma, 2) + ' MPa')
+        + pNote('Toutes les hypothèses (règlement, matériaux, poids volumiques, déformations, sol, séisme, prix, hypothèses particulières) se saisissent dans l’onglet <b>Hypothèses</b> de la fenêtre principale.')
+        + pBtns('<button class="mini" data-cmd="tab" data-arg="hyp">Ouvrir les hypothèses</button>');
     } else if (id === 'profil') {
       sub = 'Profil en travers';
-      h = G('Profil en travers');
+      h = G('Usage') + pSel('Type d’ouvrage', 'usage', [['route', 'Pont-route'], ['rail', 'Pont-rail']]) + G('Profil en travers');
       if (rail) h += pNum('Nombre de voies', 'profil.nbVoiesFer', '') + pNum('Entraxe des voies', 'profil.entraxe', 'm') + pNum('Demi-largeur hors voie', 'profil.demiLarg', 'm');
       else h += pNum('Trottoir gauche', 'profil.trottoirG', 'm') + pNum('Chaussée (roulable)', 'profil.roulable', 'm') + pNum('Trottoir droit', 'profil.trottoirD', 'm');
       h += pNum('Largeur imposée', 'profil.largeurForcee', 'm', { val: S.profil.largeurForcee || '', ph: 'auto' }) + pRO('Largeur du tablier W', '<b>' + fr(m.W, 2) + ' m</b>');
     } else if (id === 'tablier') {
       sub = T.nom;
-      h = G('Tablier') + pSel('Type', 'tablier.type', C.TYPE_KEYS.map((k) => { const st = C.typeStatus(k, S.travees, S.usage); return [k, C.TYPES[k].nom + ' — ' + (st.k === 'ok' ? 'adapté' : st.k === 'lim' ? 'limite' : 'hors domaine')]; }))
-        + pRO('Désignation', esc(T.titre)) + pRO('Domaine d’emploi', T.dom[S.usage].join(' – ') + ' m')
+      h = G('Tablier') + pSel('Type', 'tablier.type', C.TYPE_KEYS.map((k) => { const st = C.typeStatus(k, S.travees, S.usage); return [k, C.TYPES[k].nom + ' — ' + C.TYPES[k].titre.toLowerCase() + (st.k === 'ok' ? '' : st.k === 'lim' ? ' (limite)' : ' (hors domaine)')]; }))
+        + pRO('Domaine d’emploi', T.dom[S.usage].join(' – ') + ' m')
         + pNum('Hauteur imposée', 'tablier.h', 'm', { val: S.tablier.h || '', ph: fr(m.pd.h, 2) + ' (auto)' })
-        + pRO('Hauteur retenue', '<b>' + fr(m.h, 2) + ' m</b>' + (m.hAuto ? '' : ' (imposée)'))
         + pChk('Travées continues', 'tablier.continu', !(T.iso && T.cont && n > 1))
         + (T.famille === 'poutres' ? pChk('Hourdis continu sur appuis', 'tablier.dalleContinuite', n <= 1) : '')
-        + G('Prédimensionnement') + pNote(esc(m.pd.regle) + '.<br>' + esc(T.ref));
+        + G('Prédimensionnement') + pNote('h = <b>' + fr(m.h, 2) + ' m</b>' + (m.hAuto ? ' — ' + esc(m.pd.regle) : ' (imposée ; prédimensionnement ' + fr(m.pd.h, 2) + ' m)') + '.<br>' + esc(T.ref));
     } else if (id === 'section') {
       sub = 'Coupe transversale';
       const tmp = document.createElement('div'); tmp.innerHTML = tPredim();
-      const rows = [...tmp.querySelectorAll('table')[0].rows].slice(3);
-      h = G('Coupe transversale') + rows.map((r) => pRO(r.cells[0].textContent, r.cells[1].innerHTML)).join('');
+      const rows = [...tmp.querySelectorAll('table')[0].rows].slice(5);
+      h = G('Coupe transversale') + rows.map((r) => pRO(r.cells[0].textContent, r.cells[1].innerHTML)).join('')
+        + (M.an ? G('Caractéristiques de la section brute') + pRO('Aire B', fr(M.an.sec.A, 3) + ' m²') + pRO('Inertie I', fr(M.an.sec.I, 4) + ' m⁴') + pRO('v / v′', fr(M.an.sec.v, 3) + ' / ' + fr(M.an.sec.vp, 3) + ' m') + pRO('Rendement ρ', fr(M.an.sec.rho, 3)) : '');
     } else if (id === 'gperm') {
       sub = 'Charges permanentes';
       h = G('Par mètre de tablier (kN/m)') + pRO('Poids propre de la structure', fx(m.gStruct, 1)) + (m.gEnt > 0 ? pRO('Entretoises d’about', fx(m.gEnt, 1)) : '')
         + m.sup.rows.map((r) => pRO(esc(r[0]), fx(r[1], 1))).join('') + pRO('<b>Total g</b>', '<b>' + fx(m.g, 1) + '</b>');
     } else if (id === 'travees') {
       sub = n + ' travée' + (n > 1 ? 's' : '');
-      h = G('Travées') + S.travees.map((L, i) => pNum('Travée ' + (i + 1), 'travees.' + i, 'm')).join('') + pNum('Biais', 'biais', 'gr')
-        + pRO('Longueur entre culées', '<b>' + fr(m.Ltot, 2) + ' m</b>') + pRO('Fonctionnement', m.cont ? 'continu' : 'travées indépendantes')
+      h = G('Travées') + pRO('Nombre', String(n)) + pRO('Longueur entre culées', '<b>' + fr(m.Ltot, 2) + ' m</b>') + pRO('Fonctionnement', m.cont ? 'continu' : 'travées indépendantes')
+        + pNum('Biais', 'biais', 'gr')
+        + pNote('Sélectionnez une travée dans l’arborescence pour modifier sa portée.')
         + pBtns(`<button class="mini" data-cmd="addSpan"${n >= 12 ? ' disabled' : ''}>Ajouter une travée</button> <button class="mini" data-cmd="delSpan"${n <= 1 ? ' disabled' : ''}>Retirer la dernière</button>`);
     } else if (/^T\d+$/.test(id)) {
       const i = +id.slice(1) - 1;
       sub = 'Travée ' + (i + 1);
-      h = G('Travée ' + (i + 1)) + pNum('Portée (entre axes d’appui)', 'travees.' + i, 'm') + pRO('Abscisse de début', fr(m.xs[i], 2) + ' m') + pRO('Abscisse de fin', fr(m.xs[i + 1], 2) + ' m')
+      h = G('Travée ' + (i + 1)) + pNum('Portée (entre axes d’appui)', 'travees.' + i, 'm') + pRO('Abscisses', fr(m.xs[i], 2) + ' → ' + fr(m.xs[i + 1], 2) + ' m')
         + pRO('Appuis', M.supports[i].id + ' → ' + M.supports[i + 1].id)
-        + pBtns(`<button class="mini" data-cmd="insSpan" data-arg="${i}"${n >= 12 ? ' disabled' : ''}>Dupliquer la travée</button> <button class="mini" data-cmd="rmSpan" data-arg="${i}"${n <= 1 ? ' disabled' : ''}>Supprimer la travée</button>`);
+        + (M.an ? G('Efforts (analyse longitudinale)') + spanRO(i) : '')
+        + pBtns(`<button class="mini" data-cmd="insSpan" data-arg="${i}"${n >= 12 ? ' disabled' : ''}>Dupliquer</button> <button class="mini" data-cmd="splitSpan" data-arg="${i}"${n >= 12 ? ' disabled' : ''}>Couper en deux</button> <button class="mini" data-cmd="rmSpan" data-arg="${i}"${n <= 1 ? ' disabled' : ''}>Supprimer</button>`);
     } else if (id === 'appuis') {
-      sub = M.supports.length + ' lignes';
-      h = G('Appuis') + M.supports.map((s) => pRO(s.id + ' — ' + (s.kind === 'culee' ? 'culée' : 'pile'), 'H ' + fr(s.H, 2) + ' m · N ' + f0(s.N) + ' kN')).join('')
-        + G('Types') + (n > 1 ? pSel('Type de piles', 'piles.type', Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom])) : '') + pSel('Type de culées', 'culees.type', Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom]));
+      sub = M.supports.length + ' lignes d’appui';
+      h = G('Types d’appuis') + (n > 1 ? pSel('Piles', 'piles.type', Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom + ' — ' + C.PILES[k].desc.toLowerCase()])) : '')
+        + pSel('Culées', 'culees.type', Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom + ' — ' + C.CULEES[k].desc.toLowerCase()]))
+        + (rail ? '' : pChk('Dalles de transition', 'culees.dalleTransition'))
+        + G('Fondations') + (n > 1 ? pSel('Piles', 'fond.piles', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]) : '') + pSel('Culées', 'fond.culees', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']])
+        + pNote('Sol et pieux : voir l’onglet Hypothèses. Sélectionnez un appui pour sa hauteur et ses résultats.');
     } else if (/^[CP]\d+$/.test(id)) {
       const s = M.supports.find((x) => x.id === id);
       if (s.kind === 'culee') {
-        const k = s.j === 0 ? 0 : 1;
-        sub = 'Culée ' + id;
-        h = G('Culée ' + id) + pSel('Type (les deux culées)', 'culees.type', Object.keys(C.CULEES).map((x) => [x, C.CULEES[x].nom]))
-          + pNum('Hauteur H', 'culees.hauteurs.' + k, 'm') + (rail ? '' : pChk('Dalles de transition', 'culees.dalleTransition'))
-          + pNote('H : du dessus de la fondation au sommier d’appui.') + pSel('Fondation des culées', 'fond.culees', [['superficielle', 'Semelle'], ['pieux', 'Pieux forés']]) + supRO(s);
+        sub = 'Culée ' + id + ' — ' + C.CULEES[s.geo.type].nom.toLowerCase();
+        h = G('Géométrie') + pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm') + pNote('H : du dessus de la fondation au sommier d’appui.') + supRO(s);
       } else {
-        sub = 'Pile ' + id;
-        h = G('Pile ' + id) + pSel('Type (toutes les piles)', 'piles.type', Object.keys(C.PILES).map((x) => [x, C.PILES[x].nom]))
-          + pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm')
-          + pSel('Fondation des piles', 'fond.piles', [['superficielle', 'Semelle'], ['pieux', 'Pieux forés']]) + supRO(s);
+        sub = 'Pile ' + id + ' — ' + C.PILES[s.geo.type].nom.toLowerCase();
+        h = G('Géométrie') + pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm') + supRO(s);
       }
-    } else if (id === 'fond') {
-      sub = 'Fondations';
-      h = G('Modes') + (n > 1 ? pSel('Piles', 'fond.piles', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]) : '') + pSel('Culées', 'fond.culees', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']])
-        + G('Sol') + pNum('σ admissible (ELS)', 'fond.sigma', 'MPa')
-        + G('Pieux') + pSel('Diamètre', 'fond.diam', [[0.6, 'Ø 0,60 m'], [0.8, 'Ø 0,80 m'], [1, 'Ø 1,00 m'], [1.2, 'Ø 1,20 m'], [1.5, 'Ø 1,50 m']]) + pNum('Longueur', 'fond.long', 'm') + pNum('Charge admissible / pieu', 'fond.qadm', 'MN')
-        + pNote('Effort centré, sans moment ; les culées remblayées sont majorées de 25 % pour la poussée des terres.');
     } else if (id === 'equip') {
       sub = 'Équipements';
       h = G('Équipements');
       if (!rail) h += pSel('Dispositif de retenue', 'equip.retenue', [['BN4', 'Barrière BN4'], ['GBA', 'GBA (béton)'], ['GC', 'Garde-corps seul']]) + pNum('Épaisseur d’enrobés', 'equip.revetement', 'm');
       h += pChk('Corniches', 'equip.corniches') + pChk('Étanchéité', 'equip.etancheite') + (rail ? '' : pChk('Gargouilles', 'equip.gargouilles'));
       if (rail) h += pNote('Ballast 0,60 m, caniveaux à câbles et garde-corps comptés d’office.');
-    } else if (id === 'prix') {
-      sub = 'Prix unitaires HT';
-      h = G('Monnaie') + pTxt('Devise', 'devise') + G('Prix unitaires') + Object.keys(C.PRIX).map((k) => pNum(esc(C.PRIX[k].des), 'prix.' + k, C.PRIX[k].u === '%' ? '%' : '/' + C.PRIX[k].u)).join('')
-        + pNote('Prix indicatifs, à ajuster au marché. Joints : prix de base × coefficient selon le souffle ; pieux : prix de base pour Ø 1,00 m.');
-    } else if (id === 'resultats' || /^r-/.test(id)) {
-      sub = 'Résultats';
-      const k = m.kpi;
-      h = G('Synthèse') + pRO('Béton', f0(k.beton) + ' m³ (' + fr(k.beton / k.surf, 2) + ' m³/m²)') + pRO('Aciers HA', fx(k.acier / 1000, 1) + ' t (' + f0(k.acier / k.surf) + ' kg/m²)')
-        + (k.prec > 0 ? pRO('Précontrainte', fx(k.prec / 1000, 1) + ' t') : '') + (k.metal > 0 ? pRO(T.famille === 'prp' ? 'Poutrelles' : 'Charpente', fx(k.metal / 1000, 0) + ' t') : '')
-        + pRO('Épaisseur équivalente', fr(k.epEq, 2) + ' m') + pRO('Coût HT', '<b>' + f0(m.total) + ' ' + esc(S.devise) + '</b>') + pRO('Ratio', f0(k.parM2) + ' ' + esc(S.devise) + '/m²')
-        + G('Lots') + m.lots.map((L) => pRO(esc(L.lot), f0(L.mt))).join('')
-        + pNote('Détail dans la fenêtre de tableaux, sous la vue graphique.');
     }
     return { h: `<table class="pg"><tbody>${h}</tbody></table>`, sub };
   }
@@ -331,15 +302,19 @@
   let rendering = false;
   function keepFocus(fn) {
     const a = document.activeElement, k = a && a.dataset ? a.dataset.k : null;
-    const raw = k ? a.value : null, pos = k && a.type === 'text' ? a.selectionStart : null, inRib = a && a.closest && a.closest('#ribbon');
+    const isTxt = a && (a.type === 'text' || a.tagName === 'TEXTAREA');
+    const raw = k ? a.value : null, pos = k && isTxt ? a.selectionStart : null, zone = k && a.closest ? a.closest('#ribbon,#props,#res') : null;
+    const scr = zone ? zone.scrollTop : 0;
     rendering = true;
     try { fn(); } finally { rendering = false; }
-    if (!k) return;
-    const el = document.querySelector((inRib ? '#ribbon' : '#props') + ` [data-k="${k}"]`);
+    if (!k || !zone) return;
+    const z = document.getElementById(zone.id), el = z && z.querySelector(`[data-k="${k}"]`);
     if (!el) return;
-    el.focus();
-    if (el.type === 'text') { el.value = raw; try { el.setSelectionRange(pos, pos); } catch (e) { /* champ non textuel */ } }
+    z.scrollTop = scr;
+    el.focus({ preventScroll: true });
+    if (el.type === 'text' || el.tagName === 'TEXTAREA') { el.value = raw; try { el.setSelectionRange(pos, pos); } catch (e) { /* champ non textuel */ } }
   }
+
 
   /* ───────── Tableaux de résultats ───────── */
   const kN = (v) => f0(v);
@@ -409,8 +384,8 @@
 
   /* ───────── Fenêtre principale : onglets (vues graphiques et tableaux), rendu, sélection, navigation ───────── */
   const cv = $('#cv');
-  const VIEWS = [['elev', 'Élévation'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D']];
-  const TABLES = { predim: 'Prédimensionnement', ddc: 'Descente de charges', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
+  const VIEWS = [['elev', 'Élévation'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D'], ['diag', 'Diagrammes']];
+  const TABLES = { hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
   const isTable = () => view.startsWith('t:');
@@ -430,6 +405,13 @@
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
     cv.hidden = false; tp.hidden = true;
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
+    if (view === 'diag') {
+      $('#axes2d').style.display = 'none';
+      $('#svgHost').innerHTML = C.diagSVG(M, diagK, { width: cw, height: ch, id: 'dg' }) + '<div class="xh" id="xh" hidden><div class="xl"></div><div class="xb"></div></div>';
+      const el = $('#svgHost svg'); el.removeAttribute('width'); el.removeAttribute('height');
+      $('#vinfo').textContent = diagK === 'R' ? 'Réactions — analyse longitudinale' : 'Survolez le diagramme pour lire les valeurs';
+      return;
+    }
     if (view === '3d') {
       model3 = C.build3D(M);
       draw3D();
@@ -457,12 +439,14 @@
   }
   function applyVB() { const el = $('#svgHost svg'); if (el && view !== '3d') el.setAttribute('viewBox', vb.map((v) => v.toFixed(2)).join(' ')); }
   function applySel() {
+    if (view === 'diag') return;
     if (isTable()) { $$('#res [data-pick]').forEach((r) => r.classList.toggle('selr', r.dataset.pick === selId)); return; }
     if (view === '3d') { draw3D(); return; }
     $$('#svgHost .sel').forEach((e) => e.classList.remove('sel'));
     $$(`#svgHost [data-tag="${tagOf(selId)}"]`).forEach((e) => e.classList.add('sel'));
   }
   function fitView() {
+    if (view === 'diag' || isTable()) return;
     if (view === '3d') { Object.assign(cam3, { zoom: 1, panX: 0, panY: 0 }); draw3D(); }
     else if (vbBase) { vb = vbBase.slice(); applyVB(); }
   }
@@ -478,7 +462,28 @@
     p.x = ev.clientX; p.y = ev.clientY;
     return p.matrixTransform(el.getScreenCTM().inverse());
   }
+  /* curseur de lecture des diagrammes */
+  cv.addEventListener('mousemove', (ev) => {
+    if (view !== 'diag' || diagK === 'R' || !M || !M.an) return;
+    const el = $('#svgHost svg'), xh = $('#xh'); if (!el || !xh) return;
+    const r = el.getBoundingClientRect(), sc = r.width / el.viewBox.baseVal.width;
+    const x0 = +el.dataset.x0, kx = +el.dataset.kx, xm = ((ev.clientX - r.left) / sc - x0) / kx;
+    if (xm < 0 || xm > M.Ltot) { xh.hidden = true; return; }
+    const p = M.an.pts.reduce((a, q) => (Math.abs(q.x - xm) < Math.abs(a.x - xm) ? q : a));
+    const rows = diagK === 'M' ? [['ELU max', p.MeluMax], ['ELU min', p.MeluMin], ['ELS max', p.MelsMax], ['ELS min', p.MelsMin], ['G', p.MG], ['Q max', p.MQmax], ['Q min', p.MQmin]]
+      : diagK === 'V' ? [['ELU max', p.VeluMax], ['ELU min', p.VeluMin], ['G', p.VG], ['Q max', p.VQmax], ['Q min', p.VQmin]]
+        : [['σ sup max', p.sSupMax], ['σ sup min', p.sSupMin], ['σ inf max', p.sInfMax], ['σ inf min', p.sInfMin]];
+    const u = diagK === 'M' ? 'kN·m' : diagK === 'V' ? 'kN' : 'MPa', d = diagK === 'S' ? 2 : 0;
+    xh.hidden = false;
+    const cr = cv.getBoundingClientRect(), px = r.left - cr.left + (x0 + p.x * kx) * sc;
+    xh.querySelector('.xl').style.left = px + 'px';
+    const b = xh.querySelector('.xb');
+    b.innerHTML = `<b>x = ${fx(p.x, 2)} m</b>` + rows.map(([k, v]) => `<div><span>${k}</span><span>${fx(v, d)} ${u}</span></div>`).join('');
+    b.style.left = Math.min(px + 12, cr.width - 190) + 'px';
+  });
+  cv.addEventListener('mouseleave', () => { const xh = $('#xh'); if (xh) xh.hidden = true; });
   cv.addEventListener('wheel', (ev) => {
+    if (view === 'diag') return;
     ev.preventDefault();
     if (view === '3d') { zoomAt(ev.deltaY > 0 ? 1.12 : 1 / 1.12); return; }
     const p = toSvgPt(ev);
@@ -486,7 +491,7 @@
   }, { passive: false });
   let drag = null;
   cv.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0) return;
+    if (ev.button !== 0 || view === 'diag') return;
     const el = $('#svgHost svg'); if (!el) return;
     const m = el.getScreenCTM();
     drag = { x: ev.clientX, y: ev.clientY, vb: vb ? vb.slice() : null, k: 1 / m.a, moved: false, tag: ev.target.closest && ev.target.closest('[data-tag]'),
@@ -562,9 +567,82 @@
     h += M.warn.map((w) => `<li class="w">${esc(w)}</li>`).join('') + M.notes.map((n) => `<li class="i">${esc(n)}</li>`).join('');
     return h + '</ul>';
   }
+  /* ───────── Tableau « Efforts longitudinaux » (analyse EF) ───────── */
+  function spanRO(i) {
+    const an = M.an, sp = an.spans[i]; if (!sp) return '';
+    let h = pRO('M ELU max (x = ' + fr(sp.xMax, 1) + ' m)', f0(sp.Melu) + ' kN·m') + pRO('M ELS car. max', f0(sp.Mels) + ' kN·m')
+      + pRO('σ sup / σ inf (ELS, sans P)', fx(sp.sSup, 1) + ' / ' + fx(sp.sInf, 1) + ' MPa') + pRO('V ELU max', f0(sp.Vmax) + ' kN');
+    if (an.des.kind === 'BA') h += pRO('Aciers inférieurs requis', fx(sp.As, 1) + ' cm²/m');
+    if (an.des.kind === 'acier') h += pRO('σ acier inférieur (ELS)', f0(sp.sAcier) + ' MPa ≤ ' + an.des.fy);
+    return h;
+  }
+  function tEfforts() {
+    const an = M.an;
+    if (!an) return '<p class="hint">Analyse indisponible pour cette configuration.</p>';
+    const sc = an.sec, d = an.des, idOf = (j) => M.supports[j].id;
+    let h = `<p class="hint"><b>Modèle</b> : poutre ${M.cont ? 'continue sur ' + (M.xs.length) + ' appuis' : 'isostatique par travée'}, éléments finis de Bernoulli (maillage ${fx(an.hMax, 2)} m), lignes d’influence de M, V et R.<br>`
+      + `<b>Trafic</b> : ${esc(an.TM.lab)}. <b>Combinaisons</b> : ${esc(M.cb.lab)}.<br>`
+      + `<b>Section brute</b> (n = 6 pour l’acier) : B = ${fx(sc.A, 3)} m², I = ${fx(sc.I, 4)} m⁴, v = ${fx(sc.v, 3)} m, v′ = ${fx(sc.vp, 3)} m, ρ = ${fx(sc.rho, 3)}.</p>`;
+    const extra = d.kind === 'BA' ? '<th>As inf (cm²/m)</th>' : d.kind === 'acier' ? '<th>σ acier (MPa)</th>' : '';
+    h += '<h4>Travées <small>moments positifs (fibre inférieure tendue)</small></h4><table class="t"><thead><tr><th>Travée</th><th>L (m)</th><th>x Mmax (m)</th><th>M G</th><th>M Q</th><th>M ELS</th><th>M ELU</th><th>σ sup</th><th>σ inf</th>' + extra + '<th>V ELU max</th></tr></thead><tbody>';
+    an.spans.forEach((sp) => {
+      h += `<tr class="pick" data-pick="T${sp.i + 1}"><td>T${sp.i + 1}</td><td>${fx(sp.L, 2)}</td><td>${fx(sp.xMax, 2)}</td><td>${f0(sp.MG)}</td><td>${f0(sp.MQ)}</td><td>${f0(sp.Mels)}</td><td><b>${f0(sp.Melu)}</b></td><td>${fx(sp.sSup, 1)}</td><td class="${sp.sInf < 0 ? 'ko' : ''}">${fx(sp.sInf, 1)}</td>`
+        + (d.kind === 'BA' ? `<td>${fx(sp.As, 1)}</td>` : d.kind === 'acier' ? `<td class="${sp.sAcier > d.fy ? 'ko' : 'ok'}">${f0(sp.sAcier)}</td>` : '') + `<td>${f0(sp.Vmax)}</td></tr>`;
+    });
+    h += '</tbody></table>';
+    h += '<h4>Lignes d’appui <small>moments sur appuis et réactions — comparaison avec la descente de charges forfaitaire</small></h4><table class="t"><thead><tr><th>Appui</th><th>M G</th><th>M Q min</th><th>M ELS</th><th>M ELU</th>' + (d.kind === 'BA' ? '<th>As sup (cm²/m)</th>' : '') + '<th>R G</th><th>R Q</th><th>R ELU</th><th>R ELU forfait</th><th>Écart</th></tr></thead><tbody>';
+    an.sups.forEach((s) => {
+      const est = M.supports[s.j].elu, ec = (s.R.elu - est) / est * 100;
+      h += `<tr class="pick" data-pick="${idOf(s.j)}"><td>${idOf(s.j)}</td><td>${f0(s.MG)}</td><td>${f0(s.MQ)}</td><td>${f0(s.Mels)}</td><td><b>${f0(s.Melu)}</b></td>` + (d.kind === 'BA' ? `<td>${fx(s.As, 1)}</td>` : '')
+        + `<td>${f0(s.R.G)}</td><td>${f0(s.R.Qmax)}</td><td><b>${f0(s.R.elu)}</b></td><td class="mute">${f0(est)}</td><td class="mute">${ec >= 0 ? '+' : ''}${fx(ec, 1)} %</td></tr>`;
+    });
+    h += '</tbody></table>';
+    if (an.prec) {
+      const p = an.prec;
+      h += `<h4>Précontrainte indicative</h4><p class="hint">Pour décomprimer la fibre inférieure sous ELS caractéristique dans la travée la plus sollicitée (T${p.span + 1}), avec une excentricité des câbles e = ${fx(p.e, 2)} m : `
+        + `<b>P ≈ ${fx(p.P / 1000, 1)} MN</b>, soit environ <b>${p.nCables} câbles 12T15</b> (${fx(p.cable / 1000, 2)} MN par câble après pertes forfaitaires de 25 %). Valeur d’ordre de grandeur, à confirmer par le calcul de précontrainte (tracé, pertes, phasage).</p>`;
+    }
+    if (d.kind === 'BA') h += `<p class="hint">Aciers longitudinaux : As = M<sub>ELU</sub> / (0,9 d · f<sub>yd</sub>), d = ${fx(d.d, 2)} m, f<sub>yd</sub> = 435 MPa, répartis sur la largeur ${fx(M.W, 2)} m.</p>`;
+    if (d.kind === 'acier') h += '<p class="hint">Contrainte dans l’acier inférieur ≈ n × contrainte de la section homogénéisée (n = 6, court terme), sans phasage de construction.</p>';
+    return h;
+  }
+
+  /* ───────── Page « Hypothèses » (zone de saisie de toutes les hypothèses de calcul) ───────── */
+  function tHyp() {
+    const rail = S.usage === 'rail', H = S.hyp, cl = C.CLASSES_BETON.map((c) => [c, c]);
+    const card = (t, rows, wide) => `<section class="hc${wide ? ' wide' : ''}"><h4>${t}</h4><table class="pg"><tbody>${rows}</tbody></table></section>`;
+    const qAuto = S.reglement === 'EC' ? 3 : 1.5;
+    let h = '<div class="hyp-head"><div><h3>Hypothèses de calcul</h3><p>Ces hypothèses alimentent le prédimensionnement, la descente de charges, l’analyse longitudinale, les métrés, la note PDF et le cartouche DXF.</p></div></div><div class="hgrid">';
+    h += card('Règlement & trafic',
+      pSel('Règlement de charges', 'reglement', rail ? [['EC', 'EN 1991-2 (LM71, SW/2)'], ['F61', 'UIC 71 / Livret 2.01']] : [['EC', 'Eurocodes — EN 1991-2 (LM1)'], ['F61', 'Fascicule 61 titre II (A, Bc)']])
+      + (rail ? pNum('Coefficient α (LM71)', 'alpha', '') : pSel('Classe du pont', 'classe', [[1, '1re classe'], [2, '2e classe'], [3, '3e classe']]))
+      + pNum('Charge sur trottoirs', 'hyp.qTrottoir', 'kN/m²', { val: H.qTrottoir || '', ph: fr(qAuto, 1) + ' (règl.)' })
+      + pRO('Combinaisons', esc(M.cb.lab)) + pRO('Modèle retenu', esc(trafLabel())));
+    h += card('Matériaux',
+      pSel('Béton du tablier', 'hyp.betonTab', cl) + pSel('Béton des appuis', 'hyp.betonApp', cl) + pSel('Béton des fondations', 'hyp.betonFond', cl) + pSel('Béton des pieux', 'hyp.betonPieux', cl)
+      + pTxt('Aciers passifs', 'hyp.acier') + pTxt('Précontrainte', 'hyp.precontrainte') + pSel('Acier de charpente', 'hyp.charpente', [['S355', 'S355'], ['S420', 'S420'], ['S460', 'S460']])
+      + pNum('Enrobage tablier', 'hyp.enrobTab', 'cm') + pNum('Enrobage appuis', 'hyp.enrobApp', 'cm') + pNum('Enrobage fondations', 'hyp.enrobFond', 'cm'));
+    h += card('Poids volumiques',
+      pNum('Béton armé', 'hyp.gammaB', 'kN/m³') + pNum('Enrobés', 'hyp.gammaEnrobes', 'kN/m³') + pNum('Ballast', 'hyp.gammaBallast', 'kN/m³') + pNum('Remblai', 'hyp.gammaRemblai', 'kN/m³'));
+    h += card('Déformations, appareils & durabilité',
+      pNum('Variation de température ΔT', 'hyp.dT', '±°C') + pNum('Retrait + fluage', 'hyp.retrait', '‰×0,1')
+      + pNum('Majoration excentrement appareils', 'hyp.kExc', '', { val: H.kExc || '', ph: 'auto (1,3 / 1,5)' })
+      + pNum('Durée d’utilisation de projet', 'hyp.dureeVie', 'ans') + pTxt('Classes d’exposition', 'hyp.exposition'));
+    h += card('Sol & fondations',
+      pNum('σ admissible du sol (ELS)', 'fond.sigma', 'MPa') + pNum('Majoration semelles de culées', 'hyp.majCulees', '%')
+      + pSel('Diamètre des pieux', 'fond.diam', [[0.6, 'Ø 0,60 m'], [0.8, 'Ø 0,80 m'], [1, 'Ø 1,00 m'], [1.2, 'Ø 1,20 m'], [1.5, 'Ø 1,50 m']])
+      + pNum('Longueur des pieux', 'fond.long', 'm') + pNum('Charge admissible par pieu', 'fond.qadm', 'MN'));
+    h += card('Séisme — RPOA 2005',
+      pNum('Accélération de calcul a', 'hyp.seismeA', 'g') + pSel('Importance de l’ouvrage', 'hyp.seismeClasse', [['strategique', 'Stratégique'], ['important', 'Important'], ['courant', 'Courant']])
+      + pNote('Enregistré dans la note ; non pris en compte dans ce prédimensionnement.'));
+    h += card('Prix unitaires (' + esc(S.devise || 'MAD') + ' HT)', pTxt('Devise', 'devise') + Object.keys(C.PRIX).map((k) => pNum(esc(C.PRIX[k].des), 'prix.' + k, C.PRIX[k].u === '%' ? '%' : '/' + C.PRIX[k].u)).join(''), true);
+    h += `<section class="hc wide"><h4>Hypothèses particulières</h4><textarea class="hnotes" data-k="hyp.notes" data-txt="1" rows="7" placeholder="Données du projet, contraintes de site, hypothèses du maître d’ouvrage, références géotechniques… Ce texte est repris tel quel dans la note PDF.">${esc(H.notes)}</textarea></section>`;
+    return h + '</div>';
+  }
+
   function renderTable() {
     const k = view.slice(2);
-    const f = { predim: tPredim, ddc: tDdc, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
+    const f = { hyp: tHyp, predim: tPredim, ddc: tDdc, efforts: tEfforts, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
     const box = $('#res'), st = box.scrollTop;
     box.innerHTML = f();
     box.scrollTop = st;
@@ -585,19 +663,20 @@
   /* ───────── Calcul et rendu d'ensemble ───────── */
   function recompute(full) {
     try { M = C.compute(S); } catch (err) { console.error(err); return; }
+    try { M.an = C.analyse(M); } catch (err) { console.error(err); M.an = null; }
     if (full !== 'nohist') pushHist();
-    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); });
-    renderView(); renderStatus();
+    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); });
+    renderStatus();
     save();
   }
   function select(id, o) {
     o = o || {};
     const v0 = view;
     selId = id;
-    if (/^r-/.test(id)) { if (!openT.includes(id.slice(2))) openT.push(id.slice(2)); view = 't:' + id.slice(2); }
+    if (id === 'hyp') { if (!openT.includes('hyp')) openT.push('hyp'); view = 't:hyp'; }
     const p = parentOf(id, treeModel());
     if (p) expanded.add(p);
-    if (!o.keepView && !/^r-/.test(id) && view !== '3d') {
+    if (!o.keepView && id !== 'hyp' && view !== '3d' && view !== 'diag') {
       if (['section', 'profil', 'equip'].includes(id)) view = 'sec';
       else if (/^T\d+$/.test(id) || /^C\d+$/.test(id)) view = 'elev';
       else if (/^P\d+$/.test(id) && view === 'sec' && !$(`#svgHost [data-tag="${id}"]`)) view = 'elev';
@@ -664,6 +743,7 @@
       case 'fondP': S.fond.piles = arg; break;
       case 'fondC': S.fond.culees = arg; break;
       case 'tab': openTable(arg); return;
+      case 'diag': diagK = arg; setView('diag'); return;
       case 'closeT': closeTable(arg); return;
       case 'view': setView(arg); return;
       case 'fit': fitView(); return;
@@ -681,6 +761,11 @@
 
   function renderVtools() {
     if (isTable()) { $('#vtools').innerHTML = ''; return; }
+    if (view === 'diag') {
+      $('#vtools').innerHTML = [['M', 'diagM', 'Moments'], ['V', 'diagV', 'Efforts tranchants'], ['S', 'diagS', 'Contraintes'], ['R', 'diagR', 'Réactions']]
+        .map(([k, ic, t]) => `<button class="vt${diagK === k ? ' on' : ''}" data-cmd="diag" data-arg="${k}" title="${t}" aria-label="${t}">${ico(ic)}</button>`).join('');
+      return;
+    }
     const L = [['fit', 'Ajuster la vue (double-clic)'], ['zin', 'Zoom +'], ['zout', 'Zoom −']].concat(view === '3d' ? [['wire', 'Fil de fer']] : [['dims', 'Afficher les cotes']]);
     $('#vtools').innerHTML = L.map(([c, t]) => `<button class="vt${(c === 'dims' && showDims) || (c === 'wire' && wire) ? ' on' : ''}" data-cmd="${c}" title="${t}" aria-label="${t}">${ico(c)}</button>`).join('');
   }
@@ -746,13 +831,13 @@
     clearTimeout(tm);
     S = C.normalize(S);
     const v = getPath(S, el.dataset.k);
-    el.value = (el.dataset.k === 'tablier.h' || el.dataset.k === 'profil.largeurForcee') ? (v ? show(v) : '') : show(v);
+    el.value = ['tablier.h', 'profil.largeurForcee', 'hyp.kExc', 'hyp.qTrottoir'].includes(el.dataset.k) ? (v ? show(v) : '') : show(v);
     recompute(false);
   };
-  ['#props', '#ribbon'].forEach((s) => {
+  ['#props', '#ribbon', '#res'].forEach((s) => {
     const r = $(s);
     r.addEventListener('input', onInput); r.addEventListener('change', onChange); r.addEventListener('focusout', onBlur);
-    r.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.dataset && ev.target.dataset.k && !ev.target.dataset.sel) ev.target.blur(); });
+    r.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.dataset && ev.target.dataset.k) ev.target.blur(); });
   });
   $('#fOpen').addEventListener('change', (ev) => {
     const file = ev.target.files[0]; if (!file) return;
@@ -813,6 +898,12 @@
     const rail = S.usage === 'rail', T = C.TYPES[S.tablier.type], n = S.travees.length, L = [];
     const radio = (title, cmd, cur, opts) => { L.push(H(title)); opts.forEach(([v, l]) => L.push(it(l, cmd, v, { on: cur === v, radio: true }))); };
     const props = (x) => L.push(it('Propriétés', 'props', x, { ic: 'edit', kbd: 'Entrée' }));
+    if (id === null && view === 'diag') {
+      L.push(H('Diagramme'));
+      [['M', 'Moments fléchissants', 'diagM'], ['V', 'Efforts tranchants', 'diagV'], ['S', 'Contraintes ELS', 'diagS'], ['R', 'Réactions', 'diagR']].forEach(([k, l, ic]) => L.push(it(l, 'diag', k, { on: diagK === k, radio: true, ic })));
+      L.push('-'); L.push(it('Tableau des efforts', 'tab', 'efforts', { ic: 'efforts' }));
+      return L;
+    }
     if (id === null) {
       L.push(H('Vue')); L.push(it('Ajuster la vue', 'fit', null, { ic: 'fit' }));
       [['elev', 'Élévation', 'elev'], ['sec', 'Coupe transversale', 'sec'], ['3d', 'Vue 3D', 'v3d']].forEach(([v, l, ic]) => L.push(it(l, 'view', v, { on: view === v, radio: true, ic })));
@@ -824,6 +915,7 @@
       const i = +id.slice(1) - 1;
       L.push(H('Travée ' + (i + 1) + ' — ' + fr(S.travees[i], 2) + ' m'));
       L.push(it('Modifier la portée…', 'props', id, { ic: 'edit', kbd: 'Entrée' }));
+      L.push(it('Diagramme des moments', 'diag', 'M', { ic: 'diagM' }));
       L.push(it('Dupliquer la travée', 'insSpan', i, { ic: 'dup', dis: n >= 12 }));
       L.push(it('Couper en deux (ajouter une pile)', 'splitSpan', i, { ic: 'addSpan', dis: n >= 12 }));
       L.push('-'); L.push(it('Supprimer la travée', 'rmSpan', i, { ic: 'del', dis: n <= 1, danger: true, kbd: 'Suppr' }));
@@ -834,7 +926,7 @@
       L.push(H('Pile ' + id)); props(id);
       radio('Type de pile (toutes)', 'pile', S.piles.type, Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom]));
       radio('Fondation des piles', 'fondP', S.fond.piles, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
-      L.push('-'); L.push(it('Voir en coupe transversale', 'view', 'sec', { ic: 'sec' }));
+      L.push('-'); L.push(it('Voir en coupe transversale', 'view', 'sec', { ic: 'sec' })); L.push(it('Réactions (diagramme)', 'diag', 'R', { ic: 'diagR' }));
       L.push(it('Supprimer la pile (fusionner les travées)', 'rmPile', j, { ic: 'del', danger: true, kbd: 'Suppr' }));
       return L;
     }
@@ -861,23 +953,23 @@
       L.push(H('Appuis')); props(id);
       if (n > 1) radio('Type de piles', 'pile', S.piles.type, Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom]));
       radio('Type de culées', 'culee', S.culees.type, Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom]));
+      if (n > 1) radio('Fondation des piles', 'fondP', S.fond.piles, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
+      radio('Fondation des culées', 'fondC', S.fond.culees, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
       return L;
     }
-    if (id === 'fond') {
-      L.push(H('Fondations')); props(id);
-      if (n > 1) radio('Piles', 'fondP', S.fond.piles, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
-      radio('Culées', 'fondC', S.fond.culees, [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]);
-      return L;
-    }
-    if (id === 'usage' || id === 'profil') {
-      L.push(H(id === 'usage' ? 'Usage & règlement' : 'Profil en travers')); props(id);
-      radio('Usage', 'usage', S.usage, [['route', 'Pont-route'], ['rail', 'Pont-rail']]);
+    if (id === 'hyp') {
+      L.push(H('Hypothèses')); L.push(it('Ouvrir les hypothèses', 'tab', 'hyp', { ic: 'predim' }));
       radio('Règlement', 'reg', S.reglement, rail ? [['EC', 'EN 1991-2'], ['F61', 'UIC 71 / Livret 2.01']] : [['EC', 'Eurocodes'], ['F61', 'Fascicule 61 titre II']]);
+      return L;
+    }
+    if (id === 'profil') {
+      L.push(H('Profil en travers')); props(id);
+      radio('Usage', 'usage', S.usage, [['route', 'Pont-route'], ['rail', 'Pont-rail']]);
       return L;
     }
     if (/^r-/.test(id) || id === 'resultats') {
       L.push(H('Résultats'));
-      Object.keys(TABLES).forEach((k) => L.push(it('Tableau : ' + TABLES[k], 'tab', k, { ic: k })));
+      Object.keys(TABLES).forEach((k) => L.push(it('Tableau : ' + TABLES[k], 'tab', k, { ic: k === 'hyp' ? 'predim' : k })));
       L.push('-'); L.push(it('Note de prédimensionnement (PDF)', 'pdf', null, { ic: 'pdf' }));
       return L;
     }
@@ -886,7 +978,7 @@
       L.push(it('Enregistrer', 'save', null, { ic: 'save', kbd: 'Ctrl+S' })); L.push(it('Note PDF', 'pdf', null, { ic: 'pdf' })); L.push(it('Plan DXF', 'dxf', null, { ic: 'dxf' }));
       return L;
     }
-    L.push(H({ equip: 'Équipements', prix: 'Prix unitaires' }[id] || id)); props(id);
+    L.push(H({ equip: 'Équipements' }[id] || id)); props(id);
     return L;
   }
   function showMenu(id, x, y) {
@@ -969,13 +1061,35 @@
     const tmp = document.createElement('div'); tmp.innerHTML = tPredim();
     const rowsP = [...tmp.querySelectorAll('table')[0].rows].map((r) => [r.cells[0].textContent, r.cells[1].innerHTML]);
     const rowsG = [...tmp.querySelectorAll('table')[1].tBodies[0].rows].map((r) => ({ c: [r.cells[0].textContent, r.cells[1].textContent], cls: r.className }));
-    h += '<h2 class="p-h">3. Prédimensionnement du tablier</h2>' + tab(['Paramètre', 'Valeur'], rowsP, true);
+    // hypothèses de calcul
+    const Hh = S.hyp, cls = { strategique: 'stratégique', important: 'important', courant: 'courant' };
+    h += '<h2 class="p-h p-break">3. Hypothèses de calcul</h2>' + tab(['Thème', 'Hypothèses'], [
+      ['Règlement', esc(regLabel()) + ' — ' + esc(trafLabel()) + '<br>' + esc(M.cb.lab)],
+      ['Matériaux', 'Béton : tablier ' + Hh.betonTab + ', appuis ' + Hh.betonApp + ', fondations ' + Hh.betonFond + ', pieux ' + Hh.betonPieux + ' — aciers ' + esc(Hh.acier) + (['PSIDP', 'VIPP', 'PRAD'].includes(S.tablier.type) ? ' — précontrainte ' + esc(Hh.precontrainte) : '') + (['PRP', 'MIXTE'].includes(S.tablier.type) ? ' — charpente ' + Hh.charpente : '')],
+      ['Enrobages', 'tablier ' + fr(Hh.enrobTab, 0) + ' cm, appuis ' + fr(Hh.enrobApp, 0) + ' cm, fondations ' + fr(Hh.enrobFond, 0) + ' cm — exposition ' + esc(Hh.exposition) + ' — durée d’utilisation ' + Hh.dureeVie + ' ans'],
+      ['Poids volumiques', 'béton armé ' + fr(Hh.gammaB, 0) + ' kN/m³, enrobés ' + fr(Hh.gammaEnrobes, 0) + ', ballast ' + fr(Hh.gammaBallast, 0) + ', remblai ' + fr(Hh.gammaRemblai, 0) + ' kN/m³'],
+      ['Déformations', 'ΔT = ±' + fr(Hh.dT, 0) + ' °C, retrait + fluage ' + fr(Hh.retrait, 1) + '×10⁻⁴ — majoration d’excentrement des appareils ' + (Hh.kExc ? fr(Hh.kExc, 2) : 'automatique')],
+      ['Sol et fondations', 'σ adm = ' + fr(S.fond.sigma, 2) + ' MPa (ELS) — semelles de culées majorées de ' + fr(Hh.majCulees, 0) + ' % — pieux Ø ' + fr(S.fond.diam, 2) + ' m, L = ' + fr(S.fond.long, 1) + ' m, Q adm = ' + fr(S.fond.qadm, 2) + ' MN'],
+      ['Séisme', 'RPOA 2005 : a = ' + fr(Hh.seismeA, 2) + ' g, ouvrage ' + cls[Hh.seismeClasse] + ' — non pris en compte dans le prédimensionnement'],
+    ], true);
+    if (Hh.notes.trim()) h += '<h3 class="p-h3">Hypothèses particulières</h3><p style="white-space:pre-wrap">' + esc(Hh.notes) + '</p>';
+    h += '<h2 class="p-h">4. Prédimensionnement du tablier</h2>' + tab(['Paramètre', 'Valeur'], rowsP, true);
     h += '<h3 class="p-h3">Charges permanentes (kN/m)</h3>' + tab(['Désignation', 'kN/m'], rowsG);
-    h += '<h2 class="p-h p-break">4. Descente de charges estimée</h2><p>' + esc(trafLabel()) + ' Combinaisons : ' + esc(M.cb.lab) + '.</p>';
+    h += '<h2 class="p-h p-break">5. Descente de charges estimée</h2><p>' + esc(trafLabel()) + ' Combinaisons : ' + esc(M.cb.lab) + '.</p>';
     h += tab(['Appui', 'Ligne', 'Portées (m)', 'G (kN)', 'Q (kN)', 'Modèle', 'ELS (kN)', 'ELU (kN)'], M.lines.map((l) => [M.supports[l.j].id, l.side === 'C' ? 'unique' : l.side === 'G' ? 'gauche' : 'droite', [l.Lg, l.Ld].filter((v) => v > 0).map((v) => fr(v, 2)).join(' + '), f0(l.G), f0(l.Q), esc(l.det.mod), f0(l.els), f0(l.elu)]));
     h += tab(['Appui', 'G tablier', 'Q', 'ELS', 'ELU', 'Poids appui', 'N fondation (ELS)'], M.supports.map((s) => [s.id, f0(s.G), f0(s.Q), f0(s.els), f0(s.elu), f0(s.Gapp), f0(s.N)]));
     // appuis
-    h += '<h2 class="p-h">5. Appuis, appareils d’appui et fondations</h2>';
+    // analyse longitudinale
+    if (M.an) {
+      const an = M.an;
+      h += '<h2 class="p-h p-break">6. Analyse longitudinale du tablier</h2><p>Poutre ' + (M.cont ? 'continue' : 'isostatique par travée') + ' modélisée par éléments finis (lignes d’influence de M, V et R). Trafic : ' + esc(an.TM.lab) + '. Section brute : B = ' + fr(an.sec.A, 3) + ' m², I = ' + fr(an.sec.I, 4) + ' m⁴, v = ' + fr(an.sec.v, 3) + ' m, v′ = ' + fr(an.sec.vp, 3) + ' m.</p>';
+      h += `<figure class="p-fig">${C.diagSVG(M, 'M', { width: 1000, height: 330, id: 'qm' })}<figcaption>Enveloppe des moments fléchissants (kN·m)</figcaption></figure>`;
+      h += tab(['Travée', 'L (m)', 'M G', 'M Q', 'M ELS', 'M ELU', 'σ sup / σ inf ELS (MPa)'].concat(an.des.kind === 'BA' ? ['As inf (cm²/m)'] : an.des.kind === 'acier' ? ['σ acier (MPa)'] : []),
+        an.spans.map((sp) => ['T' + (sp.i + 1), fr(sp.L, 2), f0(sp.MG), f0(sp.MQ), f0(sp.Mels), f0(sp.Melu), fr(sp.sSup, 1) + ' / ' + fr(sp.sInf, 1)].concat(an.des.kind === 'BA' ? [fr(sp.As, 1)] : an.des.kind === 'acier' ? [f0(sp.sAcier)] : [])));
+      h += tab(['Appui', 'M ELS', 'M ELU', 'R G', 'R Q', 'R ELU', 'R ELU forfait'], an.sups.map((s) => [M.supports[s.j].id, f0(s.Mels), f0(s.Melu), f0(s.R.G), f0(s.R.Qmax), f0(s.R.elu), f0(M.supports[s.j].elu)]));
+      if (an.prec) h += `<p>Précontrainte indicative pour décomprimer la fibre inférieure sous ELS caractéristique (T${an.prec.span + 1}) : P ≈ ${fr(an.prec.P / 1000, 1)} MN, soit environ ${an.prec.nCables} câbles 12T15.</p>`;
+    }
+    h += '<h2 class="p-h">7. Appuis, appareils d’appui et fondations</h2>';
     h += tab(['Appui', 'Éléments', 'Fondation', 'Appareils d’appui'], M.supports.map((s) => {
       const f = s.fo;
       const fo = f.mode === 'superficielle' ? 'Semelle ' + fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m ; q = ' + fr(f.q / 1000, 3) + ' MPa' : f.n + ' pieux Ø ' + fr(f.D, 2) + ' m, L = ' + fr(f.Lp, 1) + ' m ; ' + fr(f.Npieu / 1000, 2) + ' MN/pieu' + (f.e > 0 ? ' ; massif ' + fr(f.Lx, 2) + ' × ' + fr(f.Ly, 2) + ' × ' + fr(f.e, 2) + ' m' : '');
@@ -990,9 +1104,9 @@
       rowsM.push({ c: ['', 'Sous-total', '', '', '', f0(L.mt)], cls: 'tot' });
     });
     rowsM.push({ c: ['', 'TOTAL HT', '', '', '', f0(M.total)], cls: 'tot' });
-    h += '<h2 class="p-h p-break">6. Métrés et estimation</h2>' + tab(['Code', 'Désignation', 'U', 'Quantité', 'P.U. ' + esc(dv), 'Montant ' + esc(dv)], rowsM, true);
+    h += '<h2 class="p-h p-break">8. Métrés et estimation</h2>' + tab(['Code', 'Désignation', 'U', 'Quantité', 'P.U. ' + esc(dv), 'Montant ' + esc(dv)], rowsM, true);
     h += `<p>Coût ${f0(M.kpi.parM2)} ${esc(dv)} HT/m² de tablier (${f0(M.surf)} m²) — béton ${fr(M.kpi.beton / M.surf, 2)} m³/m², aciers HA ${f0(M.kpi.acier / M.surf)} kg/m².</p>`;
-    h += '<h2 class="p-h">7. Hypothèses et limites</h2><div class="p-small"><ul>' + M.notes.map((n) => `<li>${esc(n)}</li>`).join('')
+    h += '<h2 class="p-h">9. Limites du prédimensionnement</h2><div class="p-small"><ul>' + M.notes.map((n) => `<li>${esc(n)}</li>`).join('')
       + '<li>Prédimensionnement par élancements usuels (guides SETRA) ; ratios d’aciers et de charpente statistiques.</li><li>Prix unitaires indicatifs, hors taxes, à ajuster au marché et au projet.</li><li>Document généré par BridgeAI Studios — Bridge Composer ; il ne constitue pas une note de calcul justificative.</li></ul></div>';
     $('#print').innerHTML = h;
   }

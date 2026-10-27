@@ -136,6 +136,7 @@
       ['PLAN DE COFFRAGE D’ENSEMBLE — AVANT-PROJET (configurateur)', 3],
       [M.T.nom + ' — ' + M.S.travees.map((v) => C.fr(v, 2)).join(' + ') + ' = ' + C.fr(M.Ltot, 2) + ' m — largeur ' + C.fr(M.W, 2) + ' m — h = ' + C.fr(M.h, 2) + ' m', 2.5],
       ['Unité : mètre. Élévation 1/' + E.ech + ', coupe 1/' + S.ech + '. ' + (P.ref ? 'Réf. ' + P.ref + '. ' : '') + 'Date : ' + (meta.date || ''), 2.5],
+      ['NOTA : béton tablier ' + M.S.hyp.betonTab + ', appuis ' + M.S.hyp.betonApp + ', fondations ' + M.S.hyp.betonFond + ' — aciers ' + M.S.hyp.acier + ' — arêtes vues chanfreinées 2 × 2 cm.', 2.5],
       ['Prédimensionnement indicatif : à justifier par une note de calcul.', 2.5],
     ];
     const rh = 8 * k;

@@ -4,7 +4,7 @@
  *  3. Prédimensionnement PSI-DA continu 12-15-12 : h = 0,60 m (L/26).
  *  4. Fondations : contrainte ≤ σ adm, effort par pieu ≤ Q adm.
  */
-const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'));
+const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'), require('../composer/analysis.js'), require('../composer/diag.js'));
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) fails++; };
 const bad = (s) => /NaN|undefined|Infinity/.test(s);
@@ -30,12 +30,30 @@ for (const u of ['route', 'rail']) for (const t of C.TYPE_KEYS) for (const reg o
   const dump = JSON.stringify({ k: m.kpi, l: m.lines.map((x) => [x.G, x.Q, x.app.des]), s: m.supports.map((x) => [x.N, x.fo]) });
   const svg = C.toSVG(C.elevScene(m), { width: 900 }) + C.toSVG(C.secScene(m), { width: 600 });
   const dxf = C.buildDXF(m, { date: 'test' });
+  m.an = C.analyse(m);
+  const dg = ['M', 'V', 'S', 'R'].map((k) => C.diagSVG(m, k, { width: 800, height: 400 })).join('') + JSON.stringify(m.an.spans) + JSON.stringify(m.an.sups);
   const v3 = C.render3D(C.build3D(m), { yaw: -0.6, pitch: 0.4, zoom: 1, panX: 0, panY: 0 }, { width: 800, height: 500 });
-  const good = !bad(dump) && !bad(svg) && !/nan/i.test(dxf) && m.total > 0 && m.kpi.beton > 0 && dxf.endsWith('EOF\r\n') && !bad(v3);
+  const good = !bad(dump) && !bad(svg) && !/nan/i.test(dxf) && m.total > 0 && m.kpi.beton > 0 && dxf.endsWith('EOF\r\n') && !bad(v3) && !bad(dg);
   if (!good) ok(false, `${u} ${t} ${reg} ${fond} ${bad(dump)} ${bad(svg)} ${/nan/i.test(dxf)}`);
   n++;
 }
 ok(fails === f0, n + ' combinaisons type × usage × règlement × fondation sans NaN, DXF et vue 3D complets');
+
+// 2b. analyse longitudinale : solutions de référence
+const A = C._an;
+{
+  let mdl = A.beamModel(20, [0, 20], 0.5), IL = A.influence(mdl), xs = mdl.xs, w = A.tributary(xs);
+  const im = xs.findIndex((x) => Math.abs(x - 10) < 1e-9); let Mq = 0; for (let j = 0; j < xs.length; j++) Mq += IL.M[im][j] * w[j];
+  ok(Math.abs(IL.M[im][im] - 5) < 1e-9 && Math.abs(Mq - 50) < 1e-6, `poutre isostatique 20 m : M(P = 1 à mi-portée) = ${IL.M[im][im].toFixed(3)} (5), M(q = 1) = ${Mq.toFixed(3)} (50)`);
+  mdl = A.beamModel(40, [0, 20, 40], 0.5); IL = A.influence(mdl); xs = mdl.xs; w = A.tributary(xs);
+  const is = xs.findIndex((x) => Math.abs(x - 20) < 1e-9); let Ms = 0, R1 = 0; for (let j = 0; j < xs.length; j++) { Ms += IL.M[is][j] * w[j]; R1 += IL.R[1][j] * w[j]; }
+  ok(Math.abs(Ms + 50) < 0.1 && Math.abs(R1 - 25) < 0.01, `2 travées de 20 m, q = 1 : M sur appui = ${Ms.toFixed(2)} (−50), R centrale = ${R1.toFixed(2)} (25)`);
+  const m = C.compute(C.defaults('route')); m.an = C.analyse(m);
+  const t2 = m.an.spans[1], ref = m.g * 40 * 40 / 8;
+  ok(Math.abs(t2.MG - ref) / ref < 0.005, `VIPP 40 m isostatique : M G = ${t2.MG.toFixed(0)} kN·m (gL²/8 = ${ref.toFixed(0)})`);
+  const dmax = Math.max.apply(null, m.an.sups.map((s) => Math.abs(s.R.elu - m.supports[s.j].elu) / m.supports[s.j].elu));
+  ok(dmax < 0.05, `réactions EF / descente de charges : écart maximal ${(dmax * 100).toFixed(1)} %`);
+}
 
 // 3. prédimensionnement
 const a = C.compute(Object.assign(C.defaults('route'), { tablier: { type: 'PSIDA' }, travees: [12, 15, 12], piles: { type: 'voile', hauteurs: [6, 6] }, culees: { hauteurs: [3.5, 3.5] } }));

@@ -189,6 +189,24 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .msgl li.i::before{content:"i";background:#5b7db8;font-style:italic}
 .msgl li.o::before{content:"✓";background:var(--ok)}
 
+/* page Hypothèses */
+.hyp-head h3{font-size:15px;font-weight:600;color:#1b2230}
+.hyp-head p{color:var(--mute);margin:2px 0 10px;max-width:900px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-items:start}
+.hc{border:1px solid var(--line);border-radius:4px;background:#fff;overflow:hidden}
+.hc.wide{grid-column:1/-1}
+.hc h4{margin:0 !important;padding:5px 8px;background:linear-gradient(#f7f8fa,#e9ecf1);border-bottom:1px solid var(--line);font-size:11.5px !important}
+.hc.wide .pg{columns:auto}
+.hnotes{display:block;width:100%;min-height:120px;border:none;padding:8px 10px;font:inherit;font-size:12.5px;line-height:1.5;resize:vertical;outline:none}
+.hnotes:focus{box-shadow:inset 0 0 0 2px rgba(31,95,209,.25)}
+/* curseur de lecture des diagrammes */
+.xh{position:absolute;inset:0;pointer-events:none}
+.xh .xl{position:absolute;top:40px;bottom:40px;width:0;border-left:1px dashed #1b2230}
+.xh .xb{position:absolute;top:44px;min-width:170px;background:rgba(255,255,255,.96);border:1px solid #aab3c0;border-radius:4px;box-shadow:0 4px 14px -6px rgba(20,30,50,.35);padding:6px 8px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.xh .xb b{display:block;margin-bottom:3px}
+.xh .xb div{display:flex;justify-content:space-between;gap:12px}
+.xh .xb div span:first-child{color:var(--mute)}
+
 /* menu contextuel */
 .cmenu{position:fixed;z-index:500;min-width:220px;max-width:300px;background:#fff;border:1px solid #aab3c0;border-radius:4px;box-shadow:0 8px 24px -6px rgba(20,30,50,.35);padding:3px 0;font-size:12px}
 .cmenu .mh{padding:4px 12px 2px;font-size:10.5px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
@@ -273,17 +291,16 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <body>
 
 <header class="titlebar">
-  <a href="index.html" class="logo" title="Accueil BridgeAI Studios">Bridge<span>AI</span> Studios</a>
+  <span class="logo">Bridge<span>AI</span> Studios</span>
   <span class="tb-sep"></span>
   <span class="tb-app">Bridge Composer</span>
   <span class="tb-doc" id="tbDoc"></span>
-  <span class="tb-right"><a href="ponts-types.html">Ponts types</a><a href="index.html">← Accueil</a></span>
+  <span class="tb-right"><a href="index.html">← Accueil BridgeAI Studios</a></span>
 </header>
 
 <nav class="menubar" id="menubar" aria-label="Menus">
   <button class="mtab file" data-m="fichier">Fichier</button>
   <button class="mtab on" data-m="resultats">Résultats</button>
-  <button class="mtab" data-m="affichage">Affichage</button>
 </nav>
 <div class="ribbon" id="ribbon" role="toolbar" aria-label="Commandes"></div>
 
@@ -320,10 +337,12 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=4"></script>
-<script src="composer/draw.js?v=4"></script>
-<script src="composer/dxf.js?v=4"></script>
-<script src="composer/view3d.js?v=4"></script>
-<script src="composer/app.js?v=4"></script>
+<script src="composer/calc.js?v=6"></script>
+<script src="composer/draw.js?v=6"></script>
+<script src="composer/dxf.js?v=6"></script>
+<script src="composer/view3d.js?v=6"></script>
+<script src="composer/analysis.js?v=6"></script>
+<script src="composer/diag.js?v=6"></script>
+<script src="composer/app.js?v=6"></script>
 </body>
 </html>
