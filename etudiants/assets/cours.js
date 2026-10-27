@@ -101,6 +101,7 @@
     let ticking = false;
     function onScroll() {
       ticking = false;
+      if (document.body.classList.contains("paged")) return;
       const y = window.scrollY + 120;
       let on = 0;
       heads.forEach((h, i) => { if (h && h.offsetTop <= y) on = i; });
@@ -112,6 +113,131 @@
     }
     addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
     onScroll();
+  }
+
+
+  /* ── découpage en pages courtes (≈ 2 écrans) ── */
+  function paginate() {
+    const art = $("article");
+    if (!art || document.body.dataset.paged === "no") return;
+    const secs = $$(":scope > section", art);
+    if (secs.length < 2) return;
+    const target = Math.max(1100, Math.min(1700, innerHeight * 1.9));
+    // 1. morceaux : chaque h2 et chaque h3 « de premier niveau » ouvre un morceau
+    const chunks = [];
+    secs.forEach((sec, si) => {
+      let cur = null;
+      Array.from(sec.children).forEach(ch => {
+        const isQuiz = ch.matches(".quiz");
+        const head = ch.tagName === "H2" || ch.tagName === "H3" || isQuiz;
+        if (!cur || (head && cur.els.length)) {
+          cur = { sec: si, els: [], h2: ch.tagName === "H2", title: head && !isQuiz ? ch : null, force: isQuiz, quiz: isQuiz };
+          chunks.push(cur);
+        }
+        cur.els.push(ch);
+      });
+    });
+    chunks.forEach(c => {
+      c.h = c.els.reduce((a, e) => a + e.offsetHeight + 16, 0);
+      if (!c.title) c.title = c.els[0].closest("section").querySelector("h2");
+    });
+    // 2. regroupement : nouvelle page à chaque section, et à un h3 si la page devient trop longue
+    const pages = [];
+    let pg = null;
+    chunks.forEach(c => {
+      const newSec = !pg || c.sec !== pg.sec;
+      const small = pg && pg.h < 420;
+      if (!pg || c.force || (newSec && !small) || (!newSec && pg.h + c.h > target && pg.h > 380)) {
+        pg = { sec: c.sec, h: 0, chunks: [], title: c.title, quiz: c.quiz };
+        pages.push(pg);
+      }
+      if (newSec) pg.sec = c.sec;
+      pg.chunks.push(c); pg.h += c.h;
+    });
+    if (pages.length < 2) return;
+    pages.forEach((p, k) => p.chunks.forEach(c => c.els.forEach(e => { e.dataset.pg = k; })));
+    const N = pages.length;
+    const label = p => {
+      const h = p.title;
+      if (!h) return "Introduction";
+      if (h.closest(".keys")) return "À retenir";
+      return h.textContent.replace(/^\s*\d+(\.\d+)*\s*/, "").trim();
+    };
+    pages.forEach((p, k) => {
+      const e0 = p.chunks[0].els[0];
+      p.label = p.quiz ? "Quiz : testez-vous" : e0.matches(".keys") ? "À retenir" : (k === 0 && !e0.matches("h2,h3")) ? "Introduction" : label(p);
+    });
+
+    // 3. interface : bandeau de progression + boutons
+    document.body.classList.add("paged");
+    const top = el("div", { class: "pager-top" });
+    top.innerHTML = `<div class="pg-info"><span class="pg-count"></span><span class="pg-title"></span></div>
+      <div class="pg-dots">${pages.map((p, k) => `<button type="button" title="${(k + 1) + ". " + p.label.replace(/"/g, "&quot;")}" aria-label="Page ${k + 1}"></button>`).join("")}</div>`;
+    art.prepend(top);
+    const bottom = el("div", { class: "pager-bottom" });
+    bottom.innerHTML = `<button type="button" class="pg-prev">← <span></span></button><span class="pg-mid"></span><button type="button" class="pg-next"><span></span> →</button>`;
+    const chNav = $(".ch-nav", art);
+    art.insertBefore(bottom, chNav || null);
+    const dots = $$(".pg-dots button", top);
+    let k = 0;
+    function show(n, scrollTo) {
+      k = Math.max(0, Math.min(N - 1, n));
+      $$("[data-pg]", art).forEach(e => e.classList.toggle("pg-hide", +e.dataset.pg !== k));
+      secs.forEach(sec => sec.classList.toggle("pg-hide", !$$(":scope > [data-pg]", sec).some(e => +e.dataset.pg === k)));
+      dots.forEach((d, i) => { d.classList.toggle("on", i === k); d.classList.toggle("done", i < k); });
+      $(".pg-count", top).textContent = `Page ${k + 1} / ${N}`;
+      $(".pg-title", top).textContent = pages[k].label;
+      const pv = $(".pg-prev", bottom), nx = $(".pg-next", bottom);
+      pv.style.visibility = k ? "visible" : "hidden";
+      nx.style.display = k < N - 1 ? "" : "none";
+      if (k) $("span", pv).textContent = pages[k - 1].label;
+      if (k < N - 1) $("span", nx).textContent = pages[k + 1].label;
+      $(".pg-mid", bottom).textContent = `${k + 1} / ${N}`;
+      if (chNav) chNav.classList.toggle("pg-hide", k < N - 1);
+      const bar = $(".reading-bar");
+      if (bar) bar.style.width = ((k + 1) / N * 100) + "%";
+      // sommaire latéral
+      $$(".side .toc a").forEach(a => {
+        const t = document.getElementById(a.getAttribute("href").slice(1));
+        a.classList.toggle("on", !!t && +((t.closest("[data-pg]") || {}).dataset || {}).pg === k);
+      });
+      try { history.replaceState(null, "", "#p" + (k + 1)); } catch (e) {}
+      if (scrollTo) {
+        const y = art.getBoundingClientRect().top + scrollY - 70;
+        if (scrollY > y) window.scrollTo({ top: y, behavior: "auto" });
+      }
+      window.dispatchEvent(new Event("resize"));
+      document.dispatchEvent(new CustomEvent("cours:page", { detail: k }));
+    }
+    const go = n => { show(n, true); };
+    $(".pg-prev", bottom).addEventListener("click", () => go(k - 1));
+    $(".pg-next", bottom).addEventListener("click", () => go(k + 1));
+    dots.forEach((d, i) => d.addEventListener("click", () => go(i)));
+    addEventListener("keydown", e => {
+      if (e.target.closest && e.target.closest("input,select,textarea")) return;
+      if (e.key === "ArrowRight") go(k + 1);
+      if (e.key === "ArrowLeft") go(k - 1);
+    });
+    // liens internes (sommaire, renvois) : ouvrir la bonne page
+    document.addEventListener("click", e => {
+      const a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = decodeURIComponent(a.getAttribute("href").slice(1));
+      const t = id && document.getElementById(id);
+      const host = t && t.closest("[data-pg]");
+      if (!host) return;
+      e.preventDefault();
+      show(+host.dataset.pg);
+      requestAnimationFrame(() => window.scrollTo({ top: t.getBoundingClientRect().top + scrollY - 80, behavior: "smooth" }));
+      document.body.classList.remove("side-open");
+    });
+    // page de départ
+    let start = 0;
+    const h = location.hash.slice(1);
+    if (/^p\d+$/.test(h)) start = +h.slice(1) - 1;
+    else if (h && document.getElementById(h)) { const host = document.getElementById(h).closest("[data-pg]"); if (host) start = +host.dataset.pg; }
+    show(start);
+    window.Cours.page = { show, count: N };
   }
 
   /* ── précédent / suivant ── */
@@ -337,6 +463,7 @@
     tips();
     quizzes();
     sequences();
+    paginate();
     viewers();
     printing();
     document.dispatchEvent(new Event("cours:ready"));

@@ -79,6 +79,40 @@
 .soon span{font-size:13px;padding:7px 14px;border-radius:999px;border:1px dashed #cbbf9c;color:#7a6a3b;background:#fffaf0}
 @media(max-width:980px){.hero .in,.course{grid-template-columns:1fr}.course-card{position:static}.tools{grid-template-columns:1fr 1fr}.site-nav ul{display:none}}
 @media(max-width:640px){.chapters{grid-template-columns:1fr}.tools{grid-template-columns:1fr}.dl-row{grid-template-columns:44px 1fr}.dl-row .act{grid-column:2}.hero{padding:44px 16px 40px}.wrap{padding:40px 16px}}
+
+/* ─── version compacte ─── */
+.hero{padding:44px 3vw 40px}
+.hero .in{grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:32px}
+.hero h1{font-size:clamp(34px,4.4vw,56px);margin-bottom:12px}
+.hero p.sub{font-size:16px;margin-bottom:20px}
+.hero .stats{margin-top:22px;gap:24px}
+.hero .stats b{font-size:28px}
+.hero-art svg{max-height:250px}
+.wrap{padding:34px 3vw 44px}
+.sec-h{margin-bottom:18px}
+.chapters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.chap{position:relative;display:flex;flex-direction:column;gap:4px;padding:14px 14px 12px;border-radius:16px;background:#fff;border:1px solid var(--line);overflow:hidden;transition:border-color .25s,transform .25s,box-shadow .25s;min-height:168px}
+.chap:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:0 16px 36px -22px rgba(20,23,31,.45)}
+.chap .cover{position:absolute;inset:0;z-index:1}
+.chap .num{position:absolute;right:10px;top:0;font-family:'Cormorant Garamond',serif;font-size:52px;line-height:1;color:transparent;-webkit-text-stroke:1px rgba(168,132,42,.45)}
+.chap small{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+.chap h4{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:21px;line-height:1.08;padding-right:34px}
+.chap p{font-size:12.5px;color:var(--mute);line-height:1.45}
+.chap .foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto;padding-top:8px}
+.chap .tags{display:flex;flex-wrap:wrap;gap:4px}
+.chap .tags span{font-size:10.5px;padding:2px 8px;border-radius:999px;background:#f2efe6;color:#6a5a2c}
+.chap .tags span.t3d{background:#e6eefc;color:#2453b3}.chap .tags span.ani{background:#e4f6ef;color:#0b6e5c}.chap .tags span.cal{background:#fbeee9;color:#a33d22}
+.chap .pdf{position:relative;z-index:2;font-size:11px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid var(--line2);border-radius:8px;padding:3px 8px;white-space:nowrap}
+.chap .pdf:hover{background:var(--gold);color:#fff}
+.chap.form{background:linear-gradient(150deg,#121827,#1d2740);border-color:#1d2740}
+.chap.form h4{color:#fff}.chap.form p{color:#b7bfcd}.chap.form .num{-webkit-text-stroke:1px rgba(232,201,122,.5)}
+.chap.form .tags span{background:rgba(255,255,255,.08);color:#e8c97a}.chap.form .pdf{color:#e8c97a;border-color:rgba(232,201,122,.4)}
+.tools-line{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:22px;font-size:13.5px;color:var(--mute)}
+.tools-line a{text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-soft)}
+.tools-line a:hover{border-color:var(--gold);color:var(--gold)}
+@media(max-width:1180px){.chapters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:980px){.hero .in{grid-template-columns:1fr}.hero-art{display:none}}
+@media(max-width:640px){.chapters{grid-template-columns:1fr 1fr;gap:10px}.chap{min-height:0;padding:12px}.chap h4{font-size:18px}.chap p{display:none}.hero{padding:30px 16px 28px}.wrap{padding:24px 16px 32px}}
 </style>
 </head>
 <body>
@@ -105,7 +139,7 @@
       <p class="sub">Un cours complet, pensé pour les élèves ingénieurs en génie civil : chaque notion expliquée pas à pas, avec des schémas en couleur, des maquettes 3D à manipuler, des séquences animées, des calculatrices interactives et un quiz à la fin de chaque chapitre.</p>
       <div class="cta">
         <a class="btn" href="etudiants/ponts/ch0.html">Commencer le cours →</a>
-        <a class="btn ghost" href="#telecharger">Télécharger les chapitres</a>
+        <a class="btn ghost" href="#cours">Voir les chapitres</a>
       </div>
       <div class="stats">
         <div><b>10</b>modules</div>
@@ -153,58 +187,23 @@
   <section class="wrap" id="cours">
     <div class="sec-h">
       <h2>Le cours de <em>ponts</em></h2>
-      <p>Huit chapitres qui suivent la vraie démarche d'un bureau d'études : on conçoit, on prédimensionne, on inventorie les charges, on calcule le tablier puis les appuis, on vérifie au séisme et on dimensionne les sections.</p>
+      <p>Dix modules courts, découpés en pages de lecture rapide. Cliquez sur un chapitre pour le lire, ou sur « PDF » pour le télécharger.</p>
     </div>
-    <div class="course">
-      <aside class="course-card">
-        <div class="tag">Génie civil · 4e – 5e année</div>
-        <h3>Cours de ponts</h3>
-        <p>Un cours complet, écrit pour le web. Il avance « en parallèle avec un calcul concret » : un pont routier au-dessus d'une voie ferrée, suivi de la collecte des données jusqu'au ferraillage.</p>
-        <ul>
-          <li>Typologie et état de l'art des ponts au Maroc</li>
-          <li>Conception et prédimensionnement des ponts courants</li>
-          <li>Méthodes de construction</li>
-          <li>Règlement de charges (fascicule 61 titre II, Eurocodes)</li>
-          <li>Calcul d'un pont courant de A à Z</li>
-        </ul>
-        <a class="btn" href="etudiants/ponts/ch0.html" style="width:100%;justify-content:center">Commencer par l'introduction</a>
-      </aside>
-
-      <div class="chapters">
-        <a class="chap" href="etudiants/ponts/ch0.html"><span class="num">0</span><small>Chapitre 0</small><h4>Introduction au cours des ponts</h4><p>Objectifs, organisation, disciplines associées, cycle d'un projet d'ouvrage et présentation du pont « fil rouge ».</p><div class="tags"><span class="ani">Animations</span><span>Quiz</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch1.html"><span class="num">1</span><small>Chapitre 1</small><h4>Constituants d'un pont &amp; terminologie</h4><p>Tablier, piles, culées, fondations ; travée, portée, ouverture ; familles SETRA ; équipements.</p><div class="tags"><span class="t3d">3D</span><span class="ani">Animation</span><span>Quiz</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch2.html"><span class="num">2</span><small>Chapitre 2</small><h4>Conception des ponts courants</h4><p>Collecte des données, gabarits, implantation des appuis, choix du type d'ouvrage et méthodes de construction.</p><div class="tags"><span class="ani">Animations</span><span class="cal">Calculatrice</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch3.html"><span class="num">3</span><small>Chapitre 3</small><h4>Prédimensionnement</h4><p>Élancements, tabliers par type, piles, culées, dalles de transition, fondations et poids propre.</p><div class="tags"><span class="cal">Calculatrices</span><span class="ani">Animations</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch4.html"><span class="num">4</span><small>Chapitre 4</small><h4>Charges sur les ponts &amp; réglementation</h4><p>Fascicule 61 titre II : A(l), Bc, Bt, Br, Mc120, convois D et E, coefficient dynamique, freinage, vent, UIC 71.</p><div class="tags"><span class="cal">Calculatrices</span><span class="ani">Animations</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch5.html"><span class="num">5</span><small>Chapitre 5</small><h4>Méthodes de calcul des tabliers</h4><p>Lignes d'influence, convois mobiles, théorème de Barré, répartition transversale (Courbon, Guyon-Massonnet).</p><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch6.html"><span class="num">6</span><small>Chapitre 6</small><h4>Calcul des appuis &amp; fondations</h4><p>Efforts sur les appuis, appareils d'appui en élastomère fretté, répartition des efforts horizontaux, culées, semelles, pieux.</p><div class="tags"><span class="cal">Calculatrices</span><span class="ani">Animations</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch7.html"><span class="num">7</span><small>Chapitre 7</small><h4>Analyse sismique des ponts</h4><p>Dynamique, spectre de réponse, méthode monomodale, dispositions constructives et isolation sismique.</p><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div></a>
-        <a class="chap" href="etudiants/ponts/ch8.html"><span class="num">8</span><small>Chapitre 8</small><h4>Dimensionnement &amp; ferraillage</h4><p>États-limites, flexion, effort tranchant, notions de précontrainte, dispositions constructives et plans.</p><div class="tags"><span class="cal">Calculatrice</span><span class="ani">Animations</span></div></a>
-        <a class="chap wide" href="etudiants/ponts/formulaire.html"><span class="num">F</span><small>À garder sous la main</small><h4>Formulaire de poche</h4><p>Toutes les formules et valeurs du cours sur quelques pages imprimables : élancements, charges réglementaires, RDM, appareils d'appui, séisme, béton armé.</p><div class="tags"><span>Imprimable</span><span>Recherche instantanée</span></div></a>
-      </div>
+    <div class="chapters">
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch0.html" aria-label="Introduction"></a><span class="num">0</span><small>Chapitre 0</small><h4>Introduction</h4><p>Objectifs, disciplines, cycle d'un projet, le pont « fil rouge ».</p><div class="foot"><div class="tags"><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch0.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch1.html" aria-label="Constituants & terminologie"></a><span class="num">1</span><small>Chapitre 1</small><h4>Constituants &amp; terminologie</h4><p>Tablier, appuis, fondations ; familles de ponts ; équipements.</p><div class="foot"><div class="tags"><span class="t3d">3D</span><span class="ani">Animation</span></div><a class="pdf" href="etudiants/ponts/ch1.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch2.html" aria-label="Conception"></a><span class="num">2</span><small>Chapitre 2</small><h4>Conception</h4><p>Données, gabarits, implantation des appuis, choix du type, construction.</p><div class="foot"><div class="tags"><span class="ani">Animations</span><span class="cal">Calcul</span></div><a class="pdf" href="etudiants/ponts/ch2.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch3.html" aria-label="Prédimensionnement"></a><span class="num">3</span><small>Chapitre 3</small><h4>Prédimensionnement</h4><p>Élancements, tabliers, piles, culées, fondations, poids propre.</p><div class="foot"><div class="tags"><span class="cal">Calculs</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch3.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch4.html" aria-label="Charges & réglementation"></a><span class="num">4</span><small>Chapitre 4</small><h4>Charges &amp; réglementation</h4><p>Fascicule 61 titre II, coefficient dynamique, freinage, UIC 71.</p><div class="foot"><div class="tags"><span class="cal">Calculs</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch4.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch5.html" aria-label="Calcul des tabliers"></a><span class="num">5</span><small>Chapitre 5</small><h4>Calcul des tabliers</h4><p>Lignes d'influence, Barré, répartition transversale.</p><div class="foot"><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch5.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch6.html" aria-label="Appuis & fondations"></a><span class="num">6</span><small>Chapitre 6</small><h4>Appuis &amp; fondations</h4><p>Appareils d'appui, efforts horizontaux, culées, pieux.</p><div class="foot"><div class="tags"><span class="cal">Calculs</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch6.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch7.html" aria-label="Analyse sismique"></a><span class="num">7</span><small>Chapitre 7</small><h4>Analyse sismique</h4><p>Dynamique, spectre, méthode monomodale, dispositions.</p><div class="foot"><div class="tags"><span class="cal">Simulateur</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch7.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap"><a class="cover" href="etudiants/ponts/ch8.html" aria-label="Dimensionnement & ferraillage"></a><span class="num">8</span><small>Chapitre 8</small><h4>Dimensionnement &amp; ferraillage</h4><p>Flexion, tranchant, précontrainte, plans.</p><div class="foot"><div class="tags"><span class="cal">Calcul</span><span class="ani">Animations</span></div><a class="pdf" href="etudiants/ponts/ch8.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
+      <div class="chap form"><a class="cover" href="etudiants/ponts/formulaire.html" aria-label="Formulaire de poche"></a><span class="num">F</span><small>Formulaire</small><h4>Formulaire de poche</h4><p>Toutes les formules du cours, imprimable.</p><div class="foot"><div class="tags"><span class="">Recherche</span></div><a class="pdf" href="etudiants/ponts/formulaire.html?pdf=1" target="_blank" rel="noopener" title="Télécharger en PDF">PDF ↓</a></div></div>
     </div>
-  </section>
-
-  <section class="wrap" id="telecharger" style="padding-top:10px">
-    <div class="sec-h">
-      <h2>Télécharger <em>les chapitres</em></h2>
-      <p>Chaque chapitre s'exporte en PDF prêt à imprimer : le bouton ouvre la fenêtre d'impression, choisissez « Enregistrer au format PDF ».</p>
+    <div class="tools-line"><span>Pratiquer avec les outils du site :</span>
+      <a href="handbag.html">HandBag</a><a href="beton.html">Béton armé</a><a href="ponts-types.html">Ponts types</a><a href="plans-ferraillage.html">Plans de ferraillage</a>
     </div>
-    <div class="dl" id="dl-list"></div>
-  </section>
-
-  <section class="wrap" style="padding-top:10px">
-    <div class="sec-h">
-      <h2>Pratiquer avec <em>les outils</em></h2>
-      <p>Les mêmes outils que ceux utilisés en bureau d'études, en accès libre sur BridgeAI Studios.</p>
-    </div>
-    <div class="tools">
-      <a class="tool" href="handbag.html"><b>HandBag</b><span>264 feuilles de calcul : béton armé, précontrainte, appuis, géotechnique, séisme…</span></a>
-      <a class="tool" href="beton.html"><b>Béton armé</b><span>Calcul de sections BAEL 91 / Eurocode 2 avec export PDF.</span></a>
-      <a class="tool" href="ponts-types.html"><b>Ponts types</b><span>Calcul automatique de tabliers VIPP et autres ponts types SETRA.</span></a>
-      <a class="tool" href="plans-ferraillage.html"><b>Plans de ferraillage</b><span>Coffrage coté, ferraillage, nomenclature et export DXF.</span></a>
-    </div>
-    <div class="soon"><span>Prochainement : béton précontraint</span><span>Hydraulique des ouvrages de franchissement</span><span>Diagnostic &amp; réparation des ouvrages</span><span>Méthodes de construction</span></div>
   </section>
 </main>
 
@@ -215,28 +214,5 @@
   </div>
 </footer>
 
-<script>
-(function () {
-  var L = [
-    ["0", "ch0", "Introduction au cours des ponts", "Organisation, objectifs, cycle d'un projet"],
-    ["1", "ch1", "Constituants d'un pont & terminologie", "Anatomie, familles, équipements"],
-    ["2", "ch2", "Conception des ponts courants", "Données, gabarits, choix du type, construction"],
-    ["3", "ch3", "Prédimensionnement", "Élancements, tabliers, piles, culées"],
-    ["4", "ch4", "Charges sur les ponts & réglementation", "Fascicule 61 titre II, δ, freinage, UIC 71"],
-    ["5", "ch5", "Méthodes de calcul des tabliers", "Lignes d'influence, Barré, Courbon"],
-    ["6", "ch6", "Calcul des appuis & fondations", "Appareils d'appui, piles, culées, pieux"],
-    ["7", "ch7", "Analyse sismique des ponts", "Spectre, méthode monomodale, dispositions"],
-    ["8", "ch8", "Dimensionnement & ferraillage", "Flexion, tranchant, précontrainte"],
-    ["F", "formulaire", "Formulaire de poche", "Toutes les formules du cours"]
-  ];
-  var h = "";
-  L.forEach(function (r) {
-    h += '<div class="dl-row"><div class="n">' + r[0] + '</div><div class="t">' + r[2] + '<small>' + r[3] + '</small></div>' +
-      '<div class="act"><a class="btn sm light" href="etudiants/ponts/' + r[1] + '.html">Lire</a>' +
-      '<a class="btn sm" href="etudiants/ponts/' + r[1] + '.html?pdf=1" target="_blank" rel="noopener">PDF</a></div></div>';
-  });
-  document.getElementById("dl-list").innerHTML = h;
-})();
-</script>
 </body>
 </html>
