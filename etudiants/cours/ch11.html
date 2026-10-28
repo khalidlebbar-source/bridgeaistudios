@@ -162,13 +162,13 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
 <section class="slide" data-title="Ce qui se passe dans une section fléchie">
   <div class="kicker">Flexion simple à l'ELU</div>
   <h2 class="t">Dans une section fléchie : <em>un couple de forces</em></h2>
-  <svg class="full" viewBox="0 0 1150 430" aria-label="Section, déformations, contraintes et forces">
+  <svg class="full" viewBox="0 0 1250 430" aria-label="Section, déformations, contraintes et forces">
     <defs>
       <marker id="c10s19-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f6fe0"/></marker>
       <marker id="c10s19-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
       <marker id="c10s19-ar3" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
     </defs>
-    <rect width="1150" height="430" rx="16" fill="#fff"/>
+    <rect width="1250" height="430" rx="16" fill="#fff"/>
     <!-- section -->
     <g data-a data-fx="fade">
       <text x="150" y="36" text-anchor="middle" class="lbl-b">section</text>
@@ -181,31 +181,74 @@ svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin
       <text x="150" y="425" text-anchor="middle" class="lbl-s">béton tendu négligé</text>
     </g>
     <!-- déformations -->
-    <g data-b="1">
+    <g transform="translate(-30 0)"><g data-b="1">
       <text x="440" y="36" text-anchor="middle" class="lbl-b">déformations</text>
       <path d="M440 60 V400" stroke="#9aa3ae"/>
       <path d="M440 60 H370 L440 143 L631 370 H440" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="3" data-b="1" data-fx="draw"/>
       <text x="300" y="66" class="lbl-s" style="fill:#2453b3">3,5 ‰</text>
       <text x="560" y="398" class="lbl-s" style="fill:#2453b3">ε<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> ≤ 10 ‰</tspan></text>
       <text x="430" y="270" text-anchor="end" class="lbl-s">les sections planes</text><text x="430" y="290" text-anchor="end" class="lbl-s">restent planes</text>
-    </g>
+    </g></g>
     <!-- contraintes -->
-    <g data-b="2" data-fx="fade">
+    <g transform="translate(-80 0)"><g data-b="2" data-fx="fade">
       <text x="760" y="36" text-anchor="middle" class="lbl-b">contraintes</text>
       <path d="M760 60 V400" stroke="#9aa3ae"/>
       <rect x="680" y="60" width="80" height="66" fill="#e2c070" opacity=".75" stroke="#b8902f"/>
       <text x="676" y="54" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">f<tspan font-size="12" dy="3">bu</tspan></text>
       <path d="M672 60 V126" stroke="#b8902f" marker-start="url(#c10s19-ar3)" marker-end="url(#c10s19-ar3)"/><text x="664" y="100" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">0,8 y</text>
       <circle cx="760" cy="370" r="9" fill="#2f6fe0"/><text x="776" y="376" class="lbl-s" style="fill:#2453b3">f<tspan font-size="12" dy="3">su</tspan></text>
-    </g>
+    </g></g>
     <!-- forces -->
-    <g data-b="3" data-fx="fade">
+    <g transform="translate(-130 0)"><g data-b="3" data-fx="fade">
       <text x="1000" y="36" text-anchor="middle" class="lbl-b">forces</text>
       <path d="M1080 93 H935" stroke="#2f6fe0" stroke-width="5" marker-end="url(#c10s19-ar)" class="pulse"/><text x="1084" y="99" class="lbl-b" style="fill:#2453b3">F<tspan font-size="14" dy="4">b</tspan></text>
       <path d="M935 370 H1080" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c10s19-ar2)" class="pulse"/><text x="1084" y="376" class="lbl-b" style="fill:#a33d22">F<tspan font-size="14" dy="4">s</tspan></text>
       <path d="M920 93 V370" stroke="#b8902f" stroke-width="2" marker-start="url(#c10s19-ar3)" marker-end="url(#c10s19-ar3)"/><text x="900" y="238" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">z</text>
     </g>
-    <g data-b="4" data-fx="zoom"><rect x="880" y="250" width="250" height="60" rx="12" fill="#141a26"/><text x="1005" y="288" text-anchor="middle" class="lbl-w" style="font-size:22px">M<tspan font-size="15" dy="4">u</tspan><tspan dy="-4"> = F</tspan><tspan font-size="15" dy="4">b</tspan><tspan dy="-4"> × z</tspan></text></g>
+    <g data-b="4" data-fx="zoom"><rect x="880" y="250" width="250" height="60" rx="12" fill="#141a26"/><text x="1005" y="288" text-anchor="middle" class="lbl-w" style="font-size:22px">M<tspan font-size="15" dy="4">u</tspan><tspan dy="-4"> = F</tspan><tspan font-size="15" dy="4">b</tspan><tspan dy="-4"> × z</tspan></text></g></g>
+    <!-- en image : pousser / tirer -->
+    <path d="M1005 60 V400" stroke="#e6e9ee" stroke-width="2"/>
+    <text x="1130" y="36" text-anchor="middle" class="lbl-b">en image</text>
+    <g data-b="3" data-fx="up">
+      <rect x="1022" y="62" width="216" height="168" rx="12" fill="#eef3fd"/>
+      <path d="M1032 190 H1228" stroke="#9aa3ae" stroke-width="2"/>
+      <rect x="1214" y="80" width="12" height="110" fill="#9aa3ae"/>
+      <path d="M1214 88 l12 -8 M1214 104 l12 -8 M1214 120 l12 -8 M1214 136 l12 -8 M1214 152 l12 -8 M1214 168 l12 -8 M1214 184 l12 -8" stroke="#6e7884" stroke-width="1.5"/>
+      <rect x="1150" y="102" width="62" height="88" rx="3" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>
+      <g fill="#8d97a3"><circle cx="1166" cy="122" r="2.5"/><circle cx="1192" cy="138" r="2"/><circle cx="1172" cy="162" r="2.5"/><circle cx="1198" cy="176" r="2"/></g>
+      <text x="1181" y="96" text-anchor="middle" class="lbl-s" style="font-size:13px">béton</text>
+      <path d="M1154 146 h20" stroke="#2f6fe0" stroke-width="3" marker-end="url(#c10s19-ar)"/><path d="M1209 146 h-20" stroke="#2f6fe0" stroke-width="3" marker-end="url(#c10s19-ar)"/>
+      <g stroke="#141a26" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <animateTransform attributeName="transform" type="translate" values="0 0;4 0;0 0" dur="1.6s" repeatCount="indefinite"/>
+        <circle cx="1112" cy="104" r="11" fill="#141a26" stroke="none"/>
+        <path d="M1104 116 L1082 154"/>
+        <path d="M1102 122 L1128 124 L1149 116"/>
+        <path d="M1098 130 L1124 136 L1149 132"/>
+        <path d="M1082 154 L1098 172 L1094 189"/>
+        <path d="M1082 154 L1062 172 L1046 189"/>
+      </g>
+      <text x="1130" y="214" text-anchor="middle" class="lbl-s" style="fill:#2453b3;font-size:15px"><tspan font-weight="600">Béton comprimé</tspan> : on le pousse</text>
+    </g>
+    <g data-b="3" data-fx="up" data-d=".25">
+      <rect x="1022" y="246" width="216" height="168" rx="12" fill="#fdeeea"/>
+      <path d="M1032 376 H1228" stroke="#9aa3ae" stroke-width="2"/>
+      <rect x="1032" y="270" width="12" height="106" fill="#9aa3ae"/>
+      <path d="M1032 278 l12 -8 M1032 294 l12 -8 M1032 310 l12 -8 M1032 326 l12 -8 M1032 342 l12 -8 M1032 358 l12 -8 M1032 374 l12 -8" stroke="#6e7884" stroke-width="1.5"/>
+      <path d="M1044 318 H1168" stroke="#dc4a2c" stroke-width="7" stroke-linecap="round"/>
+      <path d="M1056 314 v8 M1070 314 v8 M1084 314 v8 M1098 314 v8 M1112 314 v8 M1126 314 v8 M1140 314 v8" stroke="#a33d22" stroke-width="2"/>
+      <text x="1100" y="300" text-anchor="middle" class="lbl-s" style="font-size:13px">barre d'acier</text>
+      <g stroke="#141a26" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <animateTransform attributeName="transform" type="translate" values="0 0;3 0;0 0" dur="1.6s" repeatCount="indefinite"/>
+        <circle cx="1214" cy="290" r="11" fill="#141a26" stroke="none"/>
+        <path d="M1207 302 L1194 344"/>
+        <path d="M1204 310 L1184 322 L1170 318"/>
+        <path d="M1202 318 L1186 326 L1170 320"/>
+        <path d="M1194 344 L1178 358 L1166 375"/>
+        <path d="M1194 344 L1196 360 L1182 375"/>
+      </g>
+      <path d="M1088 336 h-26" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c10s19-ar2)"/><path d="M1124 336 h26" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c10s19-ar2)"/>
+      <text x="1130" y="400" text-anchor="middle" class="lbl-s" style="fill:#a33d22;font-size:15px"><tspan font-weight="600">Acier tendu</tspan> : on le tire</text>
+    </g>
   </svg>
   <div class="callout b" style="margin-top:4px;font-size:17px;padding:10px 18px" data-b="4" data-fx="up"><span class="lab">Hypothèses du calcul</span>Sections planes, béton tendu négligé, adhérence parfaite. Le diagramme pivote autour de <b>A</b> (acier à 10 ‰) ou de <b>B</b> (béton à 3,5 ‰) ; le bloc réel est remplacé par un <b>rectangle de hauteur 0,8 y</b>.</div>
 </section>
