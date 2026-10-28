@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /bibliotheque.html
+Disallow: /library/
+Disallow: /liens-qrcode.html
+Disallow: /tools/
+
+Sitemap: https://www.bridgeaistudios.com/sitemap.xml
