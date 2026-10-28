@@ -132,7 +132,7 @@
     $(".progress").style.width = ((k + (slides[k].dataset.steps > 0 ? step / slides[k].dataset.steps : 1)) / N * 100) + "%";
     $(".prev").disabled = k === 0;
     $(".next").disabled = k === N - 1 && !(ci >= 0 && ci < CHAPTERS.length - 1);
-    $(".replay").style.display = +slides[k].dataset.steps > 0 ? "" : "none";
+    $(".replay").style.visibility = +slides[k].dataset.steps > 0 ? "visible" : "hidden";
   }
   let replayT = null;
   function stopReplay() { clearInterval(replayT); replayT = null; slides.forEach(x => x.classList.remove("replaying")); }

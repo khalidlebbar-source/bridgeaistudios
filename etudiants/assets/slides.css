@@ -159,7 +159,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:18px;background:#fff;bord
 .ui{position:fixed;z-index:20;display:flex;gap:6px;align-items:center;transition:opacity .4s}
 .ui.top{left:14px;top:12px}
 .ui.bot{right:14px;bottom:12px}
-body.idle .ui{opacity:0}
+body.idle .ui{opacity:.35}
 body.idle .ui:hover{opacity:1}
 .ui a,.ui button{font:inherit;height:36px;min-width:38px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(15,22,38,.78);backdrop-filter:blur(8px);color:#e8ebf1;font-size:14px;cursor:pointer;text-decoration:none}
 .ui a:hover,.ui button:hover:not(:disabled){border-color:var(--gold2);color:var(--gold2)}
@@ -225,3 +225,8 @@ body.toc-open .toc{transform:none}
 @media (prefers-reduced-motion:reduce){.slide,[data-a],[data-b]{animation:none!important}}
 
 .slide.replaying [data-b]{--dl:0s!important}
+
+/* boutons de défilement toujours au même endroit */
+.ui .cnt{min-width:72px;justify-content:center;text-align:center;display:inline-flex}
+.ui .replay{min-width:104px}
+.ui .prev,.ui .next{min-width:46px}
