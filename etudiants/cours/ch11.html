@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 11 — Dimensionner les sections · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 11 : dimensionner les sections — états-limites ELU et ELS, lois de comportement, flexion simple BAEL, effort tranchant, flexion composée, précontrainte, pertes et ferraillage.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch11.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+/* ── styles propres au chapitre 10 ── */
+.c10-ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.c10-ctl label{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink2)}
+.c10-ctl label span.v{color:var(--gold);font-weight:500}
+.c10-ctl input[type=range]{accent-color:var(--gold);width:100%}
+.c10-ctl input[type=number],.c10-ctl select{font:inherit;font-size:16px;padding:5px 8px;border:1px solid #d9d3c3;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+.c10-btn{font:inherit;font-size:16px;padding:8px 16px;border-radius:10px;border:1px solid var(--gold);background:var(--gold);color:#fff;cursor:pointer}
+.c10-btn.o{background:#fff;color:#8a6a1f}
+.c10-res{display:grid;grid-template-columns:auto auto;gap:4px 14px;font-size:16px;color:var(--ink2);align-items:baseline}
+.c10-res b{font-weight:500;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.c10-res b.ok{color:#0b8a5c}.c10-res b.ko{color:var(--red)}
+.c10-res .h{grid-column:1/-1;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-top:6px}
+.c10-tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.c10-tile h3{font-size:18px;margin:6px 0 2px}
+.c10-tile p{font-size:16px;line-height:1.35;margin:0}
+.c10-num{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;color:var(--gold)}
+.c10-lnk{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:#141a26;color:#f1e3bd;text-decoration:none;font-size:17px}
+.c10-lnk:hover{background:#22314f}
+.c10-k{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;font-size:14px;font-weight:500;text-align:center;line-height:26px;margin-right:8px}
+/* travée qui tombe (diapositive longueur d'appui) */
+.c10-spR,.c10-spL,.c10-spR2,.c10-spL2{transform-box:fill-box}
+.c10-spR{transform-origin:right center}
+.slide.c10-run .c10-spR{animation:c10-fall 3.2s ease-in forwards}
+.slide.c10-run .c10-spL{animation:c10-wob 3.2s ease-in-out forwards}
+.c10-spR2{animation:c10-wob2 1.8s ease-in-out infinite}
+.c10-spL2{animation:c10-wob2 1.8s ease-in-out infinite reverse}
+@keyframes c10-fall{0%{transform:none}12%{transform:translateX(-8px)}24%{transform:translateX(12px)}36%{transform:translateX(-6px)}50%{transform:translateX(22px)}62%{transform:translateX(34px)}74%{transform:translateX(40px) rotate(-9deg)}100%{transform:translateX(44px) translateY(26px) rotate(-17deg)}}
+@keyframes c10-wob{0%,100%{transform:none}20%{transform:translateX(8px)}40%{transform:translateX(-10px)}60%{transform:translateX(6px)}80%{transform:translateX(-4px)}}
+@keyframes c10-wob2{0%,100%{transform:translateX(-14px)}50%{transform:translateX(14px)}}
+.c10-hint{font-size:15px;color:var(--mute)}
+.formula .tex{white-space:nowrap}
+svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin:center}
+.c10-ctl label>span:first-child{display:block}
+</style>
+</head>
+<body data-ch="ch11">
+<div class="deck">
+
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">11</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 11</div>
+  <h1 data-a data-fx="up" data-d=".15" style="font-size:66px;width:840px">Dimensionner <em>les sections</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35" style="top:300px">Les efforts sont connus. Combien d'acier faut-il, où le placer, et quand précontraindre ?</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect y="230" width="1280" height="30" fill="#18213a"/>
+    <g transform="translate(640 36)">
+      <rect x="0" y="0" width="300" height="194" rx="4" fill="#3b4a6b" stroke="#56678e" stroke-width="2"/>
+      <rect x="22" y="14" width="256" height="166" rx="10" fill="none" stroke="#9fb0cf" stroke-width="2" stroke-dasharray="6 5"/>
+      <circle cx="40" cy="30" r="6" fill="#8fb0ff"/><circle cx="150" cy="30" r="6" fill="#8fb0ff"/><circle cx="260" cy="30" r="6" fill="#8fb0ff"/>
+      <circle cx="40" cy="162" r="9" fill="#e2c070"/><circle cx="90" cy="162" r="9" fill="#e2c070"/><circle cx="150" cy="162" r="9" fill="#e2c070"/><circle cx="210" cy="162" r="9" fill="#e2c070"/><circle cx="260" cy="162" r="9" fill="#e2c070"/>
+    </g>
+    <g transform="translate(1010 36)">
+      <path d="M0 0 H80 L0 120 Z" fill="#e06a5a" opacity=".8"/>
+      <path d="M0 120 L0 194 L-40 194 Z" fill="#5ec2a8" opacity=".55"/>
+      <path d="M0 -6 V200" stroke="#c9d2e3" stroke-width="2"/>
+      <text x="88" y="16" font-size="16" fill="#c9d2e3" font-family="Outfit">σ béton (compression)</text>
+      <text x="12" y="190" font-size="16" fill="#c9d2e3" font-family="Outfit">traction (aciers)</text>
+    </g>
+  </svg>
+</section>
+
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:30px">
+    <div class="card violet" data-b="1" data-fx="up">
+      <div class="ico" style="background:#f1ecfa"><svg viewBox="0 0 32 32" fill="none" stroke="#7a52c7" stroke-width="2"><path d="M4 26h24"/><path d="M6 26V12l10-6 10 6v14"/></svg></div>
+      <h3>Choisir l'état-limite</h3><p>ELU, ELS, combinaisons, lois de comportement du béton et de l'acier.</p></div>
+    <div class="card gold" data-b="2" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><rect x="9" y="4" width="14" height="24" rx="1"/><circle cx="12.5" cy="24" r="1.6"/><circle cx="19.5" cy="24" r="1.6"/></svg></div>
+      <h3>Ferrailler en flexion</h3><p>μ → α → z → A<sub>s</sub>, calculatrice BAEL, ELS souvent dimensionnant.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><path d="M4 6l24 20M4 26L28 6"/></svg></div>
+      <h3>Vérifier le tranchant</h3><p>Treillis de Ritter-Mörsch, flexion composée et diagramme N–M.</p></div>
+    <div class="card teal" data-b="4" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M3 16h26"/><path d="M3 12c8 8 18 8 26 0"/></svg></div>
+      <h3>Comprendre la précontrainte</h3><p>Pré- ou post-tension, pertes, classes BPEL, cage d'armatures.</p></div>
+  </div>
+  <div class="callout t" style="margin-top:30px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Les efforts de notre pont sont connus (chapitres 7 à 10) : il reste à <b>dessiner ses sections</b> — quelle quantité d'acier, où la placer, et quand précontraindre.</div>
+</section>
+
+<section class="slide" data-title="États-limites : ELU et ELS">
+  <div class="kicker">Deux familles d'exigences</div>
+  <h2 class="t">Ne pas rompre, <em>rester durable</em></h2>
+  <div class="cols c2" style="gap:26px">
+    <div class="card red" data-b="1" data-fx="left">
+      <svg class="full" viewBox="0 0 520 170" aria-label="État-limite ultime">
+        <rect width="520" height="170" rx="12" fill="#fdf3e2"/>
+        <path d="M40 140 L56 116 L72 140 Z M448 140 L464 116 L480 140 Z" fill="#6e7884"/>
+        <g><animateTransform attributeName="transform" type="rotate" values="0 56 112;0 56 112;7 56 112;7 56 112" keyTimes="0;.4;.6;1" dur="3s" repeatCount="indefinite"/><rect x="40" y="88" width="218" height="24" fill="#b9c2cc" stroke="#6e7884"/></g>
+        <g><animateTransform attributeName="transform" type="rotate" values="0 464 112;0 464 112;-7 464 112;-7 464 112" keyTimes="0;.4;.6;1" dur="3s" repeatCount="indefinite"/><rect x="262" y="88" width="218" height="24" fill="#b9c2cc" stroke="#6e7884"/></g>
+        <path d="M260 40 V80" stroke="#dc4a2c" stroke-width="5"/><path d="M250 72 L260 88 L270 72 Z" fill="#dc4a2c"/>
+      </svg>
+      <h3 style="margin-top:10px">ELU — état-limite ultime</h3>
+      <p>Rupture, perte d'équilibre, flambement. Matériaux à leur résistance de calcul.</p>
+      <div class="formula" style="margin-top:10px;font-size:20px;padding:8px 14px"><span class="tex">1{,}35\,G + 1{,}6\,Q_r</span> <span style="font-size:15px;color:var(--mute)">(A, B — BAEL)</span></div>
+    </div>
+    <div class="card teal" data-b="2" data-fx="right">
+      <svg class="full" viewBox="0 0 520 170" aria-label="État-limite de service">
+        <rect width="520" height="170" rx="12" fill="#e9f7f3"/>
+        <path d="M40 140 L56 116 L72 140 Z M448 140 L464 116 L480 140 Z" fill="#6e7884"/>
+        <path d="M40 88 Q 260 100 480 88 L480 112 Q 260 124 40 112 Z" fill="#b9c2cc" stroke="#6e7884"/>
+        <g stroke="#dc4a2c" stroke-width="1.6"><path d="M220 120 v-9 M245 121 v-11 M270 121 v-11 M295 121 v-9"/></g>
+        <path d="M260 124 V150" stroke="#12a08a" stroke-width="2"/><text x="270" y="156" class="lbl-s" style="fill:#0b6e5c">flèche, fissures fines</text>
+        <g class="drive" style="--t:5s;--from:40px;--to:440px"><rect x="0" y="70" width="34" height="16" rx="3" fill="#2f6fe0"/></g>
+      </svg>
+      <h3 style="margin-top:10px">ELS — état-limite de service</h3>
+      <p>Compression du béton, contrainte de l'acier (fissuration), déformations.</p>
+      <div class="formula" style="margin-top:10px;font-size:20px;padding:8px 14px"><span class="tex">G + 1{,}2\,Q_r</span> <span style="font-size:15px;color:var(--mute)">(A, B — BAEL)</span></div>
+    </div>
+  </div>
+  <div class="callout b" style="margin-top:16px;font-size:18px" data-b="3" data-fx="up"><span class="lab">Quels règlements ?</span>Ponts courants : souvent <b>BAEL 91 et BPEL 91 (révisés 99)</b>, imposés par le CPS. Grands projets récents : de plus en plus les <b>Eurocodes</b> (EN 1992-1-1 et EN 1992-2). Mêmes principes, coefficients différents.</div>
+</section>
+
+<section class="slide" data-title="Lois de comportement des matériaux">
+  <div class="kicker">Les matériaux</div>
+  <h2 class="t">Béton et acier : <em>deux lois de calcul</em></h2>
+  <div class="cols c2" style="gap:26px">
+    <div class="card" data-a data-fx="left" style="padding:16px">
+      <svg class="full" viewBox="0 0 520 290" aria-label="Diagramme parabole-rectangle du béton">
+        <rect width="520" height="290" rx="12" fill="#fdf3e2"/>
+        <path d="M60 30 V250 H490" stroke="#9aa3ae" stroke-width="1.5" fill="none"/>
+        <path d="M60 250 Q174 70 289 70 L460 70" stroke="#b8902f" stroke-width="4" fill="none" data-a data-fx="draw" data-d=".3"/>
+        <path d="M60 70 H460 M289 70 V250 M460 70 V250" stroke="#b8902f" stroke-dasharray="4 4" opacity=".6"/>
+        <text x="20" y="76" class="lbl-b" style="fill:#8a6a1f;font-size:18px">f<tspan font-size="13" dy="4">bu</tspan></text>
+        <g class="lbl-s" text-anchor="middle"><text x="289" y="272">2 ‰</text><text x="460" y="272">3,5 ‰</text></g>
+        <text x="490" y="240" text-anchor="end" class="lbl-s">ε<tspan font-size="12" dy="3">bc</tspan></text>
+        <text x="120" y="140" class="lbl" style="fill:#8a6a1f">parabole</text><text x="330" y="100" class="lbl" style="fill:#8a6a1f">rectangle</text>
+      </svg>
+      <div class="formula" style="margin-top:10px;font-size:20px;padding:8px 14px" data-b="1" data-fx="up"><span class="tex">f_{bu} = \dfrac{0{,}85\,f_{c28}}{\theta\,\gamma_b} = 17\ \text{MPa}</span><div class="w" style="margin-top:2px">pour f<sub>c28</sub> = 30 MPa, γ<sub>b</sub> = 1,5. Traction : f<sub>t28</sub> = 0,6 + 0,06 f<sub>c28</sub> = 2,4 MPa — faible !</div></div>
+    </div>
+    <div class="card" data-b="2" data-fx="right" style="padding:16px">
+      <svg class="full" viewBox="0 0 520 290" aria-label="Diagramme élasto-plastique de l'acier">
+        <rect width="520" height="290" rx="12" fill="#eef4fc"/>
+        <path d="M60 30 V250 H500" stroke="#9aa3ae" stroke-width="1.5" fill="none"/>
+        <path d="M60 250 L151 80 L480 80" stroke="#2f6fe0" stroke-width="4" fill="none" data-b="2" data-fx="draw"/>
+        <path d="M60 80 H151 M151 80 V250 M480 80 V250" stroke="#2f6fe0" stroke-dasharray="4 4" opacity=".6"/>
+        <text x="16" y="86" class="lbl-b" style="fill:#2453b3;font-size:18px">f<tspan font-size="13" dy="4">su</tspan></text>
+        <g class="lbl-s" text-anchor="middle"><text x="151" y="272">2,17 ‰</text><text x="480" y="272">10 ‰</text></g>
+        <text x="500" y="240" text-anchor="end" class="lbl-s">ε<tspan font-size="12" dy="3">s</tspan></text>
+        <text x="200" y="64" class="lbl" style="fill:#2453b3">palier plastique</text>
+        <text x="112" y="210" class="lbl-s" style="fill:#2453b3">E<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> = 200 GPa</tspan></text>
+      </svg>
+      <div class="formula" style="margin-top:10px;font-size:20px;padding:8px 14px" data-b="2" data-fx="up"><span class="tex">f_{su} = \dfrac{f_e}{\gamma_s} = \dfrac{500}{1{,}15} = 434{,}8\ \text{MPa}</span><div class="w" style="margin-top:2px">Barres HA Fe E500 (B500 en Eurocode). Allongement limité à 10 ‰ (BAEL).</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Ce qui se passe dans une section fléchie">
+  <div class="kicker">Flexion simple à l'ELU</div>
+  <h2 class="t">Dans une section fléchie : <em>un couple de forces</em></h2>
+  <svg class="full" viewBox="0 0 1150 430" aria-label="Section, déformations, contraintes et forces">
+    <defs>
+      <marker id="c10s19-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f6fe0"/></marker>
+      <marker id="c10s19-ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+      <marker id="c10s19-ar3" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b8902f"/></marker>
+    </defs>
+    <rect width="1150" height="430" rx="16" fill="#fff"/>
+    <!-- section -->
+    <g data-a data-fx="fade">
+      <text x="150" y="36" text-anchor="middle" class="lbl-b">section</text>
+      <rect x="90" y="60" width="120" height="340" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>
+      <g fill="#2f6fe0"><circle cx="112" cy="370" r="9"/><circle cx="150" cy="370" r="9"/><circle cx="188" cy="370" r="9"/></g>
+      <path d="M70 143 H230" stroke="#b8902f" stroke-width="2" stroke-dasharray="6 4" data-b="1" data-fx="fade"/>
+      <text x="236" y="148" class="lbl-s" style="fill:#8a6a1f" data-b="1" data-fx="fade">axe neutre</text>
+      <path d="M60 60 V370" stroke="#9aa3ae" marker-start="url(#c10s19-ar3)" marker-end="url(#c10s19-ar3)"/><text x="40" y="220" class="lbl-s" text-anchor="middle">d</text>
+      <rect x="90" y="60" width="120" height="83" fill="#2f6fe0" opacity=".14" data-b="1" data-fx="fade"/>
+      <text x="150" y="425" text-anchor="middle" class="lbl-s">béton tendu négligé</text>
+    </g>
+    <!-- déformations -->
+    <g data-b="1">
+      <text x="440" y="36" text-anchor="middle" class="lbl-b">déformations</text>
+      <path d="M440 60 V400" stroke="#9aa3ae"/>
+      <path d="M440 60 H370 L440 143 L631 370 H440" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="3" data-b="1" data-fx="draw"/>
+      <text x="300" y="66" class="lbl-s" style="fill:#2453b3">3,5 ‰</text>
+      <text x="560" y="398" class="lbl-s" style="fill:#2453b3">ε<tspan font-size="12" dy="3">s</tspan><tspan dy="-3"> ≤ 10 ‰</tspan></text>
+      <text x="430" y="270" text-anchor="end" class="lbl-s">les sections planes</text><text x="430" y="290" text-anchor="end" class="lbl-s">restent planes</text>
+    </g>
+    <!-- contraintes -->
+    <g data-b="2" data-fx="fade">
+      <text x="760" y="36" text-anchor="middle" class="lbl-b">contraintes</text>
+      <path d="M760 60 V400" stroke="#9aa3ae"/>
+      <rect x="680" y="60" width="80" height="66" fill="#e2c070" opacity=".75" stroke="#b8902f"/>
+      <text x="676" y="54" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">f<tspan font-size="12" dy="3">bu</tspan></text>
+      <path d="M672 60 V126" stroke="#b8902f" marker-start="url(#c10s19-ar3)" marker-end="url(#c10s19-ar3)"/><text x="664" y="100" text-anchor="end" class="lbl-s" style="fill:#8a6a1f">0,8 y</text>
+      <circle cx="760" cy="370" r="9" fill="#2f6fe0"/><text x="776" y="376" class="lbl-s" style="fill:#2453b3">f<tspan font-size="12" dy="3">su</tspan></text>
+    </g>
+    <!-- forces -->
+    <g data-b="3" data-fx="fade">
+      <text x="1000" y="36" text-anchor="middle" class="lbl-b">forces</text>
+      <path d="M1080 93 H935" stroke="#2f6fe0" stroke-width="5" marker-end="url(#c10s19-ar)" class="pulse"/><text x="1084" y="99" class="lbl-b" style="fill:#2453b3">F<tspan font-size="14" dy="4">b</tspan></text>
+      <path d="M935 370 H1080" stroke="#dc4a2c" stroke-width="5" marker-end="url(#c10s19-ar2)" class="pulse"/><text x="1084" y="376" class="lbl-b" style="fill:#a33d22">F<tspan font-size="14" dy="4">s</tspan></text>
+      <path d="M920 93 V370" stroke="#b8902f" stroke-width="2" marker-start="url(#c10s19-ar3)" marker-end="url(#c10s19-ar3)"/><text x="900" y="238" text-anchor="end" class="lbl-b" style="fill:#8a6a1f">z</text>
+    </g>
+    <g data-b="4" data-fx="zoom"><rect x="880" y="250" width="250" height="60" rx="12" fill="#141a26"/><text x="1005" y="288" text-anchor="middle" class="lbl-w" style="font-size:22px">M<tspan font-size="15" dy="4">u</tspan><tspan dy="-4"> = F</tspan><tspan font-size="15" dy="4">b</tspan><tspan dy="-4"> × z</tspan></text></g>
+  </svg>
+  <div class="callout b" style="margin-top:4px;font-size:17px;padding:10px 18px" data-b="4" data-fx="up"><span class="lab">Hypothèses du calcul</span>Sections planes, béton tendu négligé, adhérence parfaite. Le diagramme pivote autour de <b>A</b> (acier à 10 ‰) ou de <b>B</b> (béton à 3,5 ‰) ; le bloc réel est remplacé par un <b>rectangle de hauteur 0,8 y</b>.</div>
+</section>
+
+<section class="slide" data-title="Flexion simple : la méthode BAEL">
+  <div class="kicker">Flexion simple — BAEL 91 révisé 99</div>
+  <h2 class="t">Du moment aux aciers <em>en quatre lignes</em></h2>
+  <div class="steps" style="margin-top:40px">
+    <div class="st" data-b="1" data-fx="up"><div class="k">1</div><h3>Moment réduit</h3><div style="font-size:19px"><span class="tex">\mu_u = \dfrac{M_u}{b\,d^2 f_{bu}}</span></div></div>
+    <div class="st" data-b="2" data-fx="up"><div class="k">2</div><h3>Axe neutre</h3><div style="font-size:19px"><span class="tex">\alpha = 1{,}25\big(1-\sqrt{1-2\mu_u}\big)</span></div></div>
+    <div class="st" data-b="3" data-fx="up"><div class="k">3</div><h3>Bras de levier</h3><div style="font-size:19px"><span class="tex">z = d\,(1-0{,}4\,\alpha)</span></div></div>
+    <div class="st" data-b="4" data-fx="up" style="background:#fff8e6;border-color:#e2c070"><div class="k">4</div><h3>Aciers tendus</h3><div style="font-size:19px"><span class="tex">A_s = \dfrac{M_u}{z\,f_{su}}</span></div></div>
+  </div>
+  <div class="cols c3" style="margin-top:22px;gap:18px">
+    <div class="card gold" data-b="5" data-fx="up" style="padding:14px 18px"><h3>Limite μ<sub>l</sub></h3><div class="big" style="font-size:54px">0,3717</div><p style="font-size:16px">pour Fe E500 (α<sub>l</sub> = 0,6168). Au-delà : aciers comprimés… ou mieux, une section plus haute.</p></div>
+    <div class="card teal" data-b="6" data-fx="up" style="padding:14px 18px"><h3>Non-fragilité</h3><div style="font-size:21px;margin:8px 0"><span class="tex">A_{s,\min} = 0{,}23\,b\,d\,\dfrac{f_{t28}}{f_e}</span></div><p style="font-size:16px">La section armée doit reprendre le moment qui a fissuré le béton.</p></div>
+    <div class="card blue" data-b="7" data-fx="up" style="padding:14px 18px;display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center">
+      <svg viewBox="0 0 110 130" style="width:110px"><rect x="5" y="10" width="100" height="22" fill="#cfd5dc" stroke="#6e7884"/><rect x="38" y="32" width="34" height="90" fill="#cfd5dc" stroke="#6e7884"/><path d="M0 24 H110" stroke="#b8902f" stroke-dasharray="4 3"/><g fill="#2f6fe0"><circle cx="47" cy="112" r="4"/><circle cx="63" cy="112" r="4"/></g></svg>
+      <div><h3>Section en T</h3><p style="font-size:16px">Si <span class="tex">M_u \le M_{tu} = b\,h_0 f_{bu}(d-h_0/2)</span> : calcul en rectangle de largeur b — le cas courant en pont.</p></div>
+    </div>
+  </div>
+  <div class="callout t" style="margin-top:20px;font-size:18px" data-b="8" data-fx="up"><span class="lab">Exemple test</span>b = 0,30 m, d = 0,45 m, M<sub>u</sub> = 200 kN·m, f<sub>c28</sub> = 25 MPa, Fe E500 → μ = 0,2324 ; α = 0,3355 ; z = 0,390 m ; <b>A<sub>s</sub> = 11,81 cm²</b>. Vérifiez-le à la diapositive suivante.</div>
+</section>
+
+<section class="slide" id="c10-calc" data-title="Calculatrice de flexion BAEL">
+  <div class="kicker">À vous de calculer</div>
+  <h2 class="t">Calculatrice de flexion <em>BAEL + ELS</em></h2>
+  <div class="interactive" style="display:grid;grid-template-columns:380px 330px 1fr;gap:20px;height:530px">
+    <div class="card" style="padding:14px 16px">
+      <div class="c10-ctl" style="gap:8px 12px">
+        <label>b (m) <input type="number" id="c10f-b" value="0.30" step="0.05" min="0.1"></label>
+        <label>h (m) <input type="number" id="c10f-h" value="0.50" step="0.05" min="0.1"></label>
+        <label>d (m) <input type="number" id="c10f-d" value="0.45" step="0.01" min="0.05"></label>
+        <label><span>b₀ âme (m)</span><input type="number" id="c10f-b0" value="0.30" step="0.05" min="0.1"></label>
+        <label><span>h₀ table (m)</span><input type="number" id="c10f-h0" value="0" step="0.02" min="0"></label>
+        <label><span>M<sub>u</sub> (kN·m)</span><input type="number" id="c10f-Mu" value="200" step="10" min="0"></label>
+        <label><span>M<sub>ser</sub> (kN·m)</span><input type="number" id="c10f-Ms" value="145" step="10" min="0"></label>
+        <label><span>f<sub>c28</sub> (MPa)</span><select id="c10f-fc"><option>25</option><option selected>30</option><option>35</option><option>40</option></select></label>
+        <label>Acier <select id="c10f-fe"><option value="500">Fe E500</option><option value="400">Fe E400</option></select></label>
+        <label>Fissuration <select id="c10f-fis"><option value="FPP">peu préj.</option><option value="FP" selected>préjudiciable</option><option value="FTP">très préj.</option></select></label>
+      </div>
+      <p class="c10-hint" style="margin:12px 0 0;line-height:1.4">Rectangle : laissez b₀ = b et h₀ = 0. Essayez M<sub>u</sub> = 600 kN·m avec d = 0,54 m : μ dépasse μ<sub>l</sub>.</p>
+    </div>
+    <div class="card" style="padding:14px 16px">
+      <div class="c10-res">
+        <span class="h">Matériaux</span>
+        <span>f<sub>bu</sub> ; f<sub>su</sub></span><b id="c10f-mat">—</b>
+        <span class="h">ELU</span>
+        <span>μ<sub>u</sub> (μ<sub>l</sub>)</span><b id="c10f-mu">—</b>
+        <span>α ; pivot</span><b id="c10f-al">—</b>
+        <span>z</span><b id="c10f-z">—</b>
+        <span>A<sub>s</sub> ELU</span><b id="c10f-As">—</b>
+        <span>A'<sub>s</sub> comprimés</span><b id="c10f-Asc">—</b>
+        <span>A<sub>s,min</sub></span><b id="c10f-Asmin">—</b>
+        <span class="h">ELS</span>
+        <span>A<sub>s</sub> pour σ<sub>s</sub> ≤ σ̄<sub>s</sub></span><b id="c10f-Asels">—</b>
+        <span>Choix</span><b id="c10f-bars">—</b>
+        <span>σ<sub>bc</sub> / 0,6 f<sub>c28</sub></span><b id="c10f-sbc">—</b>
+        <span>σ<sub>s</sub> / σ̄<sub>s</sub></span><b id="c10f-ss">—</b>
+      </div>
+    </div>
+    <div class="card" style="padding:10px;display:flex;align-items:center;justify-content:center">
+      <svg id="c10f-svg" viewBox="0 0 380 480" style="width:100%;height:100%" aria-label="Section calculée"></svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="En pont, l'ELS gouverne souvent">
+  <div class="kicker">Exemple — dalle PSI-DA, L = 12 m, h = 0,60 m</div>
+  <h2 class="t">Le piège : <em>l'ELS gouverne</em> souvent</h2>
+  <div class="split">
+    <div>
+      <table class="tb" style="font-size:17px">
+        <tr data-b="1" data-fx="left"><td>Moments (bande de 1 m)</td><td class="n">M<sub>u</sub> = <b>947,8</b> · M<sub>ser</sub> = <b>706,7</b> kN·m</td></tr>
+        <tr data-b="2" data-fx="left"><td>ELU : μ = 0,191 &lt; 0,372</td><td class="n">A<sub>s</sub> = <b>45,2 cm²/m</b></td></tr>
+        <tr data-b="3" data-fx="left"><td>ELS avec 45,2 cm²</td><td class="n" style="color:#a33d22">σ<sub>s</sub> ≈ <b>300 MPa</b> &gt; 250</td></tr>
+        <tr data-b="4" data-fx="left" class="hl"><td>Choix : HA32 tous les 12,5 cm</td><td class="n">A<sub>s</sub> = <b>64,3 cm²/m</b></td></tr>
+        <tr data-b="5" data-fx="left"><td>Vérification ELS</td><td class="n" style="color:#0b6e5c">σ<sub>bc</sub> = 12,8 ≤ 18 · σ<sub>s</sub> = 239 ≤ 250</td></tr>
+      </table>
+      <div class="callout r" style="margin-top:16px;font-size:18px" data-b="6" data-fx="up"><span class="lab">Pourquoi ?</span>En fissuration préjudiciable, σ̄<sub>s</sub> = <b>250 MPa</b> pour Fe E500, bien moins que f<sub>su</sub> = 435 MPa. S'arrêter à l'ELU sous-estime les aciers de 20 à 40 %.</div>
+    </div>
+    <div class="vis">
+      <svg viewBox="0 0 620 460" aria-label="Comparaison des sections d'acier">
+        <rect width="620" height="460" rx="16" fill="#fff"/>
+        <text x="30" y="44" class="lbl-b">Aciers longitudinaux (cm²/m)</text>
+        <g class="lbl" text-anchor="end"><text x="150" y="104">ELU</text><text x="150" y="164">ELS requis</text><text x="150" y="224">retenu</text></g>
+        <rect x="160" y="80" width="316" height="34" rx="8" fill="#9aa3ae" data-b="2" data-fx="growx"/>
+        <rect x="160" y="140" width="427" height="34" rx="8" fill="#dc4a2c" data-b="3" data-fx="growx"/>
+        <rect x="160" y="200" width="450" height="34" rx="8" fill="#12a08a" data-b="4" data-fx="growx"/>
+        <g class="lbl-w" style="font-size:17px"><text x="172" y="103" data-b="2" data-fx="fade">45,2</text><text x="172" y="163" data-b="3" data-fx="fade">≈ 61</text><text x="172" y="223" data-b="4" data-fx="fade">64,3 — HA32 / 12,5 cm</text></g>
+        <!-- coupe de dalle -->
+        <g data-b="4" data-fx="up">
+          <rect x="40" y="290" width="540" height="110" fill="#cfd5dc" stroke="#6e7884"/>
+          <g fill="#2f6fe0"><circle cx="70" cy="380" r="10"/><circle cx="137" cy="380" r="10"/><circle cx="204" cy="380" r="10"/><circle cx="271" cy="380" r="10"/><circle cx="338" cy="380" r="10"/><circle cx="405" cy="380" r="10"/><circle cx="472" cy="380" r="10"/><circle cx="539" cy="380" r="10"/></g>
+          <g fill="#7a8494"><circle cx="70" cy="306" r="5"/><circle cx="204" cy="306" r="5"/><circle cx="338" cy="306" r="5"/><circle cx="472" cy="306" r="5"/></g>
+          <text x="310" y="436" text-anchor="middle" class="lbl-s">bande de 1 m — 8 HA32 en nappe inférieure</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Effort tranchant : le treillis de Ritter-Mörsch">
+  <div class="kicker">Effort tranchant</div>
+  <h2 class="t">Le treillis de <em>Ritter-Mörsch</em></h2>
+  <svg class="full" viewBox="0 0 1150 290" aria-label="Treillis de Ritter-Mörsch">
+    <rect width="1150" height="290" rx="16" fill="#eef4fc"/>
+    <path d="M40 260 L60 230 L80 260 Z M1070 260 L1090 230 L1110 260 Z" fill="#6e7884"/>
+    <rect x="40" y="60" width="1070" height="170" fill="#cfd5dc" stroke="#6e7884" opacity=".85"/>
+    <g stroke="#dc4a2c" stroke-width="2" fill="none" data-b="1" data-fx="draw">
+      <path d="M120 220 l70 -80 M200 222 l60 -70 M290 222 l50 -60 M860 222 l-50 -60 M950 222 l-60 -70 M1030 220 l-70 -80"/>
+      <path d="M520 228 v-50 M575 228 v-60 M630 228 v-50"/>
+    </g>
+    <g data-b="2" data-fx="draw" stroke="#2f6fe0" stroke-width="5" fill="none">
+      <path d="M60 210 L150 80 M150 210 L240 80 M240 210 L330 80 M330 210 L420 80 M420 210 L510 80 M1090 210 L1000 80 M1000 210 L910 80 M910 210 L820 80 M820 210 L730 80 M730 210 L640 80"/>
+    </g>
+    <g data-b="3" data-fx="draw" stroke="#12a08a" stroke-width="5" fill="none">
+      <path d="M150 210 V80 M240 210 V80 M330 210 V80 M420 210 V80 M510 210 V80 M640 210 V80 M730 210 V80 M820 210 V80 M910 210 V80 M1000 210 V80"/>
+    </g>
+    <g data-b="4" data-fx="fade">
+      <path d="M60 80 H1090" stroke="#2f6fe0" stroke-width="7" opacity=".55"/>
+      <path d="M60 210 H1090" stroke="#dc4a2c" stroke-width="7" opacity=".7"/>
+    </g>
+    <g class="lbl-s">
+      <text x="160" y="40" style="fill:#a33d22" data-b="1" data-fx="fade">fissures inclinées ≈ 45°</text>
+      <text x="560" y="40" style="fill:#2453b3" data-b="2" data-fx="fade">bielles comprimées</text>
+      <text x="860" y="40" style="fill:#0b6e5c" data-b="3" data-fx="fade">étriers tendus</text>
+      <text x="450" y="282" style="fill:#a33d22" data-b="4" data-fx="fade">membrure tendue : aciers longitudinaux</text>
+    </g>
+  </svg>
+  <div class="cols c2" style="gap:22px;margin-top:16px">
+    <div class="formula" style="font-size:19px;padding:10px 16px" data-b="5" data-fx="up"><span class="tex">\tau_u = \dfrac{V_u}{b_0\,d} \le \bar\tau_u = \min\!\Big(0{,}15\dfrac{f_{c28}}{\gamma_b};\,4\ \text{MPa}\Big)</span><div class="w" style="margin-top:2px">Protège les bielles : si c'est dépassé, on épaissit l'âme.</div></div>
+    <div class="formula" style="font-size:19px;padding:10px 16px" data-b="6" data-fx="up"><span class="tex">\dfrac{A_t}{b_0\,s_t} \ge \dfrac{\gamma_s\,(\tau_u - 0{,}3\,f_{t28}\,k)}{0{,}9\,f_e}</span><div class="w" style="margin-top:2px">Exemple : τ<sub>u</sub> = 2,16 ≤ 2,5 MPa → 4 brins HA10 tous les 25 cm. Étriers serrés près des appuis.</div></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Flexion composée : le diagramme N–M">
+  <div class="kicker">Flexion composée — les piles</div>
+  <h2 class="t">Le diagramme d'interaction <em>N–M</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 700 470" aria-label="Diagramme d'interaction">
+        <rect width="700" height="470" rx="16" fill="#fff"/>
+        <path d="M156 30 V440" stroke="#9aa3ae"/><path d="M40 250 H680" stroke="#9aa3ae"/>
+        <path d="M72.5 250 L112.4 212.7 L128.3 197.5 L144.6 182.4 L161.4 167.3 L178.8 152.2 L196.7 137.1 L215.3 121.8 L230.7 109.9 L240.5 103.7 L250.2 98 L259.9 92.8 L269.7 88.1 L279.4 83.8 L289.2 80 L298.9 76.8 L308.7 74 L318.4 71.6 L328.1 69.8 L337.9 68.5 L349 68.8 L363.9 73.2 L378.4 77.7 L392.4 82.2 L406.1 86.9 L419.5 91.8 L432.6 96.9 L445.4 102.3 L458 108 L470.4 113.9 L482.7 120.2 L494.7 126.8 L506.7 133.7 L518.4 141.1 L528.2 147.4 L544.7 159 L560.9 171.3 L576.9 184.3 L592.7 198.2 L608.2 213 L620.5 225.3 L647.5 250 L620.9 274.4 L608.2 287 L592.7 301.8 L576.9 315.7 L560.9 328.7 L544.7 341 L528.2 352.6 L518.4 358.9 L506.7 366.3 L494.7 373.2 L482.7 379.8 L470.4 386.1 L458 392 L445.4 397.7 L432.6 403.1 L419.5 408.2 L406.1 413.1 L392.4 417.8 L378.4 422.3 L363.9 426.8 L349 431.2 L337.9 431.5 L328.1 430.2 L318.4 428.4 L308.7 426 L298.9 423.2 L289.2 420 L279.4 416.2 L269.7 411.9 L259.9 407.2 L250.2 402 L240.5 396.3 L230.7 390.1 L215.3 378.2 L196.7 362.9 L178.8 347.8 L161.4 332.7 L144.6 317.6 L128.3 302.5 L112.4 287.3 Z" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="3.5" data-a data-fx="draw"/>
+        <g class="lbl-s"><text x="696" y="320" text-anchor="end">N (MN) →</text><text x="166" y="44">M (MN·m)</text></g>
+        <g class="lbl-s" text-anchor="middle"><text x="156" y="268">0</text><text x="276" y="268">5</text><text x="396" y="268">10</text><text x="516" y="268">15</text><text x="636" y="268">20</text></g>
+        <g data-b="2" data-fx="pop"><circle cx="276" cy="160" r="10" fill="#12a08a"/><text x="292" y="166" class="lbl-b" style="fill:#0b6e5c;font-size:17px">admissible</text></g>
+        <g data-b="3" data-fx="pop"><circle cx="444" cy="86" r="10" fill="#dc4a2c"/><text x="460" y="80" class="lbl-b" style="fill:#a33d22;font-size:17px">hors domaine</text></g>
+        <g data-b="1" data-fx="fade"><path d="M344 60 V250" stroke="#b8902f" stroke-dasharray="5 4"/><text x="352" y="214" class="lbl-s" style="fill:#8a6a1f">≈ 7,9 MN : M maximal</text></g>
+        <text x="40" y="462" class="lbl-s">exemple calculé : section 1,00 × 1,00 m, f<tspan font-size="12" dy="3">bu</tspan><tspan dy="-3"> = 17 MPa, 2 × 40 cm²</tspan></text>
+      </svg>
+    </div>
+    <div>
+      <p class="lead" data-a data-fx="right" style="font-size:22px">Une pile est <b>comprimée</b> par le tablier et <b>fléchie</b> par le freinage, le vent, le séisme.</p>
+      <ul class="b tight" style="margin-top:12px">
+        <li data-b="1" data-fx="right">Une compression modérée <b>aide</b> la section… jusqu'à un certain point.</li>
+        <li data-b="2" data-fx="right">Tout couple (N, M) <b>à l'intérieur</b> de la courbe est admissible.</li>
+        <li data-b="4" data-fx="right">Vérifier <b>N max</b> avec son M, et <b>N min</b> (tablier vide) avec M max.</li>
+        <li data-b="5" data-fx="right">Pile élancée : ajouter le <b>second ordre</b> (flambement).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="c10-pc" data-title="La précontrainte : comprimer d'avance">
+  <div class="kicker">Le béton précontraint</div>
+  <h2 class="t">Comprimer d'avance <em>ce que la charge va tendre</em></h2>
+  <svg class="full" viewBox="0 0 1150 330" aria-label="Poutre précontrainte">
+    <defs><marker id="c10s25-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#dc4a2c"/></marker>
+    <marker id="c10s25-ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7a8494"/></marker></defs>
+    <rect width="1150" height="330" rx="16" fill="#eef4fc"/>
+    <path d="M70 230 L80 214 L90 230 Z M710 230 L720 214 L730 230 Z" fill="#6e7884"/>
+    <rect x="40" y="230" width="720" height="10" fill="#c9a77a"/>
+    <g id="c10pc-q" opacity="0" style="transition:opacity .5s">
+      <path d="M140 40 V96 M240 40 V96 M340 40 V96 M440 40 V96 M540 40 V96 M640 40 V96" stroke="#dc4a2c" stroke-width="3" marker-end="url(#c10s25-ar)"/>
+      <path d="M130 40 H650" stroke="#dc4a2c" stroke-width="3"/>
+      <text x="660" y="46" class="lbl-s" style="fill:#a33d22">charges de service</text>
+    </g>
+    <g id="c10pc-g" opacity="0" style="transition:opacity .5s">
+      <path d="M190 62 V100 M400 62 V100 M610 62 V100" stroke="#7a8494" stroke-width="2.5" marker-end="url(#c10s25-ag)"/>
+      <text x="420" y="74" class="lbl-s">poids propre</text>
+    </g>
+    <path id="c10pc-beam" d="M80 130 H720 V190 H80 Z" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>
+    <path id="c10pc-cab" d="M80 160 L720 160" stroke="#9aa3ae" stroke-width="4" fill="none" stroke-dasharray="8 6"/>
+    <g id="c10pc-jk" opacity="0" style="transition:opacity .4s">
+      <rect x="26" y="146" width="52" height="28" rx="4" fill="#e8a020"/><rect x="722" y="146" width="52" height="28" rx="4" fill="#e8a020"/>
+      <text x="20" y="130" class="lbl-s" style="fill:#8a5a10">vérin</text>
+    </g>
+    <text id="c10pc-cam" x="400" y="290" text-anchor="middle" class="lbl-b" style="fill:#2453b3"></text>
+    <!-- diagramme de contraintes -->
+    <text x="960" y="40" text-anchor="middle" class="lbl-b">contraintes (MPa)</text>
+    <path d="M960 100 V240" stroke="#141a26" stroke-width="1.5"/>
+    <text x="935" y="262" text-anchor="end" class="lbl-s" style="fill:#a33d22">traction</text><text x="985" y="262" class="lbl-s" style="fill:#2453b3">compression</text>
+    <g data-b="1" data-only data-fx="fade"><path d="M960 110 H936 L1080 230 H960 Z" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="2"/><text x="930" y="104" text-anchor="end" class="lbl-b" style="fill:#a33d22">−3</text><text x="1086" y="236" class="lbl-b" style="fill:#2453b3">+15</text></g>
+    <g data-b="2" data-only data-fx="fade"><path d="M960 110 H986 L1030 230 H960 Z" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="2"/><text x="992" y="104" class="lbl-b" style="fill:#2453b3">+3,25</text><text x="1036" y="236" class="lbl-b" style="fill:#2453b3">+8,75</text></g>
+    <g data-b="3,4" data-only data-fx="fade"><path d="M960 110 H1056 L960 230 Z" fill="#e3ecfc" stroke="#2f6fe0" stroke-width="2"/><text x="1062" y="116" class="lbl-b" style="fill:#2453b3">+12</text><text x="970" y="236" class="lbl-b" style="fill:#2453b3">0</text></g>
+  </svg>
+  <div style="position:relative;height:120px;margin-top:26px">
+    <div class="callout" style="position:absolute;inset:0" data-b="0" data-only><span class="lab">Étape 0</span>Poutre 0,50 × 1,20 m, portée 20 m. Une gaine suit un tracé parabolique : basse à mi-travée. Cliquez pour tendre le câble.</div>
+    <div class="callout b" style="position:absolute;inset:0" data-b="1" data-only data-fx="fade"><span class="lab">1 · On tend le câble</span>Les vérins tendent le câble (P = 3,6 MN) puis le bloquent. Excentré vers le bas, il comprime la fibre inférieure : <b>la poutre se cambre et remonte</b>.</div>
+    <div class="callout" style="position:absolute;inset:0" data-b="2" data-only data-fx="fade"><span class="lab">2 · À vide</span>En se soulevant, la poutre porte son poids propre (M<sub>g</sub> = 750 kN·m) : <b>toute la section est comprimée</b>.</div>
+    <div class="callout t" style="position:absolute;inset:0" data-b="3" data-only data-fx="fade"><span class="lab">3 · En charge</span>Sous les charges de service (M<sub>q</sub> = 1 050 kN·m), la poutre redevient droite : la charge n'a fait que <b>décomprimer</b> la fibre inférieure.</div>
+    <div class="formula" style="position:absolute;inset:0;display:flex;align-items:center;gap:24px" data-b="4" data-only data-fx="zoom"><span class="tex">\sigma = \dfrac{P}{A} \pm \dfrac{P\,e}{W} \mp \dfrac{M}{W}</span><span style="font-size:18px;color:var(--ink2)">Entre l'état à vide et l'état en charge, le béton reste comprimé : <b>il ne fissure pas</b>.</span></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Pré-tension ou post-tension">
+  <div class="kicker">Deux façons de précontraindre</div>
+  <h2 class="t">Pré-tension <em>ou</em> post-tension</h2>
+  <div class="cols c2" style="gap:24px">
+    <div class="card gold" data-b="1" data-fx="left" style="padding:14px">
+      <svg class="full" viewBox="0 0 520 220" aria-label="Pré-tension sur banc">
+        <rect width="520" height="220" rx="12" fill="#fdf3e2"/>
+        <rect x="14" y="70" width="40" height="110" fill="#6e7884"/><rect x="466" y="70" width="40" height="110" fill="#6e7884"/>
+        <rect x="54" y="180" width="412" height="14" fill="#9aa3ae"/>
+        <rect x="90" y="96" width="340" height="70" fill="#cfd5dc" stroke="#6e7884"/>
+        <g stroke="#dc4a2c" stroke-width="2.5"><path d="M54 150 H466 M54 158 H466 M54 142 H466" class="flow"/></g>
+        <text x="260" y="44" text-anchor="middle" class="lbl-s">1. torons tendus entre deux culées · 2. bétonnage · 3. relâchement</text>
+        <text x="260" y="212" text-anchor="middle" class="lbl-s">l'adhérence transmet l'effort au béton</text>
+      </svg>
+      <h3 style="margin-top:8px">Pré-tension — en usine</h3>
+      <p>Industrielle et économique, mais <b>câbles rectilignes</b>. Poutres préfabriquées (PRAD).</p>
+    </div>
+    <div class="card blue" data-b="2" data-fx="right" style="padding:14px">
+      <svg class="full" viewBox="0 0 520 220" aria-label="Post-tension">
+        <rect width="520" height="220" rx="12" fill="#eef4fc"/>
+        <rect x="50" y="70" width="420" height="90" fill="#cfd5dc" stroke="#6e7884"/>
+        <path d="M50 105 Q 260 190 470 105" stroke="#9aa3ae" stroke-width="10" fill="none"/>
+        <path d="M50 105 Q 260 190 470 105" stroke="#dc4a2c" stroke-width="3" fill="none" class="flow"/>
+        <rect x="470" y="94" width="12" height="22" fill="#6e7884"/>
+        <g><animateTransform attributeName="transform" type="translate" values="0 0;14 0;14 0;0 0" keyTimes="0;.4;.8;1" dur="2.6s" repeatCount="indefinite"/><rect x="482" y="92" width="30" height="26" rx="3" fill="#e8a020"/></g>
+        <rect x="16" y="94" width="34" height="22" fill="#e8a020"/>
+        <text x="260" y="44" text-anchor="middle" class="lbl-s">béton durci · câble enfilé dans une gaine · tension au vérin</text>
+        <text x="260" y="196" text-anchor="middle" class="lbl-s">tracé courbe qui suit les moments</text>
+      </svg>
+      <h3 style="margin-top:8px">Post-tension — sur l'ouvrage</h3>
+      <p><b>Tracé courbe</b> possible. VIPP, ponts-dalles précontraints, caissons.</p>
+    </div>
+  </div>
+  <div class="formula" style="margin-top:16px;display:flex;align-items:center;gap:24px;font-size:22px;padding:12px 20px" data-b="3" data-fx="up"><span class="tex">u = \dfrac{8\,P\,f}{L^2}</span><span style="font-size:18px;color:var(--ink2)">Un câble parabolique de flèche f pousse le béton <b>vers le haut</b>. P = 3,6 MN, f = 0,30 m, L = 20 m → <b>u = 21,6 kN/m</b>, du même ordre que le poids propre (15 kN/m).</span></div>
+</section>
+
+<section class="slide" data-title="Pertes de précontrainte et classes BPEL">
+  <div class="kicker">BPEL 91 révisé 99</div>
+  <h2 class="t">Les pertes, puis <em>les classes de vérification</em></h2>
+  <div class="split">
+    <div class="vis">
+      <svg viewBox="0 0 620 450" aria-label="Pertes de précontrainte le long du câble">
+        <rect width="620" height="450" rx="16" fill="#fff"/>
+        <path d="M60 30 V380 H600" stroke="#9aa3ae" stroke-width="1.5" fill="none"/>
+        <path d="M60 70 H590" stroke="#141a26" stroke-width="2" stroke-dasharray="6 5" data-a data-fx="draw"/>
+        <text x="590" y="62" text-anchor="end" class="lbl-s">tension au vérin σ<tspan font-size="12" dy="3">p0</tspan></text>
+        <path d="M60 128 L110 108 C 250 112 420 140 590 160" stroke="#e8a020" stroke-width="3.5" fill="none" data-b="1" data-fx="draw"/>
+        <path d="M60 70 L110 108" stroke="#e8a020" stroke-width="2" stroke-dasharray="3 3" data-b="1" data-fx="fade"/>
+        <path d="M60 196 L110 176 C 250 180 420 208 590 228" stroke="#dc4a2c" stroke-width="3.5" fill="none" data-b="2" data-fx="draw"/>
+        <g data-b="1" data-fx="fade"><text x="120" y="98" class="lbl-s" style="fill:#8a5a10">recul d'ancrage</text><text x="300" y="112" class="lbl-s" style="fill:#8a5a10">frottement : σ(x) = σ<tspan font-size="12" dy="3">p0</tspan><tspan dy="-3"> e</tspan><tspan font-size="12" dy="-7">−(fα+φx)</tspan></text></g>
+        <g data-b="2" data-fx="fade"><text x="250" y="250" class="lbl-s" style="fill:#a33d22">+ retrait, fluage du béton, relaxation de l'acier</text>
+          <path d="M560 74 V222" stroke="#dc4a2c" stroke-width="2" stroke-dasharray="4 3"/><text x="550" y="300" text-anchor="end" class="lbl-b" style="fill:#a33d22">20 à 30 % au total</text></g>
+        <g class="lbl-s"><text x="60" y="404">ancrage actif</text><text x="590" y="404" text-anchor="end">x le long du câble</text></g>
+        <text x="60" y="436" class="lbl-s" style="fill:#6b7383">allure indicative — à calculer selon le BPEL ou l'EN 1992</text>
+      </svg>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" data-b="3" data-fx="right" style="padding:12px 16px;display:grid;grid-template-columns:70px 1fr;gap:14px;align-items:center">
+        <svg viewBox="0 0 70 80" style="width:70px"><path d="M35 8 V72" stroke="#141a26"/><path d="M35 10 H55 L65 70 H35 Z" fill="#cfe0fb" stroke="#2f6fe0"/></svg>
+        <div><h3 style="margin:0">Classe I</h3><p style="font-size:16px;margin:0">Aucune traction : section entièrement comprimée. Ouvrages très exposés.</p></div></div>
+      <div class="card" data-b="4" data-fx="right" style="padding:12px 16px;display:grid;grid-template-columns:70px 1fr;gap:14px;align-items:center;border-color:#e2c070;background:#fffaf0">
+        <svg viewBox="0 0 70 80" style="width:70px"><path d="M35 8 V72" stroke="#141a26"/><path d="M35 10 H28 L60 70 H35 Z" fill="#cfe0fb" stroke="#2f6fe0"/><path d="M35 10 H28 L31 16 H35Z" fill="#fbd6cc"/></svg>
+        <div><h3 style="margin:0">Classe II — le cas courant</h3><p style="font-size:16px;margin:0">Tractions limitées (de l'ordre de f<sub>tj</sub>), sans fissuration. VIPP, ponts-dalles précontraints.</p></div></div>
+      <div class="card" data-b="5" data-fx="right" style="padding:12px 16px;display:grid;grid-template-columns:70px 1fr;gap:14px;align-items:center">
+        <svg viewBox="0 0 70 80" style="width:70px"><path d="M35 8 V72" stroke="#141a26"/><path d="M35 10 H10 L58 70 H35 Z" fill="#cfe0fb" stroke="#2f6fe0"/><path d="M14 64 l4 -6 l4 6" stroke="#dc4a2c" fill="none"/></svg>
+        <div><h3 style="margin:0">Classe III</h3><p style="font-size:16px;margin:0">Fissuration contrôlée, précontrainte partielle + aciers passifs. Peu utilisée en pont.</p></div></div>
+      <p class="c10-hint" data-b="5" data-fx="fade" style="margin:0">Compression aussi limitée (≈ 0,5 f<sub>c28</sub> en service) et ELU vérifié comme en béton armé.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Du calcul à la cage d'armatures">
+  <div class="kicker">Dispositions constructives</div>
+  <h2 class="t">Monter la cage, <em>barre par barre</em></h2>
+  <div class="split" style="grid-template-columns:.95fr 1.15fr">
+    <table class="tb" style="font-size:16.5px">
+      <tr><th>Règle</th><th>Ordre de grandeur (BAEL)</th></tr>
+      <tr data-b="1" data-fx="left"><td><b>Enrobage</b></td><td>≥ 3 cm à l'air, ≥ 5 cm en bord de mer ; souvent 3 à 5 cm en pont, selon le CPS</td></tr>
+      <tr data-b="2" data-fx="left"><td><b>Espacement</b></td><td>≥ Ø, ≥ 1,5 × plus gros granulat : le béton et l'aiguille vibrante doivent passer</td></tr>
+      <tr data-b="3" data-fx="left"><td><b>Ancrage, recouvrement</b></td><td>à défaut de calcul : ≈ 40 Ø (Fe E400), 50 Ø (Fe E500) ; recouvrements décalés</td></tr>
+      <tr data-b="4" data-fx="left"><td><b>Cadres</b></td><td>serrés près des appuis, espacés au centre</td></tr>
+      <tr data-b="5" data-fx="left"><td><b>Ancrage sur appui</b></td><td>armature inférieure prolongée, retour ou crochet</td></tr>
+    </table>
+    <div class="vis">
+      <svg viewBox="0 0 640 460" aria-label="Cage d'armatures d'une poutre">
+        <rect width="640" height="460" rx="16" fill="#eef4fc"/>
+        <rect x="30" y="80" width="580" height="200" fill="#e7ebef" stroke="#6e7884" stroke-width="1.5"/>
+        <rect x="42" y="92" width="556" height="176" fill="none" stroke="#b8902f" stroke-dasharray="5 4" data-b="1" data-fx="fade"/>
+        <text x="40" y="66" class="lbl-s" data-b="1" data-fx="fade" style="fill:#8a6a1f">coffrage et enrobage</text>
+        <g data-b="2" data-fx="draw" stroke="#2f6fe0" stroke-width="5" fill="none"><path d="M48 260 H592"/><path d="M150 248 H490"/></g>
+        <text x="320" y="306" text-anchor="middle" class="lbl-s" style="fill:#2453b3" data-b="2" data-fx="fade">aciers tendus : 2 lits, le 2e arrêté plus tôt</text>
+        <g data-b="3" data-fx="draw" stroke="#7a8494" stroke-width="3" fill="none"><path d="M48 100 H592"/></g>
+        <g data-b="4" data-fx="fade" stroke="#7a52c7" stroke-width="2.4">
+          <path d="M56 96 V264 M70 96 V264 M84 96 V264 M98 96 V264 M114 96 V264 M132 96 V264 M154 96 V264 M180 96 V264 M210 96 V264 M245 96 V264 M282 96 V264 M320 96 V264 M358 96 V264 M395 96 V264 M430 96 V264 M460 96 V264 M486 96 V264 M508 96 V264 M526 96 V264 M542 96 V264 M556 96 V264 M570 96 V264 M584 96 V264"/>
+        </g>
+        <text x="320" y="56" text-anchor="middle" class="lbl-s" style="fill:#5b3aa0" data-b="4" data-fx="fade">cadres serrés près des appuis</text>
+        <g data-b="5" data-fx="draw" stroke="#dc4a2c" stroke-width="5" fill="none"><path d="M48 260 V200 M592 260 V200"/></g>
+        <g data-b="5" data-fx="pop"><circle cx="48" cy="232" r="22" fill="none" stroke="#dc4a2c" stroke-width="2"/><circle cx="592" cy="232" r="22" fill="none" stroke="#dc4a2c" stroke-width="2"/></g>
+        <path d="M20 300 L40 280 L60 300 Z M580 300 L600 280 L620 300 Z" fill="#6e7884"/>
+        <!-- coupe -->
+        <g data-b="4" data-fx="up">
+          <rect x="260" y="330" width="120" height="110" fill="#e7ebef" stroke="#6e7884"/>
+          <rect x="272" y="342" width="96" height="86" fill="none" stroke="#7a52c7" stroke-width="2.4" rx="4"/>
+          <g fill="#2f6fe0"><circle cx="282" cy="418" r="6"/><circle cx="320" cy="418" r="6"/><circle cx="358" cy="418" r="6"/><circle cx="301" cy="404" r="5"/><circle cx="339" cy="404" r="5"/></g>
+          <g fill="#7a8494"><circle cx="282" cy="352" r="4"/><circle cx="358" cy="352" r="4"/></g>
+          <text x="392" y="390" class="lbl-s">coupe</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide dark" data-title="À retenir">
+  <div class="kicker" style="color:#e2c070">À retenir</div>
+  <h2 class="t">Ce qu'il faut garder en tête</h2>
+  <ul class="b" style="margin-top:12px;max-width:1080px;gap:12px">
+    <li data-b="1" data-fx="left" style="font-size:20px">… on justifie une section à l'<b>ELU</b> (résistance) et à l'<b>ELS</b> (fissuration, contraintes) — en pont, l'ELS gouverne souvent.</li>
+    <li data-b="2" data-fx="left" style="font-size:20px">… en flexion simple : <b>μ → α → z → A<sub>s</sub></b>, avec μ<sub>l</sub> = 0,3717 comme limite sans aciers comprimés.</li>
+    <li data-b="3" data-fx="left" style="font-size:20px">… l'<b>effort tranchant</b> se lit avec le treillis de Ritter-Mörsch : bielles de béton, cadres d'acier.</li>
+    <li data-b="4" data-fx="left" style="font-size:20px">… la <b>flexion composée</b> se vérifie dans le diagramme d'interaction N–M.</li>
+    <li data-b="5" data-fx="left" style="font-size:20px">… la <b>précontrainte</b> comprime d'avance le béton ; il faut compter ses pertes et viser une classe BPEL.</li>
+  </ul>
+  <p data-b="6" data-fx="up" style="margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:30px;color:#e2c070;font-style:italic;max-width:900px">Le calcul donne une quantité d'acier ; le plan de ferraillage la rend constructible.</p>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="ch12.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Chapitre 12 : Faire durer un pont →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var g = 9.81;
+  function fmt(x, d) { if (!isFinite(x)) return "—"; var s = Number(x).toFixed(d); var p = s.split("."); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); return p.join(","); }
+  var HOOK = window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+  function isOn(id) { var s = $(id); return s && s.classList.contains("on"); }
+
+  /* ── spectres EC8 (valeurs recommandées, type 1), normalisés par a_g ── */
+  var SOIL = { S: 1.2, TB: 0.15, TC: 0.5, TD: 2.0 }; // sol B
+  function Se(T, eta) {
+    eta = eta || 1; var S = SOIL.S, TB = SOIL.TB, TC = SOIL.TC, TD = SOIL.TD;
+    if (T <= TB) return S * (1 + T / TB * (2.5 * eta - 1));
+    if (T <= TC) return 2.5 * S * eta;
+    if (T <= TD) return 2.5 * S * eta * TC / T;
+    return 2.5 * S * eta * TC * TD / (T * T);
+  }
+  function Sd(T, q) {
+    var S = SOIL.S, TB = SOIL.TB, TC = SOIL.TC, TD = SOIL.TD, b = 0.2;
+    if (T <= TB) return S * (2 / 3 + T / TB * (2.5 / q - 2 / 3));
+    if (T <= TC) return S * 2.5 / q;
+    if (T <= TD) return Math.max(b, S * 2.5 / q * TC / T);
+    return Math.max(b, S * 2.5 / q * TC * TD / (T * T));
+  }
+  function curve(f, x0, sx, y0, sy, tmax) {
+    var d = "", T = 0;
+    for (var i = 0; T <= tmax + 1e-9; i++) { d += (i ? " L" : "M") + (x0 + T * sx).toFixed(1) + " " + (y0 - f(T) * sy).toFixed(1); T += T < 0.6 ? 0.01 : 0.025; }
+    return d;
+  }
+  function setD(id, d) { var e = $(id); if (e) e.setAttribute("d", d); }
+  setD("c10s9-se", curve(function (T) { return Se(T); }, 70, 150, 400, 100, 4));
+  setD("c10s10-se", curve(function (T) { return Se(T); }, 60, 140, 400, 95, 4));
+  setD("c10s10-q15", curve(function (T) { return Sd(T, 1.5); }, 60, 140, 400, 95, 4));
+  setD("c10s10-q35", curve(function (T) { return Sd(T, 3.5); }, 60, 140, 400, 95, 4));
+  var ETA15 = Math.max(0.55, Math.sqrt(10 / (5 + 15)));
+  setD("c10s15-se", curve(function (T) { return Se(T); }, 60, 140, 400, 95, 4));
+  setD("c10s15-se15", curve(function (T) { return Se(T, ETA15); }, 60, 140, 400, 95, 4));
+  /* courbes de résonance */
+  [["c10s7-r05", 0.05], ["c10s7-r10", 0.10], ["c10s7-r20", 0.20]].forEach(function (c) {
+    var d = "", r = 0, xi = c[1];
+    for (var i = 0; r <= 3.0001; i++) {
+      var D = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * xi * r, 2));
+      d += (i ? " L" : "M") + (60 + r * 170).toFixed(1) + " " + (370 - Math.min(D, 10.7) * 31.5).toFixed(1);
+      r += (r > 0.8 && r < 1.2) ? 0.004 : 0.03;
+    }
+    setD(c[0], d);
+  });
+
+  /* ── 9. la période du pont glisse sur le spectre ── */
+  (function () {
+    var raf = 0, t0 = 0;
+    function frame(now) {
+      if (!isOn("c10-spec")) { raf = 0; return; }
+      var ph = ((now - t0) / 9000) % 1, T = 0.12 + (3.5 - 0.12) * (0.5 - 0.5 * Math.cos(2 * Math.PI * ph));
+      var v = Se(T), x = 70 + 150 * T, y = 400 - 100 * v;
+      $("c10s9-pt").setAttribute("cx", x); $("c10s9-pt").setAttribute("cy", y);
+      $("c10s9-v").setAttribute("d", "M" + x.toFixed(1) + " " + y.toFixed(1) + " V400");
+      var bx = Math.min(470, x + 18), by = Math.max(36, y - 74);
+      $("c10s9-bx").setAttribute("x", bx); $("c10s9-bx").setAttribute("y", by);
+      var t1 = $("c10s9-t1"), t2 = $("c10s9-t2");
+      t1.setAttribute("x", bx + 14); t1.setAttribute("y", by + 22); t1.textContent = "T = " + fmt(T, 2) + " s";
+      t2.setAttribute("x", bx + 14); t2.setAttribute("y", by + 43); t2.textContent = "Sa = " + fmt(v, 2) + " × ag";
+      raf = requestAnimationFrame(frame);
+    }
+    HOOK["c10-spec"] = function () { if (!raf) { t0 = performance.now() - 2600; raf = requestAnimationFrame(frame); } };
+  })();
+
+  /* ── 13. la travée tombe ── */
+  HOOK["c10-appui"] = function (st, sl) {
+    if (st >= 1) { if (!sl.classList.contains("c10-run")) { void sl.offsetWidth; sl.classList.add("c10-run"); } }
+    else sl.classList.remove("c10-run");
+  };
+
+  /* ── 15. isolation : le point glisse ── */
+  (function () {
+    var cur = { T: 0.8, eta: 1 }, raf = 0;
+    function pos(T, eta) { return [60 + 140 * T, 400 - 95 * Se(T, eta)]; }
+    function place() {
+      var p = pos(cur.T, cur.eta), pt = $("c10s15-pt"), lb = $("c10s15-lb");
+      pt.setAttribute("cx", p[0].toFixed(1)); pt.setAttribute("cy", p[1].toFixed(1));
+      if (cur.T > 1.6) { lb.setAttribute("x", (p[0] - 20).toFixed(1)); lb.setAttribute("y", (p[1] - 62).toFixed(1)); lb.textContent = "pont isolé"; }
+      else { lb.setAttribute("x", (p[0] + 18).toFixed(1)); lb.setAttribute("y", (p[1] - 14).toFixed(1)); lb.textContent = "pont classique"; }
+    }
+    function go(T1, e1) {
+      cancelAnimationFrame(raf);
+      var T0 = cur.T, e0 = cur.eta, s = performance.now();
+      (function f(now) {
+        var k = Math.min(1, (now - s) / 1400), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        cur.T = T0 + (T1 - T0) * e; cur.eta = e0 + (e1 - e0) * e; place();
+        if (k < 1) raf = requestAnimationFrame(f);
+      })(s);
+    }
+    HOOK["c10-iso"] = function (st) {
+      if (st <= 0) go(0.8, 1); else if (st === 1) go(2.5, 1); else go(2.5, ETA15);
+    };
+    if ($("c10s15-pt")) place();
+  })();
+
+  /* ── 25. précontrainte : la poutre remonte ── */
+  (function () {
+    var c = 0, raf = 0;
+    function s(x) { var u = (x - 80) / 640; return 4 * u * (1 - u); }
+    function draw() {
+      var top = "", bot = "", cab = "";
+      for (var x = 80; x <= 720; x += 20) { top += (x === 80 ? "M" : " L") + x + " " + (130 - c * s(x)).toFixed(1); cab += (x === 80 ? "M" : " L") + x + " " + (160 + 24 * s(x) - c * s(x)).toFixed(1); }
+      for (var x2 = 720; x2 >= 80; x2 -= 20) bot += " L" + x2 + " " + (190 - c * s(x2)).toFixed(1);
+      $("c10pc-beam").setAttribute("d", top + bot + " Z");
+      $("c10pc-cab").setAttribute("d", cab);
+    }
+    function tween(c1) {
+      cancelAnimationFrame(raf);
+      var c0 = c, t0 = performance.now();
+      (function f(now) { var k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3); c = c0 + (c1 - c0) * e; draw(); if (k < 1) raf = requestAnimationFrame(f); })(t0);
+    }
+    HOOK["c10-pc"] = function (st) {
+      var cab = $("c10pc-cab");
+      if (st >= 1) { cab.setAttribute("stroke", "#dc4a2c"); cab.setAttribute("stroke-dasharray", "none"); } else { cab.setAttribute("stroke", "#9aa3ae"); cab.setAttribute("stroke-dasharray", "8 6"); }
+      $("c10pc-jk").setAttribute("opacity", st === 1 ? 1 : 0);
+      $("c10pc-g").setAttribute("opacity", st === 2 ? 1 : 0);
+      $("c10pc-q").setAttribute("opacity", st >= 3 ? 1 : 0);
+      $("c10pc-cam").textContent = st === 1 ? "↑ la poutre se cambre (contre-flèche)" : st === 2 ? "le poids propre réduit la contre-flèche" : st >= 3 ? "la poutre redevient droite" : "";
+      tween([0, 16, 8, 0, 0][Math.min(st, 4)]);
+    };
+    if ($("c10pc-beam")) draw();
+  })();
+
+  /* ── 8. simulateur d'oscillateur ── */
+  (function () {
+    var svg = $("c10m-svg"); if (!svg) return;
+    var P = {}, running = false, raf = 0, t = 0, u = 0, v = 0, umax = 0, last = 0, buf = [], tEnd = 1e9;
+    var eqC = [], eqMax = 1;
+    (function () { var seed = 11; function r() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      for (var k = 0; k < 30; k++) { var fr = 0.4 * Math.pow(10, r() * 1.2); eqC.push([fr, 1 / Math.sqrt(1 + Math.pow(1.2 / fr, 4)) / (1 + fr / 8), r() * 6.283]); }
+      var m = 0; for (var i = 0; i < 2400; i++) { var a = eqRaw(i * 0.005); if (Math.abs(a) > m) m = Math.abs(a); } eqMax = m || 1; })();
+    function eqRaw(tt) { var env = tt < 2 ? tt / 2 : (tt < 6 ? 1 : Math.exp(-(tt - 6) / 2.5)); if (tt > 12) env = 0; var a = 0; for (var k = 0; k < eqC.length; k++) a += eqC[k][1] * Math.sin(2 * Math.PI * eqC[k][0] * tt + eqC[k][2]); return env * a; }
+    function val(id) { return parseFloat($(id).value); }
+    function params() {
+      var M = val("c10m-M"), H = val("c10m-H"), D = val("c10m-D"), f = val("c10m-f"), typ = $("c10m-type").value;
+      var I = Math.PI * Math.pow(D, 4) / 64, K = 3 * 32e6 * I / Math.pow(H, 3), w = Math.sqrt(K / M);
+      P = { M: M, H: H, D: D, f: f, typ: typ, a: 0.1, xi: 0.05, K: K, w: w, T: 2 * Math.PI / w, fn: w / (2 * Math.PI) };
+      $("c10m-Mv").textContent = fmt(M, 0) + " t"; $("c10m-Hv").textContent = fmt(H, 1) + " m"; $("c10m-Dv").textContent = fmt(D, 2) + " m"; $("c10m-fv").textContent = fmt(f, 2) + " Hz";
+      $("c10m-K").textContent = fmt(K, 0) + " kN/m"; $("c10m-T").textContent = fmt(P.T, 2) + " s"; $("c10m-fn").textContent = fmt(P.fn, 2) + " Hz";
+      $("c10m-r").textContent = typ === "sin" ? fmt(f / P.fn, 2) : "—";
+    }
+    function ag(tt) {
+      if (P.typ === "sin") return P.a * g * Math.sin(2 * Math.PI * P.f * tt) * Math.min(1, tt / 1.5);
+      if (P.typ === "imp") return tt < 0.15 ? 3 * P.a * g * Math.sin(Math.PI * tt / 0.15) : 0;
+      return 2 * P.a * g * eqRaw(tt) / eqMax;
+    }
+    function draw() {
+      var sc = 700, ux = Math.max(-150, Math.min(150, u * sc));
+      var agv = ag(t), gx = agv / (P.a * g) * 7;
+      var x0 = 300 + gx, base = 262, top = base - (110 + P.H * 6.5), cx = x0 + ux, w = Math.max(9, Math.min(24, P.D * 10));
+      var h = '<rect width="680" height="500" rx="10" fill="#f4f7fb"/>';
+      h += '<g transform="translate(' + gx.toFixed(1) + ' 0)"><rect x="-20" y="262" width="720" height="40" fill="#ead7bd"/><rect x="250" y="256" width="100" height="14" fill="#9aa3ae" stroke="#5d6672"/></g>';
+      h += '<path d="M300 40 V262" stroke="#b8902f" stroke-dasharray="4 4"/>';
+      h += '<path d="M' + (x0 - w) + ' ' + base + ' C' + (x0 - w) + ' ' + (base - (base - top) * .45) + ' ' + (cx - w) + ' ' + (top + (base - top) * .3) + ' ' + (cx - w) + ' ' + top + ' L' + (cx + w) + ' ' + top + ' C' + (cx + w) + ' ' + (top + (base - top) * .3) + ' ' + (x0 + w) + ' ' + (base - (base - top) * .45) + ' ' + (x0 + w) + ' ' + base + ' Z" fill="#cfd5dc" stroke="#6e7884"/>';
+      var dw = 150 + Math.min(150, P.M / 8);
+      h += '<rect x="' + (cx - dw / 2).toFixed(1) + '" y="' + (top - 30) + '" width="' + dw.toFixed(0) + '" height="30" rx="3" fill="#b9c2cc" stroke="#6e7884"/>';
+      h += '<rect x="' + (cx - dw / 2).toFixed(1) + '" y="' + (top - 35) + '" width="' + dw.toFixed(0) + '" height="6" fill="#3c4049"/>';
+      h += '<text x="' + cx.toFixed(1) + '" y="' + (top - 9) + '" text-anchor="middle" class="lbl-s" style="fill:#141a26">M = ' + fmt(P.M, 0) + ' t</text>';
+      h += '<text x="16" y="292" class="lbl-s" style="fill:#a33d22">sol : ' + (P.typ === "sin" ? "sinus " + fmt(P.f, 2) + " Hz" : P.typ === "imp" ? "choc bref" : "séisme synthétique") + ' · 0,1 g</text>';
+      h += '<text x="664" y="292" text-anchor="end" class="lbl-s">déplacements amplifiés</text>';
+      var X0 = 30, W = 620, Y0 = 410, span = 8;
+      h += '<rect x="16" y="312" width="648" height="176" rx="10" fill="#fff" stroke="#e3dfd4"/><path d="M' + X0 + ' ' + Y0 + ' H' + (X0 + W) + '" stroke="#e3dfd4"/>';
+      var m = 0.002; for (var j = 0; j < buf.length; j++) m = Math.max(m, Math.abs(buf[j][1]));
+      var d = "", da = "";
+      for (var k = 0; k < buf.length; k++) { var xx = X0 + W - (t - buf[k][0]) / span * W; if (xx < X0) continue; d += (d ? "L" : "M") + xx.toFixed(1) + " " + (Y0 - buf[k][1] / m * 62).toFixed(1); da += (da ? "L" : "M") + xx.toFixed(1) + " " + (Y0 - buf[k][2] / (P.a * g * 3) * 30).toFixed(1); }
+      if (da) h += '<path d="' + da + '" stroke="#dc4a2c" stroke-width="1.2" fill="none" opacity=".45"/>';
+      if (d) h += '<path d="' + d + '" stroke="#2f6fe0" stroke-width="2.2" fill="none"/>';
+      h += '<text x="30" y="334" class="lbl-s" style="fill:#2453b3">déplacement du tablier u(t) — 8 dernières secondes</text>';
+      h += '<text x="650" y="334" text-anchor="end" class="lbl-s">± ' + fmt(m * 100, 1) + ' cm</text>';
+      h += '<text x="650" y="480" text-anchor="end" class="lbl-s">t = ' + fmt(t, 1) + ' s</text>';
+      svg.innerHTML = h;
+    }
+    function step(now) {
+      if (!running) return;
+      if (!isOn("c10-sim")) { running = false; return; }
+      var dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      var n = Math.max(1, Math.round(dt * 2000)), hh = dt / n;
+      for (var i = 0; i < n; i++) { var a = -ag(t) - 2 * P.xi * P.w * v - P.w * P.w * u; v += a * hh; u += v * hh; t += hh; if (Math.abs(u) > umax) umax = Math.abs(u); }
+      buf.push([t, u, ag(t)]); while (buf.length && buf[0][0] < t - 8.2) buf.shift();
+      $("c10m-u").textContent = fmt(umax * 100, 2) + " cm"; $("c10m-F").textContent = fmt(P.K * umax, 0) + " kN";
+      draw();
+      if (t > tEnd) { running = false; return; }
+      raf = requestAnimationFrame(step);
+    }
+    function start() {
+      params(); cancelAnimationFrame(raf); t = 0; u = 0; v = 0; umax = 0; buf = [];
+      tEnd = P.typ === "sin" ? 40 : (P.typ === "imp" ? 20 : 16);
+      running = true; last = performance.now(); raf = requestAnimationFrame(step);
+    }
+    function stop() { running = false; cancelAnimationFrame(raf); }
+    ["c10m-M", "c10m-H", "c10m-D", "c10m-f", "c10m-type"].forEach(function (id) { $(id).addEventListener("input", function () { params(); if (!running) draw(); }); });
+    $("c10m-go").addEventListener("click", start);
+    $("c10m-stop").addEventListener("click", stop);
+    $("c10m-res").addEventListener("click", function () { params(); $("c10m-type").value = "sin"; $("c10m-f").value = (Math.round(P.fn / 0.02) * 0.02).toFixed(2); start(); });
+    params(); draw();
+    HOOK["c10-sim"] = function () { if (!running) { $("c10m-type").value = "sin"; start(); } };
+  })();
+
+  /* ── 21. calculatrice de flexion BAEL ── */
+  (function () {
+    var svg = $("c10f-svg"); if (!svg) return;
+    function num(id, def) { var v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) ? v : def; }
+    function set(id, t, cls) { var e = $(id); e.innerHTML = t; e.className = cls || ""; }
+    function flexT(p) {
+      var b = p.b, b0 = Math.min(p.b0 || p.b, p.b), h0 = p.h0 || 0, d = p.d, dp = p.dp, Mu = p.Mu, fc28 = p.fc28, fe = p.fe;
+      var gb = 1.5, gs = 1.15, Es = 200000, fbu = 0.85 * fc28 / gb, fsu = fe / gs, ft = 0.6 + 0.06 * fc28;
+      var el = fsu / Es * 1000, al = 3.5 / (3.5 + el), mul = 0.8 * al * (1 - 0.4 * al);
+      var M = Mu / 1000, r = { fbu: fbu, fsu: fsu, ft: ft, mul: mul, T: false, Mtu: null }, bw = b, M1 = 0, As1 = 0;
+      if (b0 < b && h0 > 0) { r.Mtu = b * h0 * fbu * (d - h0 / 2) * 1000; if (Mu > r.Mtu) { r.T = true; bw = b0; M1 = (b - b0) * h0 * fbu * (d - h0 / 2); As1 = (b - b0) * h0 * fbu / fsu; } }
+      var M2 = M - M1; r.bw = bw; r.mu = M2 / (bw * d * d * fbu);
+      if (r.mu <= mul) { r.alpha = 1.25 * (1 - Math.sqrt(1 - 2 * r.mu)); r.z = d * (1 - 0.4 * r.alpha); r.As = (As1 + M2 / (r.z * fsu)) * 1e4; r.Asc = 0; }
+      else { r.alpha = al; r.z = d * (1 - 0.4 * al); var Ml = mul * bw * d * d * fbu, esc = 3.5 * (al * d - dp) / (al * d), ssc = Math.min(Es * esc / 1000, fsu);
+        r.Asc = Math.max(0, (M2 - Ml) / ((d - dp) * ssc) * 1e4); r.As = (As1 + Ml / (r.z * fsu) + (M2 - Ml) / ((d - dp) * fsu)) * 1e4; }
+      r.y = r.alpha * d; r.pivot = r.alpha <= 0.2593 ? "A" : "B";
+      r.Asmin = 0.23 * b0 * d * ft / fe * 1e4;
+      return r;
+    }
+    function elsT(p, As, Asc) {
+      var b = p.b, b0 = Math.min(p.b0 || p.b, p.b), h0 = p.h0 || 0, d = p.d, dp = p.dp, n = 15;
+      As /= 1e4; Asc = (Asc || 0) / 1e4;
+      var A = b / 2, B = n * (As + Asc), C = -n * (As * d + Asc * dp), y = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A), I;
+      if (b0 < b && h0 > 0 && y > h0) {
+        A = b0 / 2; B = (b - b0) * h0 + n * (As + Asc); C = -((b - b0) * h0 * h0 / 2 + n * (As * d + Asc * dp)); y = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+        I = b0 * Math.pow(y, 3) / 3 + (b - b0) * (Math.pow(h0, 3) / 12 + h0 * Math.pow(y - h0 / 2, 2)) + n * As * Math.pow(d - y, 2) + n * Asc * Math.pow(y - dp, 2);
+      } else I = b * Math.pow(y, 3) / 3 + n * As * Math.pow(d - y, 2) + n * Asc * Math.pow(y - dp, 2);
+      var M = p.Ms / 1000; return { y: y, sbc: M * y / I, ss: n * M * (d - y) / I };
+    }
+    function sbar(fe, ft, cls) { if (cls === "FPP") return Infinity; var x = Math.min(2 / 3 * fe, Math.max(0.5 * fe, 110 * Math.sqrt(1.6 * ft))); return cls === "FP" ? x : 0.8 * x; }
+    function bars(Areq, bw, c) {
+      var D = [10, 12, 14, 16, 20, 25, 32, 40], out = [];
+      D.forEach(function (f) {
+        var a = Math.PI * f * f / 400, n = Math.max(2, Math.ceil(Areq / a - 1e-9)), e = Math.max(f, 25) / 1000;
+        var nmax = Math.max(2, Math.floor((bw - 2 * c - 0.02 + e) / (f / 1000 + e))), lay = Math.ceil(n / nmax); if (lay > 3) return;
+        out.push({ f: f, n: n, A: n * a, lay: lay, nmax: nmax, score: n * a * (1 + 0.06 * (lay - 1)) * (f > 32 ? 1.05 : 1) * (n > 12 ? 1.04 : 1) });
+      });
+      out.sort(function (x, y) { return x.score - y.score; }); return out;
+    }
+    function upd() {
+      var p = { b: Math.max(0.05, num("c10f-b", 0.3)), h: Math.max(0.05, num("c10f-h", 0.5)), d: Math.max(0.03, num("c10f-d", 0.45)), dp: 0.05,
+        b0: Math.max(0.05, num("c10f-b0", 0.3)), h0: Math.max(0, num("c10f-h0", 0)), Mu: Math.max(0, num("c10f-Mu", 200)), Ms: Math.max(0, num("c10f-Ms", 145)),
+        fc28: num("c10f-fc", 30), fe: num("c10f-fe", 500) };
+      var fis = $("c10f-fis").value;
+      if (p.d >= p.h) p.d = p.h * 0.9; if (p.b0 > p.b) p.b0 = p.b;
+      var r = flexT(p);
+      set("c10f-mat", fmt(r.fbu, 1) + " ; " + fmt(r.fsu, 1) + " MPa");
+      set("c10f-mu", fmt(r.mu, 4) + " (" + fmt(r.mul, 4) + ")", r.mu > r.mul ? "ko" : "");
+      set("c10f-al", fmt(r.alpha, 3) + " ; " + r.pivot);
+      set("c10f-z", fmt(r.z, 3) + " m");
+      set("c10f-As", fmt(r.As, 2) + " cm²");
+      set("c10f-Asc", r.Asc > 0 ? fmt(r.Asc, 2) + " cm²" : "0", r.Asc > 0 ? "ko" : "");
+      set("c10f-Asmin", fmt(r.Asmin, 2) + " cm²");
+      var sb = sbar(p.fe, r.ft, fis), Aels = 0;
+      if (isFinite(sb) && p.Ms > 0) {
+        var lo = 0.01, hi = 2000;
+        if (elsT(p, hi, r.Asc).ss > sb) Aels = NaN;
+        else { for (var i = 0; i < 60; i++) { var m = (lo + hi) / 2; if (elsT(p, m, r.Asc).ss > sb) lo = m; else hi = m; } Aels = hi; }
+      }
+      set("c10f-Asels", isFinite(sb) ? (isFinite(Aels) ? fmt(Aels, 2) + " cm²" : "section trop faible") : "sans objet");
+      var Areq = Math.max(r.As, r.Asmin, isFinite(Aels) ? Aels : 0), bw = (p.b0 < p.b && p.h0 > 0) ? p.b0 : p.b;
+      var best = bars(Areq, bw, Math.min(0.05, Math.max(0.02, p.h - p.d - 0.02)))[0];
+      set("c10f-bars", best ? best.n + " HA" + best.f + " = " + fmt(best.A, 1) + " cm²" : "—");
+      var els = best ? elsT(p, best.A, r.Asc) : null;
+      if (els && p.Ms > 0) {
+        var lim = 0.6 * p.fc28;
+        set("c10f-sbc", fmt(els.sbc, 1) + " / " + fmt(lim, 0), els.sbc <= lim ? "ok" : "ko");
+        set("c10f-ss", fmt(els.ss, 0) + " / " + (isFinite(sb) ? fmt(sb, 0) : "—"), (!isFinite(sb) || els.ss <= sb * 1.0001) ? "ok" : "ko");
+      } else { set("c10f-sbc", "—"); set("c10f-ss", "—"); }
+      /* dessin */
+      var W = 380, Hs = 480, sc = Math.min(300 / p.h, 300 / p.b), ox = (W - p.b * sc) / 2, oy = 60;
+      var h = '<rect width="380" height="480" rx="10" fill="#eef4fc"/>';
+      if (p.b0 < p.b && p.h0 > 0) {
+        var bo = (p.b - p.b0) / 2 * sc;
+        h += '<path d="M' + ox + ' ' + oy + ' h' + (p.b * sc) + ' v' + (p.h0 * sc) + ' h' + (-bo) + ' V' + (oy + p.h * sc) + ' h' + (-p.b0 * sc) + ' V' + (oy + p.h0 * sc) + ' h' + (-bo) + ' Z" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>';
+      } else h += '<rect x="' + ox + '" y="' + oy + '" width="' + (p.b * sc) + '" height="' + (p.h * sc) + '" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>';
+      var yn = oy + Math.min(r.y, p.h) * sc;
+      h += '<rect x="' + ox + '" y="' + oy + '" width="' + (p.b * sc) + '" height="' + Math.min(0.8 * r.y, p.h) * sc + '" fill="#2f6fe0" opacity=".16"/>';
+      h += '<path d="M' + (ox - 20) + ' ' + yn + ' H' + (ox + p.b * sc + 20) + '" stroke="#b8902f" stroke-width="2" stroke-dasharray="6 4"/>';
+      h += '<text x="' + (ox + p.b * sc + 6) + '" y="' + (yn - 6) + '" class="lbl-s" style="fill:#8a6a1f">y = ' + fmt(r.y * 100, 1) + ' cm</text>';
+      if (best) {
+        var per = Math.min(best.n, best.nmax), rb = Math.max(4, best.f / 1000 * sc / 2), x1 = ox + (p.b - bw) / 2 * sc + 0.05 * sc, x2 = ox + (p.b + bw) / 2 * sc - 0.05 * sc;
+        for (var L = 0, k = 0; L < best.lay; L++) {
+          var nn = Math.min(per, best.n - k), yy = oy + p.d * sc - L * (rb * 2 + 6);
+          for (var q = 0; q < nn; q++, k++) { var xx = nn > 1 ? x1 + (x2 - x1) * q / (nn - 1) : (x1 + x2) / 2; h += '<circle cx="' + xx.toFixed(1) + '" cy="' + yy.toFixed(1) + '" r="' + rb.toFixed(1) + '" fill="#2f6fe0"/>'; }
+        }
+      }
+      if (r.Asc > 0) h += '<circle cx="' + (ox + 0.06 * sc) + '" cy="' + (oy + p.dp * sc) + '" r="5" fill="#dc4a2c"/><circle cx="' + (ox + (p.b - 0.06) * sc) + '" cy="' + (oy + p.dp * sc) + '" r="5" fill="#dc4a2c"/>';
+      h += '<text x="190" y="36" text-anchor="middle" class="lbl-b" style="font-size:18px">' + (best ? best.n + " HA" + best.f : "") + '</text>';
+      h += '<text x="190" y="' + (oy + p.h * sc + 34) + '" text-anchor="middle" class="lbl-s">b = ' + fmt(p.b * 100, 0) + ' cm · h = ' + fmt(p.h * 100, 0) + ' cm</text>';
+      svg.innerHTML = h;
+    }
+    ["c10f-b", "c10f-h", "c10f-d", "c10f-b0", "c10f-h0", "c10f-Mu", "c10f-Ms", "c10f-fc", "c10f-fe", "c10f-fis"].forEach(function (id) { $(id).addEventListener("input", upd); $(id).addEventListener("change", upd); });
+    upd();
+  })();
+  /* animations SMIL détachées hors de la diapositive affichée (économie de calcul) */
+  (function () {
+    var all = document.querySelectorAll(".deck .slide");
+    function sync(s) {
+      var on = s.classList.contains("on");
+      if (!on && !s._c10) {
+        s._c10 = [];
+        s.querySelectorAll("animate,animateTransform,animateMotion,set").forEach(function (a) { var c = document.createComment("a"); a.replaceWith(c); s._c10.push([c, a]); });
+      } else if (on && s._c10) {
+        s._c10.forEach(function (x) { x[0].replaceWith(x[1]); }); s._c10 = null;
+      }
+    }
+    all.forEach(function (s) { sync(s); new MutationObserver(function () { sync(s); }).observe(s, { attributes: true, attributeFilter: ["class"] }); });
+  })();
+  try { var cs = document.querySelectorAll(".deck .slide")[window.Slides.index]; if (cs && HOOK[cs.id]) HOOK[cs.id](window.Slides.step, cs); } catch (e) {}
+})();
+</script>
+</body>
+</html>

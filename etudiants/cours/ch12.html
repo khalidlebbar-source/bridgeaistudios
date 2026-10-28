@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapitre 12 — Faire durer un pont · Cours de ponts · BridgeAI Studios</title>
+<meta name="description" content="Cours de ponts en diapositives, chapitre 12 : faire durer un pont — pathologies, corrosion des armatures, affouillement, alcali-réaction, surveillance et auscultation, entretien, réparation et renforcement ; conclusion du cours.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/etudiants/cours/ch12.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../handbag/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/slides.css">
+<style>
+/* ── styles propres au chapitre 10 ── */
+.c10-ctl{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.c10-ctl label{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink2)}
+.c10-ctl label span.v{color:var(--gold);font-weight:500}
+.c10-ctl input[type=range]{accent-color:var(--gold);width:100%}
+.c10-ctl input[type=number],.c10-ctl select{font:inherit;font-size:16px;padding:5px 8px;border:1px solid #d9d3c3;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+.c10-btn{font:inherit;font-size:16px;padding:8px 16px;border-radius:10px;border:1px solid var(--gold);background:var(--gold);color:#fff;cursor:pointer}
+.c10-btn.o{background:#fff;color:#8a6a1f}
+.c10-res{display:grid;grid-template-columns:auto auto;gap:4px 14px;font-size:16px;color:var(--ink2);align-items:baseline}
+.c10-res b{font-weight:500;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.c10-res b.ok{color:#0b8a5c}.c10-res b.ko{color:var(--red)}
+.c10-res .h{grid-column:1/-1;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-top:6px}
+.c10-tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.c10-tile h3{font-size:18px;margin:6px 0 2px}
+.c10-tile p{font-size:16px;line-height:1.35;margin:0}
+.c10-num{font-family:'Cormorant Garamond',serif;font-size:40px;line-height:1;color:var(--gold)}
+.c10-lnk{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:#141a26;color:#f1e3bd;text-decoration:none;font-size:17px}
+.c10-lnk:hover{background:#22314f}
+.c10-k{display:inline-block;min-width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;font-size:14px;font-weight:500;text-align:center;line-height:26px;margin-right:8px}
+/* travée qui tombe (diapositive longueur d'appui) */
+.c10-spR,.c10-spL,.c10-spR2,.c10-spL2{transform-box:fill-box}
+.c10-spR{transform-origin:right center}
+.slide.c10-run .c10-spR{animation:c10-fall 3.2s ease-in forwards}
+.slide.c10-run .c10-spL{animation:c10-wob 3.2s ease-in-out forwards}
+.c10-spR2{animation:c10-wob2 1.8s ease-in-out infinite}
+.c10-spL2{animation:c10-wob2 1.8s ease-in-out infinite reverse}
+@keyframes c10-fall{0%{transform:none}12%{transform:translateX(-8px)}24%{transform:translateX(12px)}36%{transform:translateX(-6px)}50%{transform:translateX(22px)}62%{transform:translateX(34px)}74%{transform:translateX(40px) rotate(-9deg)}100%{transform:translateX(44px) translateY(26px) rotate(-17deg)}}
+@keyframes c10-wob{0%,100%{transform:none}20%{transform:translateX(8px)}40%{transform:translateX(-10px)}60%{transform:translateX(6px)}80%{transform:translateX(-4px)}}
+@keyframes c10-wob2{0%,100%{transform:translateX(-14px)}50%{transform:translateX(14px)}}
+.c10-hint{font-size:15px;color:var(--mute)}
+.formula .tex{white-space:nowrap}
+svg [data-fx="pop"],svg [data-fx="zoom"]{transform-box:fill-box;transform-origin:center}
+.c10-ctl label>span:first-child{display:block}
+</style>
+</head>
+<body data-ch="ch12">
+<div class="deck">
+
+<section class="slide cover" data-title="Couverture">
+  <div class="num" data-a data-fx="fade" data-d=".2">12</div>
+  <div class="ckick" data-a data-fx="left">Cours de ponts · Chapitre 12</div>
+  <h1 data-a data-fx="up" data-d=".15" style="font-size:66px;width:840px">Faire durer <em>un pont</em></h1>
+  <p class="csub" data-a data-fx="up" data-d=".35" style="top:300px">Un pont se conçoit pour cent ans. Comment le voir vieillir, le surveiller et le réparer à temps ?</p>
+  <svg class="art" viewBox="0 0 1280 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect y="230" width="1280" height="30" fill="#18213a"/>
+    <g data-a data-fx="up" data-d=".3">
+      <path d="M620 150 H1240 V172 H620 Z" fill="#3b4a6b" stroke="#56678e"/>
+      <path d="M640 172 V230 M1220 172 V230" stroke="#56678e" stroke-width="16"/>
+    </g>
+    <g data-a data-fx="fade" data-d=".7" stroke="#e2c070" stroke-width="2.2" fill="none">
+      <circle cx="930" cy="110" r="26"/><path d="M948 128 l22 22"/>
+    </g>
+    <path data-a data-fx="draw" data-d=".9" d="M620 70 C760 70 860 60 960 52 S1150 40 1240 36" stroke="#5ec2a8" stroke-width="2.4" fill="none"/>
+    <text x="1080" y="28" font-size="15" fill="#8d98ad" font-family="Outfit">100 ans de service</text>
+  </svg>
+</section>
+
+<section class="slide" data-title="Ce que vous saurez faire">
+  <div class="kicker">Objectifs du chapitre</div>
+  <h2 class="t">À la fin de ce chapitre, vous saurez…</h2>
+  <div class="cols c4" style="margin-top:30px">
+    <div class="card violet" data-b="1" data-fx="up">
+      <div class="ico" style="background:#f1ecfa"><svg viewBox="0 0 32 32" fill="none" stroke="#7a52c7" stroke-width="2"><path d="M16 4l12 22H4z"/><path d="M16 13v6M16 22v1"/></svg></div>
+      <h3>Reconnaître les pathologies</h3><p>Fissures, éclatements, désordres d'appuis : lire un pont qui vieillit.</p></div>
+    <div class="card gold" data-b="2" data-fx="up">
+      <div class="ico" style="background:#fbf1d8"><svg viewBox="0 0 32 32" fill="none" stroke="#b8902f" stroke-width="2"><path d="M6 26c4-10 16-10 20 0"/><circle cx="16" cy="10" r="5"/></svg></div>
+      <h3>Expliquer la corrosion</h3><p>Carbonatation, chlorures, enrobage, affouillement, alcali-réaction.</p></div>
+    <div class="card blue" data-b="3" data-fx="up">
+      <div class="ico" style="background:#e3ecfc"><svg viewBox="0 0 32 32" fill="none" stroke="#2f6fe0" stroke-width="2"><circle cx="14" cy="14" r="8"/><path d="M20 20l8 8"/></svg></div>
+      <h3>Surveiller</h3><p>Inspections, auscultation, instrumentation : voir avant que ça casse.</p></div>
+    <div class="card teal" data-b="4" data-fx="up">
+      <div class="ico" style="background:#dcf2ed"><svg viewBox="0 0 32 32" fill="none" stroke="#12a08a" stroke-width="2"><path d="M6 26l8-8M14 18l4-10 6 6-10 4"/></svg></div>
+      <h3>Entretenir et réparer</h3><p>Étanchéité, joints, ragréage, renforcement : agir tôt coûte moins.</p></div>
+  </div>
+  <div class="callout t" style="margin-top:30px" data-b="5" data-fx="up"><span class="lab">Le fil rouge</span>Notre pont est conçu, calculé et ferraillé. Dernière question : <b>comment le faire durer cent ans</b> ?</div>
+</section>
+
+<section class="slide" data-title="Les principales pathologies">
+  <div class="kicker">Ce qui abîme un pont</div>
+  <h2 class="t">Huit ennemis <em>du pont</em></h2>
+  <div class="cols c4" style="gap:16px">
+    <div class="c10-tile" data-b="1" data-fx="up">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="20" y="16" width="200" height="58" fill="#cfd5dc"/><circle cx="80" cy="56" r="9" fill="#a5532c"/><circle cx="160" cy="56" r="9" fill="#2f6fe0"/><path d="M80 47 L74 16 M80 47 L90 16" stroke="#6e7884" stroke-width="1.5"/><circle cx="80" cy="56" r="14" fill="none" stroke="#c46a33" stroke-width="3" class="pulse"/></svg>
+      <h3>Corrosion des armatures</h3><p>Carbonatation, chlorures du bord de mer.</p></div>
+    <div class="c10-tile" data-b="1" data-fx="up" data-d=".1">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#f1ecfa"/><rect x="20" y="10" width="200" height="70" fill="#cfd5dc"/><g stroke="#7a52c7" stroke-width="1.6" fill="none"><path d="M30 30 l30 8 l20 -14 l30 12 l26 -10 l30 14 l24 -6 M40 60 l26 -16 l28 18 l30 -12 l32 16 l30 -14 M60 38 l6 22 M110 36 l-2 26 M170 34 l4 28"/></g></svg>
+      <h3>Alcali-réaction</h3><p>Gel gonflant, faïençage du béton.</p></div>
+    <div class="c10-tile" data-b="1" data-fx="up" data-d=".2">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><path d="M20 30 Q120 46 220 30 L220 56 Q120 72 20 56 Z" fill="#cfd5dc" stroke="#6e7884"/><g stroke="#dc4a2c" stroke-width="2"><path d="M90 66 v-14 M110 68 v-16 M130 68 v-16 M150 66 v-14"/></g></svg>
+      <h3>Fissuration</h3><p>Retrait, surcharges, défauts de ferraillage.</p></div>
+    <div class="c10-tile" data-b="1" data-fx="up" data-d=".3">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#e4f0fa"/><rect y="40" width="240" height="22" fill="#bfe0f5"/><path d="M0 50 H240" stroke="#3a9ad9" stroke-width="2" class="flow"/><rect x="106" y="6" width="28" height="56" fill="#cfd5dc" stroke="#6e7884"/><path d="M80 62 Q120 92 160 62 Z" fill="#9fc6e4"/><rect x="92" y="60" width="56" height="8" fill="#9aa3ae"/></svg>
+      <h3>Affouillement</h3><p>La crue creuse sous les fondations.</p></div>
+    <div class="c10-tile" data-b="2" data-fx="up">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdeee9"/><rect x="0" y="14" width="240" height="18" fill="#b9c2cc" stroke="#6e7884"/><g class="drive" style="--t:3s;--from:-120px;--to:60px"><rect x="0" y="34" width="90" height="40" rx="4" fill="#e8a020"/><rect x="70" y="28" width="20" height="8" fill="#dc4a2c"/></g><path d="M150 32 l6 10 l6 -10" stroke="#dc4a2c" stroke-width="2" fill="none"/></svg>
+      <h3>Chocs de véhicules</h3><p>Poids lourds hors gabarit sous un PS.</p></div>
+    <div class="c10-tile" data-b="2" data-fx="up" data-d=".1">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#e9f7f3"/><rect x="10" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="130" y="20" width="100" height="16" fill="#b9c2cc"/><rect x="10" y="14" width="100" height="6" fill="#3c4049"/><rect x="130" y="14" width="100" height="6" fill="#3c4049"/><g fill="#3a9ad9"><circle cx="120" cy="44" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" repeatCount="indefinite"/></circle><circle cx="120" cy="60" r="3"><animate attributeName="cy" values="40;84" dur="1.2s" begin=".6s" repeatCount="indefinite"/></circle></g></svg>
+      <h3>Étanchéité, joints</h3><p>L'eau s'infiltre : tout commence là.</p></div>
+    <div class="c10-tile" data-b="2" data-fx="up" data-d=".2">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#fdf3e2"/><rect x="20" y="10" width="200" height="22" fill="#b9c2cc"/><path d="M90 32 H150 L156 52 H84 Z" fill="#3c4049"/><path d="M100 40 l8 6 l-6 4" stroke="#e2c070" stroke-width="2" fill="none"/><rect x="50" y="52" width="140" height="28" fill="#cfd5dc"/></svg>
+      <h3>Appareils d'appui</h3><p>Élastomère qui vieillit, se fend, glisse.</p></div>
+    <div class="c10-tile" data-b="2" data-fx="up" data-d=".3" style="background:#f4f5f7">
+      <svg viewBox="0 0 240 90" style="width:100%;height:112px"><rect width="240" height="90" rx="10" fill="#eef1f5"/><g stroke="#8aa7c4" stroke-width="2.4"><path d="M120 18 V72 M96 32 L144 58 M96 58 L144 32"/></g></svg>
+      <h3>Gel</h3><p>Peu concerné au Maroc, sauf en montagne.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="La corrosion des armatures">
+  <div class="kicker">Pathologie n° 1</div>
+  <h2 class="t">Le front de carbonatation <em>avance vers l'acier</em></h2>
+  <div class="split r">
+    <div class="vis">
+      <svg viewBox="0 0 620 460" aria-label="Avancée du front de carbonatation">
+        <defs><clipPath id="c10s31-cl"><rect x="40" y="70" width="540" height="350"/></clipPath>
+          <marker id="c10s31-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6b7383"/></marker></defs>
+        <rect width="620" height="460" rx="16" fill="#eef4fc"/>
+        <g class="lbl-s" style="fill:#4d5566"><text x="60" y="30">CO₂ de l'air</text><text x="420" y="30" style="fill:#3a7ab0">Cl⁻ (embruns marins)</text></g>
+        <g stroke="#6b7383" stroke-width="2" marker-end="url(#c10s31-ar)"><path d="M80 40 V64" class="flow"/><path d="M160 40 V64" class="flow"/><path d="M240 40 V64" class="flow"/></g>
+        <g fill="#3a9ad9"><circle cx="440" cy="50" r="4"><animate attributeName="cy" values="40;66" dur="1.4s" repeatCount="indefinite"/></circle><circle cx="490" cy="50" r="4"><animate attributeName="cy" values="40;66" dur="1.4s" begin=".5s" repeatCount="indefinite"/></circle><circle cx="540" cy="50" r="4"><animate attributeName="cy" values="40;66" dur="1.4s" begin=".9s" repeatCount="indefinite"/></circle></g>
+        <!-- béton sain (rose = non carbonaté) -->
+        <rect x="40" y="70" width="540" height="350" fill="#f3c6da"/>
+        <g clip-path="url(#c10s31-cl)">
+          <rect x="40" y="70" width="540" height="0" fill="#c4c9d0">
+            <animate attributeName="height" values="0;0;150;150" keyTimes="0;.05;.75;1" dur="10s" repeatCount="indefinite"/>
+          </rect>
+          <path d="M40 70 H580" stroke="#6b7383" stroke-width="3" stroke-dasharray="10 6">
+            <animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 150;0 150" keyTimes="0;.05;.75;1" dur="10s" repeatCount="indefinite"/>
+          </path>
+        </g>
+        <!-- armatures -->
+        <g>
+          <circle cx="150" cy="190" r="16" fill="#2f6fe0"/><circle cx="310" cy="190" r="16" fill="#2f6fe0"/><circle cx="470" cy="190" r="16" fill="#2f6fe0"/>
+          <g fill="#a5532c" opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;.52;.7;1" dur="10s" repeatCount="indefinite"/>
+            <circle cx="150" cy="190" r="20"/><circle cx="310" cy="190" r="20"/><circle cx="470" cy="190" r="20"/></g>
+          <g stroke="#7a3b1c" stroke-width="2.5" fill="none" opacity="0"><animate attributeName="opacity" values="0;0;1;1" keyTimes="0;.68;.8;1" dur="10s" repeatCount="indefinite"/>
+            <path d="M150 170 L144 120 L152 90 L146 70 M310 170 L316 120 L306 70 M470 170 L466 110 L474 70"/></g>
+        </g>
+        <path d="M600 70 V190" stroke="#b8902f" stroke-width="2"/><path d="M594 70 H606 M594 190 H606" stroke="#b8902f" stroke-width="2"/>
+        <text x="596" y="140" text-anchor="end" class="lbl-b" style="fill:#8a6a1f" transform="rotate(-90 596 140)">enrobage c</text>
+        <g class="lbl-s"><text x="60" y="300" style="fill:#8a3a5c">béton non carbonaté (pH ≈ 13) : l'acier est protégé</text><text x="60" y="400" style="fill:#4d5566">gris : zone carbonatée · rose : test à la phénolphtaléine</text></g>
+      </svg>
+    </div>
+    <div>
+      <div class="formula" data-a data-fx="right" style="font-size:22px;padding:12px 18px"><span class="tex">x = K\sqrt{t}</span><div class="w" style="margin-top:4px">Le front progresse comme la racine du temps (modèle simplifié). K dépend du béton et de l'humidité.</div></div>
+      <div class="cols c2" style="gap:12px;margin-top:16px">
+        <div class="c10-tile" data-b="1" data-fx="up"><div class="c10-num">≈ 56 ans</div><p>c = 30 mm, K = 4 mm/√an</p></div>
+        <div class="c10-tile" data-b="2" data-fx="up" style="border-color:#7fd8c8;background:#effaf7"><div class="c10-num" style="color:#12a08a">≈ 156 ans</div><p>c = 50 mm : l'enrobage compte <b>au carré</b></p></div>
+      </div>
+      <ul class="b tight" style="margin-top:16px">
+        <li data-b="3" data-fx="right">Les <b>chlorures</b> (ports, ouvrages côtiers) dépassivent l'acier plus vite encore.</li>
+        <li data-b="4" data-fx="right">La rouille gonfle, <b>fait éclater l'enrobage</b>, l'acier perd sa section.</li>
+        <li data-b="5" data-fx="right">Parades : enrobage, béton <b>compact</b>, fissures limitées, étanchéité.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Affouillement, alcali-réaction et eau">
+  <div class="kicker">Trois pathologies à connaître</div>
+  <h2 class="t">L'eau, le sol <em>et le béton lui-même</em></h2>
+  <div class="cols c3" style="gap:20px">
+    <div class="card blue" data-b="1" data-fx="up" style="padding:14px">
+      <svg class="full" viewBox="0 0 340 230" aria-label="Affouillement">
+        <rect width="340" height="230" rx="12" fill="#e4f0fa"/>
+        <rect y="70" width="340" height="80" fill="#bfe0f5"/>
+        <g stroke="#3a9ad9" stroke-width="2.4" fill="none"><path d="M10 92 H120" class="flow"/><path d="M220 112 H330" class="flow"/><path d="M10 132 H110" class="flow"/></g>
+        <path d="M0 150 H340 V230 H0 Z" fill="#ead7bd"/>
+        <path d="M110 150 Q170 150 230 150 Z" fill="#bfe0f5" stroke="#3a9ad9">
+          <animate attributeName="d" values="M110 150 Q170 150 230 150 Z;M100 150 Q170 212 240 150 Z;M100 150 Q170 212 240 150 Z" keyTimes="0;.7;1" dur="5s" repeatCount="indefinite"/></path>
+        <rect x="150" y="20" width="40" height="150" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="128" y="168" width="84" height="16" fill="#9aa3ae"/>
+        <rect x="0" y="12" width="340" height="12" fill="#b9c2cc"/>
+        <text x="250" y="200" class="lbl-s">fosse</text>
+      </svg>
+      <h3 style="margin-top:8px">Affouillement</h3>
+      <p>Les crues brutales des oueds creusent le lit autour des appuis : une des premières causes d'effondrement de ponts dans le monde.</p>
+    </div>
+    <div class="card violet" data-b="2" data-fx="up" style="padding:14px">
+      <svg class="full" viewBox="0 0 340 230" aria-label="Alcali-réaction">
+        <rect width="340" height="230" rx="12" fill="#f1ecfa"/>
+        <rect x="30" y="30" width="280" height="170" fill="#cfd5dc" stroke="#6e7884"/>
+        <g stroke="#7a52c7" stroke-width="2" fill="none" data-b="2" data-fx="draw">
+          <path d="M40 70 L90 80 L120 60 L170 78 L210 62 L260 82 L300 70 M40 130 L80 118 L130 140 L180 120 L230 142 L300 124 M50 180 L100 166 L150 186 L200 170 L250 188 L300 172"/>
+          <path d="M90 80 L80 118 L100 166 M170 78 L180 120 L150 186 M260 82 L230 142 L250 188"/>
+        </g>
+        <g stroke="#dc4a2c" stroke-width="2.4"><path d="M170 20 V6 M170 210 V224 M20 115 H6 M320 115 H334"/></g>
+        <circle cx="170" cy="115" r="10" fill="#e8f0c9" stroke="#9aa34a"><animate attributeName="r" values="6;14;6" dur="3s" repeatCount="indefinite"/></circle>
+      </svg>
+      <h3 style="margin-top:8px">Alcali-réaction</h3>
+      <p>Les alcalins du ciment attaquent certains granulats : un gel gonfle et fissure le béton en réseau. Prévention : choix des granulats et du ciment.</p>
+    </div>
+    <div class="card teal" data-b="3" data-fx="up" style="padding:14px">
+      <svg class="full" viewBox="0 0 340 230" aria-label="Infiltrations d'eau">
+        <rect width="340" height="230" rx="12" fill="#e9f7f3"/>
+        <rect x="10" y="40" width="150" height="26" fill="#b9c2cc" stroke="#6e7884"/><rect x="180" y="40" width="150" height="26" fill="#b9c2cc" stroke="#6e7884"/>
+        <rect x="10" y="32" width="150" height="8" fill="#3c4049"/><rect x="180" y="32" width="150" height="8" fill="#3c4049"/>
+        <rect x="90" y="96" width="160" height="22" fill="#cfd5dc" stroke="#6e7884"/><rect x="150" y="118" width="40" height="100" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="120" y="76" width="34" height="20" fill="#3c4049"/><rect x="186" y="76" width="34" height="20" fill="#3c4049"/>
+        <path d="M150 118 Q160 160 152 200 L188 200 Q180 160 190 118 Z" fill="#a5532c" opacity=".35"/>
+        <g fill="#3a9ad9"><circle cx="170" cy="70" r="4"><animate attributeName="cy" values="64;110" dur="1s" repeatCount="indefinite"/></circle><circle cx="170" cy="80" r="4"><animate attributeName="cy" values="64;110" dur="1s" begin=".5s" repeatCount="indefinite"/></circle></g>
+        <text x="200" y="160" class="lbl-s">coulures, rouille</text>
+        <text x="12" y="24" class="lbl-s">joint de chaussée fuyard</text>
+      </svg>
+      <h3 style="margin-top:8px">L'eau qui s'infiltre</h3>
+      <p>Joint ou étanchéité défectueux : l'eau chargée coule sur le chevêtre et les appareils d'appui. Elle ouvre la porte à toutes les autres pathologies.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Surveiller et ausculter">
+  <div class="kicker">Surveillance</div>
+  <h2 class="t">Cent ans de vie, <em>sous surveillance</em></h2>
+  <svg class="full" viewBox="0 0 1150 250" aria-label="Frise du cycle de vie d'un pont">
+    <rect width="1150" height="250" rx="16" fill="#fff"/>
+    <g class="lbl-s" text-anchor="end"><text x="170" y="64">Surveillance</text><text x="170" y="124">Entretien</text><text x="170" y="184">Grosses réparations</text></g>
+    <path d="M190 210 H1120" stroke="#9aa3ae" stroke-width="2"/>
+    <g class="lbl-s" text-anchor="middle"><text x="190" y="236">0</text><text x="422" y="236">25</text><text x="655" y="236">50</text><text x="887" y="236">75</text><text x="1110" y="236">100 ans</text></g>
+    <g data-a data-fx="fade">
+      <path d="M190 60 H1120" stroke="#e8e2d2" stroke-width="10" stroke-linecap="round"/>
+      <path d="M190 60 H1120" stroke="#12a08a" stroke-width="2" stroke-dasharray="1 8.3" stroke-linecap="round"/>
+    </g>
+    <g data-b="1" data-fx="fade" fill="#b8902f">
+      <rect x="183" y="53" width="14" height="14" transform="rotate(45 190 60)" fill="#141a26"/>
+      <g><circle cx="246" cy="60" r="7"/><circle cx="302" cy="60" r="7"/><circle cx="358" cy="60" r="7"/><circle cx="413" cy="60" r="7"/><circle cx="469" cy="60" r="7"/><circle cx="525" cy="60" r="7"/><circle cx="581" cy="60" r="7"/><circle cx="637" cy="60" r="7"/><circle cx="692" cy="60" r="7"/><circle cx="748" cy="60" r="7"/><circle cx="804" cy="60" r="7"/><circle cx="860" cy="60" r="7"/><circle cx="916" cy="60" r="7"/><circle cx="971" cy="60" r="7"/><circle cx="1027" cy="60" r="7"/><circle cx="1083" cy="60" r="7"/></g>
+    </g>
+    <g data-b="2" data-fx="fade">
+      <path d="M190 120 H1120" stroke="#e8e2d2" stroke-width="10" stroke-linecap="round"/>
+      <g fill="#2f6fe0"><rect x="324" y="112" width="16" height="16" rx="3"/><rect x="463" y="112" width="16" height="16" rx="3"/><rect x="603" y="112" width="16" height="16" rx="3"/><rect x="742" y="112" width="16" height="16" rx="3"/><rect x="882" y="112" width="16" height="16" rx="3"/><rect x="1021" y="112" width="16" height="16" rx="3"/></g>
+      <g fill="#e8a020"><circle cx="422" cy="120" r="8"/><circle cx="655" cy="120" r="8"/><circle cx="887" cy="120" r="8"/></g>
+    </g>
+    <g data-b="3" data-fx="fade">
+      <path d="M190 180 H1120" stroke="#e8e2d2" stroke-width="10" stroke-linecap="round"/>
+      <g fill="#7a52c7"><rect x="461" y="170" width="20" height="20" rx="4"/><rect x="740" y="170" width="20" height="20" rx="4"/><rect x="1019" y="170" width="20" height="20" rx="4"/></g>
+      <g fill="#dc4a2c"><circle cx="562" cy="180" r="10"/><circle cx="934" cy="180" r="10"/></g>
+      <rect x="690" y="170" width="20" height="20" rx="4" fill="#12a08a"/>
+    </g>
+    <g class="drive" style="--t:12s;--from:190px;--to:1120px"><path d="M0 36 V204" stroke="#141a26" stroke-width="1.5" stroke-dasharray="4 4"/></g>
+  </svg>
+  <div style="display:flex;flex-wrap:wrap;gap:8px 18px;font-size:15.5px;color:var(--ink2);margin:8px 0 10px 4px">
+    <span data-b="1" data-fx="fade"><b style="color:#141a26">◆</b> inspection initiale (point zéro) · <b style="color:#12a08a">·</b> visite annuelle · <b style="color:#b8902f">●</b> inspection détaillée ≈ tous les 6 ans</span>
+    <span data-b="2" data-fx="fade"><b style="color:#2f6fe0">■</b> couche de roulement · <b style="color:#e8a020">●</b> joints</span>
+    <span data-b="3" data-fx="fade"><b style="color:#7a52c7">■</b> étanchéité · <b style="color:#dc4a2c">●</b> appareils d'appui · <b style="color:#12a08a">■</b> réparation du béton</span>
+    <span class="c10-hint">ordres de grandeur indicatifs, très variables selon l'ouvrage et l'exposition</span>
+  </div>
+  <div class="cols c4" style="gap:14px" data-b="4" data-fx="up">
+    <div class="c10-tile"><h3 style="margin-top:0">Sonique des pieux</h3><p>Sondes descendues dans des tubes réservés : anomalies de bétonnage.</p></div>
+    <div class="c10-tile"><h3 style="margin-top:0">Nivellement</h3><p>Topographie des appuis et du tablier : tassements, flèches.</p></div>
+    <div class="c10-tile"><h3 style="margin-top:0">Mesures sur le béton</h3><p>Enrobage, carbonatation, chlorures, potentiel de corrosion, carottes.</p></div>
+    <div class="c10-tile"><h3 style="margin-top:0">Suivi dans le temps</h3><p>Fissuromètres, capteurs, épreuves de chargement.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Entretenir, réparer, renforcer">
+  <div class="kicker">Entretien et réparation</div>
+  <h2 class="t">Soulever un tablier <em>pour changer ses appuis</em></h2>
+  <div class="split" style="grid-template-columns:1fr 1.05fr">
+    <div class="vis">
+      <svg viewBox="0 0 600 470" aria-label="Remplacement d'un appareil d'appui par vérinage">
+        <rect width="600" height="470" rx="16" fill="#eef4fc"/>
+        <rect x="170" y="290" width="260" height="40" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="255" y="330" width="90" height="120" fill="#cfd5dc" stroke="#6e7884"/>
+        <rect x="0" y="450" width="600" height="20" fill="#ead7bd"/>
+        <!-- appareil gauche fixe -->
+        <rect x="190" y="262" width="56" height="28" fill="#3c4049"/>
+        <!-- ancien appareil droit -->
+        <g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;240 0;240 0" keyTimes="0;.3;.45;1" dur="9s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.3;.45;.99;1" dur="9s" repeatCount="indefinite"/>
+          <rect x="354" y="262" width="56" height="28" fill="#6b4a3a"/><path d="M362 270 l10 8 l-6 6 M392 268 l6 12" stroke="#e2c070" stroke-width="2" fill="none"/></g>
+        <!-- nouvel appareil -->
+        <g opacity="0"><animateTransform attributeName="transform" type="translate" values="240 0;240 0;0 0;0 0" keyTimes="0;.5;.62;1" dur="9s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.5;.55;.99;1" dur="9s" repeatCount="indefinite"/>
+          <rect x="354" y="262" width="56" height="28" fill="#12a08a"/><path d="M354 271 H410 M354 280 H410" stroke="#7fd8c8"/></g>
+        <!-- vérins -->
+        <g fill="#e8a020">
+          <rect x="268" y="262" width="26" height="28"><animate attributeName="y" values="262;262;250;250;262;262" keyTimes="0;.1;.22;.72;.84;1" dur="9s" repeatCount="indefinite"/><animate attributeName="height" values="28;28;40;40;28;28" keyTimes="0;.1;.22;.72;.84;1" dur="9s" repeatCount="indefinite"/></rect>
+          <rect x="306" y="262" width="26" height="28"><animate attributeName="y" values="262;262;250;250;262;262" keyTimes="0;.1;.22;.72;.84;1" dur="9s" repeatCount="indefinite"/><animate attributeName="height" values="28;28;40;40;28;28" keyTimes="0;.1;.22;.72;.84;1" dur="9s" repeatCount="indefinite"/></rect>
+        </g>
+        <!-- tablier -->
+        <g><animateTransform attributeName="transform" type="translate" values="0 0;0 0;0 -12;0 -12;0 0;0 0" keyTimes="0;.1;.22;.72;.84;1" dur="9s" repeatCount="indefinite"/>
+          <rect x="20" y="200" width="560" height="62" fill="#b9c2cc" stroke="#6e7884"/><rect x="20" y="192" width="560" height="9" fill="#3c4049"/>
+        </g>
+        <g class="lbl-s"><text x="300" y="120" text-anchor="middle" style="fill:#8a5a10">les vérins soulèvent le tablier de quelques millimètres</text><text x="440" y="250" style="fill:#0b6e5c">appareil neuf</text><text x="40" y="380">appareil usé → remplacé</text></g>
+        <path d="M150 374 L350 290" stroke="#6b7383" stroke-dasharray="4 4"/>
+        <text x="300" y="150" text-anchor="middle" class="lbl-s">(déplacement très exagéré)</text>
+      </svg>
+    </div>
+    <div class="cols c2" style="gap:12px">
+      <div class="c10-tile" data-b="1" data-fx="up"><div class="c10-num" style="font-size:30px">01</div><h3>Étanchéité et joints</h3><p>Reprendre la chape, remplacer les joints : l'entretien qui protège tout le reste.</p></div>
+      <div class="c10-tile" data-b="2" data-fx="up"><div class="c10-num" style="font-size:30px">02</div><h3>Réparer le béton</h3><p>Purger le béton dégradé, traiter les aciers, reconstituer l'enrobage au mortier.</p></div>
+      <div class="c10-tile" data-b="3" data-fx="up"><div class="c10-num" style="font-size:30px">03</div><h3>Protection cathodique</h3><p>Un faible courant (ou des anodes sacrificielles) arrête la corrosion des aciers.</p></div>
+      <div class="c10-tile" data-b="4" data-fx="up"><div class="c10-num" style="font-size:30px">04</div><h3>Renforcer</h3><p>Précontrainte additionnelle extérieure, composites collés (fibres de carbone).</p></div>
+      <div class="callout t" style="grid-column:1/-1;font-size:17px" data-b="5" data-fx="up"><span class="lab">La règle d'or</span>Réparer <b>tôt</b> coûte peu ; attendre multiplie le coût. Un défaut d'étanchéité négligé devient une corrosion, puis un renforcement.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Notre fil rouge, de la donnée au ferraillage">
+  <div class="kicker">Notre fil rouge — le cours en une image</div>
+  <h2 class="t">De la donnée <em>au ferraillage</em></h2>
+  <svg class="full" viewBox="0 0 1150 400" aria-label="Les étapes du projet du fil rouge">
+    <rect width="1150" height="400" rx="16" fill="#fff"/>
+    <path d="M115 95 H1035 Q1095 95 1095 155 V205 Q1095 265 1035 265 H115" stroke="#e2c070" stroke-width="5" fill="none" data-a data-fx="draw"/>
+    <g text-anchor="middle">
+      <g data-a data-fx="pop" data-d=".1"><circle cx="115" cy="95" r="34" fill="#141a26"/><text x="115" y="103" class="lbl-w" style="font-size:22px">1</text><text x="115" y="152" class="lbl-b" style="font-size:17px">Les données</text><text x="115" y="172" class="lbl-s">voie ferrée, sol, 20 MDH</text></g>
+      <g data-a data-fx="pop" data-d=".25"><circle cx="345" cy="95" r="34" fill="#b8902f"/><text x="345" y="103" class="lbl-w" style="font-size:22px">2–3</text><text x="345" y="152" class="lbl-b" style="font-size:17px">Anatomie, familles</text><text x="345" y="172" class="lbl-s">choisir le type d'ouvrage</text></g>
+      <g data-a data-fx="pop" data-d=".4"><circle cx="575" cy="95" r="34" fill="#b8902f"/><text x="575" y="103" class="lbl-w" style="font-size:22px">4</text><text x="575" y="152" class="lbl-b" style="font-size:17px">Concevoir</text><text x="575" y="172" class="lbl-s">une travée de 25 m, gabarit</text></g>
+      <g data-a data-fx="pop" data-d=".55"><circle cx="805" cy="95" r="34" fill="#12a08a"/><text x="805" y="103" class="lbl-w" style="font-size:22px">5</text><text x="805" y="152" class="lbl-b" style="font-size:17px">Construire</text><text x="805" y="172" class="lbl-s">poser les poutres sur les voies</text></g>
+      <g data-a data-fx="pop" data-d=".7"><circle cx="1035" cy="95" r="34" fill="#12a08a"/><text x="1035" y="103" class="lbl-w" style="font-size:22px">6</text><text x="1035" y="30" class="lbl-b" style="font-size:17px">Prédimensionner</text><text x="1035" y="51" class="lbl-s" style="font-size:14.5px">4 poutres précontraintes</text></g>
+      <g data-a data-fx="pop" data-d=".85"><circle cx="1035" cy="265" r="34" fill="#2f6fe0"/><text x="1035" y="273" class="lbl-w" style="font-size:22px">7</text><text x="1035" y="322" class="lbl-b" style="font-size:17px">Charges</text><text x="1035" y="342" class="lbl-s">A, Bc, Mc120, combinaisons</text></g>
+      <g data-a data-fx="pop" data-d="1"><circle cx="805" cy="265" r="34" fill="#2f6fe0"/><text x="805" y="273" class="lbl-w" style="font-size:22px">8</text><text x="805" y="322" class="lbl-b" style="font-size:17px">Calculer le tablier</text><text x="805" y="342" class="lbl-s">moments, efforts tranchants</text></g>
+      <g data-a data-fx="pop" data-d="1.15"><circle cx="575" cy="265" r="34" fill="#2f6fe0"/><text x="575" y="273" class="lbl-w" style="font-size:22px">9</text><text x="575" y="322" class="lbl-b" style="font-size:17px">Appuis, fondations</text><text x="575" y="342" class="lbl-s">culées, semelles, sol à −3 m</text></g>
+      <g data-a data-fx="pop" data-d="1.3"><circle cx="345" cy="265" r="34" fill="#dc4a2c"/><text x="345" y="273" class="lbl-w" style="font-size:22px">10</text><text x="345" y="322" class="lbl-b" style="font-size:17px">Séisme, sections</text><text x="345" y="342" class="lbl-s">chapitres 10 et 11</text></g>
+      <g data-a data-fx="pop" data-d="1.45"><circle cx="115" cy="265" r="40" fill="#e2c070" class="pulse"/><text x="115" y="273" class="lbl-b" style="font-size:20px">plans</text><text x="115" y="328" class="lbl-b" style="font-size:17px">Ferraillage</text><text x="115" y="348" class="lbl-s">+ surveillance (ch. 12)</text></g>
+    </g>
+  </svg>
+  <div class="interactive" style="display:flex;gap:14px;align-items:center;margin-top:16px;flex-wrap:wrap" data-b="1" data-fx="up">
+    <span style="font-size:18px;color:var(--ink2)">Passez à la pratique avec les outils du site :</span>
+    <a class="c10-lnk" href="../../beton.html">Calculs béton →</a>
+    <a class="c10-lnk" href="../../plans-ferraillage.html">Plans de ferraillage →</a>
+    <a class="c10-lnk" href="../../handbag.html">HandBag →</a>
+  </div>
+</section>
+
+<section class="slide dark" data-title="À retenir — vous savez maintenant…">
+  <div class="kicker" style="color:#e2c070">Conclusion du cours · À retenir</div>
+  <h2 class="t">Vous savez maintenant…</h2>
+  <ul class="b" style="margin-top:12px;max-width:1080px;gap:12px">
+    <li data-b="1" data-fx="left" style="font-size:20px">… <b>lire un site</b> et choisir un ouvrage, le <b>prédimensionner</b>, le <b>charger</b> et calculer son tablier et ses appuis.</li>
+    <li data-b="2" data-fx="left" style="font-size:20px">… <b>justifier un pont au séisme</b> : T = 2π√(M/K), spectre EC8, F = M·S<sub>a</sub>(T), répartition selon les raideurs ; le CPS fixe le référentiel.</li>
+    <li data-b="3" data-fx="left" style="font-size:20px">… <b>éviter l'effondrement</b> : longueur d'appui ≥ 400 mm + déplacements, butées, rotules confinées, dimensionnement en capacité.</li>
+    <li data-b="4" data-fx="left" style="font-size:20px">… <b>ferrailler une section</b> : μ → α → z → A<sub>s</sub> (μ<sub>l</sub> = 0,3717), ELS souvent dimensionnant, Ritter-Mörsch, N–M, précontrainte.</li>
+    <li data-b="5" data-fx="left" style="font-size:20px">… <b>faire durer</b> : enrobage et étanchéité d'abord, puis surveiller, entretenir et réparer tôt.</li>
+  </ul>
+  <p data-b="6" data-fx="up" style="margin-top:20px;font-family:'Cormorant Garamond',serif;font-size:30px;color:#e2c070;font-style:italic;max-width:900px">Un pont se conçoit pour cent ans : chaque décision compte.</p>
+  <div style="position:absolute;right:64px;bottom:56px" data-b="6" data-fx="zoom">
+    <a href="../../etudiants.html" class="interactive" style="display:inline-flex;align-items:center;gap:12px;padding:16px 24px;border-radius:14px;background:#e2c070;color:#141a26;text-decoration:none;font-size:20px;font-weight:500">Retour à l'espace étudiants →</a>
+  </div>
+</section>
+
+</div>
+<script src="../../handbag/katex/katex.min.js"></script>
+<script src="../assets/slides.js"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var g = 9.81;
+  function fmt(x, d) { if (!isFinite(x)) return "—"; var s = Number(x).toFixed(d); var p = s.split("."); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); return p.join(","); }
+  var HOOK = window.SLIDE_HOOK = window.SLIDE_HOOK || {};
+  function isOn(id) { var s = $(id); return s && s.classList.contains("on"); }
+
+  /* ── spectres EC8 (valeurs recommandées, type 1), normalisés par a_g ── */
+  var SOIL = { S: 1.2, TB: 0.15, TC: 0.5, TD: 2.0 }; // sol B
+  function Se(T, eta) {
+    eta = eta || 1; var S = SOIL.S, TB = SOIL.TB, TC = SOIL.TC, TD = SOIL.TD;
+    if (T <= TB) return S * (1 + T / TB * (2.5 * eta - 1));
+    if (T <= TC) return 2.5 * S * eta;
+    if (T <= TD) return 2.5 * S * eta * TC / T;
+    return 2.5 * S * eta * TC * TD / (T * T);
+  }
+  function Sd(T, q) {
+    var S = SOIL.S, TB = SOIL.TB, TC = SOIL.TC, TD = SOIL.TD, b = 0.2;
+    if (T <= TB) return S * (2 / 3 + T / TB * (2.5 / q - 2 / 3));
+    if (T <= TC) return S * 2.5 / q;
+    if (T <= TD) return Math.max(b, S * 2.5 / q * TC / T);
+    return Math.max(b, S * 2.5 / q * TC * TD / (T * T));
+  }
+  function curve(f, x0, sx, y0, sy, tmax) {
+    var d = "", T = 0;
+    for (var i = 0; T <= tmax + 1e-9; i++) { d += (i ? " L" : "M") + (x0 + T * sx).toFixed(1) + " " + (y0 - f(T) * sy).toFixed(1); T += T < 0.6 ? 0.01 : 0.025; }
+    return d;
+  }
+  function setD(id, d) { var e = $(id); if (e) e.setAttribute("d", d); }
+  setD("c10s9-se", curve(function (T) { return Se(T); }, 70, 150, 400, 100, 4));
+  setD("c10s10-se", curve(function (T) { return Se(T); }, 60, 140, 400, 95, 4));
+  setD("c10s10-q15", curve(function (T) { return Sd(T, 1.5); }, 60, 140, 400, 95, 4));
+  setD("c10s10-q35", curve(function (T) { return Sd(T, 3.5); }, 60, 140, 400, 95, 4));
+  var ETA15 = Math.max(0.55, Math.sqrt(10 / (5 + 15)));
+  setD("c10s15-se", curve(function (T) { return Se(T); }, 60, 140, 400, 95, 4));
+  setD("c10s15-se15", curve(function (T) { return Se(T, ETA15); }, 60, 140, 400, 95, 4));
+  /* courbes de résonance */
+  [["c10s7-r05", 0.05], ["c10s7-r10", 0.10], ["c10s7-r20", 0.20]].forEach(function (c) {
+    var d = "", r = 0, xi = c[1];
+    for (var i = 0; r <= 3.0001; i++) {
+      var D = 1 / Math.sqrt(Math.pow(1 - r * r, 2) + Math.pow(2 * xi * r, 2));
+      d += (i ? " L" : "M") + (60 + r * 170).toFixed(1) + " " + (370 - Math.min(D, 10.7) * 31.5).toFixed(1);
+      r += (r > 0.8 && r < 1.2) ? 0.004 : 0.03;
+    }
+    setD(c[0], d);
+  });
+
+  /* ── 9. la période du pont glisse sur le spectre ── */
+  (function () {
+    var raf = 0, t0 = 0;
+    function frame(now) {
+      if (!isOn("c10-spec")) { raf = 0; return; }
+      var ph = ((now - t0) / 9000) % 1, T = 0.12 + (3.5 - 0.12) * (0.5 - 0.5 * Math.cos(2 * Math.PI * ph));
+      var v = Se(T), x = 70 + 150 * T, y = 400 - 100 * v;
+      $("c10s9-pt").setAttribute("cx", x); $("c10s9-pt").setAttribute("cy", y);
+      $("c10s9-v").setAttribute("d", "M" + x.toFixed(1) + " " + y.toFixed(1) + " V400");
+      var bx = Math.min(470, x + 18), by = Math.max(36, y - 74);
+      $("c10s9-bx").setAttribute("x", bx); $("c10s9-bx").setAttribute("y", by);
+      var t1 = $("c10s9-t1"), t2 = $("c10s9-t2");
+      t1.setAttribute("x", bx + 14); t1.setAttribute("y", by + 22); t1.textContent = "T = " + fmt(T, 2) + " s";
+      t2.setAttribute("x", bx + 14); t2.setAttribute("y", by + 43); t2.textContent = "Sa = " + fmt(v, 2) + " × ag";
+      raf = requestAnimationFrame(frame);
+    }
+    HOOK["c10-spec"] = function () { if (!raf) { t0 = performance.now() - 2600; raf = requestAnimationFrame(frame); } };
+  })();
+
+  /* ── 13. la travée tombe ── */
+  HOOK["c10-appui"] = function (st, sl) {
+    if (st >= 1) { if (!sl.classList.contains("c10-run")) { void sl.offsetWidth; sl.classList.add("c10-run"); } }
+    else sl.classList.remove("c10-run");
+  };
+
+  /* ── 15. isolation : le point glisse ── */
+  (function () {
+    var cur = { T: 0.8, eta: 1 }, raf = 0;
+    function pos(T, eta) { return [60 + 140 * T, 400 - 95 * Se(T, eta)]; }
+    function place() {
+      var p = pos(cur.T, cur.eta), pt = $("c10s15-pt"), lb = $("c10s15-lb");
+      pt.setAttribute("cx", p[0].toFixed(1)); pt.setAttribute("cy", p[1].toFixed(1));
+      if (cur.T > 1.6) { lb.setAttribute("x", (p[0] - 20).toFixed(1)); lb.setAttribute("y", (p[1] - 62).toFixed(1)); lb.textContent = "pont isolé"; }
+      else { lb.setAttribute("x", (p[0] + 18).toFixed(1)); lb.setAttribute("y", (p[1] - 14).toFixed(1)); lb.textContent = "pont classique"; }
+    }
+    function go(T1, e1) {
+      cancelAnimationFrame(raf);
+      var T0 = cur.T, e0 = cur.eta, s = performance.now();
+      (function f(now) {
+        var k = Math.min(1, (now - s) / 1400), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        cur.T = T0 + (T1 - T0) * e; cur.eta = e0 + (e1 - e0) * e; place();
+        if (k < 1) raf = requestAnimationFrame(f);
+      })(s);
+    }
+    HOOK["c10-iso"] = function (st) {
+      if (st <= 0) go(0.8, 1); else if (st === 1) go(2.5, 1); else go(2.5, ETA15);
+    };
+    if ($("c10s15-pt")) place();
+  })();
+
+  /* ── 25. précontrainte : la poutre remonte ── */
+  (function () {
+    var c = 0, raf = 0;
+    function s(x) { var u = (x - 80) / 640; return 4 * u * (1 - u); }
+    function draw() {
+      var top = "", bot = "", cab = "";
+      for (var x = 80; x <= 720; x += 20) { top += (x === 80 ? "M" : " L") + x + " " + (130 - c * s(x)).toFixed(1); cab += (x === 80 ? "M" : " L") + x + " " + (160 + 24 * s(x) - c * s(x)).toFixed(1); }
+      for (var x2 = 720; x2 >= 80; x2 -= 20) bot += " L" + x2 + " " + (190 - c * s(x2)).toFixed(1);
+      $("c10pc-beam").setAttribute("d", top + bot + " Z");
+      $("c10pc-cab").setAttribute("d", cab);
+    }
+    function tween(c1) {
+      cancelAnimationFrame(raf);
+      var c0 = c, t0 = performance.now();
+      (function f(now) { var k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3); c = c0 + (c1 - c0) * e; draw(); if (k < 1) raf = requestAnimationFrame(f); })(t0);
+    }
+    HOOK["c10-pc"] = function (st) {
+      var cab = $("c10pc-cab");
+      if (st >= 1) { cab.setAttribute("stroke", "#dc4a2c"); cab.setAttribute("stroke-dasharray", "none"); } else { cab.setAttribute("stroke", "#9aa3ae"); cab.setAttribute("stroke-dasharray", "8 6"); }
+      $("c10pc-jk").setAttribute("opacity", st === 1 ? 1 : 0);
+      $("c10pc-g").setAttribute("opacity", st === 2 ? 1 : 0);
+      $("c10pc-q").setAttribute("opacity", st >= 3 ? 1 : 0);
+      $("c10pc-cam").textContent = st === 1 ? "↑ la poutre se cambre (contre-flèche)" : st === 2 ? "le poids propre réduit la contre-flèche" : st >= 3 ? "la poutre redevient droite" : "";
+      tween([0, 16, 8, 0, 0][Math.min(st, 4)]);
+    };
+    if ($("c10pc-beam")) draw();
+  })();
+
+  /* ── 8. simulateur d'oscillateur ── */
+  (function () {
+    var svg = $("c10m-svg"); if (!svg) return;
+    var P = {}, running = false, raf = 0, t = 0, u = 0, v = 0, umax = 0, last = 0, buf = [], tEnd = 1e9;
+    var eqC = [], eqMax = 1;
+    (function () { var seed = 11; function r() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+      for (var k = 0; k < 30; k++) { var fr = 0.4 * Math.pow(10, r() * 1.2); eqC.push([fr, 1 / Math.sqrt(1 + Math.pow(1.2 / fr, 4)) / (1 + fr / 8), r() * 6.283]); }
+      var m = 0; for (var i = 0; i < 2400; i++) { var a = eqRaw(i * 0.005); if (Math.abs(a) > m) m = Math.abs(a); } eqMax = m || 1; })();
+    function eqRaw(tt) { var env = tt < 2 ? tt / 2 : (tt < 6 ? 1 : Math.exp(-(tt - 6) / 2.5)); if (tt > 12) env = 0; var a = 0; for (var k = 0; k < eqC.length; k++) a += eqC[k][1] * Math.sin(2 * Math.PI * eqC[k][0] * tt + eqC[k][2]); return env * a; }
+    function val(id) { return parseFloat($(id).value); }
+    function params() {
+      var M = val("c10m-M"), H = val("c10m-H"), D = val("c10m-D"), f = val("c10m-f"), typ = $("c10m-type").value;
+      var I = Math.PI * Math.pow(D, 4) / 64, K = 3 * 32e6 * I / Math.pow(H, 3), w = Math.sqrt(K / M);
+      P = { M: M, H: H, D: D, f: f, typ: typ, a: 0.1, xi: 0.05, K: K, w: w, T: 2 * Math.PI / w, fn: w / (2 * Math.PI) };
+      $("c10m-Mv").textContent = fmt(M, 0) + " t"; $("c10m-Hv").textContent = fmt(H, 1) + " m"; $("c10m-Dv").textContent = fmt(D, 2) + " m"; $("c10m-fv").textContent = fmt(f, 2) + " Hz";
+      $("c10m-K").textContent = fmt(K, 0) + " kN/m"; $("c10m-T").textContent = fmt(P.T, 2) + " s"; $("c10m-fn").textContent = fmt(P.fn, 2) + " Hz";
+      $("c10m-r").textContent = typ === "sin" ? fmt(f / P.fn, 2) : "—";
+    }
+    function ag(tt) {
+      if (P.typ === "sin") return P.a * g * Math.sin(2 * Math.PI * P.f * tt) * Math.min(1, tt / 1.5);
+      if (P.typ === "imp") return tt < 0.15 ? 3 * P.a * g * Math.sin(Math.PI * tt / 0.15) : 0;
+      return 2 * P.a * g * eqRaw(tt) / eqMax;
+    }
+    function draw() {
+      var sc = 700, ux = Math.max(-150, Math.min(150, u * sc));
+      var agv = ag(t), gx = agv / (P.a * g) * 7;
+      var x0 = 300 + gx, base = 262, top = base - (110 + P.H * 6.5), cx = x0 + ux, w = Math.max(9, Math.min(24, P.D * 10));
+      var h = '<rect width="680" height="500" rx="10" fill="#f4f7fb"/>';
+      h += '<g transform="translate(' + gx.toFixed(1) + ' 0)"><rect x="-20" y="262" width="720" height="40" fill="#ead7bd"/><rect x="250" y="256" width="100" height="14" fill="#9aa3ae" stroke="#5d6672"/></g>';
+      h += '<path d="M300 40 V262" stroke="#b8902f" stroke-dasharray="4 4"/>';
+      h += '<path d="M' + (x0 - w) + ' ' + base + ' C' + (x0 - w) + ' ' + (base - (base - top) * .45) + ' ' + (cx - w) + ' ' + (top + (base - top) * .3) + ' ' + (cx - w) + ' ' + top + ' L' + (cx + w) + ' ' + top + ' C' + (cx + w) + ' ' + (top + (base - top) * .3) + ' ' + (x0 + w) + ' ' + (base - (base - top) * .45) + ' ' + (x0 + w) + ' ' + base + ' Z" fill="#cfd5dc" stroke="#6e7884"/>';
+      var dw = 150 + Math.min(150, P.M / 8);
+      h += '<rect x="' + (cx - dw / 2).toFixed(1) + '" y="' + (top - 30) + '" width="' + dw.toFixed(0) + '" height="30" rx="3" fill="#b9c2cc" stroke="#6e7884"/>';
+      h += '<rect x="' + (cx - dw / 2).toFixed(1) + '" y="' + (top - 35) + '" width="' + dw.toFixed(0) + '" height="6" fill="#3c4049"/>';
+      h += '<text x="' + cx.toFixed(1) + '" y="' + (top - 9) + '" text-anchor="middle" class="lbl-s" style="fill:#141a26">M = ' + fmt(P.M, 0) + ' t</text>';
+      h += '<text x="16" y="292" class="lbl-s" style="fill:#a33d22">sol : ' + (P.typ === "sin" ? "sinus " + fmt(P.f, 2) + " Hz" : P.typ === "imp" ? "choc bref" : "séisme synthétique") + ' · 0,1 g</text>';
+      h += '<text x="664" y="292" text-anchor="end" class="lbl-s">déplacements amplifiés</text>';
+      var X0 = 30, W = 620, Y0 = 410, span = 8;
+      h += '<rect x="16" y="312" width="648" height="176" rx="10" fill="#fff" stroke="#e3dfd4"/><path d="M' + X0 + ' ' + Y0 + ' H' + (X0 + W) + '" stroke="#e3dfd4"/>';
+      var m = 0.002; for (var j = 0; j < buf.length; j++) m = Math.max(m, Math.abs(buf[j][1]));
+      var d = "", da = "";
+      for (var k = 0; k < buf.length; k++) { var xx = X0 + W - (t - buf[k][0]) / span * W; if (xx < X0) continue; d += (d ? "L" : "M") + xx.toFixed(1) + " " + (Y0 - buf[k][1] / m * 62).toFixed(1); da += (da ? "L" : "M") + xx.toFixed(1) + " " + (Y0 - buf[k][2] / (P.a * g * 3) * 30).toFixed(1); }
+      if (da) h += '<path d="' + da + '" stroke="#dc4a2c" stroke-width="1.2" fill="none" opacity=".45"/>';
+      if (d) h += '<path d="' + d + '" stroke="#2f6fe0" stroke-width="2.2" fill="none"/>';
+      h += '<text x="30" y="334" class="lbl-s" style="fill:#2453b3">déplacement du tablier u(t) — 8 dernières secondes</text>';
+      h += '<text x="650" y="334" text-anchor="end" class="lbl-s">± ' + fmt(m * 100, 1) + ' cm</text>';
+      h += '<text x="650" y="480" text-anchor="end" class="lbl-s">t = ' + fmt(t, 1) + ' s</text>';
+      svg.innerHTML = h;
+    }
+    function step(now) {
+      if (!running) return;
+      if (!isOn("c10-sim")) { running = false; return; }
+      var dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      var n = Math.max(1, Math.round(dt * 2000)), hh = dt / n;
+      for (var i = 0; i < n; i++) { var a = -ag(t) - 2 * P.xi * P.w * v - P.w * P.w * u; v += a * hh; u += v * hh; t += hh; if (Math.abs(u) > umax) umax = Math.abs(u); }
+      buf.push([t, u, ag(t)]); while (buf.length && buf[0][0] < t - 8.2) buf.shift();
+      $("c10m-u").textContent = fmt(umax * 100, 2) + " cm"; $("c10m-F").textContent = fmt(P.K * umax, 0) + " kN";
+      draw();
+      if (t > tEnd) { running = false; return; }
+      raf = requestAnimationFrame(step);
+    }
+    function start() {
+      params(); cancelAnimationFrame(raf); t = 0; u = 0; v = 0; umax = 0; buf = [];
+      tEnd = P.typ === "sin" ? 40 : (P.typ === "imp" ? 20 : 16);
+      running = true; last = performance.now(); raf = requestAnimationFrame(step);
+    }
+    function stop() { running = false; cancelAnimationFrame(raf); }
+    ["c10m-M", "c10m-H", "c10m-D", "c10m-f", "c10m-type"].forEach(function (id) { $(id).addEventListener("input", function () { params(); if (!running) draw(); }); });
+    $("c10m-go").addEventListener("click", start);
+    $("c10m-stop").addEventListener("click", stop);
+    $("c10m-res").addEventListener("click", function () { params(); $("c10m-type").value = "sin"; $("c10m-f").value = (Math.round(P.fn / 0.02) * 0.02).toFixed(2); start(); });
+    params(); draw();
+    HOOK["c10-sim"] = function () { if (!running) { $("c10m-type").value = "sin"; start(); } };
+  })();
+
+  /* ── 21. calculatrice de flexion BAEL ── */
+  (function () {
+    var svg = $("c10f-svg"); if (!svg) return;
+    function num(id, def) { var v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) ? v : def; }
+    function set(id, t, cls) { var e = $(id); e.innerHTML = t; e.className = cls || ""; }
+    function flexT(p) {
+      var b = p.b, b0 = Math.min(p.b0 || p.b, p.b), h0 = p.h0 || 0, d = p.d, dp = p.dp, Mu = p.Mu, fc28 = p.fc28, fe = p.fe;
+      var gb = 1.5, gs = 1.15, Es = 200000, fbu = 0.85 * fc28 / gb, fsu = fe / gs, ft = 0.6 + 0.06 * fc28;
+      var el = fsu / Es * 1000, al = 3.5 / (3.5 + el), mul = 0.8 * al * (1 - 0.4 * al);
+      var M = Mu / 1000, r = { fbu: fbu, fsu: fsu, ft: ft, mul: mul, T: false, Mtu: null }, bw = b, M1 = 0, As1 = 0;
+      if (b0 < b && h0 > 0) { r.Mtu = b * h0 * fbu * (d - h0 / 2) * 1000; if (Mu > r.Mtu) { r.T = true; bw = b0; M1 = (b - b0) * h0 * fbu * (d - h0 / 2); As1 = (b - b0) * h0 * fbu / fsu; } }
+      var M2 = M - M1; r.bw = bw; r.mu = M2 / (bw * d * d * fbu);
+      if (r.mu <= mul) { r.alpha = 1.25 * (1 - Math.sqrt(1 - 2 * r.mu)); r.z = d * (1 - 0.4 * r.alpha); r.As = (As1 + M2 / (r.z * fsu)) * 1e4; r.Asc = 0; }
+      else { r.alpha = al; r.z = d * (1 - 0.4 * al); var Ml = mul * bw * d * d * fbu, esc = 3.5 * (al * d - dp) / (al * d), ssc = Math.min(Es * esc / 1000, fsu);
+        r.Asc = Math.max(0, (M2 - Ml) / ((d - dp) * ssc) * 1e4); r.As = (As1 + Ml / (r.z * fsu) + (M2 - Ml) / ((d - dp) * fsu)) * 1e4; }
+      r.y = r.alpha * d; r.pivot = r.alpha <= 0.2593 ? "A" : "B";
+      r.Asmin = 0.23 * b0 * d * ft / fe * 1e4;
+      return r;
+    }
+    function elsT(p, As, Asc) {
+      var b = p.b, b0 = Math.min(p.b0 || p.b, p.b), h0 = p.h0 || 0, d = p.d, dp = p.dp, n = 15;
+      As /= 1e4; Asc = (Asc || 0) / 1e4;
+      var A = b / 2, B = n * (As + Asc), C = -n * (As * d + Asc * dp), y = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A), I;
+      if (b0 < b && h0 > 0 && y > h0) {
+        A = b0 / 2; B = (b - b0) * h0 + n * (As + Asc); C = -((b - b0) * h0 * h0 / 2 + n * (As * d + Asc * dp)); y = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
+        I = b0 * Math.pow(y, 3) / 3 + (b - b0) * (Math.pow(h0, 3) / 12 + h0 * Math.pow(y - h0 / 2, 2)) + n * As * Math.pow(d - y, 2) + n * Asc * Math.pow(y - dp, 2);
+      } else I = b * Math.pow(y, 3) / 3 + n * As * Math.pow(d - y, 2) + n * Asc * Math.pow(y - dp, 2);
+      var M = p.Ms / 1000; return { y: y, sbc: M * y / I, ss: n * M * (d - y) / I };
+    }
+    function sbar(fe, ft, cls) { if (cls === "FPP") return Infinity; var x = Math.min(2 / 3 * fe, Math.max(0.5 * fe, 110 * Math.sqrt(1.6 * ft))); return cls === "FP" ? x : 0.8 * x; }
+    function bars(Areq, bw, c) {
+      var D = [10, 12, 14, 16, 20, 25, 32, 40], out = [];
+      D.forEach(function (f) {
+        var a = Math.PI * f * f / 400, n = Math.max(2, Math.ceil(Areq / a - 1e-9)), e = Math.max(f, 25) / 1000;
+        var nmax = Math.max(2, Math.floor((bw - 2 * c - 0.02 + e) / (f / 1000 + e))), lay = Math.ceil(n / nmax); if (lay > 3) return;
+        out.push({ f: f, n: n, A: n * a, lay: lay, nmax: nmax, score: n * a * (1 + 0.06 * (lay - 1)) * (f > 32 ? 1.05 : 1) * (n > 12 ? 1.04 : 1) });
+      });
+      out.sort(function (x, y) { return x.score - y.score; }); return out;
+    }
+    function upd() {
+      var p = { b: Math.max(0.05, num("c10f-b", 0.3)), h: Math.max(0.05, num("c10f-h", 0.5)), d: Math.max(0.03, num("c10f-d", 0.45)), dp: 0.05,
+        b0: Math.max(0.05, num("c10f-b0", 0.3)), h0: Math.max(0, num("c10f-h0", 0)), Mu: Math.max(0, num("c10f-Mu", 200)), Ms: Math.max(0, num("c10f-Ms", 145)),
+        fc28: num("c10f-fc", 30), fe: num("c10f-fe", 500) };
+      var fis = $("c10f-fis").value;
+      if (p.d >= p.h) p.d = p.h * 0.9; if (p.b0 > p.b) p.b0 = p.b;
+      var r = flexT(p);
+      set("c10f-mat", fmt(r.fbu, 1) + " ; " + fmt(r.fsu, 1) + " MPa");
+      set("c10f-mu", fmt(r.mu, 4) + " (" + fmt(r.mul, 4) + ")", r.mu > r.mul ? "ko" : "");
+      set("c10f-al", fmt(r.alpha, 3) + " ; " + r.pivot);
+      set("c10f-z", fmt(r.z, 3) + " m");
+      set("c10f-As", fmt(r.As, 2) + " cm²");
+      set("c10f-Asc", r.Asc > 0 ? fmt(r.Asc, 2) + " cm²" : "0", r.Asc > 0 ? "ko" : "");
+      set("c10f-Asmin", fmt(r.Asmin, 2) + " cm²");
+      var sb = sbar(p.fe, r.ft, fis), Aels = 0;
+      if (isFinite(sb) && p.Ms > 0) {
+        var lo = 0.01, hi = 2000;
+        if (elsT(p, hi, r.Asc).ss > sb) Aels = NaN;
+        else { for (var i = 0; i < 60; i++) { var m = (lo + hi) / 2; if (elsT(p, m, r.Asc).ss > sb) lo = m; else hi = m; } Aels = hi; }
+      }
+      set("c10f-Asels", isFinite(sb) ? (isFinite(Aels) ? fmt(Aels, 2) + " cm²" : "section trop faible") : "sans objet");
+      var Areq = Math.max(r.As, r.Asmin, isFinite(Aels) ? Aels : 0), bw = (p.b0 < p.b && p.h0 > 0) ? p.b0 : p.b;
+      var best = bars(Areq, bw, Math.min(0.05, Math.max(0.02, p.h - p.d - 0.02)))[0];
+      set("c10f-bars", best ? best.n + " HA" + best.f + " = " + fmt(best.A, 1) + " cm²" : "—");
+      var els = best ? elsT(p, best.A, r.Asc) : null;
+      if (els && p.Ms > 0) {
+        var lim = 0.6 * p.fc28;
+        set("c10f-sbc", fmt(els.sbc, 1) + " / " + fmt(lim, 0), els.sbc <= lim ? "ok" : "ko");
+        set("c10f-ss", fmt(els.ss, 0) + " / " + (isFinite(sb) ? fmt(sb, 0) : "—"), (!isFinite(sb) || els.ss <= sb * 1.0001) ? "ok" : "ko");
+      } else { set("c10f-sbc", "—"); set("c10f-ss", "—"); }
+      /* dessin */
+      var W = 380, Hs = 480, sc = Math.min(300 / p.h, 300 / p.b), ox = (W - p.b * sc) / 2, oy = 60;
+      var h = '<rect width="380" height="480" rx="10" fill="#eef4fc"/>';
+      if (p.b0 < p.b && p.h0 > 0) {
+        var bo = (p.b - p.b0) / 2 * sc;
+        h += '<path d="M' + ox + ' ' + oy + ' h' + (p.b * sc) + ' v' + (p.h0 * sc) + ' h' + (-bo) + ' V' + (oy + p.h * sc) + ' h' + (-p.b0 * sc) + ' V' + (oy + p.h0 * sc) + ' h' + (-bo) + ' Z" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>';
+      } else h += '<rect x="' + ox + '" y="' + oy + '" width="' + (p.b * sc) + '" height="' + (p.h * sc) + '" fill="#cfd5dc" stroke="#6e7884" stroke-width="1.5"/>';
+      var yn = oy + Math.min(r.y, p.h) * sc;
+      h += '<rect x="' + ox + '" y="' + oy + '" width="' + (p.b * sc) + '" height="' + Math.min(0.8 * r.y, p.h) * sc + '" fill="#2f6fe0" opacity=".16"/>';
+      h += '<path d="M' + (ox - 20) + ' ' + yn + ' H' + (ox + p.b * sc + 20) + '" stroke="#b8902f" stroke-width="2" stroke-dasharray="6 4"/>';
+      h += '<text x="' + (ox + p.b * sc + 6) + '" y="' + (yn - 6) + '" class="lbl-s" style="fill:#8a6a1f">y = ' + fmt(r.y * 100, 1) + ' cm</text>';
+      if (best) {
+        var per = Math.min(best.n, best.nmax), rb = Math.max(4, best.f / 1000 * sc / 2), x1 = ox + (p.b - bw) / 2 * sc + 0.05 * sc, x2 = ox + (p.b + bw) / 2 * sc - 0.05 * sc;
+        for (var L = 0, k = 0; L < best.lay; L++) {
+          var nn = Math.min(per, best.n - k), yy = oy + p.d * sc - L * (rb * 2 + 6);
+          for (var q = 0; q < nn; q++, k++) { var xx = nn > 1 ? x1 + (x2 - x1) * q / (nn - 1) : (x1 + x2) / 2; h += '<circle cx="' + xx.toFixed(1) + '" cy="' + yy.toFixed(1) + '" r="' + rb.toFixed(1) + '" fill="#2f6fe0"/>'; }
+        }
+      }
+      if (r.Asc > 0) h += '<circle cx="' + (ox + 0.06 * sc) + '" cy="' + (oy + p.dp * sc) + '" r="5" fill="#dc4a2c"/><circle cx="' + (ox + (p.b - 0.06) * sc) + '" cy="' + (oy + p.dp * sc) + '" r="5" fill="#dc4a2c"/>';
+      h += '<text x="190" y="36" text-anchor="middle" class="lbl-b" style="font-size:18px">' + (best ? best.n + " HA" + best.f : "") + '</text>';
+      h += '<text x="190" y="' + (oy + p.h * sc + 34) + '" text-anchor="middle" class="lbl-s">b = ' + fmt(p.b * 100, 0) + ' cm · h = ' + fmt(p.h * 100, 0) + ' cm</text>';
+      svg.innerHTML = h;
+    }
+    ["c10f-b", "c10f-h", "c10f-d", "c10f-b0", "c10f-h0", "c10f-Mu", "c10f-Ms", "c10f-fc", "c10f-fe", "c10f-fis"].forEach(function (id) { $(id).addEventListener("input", upd); $(id).addEventListener("change", upd); });
+    upd();
+  })();
+  /* animations SMIL détachées hors de la diapositive affichée (économie de calcul) */
+  (function () {
+    var all = document.querySelectorAll(".deck .slide");
+    function sync(s) {
+      var on = s.classList.contains("on");
+      if (!on && !s._c10) {
+        s._c10 = [];
+        s.querySelectorAll("animate,animateTransform,animateMotion,set").forEach(function (a) { var c = document.createComment("a"); a.replaceWith(c); s._c10.push([c, a]); });
+      } else if (on && s._c10) {
+        s._c10.forEach(function (x) { x[0].replaceWith(x[1]); }); s._c10 = null;
+      }
+    }
+    all.forEach(function (s) { sync(s); new MutationObserver(function () { sync(s); }).observe(s, { attributes: true, attributeFilter: ["class"] }); });
+  })();
+  try { var cs = document.querySelectorAll(".deck .slide")[window.Slides.index]; if (cs && HOOK[cs.id]) HOOK[cs.id](window.Slides.step, cs); } catch (e) {}
+})();
+</script>
+</body>
+</html>

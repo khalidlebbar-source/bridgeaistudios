@@ -18,7 +18,9 @@
     ["ch7", "7", "Charges et règlements"],
     ["ch8", "8", "Calculer le tablier"],
     ["ch9", "9", "Appuis et fondations"],
-    ["ch10", "10", "Séisme, dimensionnement et durabilité"]
+    ["ch10", "10", "Le pont face au séisme"],
+    ["ch11", "11", "Dimensionner les sections"],
+    ["ch12", "12", "Faire durer un pont"]
   ];
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
