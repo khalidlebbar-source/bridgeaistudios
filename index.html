@@ -295,9 +295,9 @@ footer{padding:24px 5%}
 .footer-bottom a{color:var(--silver);text-decoration:none}
 .footer-bottom a:hover{color:var(--gold)}
 .footer-bottom{gap:14px 24px}
-.footer-notes{max-width:1200px;margin:0 auto 18px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:6px}
-.footer-notes p{font-size:11px;line-height:1.6;color:var(--silver);letter-spacing:.02em;max-width:110ch}
-.footer-notes b{color:var(--gold);font-weight:400;letter-spacing:.08em;text-transform:uppercase;font-size:10px;margin-right:6px}
+.footer-notes{width:100%;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:2px}
+.footer-notes p{font-size:10px;line-height:1.5;color:rgba(136,146,164,.85);letter-spacing:.01em}
+.footer-notes b{color:var(--gold);font-weight:400;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;margin-right:8px}
 .visits{display:inline-flex;align-items:center;gap:8px;margin-left:auto;padding:6px 14px;border-radius:99px;border:1px solid rgba(201,168,76,.15);background:rgba(201,168,76,.03);font-size:11px;color:var(--silver);letter-spacing:.04em}
 .visits b{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:400;color:var(--gold)}
 .visits-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
@@ -317,7 +317,11 @@ h1{font-size:clamp(52px,9vw,104px)}
   .tool-title{font-size:clamp(22px,3.4vh,30px)}
   .tool-desc{line-height:1.6}
   .tool-go{margin-top:clamp(0px,.6vh,8px)}
-  footer{padding:14px 5%}
+  footer{padding:8px 5% 10px}
+  .footer-notes{margin-bottom:6px;padding-bottom:6px}
+  .footer-inner{max-width:none}
+  .footer-bottom{flex-wrap:nowrap;gap:24px}
+  .footer-bottom p{white-space:nowrap}
 }
 .tools{grid-template-columns:repeat(6,1fr)}
 @media(min-width:861px){.hero-inner{max-width:1360px}.tool{padding-left:20px;padding-right:20px}}
@@ -424,11 +428,11 @@ h1{font-size:clamp(52px,9vw,104px)}
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-inner">
     <div class="footer-notes">
-      <p><b data-fr="Avertissement" data-en="Disclaimer">Avertissement</b><span data-fr="Les outils de calcul, plans et contenus de ce site sont fournis à titre d’aide à la conception et à la formation. Ils ne se substituent ni à l’étude d’un ingénieur qualifié, ni au contrôle réglementaire d’un projet. Les résultats doivent être vérifiés par l’utilisateur, sous sa seule responsabilité ; les éditeurs du site déclinent toute responsabilité quant à l’usage qui en est fait et à ses conséquences." data-en="The calculation tools, drawings and content on this site are provided as design and training aids. They do not replace the work of a qualified engineer or the regulatory review of a project. Results must be checked by the user, under their sole responsibility; the site’s publishers accept no liability for their use or its consequences.">Les outils de calcul, plans et contenus de ce site sont fournis à titre d’aide à la conception et à la formation. Ils ne se substituent ni à l’étude d’un ingénieur qualifié, ni au contrôle réglementaire d’un projet. Les résultats doivent être vérifiés par l’utilisateur, sous sa seule responsabilité ; les éditeurs du site déclinent toute responsabilité quant à l’usage qui en est fait et à ses conséquences.</span></p>
-      <p><b data-fr="Version en développement" data-en="Under development">Version en développement</b><span data-fr="Le site est en cours de développement : certaines fonctionnalités peuvent être incomplètes, modifiées ou indisponibles temporairement. Vos retours sont les bienvenus à contact@bridgeaistudios.com." data-en="The site is under active development: some features may be incomplete, changed or temporarily unavailable. Feedback is welcome at contact@bridgeaistudios.com.">Le site est en cours de développement : certaines fonctionnalités peuvent être incomplètes, modifiées ou indisponibles temporairement. Vos retours sont les bienvenus à contact@bridgeaistudios.com.</span></p>
+      <p><b>Avertissement</b>Outils et contenus fournis à titre d’aide à la conception et à la formation : ils ne remplacent ni l’étude d’un ingénieur qualifié, ni le contrôle réglementaire. Résultats à vérifier par l’utilisateur ; les éditeurs déclinent toute responsabilité quant à leur usage.</p>
+      <p><b>Version en développement</b>Site en cours de construction : certaines fonctionnalités peuvent être incomplètes ou momentanément indisponibles. Remarques bienvenues à contact@bridgeaistudios.com.</p>
     </div>
+  <div class="footer-inner">
     <div class="footer-bottom">
       <p><span class="footer-logo" style="font-size:16px;margin:0">Bridge<span>AI</span> Studios</span> &nbsp;·&nbsp; <a href="ponts-types.html" data-fr="Ponts types" data-en="Standard bridges">Ponts types</a> &nbsp;·&nbsp; <a href="plans-ferraillage.html" data-fr="Plans coffrage &amp; ferraillage" data-en="Formwork &amp; rebar drawings">Plans coffrage &amp; ferraillage</a> &nbsp;·&nbsp; <a href="handbag.html">HandBag</a> &nbsp;·&nbsp; <a href="bibliotheque.html" data-fr="Bibliothèque" data-en="Library">Bibliothèque</a> &nbsp;·&nbsp; <a href="etudiants.html" data-fr="Espace étudiants" data-en="Students">Espace étudiants</a> &nbsp;·&nbsp; <a href="liens-utiles.html" data-fr="Liens utiles" data-en="Useful links">Liens utiles</a></p>
       <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> &nbsp;·&nbsp; <a href="mentions-legales.html">Mentions légales</a> &nbsp;·&nbsp; <a href="confidentialite.html">Confidentialité</a> &nbsp;·&nbsp; &copy; 2026 BridgeAI Studios</p>
