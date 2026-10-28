@@ -2,6 +2,7 @@
 import { ProjetRes, TraveeRes } from "./project";
 import { XL, LOAD_LABEL, LoadKey } from "./sollicitations";
 import { barArea } from "./ba";
+import { verinageSVG, VG_CSS } from "./verinage-svg";
 
 const f = (x: number | undefined, d = 2) => (x === undefined || !isFinite(x) ? "—" : x.toFixed(d).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, " ").replace(/ (?=\d*,)/g, " "));
 const fx = (x: number, d = 2) => { const s = x.toFixed(d).split("."); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); return s.join(","); };
@@ -92,7 +93,7 @@ function noteTravee(t: TraveeRes, num: string) {
     tbl(["y \\ e", "−b", "−3b/4", "−b/2", "−b/4", "0", "b/4", "b/2", "3b/4", "b"], R.Ktable.map((r, i) => [["0", "b/4", "b/2", "3b/4", "b"][i], ...r.map(v => fx(v, 4))]), "small") +
     `<h5>Kmoy par poutre (poutres numérotées de gauche à droite)</h5>` + tbl(["Charge", ...beams], (Object.keys(R.Kmoy) as LoadKey[]).filter(k => R.glob[k]).map(k => [lk(k), ...R.Kmoy[k].map(v => fx(v, 4))]), "small") +
     `<h5>Coefficients Cp = Kmoy · δ / n</h5>` + tbl(["Charge", ...beams], (Object.keys(R.Cp) as LoadKey[]).filter(k => R.glob[k]).map(k => [lk(k), ...R.Cp[k].map(v => fx(v, 4))]), "small");
-  h += `<h4>VIII. Sollicitations maximales par poutre (Mmoy, Tmoy)</h4><p class="c">Coefficients a, bc, bt et δ intégrés. Enveloppe des poutres${g.compat ? " de l'axe vers la rive droite (convention du programme de référence)" : ""}.</p><div class="grid2">` +
+  h += `<h4>VIII. Sollicitations maximales par poutre (Mmoy, Tmoy)</h4><p class="c">Coefficients a, bc, bt et δ intégrés. Enveloppe des poutres${g.compat ? " de l'axe vers la rive droite (convention de l'ancien programme)" : " sur toute la largeur"}.</p><div class="grid2">` +
     loads.map(k => `<div><h5>${lk(k)} — Cp = ${fx(R.moy[k]!.cp, 4)} (P${R.moy[k]!.beam + 1})</h5>${tabXL(k, "moy")}</div>`).join("") + `</div>`;
   h += `<h4>IX. Sollicitations aux états limites</h4>` + tbl(["x/L", "M ELU (kN·m)", "Comb.", "T ELU (kN)", "Comb.", "M ELS (kN·m)", "Comb.", "T ELS (kN)", "Comb."],
     XL.map((x, i) => [fx(x, 1), R.ELU.M[i].v, lk(R.ELU.M[i].comb as LoadKey), R.ELU.T[i].v, lk(R.ELU.T[i].comb as LoadKey), R.ELS.M[i].v, lk(R.ELS.M[i].comb as LoadKey), R.ELS.T[i].v, lk(R.ELS.T[i].comb as LoadKey)]))
@@ -133,7 +134,7 @@ function noteTravee(t: TraveeRes, num: string) {
 export function noteHTML(r: ProjetRes) {
   const p = r.projet, g = p.base, sup = r.sup;
   let h = `<header class="cover"><div class="kicker">${esc(g.projet)}</div><h1>Note de calcul du tablier</h1><div class="sub">${esc(g.ouvrage)} — tablier à poutres préfabriquées en béton armé (PPBA)</div></header>`;
-  h += `<nav class="toc"><b>Sommaire</b><ol><li>Hypothèses de calcul</li><li>Charges des superstructures et poids des travées</li>${r.travees.map(t => `<li>Dimensionnement des poutres — ${esc(t.def.nom)}</li>`).join("")}<li>Dimensionnement de l'hourdis</li><li>Dimensionnement de la dallette de continuité</li><li>Dimensionnement des entretoises</li><li>Calculs complémentaires</li></ol></nav>`;
+  h += `<div class="toc"><b>Sommaire</b><ol><li>Hypothèses de calcul</li><li>Charges des superstructures et poids des travées</li>${r.travees.map(t => `<li>Dimensionnement des poutres — ${esc(t.def.nom)}</li>`).join("")}<li>Dimensionnement de l'hourdis</li><li>Dimensionnement de la dallette de continuité</li><li>Dimensionnement des entretoises</li><li>Calculs complémentaires</li></ol></div>`;
   h += `<h2>1. Hypothèses de calcul</h2><h3>1.1 Règlements</h3><ul><li>Béton armé : BAEL 91 modifié 99</li><li>Chargements : fascicule 61 titre II</li><li>Répartition transversale : méthode de Guyon-Massonnet</li></ul>
   <h3>1.2 Matériaux</h3><ul><li>Béton du tablier : fc28 = ${g.fc28} MPa</li><li>Aciers HA : FeE${g.fe} ; aciers doux : FeE${g.feDX}</li><li>Fissuration ${g.fiss === "P" ? "préjudiciable" : g.fiss === "TP" ? "très préjudiciable" : "peu préjudiciable"}</li></ul>
   <h3>1.3 Chargements</h3><ul><li>Charges de trottoir (${fx(g.qtr, 2)} kN/m²)</li>${g.charges.AL ? "<li>A(l)</li>" : ""}${g.charges.Bc || g.charges.Bt || g.charges.Br ? "<li>Système B (Bc, Bt, Br)</li>" : ""}${g.charges.Mc120 ? "<li>Mc120</li>" : ""}${g.charges.Me120 ? "<li>Me120</li>" : ""}${g.charges.D ? "<li>Convoi D</li>" : ""}${g.charges.E ? "<li>Convoi E</li>" : ""}</ul>`;
@@ -172,18 +173,22 @@ export function noteHTML(r: ProjetRes) {
     ["Axe neutre y / inertie fissurée", `${fx(DC.y, 3)} m / ${fx(DC.I * 1e8, 0)} cm⁴`],
   ]) + tbl(["Effet", "M (kN·m)", "σb (MPa)", "σs' (MPa)", "σs (MPa)"], [...DC.rows.map(x => [x.n, fx(x.M, 2), fx(x.sb, 2), fx(x.ss2, 2), fx(x.ss, 2)]), ["<b>Combinaison ELS</b>", `<b>${fx(DC.tot.M, 2)}</b>`, `<b>${fx(DC.tot.sb, 1)}</b>`, `<b>${fx(DC.tot.ss2, 0)}</b>`, `<b>${fx(DC.tot.ss, 0)}</b>`], ["Limites", "", fx(DC.sbl, 1), fx(DC.ssl, 0), fx(DC.ssl, 0)]]);
   const EN = r.EN, en = p.compl.entretoise;
-  h += `<h2>${n0 + 2}. Dimensionnement des entretoises</h2><p class="c">Hypothèse fondamentale : le vérinage se fait à vide, sans circulation. Charge apportée par chaque poutre : ${fx(EN.P, 1)} kN.</p>` +
-    tbl(["Vérin", ...EN.jacks.map((_, i) => String(i + 1))], [["Position (m)", ...EN.jacks.map(x => fx(x, 2))], ["Réaction (t)", ...EN.reac.map(v => fx(v / 10, 1))]], "small") +
-    kv([["Moment maximal — fibre supérieure", fx(EN.Msup, 0), "kN·m"], ["Moment maximal — fibre inférieure", fx(EN.Minf, 0), "kN·m"], ["Section : b × H (hourdis compris)", `${fx(en.bEnt, 2)} × ${fx(en.Htot, 2)}`, "m"],
-      ["Acier fibre supérieure (FeE" + en.feSup + ")", fx(EN.AsSup, 2), "cm²"], ["Acier fibre inférieure (FeE" + en.feInf + ")", fx(EN.AsInf, 2), "cm²"],
-      ["Effort tranchant max / ELU", `${fx(EN.Tmax, 0)} / ${fx(EN.Tu, 0)}`, "kN"], ["τu / limite", `${fx(EN.tu, 2)} / ${fx(EN.tlim, 2)}`, "MPa"], ["At/St", fx(EN.AtSt, 2), "cm²/ml"]]);
+  h += `<h2>${n0 + 2}. Dimensionnement des entretoises</h2><p class="c">Hypothèse fondamentale : le vérinage se fait à vide, sans circulation. L'entretoise est une poutre continue (inertie constante) appuyée sur les vérins et chargée par les poutres. Charge apportée par chaque poutre : ${fx(EN.P, 1)} kN.</p>` +
+    verinageSVG(EN.Lent, EN.beams, EN.P, EN.V) +
+    tbl(["Vérin", ...EN.jacks.map((_, i) => String(i + 1))], [["Position depuis l'axe (m)", ...EN.jacks.map(x => fx(x, 2))], ["Réaction ELS (t)", ...EN.reac.map(v => fx(v / 10, 1))], ["Réaction ELU (t)", ...EN.reac.map(v => fx((1.35 * v) / 10, 1))]], "small") +
+    (EN.V.soulev ? `<p class="ko">Un vérin est tendu : cette disposition provoque un décollement. Déplacer les vérins.</p>` : "") +
+    kv([["Moment maximal — fibre supérieure tendue (ELS)", fx(EN.Msup, 0), "kN·m"], ["Moment maximal — fibre inférieure tendue (ELS)", fx(EN.Minf, 0), "kN·m"], ["Section : b × H (hourdis compris) ; d", `${fx(en.bEnt, 2)} × ${fx(en.Htot, 2)} ; ${fx(EN.d, 2)}`, "m"],
+      ["Acier fibre supérieure (FeE" + en.feSup + ", σs ≤ " + fx(EN.ssS, 0) + " MPa)", fx(EN.AsSup, 2), "cm²"], ["→ on pose", `${EN.barSup.n} HA${EN.barSup.d} (${fx(EN.barSup.A, 2)} cm²)`],
+      ["Acier fibre inférieure (FeE" + en.feInf + ", σs ≤ " + fx(EN.ssI, 0) + " MPa)", fx(EN.AsInf, 2), "cm²"], ["→ on pose", `${EN.barInf.n} ${en.feInf < 400 ? "DX" : "HA"}${EN.barInf.d} (${fx(EN.barInf.A, 2)} cm²)`],
+      ["Effort tranchant max (ELS) / ELU", `${fx(EN.Tmax, 0)} / ${fx(EN.Tu, 0)}`, "kN"], ["τu / limite", `${fx(EN.tu, 2)} / ${fx(EN.tlim, 2)}`, "MPa"], ["At/St requis", fx(EN.AtSt, 2), "cm²/ml"],
+      ["→ on pose", `${EN.cadres.brins} brins HA${EN.cadres.d} esp. ${fx(EN.cadres.esp, 1)} cm (${fx(EN.cadres.pose, 2)} cm²/ml)`]]);
   h += `<h2>${n0 + 3}. Calculs complémentaires</h2><h3>Levage des poutres</h3><p class="c">Sous un effort concentré F, on dispose dans les deux sens un ferraillage équilibrant 4 % de F, les aciers travaillant aux 2/3 de leur limite élastique.</p>` +
     tbl(["Travée", "Poids de la poutre (t)", "F par trou de levage (t)", "A (cm²)", "Ferraillage"], r.travees.map(t => [esc(t.def.nom), fx((t.LV.F * 2) / 10, 2), fx(t.LV.F / 10, 2), fx(t.LV.A, 2), `${t.LV.nb} DX${p.compl.levage.diam} par sens`]));
   h += `<h3>Frettes sous appareils d'appui</h3>` + kv([["Réaction maximale ELS (Rmax)", fx(r.FR.Rmax, 0), "kN"], ["A = 0,04 Rmax / (2/3 fe) dans chaque direction", fx(r.FR.A, 2), "cm²"], ["Nombre minimal de brins Φ" + p.compl.frettes.diam + " par sens", fx(r.FR.nmin, 2), ""], ["Retenu", `${r.FR.nb} DX${p.compl.frettes.diam}`, "par sens"]]);
   void barArea;
   return h;
 }
-export const NOTE_CSS = `
+export const NOTE_CSS = VG_CSS + `
 .note{font-family:'Outfit',system-ui,sans-serif;color:var(--ink,#18191f);line-height:1.5;font-size:13.5px}
 .note h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:34px;margin:4px 0}
 .note h2{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:23px;margin:34px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border,#e2ddd6);page-break-after:avoid}

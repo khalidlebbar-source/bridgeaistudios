@@ -33,7 +33,7 @@ export const exempleGrandes: PPBAInput = {
   Lh: 9.9, hd: 0.2, trG: 2.15, trD: 0.25,
   qsup: 45.5, ent: { b: 9.9, h: 1.05, ep: 0.4, nb: 2 }, gb: 25,
   charges: { AL: true, Br: true, Bt: true, Bc: true, Mc120: true, Me120: true, D: true, E: true },
-  qtr: 1.5, DEcentre: true, compat: true,
+  qtr: 1.5, DEcentre: true, compat: false,
   fc28: 35, fe: 500, feDX: 235, fiss: "P",
 };
 export const exemplePetites: PPBAInput = { ...exempleGrandes, travee: "Petites travées", L: 15, Lpoutre: 16 };

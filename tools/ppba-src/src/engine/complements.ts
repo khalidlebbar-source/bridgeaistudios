@@ -23,7 +23,8 @@ export interface ComplInput {
     predalle: { ep: number; portee: number; chantier: number };
   };
   dallette: { L: number; H: number; As: [number, number, number, number]; Ai: [number, number, number, number]; ch: number; cb: number; T: number; Itablier?: number; Gtablier?: number; Qsup?: number };
-  entretoise: { verins: number[]; bEnt: number; Htot: number; feSup: number; feInf: number; feCis: number; enr: number };
+  entretoise: { verins: number[]; sym?: boolean; // positions des vérins depuis l'axe du tablier (m, signées)
+    bEnt: number; Htot: number; feSup: number; feInf: number; feCis: number; enr: number };
   levage: { fe: number; diam: number };
   frettes: { fe: number; diam: number };
 }
@@ -54,7 +55,7 @@ export const complExemple: ComplInput = {
     predalle: { ep: 0.06, portee: 0.97, chantier: 2 },
   },
   dallette: { L: 1.1, H: 0.15, As: [14, 20, 20, 20], Ai: [14, 20, 14, 20], ch: 0.05, cb: 0.029, T: 0.01 },
-  entretoise: { verins: [1.65, 2.95, 4.65], bEnt: 0.4, Htot: 1.25, feSup: 500, feInf: 235, feCis: 500, enr: 0.06 },
+  entretoise: { verins: [-4, -1.65, -1.2, 1.2, 1.65, 4], sym: true, bEnt: 0.4, Htot: 1.25, feSup: 500, feInf: 235, feCis: 500, enr: 0.06 },
   levage: { fe: 235, diam: 10 },
   frettes: { fe: 235, diam: 10 },
 };

@@ -2,6 +2,9 @@
 import { projetExemple, Projet, TraveeDef } from "../engine/project";
 import { NOTE_CSS } from "../engine/note";
 import { SuperElt } from "../engine/complements";
+import { verinage, verinsNormalises, dimEntretoise } from "../engine/verinage";
+import { verinageSVG } from "../engine/verinage-svg";
+import { poidsTravee } from "../engine/sollicitations";
 
 const $ = (s: string, r: ParentNode = document) => r.querySelector(s) as HTMLElement;
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
@@ -72,14 +75,6 @@ function beamSketch(active = "") {
     <text class="lbl" x="${X(-g.bs / 2) - 6}" y="${Y(H / 2)}" text-anchor="end">H = ${fx(H, 2)}</text>
   </svg>`;
 }
-function jackSketch() {
-  const g = P.base, W = 640, Hh = 120, s = (W - 60) / g.Lh, cx = W / 2, X = (y: number) => cx + y * s;
-  const v = P.compl.entretoise.verins, jacks = [...v.map(x => -x), ...v];
-  let out = `<rect class="slab" x="${X(-g.Lh / 2)}" y="40" width="${g.Lh * s}" height="22"/>`;
-  for (let i = 0; i < g.n; i++) { const y = (i - (g.n - 1) / 2) * g.e; out += `<line class="load" x1="${X(y)}" x2="${X(y)}" y1="8" y2="38"/><polygon class="arrow" points="${X(y) - 4},32 ${X(y) + 4},32 ${X(y)},39"/>`; }
-  for (const j of jacks) out += `<polygon class="jack" points="${X(j)},63 ${X(j) - 7},80 ${X(j) + 7},80"/><text class="dimt" x="${X(j)}" y="96" text-anchor="middle">${fx(Math.abs(j), 2)}</text>`;
-  return `<svg viewBox="0 0 ${W} ${Hh}" class="sketch" aria-label="Vérinage de l'entretoise">${out}<text class="lbl" x="${cx}" y="114" text-anchor="middle">Vérins (cotes depuis l'axe du tablier) — charges des poutres</text></svg>`;
-}
 
 // ------------------------------------------------------------------ étapes
 const STEPS: { id: string; lbl: string; grp: string }[] = [
@@ -89,7 +84,8 @@ const STEPS: { id: string; lbl: string; grp: string }[] = [
   { id: "super", lbl: "Superstructures", grp: "Données" },
   { id: "travees", lbl: "Travées et ferraillage", grp: "Données" },
   { id: "hourdis", lbl: "Hourdis (Thénoz)", grp: "Données" },
-  { id: "annexes", lbl: "Dallette, entretoises, levage", grp: "Données" },
+  { id: "entretoise", lbl: "Entretoises (vérinage)", grp: "Données" },
+  { id: "annexes", lbl: "Dallette, levage, frettes", grp: "Données" },
   { id: "synth", lbl: "Synthèse", grp: "Résultats" },
   { id: "note", lbl: "Note de calcul", grp: "Résultats" },
 ];
@@ -100,7 +96,7 @@ function viewOuvrage() {
       { p: "base.fiss", l: "Fissuration", t: "sel", opts: [["PP", "Peu préjudiciable"], ["P", "Préjudiciable"], ["TP", "Très préjudiciable"]] }, { p: "base.gb", l: "Poids volumique du béton", u: "kN/m³", c: "GB" }])) +
     card("Chargements (fascicule 61 titre II)", `<div class="chks">${[["AL", "A(l)"], ["Bc", "Bc"], ["Bt", "Bt"], ["Br", "Br"], ["Mc120", "Mc120"], ["Me120", "Me120"], ["D", "Convoi D"], ["E", "Convoi E"]].map(([k, l]) => field({ p: "base.charges." + k, l, t: "chk" })).join("")}</div>` +
       grid(3, [{ p: "base.qtr", l: "Charge générale de trottoir", u: "kN/m²", c: "QTR" }]) +
-      `<div class="chks">${field({ p: "base.DEcentre", l: "Convois D et E circulant dans l'axe du tablier", t: "chk" })}${field({ p: "base.compat", l: "Conventions du programme de référence (.LIR) pour l'effort tranchant", t: "chk" })}</div>`);
+      `<div class="chks">${field({ p: "base.DEcentre", l: "Convois D et E circulant dans l'axe du tablier", t: "chk" })}${field({ p: "base.compat", l: "Conventions de l'ancien programme .LIR (effort tranchant, demi-tablier droit)", t: "chk" })}</div>`);
 }
 function viewTablier() {
   const g = P.base, Lr = g.Lh - g.trG - g.trD, cl = Lr >= 7 ? 1 : Lr > 5.5 ? 2 : 3;
@@ -159,14 +155,119 @@ function viewHourdis() {
       { p: h + ".aciers.loSup.0", l: "Long. sup. Ø1", u: "mm" }, { p: h + ".aciers.loSup.1", l: "Ø2", u: "mm" }, { p: h + ".aciers.loSup.2", l: "Esp.", u: "cm" }, { p: h + ".predalle.portee", l: "Portée prédalle", u: "m" }]));
 }
 function viewAnnexes() {
-  const d = "compl.dallette", e = "compl.entretoise";
+  const d = "compl.dallette";
   return card("Dallette de continuité (bande de 1 m)", grid(4, [{ p: d + ".L", l: "Portée", u: "m" }, { p: d + ".H", l: "Hauteur", u: "m" }, { p: d + ".ch", l: "Enrobage aciers sup.", u: "m" }, { p: d + ".cb", l: "Enrobage aciers inf.", u: "m" },
     { p: d + ".As.0", l: "Sup. Ø1", u: "mm" }, { p: d + ".As.1", l: "Esp.", u: "cm" }, { p: d + ".As.2", l: "Sup. Ø2", u: "mm" }, { p: d + ".As.3", l: "Esp.", u: "cm" },
     { p: d + ".Ai.0", l: "Inf. Ø1", u: "mm" }, { p: d + ".Ai.1", l: "Esp.", u: "cm" }, { p: d + ".Ai.2", l: "Inf. Ø2", u: "mm" }, { p: d + ".Ai.3", l: "Esp.", u: "cm" }, { p: d + ".T", l: "Tassement différentiel", u: "m" }])) +
-    `<div class="schema">${jackSketch()}</div>` + card("Entretoises — vérinage à vide", grid(4, [{ p: e + ".verins.0", l: "Vérin intérieur", u: "m" }, { p: e + ".verins.1", l: "Vérin médian", u: "m" }, { p: e + ".verins.2", l: "Vérin extérieur", u: "m" },
-    { p: e + ".bEnt", l: "Épaisseur", u: "m" }, { p: e + ".Htot", l: "Hauteur (hourdis compris)", u: "m" }, { p: e + ".feSup", l: "fe fibre sup.", u: "MPa" }, { p: e + ".feInf", l: "fe fibre inf.", u: "MPa" }, { p: e + ".feCis", l: "fe cadres", u: "MPa" }])) +
     card("Levage et frettes", grid(4, [{ p: "compl.levage.fe", l: "fe aciers de levage", u: "MPa" }, { p: "compl.levage.diam", l: "Ø aciers de levage", u: "mm" }, { p: "compl.frettes.fe", l: "fe frettes", u: "MPa" }, { p: "compl.frettes.diam", l: "Ø frettes", u: "mm" }]));
 }
+
+// ------------------------------------------------------------------ entretoise : placement des vérins
+const SNAP = 0.05;
+let jSel = -1, drag: { i: number; mate: number } | null = null;
+function bigSpan() { return P.travees.reduce((a, b) => (b.L > a.L ? b : a)); }
+function jacksState() {
+  const en = P.compl.entretoise;
+  if (en.sym === undefined) { en.verins = verinsNormalises(en.verins, en.sym); en.sym = true; save(); }
+  return en;
+}
+function liveVerinage() {
+  const g = P.base, t = bigSpan(), en = jacksState();
+  const gg = { ...g, L: t.L, Lpoutre: t.Lpoutre };
+  const Pp = poidsTravee(gg).Rpoutre;
+  const beams = Array.from({ length: g.n }, (_, i) => (i - (g.n - 1) / 2) * g.e);
+  const V = verinage(g.ent.b, beams, Pp, en.verins);
+  const D = V.ok ? dimEntretoise(V, en, g.fc28, g.fiss) : null;
+  return { Pp, beams, V, D, t };
+}
+function jackPanel() {
+  const { Pp, beams, V, D, t } = liveVerinage(), en = P.compl.entretoise, g = P.base;
+  const rows = V.jacks.map((j, i) => `<tr class="${i === jSel ? "sel" : ""}"><td>${i + 1}</td><td><input class="usr cell" style="width:76px" data-jpos="${i}" value="${fx(j, 2)}" aria-label="Position du vérin ${i + 1}"/></td><td class="n${V.reac[i] < 0 ? " ko" : ""}">${V.reac[i] !== undefined ? fx(V.reac[i] / 10, 1) + " t" : "—"}</td><td><button class="mini" data-jdel="${i}" title="Retirer ce vérin">×</button></td></tr>`).join("");
+  const chip = (l: string, v: string, cls = "") => `<div class="res-card ${cls}"><div class="res-lbl">${l}</div><div class="res-val">${v}</div></div>`;
+  return `<div id="vgBox" class="vg-box">${verinageSVG(g.ent.b, beams, Pp, V, true, jSel)}</div>
+    <div class="vg-side"><table class="ed jt"><thead><tr><th>N°</th><th>Position (m)</th><th>Réaction</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="4" class="hint">Aucun vérin : cliquez sur l'entretoise.</td></tr>`}</tbody></table>
+    ${V.soulev ? `<div class="alert attention">Un vérin est tendu : la disposition provoque un décollement.</div>` : ""}
+    ${V.ok && D ? `<div class="res-grid">${chip("M fibre sup. tendue", fx(V.Msup, 0) + '<span class="res-unit"> kN·m</span>')}${chip("M fibre inf. tendue", fx(V.Minf, 0) + '<span class="res-unit"> kN·m</span>')}${chip("Acier sup.", `${D.barSup.n} HA${D.barSup.d}`, "")}${chip("Acier inf.", `${D.barInf.n} ${en.feInf < 400 ? "DX" : "HA"}${D.barInf.d}`)}${chip("Cadres", `${D.cadres.brins} HA${D.cadres.d} e=${fx(D.cadres.esp, 1)}`)}${chip("τu", fx(D.tu, 2) + '<span class="res-unit"> / ' + fx(D.tlim, 2) + " MPa</span>", D.tu > D.tlim ? "ko" : "")}</div>` : `<div class="alert attention">${V.erreur ?? ""}</div>`}
+    <p class="hint">Charge par poutre (charges permanentes, ${t.nom.toLowerCase()}) : ${fx(Pp, 0)} kN ≈ ${fx(Pp / 10, 1)} t. Sections requises : sup. ${D ? fx(D.AsSup, 2) : "—"} cm², inf. ${D ? fx(D.AsInf, 2) : "—"} cm², At/St ${D ? fx(D.AtSt, 2) : "—"} cm²/ml.</p></div>`;
+}
+function viewEntretoise() {
+  const e = "compl.entretoise", en = jacksState();
+  return card("Placement des vérins", `<p class="hint">Cliquez sur l'entretoise pour ajouter un vérin, faites-le glisser pour le déplacer (pas de ${fx(SNAP, 2)} m). Touche Suppr ou × pour le retirer, flèches ← → pour l'ajuster. Les cotes sont comptées depuis l'axe du tablier.</p>
+    <div class="vg-tools"><label class="chk"><input type="checkbox" id="jSym" ${en.sym ? "checked" : ""}/> Disposition symétrique</label>
+    <button class="btn-secondary" id="jMid">Un vérin entre chaque poutre</button><button class="btn-secondary" id="jPair">Deux vérins par poutre (± 0,40 m)</button><button class="btn-secondary" id="jEx">Exemple MEDZ</button><button class="btn-secondary" id="jClr">Tout retirer</button></div>
+    <div id="jackPanel" class="vg-wrap">${jackPanel()}</div>`) +
+    card("Section et aciers de l'entretoise", grid(4, [{ p: e + ".bEnt", l: "Épaisseur", u: "m" }, { p: e + ".Htot", l: "Hauteur (hourdis compris)", u: "m" }, { p: e + ".enr", l: "Distance des aciers au parement", u: "m" }, { p: "base.ent.b", l: "Longueur de l'entretoise", u: "m" },
+      { p: e + ".feSup", l: "fe fibre sup.", u: "MPa" }, { p: e + ".feInf", l: "fe fibre inf.", u: "MPa" }, { p: e + ".feCis", l: "fe cadres", u: "MPa" }]));
+}
+function setJacks(v: number[]) {
+  const en = P.compl.entretoise, half = P.base.ent.b / 2;
+  en.verins = Array.from(new Set(v.map(x => Math.round(Math.max(-half, Math.min(half, x)) / SNAP) * SNAP).map(x => +x.toFixed(4)))).sort((a, b) => a - b);
+  save(); lastRes = null;
+}
+function refreshJacks() { const el = $("#jackPanel"); if (el) { el.innerHTML = jackPanel(); bindJackPanel(); } }
+function mateOf(i: number) { const v = P.compl.entretoise.verins; if (!P.compl.entretoise.sym) return -1; const j = v.findIndex(x => Math.abs(x + v[i]) < 1e-6); return j === i ? -1 : j; }
+function xFromEvent(ev: PointerEvent) {
+  const svg = document.querySelector("#vgBox svg") as SVGSVGElement, r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+  const sx = ((ev.clientX - r.left) * vb.width) / r.width, Lent = P.base.ent.b, mx = 46, s = (vb.width - 2 * mx) / Lent;
+  return (sx - mx) / s - Lent / 2;
+}
+function bindJackPanel() {
+  const box = $("#vgBox");
+  if (box) {
+    box.onpointerdown = (ev: PointerEvent) => {
+      const t = ev.target as Element, jg = t.closest("[data-j]") as HTMLElement | null;
+      if (jg) { const i = +jg.dataset.j!; jSel = i; drag = { i, mate: mateOf(i) }; box.setPointerCapture(ev.pointerId); ev.preventDefault(); refreshJacks(); return; }
+      if (t.closest("[data-track]")) {
+        const x = Math.round(xFromEvent(ev) / SNAP) * SNAP, v = P.compl.entretoise.verins.slice();
+        if (v.some(y => Math.abs(y - x) < SNAP / 2)) return;
+        v.push(x); if (P.compl.entretoise.sym && Math.abs(x) > 1e-6) v.push(-x);
+        setJacks(v); jSel = P.compl.entretoise.verins.findIndex(y => Math.abs(y - x) < 1e-6); refreshJacks();
+      }
+    };
+    box.onpointermove = (ev: PointerEvent) => {
+      if (!drag) return;
+      const v = P.compl.entretoise.verins.slice(), half = P.base.ent.b / 2;
+      let x = Math.round(Math.max(-half, Math.min(half, xFromEvent(ev))) / SNAP) * SNAP;
+      if (drag.mate >= 0 && Math.abs(x) < SNAP) x = Math.sign(v[drag.i]) * SNAP;
+      v[drag.i] = x; if (drag.mate >= 0) v[drag.mate] = -x;
+      // pas de superposition : on ignore le déplacement s'il écrase un autre vérin
+      if (v.some((y, k) => k !== drag!.i && Math.abs(y - x) < SNAP / 2)) return;
+      P.compl.entretoise.verins = v; lastRes = null;
+      const el = $("#vgBox"); const { Pp, beams, V } = liveVerinage(); el.innerHTML = verinageSVG(P.base.ent.b, beams, Pp, V, true, drag.i);
+    };
+    box.onpointerup = box.onpointercancel = () => {
+      if (!drag) return; const x = P.compl.entretoise.verins[drag.i]; drag = null;
+      setJacks(P.compl.entretoise.verins); jSel = P.compl.entretoise.verins.findIndex(y => Math.abs(y - x) < 1e-6); refreshJacks();
+    };
+    box.onkeydown = (ev: KeyboardEvent) => {
+      const jg = (ev.target as Element).closest("[data-j]") as HTMLElement | null; if (!jg) return;
+      const i = +jg.dataset.j!, m = mateOf(i), v = P.compl.entretoise.verins.slice();
+      if (ev.key === "Delete" || ev.key === "Backspace") { const rm = new Set([i, m]); setJacks(v.filter((_, k) => !rm.has(k))); jSel = -1; refreshJacks(); ev.preventDefault(); return; }
+      const d = ev.key === "ArrowLeft" ? -1 : ev.key === "ArrowRight" ? 1 : 0; if (!d) return;
+      const x = v[i] + d * (ev.shiftKey ? 5 : 1) * SNAP; v[i] = x; if (m >= 0) v[m] = -x;
+      setJacks(v); jSel = P.compl.entretoise.verins.findIndex(y => Math.abs(y - x) < 1e-6); refreshJacks();
+      (document.querySelector(`#vgBox [data-j="${jSel}"]`) as HTMLElement | null)?.focus(); ev.preventDefault();
+    };
+  }
+  document.querySelectorAll<HTMLInputElement>("[data-jpos]").forEach(el => (el.onchange = () => {
+    const i = +el.dataset.jpos!, x = parseFloat(el.value.replace(",", ".").replace("−", "-")); if (isNaN(x)) return;
+    const v = P.compl.entretoise.verins.slice(), m = mateOf(i); v[i] = x; if (m >= 0) v[m] = -x; setJacks(v); jSel = i; refreshJacks();
+  }));
+  document.querySelectorAll<HTMLElement>("[data-jdel]").forEach(el => (el.onclick = () => {
+    const i = +el.dataset.jdel!, rm = new Set([i, mateOf(i)]); setJacks(P.compl.entretoise.verins.filter((_, k) => !rm.has(k))); jSel = -1; refreshJacks();
+  }));
+}
+function bindEntretoise() {
+  const sym = $("#jSym") as HTMLInputElement | null; if (!sym) return;
+  sym.onchange = () => { P.compl.entretoise.sym = sym.checked; if (sym.checked) { const v = P.compl.entretoise.verins; setJacks([...v, ...v.map(x => -x)]); } save(); refreshJacks(); };
+  const beams = () => Array.from({ length: P.base.n }, (_, i) => (i - (P.base.n - 1) / 2) * P.base.e);
+  $("#jMid").onclick = () => { const b = beams(); setJacks(b.slice(1).map((x, i) => (x + b[i]) / 2)); refreshJacks(); };
+  $("#jPair").onclick = () => { setJacks(beams().flatMap(x => [x - 0.4, x + 0.4])); refreshJacks(); };
+  $("#jEx").onclick = () => { setJacks([-4, -1.65, -1.2, 1.2, 1.65, 4]); refreshJacks(); };
+  $("#jClr").onclick = () => { setJacks([]); jSel = -1; refreshJacks(); };
+  bindJackPanel();
+}
+
 function viewSynth() {
   if (!lastRes) return `<div class="card"><p>Lancez le calcul pour afficher les résultats.</p><button class="btn-primary" data-run>Calculer</button></div>`;
   const s = lastRes.synth;
@@ -194,23 +295,24 @@ function render() {
   $("#side").innerHTML = groups.map(g => `<div class="sidebar-section"><div class="sidebar-label">${g}</div>${STEPS.filter(s => s.grp === g).map((s, i) => `<div class="nav-item ${s.id === step ? "active" : ""}" data-step="${s.id}"><span class="nav-num">${g === "Données" ? i : "→"}</span><span class="nav-label">${s.lbl}</span></div>`).join("")}</div>`).join("") +
     `<div class="side-actions"><button class="btn-primary" data-run>Calculer</button><button class="btn-secondary" id="loadEx">Charger l'exemple</button><button class="btn-secondary" id="exportJ">Exporter (.json)</button><label class="btn-secondary file">Importer<input type="file" id="importJ" accept=".json" hidden/></label></div>`;
   const st = STEPS.find(s => s.id === step)!;
-  const views: Record<string, () => string> = { ouvrage: viewOuvrage, tablier: viewTablier, poutre: viewPoutre, super: viewSuper, travees: viewTravees, hourdis: viewHourdis, annexes: viewAnnexes, synth: viewSynth, note: viewNote };
+  const views: Record<string, () => string> = { ouvrage: viewOuvrage, tablier: viewTablier, poutre: viewPoutre, super: viewSuper, travees: viewTravees, hourdis: viewHourdis, annexes: viewAnnexes, entretoise: viewEntretoise, synth: viewSynth, note: viewNote };
   $("#main").innerHTML = `<div class="page-header"><div class="page-eyebrow">PPBA · ${st.grp}</div><h1 class="page-title">${st.lbl}</h1></div><div id="status" class="status"></div>${views[step]()}`;
   bind();
 }
 function refreshSketch() {
   const sk = document.querySelector(".schema");
   if (!sk) return;
-  if (step === "tablier") sk.innerHTML = deckSketch(); else if (step === "poutre") sk.innerHTML = beamSketch(); else if (step === "annexes") sk.innerHTML = jackSketch();
+  if (step === "tablier") sk.innerHTML = deckSketch(); else if (step === "poutre") sk.innerHTML = beamSketch(); 
 }
 function bind() {
+  if (step === "entretoise") bindEntretoise();
   document.querySelectorAll<HTMLElement>("[data-step]").forEach(el => (el.onclick = () => { step = el.dataset.step!; render(); window.scrollTo(0, 0); }));
   document.querySelectorAll<HTMLElement>("[data-run]").forEach(el => (el.onclick = run));
   document.querySelectorAll<HTMLInputElement>("[data-p]").forEach(el => {
     el.onchange = el.oninput = () => {
       const t = el.dataset.t, p = el.dataset.p!;
       if (t === "chk") set(p, el.checked); else if (t === "text" || t === "sel") set(p, el.value); else { const v = parseFloat(el.value.replace(",", ".")); if (!isNaN(v)) set(p, v); }
-      lastRes = null; refreshSketch();
+      lastRes = null; refreshSketch(); if (step === "entretoise") refreshJacks();
       if (step === "tablier" || step === "super") { const d = document.querySelector(".derived"); if (d && el.type !== "checkbox" && (el as any)._t) clearTimeout((el as any)._t); (el as any)._t = setTimeout(() => { if (document.activeElement !== el) render(); }, 600); }
     };
     el.onfocus = () => { const code = el.closest(".field")?.getAttribute("data-code"); if (code && (step === "tablier" || step === "poutre")) { const sk = document.querySelector(".schema"); if (sk) sk.innerHTML = step === "tablier" ? deckSketch(code) : beamSketch(code); } };

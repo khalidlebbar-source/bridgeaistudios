@@ -5,6 +5,7 @@ import { ComplInput } from "./complements";
 import { barArea, ft, Ei, EvBAEL, sigmaS, stressesELS, asELU, asELS, Layer } from "./ba";
 import { AL, delta } from "./fasc61";
 import { areaAbove } from "./geometry";
+import { verinage, verinsNormalises, dimEntretoise } from "./verinage";
 
 const r2 = (x: number) => Math.round(x * 100) / 100;
 
@@ -296,43 +297,10 @@ export function dallette(R: Resultat, c: ComplInput, sup: ReturnType<typeof supe
 export function entretoise(R: Resultat, c: ComplInput) {
   const g = R.input, en = c.entretoise;
   const P = R.moy.G!.T[0];                                   // réaction maximale d'une poutre sous charges permanentes
-  const bx = R.ys.slice();
-  const jacks = [...en.verins.map(v => -v).reverse(), ...en.verins];
-  // poutre continue (EI constant) : rigidité par éléments finis
-  const xs = Array.from(new Set([...jacks, ...bx, -g.Lh / 2, g.Lh / 2].map(v => Math.round(v * 1e4) / 1e4))).sort((a, b) => a - b);
-  const N = xs.length, K: number[][] = Array.from({ length: 2 * N }, () => new Array(2 * N).fill(0)), F = new Array(2 * N).fill(0);
-  const ke = (l: number) => [[12, 6 * l, -12, 6 * l], [6 * l, 4 * l * l, -6 * l, 2 * l * l], [-12, -6 * l, 12, -6 * l], [6 * l, 2 * l * l, -6 * l, 4 * l * l]].map(r => r.map(v => v / l ** 3));
-  for (let i = 0; i < N - 1; i++) { const k = ke(xs[i + 1] - xs[i]), id = [2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 3]; for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) K[id[a]][id[b]] += k[a][b]; }
-  const idx = (x: number) => xs.indexOf(Math.round(x * 1e4) / 1e4);
-  for (const b of bx) F[2 * idx(b)] -= P;
-  const fixed = new Set(jacks.map(j => 2 * idx(j)));
-  const free = Array.from({ length: 2 * N }, (_, i) => i).filter(i => !fixed.has(i));
-  const Kf = free.map(i => free.map(j => K[i][j])), Ff = free.map(i => F[i]);
-  const u = gauss(Kf, Ff), U = new Array(2 * N).fill(0); free.forEach((d2, k) => (U[d2] = u[k]));
-  const Rr = K.map((r, i) => r.reduce((s, v, j) => s + v * U[j], 0) - F[i]);
-  const reac = jacks.map(j => Rr[2 * idx(j)]);
-  let Mmax = 0, Mmin = 0; const diag: { x: number; M: number }[] = [];
-  for (let i = 0; i < N - 1; i++) {
-    const l = xs[i + 1] - xs[i], k = ke(l), id = [2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 3];
-    const f = k.map(r => r.reduce((s, v, j) => s + v * U[id[j]], 0));
-    const M1 = -f[1], M2 = f[3];
-    diag.push({ x: xs[i], M: M1 }, { x: xs[i + 1], M: M2 });
-    Mmax = Math.max(Mmax, M1, M2); Mmin = Math.min(Mmin, M1, M2);
-  }
-  // convention : M > 0 tend la fibre inférieure
-  const Msup = Math.abs(Mmin), Minf = Mmax;
-  const d = en.Htot - en.enr;
-  const ssS = sigmaS(en.feSup, g.fc28, g.fiss), ssI = sigmaS(en.feInf, g.fc28, g.fiss);
-  const AsSup = Math.max(asELS(Msup, en.bEnt, d, g.fc28, ssS).As, asELU(1.35 * Msup, en.bEnt, d, g.fc28, en.feSup).As);
-  const AsInf = Math.max(asELS(Minf, en.bEnt, d, g.fc28, ssI).As, asELU(1.35 * Minf, en.bEnt, d, g.fc28, en.feInf).As);
-  const Tmax = Math.max(...diagShear(xs, U, ke)), Tu = 1.35 * Tmax, tu = Tu / 1000 / (en.bEnt * d);
-  const AtSt = ((tu * en.bEnt * 1.15) / (0.9 * en.feCis)) * 1e4;
-  return { P, jacks, reac, diag, Msup, Minf, d, AsSup, AsInf, Tmax, Tu, tu, tlim: Math.min((0.15 * g.fc28) / 1.5, 4), AtSt };
-}
-function diagShear(xs: number[], U: number[], ke: (l: number) => number[][]) {
-  const out: number[] = [];
-  for (let i = 0; i < xs.length - 1; i++) { const k = ke(xs[i + 1] - xs[i]), id = [2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 3]; const f = k.map(r => r.reduce((s, v, j) => s + v * U[id[j]], 0)); out.push(Math.abs(f[0])); }
-  return out;
+  const jacks = verinsNormalises(en.verins, en.sym);
+  const V = verinage(g.ent.b, R.ys, P, jacks);
+  const D = dimEntretoise(V, en, g.fc28, g.fiss);
+  return { P, Lent: g.ent.b, beams: R.ys, V, ...D, jacks: V.jacks, reac: V.reac, Msup: V.Msup, Minf: V.Minf, Tmax: V.Vmax };
 }
 function gauss(A: number[][], b: number[]) {
   const n = b.length, M = A.map((r, i) => [...r, b[i]]);

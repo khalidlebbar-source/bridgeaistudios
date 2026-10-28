@@ -4,7 +4,7 @@ import { exempleGrandes, exemplePetites } from "../src/engine/types";
 const which = process.env.EX ?? "G";
 const ref = readLIR(which === "G" ? "ref/10-GRANDECH.LIR.txt" : "ref/11-PETITECH.LIR.txt");
 const t0 = Date.now();
-const r = calcul(which === "G" ? exempleGrandes : exemplePetites);
+const r = calcul({ ...(which === "G" ? exempleGrandes : exemplePetites), compat: process.env.COMPAT !== "0" });
 console.log(`calcul : ${Date.now() - t0} ms`);
 const pc = (a: number, b: number) => (b === 0 ? (a === 0 ? "0" : "∞") : ((100 * (a - b)) / Math.abs(b)).toFixed(2) + "%");
 const row = (lab: string, a: number, b: number, d = 3) => console.log(lab.padEnd(34), a.toFixed(d).padStart(12), b.toFixed(d).padStart(12), pc(a, b).padStart(9));

@@ -22,10 +22,9 @@ function coefs(classe: number, nv: number) {
   return { a1, bc, bt, v0, nv };
 }
 
-export function calcul(g: PPBAInput) {
-  const geo = geometry(g);
-  const L = g.L, Lp = g.Lpoutre, n = g.n;
-  // ---------- II. Charges permanentes ----------
+/** Poids de la travée (rapide : sans répartition transversale) */
+export function poidsTravee(g: PPBAInput, geo = geometry(g)) {
+  const Lp = g.Lpoutre, n = g.n;
   const Vpoutre = ((geo.Aapp + geo.Amid) / 2) * Lp;
   const Ppoutres = n * Vpoutre * g.gb;
   const p1poutres = Ppoutres / Lp, p1dalle = g.Lh * g.hd * g.gb, P1 = p1poutres + p1dalle, P2 = g.qsup;
@@ -33,7 +32,15 @@ export function calcul(g: PPBAInput) {
   const Sent = g.ent.b * g.ent.h - n * areaAbove(g, g.ent.h, g.b0);
   const Went = g.ent.nb * Sent * g.ent.ep * g.gb;
   const Wtravee = Wperm + Went;
-  const gl = Wtravee / L;   // charge permanente équivalente (kN/ml) — convention du programme
+  return { Vpoutre, Ppoutres, p1poutres, p1dalle, P1, P2, Wperm, Sent, Went, Wtravee, Rpoutre: Wtravee / (2 * n) };
+}
+
+export function calcul(g: PPBAInput) {
+  const geo = geometry(g);
+  const L = g.L, Lp = g.Lpoutre, n = g.n;
+  // ---------- II. Charges permanentes ----------
+  const { Vpoutre, Ppoutres, p1poutres, p1dalle, P1, P2, Wperm, Sent, Went, Wtravee } = poidsTravee(g, geo);
+  const gl = Wtravee / L;   // charge permanente équivalente (kN/ml), entretoises comprises
   // ---------- III. Surcharges ----------
   const Lr = g.Lh - g.trG - g.trD;
   const classe = g.classe ?? (Lr >= 7 ? 1 : Lr > 5.5 ? 2 : 3);
