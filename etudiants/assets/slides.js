@@ -53,6 +53,11 @@
       sl.append(f);
     }
     $$("[data-d]", sl).forEach(e => e.style.setProperty("--dl", e.dataset.d + "s"));
+    // tout s'affiche d'un coup : les éléments « au clic » apparaissent en cascade rapide
+    $$("[data-b]", sl).forEach(e => {
+      const m = Math.min(...e.dataset.b.split(",").map(Number));
+      e.style.setProperty("--dl", ((m - 1) * 0.12 + 0.1 + (+e.dataset.d || 0)).toFixed(2) + "s");
+    });
     // nombre d'étapes au clic
     let max = 0;
     $$("[data-b]", sl).forEach(e => e.dataset.b.split(",").forEach(v => { max = Math.max(max, +v); }));
@@ -125,18 +130,28 @@
     apply(slides[k], step);
     $(".cnt").textContent = `${k + 1} / ${N}`;
     $(".progress").style.width = ((k + (slides[k].dataset.steps > 0 ? step / slides[k].dataset.steps : 1)) / N * 100) + "%";
-    $(".prev").disabled = k === 0 && step === 0;
-    $(".next").disabled = k === N - 1 && step >= +slides[k].dataset.steps;
+    $(".prev").disabled = k === 0;
+    $(".next").disabled = k === N - 1 && !(ci >= 0 && ci < CHAPTERS.length - 1);
+    $(".replay").style.display = +slides[k].dataset.steps > 0 ? "" : "none";
   }
+  let replayT = null;
+  function stopReplay() { clearInterval(replayT); replayT = null; slides.forEach(x => x.classList.remove("replaying")); }
   function next() {
-    const sl = slides[k];
-    if (step < +sl.dataset.steps) show(k, step + 1);
-    else if (k < N - 1) show(k + 1, 0, 1);
+    stopReplay();
+    if (k < N - 1) show(k + 1, "end", 1);
     else if (ci >= 0 && ci < CHAPTERS.length - 1) location.href = CHAPTERS[ci + 1][0] + ".html";
   }
   function prev() {
-    if (step > 0) show(k, step - 1);
-    else if (k > 0) show(k - 1, "end", -1);
+    stopReplay();
+    if (k > 0) show(k - 1, "end", -1);
+  }
+  // « Rejouer » : refait l'animation pas à pas de la diapositive
+  function replay() {
+    stopReplay();
+    const n = +slides[k].dataset.steps;
+    if (!n) return;
+    let s = 0; slides[k].classList.add("replaying"); show(k, 0);
+    replayT = setInterval(() => { s++; show(k, s); if (s >= n) { clearInterval(replayT); replayT = null; setTimeout(() => slides.forEach(x => x.classList.remove("replaying")), 900); } }, 1100);
   }
 
   /* interface */
@@ -146,7 +161,7 @@
     <span class="chap ui-chip" style="height:26px;padding:0 10px;border-radius:7px;display:inline-flex;align-items:center;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#14171f;background:#e2c070">Chapitre ${chap[1]}</span>`;
   const ui2 = document.createElement("div"); ui2.className = "ui bot";
   ui2.innerHTML = `<button type="button" class="prev" title="Précédent (←)">‹</button><span class="cnt"></span><button type="button" class="next" title="Suivant (→ ou espace)">›</button>
-    <button type="button" class="full" title="Plein écran (F)">⛶</button><button type="button" class="pdf" title="Télécharger en PDF">PDF</button>`;
+    <button type="button" class="replay" title="Rejouer l'animation pas à pas (R)">↻ Animer</button><button type="button" class="full" title="Plein écran (F)">⛶</button><button type="button" class="pdf" title="Télécharger en PDF">PDF</button>`;
   const prog = document.createElement("div"); prog.className = "progress";
   const toc = document.createElement("nav"); toc.className = "toc";
   let th = `<h4>Chapitre ${chap[1]} — ${chap[2]}</h4><div class="sl">`;
@@ -157,18 +172,19 @@
   th += `</div><hr><h4>Tous les chapitres</h4><div class="chs">` + CHAPTERS.map(c => `<a href="${c[0]}.html"${c[0] === cur ? ' class="on"' : ""}><i>${c[1]}</i><span>${c[2]}</span></a>`).join("") + `</div><hr><div class="chs"><a href="../../etudiants.html"><i>←</i><span>Espace étudiants</span></a></div>`;
   toc.innerHTML = th;
   const hint = document.createElement("div"); hint.className = "hint";
-  hint.textContent = "→ / espace : avancer · ← : reculer · F : plein écran · S : sommaire";
+  hint.textContent = "→ / espace : diapositive suivante · ← : précédente · R : rejouer l'animation · F : plein écran · S : sommaire";
   document.body.append(ui1, ui2, prog, toc, hint);
   setTimeout(() => { hint.style.opacity = 0; }, 5000);
 
   $(".next", ui2).addEventListener("click", next);
   $(".prev", ui2).addEventListener("click", prev);
   $(".full", ui2).addEventListener("click", full);
+  $(".replay", ui2).addEventListener("click", replay);
   $(".pdf", ui2).addEventListener("click", printAll);
   $(".menu", ui1).addEventListener("click", () => document.body.classList.toggle("toc-open"));
   toc.addEventListener("click", e => {
     const a = e.target.closest("a[data-i]"); if (!a) return;
-    e.preventDefault(); show(+a.dataset.i, 0, 1); document.body.classList.remove("toc-open");
+    e.preventDefault(); stopReplay(); show(+a.dataset.i, "end", 1); document.body.classList.remove("toc-open");
   });
   function full() { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} }
   addEventListener("keydown", e => {
@@ -176,8 +192,9 @@
     const key = e.key;
     if (["ArrowRight", "PageDown", " ", "Enter", "ArrowDown"].includes(key)) { e.preventDefault(); next(); }
     else if (["ArrowLeft", "PageUp", "ArrowUp", "Backspace"].includes(key)) { e.preventDefault(); prev(); }
-    else if (key === "Home") show(0, 0);
-    else if (key === "End") show(N - 1, "end");
+    else if (key === "Home") { stopReplay(); show(0, "end"); }
+    else if (key === "End") { stopReplay(); show(N - 1, "end"); }
+    else if (key === "r" || key === "R") replay();
     else if (key === "f" || key === "F") full();
     else if (key === "s" || key === "S") document.body.classList.toggle("toc-open");
     else if (key === "Escape") document.body.classList.remove("toc-open");
@@ -225,6 +242,6 @@
   window.Slides = { show, next, prev, get index() { return k; }, get step() { return step; }, count: N };
 
   let start = parseInt(location.hash.slice(1), 10);
-  show(isNaN(start) ? 0 : start - 1, 0);
+  show(isNaN(start) ? 0 : start - 1, "end");
   if (/[?&]pdf=1\b/.test(location.search)) addEventListener("load", () => setTimeout(printAll, 700));
 })();

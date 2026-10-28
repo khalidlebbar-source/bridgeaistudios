@@ -223,3 +223,5 @@ body.toc-open .toc{transform:none}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 @media (prefers-reduced-motion:reduce){.slide,[data-a],[data-b]{animation:none!important}}
+
+.slide.replaying [data-b]{--dl:0s!important}
