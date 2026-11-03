@@ -827,13 +827,16 @@
     });
     return { M: Mp, Mn: -Mn, V: Vx, xM: S.sections[iM].x, xMn: S.sections[iN].x, xV: S.sections[iV].x };
   }
-  /* vitesse admissible : plus grande vitesse ≤ vEtud telle que le rapport dynamique à plein reste ≤ 1 (dichotomie) */
+  /* vitesse admissible : plus grande vitesse ≤ vEtud telle que le rapport dynamique à plein reste ≤ 1.
+   * Dichotomie sur [0, vEtud] arrêtée à la précision vEtud/256 et arrondie par défaut (même règle que les
+   * exemples d'origine, dont les vitesses sont des multiples de 160/256 = 0,625 km/h). « Aucune » si même
+   * une vitesse nulle ne suffit pas. */
   function vitesseAdmissible(rStat, Lphi, n0, vEtud, unPlusPhiRef, soigne) {
     const r = (v) => rStat * (1 + phiReel(v, Lphi, n0, soigne).phi) / unPlusPhiRef;
     if (r(vEtud) <= 1 + 1e-12) return { v: vEtud, limite: false };
-    let lo = 0, hi = vEtud;
     if (r(0) > 1 - 1e-9) return { v: 0, aucune: true, limite: true };
-    for (let it = 0; it < 60; it++) { const m = (lo + hi) / 2; if (r(m) <= 1) lo = m; else hi = m; }
+    let lo = 0, hi = vEtud;
+    for (let it = 0; it < 8; it++) { const m = (lo + hi) / 2; if (r(m) <= 1) lo = m; else hi = m; }
     return { v: lo, limite: true };
   }
   /* étude de circulation sur une liste d'ouvrages.

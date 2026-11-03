@@ -19,7 +19,7 @@
       desc: 'Semelles superficielles, puits et groupes de pieux ou barrettes sous semelle rigide : portance, tassements, déplacements, frottement négatif, aciers des pieux.' },
     { code: 'APPMOBIL', slug: 'appmobil', statut: 'on', nom: 'Appareils d’appui en élastomère fretté', reg: 'NF EN 1337-3 · guide SETRA 2000 · Livret 2.01',
       desc: 'Dimensionnement et vérification : distorsions, stabilité au flambement, non-glissement, rotation, épaisseur des frettes.' },
-    { code: 'REPHOR', slug: 'rephor', statut: 'dev', nom: 'Efforts horizontaux et appareils d’appui', reg: 'EN 1991-2 · EN 1337-3 · Livret 2.01',
+    { code: 'REPHOR', slug: 'rephor', statut: 'on', nom: 'Efforts horizontaux et appareils d’appui', reg: 'EN 1991-2 · EN 1337-3 · Livret 2.01',
       desc: 'Répartition des efforts de freinage, retrait, dilatation et interaction voie-ouvrage entre les appuis d’un ouvrage multi-travées.' },
     { code: 'MODELPRA', slug: 'modelpra', statut: 'dev', nom: 'Modélisation des ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1998-2',
       desc: 'Structure plane (poutre continue, portique, cadre multiple) sous charges ferroviaires, dénivellations, retrait, dilatation et séisme.' },

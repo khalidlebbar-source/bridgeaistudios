@@ -336,8 +336,8 @@
     const gQ = inp.gQ ?? (rail ? 1.45 : 1.35), gT = inp.gT ?? 1.5, p0T = inp.psi0T ?? 0.6, p2T = inp.psi2T ?? 0.5;
     const p0Q = inp.psi0Q ?? (rail ? 0.8 : 0);
     return [
-      { id: 'ELU1', nom: 'ELU — trafic dominant', etat: 'ELU', cR: 1.0, cT: gT * p0T, cF: gQ, txt: `G + 1,0·Rs + ${gQ}·Qlk + ${fmt2(gT * p0T)}·T` },
-      { id: 'ELU2', nom: 'ELU — température dominante', etat: 'ELU', cR: 1.0, cT: gT, cF: gQ * p0Q, txt: `G + 1,0·Rs + ${gT}·T + ${fmt2(gQ * p0Q)}·Qlk` },
+      { id: 'ELU1', nom: 'ELU — trafic dominant', etat: 'ELU', cR: 1.0, cT: gT * p0T, cF: gQ, txt: `G + 1,0·Rs + ${fmt2(gQ)}·Qlk + ${fmt2(gT * p0T)}·T` },
+      { id: 'ELU2', nom: 'ELU — température dominante', etat: 'ELU', cR: 1.0, cT: gT, cF: gQ * p0Q, txt: `G + 1,0·Rs + ${fmt2(gT)}·T + ${fmt2(gQ * p0Q)}·Qlk` },
       { id: 'ELS1', nom: 'ELS car. — trafic dominant', etat: 'ELS', cR: 1, cT: p0T, cF: 1, txt: `G + Rs + Qlk + ${fmt2(p0T)}·T` },
       { id: 'ELS2', nom: 'ELS car. — température dominante', etat: 'ELS', cR: 1, cT: 1, cF: p0Q, txt: `G + Rs + T + ${fmt2(p0Q)}·Qlk` },
       { id: 'QP', nom: 'ELS quasi permanent', etat: 'ELS', cR: 1, cT: p2T, cF: 0, txt: `G + Rs + ${fmt2(p2T)}·T` },

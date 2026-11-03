@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REPHOR — Efforts horizontaux et appareils d'appui · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/rephor.html">
+<meta name="description" content="Répartition des efforts horizontaux longitudinaux entre les appuis d'un pont multi-travées : retrait, dilatation, freinage-démarrage EN 1991-2, interaction voie-ouvrage, point fixe, raideurs des piles et culées, appareils d'appui en élastomère fretté EN 1337-3, export vers le module APPUI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .schema{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px}
+  .schema text{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink3)}
+  .schema .t-ink{fill:var(--ink2)}
+  .schema .t-gold{fill:var(--gold)}
+  .hid{display:none!important}
+  .sub{font-size:10.5px;color:var(--ink3);margin:12px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .grid-in.wide input,.grid-in.wide select{min-width:62px}
+  .ap-scroll{overflow-x:auto}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin-top:6px}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  td.na{color:#b9bdc6}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
+      <div class="eyebrow">REPHOR · efforts horizontaux</div>
+      <h1>Efforts horizontaux et <em>appareils d’appui</em></h1>
+      <p class="lead">Répartition des efforts longitudinaux (retrait, dilatation, freinage-démarrage, interaction voie-ouvrage) entre les piles et culées d’un ouvrage multi-travées, point fixe, déplacements, souffle des joints et appareils d’appui en élastomère fretté.</p>
+      <div class="badges"><span class="badge">EN 1991-2 §4.4.1 · §6.5.3 · §6.5.4</span><span class="badge">EN 1991-1-5</span><span class="badge">EN 1992-1-1 annexe B</span><span class="badge">EN 1337-3</span><span class="badge">Fasc. 61 titre II</span><span class="badge">Livret 2.01</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDon">Importer un fichier .don</button>
+      <button class="btn" id="bExport">Exporter les fichiers appui</button>
+      <button class="btn sm" id="bDef">Exemple par défaut</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card">
+      <div class="card-title"><span>Ouvrage</span></div>
+      <div class="fields" id="fGen"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Travées</span><small>portées entre axes d’appuis (m)</small></div>
+      <div class="fields" id="fTrav"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Portées séparées par des espaces. Joints : numéros des appuis portant un joint de dilatation (tabliers indépendants de part et d’autre).</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Appuis</span><small>une ligne par file, de l’origine à l’extrémité</small></div>
+      <div class="ap-scroll" id="rAp"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.5">
+        Type : P pile, CR culée enterrée à poteaux rectangulaires (type Robinson), CO culée à poteaux ronds, M mur de front, PX chevêtre sur pieux (D = diamètre), K raideurs saisies.
+        Fûts : nombre, largeur (parallèle à la file), épaisseur haut/bas (sens longitudinal), hauteur libre. Fondation : 0 = encastrée, sinon Kh (kN/m) et Kθ (kN·m/rad) en pied.
+        Appareils : F fixe, E élastomère, G glissant ; pour un appui sous joint, « côté D » = appareils du tablier suivant. Charges par file : G (permanentes), Q (trafic) en kN.
+        Plaque saisie a × b (mm), n feuillets de ti (mm), frettes ts (mm) ; laisser a = 0 pour un dimensionnement automatique.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Matériaux et appareils</span></div>
+      <div class="fields" id="fMat"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Déformations du tablier</span><small>retrait, température</small></div>
+      <div class="fields" id="fDef"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Freinage et interaction</span></div>
+      <div class="fields" id="fFr"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Combinaisons</span><small>EN 1990 annexe A2</small></div>
+      <div class="fields c3" id="fComb"></div>
+    </div>
+    <details class="ref card">
+      <summary>Périmètre et hypothèses</summary>
+      <ul>
+        <li>Modèle linéaire : tablier rigide en effort normal, chaque appui = ressort de tête (fût en console encastrée en pied, en série avec la fondation) relié au tablier par les appareils (fixe : raideur infinie ; élastomère : n·G·A/T ; glissant : frottement μ·N).</li>
+        <li>Raideur des fûts par intégration de la souplesse ∫ z²/EI dz (épaisseur linéaire). Biais : I = Ix·sin²φ + Iy·cos²φ ; les efforts sont donnés dans l’axe de l’ouvrage et projetés HX = H·sinφ, HY = H·cosφ. Culées enterrées : inerties majorées pour la butée des terres (1,825 et 2,54, dossier PP73 du Sétra).</li>
+        <li>Module du béton : instantané pour les actions de courte durée (freinage, part journalière de la température), différé E/(1 + φ) pour le retrait et la température lente. G de l’élastomère : 0,9 MPa (lent) et 1,8 MPa (rapide).</li>
+        <li>Point fixe : point du tablier de déplacement nul sous déformation imposée (raideurs longue durée).</li>
+        <li>Ponts-rails : freinage 20 kN/m ≤ 6000 kN (×α), SW/2 35 kN/m, démarrage 33 kN/m ≤ 1000 kN, coefficient de transmission voie-tablier ξ (0,5 pour voie ballastée en long rail soudé, règle du Livret 2.01). Interaction voie-ouvrage : règle simplifiée q·(L2 − L1) par voie (Livret 2.01 art. 1.4.3.2) et contrôles EN 1991-2 §6.5.4 (δB, δH, longueur dilatable). <b>Pas de modèle non linéaire voie-ouvrage complet</b> : les contraintes additionnelles dans le rail (72 / 92 MPa) ne sont pas calculées ; au-delà des domaines simplifiés, une étude d’interaction spécifique est requise.</li>
+        <li>Ponts-routes : Qlk EN 1991-2 (4.6) avec les α de l’AN française ; Fascicule 61 : A(l) sur la longueur du tablier et un camion Bc.</li>
+        <li>Combinaisons des efforts horizontaux : enveloppes ± sur dilatation/contraction et freinage ; le retrait (γ = 1) est toujours présent. Les efforts verticaux sont saisis par file (descente de charges du tablier).</li>
+        <li>Appareils en élastomère : vérification et dimensionnement par le module APPMOBIL (EN 1337-3 ou guide Sétra 2000), avec les distorsions lentes (glissements imposés) et rapides calculées ici ; les rotations sont saisies par file. Appareils fixes : rapport H/V ELS.</li>
+        <li>Séisme non traité (modèle EN 1998-2 à faire dans APPUI).</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/appmobil.js"></script>
+<script src="js/rephor.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const E = BA.rephor, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'rephor';
+
+  /* ── schémas de saisie ── */
+  const F_GEN = [
+    { id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: '', wide: true },
+    { id: 'ouvrage', label: 'Type d’ouvrage', type: 'sel', def: 'rail', options: [['rail', 'Pont-rail'], ['route', 'Pont-route']] },
+    { id: 'nvoies', label: 'Voies ferrées', def: 2, step: 1 },
+    { id: 'biais', label: 'Biais des appuis', unit: 'gr', def: 100 },
+    { id: 'tablierMat', label: 'Tablier', type: 'sel', def: 'beton', options: [['beton', 'béton / mixte'], ['acier', 'acier']] },
+  ];
+  const F_TRAV = [
+    { id: 'travees', label: 'Portées', unit: 'm', type: 'txt', def: '13.9 13.9 13.9 13.9', wide: true },
+    { id: 'about0', label: 'About côté origine', unit: 'm', def: 0.72 },
+    { id: 'aboutn', label: 'About côté extrémité', unit: 'm', def: 0.72 },
+    { id: 'joints', label: 'Joints sur appuis n°', type: 'txt', def: '', wide: true, help: 'ex. « 2 » : deux tabliers, joint sur l’appui 2' },
+  ];
+  const F_MAT = [
+    { id: 'Emode', label: 'Module du béton', type: 'sel', def: 'bael', options: [['bael', 'BAEL : 11 000·fcj^1/3'], ['ec2', 'EN 1992-1-1 : Ecm']], wide: true },
+    { id: 'fck', label: 'fc28 / fck des appuis', unit: 'MPa', def: 32 },
+    { id: 'phi', label: 'Fluage φ (E différé = E/(1+φ))', def: 2 },
+    { id: 'kbutLong', label: 'Butée culées ⊥ file', def: 1.825 },
+    { id: 'kbutTran', label: 'Butée culées ∥ file', def: 2.54 },
+    { id: 'Gld', label: 'G élastomère lent', unit: 'MPa', def: 0.9 },
+    { id: 'Gcd', label: 'G élastomère rapide', unit: 'MPa', def: 1.8 },
+    { id: 'modeApp', label: 'Appareils en élastomère', type: 'sel', def: 'verif', wide: true, options: [['verif', 'Vérification des plaques saisies'], ['dim', 'Détermination (catalogue EN 1337-3, itérations)'], ['predim', 'Prédimensionnement sous charge ELS maxi']] },
+    { id: 'reglApp', label: 'Référentiel', type: 'sel', def: 'en1337', options: [['en1337', 'EN 1337-3'], ['setra2000', 'Guide Sétra 2000']] },
+    { id: 'sigLim', label: 'σ limite ELS', unit: 'MPa', def: 15 },
+    { id: 'alpha0', label: 'Rotation de pose α0', unit: 'rad', def: 0.003 },
+    { id: 'mu', label: 'Frottement glissants μ', def: 0.05 },
+    { id: 'hvMax', label: 'H/V limite appuis fixes', def: 0.25 },
+  ];
+  const F_DEF = [
+    { id: 'retraitMode', label: 'Retrait', type: 'sel', def: 'saisi', options: [['saisi', 'saisi'], ['ec2', 'EN 1992-1-1 annexe B']] },
+    { id: 'epsRetrait', label: 'εcs saisi', unit: 'm/m', def: 0.0002 },
+    { id: 'fckTab', label: 'fck tablier', unit: 'MPa', def: 35 },
+    { id: 'RH', label: 'Humidité RH', unit: '%', def: 70 },
+    { id: 'h0', label: 'Rayon moyen h0', unit: 'mm', def: 500 },
+    { id: 'ciment', label: 'Ciment', type: 'sel', def: 'N', options: [['S', 'classe S'], ['N', 'classe N'], ['R', 'classe R']] },
+    { id: 'alphaT', label: 'αT', unit: '/°C', def: 0.00001 },
+    { id: 'dTdil', label: 'ΔT dilatation', unit: '°C', def: 35, help: 'EN 1991-1-5 §6.1.3.3 : ΔTN,exp (+ marge pour appareils)' },
+    { id: 'dTcon', label: 'ΔT contraction', unit: '°C', def: 35, help: 'ΔTN,con' },
+    { id: 'dTcd', label: 'ΔT part courte durée', unit: '°C', def: 10, help: 'variation journalière, raideurs instantanées' },
+  ];
+  const F_FR = [
+    { id: 'alpha', label: 'α (LM71, SW0)', def: 1 },
+    { id: 'xi', label: 'Transmission voie → tablier ξ', def: 0.5, help: '1 = intégralité ; 0,5 voie ballastée en LRS (Livret 2.01)' },
+    { id: 'nVoiesFrein', label: 'Voies freinées simultanément', def: 2, step: 1 },
+    { id: 'sw2', label: 'Ligne parcourue par SW/2', type: 'chk', def: true },
+    { id: 'interaction', label: 'Interaction voie-ouvrage (LRS)', type: 'chk', def: true },
+    { id: 'qInter', label: 'Intensité q', unit: 'kN/m/voie', def: 8, help: 'effort = q·(L2 − L1) par voie' },
+    { id: 'appDilatVoie', label: 'Appareils de dilatation de voie', type: 'sel', def: 0, options: [[0, 'aucun'], [1, 'à une extrémité'], [2, 'aux deux extrémités']], wide: true },
+    { id: 'thetaExt', label: 'Rotation d’about θ (δH)', unit: 'rad', def: 0 },
+    { id: 'eExt', label: 'Distance axe rotation – extrados', unit: 'm', def: 0 },
+    { id: 'classeTrafic', label: 'Classe de trafic (pont-route)', type: 'sel', def: 1, options: [[1, '1'], [2, '2']] },
+    { id: 'reglRoute', label: 'Freinage pont-route', type: 'sel', def: 'en', options: [['en', 'EN 1991-2 Qlk'], ['f61', 'Fasc. 61 (A(l), Bc)'], ['max', 'enveloppe des deux']] },
+    { id: 'lch', label: 'Largeur chargeable', unit: 'm', def: 7 },
+    { id: 'classeF61', label: 'Classe Fasc. 61', type: 'sel', def: 1, options: [[1, '1re'], [2, '2e'], [3, '3e']] },
+  ];
+  const F_COMB = [
+    { id: 'gQ', label: 'γQ trafic', def: 1.45 },
+    { id: 'gT', label: 'γ température', def: 1.5 },
+    { id: 'psi0T', label: 'ψ0 température', def: 0.6 },
+    { id: 'psi2T', label: 'ψ2 température', def: 0.5 },
+    { id: 'psi0Q', label: 'ψ0 trafic', def: 0.8 },
+  ];
+  const AP_COLS = [
+    { id: 'nom', label: 'Nom', type: 'txt', def: 'P', w: '46px' },
+    { id: 'type', label: 'Type', type: 'sel', def: 'pile', options: [['pile', 'P'], ['culee', 'CR'], ['culeeRonde', 'CO'], ['mur', 'M'], ['pieux', 'PX'], ['autre', 'K']] },
+    { id: 'nfut', label: 'Fûts', def: 2 },
+    { id: 'larfut', label: 'Larg.', def: 6 },
+    { id: 'esup', label: 'Ép. haut', def: 0.8 },
+    { id: 'einf', label: 'Ép. bas', def: 0.8 },
+    { id: 'hfut', label: 'h fût', def: 9 },
+    { id: 'Khcd', label: 'Kh/Kcd', def: 0 },
+    { id: 'Krcd', label: 'Kθ/Kld', def: 0 },
+    { id: 'app', label: 'App.', type: 'sel', def: 'elasto', options: [['fixe', 'F'], ['elasto', 'E'], ['glissant', 'G']] },
+    { id: 'appD', label: 'Côté D', type: 'sel', def: '', options: [['', '—'], ['fixe', 'F'], ['elasto', 'E'], ['glissant', 'G']] },
+    { id: 'napp', label: 'Nb', def: 4 },
+    { id: 'pa', label: 'a', def: 0 },
+    { id: 'pb', label: 'b', def: 0 },
+    { id: 'pn', label: 'n', def: 0 },
+    { id: 'pti', label: 'ti', def: 12 },
+    { id: 'pts', label: 'ts', def: 3 },
+    { id: 'Gmax', label: 'G (kN)', def: 3000 },
+    { id: 'Qmax', label: 'Q (kN)', def: 2000 },
+    { id: 'rot', label: 'α (rad)', def: 0.001 },
+  ];
+  // exemple par défaut : pont-rail 4 travées de 13,90 m, biais 84,15 gr (géométrie de l'exemple d'origine), charges indicatives
+  const DEF_V = { projet: 'Pont-rail 4 travées — exemple', ouvrage: 'rail', nvoies: 2, biais: 84.15, travees: '13.9 13.9 13.9 13.9', about0: 0.72227, aboutn: 0.72227, joints: '', modeApp: 'dim' };
+  const DEF_AP = [
+    { nom: 'C0', type: 'culee', nfut: 3, larfut: 1, esup: 0.8, einf: 1.4, hfut: 9, Khcd: 0, Krcd: 0, app: 'elasto', appD: '', napp: 4, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 3200, Qmax: 2600, rot: 0.0015 },
+    { nom: 'P1', type: 'pile', nfut: 2, larfut: 6, esup: 0.8, einf: 0.8, hfut: 9, Khcd: 0, Krcd: 0, app: 'elasto', appD: '', napp: 4, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 8400, Qmax: 5000, rot: 0.0006 },
+    { nom: 'P2', type: 'pile', nfut: 2, larfut: 6, esup: 0.8, einf: 0.8, hfut: 9, Khcd: 0, Krcd: 0, app: 'elasto', appD: '', napp: 4, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 7200, Qmax: 4500, rot: 0.0003 },
+    { nom: 'P3', type: 'pile', nfut: 2, larfut: 6, esup: 0.8, einf: 0.8, hfut: 9, Khcd: 0, Krcd: 0, app: 'elasto', appD: '', napp: 4, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 8400, Qmax: 5000, rot: 0.0006 },
+    { nom: 'C4', type: 'culee', nfut: 3, larfut: 1.2, esup: 0.8, einf: 1.8, hfut: 9, Khcd: 0, Krcd: 0, app: 'fixe', appD: '', napp: 1, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 12000, Qmax: 7500, rot: 0.0004 },
+  ];
+
+  /* ── construction des formulaires ── */
+  const saved = BA.store.load(KEY) || {};
+  const V = Object.assign({}, DEF_V, saved.v || {});
+  const ALL = [].concat(F_GEN, F_TRAV, F_MAT, F_DEF, F_FR, F_COMB);
+  const build = (vals) => {
+    BA.form(document.getElementById('fGen'), F_GEN, 'i_', vals);
+    BA.form(document.getElementById('fTrav'), F_TRAV, 'i_', vals);
+    BA.form(document.getElementById('fMat'), F_MAT, 'i_', vals);
+    BA.form(document.getElementById('fDef'), F_DEF, 'i_', vals);
+    BA.form(document.getElementById('fFr'), F_FR, 'i_', vals);
+    BA.form(document.getElementById('fComb'), F_COMB, 'i_', vals);
+  };
+  build(V);
+  const apRows = BA.rows(document.getElementById('rAp'), AP_COLS, (saved.ap || DEF_AP).map((x) => Object.assign({}, x)), { addLabel: 'Ajouter un appui', onChange: () => persist() });
+  document.querySelector('#rAp table').classList.add('wide');
+  const $ = (id) => document.getElementById('i_' + id);
+
+  function vis() {
+    const rail = $('ouvrage').value === 'rail';
+    ['nvoies', 'alpha', 'xi', 'nVoiesFrein', 'sw2', 'interaction', 'qInter', 'appDilatVoie', 'thetaExt', 'eExt'].forEach((k) => $(k).closest('.field').classList.toggle('hid', !rail));
+    ['classeTrafic', 'reglRoute', 'lch', 'classeF61'].forEach((k) => $(k).closest('.field').classList.toggle('hid', rail));
+    const ec2 = $('retraitMode').value === 'ec2';
+    ['fckTab', 'RH', 'h0', 'ciment'].forEach((k) => $(k).closest('.field').classList.toggle('hid', !ec2));
+    $('epsRetrait').closest('.field').classList.toggle('hid', ec2);
+  }
+
+  const readAll = () => BA.read(ALL, 'i_');
+  const nums = (s) => String(s || '').split(/[\s;,]+/).map((x) => parseFloat(x.replace(',', '.'))).filter((x) => Number.isFinite(x));
+  function toInput(v) {
+    const travees = nums(v.travees).filter((x) => x > 0);
+    const appuis = apRows.data.map((a) => {
+      const k = a.type === 'autre';
+      const plaque = +a.pa > 0 && +a.pb > 0 && +a.pn > 0 ? { forme: 'rect', a: a.pa / 1000, b: a.pb / 1000, n: Math.round(a.pn), ti: a.pti / 1000, ts: a.pts / 1000, te: v.reglApp === 'livret' ? 0 : 0.0025, c: 0.005 } : null;
+      return {
+        nom: a.nom, type: a.type, nfut: Math.max(1, Math.round(+a.nfut || 1)), larfut: +a.larfut, esup: +a.esup, einf: +a.einf, hfut: +a.hfut, htot: +a.hfut,
+        encastre: k ? true : !(+a.Khcd > 0 || +a.Krcd > 0), Khcd: k ? 0 : +a.Khcd, Krcd: k ? 0 : +a.Krcd, Kcd: k ? +a.Khcd : 0, Kld: k ? (+a.Krcd || +a.Khcd) : 0,
+        app: a.app, appD: a.appD || undefined, napp: Math.max(1, Math.round(+a.napp || 1)), plaque, Gmax: +a.Gmax || 0, Gmin: +a.Gmax || 0, Qmax: +a.Qmax || 0, rot: +a.rot || 0, biais: v.biais,
+      };
+    });
+    const pT = v.ouvrage === 'route';
+    return Object.assign({}, v, {
+      travees, appuis, joints: nums(v.joints).map(Math.round), biais: v.biais,
+      retraitEC2: { fck: v.fckTab, RH: v.RH, h0: v.h0, ciment: v.ciment },
+      fasc61: true, gQ: v.gQ || (pT ? 1.35 : 1.45), psi0Q: v.psi0Q ?? (pT ? 0 : 0.8),
+    });
+  }
+  function persist() { BA.store.save(KEY, { v: readAll(), ap: apRows.data }); }
+
+  /* ── schéma longitudinal ── */
+  function schema(R) {
+    const G = R.rep.G, rep = R.rep;
+    const W = 760, pad = 40, x0 = G.decks[0].x0, x1 = G.decks[G.decks.length - 1].x1;
+    const sc = (W - 2 * pad) / (x1 - x0), X = (x) => pad + (x - x0) * sc;
+    const yT = 52, yA = 70, yB = 150;
+    let g = '';
+    // tabliers
+    G.decks.forEach((d, k) => {
+      g += `<rect x="${X(d.x0) + (k ? 2 : 0)}" y="${yT - 14}" width="${(d.x1 - d.x0) * sc - (k < G.decks.length - 1 ? 2 : 0) - (k ? 2 : 0)}" height="14" fill="#e7e2d6" stroke="#9a937f"/>`;
+      const xp = rep.pfLD[k];
+      if (Number.isFinite(xp)) g += `<path d="M${X(xp)} ${yT - 22} l-6 -10 h12 z" fill="var(--gold)"/><text x="${X(xp)}" y="${yT - 36}" text-anchor="middle" class="t-gold">point fixe ${fmt(xp, 2)} m</text>`;
+    });
+    // appuis
+    const Hmax = Math.max(1, ...R.parAppui.map((p) => Math.abs(p.combs[0].H.abs)));
+    G.x.forEach((x, j) => {
+      const ap = R.inp.appuis[j];
+      const culee = /culee|mur/.test(ap.type);
+      const w = culee ? 16 : 10;
+      g += `<rect x="${X(x) - w / 2}" y="${yA + 8}" width="${w}" height="${yB - yA - 8}" fill="#f1ede3" stroke="#9a937f"/>`;
+      g += `<rect x="${X(x) - w / 2 - 6}" y="${yB}" width="${w + 12}" height="8" fill="#e7e2d6" stroke="#9a937f"/>`;
+      const ls = G.lignes.filter((l) => l.j === j);
+      ls.forEach((l, i) => {
+        const dx = ls.length > 1 ? (i ? 5 : -5) : 0;
+        const cx = X(x) + dx;
+        if (l.app === 'fixe') g += `<path d="M${cx - 6} ${yA + 8} L${cx} ${yT} L${cx + 6} ${yA + 8} Z" fill="var(--ink2)"/>`;
+        else if (l.app === 'glissant') g += `<rect x="${cx - 6}" y="${yT + 2}" width="12" height="5" fill="#fff" stroke="var(--ink3)"/><circle cx="${cx - 3}" cy="${yT + 10}" r="2" fill="var(--ink3)"/><circle cx="${cx + 3}" cy="${yT + 10}" r="2" fill="var(--ink3)"/>`;
+        else g += `<rect x="${cx - 6}" y="${yT + 1}" width="12" height="${yA + 7 - yT}" fill="#cfe3dd" stroke="var(--teal)"/>`;
+      });
+      g += `<text x="${X(x)}" y="${yB + 22}" text-anchor="middle" class="t-ink">${esc(ap.nom || 'A' + j)}</text>`;
+      // flèche effort ELU
+      const H = R.parAppui[j].combs[0].H.abs, L = 8 + 34 * H / Hmax;
+      g += `<line x1="${X(x)}" y1="${yA + 24}" x2="${X(x) + L}" y2="${yA + 24}" stroke="var(--red)" stroke-width="1.6" marker-end="url(#ah)"/><text x="${X(x) + 3}" y="${yA + 38}" font-size="10" fill="var(--red)">${fmt(H, 0)}</text>`;
+    });
+    G.L.forEach((l, i) => { g += `<text x="${(X(G.x[i]) + X(G.x[i + 1])) / 2}" y="${yB + 22}" text-anchor="middle">${fmt(l, 2)} m</text>`; });
+    return `<svg class="schema" viewBox="0 0 ${W} ${yB + 34}" role="img" aria-label="Schéma longitudinal"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--red)"/></marker></defs>${g}</svg>
+      <div class="legend"><span><svg width="14" height="10"><path d="M1 10 L7 0 L13 10Z" fill="#3c3f4d"/></svg>fixe</span><span><svg width="14" height="10"><rect x="1" y="0" width="12" height="10" fill="#cfe3dd" stroke="#0f8f7b"/></svg>élastomère</span><span><svg width="14" height="10"><rect x="1" y="0" width="12" height="5" fill="#fff" stroke="#6f7484"/></svg>glissant</span><span style="color:var(--red)">→ |H| ELU trafic dominant (kN)</span></div>`;
+  }
+
+  /* ── affichage ── */
+  let last = null;
+  const f0 = (x) => fmt(x, 0), f1 = (x) => fmt(x, 1), f2 = (x) => fmt(x, 2), mm = (x) => fmt(x * 1000, 2), K = (x) => (Number.isFinite(x) ? (x > 1e12 ? '∞' : f0(x)) : '—');
+  const APPL = { fixe: 'fixe', elasto: 'élastomère', glissant: 'glissant' };
+  function render(R) {
+    const rep = R.rep, G = rep.G, A = rep.A, inp = R.inp;
+    const nom = (j) => esc(inp.appuis[j].nom || 'Appui ' + j);
+    let h = '';
+    // indicateurs
+    const pd = rep.parDeck;
+    const kp = [
+      { l: 'Longueur totale', v: f2(G.Ltot), u: 'm', n: `${G.L.length} travée(s), ${G.decks.length} tablier(s)` },
+      { l: 'Point fixe (L.T.)', v: rep.pfLD.map((x) => f2(x)).join(' / '), u: 'm', n: 'abscisse depuis l’axe de l’appui 0', hi: true },
+      { l: rep.rail ? 'Freinage-démarrage' : 'Freinage', v: f0(Math.max(...pd.map((o) => o.frein.total))), u: 'kN', n: rep.rail ? `ξ = ${fmt(inp.xi, 2)}, ${pd[0].frein.nch} voie(s)` : 'Qlk' },
+      { l: 'Déplacement sous freinage', v: fmt(Math.max(...pd.map((o) => o.deltaB)) * 1000, 2), u: 'mm', cls: R.verifsRail && !R.verifsRail.every((v) => v.okB) ? 'ko' : '', n: rep.rail ? `δB ≤ ${fmt(R.verifsRail[0].limB * 1000, 0)} mm` : '' },
+    ];
+    h += BA.card('Synthèse', BA.kpis(kp) + '<div style="margin-top:12px">' + schema(R) + '</div>');
+
+    // tableau des appuis en lignes
+    const rowsAp = rep.app.map((ap, j) => {
+      const RA = rep.RA[j], ls = G.lignes.map((l, i) => [l, i]).filter(([l]) => l.j === j);
+      const appTxt = ls.map(([l, i]) => `${APPL[l.app]}${l.app === 'elasto' && R.plaques[j] ? ` ${R.plaques[j].a * 1000}×${R.plaques[j].b * 1000} n=${R.plaques[j].n}` : ''}`).join(' | ');
+      const Kb = ls.map(([, i]) => K(rep.RB[i].cd)).join(' | ');
+      return [nom(j), E.TYPES_APPUI[ap.type].split(',')[0], f2(G.x[j]), K(RA.Kfcd), K(RA.Kfld), `${ap.napp} × ${appTxt}`, Kb, K(rep.Keq[j].cd), K(rep.Keq[j].ld)];
+    });
+    h += BA.card('Appuis et raideurs', BA.table(['Appui', 'Type', 'x (m)', 'K fût C.T.', 'K fût L.T.', 'Appareils', 'K app. C.T.', 'K total C.T.', 'K total L.T.'], rowsAp, { leftText: true, caption: 'Raideurs en kN/m dans l’axe de l’ouvrage (biais pris en compte). K total = appareils en série avec le fût et la fondation.' }));
+
+    // efforts par action
+    const rowsH = rep.app.map((ap, j) => {
+      const p = R.parAppui[j];
+      return [nom(j), f2(p.R), f2(p.TdCD), f2(p.Td), f2(p.Tc), rep.rail ? (A.inter ? '± ' + f2(p.I) : '—') : '—', '± ' + f2(p.F)];
+    });
+    const sum = (k) => R.parAppui.reduce((s, p) => s + p[k], 0);
+    rowsH.push(['<b>Σ</b>', f2(sum('R')), f2(sum('TdCD')), f2(sum('Td')), f2(sum('Tc')), rep.rail && A.inter ? f2(sum('I')) : '—', f2(sum('F'))]);
+    h += BA.card('Efforts horizontaux par action', BA.table(['Appui', 'Retrait', 'Dilat. C.D.', 'Dilatation', 'Contraction', 'Interaction', 'Freinage'], rowsH, { leftText: true, caption: 'H (kN) sur la tête d’appui, > 0 dans le sens des abscisses croissantes. Interaction : toutes voies, total ± ; freinage : enveloppe des tabliers chargés.' })
+      + BA.table(['Appui', 'Retrait', 'Dilatation', 'Contraction', 'Interaction', 'Freinage'], rep.app.map((ap, j) => { const p = R.parAppui[j]; return [nom(j), mm(p.wR), mm(p.wTd), mm(p.wTc), A.inter ? mm(p.wI) : '—', mm(p.wF)]; }), { leftText: true, caption: 'Déplacements en tête d’appui (mm).' }));
+
+    // combinaisons
+    const rowsC = rep.app.map((ap, j) => [nom(j)].concat(R.parAppui[j].combs.map((c) => `${f1(c.H.min)} / ${f1(c.H.max)}`)));
+    h += BA.card('Combinaisons', BA.table(['Appui'].concat(R.C.map((c) => c.nom)), rowsC, { leftText: true, caption: 'Hmin / Hmax (kN) dans l’axe de l’ouvrage. ' + R.C.map((c) => `${c.id} : ${c.txt}`).join(' · ') }));
+
+    // freinage détail
+    const frRows = [];
+    pd.forEach((o) => o.frein.cas.forEach((c) => frRows.push([`Tablier ${o.k + 1}`, c.nom, f2(c.L), f1(c.F), f1(c.Ft ?? c.F)])));
+    let frH = BA.table(['Tablier', 'Action', 'L (m)', 'F (kN)', rep.rail ? 'F × ξ (kN)' : 'F (kN)'], frRows, { leftText: true });
+    if (rep.rail && A.inter) {
+      frH += BA.table(['Tablier', 'Point fixe (m)', 'L1 (m)', 'L2 (m)', 'q·(L2 − L1) par voie (kN)', 'Total (kN)'], pd.map((o) => [`Tablier ${o.k + 1}`, f2(o.inter.xpf), f2(o.inter.L1), f2(o.inter.L2), f1(o.inter.parVoie), f1(o.inter.total)]), { leftText: true, caption: 'Interaction voie-ouvrage, règle simplifiée (rail continu soudé).' });
+    }
+    h += BA.card(rep.rail ? 'Freinage, démarrage et interaction' : 'Freinage', frH);
+
+    // vérifications ponts-rails
+    if (R.verifsRail) {
+      const rv = R.verifsRail.map((v) => [`Tablier ${v.k + 1}`, `${mm(v.deltaB)} ≤ ${mm(v.limB)}`, BA.verdict(v.okB), `${f1(v.LT)} ≤ ${v.LTmax}`, BA.verdict(v.okLT), v.dH ? `${mm(v.dH)} ≤ 8` : '—', v.dH ? BA.verdict(v.okH) : '']);
+      h += BA.card('Interaction voie-ouvrage — EN 1991-2 §6.5.4', BA.table(['Tablier', 'δB (mm)', '', 'Longueur dilatable LT (m)', '', 'δH (mm)', ''], rv, { leftText: true })
+        + '<div class="msg info" style="margin-top:8px">Méthode simplifiée : les contraintes additionnelles dans le rail (72 MPa en compression, 92 MPa en traction) ne sont pas calculées. Hors de ces conditions (LT, δB) ou pour une voie sur dalle, une étude d’interaction non linéaire est nécessaire.</div>');
+    }
+
+    // joints
+    h += BA.card('Souffle des joints', BA.table(['Joint', 'Retrait', 'Dilatation', 'Contraction', 'Freinage ±', 'Ouverture max', 'Fermeture max'], R.joints.map((j) => [esc(j.lieu), mm(j.relR), mm(j.relTd), mm(j.relTc), mm(j.F), mm(j.ouvMax), mm(j.fermMax)]), { leftText: true, caption: 'Variation d’ouverture (mm, > 0 ouverture) entre l’about du tablier et la culée ou le tablier voisin ; enveloppe des combinaisons ELU et ELS.' }));
+
+    // appareils
+    let apH = '';
+    const apRows2 = R.app.map((a) => {
+      const j = a.j, lab = nom(j) + (a.cote ? ` (${a.cote === 'G' ? 'côté G' : 'côté D'})` : '');
+      if (a.app === 'elasto') {
+        if (!a.res || a.res.echec) return [lab, 'élastomère', '—', '—', '—', BA.verdict(false, '', 'aucun appareil du catalogue')];
+        const p = a.res.plaque, w = a.res.crit.filter((c) => Number.isFinite(c.taux)).sort((x, y) => y.taux - x.taux)[0];
+        return [lab, `${a.n} × ${p.a * 1000}×${p.b * 1000} — ${p.n}×${p.ti * 1000} + ${p.ts * 1000} mm`, f2(a.res.tauxMax), w ? esc(w.nom) : '', a.res.tass ? f0(a.res.tass.Kv / 1000) + ' kN/mm' : '—', BA.verdict(a.res.okSel)];
+      }
+      if (a.app === 'fixe') return [lab, 'fixe', f2(a.HV / a.HVlim), `H/V ELS = ${f2(a.HV)} (≤ ${a.HVlim})`, '—', BA.verdict(a.ok, 'Vérifié', 'Ancrages nécessaires')];
+      return [lab, 'glissant', '—', `frottement μ·N = ${f1(a.Hf)} kN`, '—', BA.verdict(true)];
+    });
+    apH += BA.table(['File', 'Appareil', 'Taux max', 'Critère déterminant', 'Kv', 'Verdict'], apRows2, { leftText: true });
+    const det = R.app.filter((a) => a.app === 'elasto' && a.res && a.res.crit);
+    if (det.length) {
+      apH += '<div class="sub">Détail des critères (EN 1337-3 / guide Sétra)</div>';
+      apH += BA.table(['File', 'Critère', 'Valeur', 'Limite', 'Taux', ''], det.flatMap((a) => a.res.crit.map((c) => [nom(a.j), esc(c.nom), fmt(c.val, 3) + (c.unit ? ' ' + c.unit : ''), fmt(c.lim, 3), f2(c.taux), BA.verdict(c.ok, 'OK', c.sel === false ? 'à traiter' : 'NON')])), { leftText: true });
+    }
+    h += BA.card('Appareils d’appui', apH, R.inp.modeApp === 'dim' ? `déterminés en ${R.iterations} itération(s)` : '');
+
+    document.getElementById('out').innerHTML = h;
+  }
+
+  function calc() {
+    persist();
+    vis();
+    try {
+      const inp = toInput(readAll());
+      const R = E.calc(inp);
+      last = R;
+      render(R);
+    } catch (e) {
+      last = null;
+      document.getElementById('out').innerHTML = BA.card('Erreur', `<div class="msg err">${esc(e.message || e)}</div>`);
+      if (typeof console !== 'undefined') console.error(e);
+    }
+  }
+
+  function note() {
+    if (!last) return;
+    const R = last, rep = R.rep, inp = R.inp;
+    const out = document.getElementById('out').cloneNode(true);
+    const secs = [...out.querySelectorAll('.card')].map((c) => ({ titre: c.querySelector('.card-title span').textContent, html: [...c.childNodes].filter((n) => !(n.classList && n.classList.contains('card-title'))).map((n) => n.outerHTML || n.textContent).join('') }));
+    const hyp = `<div class="formula">Tablier rigide en effort normal ; appui = fût (console encastrée en pied, ∫ z²/EI dz) + fondation + appareils en série.
+E béton : ${inp.Emode === 'bael' ? 'BAEL 11 000·fcj^1/3' : 'EN 1992-1-1 Ecm'} = ${f0(E.modules(inp).Ecd)} MPa (C.T.), ${f0(E.modules(inp).Eld)} MPa (L.T., φ = ${inp.phi}).
+G élastomère : ${inp.Gld} MPa (lent), ${inp.Gcd} MPa (rapide). Biais ${inp.biais} gr : I = Ix·sin²φ + Iy·cos²φ.
+Retrait εcs = ${fmt(rep.eps.eR * 1e6, 0)} µm/m ; dilatation ${fmt(rep.eps.eDil * 1e6, 0)} µm/m ; contraction ${fmt(rep.eps.eCon * 1e6, 0)} µm/m dont courte durée ${fmt(rep.eps.eCD * 1e6, 0)} µm/m.
+${rep.rail ? `Freinage EN 1991-2 §6.5.3 : 20 kN/m ≤ 6000 kN ×α (α = ${inp.alpha}), SW/2 35 kN/m, démarrage 33 kN/m ≤ 1000 kN ; ξ = ${inp.xi}.
+Interaction voie-ouvrage : q = ${inp.qInter} kN/m par voie × (L2 − L1) — méthode simplifiée, pas de modèle non linéaire.` : 'Freinage EN 1991-2 (4.6) : Qlk = 0,6 αQ1 2Q1k + 0,10 αq1 q1k w1 L, 180 αQ1 ≤ Qlk ≤ 900 kN ; Fasc. 61 : A(l)·S/(20 + 0,0035 S), Bc 300 kN.'}</div>`;
+    const data = BA.table(['Appui', 'Type', 'Fûts', 'Ép. haut / bas', 'h', 'Appareils', 'G (kN)', 'Q (kN)'], inp.appuis.map((a, j) => [esc(a.nom || 'A' + j), E.TYPES_APPUI[a.type], a.type === 'autre' ? '—' : `${a.nfut} × ${f2(a.larfut)}`, a.type === 'autre' ? '—' : `${f2(a.esup)} / ${f2(a.einf)}`, f2(a.hfut), `${a.napp} × ${APPL[a.app]}${a.appD ? ' | ' + APPL[a.appD] : ''}`, f0(a.Gmax), f0(a.Qmax)]), { leftText: true })
+      + `<p>Portées : ${rep.G.L.map((l) => f2(l)).join(' + ')} m ; abouts ${f2(inp.about0 || 0)} / ${f2(inp.aboutn || 0)} m.</p>`;
+    BA.note({ titre: 'Efforts horizontaux et appareils d’appui', code: 'REPHOR', regl: 'EN 1991-2 · EN 1991-1-5 · EN 1992-1-1 · EN 1337-3 · Fasc. 61 · Livret 2.01', projet: inp.projet,
+      sections: [{ titre: 'Hypothèses', html: hyp }, { titre: 'Données', html: data }].concat(secs) });
+  }
+
+  function exportAppuis() {
+    if (!last) return;
+    const ex = E.exportAppuis(last);
+    BA.store.download('rephor-appuis.json', { format: 'BA.rephor.appuis', version: 1, projet: last.inp.projet || '', appuis: ex });
+  }
+
+  function load(obj) {
+    const v = Object.assign({}, DEF_V, obj.v || {});
+    build(v);
+    apRows.set((obj.ap || DEF_AP).map((x) => Object.assign({}, x)));
+    document.querySelector('#rAp table').classList.add('wide');
+    bindForms();
+    calc();
+  }
+  function fromDon(txt) {
+    const p = E.parseDon(txt);
+    const v = Object.assign({}, DEF_V, {
+      projet: p.projet, ouvrage: p.ouvrage, nvoies: p.nvoies, biais: p.biais, travees: p.travees.join(' '), about0: p.about0, aboutn: p.aboutn, joints: '',
+      Emode: 'bael', fck: p.fck, phi: 2, kbutLong: p.kbutLong, kbutTran: p.kbutTran, Gld: p.Gld, Gcd: p.Gcd, modeApp: p.modeApp, sigLim: p.sigLim, alpha0: p.alpha0, mu: p.mu, hvMax: p.hvMax,
+      retraitMode: 'saisi', epsRetrait: p.epsRetrait, alphaT: 1e-5, dTdil: p.dTdil, dTcon: p.dTcon, dTcd: p.dTcd,
+      alpha: p.alpha, xi: p.xi, qInter: p.qInter, appDilatVoie: p.appDilatVoie, lch: p.lch, classeF61: p.classeF61,
+    });
+    const ap = p.appuis.map((a) => ({ nom: a.nom, type: a.type, nfut: a.nfut, larfut: a.larfut, esup: a.esup, einf: a.einf, hfut: a.hfut,
+      Khcd: a.type === 'autre' ? a.Kcd : (a.encastre ? 0 : a.Khcd), Krcd: a.type === 'autre' ? a.Kld : (a.encastre ? 0 : a.Krcd),
+      app: a.app, appD: '', napp: a.napp, pa: a.plaque ? a.plaque.a * 1000 : 0, pb: a.plaque ? a.plaque.b * 1000 : 0, pn: a.plaque ? a.plaque.n : 0, pti: a.plaque ? a.plaque.ti * 1000 : 12, pts: a.plaque ? a.plaque.ts * 1000 : 3,
+      Gmax: a.Gmax || 0, Qmax: 0, rot: 0 }));
+    load({ v, ap });
+    const n = document.createElement('div');
+    n.className = 'msg info'; n.style.marginBottom = '10px';
+    n.textContent = 'Fichier .don importé. Les descentes de charges des fichiers appui d’origine ne sont pas relues : seule la réaction ELS maxi de prédimensionnement est reprise en G ; compléter G, Q et les rotations par file. Avec le Livret 2.01 (« typcalappapp »), les plaques saisies sont reprises en dimensions NF.';
+    document.getElementById('out').prepend(n);
+  }
+
+  function bindForms() {
+    document.querySelectorAll('.col-in input, .col-in select').forEach((e) => { e.onchange = () => { vis(); persist(); }; });
+  }
+  bindForms();
+  document.getElementById('bCalc').onclick = calc;
+  document.getElementById('bNote').onclick = note;
+  document.getElementById('bExport').onclick = exportAppuis;
+  document.getElementById('bSave').onclick = () => BA.store.download('rephor.json', { module: 'rephor', version: 1, v: readAll(), ap: apRows.data });
+  document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { load(JSON.parse(txt)); } catch (e) { alert('Fichier illisible : ' + e.message); } });
+  document.getElementById('bDon').onclick = () => BA.store.pick('.don', (txt) => { try { fromDon(txt); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
+  document.getElementById('bDef').onclick = () => load({ v: DEF_V, ap: DEF_AP });
+  vis(); calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
