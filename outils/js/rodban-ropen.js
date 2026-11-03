@@ -73,7 +73,7 @@
     classe: 2, charges: { LM1: true, LM2: true, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
     appareils: { yC: [1.38, 3.48, 5.58, 7.68], yP: [1.38, 3.58, 5.48, 7.68], kv: 0 },
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
-    plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
   };
   const DEF_ROPEN = {
     type: 'ropen', projet: 'Pont-route à poutrelles enrobées — 3 travées biaises', methode: 'plaque', regl: 'ec',
@@ -85,7 +85,7 @@
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
     ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 345, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10,
       percage: { espEnt: 4.85, rangEnt: 0.2, dTrouEnt: 0.03, zEnt: 0.09, espFer: 0.3, dTrouFer: 0.04, zFer: 0.05, aboutFer: 0.1 } },
-    plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
   };
 
   /* ══════════════════ 2. Géométrie transversale, charges permanentes ══════════════════ */
@@ -204,7 +204,9 @@
     const xi = [], kindX = [];
     const pushSeg = (a, b, n, k) => { for (let i = (xi.length ? 1 : 0); i <= n; i++) { xi.push(a + (b - a) * i / n); kindX.push(k); } };
     if (cg > EPS) pushSeg(-cg, 0, Math.max(1, Math.round(cg / (L[0] / (ns * mult)) )), 'cg');
-    for (let t = 0; t < nT; t++) pushSeg(xa[t], xa[t + 1], ns * mult, 't' + t);
+    // travées : ns intervalles de section, « mult » éléments chacun ; intervalles d'about raffinés (×2) pour l'effort
+    // tranchant à la distance d des appareils ponctuels
+    for (let t = 0; t < nT; t++) for (let k = 0; k < ns; k++) { const a = xa[t] + L[t] * k / ns, b = xa[t] + L[t] * (k + 1) / ns; pushSeg(a, b, (k === 0 || k === ns - 1) ? 2 * mult : mult, 't' + t); }
     if (cd > EPS) pushSeg(xa[nT], xa[nT] + cd, Math.max(1, Math.round(cd / (L[nT - 1] / (ns * mult)))), 'cd');
     // cotangente du biais le long de l'axe : constante dans les encorbellements, linéaire entre lignes d'appui
     const cotAt = (x) => {
@@ -231,7 +233,8 @@
       elems.push({ n, i, j, yc: (yy[j] + yy[j + 1]) / 2 });
     }
     const iAppui = xa.map((x) => xi.findIndex((v) => Math.abs(v - x) < 1e-7));
-    return { xi, yy, nx, ny, nodes, elems, id, xa, cotA, cotAt, iAppui, kindX, mult, ns };
+    const iSec = (t, k) => xi.findIndex((v) => Math.abs(v - (xa[t] + L[t] * k / ns)) < 1e-7);
+    return { xi, yy, nx, ny, nodes, elems, id, xa, cotA, cotAt, iAppui, iSec, kindX, mult, ns };
   }
 
 
@@ -700,7 +703,7 @@
       return js;
     })();
     for (let t = 0; t < nT; t++) for (let k = (t ? 1 : 0); k <= ns; k++) {
-      const i = M.iAppui[t] + k * M.mult;
+      const i = M.iSec(t, k);
       secs.push({ i, x: M.xi[i], travee: t, k, kind: 't', side: k === 0 ? 'd' : k === ns ? 'g' : '' });
     }
     return { secs, fibJ };
@@ -747,11 +750,17 @@
         // effort tranchant : sur une ligne d'appui, de chaque côté (la moyenne des deux côtés s'annulerait)
         const surApp = s.k === 0 || s.k === d.sections;
         // sur appui : effort tranchant à une distance ≈ d de la ligne d'appui, de part et d'autre (EN 1992-1-1 §6.2.1 (8))
-        const dEff = G.h - +d.mat.dInf, iAt = (sg) => { let i = s.i; while (i + sg >= 0 && i + sg < M.nx && Math.abs(M.xi[i] - M.xi[s.i]) < dEff - 1e-6 && Math.abs(M.xi[i + sg] - M.xi[s.i]) <= dEff + 0.5 * Math.abs(M.xi[i + sg] - M.xi[i])) i += sg; return i === s.i ? clamp(s.i + sg, 0, M.nx - 1) : i; };
-        const nG = M.id(iAt(-1), j), nD = M.id(iAt(1), j);
-        const noms = ['mx', 'my', 'mxy', 'qx'], gs = [gMoment(M, S, node, 0), gMoment(M, S, node, 1), gMoment(M, S, node, 2), gShear(M, S, surApp ? nG : node)];
+        const dEff = G.h - +d.mat.dInf;
+        const gAt = (sg) => { // qx interpolé linéairement entre les deux lignes de nœuds encadrant la distance d
+          let i = s.i; while (i + sg >= 0 && i + sg < M.nx && Math.abs(M.xi[i + sg] - M.xi[s.i]) < dEff) i += sg;
+          const i2 = clamp(i + sg, 0, M.nx - 1), d1 = Math.abs(M.xi[i] - M.xi[s.i]), d2 = Math.abs(M.xi[i2] - M.xi[s.i]);
+          const t = d2 > d1 ? clamp((dEff - d1) / (d2 - d1), 0, 1) : 0, g1 = gShear(M, S, M.id(i, j)), g2 = gShear(M, S, M.id(i2, j));
+          for (let k = 0; k < g1.length; k++) g1[k] = g1[k] * (1 - t) + g2[k] * t;
+          return g1;
+        };
+        const noms = ['mx', 'my', 'mxy', 'qx'], gs = [gMoment(M, S, node, 0), gMoment(M, S, node, 1), gMoment(M, S, node, 2), (surApp ? gAt(-1) : gShear(M, S, node))];
         const Us = S.solveN(gs);
-        if (surApp) { noms.push('qx2'); const g2 = gShear(M, S, nD); gs.push(g2); Us.push(S.solve(g2)); }
+        if (surApp) { noms.push('qx2'); const g2 = gAt(1); gs.push(g2); Us.push(S.solve(g2)); }
         for (let a = 0; a < noms.length; a++) {
           const nom = noms[a], g = gs[a], c = cases(etaOf(Us[a]));
           const den = nom === 'mx' ? denEnv((r) => r.sec[kb].M / G.Bs) : nom === 'qx' || nom === 'qx2' ? denEnv((r) => r.sec[kb].V / G.Bs) : { max: 0, min: 0 };
@@ -804,7 +813,7 @@
     // flèche dans l'axe à mi-travée : G (module instantané) et trafic caractéristique
     const jAx = M.yy.reduce((b, v, j) => (Math.abs(v - G.yc) < Math.abs(M.yy[b] - G.yc) ? j : b), 0);
     const wMid = d.travees.map((L, t) => {
-      const i = M.iAppui[t] + Math.round(d.sections / 2) * M.mult, node = M.id(i, jAx), e = new Float64Array(S.nd); e[3 * node] = 1;
+      const i = M.iSec(t, Math.round(d.sections / 2)), node = M.id(i, jAx), e = new Float64Array(S.nd); e[3 * node] = 1;
       const c = cases(etaOf(S.solve(e)));
       return { t, x: M.xi[i], G: caseU.map((u) => u.U[3 * node]), q: c.q };
     });
@@ -846,11 +855,12 @@
       const recV = { g: catsM.map((r) => r.sec[k].V * per), den: denEnv((r) => r.sec[k].V * per), q: scale(envAt(L.V, t), t, true) };
       Object.values(recV.q).forEach((v) => { v.max *= per; v.min *= per; });
       const cM = combiner(recM, cats, 'f61'), cV = combiner(recV, cats, 'f61');
-      return { x: s.x, travee: t, kind: 't', side: s.side, k, Mx: cM, V: cV, recM, recV, fib: null };
+      const kl = Math.round((s.x - sum(d.travees.slice(0, t))) / d.travees[t] * d.sections);
+      return { x: s.x, travee: t, kind: 't', side: s.side, k: kl, kSP: k, Mx: cM, V: cV, recM, recV, fib: null };
     });
     // flexion transversale à mi-travée (Guyon-Massonnet : charges d'exploitation × δ ; superstructures)
     secs.forEach((s) => {
-      if (Math.abs(s.x - (sum(d.travees.slice(0, s.travee)) + d.travees[s.travee] / 2)) > 1e-6) return;
+      if (s.k !== Math.round(d.sections / 2)) return;
       const f = Kt[s.travee].f, q = {};
       for (const [k, c] of Object.entries(f.cas)) {
         const key = k === 'trottoir' ? 'trott' : k, mod = { AL: 'AL', Bc: 'BC', Bt: 'BT', Mc80: 'MC80', Mc120: 'MC120' }[k];
@@ -1149,7 +1159,7 @@
     }
     const n = (k, def = 0) => { const x = parseFloat(String(v[k] ?? '').replace(',', '.')); return Number.isFinite(x) ? x : def; };
     if (v.application && !/RODBAN|ROPEN/i.test(v.application)) throw new Error('Ce fichier n’est pas un fichier de données RODBAN-ROPEN.');
-    const ropen = Math.round(n('typetablier', 0)) === 1;
+    const ropen = Math.round(n('typstruct', 0)) === 1;
     const nt = Math.max(1, Math.min(7, Math.round(n('nbtrav', 1))));
     const trav = Array.from({ length: nt }, (_, k) => n('lontrav' + (k + 1)));
     const dG = n('dishouintgcg', 0.5), dD = n('dishouintgcd', 0.5);
@@ -1183,7 +1193,7 @@
       charges: { LM1: true, LM2: false, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
       appareils: { yC: posApp(nC, ecart('dishouapprivcul', 1), ecart('eaxeapprivcul', 2), ecart('eaxeappcencul', 2)), yP: posApp(nP, ecart('dishouapprivpil', 1), ecart('eaxeapprivpil', 2), ecart('eaxeappcenpil', 2)), kv: 0 },
       mat: { fck: n('fc28tab', 32), fe: n('fetab', 500), fissuration: Math.max(0, Math.round(n('fissur', 2)) - 1), dSup: n('dcdgsup', 0.07), dInf: n('dcdginf', 0.07), phi: n('coeffluage', 2) },
-      plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
+      plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
     };
     d.appareils.yC = ySym(d.appareils.yC); d.appareils.yP = ySym(d.appareils.yP);
     if (ropen) {

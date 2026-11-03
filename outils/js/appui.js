@@ -344,7 +344,7 @@
       const HX = rep ? HXt * c - HYt * s : HXt, HY = rep ? HXt * s + HYt * c : HYt, dy = rep ? num(a.dy) / c : num(a.dy);
       const cdDef = { Gmax: 0, Gmin: 0, GD: 0, R: 0, Td: d.partCDT, Tc: d.partCDT }[a.cat];
       const cd = Number.isFinite(+a.cd) && a.cd !== '' && a.cd !== undefined ? +a.cd : (cdDef === undefined ? 1 : cdDef);
-      return act({ id: 't' + k, nom: a.nom || ('Action ' + (k + 1)), cat: a.cat, qt: a.qt || '', etatG: a.etatG || '', tab: true,
+      return act({ id: 't' + k, nom: a.nom || ('Action ' + (k + 1)), cat: a.cat, qt: a.qt || '', etatG: a.etatG || '', tab: !(num(a.dx) !== 0 && G.chev),
         F: [HX, HY, num(a.V), num(a.MX), num(a.MY), 0], P: [G.xApp + num(a.dx), dy, G.zApp], cd, cible: num(a.dx) !== 0 && G.chev ? 'chevx' : 'tab' });
     });
   }
@@ -614,7 +614,7 @@
 
   /* efforts dans les fûts (sections de calcul) et le chevêtre pour chaque action élémentaire */
   function effetsElements(d, G, acts, M) {
-    const ns = 5, zs = []; for (let k = 0; k <= ns; k++) zs.push(G.zTS + G.hF * k / ns);
+    const ns = 4, zs = []; for (let k = 0; k <= ns; k++) zs.push(G.zTS + G.hF * k / ns);
     const nF = G.nF;
     const eff = {};
     for (const a of acts) {
@@ -682,7 +682,7 @@
     return mat;
   }
   const typeELU = (d, etat, hasCD) => (etat === 'ACC' ? 4 : etat === 'SIS' ? 5 : d.regl === 'EC' ? 1 : (hasCD ? 3 : 1));
-  const bisect = (f, lo, hi) => { if (f(lo)) return lo; if (!f(hi)) return null; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; if (f(m)) hi = m; else lo = m; if (hi - lo < 1e-3) break; } return hi; };
+  const bisect = (f, lo, hi) => { if (f(lo)) return lo; if (!f(hi)) return null; for (let i = 0; i < 50; i++) { const m = (lo + hi) / 2; if (f(m)) hi = m; else lo = m; if (hi - lo < Math.max(0.05, 2e-3 * hi)) break; } return hi; };
 
   /* section rectangulaire b × h, nappe tendue unique (semelle, chevêtre) : M > 0 tend la fibre inférieure (convention
    * de ce module) ; BA.sectionBA : M > 0 comprime la fibre inférieure → M_sba = −M. */
@@ -697,6 +697,7 @@
 
   /* fûts : par section, enveloppe ELU (avec excentricités additionnelles) et ELS ; section circulaire (aciers totaux) ou
    * rectangulaire (aciers symétriques sur les deux grandes faces pour My, sur les petites faces pour Mx) */
+  const VAR_ACC = new Set(['QT', 'QD', 'PQ', 'R', 'Tc', 'Td']);
   function calculFuts(d, G, acts, combs, eff, zs, mat) {
     if (!G.nF) return null;
     const f = d.geo.fut, c = num(d.mat.cFut, 0.05), rond = f.forme === 'rond';
@@ -708,31 +709,39 @@
       const secs = zs.map((z, k) => {
         const rows = combs.map((cb) => {
           let T = [0, 0, 0, 0, 0], Mg = 0, hasCD = false;
+          // actions variables d'accompagnement retenues seulement si défavorables pour le moment recherché (« γ ou 0 »)
+          let sM = 0;
+          for (const a of acts) { const co = cb.f[a.id]; if (co && co[1] && eff[a.id]) sM += co[1] * eff[a.id].fut[i][k][4]; }
           for (const a of acts) {
             const co = cb.f[a.id]; if (!co || !co[1] || !eff[a.id]) continue;
             const v = eff[a.id].fut[i][k];
+            if (VAR_ACC.has(a.cat) && co[1] * v[4] * sM < 0) continue;
             for (let j = 0; j < 5; j++) T[j] += co[1] * v[j];
             if (permCats.has(a.cat)) Mg += co[1] * Math.hypot(v[3], v[4]);
             if (a.cd > 0 && (v[0] || v[4] || v[3])) hasCD = true;
           }
           return { cb, N: T[0], Vx: T[1], Vy: T[2], Mx: T[3], My: T[4], Mg, hasCD };
         });
-        const elu = rows.filter((r) => /^ELU/.test(r.cb.type)), els = rows.filter((r) => r.cb.type === 'ELS Rare' || (d.regl === 'EC' && r.cb.etat === 'QP'));
+        // combinaisons candidates (les plus forts moments et excentricités) : évite de dimensionner chaque combinaison
+        const cand = (arr, mfn) => { const by = (fn, n) => arr.slice().sort((a, b) => fn(b) - fn(a)).slice(0, n); return [...new Set([...by(mfn, 3), ...by((r) => mfn(r) / Math.max(1, Math.abs(r.N)), 2), ...by((r) => -r.N, 1)])]; };
+        const mf = rond ? (r) => Math.hypot(r.Mx, r.My) : (r) => Math.abs(r.My);
+        const eluAll = rows.filter((r) => /^ELU/.test(r.cb.type));
+        const elu = cand(eluAll, mf).concat(rond ? [] : cand(eluAll, (r) => Math.abs(r.Mx))), els = cand(rows.filter((r) => r.cb.type === 'ELS Rare' || (d.regl === 'EC' && r.cb.etat === 'QP')), mf);
         let A = { tot: 0, face: 0, petite: 0 }, crit = {}, so2 = null;
         const L = G.hF;
         if (rond) {
-          const geo = (As) => SBA.cercle({ D: f.D, a: c, As, nb: 24 });
+          const geo = (As) => SBA.cercle({ D: f.D, a: c, As, nb: 24, nStrips: 160 });
           for (const r of elu) {
             const M1 = Math.hypot(r.Mx, r.My), type = typeELU(d, r.cb.etat, r.hasCD);
             const g0 = geo(0.01 * Math.PI * f.D * f.D / 4 * 1e4);
             const so = SBA.secondOrdre(g0, mat, { N: r.N, M: M1, Mcp: Math.min(M1, r.Mg) }, { L, lf, actif: k === 0 });
-            const As = bisect((x) => SBA.elu(geo(x), mat, { N: r.N, M: so.M, type }).ok, 0, 0.08 * G.Af * 1e4);
+            const As = bisect((x) => SBA.elu(geo(x), mat, { N: r.N, M: so.M, type }).ok, 0, 0.2 * G.Af * 1e4);
             if (As === null || As > A.tot) { A.tot = As === null ? Infinity : As; crit.elu = { n: r.cb.n, N: r.N, M1, M: so.M, e: so.e }; so2 = so; }
           }
           for (const r of els) {
             const M1 = Math.hypot(r.Mx, r.My);
             const ok = (x) => { const e = SBA.els(geo(x), mat, { N: r.N, M: M1, n: nEq }); return -e.ssMin <= ssLim + 1e-6 && e.sc <= sbc + 1e-6; };
-            const As = bisect(ok, 0.01, 0.08 * G.Af * 1e4);
+            const As = bisect(ok, 0.01, 0.2 * G.Af * 1e4);
             if (As === null || As > (A.els || 0)) { A.els = As === null ? Infinity : As; crit.els = { n: r.cb.n, N: r.N, M: M1 }; }
           }
           // minimum : EC2 9.5.2 (2) ; BAEL A.8.1,21 : 4 cm²/m de périmètre et 0,2 % de la section
@@ -746,14 +755,14 @@
           for (const r of elu) {
             const type = typeELU(d, r.cb.etat, r.hasCD);
             const so = SBA.secondOrdre(geoF(0), mat, { N: r.N, M: r.My, Mcp: Math.sign(r.My) * Math.min(Math.abs(r.My), r.Mg) }, { L, lf, actif: k === 0 });
-            const As = bisect((x) => SBA.elu(geoF(x), mat, { N: r.N, M: so.M, type }).ok, 0, 0.04 * b * e * 1e4);
+            const As = bisect((x) => SBA.elu(geoF(x), mat, { N: r.N, M: so.M, type }).ok, 0, 0.15 * b * e * 1e4);
             if (As === null || As > A.face) { A.face = As === null ? Infinity : As; crit.elu = { n: r.cb.n, N: r.N, M1: r.My, M: so.M, e: so.e, Mx: r.Mx }; }
-            const Ap = bisect((x) => SBA.elu(geoP(x), mat, { N: r.N, M: r.Mx, type }).ok, 0, 0.04 * b * e * 1e4);
+            const Ap = bisect((x) => SBA.elu(geoP(x), mat, { N: r.N, M: r.Mx, type }).ok, 0, 0.15 * b * e * 1e4);
             if (Ap === null || Ap > A.petite) A.petite = Ap === null ? Infinity : Ap;
           }
           for (const r of els) {
             const ok = (x) => { const s = SBA.els(geoF(x), mat, { N: r.N, M: r.My, n: nEq }); return -s.ssMin <= ssLim + 1e-6 && s.sc <= sbc + 1e-6; };
-            const As = bisect(ok, 0.01, 0.04 * b * e * 1e4);
+            const As = bisect(ok, 0.01, 0.15 * b * e * 1e4);
             if (As === null || As > (A.els || 0)) { A.els = As === null ? Infinity : As; crit.els = { n: r.cb.n, N: r.N, M: r.My }; }
           }
           // minimum par face : BAEL A.8.1,21 (4 cm²/m de parement, 0,2 % B au total) ; EC2 9.6.2 (voiles : 0,002 Ac au total)
@@ -930,7 +939,8 @@
     // prisme d'éclatement : d1 = min(entraxe des appareils, 2 × distance au bord) dans chaque direction
     const C = G.chev, Lb = C ? C.L : G.dimY, e1 = C ? C.l : G.dimX;
     const ent = G.nA > 1 ? Math.abs(G.yA[1] - G.yA[0]) : Lb, bord = Math.min(...G.yA.map((y) => Lb / 2 - Math.abs(y - (C ? 0 : G.yF[G.futA[G.yA.indexOf(y)]] || 0))));
-    const d1 = Math.min(ent, 2 * bord), d2 = Math.min(e1, 2 * (e1 / 2 - Math.abs(num(ap.xApp) + (C ? G.xF - (C.x0 + C.x1) / 2 : 0))));
+    const hLim = C ? C.h : Infinity;   // prisme limité à la hauteur de l'élément (chevêtre)
+    const d1 = Math.min(ent, 2 * bord, hLim), d2 = Math.min(e1, 2 * (e1 / 2 - Math.abs(num(ap.xApp) + (C ? G.xF - (C.x0 + C.x1) / 2 : 0))), hLim);
     const fr = frettage({ a0: ap.a0, b0: ap.b0, a: ap.a, b: ap.b, Pu, fck: d.mat.fck, fe: d.mat.fe, livret: !!d.livret && d.regl !== 'EC', regl: d.regl, e1, e2: Lb, d1, d2 });
     return Object.assign(fr, { Pu, Pels, crit, d1, d2, ok: fr.okK && fr.par.sb <= fr.sbLim && fr.par.ste <= fr.steLim && fr.perp.ste <= fr.steLim });
   }
