@@ -520,7 +520,7 @@
       const dd = i === 0 ? sec.h - sec.dSup : sec.dInf;
       const nf = regl === 'EC2' ? Math.max(0.26 * mat.fctm / mat.fyk, 0.0013) * dd * 1e4 : 0.23 * mat.ftj / mat.fyk * dd * 1e4;
       const tendue = elu.concat(els).some((c) => (i === 0 ? c.M > 1e-6 : c.M < -1e-6));
-      return Math.max(+o.Amin || 0, tendue ? nf : 0);
+      return o.AminSeul ? +o.Amin || 0 : Math.max(+o.Amin || 0, tendue ? nf : 0);   // AminSeul : minimum forfaitaire saisi (notes d’origine)
     });
     As = As.map((v, i) => Math.max(v, Amin[i]));
     // ELS : contrainte des aciers tendus puis du béton
@@ -707,7 +707,7 @@
   }
 
   function baMur(d, tr, res, cs, xg, yg) {
-    const o = { regl: d.regl, fck: d.beton.fck, fyk: d.beton.fyk, ssLim: d.beton.ssLim, n: d.beton.n || 15, fiss: d.beton.fiss, livret: d.regl !== 'EC' && d.beton.livret };
+    const o = { regl: d.regl, fck: d.beton.fck, fyk: d.beton.fyk, ssLim: d.beton.ssLim, n: d.beton.n || 15, fiss: d.beton.fiss, livret: d.regl !== 'EC' && d.beton.livret, AminSeul: !!d.beton.AminSeul };
     const enr = d.beton.enrob;   // {avant, arriere, fouille, terre} (m)
     const alertes = [];
     const elsC = res.filter((r) => r.type === 'ELSr' || r.type === 'ELSf'), eluC = res.filter((r) => r.type === 'ELU' || r.type === 'ELUs');
@@ -729,8 +729,11 @@
       }
     }
     const fr = [0, 1 / 8, 1 / 4, 1 / 2];
+    // niveaux de calcul : pied, H/8, H/4, H/2 de la hauteur du voile de la section haute (communs à toutes les tranches,
+    // comme le programme d'origine) ; un niveau au-dessus de la tête d'une tranche y est ramené
+    const Hh = Math.max(...tr.map((g) => g.Hv));
     const voile = tr.map((g) => fr.map((f) => {
-      const h = f * g.Hv, z0 = g.zsem + h, ep = g.ep(z0);
+      const h = Math.min(f * Hh, 0.98 * g.Hv), z0 = g.zsem + h, ep = g.ep(z0);
       const elu = eluC.map((r) => { const e = voileEfforts(d, g, r, h); return { N: e.N, M: e.M, V: e.V, type: typeELU(r), nom: r.no }; });
       const els = elsC.map((r) => { const e = voileEfforts(d, g, r, h); return { N: e.N, M: e.M, nom: r.no }; });
       // section horizontale : fibre « supérieure » = parement arrière (y croissant), M > 0 comprime le parement avant
@@ -744,7 +747,7 @@
     }));
     // ── patin et talon : consoles depuis les parements, réaction du sol de la tranche (plan σ au droit de x) ──
     const sigY = (r, g, y) => Math.max(0, r.sig.v[0] + r.sig.v[1] * (g.x - xg) + r.sig.v[2] * (y - yg));
-    const console = (g, r, side) => {
+    const consoleDirect = (g, r, side) => {
       // side 'patin' : section y = yf(zsem) = 0, partie y < 0 ; 'talon' : y = yb(zsem), partie y > yb
       const yS = side === 'patin' ? 0 : g.yb(g.zsem), y0 = side === 'patin' ? -g.p : yS, y1 = side === 'patin' ? 0 : g.yt;
       let V = 0, M = 0; const m = 20, dy = (y1 - y0) / m;
@@ -766,6 +769,31 @@
       for (const l of loads) { V += l.Fz; M += l.Fz * (l.y - yS); }
       return { V, M };   // M > 0 : moment ascendant (tend la fibre inférieure du patin)
     };
+    /* talon par équilibre du nœud (comme le programme d'origine) : la section d'encastrement du talon équilibre le patin,
+     * l'élément de liaison sous le voile et le voile (poids, poussées sur le parement arrière, eau, séisme). La part du
+     * déséquilibre propre à la tranche (effets 3D de la semelle rigide) est ainsi reportée sur le talon. */
+    const console = (g, r, side) => {
+      if (side !== 'talon' || d.options.talon === 'direct') return consoleDirect(g, r, side);
+      const yO = g.yb(g.zsem), zO = g.zf + g.es / 2;
+      let V = 0, M = 0;
+      const add = (Fy, Fz, y, z) => { V += Fz; M += (y - yO) * Fz - (z - zO) * Fy; };
+      const p = consoleDirect(g, r, 'patin'); add(0, p.V, 0, zO); M += p.M;            // patin : V au droit de y = 0, M propre
+      // élément de liaison 0 < y < yO : poids de la semelle, réaction du sol, sous-pression
+      const m = 10, dy = yO / m, uAm = GW * Math.max(0, d.eau.am - g.zf), uAv = GW * Math.max(0, d.eau.av - g.zf);
+      for (let i = 0; i < m; i++) {
+        const y = (i + 0.5) * dy;
+        add(0, sigY(r, g, y) * dy - d.beton.g * g.es * dy * (r.G || 0) + (r.W ? (uAv + (uAm - uAv) * (y + g.p) / g.B) * dy : 0), y, zO);
+      }
+      // voile : poids et actions au-dessus du dessus de semelle
+      const pv = polyCentroid(polyVoile(g)); add(0, -d.beton.g * pv.A * (r.G || 0), pv.y, pv.z);
+      if (g.zTete > g.zsem) {
+        const rv = resultante(g.cuV); add(rv.Fy * (r.Tpou || 0), rv.Fz * (r.Tpou || 0), rv.y, rv.z);
+        for (const [key, kk] of [['cuVQ', r.Qp], ['cuVC', r.Cp]]) if (kk && g[key]) { const rq = resultante(g[key]); add(rq.Fy * kk, rq.Fz * kk, rq.y, rq.z); }
+        if (r.W && d.eau.am > g.zsem) { const hw = d.eau.am - g.zsem; add(-GW * hw * hw / 2, 0, yO, g.zsem + hw / 3); }
+      }
+      for (const e of ['E1', 'E2']) if (r[e] && d.seisme.kh > 0) { const kv = (e === 'E1' ? 1 : -1) * d.seisme.kv, W = d.beton.g * pv.A; add(-d.seisme.kh * W, -kv * W, pv.y, pv.z); }
+      return { V: -V, M: -M };
+    };
     const semelles = { patin: [], talon: [] };
     for (const side of ['patin', 'talon']) for (const g of tr) {
       const eff = (r) => console(g, r, side);
@@ -781,7 +809,7 @@
       semelles[side].push({ k: g.k, sup: fe.As[0], inf: fe.As[1], sc: fe.sc, ss: fe.ss, tau: t.tau, tauLim: t.lim, At: t.At, Mels: Mels.M, MelsComb: Mels.nom, Melu: elu.reduce((a, b) => (Math.abs(b.M) > Math.abs(a.M) ? b : a), { M: 0 }).M, ok: fe.sc <= fe.sbc + 1e-6 && t.ok });
     }
     const ok = voile.every((L) => L.every((s) => s.ok !== false)) && semelles.patin.every((s) => s.ok) && semelles.talon.every((s) => s.ok);
-    return { voile, fr, patin: semelles.patin, talon: semelles.talon, ok, alertes };
+    return { voile, fr, patin: semelles.patin, talon: semelles.talon, ok, alertes, _console: console };
   }
 
   /* ═══════════════════════ PORTANCE D'APRÈS UN SONDAGE PRESSIOMÉTRIQUE (version minimale) ═══════════════════════
@@ -844,8 +872,10 @@
       // charge d'exploitation : bande biaise ; intensité ramenée à q·sin a (convention du programme d'origine : charge par mètre de voie)
       q: { type: f('typchgexp', 1) === 0 ? 'route' : 'fer', voies: f('typchgexp', 1) === 2 ? 2 : 1, y: f('yexp') / sa, dydx: cot, larg: f('larexp') / sa, exp: f('chgexp') * sa, chantier: f('qchantier'), av: f('qexpav') },
       beton: { fck: f('fcj', 25), fyk: f('fe', 500), n: f('nbael', 15), g: f('poivolbet', 25), rapmod: f('rapmodbet', 3), fiss: f('fissur', 1), livret: f('patrim', 0) === 1,
-        ssLim: f('patrim', 0) === 1 ? f('limitefissur', 240) : NaN, enrob: { fouille: f('enrcoffouil', 0.03) + 0.025, terre: f('enrcofterre', 0.025) + 0.03, avant: f('enrcofavant', 0.045) + 0.03, arriere: f('enrcofterre', 0.025) + 0.03 },
-        AminVoile: 4, AminSemelle: 3 },
+        ssLim: f('patrim', 0) === 1 ? f('limitefissur', 240) : NaN, // axes des aciers du voile : le programme d'origine place la nappe arrière à enrobage « face avant » + 0,03 et la nappe
+        // avant à enrobage « arrière » + 0,03 (hauteurs utiles relevées dans la note : 0,075 / 0,683 pour e = 0,738)
+        enrob: { fouille: f('enrcoffouil', 0.03) + 0.025, terre: f('enrcofterre', 0.025) + 0.03, avant: f('enrcofterre', 0.025) + 0.03, arriere: f('enrcofavant', 0.045) + 0.03 },
+        AminVoile: 4, AminSemelle: f('patrim', 0) === 1 ? 8.35 : 3, AminSeul: f('patrim', 0) === 1 },
       fond: { type: typ === 0 ? 'superficielle' : typ <= 2 ? 'semi-profonde' : 'profonde', qu: f('qu', 1), mu: f('frotsolsem', 0.6), c: f('cohesolfond', 0), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: f('declim1', 0), decRare: f('declim2', 25), decELU: f('renlim', 90), deplac: f('deplaclim', 0.01) },
       seisme: { kh: 0, kv: 0, aN: f('zonseism', 0) > 0 ? f('anseism', 0) : 0 },
@@ -864,7 +894,7 @@
       sol: { phi: 35, g: 19, gsat: 22, dg: 0.05 },
       eau: { am: 52.36, av: 52.36 },
       q: { type: 'fer', voies: 1, y: 2.121, dydx: 1, larg: 5.657, exp: 35.355, chantier: 10, av: 10 },
-      beton: { fck: 25, fyk: 400, n: 15, g: 25, rapmod: 3, fiss: 1, livret: true, ssLim: 240, enrob: { fouille: 0.055, terre: 0.055, avant: 0.075, arriere: 0.055 }, AminVoile: 4, AminSemelle: 3 },
+      beton: { fck: 25, fyk: 400, n: 15, g: 25, rapmod: 3, fiss: 1, livret: true, ssLim: 240, enrob: { fouille: 0.055, terre: 0.055, avant: 0.055, arriere: 0.075 }, AminVoile: 4, AminSemelle: 8.35, AminSeul: true },
       fond: { type: 'superficielle', qu: 1.2, mu: 0.6, c: 0, frottant: true, kv: 10000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: 0, decRare: 25, decELU: 90, deplac: 0.01 },
       seisme: { kh: 0, kv: 0 },

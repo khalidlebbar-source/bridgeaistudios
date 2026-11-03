@@ -60,7 +60,7 @@
     epsRet: 0, dilLD: 0, dilCD: 0, conLD: 0, conCD: 0, gradHeat: 0, gradCool: 0,
     gGsup: 1.35, gGinf: 1.0, gLM: 1.45, gSW2: 1.20, gFill: 1.45, gQ: 1.5, gT: 1.5, gSH: 1.0, gW: 1.35,
     engin: false, Pav: 200, Par: 200, voieAv: 2.5, voieAr: 2.5, empat: 3, aImp: 0.6, bImp: 0.6, epRembPro: 0.3,
-    Ldelta: 1500, kLdelta: 0.7, bv: 1, Ld600: true,
+    hPhi: 'EN', Ldelta: 1500, kLdelta: 0.7, bv: 1, Ld600: true,
   };
   /* cadre : jeu inspiré de l'exemple d'origine « Racba » (cadre de 5 m sous 2 voies, 1 m de remblai) */
   const CADRE = Object.assign({}, COMMUN, {
@@ -107,8 +107,11 @@
     const s = G.sinB;
     const LPhi = Math.max(1.3 * (G.LarCal + 2 * G.HauCal) / 3, G.LarCal, G.HauCal);      // EN 1991-2 tableau 6.2 (cadres, portiques)
     const phi0 = d.entretien === 'courant' ? CH.phi3(LPhi) : CH.phi2(LPhi);                // §6.4.5.2 (6.4)
-    const H1 = Math.max(0, d.epbal - d.hautraverse) + d.eprem + d.epetan;                  // sous-face traverses → extrados
-    const phi = Math.max(1, phi0 - Math.max(0, H1 - 1) / 10);                              // §6.4.5.3 ouvrages sous remblai
+    const H1 = Math.max(0, d.epbal - d.hautraverse) + d.eprem + d.epetan;                  // sous-face traverses → extrados (Kd)
+    // §6.4.5.3 : h = hauteur de couverture, ballast compris, de l'extrados au dessus des traverses (texte de l'EN) ;
+    // option « origine » : sous-face des traverses → dessus de la traverse béton hors étanchéité (manuel d'origine IV.4.1)
+    const hPhi = d.hPhi === 'origine' ? Math.max(0, d.epbal - d.hautraverse) + d.eprem : d.epbal + d.eprem + d.epetan;
+    const phi = Math.max(1, phi0 - Math.max(0, hPhi - 1) / 10);                            // §6.4.5.3 ouvrages sous remblai
     // largeur transversale au feuillet moyen de la traverse : 2,25 m + diffusion 4:1 dans le ballast, pente choisie dans le
     // remblai (2:1 par défaut, ou 30°) et dans le béton jusqu'au feuillet moyen (4:1 par défaut)
     const hb = Math.max(0, d.epbal - d.hautraverse);
@@ -116,7 +119,7 @@
     const pb = d.diffBeton === 'tan30' ? Math.tan(30 * DEG) : d.diffBeton === '45' ? 1 : 1 / num(d.diffBeton, 4);
     const larRep = 2.25 + 2 * hb / 4 + 2 * pr * (d.eprem + d.epetan) + 2 * pb * d.eptra / 2;
     const voies = (d.nbvoi >= 2 ? [d.axevoi1, d.axevoi2] : [d.axevoi1]).map(Number);
-    const out = { LPhi, phi0, phi, H1, hb, larRep, voies, Kd: d.kdLivret ? kdFrein(H1) : 1 };
+    const out = { LPhi, phi0, phi, H1, hPhi, hb, larRep, voies, Kd: d.kdLivret ? kdFrein(H1) : 1 };
     // répartition transversale
     if (G.tranche) {
       // bande de 1 m la plus chargée : recouvrement des bandes de diffusion des voies
@@ -126,14 +129,16 @@
       out.info = `bande de 1 m : charge d'une voie répartie sur ${larRep.toFixed(3)} m` + (nOver > 1 ? ' (bandes des deux voies superposées)' : '');
     } else {
       const B = G.Btrav, Leq = 0.8 * (d.ouv + d.eppied);                                    // portée équivalente 0,8 × portée droite
-      const lt = 2.25 + hb / 2 + (d.eptra / 2) / 2 + (d.eprem + d.epetan);                   // largeur de chargement (GMSLT, ballast 4:1)
+      // largeur de chargement au feuillet moyen (GMSLT) : 2,25 m + diffusion 4:1 sur la hauteur ballast + remblai sous les
+      // traverses, 1:1 dans le béton jusqu'au feuillet moyen (hypothèses qui restituent les tables K du programme d'origine)
+      const lt = 2.25 + 2 * (hb + d.eprem) / 4 + d.eptra / 2;
       const g = gm();
       let K = 1, K1 = 1, yK = 0, note = '';
       if (g && g.Kcharge) {
         const b = B / 2, p = { b, L: Leq, theta: b / Leq, alpha: 1 };
         const kv = (y, e) => g.Kcharge(p, y, e - lt / 2, e + lt / 2, 24);
-        for (let i = 0; i <= 64; i++) {
-          const y = -b + i * b / 32, ks = voies.map((e) => kv(y, e));
+        for (let i = 0; i <= 16; i++) {                                                     // 17 fibres (pas b/8, comme les abaques)
+          const y = -b + i * b / 8, ks = voies.map((e) => kv(y, e));
           const m = ks.reduce((a, v) => a + v, 0) / ks.length;
           if (m > K || i === 0) { K = m; yK = y; }
           if (ks[0] > K1 || i === 0) K1 = ks[0];
@@ -302,9 +307,9 @@
       L.vertF('traverse', (x) => d.gBet * tTrav(x) * Bt + d.gEtan * d.epetan * Bt);
       const qc = (d.gBet * (d.eptra + (d.haugousup || 0)) + d.gEtan * d.epetan) * Bt * eP / 2; L.node(nCG, 0, -qc); L.node(nCD, 0, -qc);
       for (const nom of ['piédroit gauche', 'piédroit droit']) { const m = M.members.find((mm) => mm.nom === nom);
-        for (const ie of m.elems) { const e = M.elems[ie]; const lo = Math.min(e.c0, e.c1), hi = Math.max(e.c0, e.c1); const u = Math.max(lo, yBas), v = Math.min(hi, yHaut); if (v - u <= 1e-9) continue;
+        for (const ie of m.elems) { const e = M.elems[ie]; const lo = Math.min(e.c0, e.c1), hi = Math.max(e.c0, e.c1); const u = Math.max(lo, G.cadre ? 0 : yBas), v = Math.min(hi, yHaut); if (v - u <= 1e-9) continue;
           const s0 = Math.min(Math.abs(u - e.c0), Math.abs(v - e.c0)), s1 = Math.max(Math.abs(u - e.c0), Math.abs(v - e.c0));
-          L.elem.push({ e: ie, type: 'u', dir: 'gy', q: -d.gBet * e.t * e.w, a: s0, b: s1 }); } }
+          L.elem.push({ e: ie, type: 'u', dir: 'gy', q: -d.gBet * e.t * Bp, a: s0, b: s1 }); } }
       for (const m of M.members.filter((mm) => mm.kind === 'sem')) for (const ie of m.elems) { const e = M.elems[ie]; L.elem.push({ e: ie, type: 'u', dir: 'gy', q: -d.gBet * e.t * e.w }); }
     });
     /* G2 couverture de remblai sur la traverse (Kter et coefficient de surpression de Marston dans les combinaisons) */
@@ -433,7 +438,8 @@
     const xs = [], Y = [];
     for (let k = 0; k <= nP; k++) {
       const x = x0 + (x1 - x0) * k / nP;
-      let ie = trav.elems.find((i) => { const e = M.elems[i]; return x >= e.c0 - 1e-9 && x <= e.c1 + 1e-9; });
+      let ie = trav.elems.find((i) => { const e = M.elems[i]; return x >= Math.min(e.c0, e.c1) - 1e-5 && x <= Math.max(e.c0, e.c1) + 1e-5; });
+      if (ie === undefined) ie = trav.elems[x < 0 ? 0 : trav.elems.length - 1];
       const e = M.elems[ie], a = clamp(x - e.c0, 0, e.c1 - e.c0);
       const r = prepCD.run({ elem: [{ e: ie, type: 'p', dir: 'gy', P: -1, a }] });
       xs.push(x); Y.push(vecteur(r, M, G, S, R, d));
@@ -592,7 +598,8 @@
     /* contribution (vecteur groupe) d'une action variable unitaire, incluse si défavorable pour sg */
     const addIf = (acc, gr, pos, vec, f, sg) => { if (!vec || !f) return 0; const v = vec[gr[pos]] * f; if (sg * v <= 0) return 0; gr.forEach((j, i) => (acc[i] += vec[j] * f)); return v; };
     /* groupe de charges ferroviaires (vertical + freinage + surcharges des remblais) */
-    function trafic(t, gr, pos, sg, etat, eng) {
+    function trafic(t, gr, pos, sg, etat, eng, fam) {
+      const kP = fam === 'k0' ? cof.k0 : cof.ka;   // la surcharge des remblais pousse avec le coefficient de la famille étudiée
       const env = envConv(t), elu = etat === 'ELU', best = { v: 0, c: gr.map(() => 0), lib: '' };
       const fams = [];
       if (eng) { if (env.ENG) fams.push({ lib: 'engin de chantier', parts: [['ENG', 1]], g: elu ? 1.35 : 1, F: 0, eng: true }); }
@@ -610,6 +617,11 @@
         // vertical : enveloppe du meilleur convoi de la famille
         let bv = null; for (const [c, k] of f.parts) { const e = env[c][sg > 0 ? 'max' : 'min']; const val = e.v * k * f.g; if (!bv || sg * val > sg * bv.v) bv = { v: val, c: e.conc.map((x) => x * k * f.g) }; }
         if (bv && sg * bv.v > 0) { v += bv.v; bv.c.forEach((x, i) => (acc[i] += x)); }
+        else if (f.F && !f.eng) {
+          // le freinage n'existe pas sans le train : charge verticale favorable conservée à 0,5 (EN 1991-2 tableau 6.11, note)
+          let bf = null; for (const [c, k] of f.parts) { const e = env[c][sg > 0 ? 'min' : 'max']; const val = 0.5 * e.v * k * f.g; if (!bf || sg * val > sg * bf.v) bf = { v: val, c: e.conc.map((x) => 0.5 * x * k * f.g) }; }
+          if (bf) { v += bf.v; bf.c.forEach((x, i) => (acc[i] += x)); }
+        }
         if (f.add) { let ba = null; for (const [c, k] of f.add) { const e = env[c][sg > 0 ? 'max' : 'min']; const val = e.v * k * f.gAdd; if (!ba || sg * val > sg * ba.v) ba = { v: val, c: e.conc.map((x) => x * k * f.gAdd) }; }
           if (ba && sg * ba.v > 0) { v += ba.v; ba.c.forEach((x, i) => (acc[i] += x)); } }
         if (f.eng) { if (E.ENR) v += addIf(acc, gr, pos, E.ENR, 1.35 * (elu ? 1 : 1 / 1.35), sg); }
@@ -617,7 +629,7 @@
           // freinage dans le sens défavorable
           if (f.F && E.FR) { const fv = E.FR[t] * f.F * f.gF; const s2 = sg * fv >= 0 ? 1 : -1; gr.forEach((j, i) => (acc[i] += s2 * E.FR[j] * f.F * f.gF)); v += s2 * fv; }
           const gf = elu ? d.gFill : 1;
-          for (const c of ['QRG', 'QRD']) v += addIf(acc, gr, pos, E[c], cof.Wfill * gf, sg);
+          for (const c of ['QRG', 'QRD']) v += addIf(acc, gr, pos, E[c], cof.Wfill * kP * gf, sg);
           for (const c of ['QTG', 'QTD']) v += addIf(acc, gr, pos, E[c], cof.Qtal * gf, sg);
         }
         if (sg * v > sg * best.v) { best.v = v; best.c = acc; best.lib = f.lib; }
@@ -639,9 +651,17 @@
       const gr = groupe(t), pos = gr.indexOf(t);
       const F = facteursPerm(d, etat, fam, cof);
       const perm = gr.map(() => 0); let lib = [];
-      for (const k of permList) { const f = F[k]; if (!f) continue; const v = E[k][t]; const ff = sg * v > 0 ? f[0] : f[1]; if (ff) gr.forEach((j, i) => (perm[i] += E[k][j] * ff)); }
+      // actions de même origine pondérées ensemble (EN 1990 §6.4.3.1 (4) note 3) : ballast (poids + poussées), terres de
+      // chaque côté du portique (talon + poussée) ; les autres cas élémentaires sont pondérés selon le signe de leur effet
+      const groupes = [['G3', 'G9', 'G10'], ['G4', 'G7'], ['G5', 'G8']].map((g) => g.filter((k) => E[k]));
+      const dansG = new Set(groupes.flat());
+      for (const g of groupes) { if (!g.length) continue;
+        const tot = (i) => g.reduce((a, k) => a + E[k][t] * (F[k] ? F[k][i] : 0), 0);
+        const i = sg * tot(0) >= sg * tot(1) ? 0 : 1;
+        for (const k of g) { const ff = F[k] ? F[k][i] : 0; if (ff) gr.forEach((j, q) => (perm[q] += E[k][j] * ff)); } }
+      for (const k of permList) { if (dansG.has(k)) continue; const f = F[k]; if (!f) continue; const v = E[k][t]; const ff = sg * v > 0 ? f[0] : f[1]; if (ff) gr.forEach((j, i) => (perm[i] += E[k][j] * ff)); }
       const elu = etat === 'ELU';
-      const T = trafic(t, gr, pos, sg, etat), TH = thermique(t, gr, pos, sg);
+      const T = trafic(t, gr, pos, sg, etat, false, fam), TH = thermique(t, gr, pos, sg);
       const Q = { v: 0, c: gr.map(() => 0) }; if (E.QI) { const v = E.QI[t] * d.charexpint; if (sg * v > 0) { Q.v = v; Q.c = gr.map((j) => E.QI[j] * d.charexpint); } }
       const gQ = elu ? d.gQ : 1, gT = elu ? d.gT : 1, gTr = 1; // γ du trafic déjà inclus dans trafic()
       const p1T = PSI.T.p1[Math.min(nv, 3) - 1];
@@ -651,7 +671,7 @@
         cand.push(lin([[gTr, T], [gQ * PSI.Q.p0, Q], [gT * PSI.TH.p0, TH]]));
         cand.push(lin([[gTr * PSI.T.p0, T], [gQ, Q], [gT * PSI.TH.p0, TH]]));
         cand.push(lin([[gTr * PSI.T.p0, T], [gQ * PSI.Q.p0, Q], [gT, TH]]));
-        if (engin) { const Eg = trafic(t, gr, pos, sg, etat, true); cand.push(lin([[1, Eg], [gT * PSI.TH.p0, TH]])); }
+        if (engin) { const Eg = trafic(t, gr, pos, sg, etat, true, fam); cand.push(lin([[1, Eg], [gT * PSI.TH.p0, TH]])); }
       } else if (etat === 'FREQ') {
         cand.push(lin([[p1T, T], [PSI.TH.p2, TH]]));
         cand.push(lin([[PSI.Q.p1, Q], [PSI.TH.p2, TH]]));
@@ -744,7 +764,7 @@
     const b = 1, h = sec.h, w = sec.b;
     // enrobages : face intérieure (nappe « sup » au sens de BA.sectionBA, M > 0 la tend) et face extérieure
     let cIn = d.cCou, cOut = d.cCou;
-    if (sec.kind === 'pied') cIn = d.cOuv;
+    if (sec.kind === 'pied' || sec.kind === 'trav') cIn = d.cOuv;   // faces vues (intrados, faces intérieures)
     if (sec.kind === 'radier' || sec.kind === 'sem') { cIn = d.cRad; cOut = d.cCou; }
     const dIn = cIn + d.dAxe, dOut = h - (cOut + d.dAxe);
     const pm = (o) => ({ M: o.M / w, N: -o.N / w, V: Math.abs(o.V) / w });     // par mètre ; N > 0 compression pour sectionBA
