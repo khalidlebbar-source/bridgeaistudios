@@ -747,8 +747,8 @@
         // effort tranchant : sur une ligne d'appui, de chaque côté (la moyenne des deux côtés s'annulerait)
         const surApp = s.k === 0 || s.k === d.sections;
         // sur appui : effort tranchant à une distance ≈ d de la ligne d'appui, de part et d'autre (EN 1992-1-1 §6.2.1 (8))
-        const mD = Math.max(1, Math.round((G.h - +d.mat.dInf) / (M.xi[s.i] - M.xi[s.i - 1] || M.xi[s.i + 1] - M.xi[s.i])));
-        const nG = s.i - mD >= 0 ? M.id(s.i - mD, j) : node, nD = s.i + mD < M.nx ? M.id(s.i + mD, j) : node;
+        const dEff = G.h - +d.mat.dInf, iAt = (sg) => { let i = s.i; while (i + sg >= 0 && i + sg < M.nx && Math.abs(M.xi[i] - M.xi[s.i]) < dEff - 1e-6 && Math.abs(M.xi[i + sg] - M.xi[s.i]) <= dEff + 0.5 * Math.abs(M.xi[i + sg] - M.xi[i])) i += sg; return i === s.i ? clamp(s.i + sg, 0, M.nx - 1) : i; };
+        const nG = M.id(iAt(-1), j), nD = M.id(iAt(1), j);
         const noms = ['mx', 'my', 'mxy', 'qx'], gs = [gMoment(M, S, node, 0), gMoment(M, S, node, 1), gMoment(M, S, node, 2), gShear(M, S, surApp ? nG : node)];
         const Us = S.solveN(gs);
         if (surApp) { noms.push('qx2'); const g2 = gShear(M, S, nD); gs.push(g2); Us.push(S.solve(g2)); }
