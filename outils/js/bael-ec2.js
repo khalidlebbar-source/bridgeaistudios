@@ -121,6 +121,7 @@
       if (e >= ec2) return fc;
       return fc * (1 - Math.pow(1 - e / ec2, n));
     };
+    if (rect) { sigC.rect = true; sigC.val = eta * fc; sigC.thr = (emax) => (1 - lam) * emax; }
     const sigS = (e) => {
       const a = Math.abs(e), s = Math.sign(e);
       if (a <= eyd) return Es * e;
@@ -252,8 +253,29 @@
   /* plan de déformation : ε(x,y) = e0 − ky·y + kx·x  (compression > 0) ; N = Σσ A ; Mx = −Σσ A y ; My = Σσ A x (kN, kN·m) */
   function integre(geo, sc, ss, e0, ky, kx = 0) {
     let N = 0, Mx = 0, My = 0, emax = -Infinity, emin = Infinity;
-    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; if (e > emax) emax = e; if (e < emin) emin = e; }
-    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; const s = sc(e, emax, emin); if (s) { const F = s * f.A * 1000; N += F; Mx -= F * f.y; My += F * f.x; } }
+    const strip = geo.plan && kx === 0;   // bandes horizontales : intégration exacte sur l'épaisseur de chaque bande
+    if (strip && geo.kind !== 'cercle') { emax = Math.max(e0 - ky * geo.yTop, e0 - ky * geo.yBot); emin = Math.min(e0 - ky * geo.yTop, e0 - ky * geo.yBot); }
+    else if (strip) { const r = geo.D / 2; emax = Math.max(e0 - ky * r, e0 + ky * r); emin = Math.min(e0 - ky * r, e0 + ky * r); }
+    else for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; if (e > emax) emax = e; if (e < emin) emin = e; }
+    const blk = sc.rect && !(emin > 0) ? sc.thr(emax) : null;   // diagramme rectangulaire : seuil de déformation
+    for (const f of geo.conc) {
+      if (strip && f.t) {
+        const ya = f.y - f.t / 2, yb = f.y + f.t / 2, ea = e0 - ky * ya, eb = e0 - ky * yb;
+        if (ea <= 0 && eb <= 0) continue;
+        if (blk !== null) {           // partie de la bande où ε ≥ seuil, contrainte constante
+          let lo = ya, hi = yb;
+          if (Math.abs(ky) > EPS) { const yt = (e0 - blk) / ky; if (ky > 0) hi = Math.min(hi, yt); else lo = Math.max(lo, yt); }
+          else if (e0 < blk) continue;
+          if (hi <= lo) continue;
+          const F = sc.val * f.A * (hi - lo) / f.t * 1000, yc = (lo + hi) / 2;
+          N += F; Mx -= F * yc; continue;
+        }
+        const em = e0 - ky * f.y, s1 = sc(ea, emax, emin), s2 = sc(em, emax, emin), s3 = sc(eb, emax, emin); // Simpson
+        const F = (s1 + 4 * s2 + s3) / 6 * f.A * 1000, Fm = (s1 * ya + 4 * s2 * f.y + s3 * yb) / 6 * f.A * 1000;
+        N += F; Mx -= Fm; continue;
+      }
+      const e = e0 - ky * f.y + kx * f.x; const s = sc(e, emax, emin); if (s) { const F = s * f.A * 1000; N += F; Mx -= F * f.y; My += F * f.x; }
+    }
     for (const b of geo.bars) { const e = e0 - ky * b.y + kx * b.x; const F = ss(e) * b.A * 1000; N += F; Mx -= F * b.y; My += F * b.x; }
     return { N, Mx, My };
   }
@@ -425,6 +447,7 @@
     geo.conc.forEach((f) => { I += f.A * sq(f.y - yG) + (f.w && f.t ? f.w * Math.pow(f.t, 3) / 12 : 0); }); geo.bars.forEach((b) => { I += n * b.A * sq(b.y - yG); });
     const fiss = (sgn) => { // sgn=+1 : M>0, fibre inférieure comprimée
       if (!geo.plan) return null;
+      if (!geo.bars.some((b) => b.A > 0 && (sgn > 0 ? b.y > 0 : b.y < 0))) return null;   // pas d'aciers sur la face tendue
       const r = els(geo, { Es: 200000 }, { n, N: 0, M: sgn * 100 });
       const yN = r.plan.e0 / r.plan.ky; // ε = e0 − ky y = 0
       let If = 0; geo.conc.forEach((f) => { const e = r.plan.e0 - r.plan.ky * f.y; if (e > 0) If += f.A * sq(f.y - yN) + (f.w && f.t ? f.w * Math.pow(f.t, 3) / 12 : 0); });
@@ -867,7 +890,7 @@
     const D = lireDon(txt), k = D.kv, f = (n, def = 0) => { const v = parseFloat(k[n]); return Number.isFinite(v) ? v : def; };
     const tc = f('typecalculs', 6), regl = f('reglement', 0) === 1 ? 'EC2' : 'BAEL';
     const out = { regl, materiau: { fck: f('fcj', 30), fyk: f('fe', 500), fissuration: f('fissur', 1), livret: f('pra', 0) === 1 && regl === 'BAEL', classe: ['A', 'B', 'C'][f('classeaciers', 1)] || 'B', phi: f('coeffluage', 2) },
-      options: { L: f('longpiece', 0), lf: f('longflamb', 0), n: f('nbael', 15), nCalcule: f('calculnbael', 0) === 1, wkCalcul: f('calculdirectfissur', 0) >= 1, cot: f('tetaefftran', 45) ? 1 / Math.tan(f('tetaefftran', 45) * Math.PI / 180) : 'libre', reprise: f('reprise', 0), sym: f('aciersym', 0) === 1,
+      options: { wmax: f('classeexposition', 1) <= 1 ? 0.3 : 0.2, L: f('longpiece', 0), lf: f('longflamb', 0), n: f('nbael', 15), nCalcule: f('calculnbael', 0) === 1, wkCalcul: f('calculdirectfissur', 0) >= 1, cot: f('tetaefftran', 45) ? 1 / Math.tan(f('tetaefftran', 45) * Math.PI / 180) : 'libre', reprise: f('reprise', 0), sym: f('aciersym', 0) === 1,
         fissu: { sup: { c: f('enrobsup', 30), phi: f('diamequivsup', 20), s: f('espacementsup', 200) }, inf: { c: f('enrobinf', 30) || f('enrobsup', 30), phi: f('diamequivinf', 20) || f('diamequivsup', 20), s: f('espacementinf', 200) || f('espacementsup', 200) } } },
       projet: [k.projet, k.oriligne, k.commentaire].filter(Boolean).join(' — '), typecalculs: tc };
     if (f('calcultypepieu', 0) > 0) out.options.pieu = { actif: true, k1: 1.2, k2: 1, fclim: 25 };
