@@ -47,7 +47,8 @@
         freinage: true, kFrein: 1.0, nbVoies: 1, convois: [],
       },
       quelconques: [],
-      seisme: { actif: true, zone: 3, sol: 'B', classe: 'II', agr: 0, q: 1.0, qT: 1.0, xi: 5, methode: 'modal', vertical: true, masseSup: 0, psi2rail: 0.3, nModes: 0 },
+      pasTablier: 0,
+      seisme: { actif: true, massesAppuis: true, zone: 3, sol: 'B', classe: 'II', agr: 0, q: 1.0, qT: 1.0, xi: 5, methode: 'modal', vertical: true, masseSup: 0, psi2rail: 0.3, nModes: 0 },
       trans: { actif: true },
       combi: { gGsup: 1.35, gGinf: 1.0, gQ: 1.45, gQsw2: 1.35, gQautre: 1.5, gT: 1.5, gSet: 1.2, psi0T: 0.6, psi1T: 0.6, psi2T: 0.5, psi0Q: 0.8, psi0A: 0.8, psi1A: 0.5 },
     };
@@ -103,8 +104,10 @@
     const xs = [];
     if (p.consoleDeb > 0) xs.push({ x: -p.consoleDeb, trav: -1 });
     let x = 0; xs.push({ x: 0, appui: 0 });
+    const nElT = p.travees.map((L) => (p.pasTablier > 0 ? Math.max(2, Math.round(L / p.pasTablier)) : nEl));
     p.travees.forEach((L, t) => {
-      for (let k = 1; k <= nEl; k++) xs.push(k === nEl ? { x: x + L, appui: t + 1 } : { x: x + L * k / nEl });
+      const ne = nElT[t];
+      for (let k = 1; k <= ne; k++) xs.push(k === ne ? { x: x + L, appui: t + 1 } : { x: x + L * k / ne });
       x += L;
     });
     if (p.consoleFin > 0) xs.push({ x: x + p.consoleFin });
@@ -194,7 +197,7 @@
           if (p.radier && p.radier.actif) radierNodes.push({ n: prev, ia });
           else {
             const b = a.base || 'encastre';
-            const s = { n: prev, ux: true, uy: true, rz: b === 'encastre' };
+            const s = { n: prev, ux: true, uy: true, rz: b === 'encastre' }; // 'articule' : rotation libre
             if (b === 'ressorts') { s.ux = ress(kReg(a.kbx, true)); s.uy = ress(kReg(a.kby, true)); s.rz = ress(kReg(a.kbr, 0)); }
             supports.push(s); info.sup.push(supports.length - 1);
           }
@@ -499,7 +502,7 @@
     // démarrage / freinage (EN 1991-2 §6.5.3) appliqués sur la longueur chargée, transmis au tablier avec le coefficient kFrein
     const Lch = LI.xs[LI.xs.length - 1] - LI.xs[0];
     const QlaUic = Math.max(Math.min(33 * Lch, 1000), Math.min(20 * Lch, 6000)) * p.rail.alpha;
-    const QlbSw2 = Math.min(35 * Lch, 1e9);
+    const QlbSw2 = Math.max(Math.min(33 * Lch, 1000), 35 * Lch); // SW/2 : Qlbk = 35 kN/m (non pondéré par α)
     const fr = { uic: (p.rail.freinage ? QlaUic / Lch : 0) * (p.rail.kFrein ?? 1) * (p.rail.kRep || 1), sw2: (p.rail.freinage && p.rail.sw2 ? QlbSw2 / Lch : 0) * (p.rail.kFrein ?? 1) * (p.rail.kRep || 1) };
     return { env, LI, phi, Lphi: Lp, fUic, fSw2, frein: fr, Lch, modeles: modeles.map((x) => x.id), layout: L };
   }
@@ -537,6 +540,7 @@
       const w = (M.poidsDeck[k] + (a.superstructures || 0) + (a.ballast || 0)) / G_ACC + (s.masseSup || 0);
       mass[e.i] += w * e.L / 2; mass[e.j] += w * e.L / 2;
     });
+    if (s.massesAppuis === false) return mass;
     if (!trans) M.long.SIS.masses.forEach((o) => { if (o.n < mass.length) mass[o.n] += o.m; });
     else M.long.SIS.masses.forEach((o) => { if (o.z <= 0.5) mass[M.appuiNode[o.pier]] += o.m; }); // moitié supérieure des appuis
     return mass;
@@ -682,10 +686,11 @@
       return E2(mx, mn);
     })();
     // charges quelconques : permanentes (G) ou variables (Q autre, ψ0 = 0,8 ; ψ1 = 0,5 ; ψ2 = 0)
-    const qG = Z(), qAmx = Z(), qAmn = Z();
-    (p.quelconques || []).forEach((q, i) => { if (q.cat === 'G') add(qG, qq[i]); else for (let k = 0; k < size; k++) { qAmx[k] += Math.max(0, qq[i][k]); qAmn[k] += Math.min(0, qq[i][k]); } });
+    const qG = Z(), qAmx = Z(), qAmn = Z(), qDmx = Z(), qDmn = Z();
+    (p.quelconques || []).forEach((q, i) => { if (q.cat === 'U') return; if (q.cat === 'G') add(qG, qq[i]); else if (q.cat === 'Ad') { for (let k = 0; k < size; k++) { qDmx[k] = Math.max(qDmx[k], qq[i][k]); qDmn[k] = Math.min(qDmn[k], qq[i][k]); } } else for (let k = 0; k < size; k++) { qAmx[k] += Math.max(0, qq[i][k]); qAmn[k] += Math.min(0, qq[i][k]); } });
     add(env.G.max, qG); add(env.G.min, qG); add(env.Gnom.max, qG); add(env.Gnom.min, qG);
     env.A = E2(qAmx, qAmn);
+    env.Ad = E2(qDmx, qDmn); // actions accidentelles : une seule à la fois (enveloppe)
     // ferroviaire
     const rail = o.sansRail ? null : enveloppesFerroviaires(M, { modele: M.long.CD });
     const H1 = u.h1CD.v;
@@ -738,6 +743,9 @@
     // ELU sismique (6.12b) : G + AEd + ψ2,1·Q trafic (EN 1998-2 §4.1.2) + ψ2·T
     comb.SIS = sis ? combine(perm(1, 1, 1).concat([{ e: env.AE, g: [1, 0] }, { e: env.Q1, g: [p.seisme.psi2rail ?? 0.3, 0] }, { e: env.T, g: [c.psi2T, 0] }])) : null;
 
+    // ELU accidentel (6.11b) : G + Ad + ψ1,1·Q1 (trafic dominant) + ψ2·T
+    const hasAd = (p.quelconques || []).some((q) => q.cat === 'Ad');
+    comb.ACC = hasAd ? combine(perm(1, 1, 1).concat([{ e: env.Ad, g: [1, 0] }, { e: env.Q1, g: [psi1Q, 0] }, { e: env.T, g: [c.psi2T, 0] }])) : null;
     // modèle transversal : 1 kN/ml, vent, séisme
     let trans = null;
     if (p.trans && p.trans.actif) {
@@ -745,7 +753,13 @@
       const t1 = run(mT, { elem: dE.map((e) => ({ e, type: 'u', q: 1 })) });
       trans = { unit: t1.v, vent: add(new Float64Array(t1.v.length), t1.v, a.qvent || 0), layout: layout(mT), sis: sis && sis.trans ? sis.trans : null, modele: mT };
     }
-    return { M, layout: L, unit: u, cas, tas, tasC, env, rail, sis, comb, trans, psi1Q };
+    // chargements libres fournis par un module appelant (RACBA-RAPO, APPUI) : {nom, modele:'LD'|'CD'|'SIS'|'TCD', loads}
+    const libres = (o.chargements || []).map((ch) => {
+      const mm = ch.modele === 'CD' ? M.long.CD : ch.modele === 'SIS' ? M.long.SIS : ch.modele === 'TCD' ? M.trans.CD : M.long.LD;
+      const rr = run(mm, ch.loads || {});
+      return { nom: ch.nom, modele: ch.modele || 'LD', v: rr.v, r: rr.r };
+    });
+    return { M, layout: L, unit: u, cas, tas, tasC, env, rail, sis, comb, trans, psi1Q, libres };
   }
 
   /* ───────────────────────── extraction pratique ───────────────────────── */
@@ -817,6 +831,22 @@
     p.rail = Object.assign(defauts().rail, { uic: chg ? !!(chg & 1) || !!(chg & 8) : true, sw0: chg ? !!(chg & 2) || !!(chg & 8) : true, sw2: !!(chg & 4), alpha: n('coeffalpha', 0, 1) || 1, pas: n('pas', 0, 0.1) || 0.1, nbVoies: n('nbvoies', 0, 1) || 1 });
     const z = n('ec8zoneseisme', 0, -1);
     p.seisme = Object.assign(defauts().seisme, { actif: z > 0 || n('modelsismique') === 1, zone: z > 0 ? z + 1 : 3, sol: 'ABCDE'[n('ec8siteseisme')] || 'B', classe: ['II', 'III', 'IV'][n('classeoa')] || 'II', agr: n('agr'), q: n('coeffq', 0, 1) || 1, qT: n('coeffqtrans', 0, 1) || 1, xi: n('xsi', 0, 5) || 5, masseSup: n('masseballast') });
+    // charges quelconques du modèle longitudinal longue durée (modèle 0) : cas unitaires de descente de charges
+    const xsDeck = []; if (p.consoleDeb > 0) xsDeck.push(-p.consoleDeb); { let x = 0; xsDeck.push(0); p.travees.forEach((L) => { for (let k = 1; k <= p.nbElTrav; k++) xsDeck.push(x + L * k / p.nbElTrav); x += L; }); if (p.consoleFin > 0) xsDeck.push(x + p.consoleFin); }
+    p.quelconques = [];
+    for (let i = 0; i < lines.length; i++) {
+      const m = /^CHARGESQUELCONQUES\s+(\d+)\s+(.*)$/.exec(lines[i]);
+      // codes 0 et 3 : modèle longitudinal longue durée (abscisse ou nœud) ; 1, 4 : courte durée ; 5 : transversal
+      if (!m || (+m[1] !== 0 && +m[1] !== 3)) continue;
+      const v = (lines[i + 1] || '').trim().split(/\s+/).map(Number);
+      if (v.length < 8) continue;
+      let x;
+      if (v[0] === 0 && v[1] > 0) x = xsDeck[v[1] - 1];
+      else if (v[0] === 1) x = v[3] + (xsDeck[0] || 0);
+      else x = v[3];
+      const P = v[0] === 0 && v[1] > 0 ? -v[6] : -v[5];
+      if (Number.isFinite(x) && P) p.quelconques.push({ nom: m[2].trim(), cat: 'U', x1: +x.toFixed(5), x2: '', q1: P, q2: '', H: 0 });
+    }
     return p;
   }
 

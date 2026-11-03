@@ -140,13 +140,13 @@
     if (forme.circ) { const R = forme.D / 2, o = []; for (let k = 0; k < 72; k++) o.push([R * Math.cos(k * Math.PI / 36), R * Math.sin(k * Math.PI / 36)]); return o; }
     return [[-forme.B / 2, -forme.L / 2], [-forme.B / 2, forme.L / 2], [forme.B / 2, forme.L / 2], [forme.B / 2, -forme.L / 2]];
   }
-  /* N (kN, > 0 compression), Mx, My (kN·m) au centre ; convention : σ(x,y) équilibre N, Σσ·y = Mx, −Σσ·x = My */
+  /* N (kN, > 0 compression), Mx, My (kN·m) appliqués au centre ; la réaction σ(x,y) équilibre : Σσ = N, Σσ·x = My, Σσ·y = −Mx */
   function repartition(forme, N, Mx, My) {
     const A = forme.circ ? Math.PI * forme.D * forme.D / 4 : forme.B * forme.L;
     const Ix = forme.circ ? Math.PI * Math.pow(forme.D, 4) / 64 : forme.B * Math.pow(forme.L, 3) / 12;
     const Iy = forme.circ ? Math.PI * Math.pow(forme.D, 4) / 64 : forme.L * Math.pow(forme.B, 3) / 12;
     if (!(N > 0)) return { ok: false, decomp: 100, smax: NaN, smin: NaN, a: 0, b: 0, c: 0 };
-    let a = N / A, b = -My / Iy, c = Mx / Ix;
+    let a = N / A, b = My / Iy, c = -Mx / Ix;
     const C = coins(forme), sig = (x, y) => a + b * x + c * y;
     const allC = C.every(([x, y]) => sig(x, y) >= -1e-9);
     if (allC) { const v = C.map(([x, y]) => sig(x, y)); return { ok: true, decomp: 0, smax: Math.max(...v), smin: Math.min(...v), a, b, c, Ac: A, A }; }
@@ -157,11 +157,11 @@
       let R = [0, 0, 0], J = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
       for (const [x, y, w] of P) {
         const s = a + b * x + c * y; if (s <= 0) continue;
-        R[0] += s * w; R[1] += s * y * w; R[2] += -s * x * w;
-        const g = [1, x, y], h = [w, y * w, -x * w];
+        R[0] += s * w; R[1] += s * y * w; R[2] += s * x * w;
+        const g = [1, x, y], h = [w, y * w, x * w];
         for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) J[i][j] += h[i] * g[j];
       }
-      const F = [R[0] - N, R[1] - Mx, R[2] - My];
+      const F = [R[0] - N, R[1] + Mx, R[2] - My];
       if (Math.abs(F[0]) < 1e-7 * N && Math.abs(F[1]) + Math.abs(F[2]) < 1e-7 * N * (forme.B || forme.D)) { conv = true; break; }
       let d;
       try { d = PQ.lu(J.map((r) => r.slice()))(F.map((v) => -v)); } catch (e) { break; }
@@ -274,9 +274,12 @@
       const gq = isELU(t) ? 2 : 3;
       const qadm = q0 + (qu - q0) * id * ib / gq;
       const Hres = N * mu + (coh > 0 ? coh * (r.Ac || A) / 1.5 : 0);
-      const sLD = Math.max(0, -TLD[2] / A / 1000 - sv0) * sm.s, sCD = Math.max(0, -TCD[2] / A / 1000) * sm.s / (d.rapSol || 2);
+      // déplacement vertical moyen (annexe F3 : modules de réaction) : σLD / kvLD + σCD / kvCD, pressions brutes (comme le programme
+      // d'origine) ; tassement Ménard net : (σLD − σv0) × s(annexe F2) pour la part de longue durée
+      const sLD = -TLD[2] / A / 1000 / kvLD, sCD = -TCD[2] / A / 1000 / kvCD;
+      const sNet = Math.max(0, -TLD[2] / A / 1000 - sv0) * sm.s + Math.max(0, -TCD[2] / A / 1000) / kvCD;
       return { n: k + 1, type: t, T, N, H, smax: r.smax / 1000, smin: r.smin / 1000, decomp: r.decomp, qref, delta, id, qadm, okP: qref <= qadm + 1e-9,
-        Hres, glis: H > 0 ? Hres / H : Infinity, okG: !isELU(t) || Hres >= H, tass: (sLD + sCD) * 1000, conv: r.ok };
+        Hres, glis: H > 0 ? Hres / H : Infinity, okG: !isELU(t) || Hres >= H, wz: (sLD + sCD) * 1000, tass: sNet * 1000, conv: r.ok };
     });
     const lim = { 'ELS freq': 0, 'ELS qp': 0, 'ELS rare': 25, 'ELU fond': 90, 'ELU acc': 90, 'ELU sis': 90 };
     res.forEach((r) => { r.decompAdm = lim[r.type]; r.okD = r.decomp <= r.decompAdm + 1e-6; r.ok = r.okP && r.okD && r.okG; });
@@ -526,18 +529,30 @@
     let ok = true;
     for (let k = 0; k <= n; k++) {
       let req = 0, crit = null;
-      for (const cb of combs) {
-        if (!isELU(cb.type)) continue;
-        for (const q of cb.piles) {
-          const M = q.Mres[k], N = q.N; // N au droit de la tête (poids propre et frottement négligés : enveloppe)
-          if (mrdCirc(pt.B, c, 0, N, pt.fc, d.fe) >= M) continue;
-          let lo = 0, hi = 0.08 * Ac;
-          if (mrdCirc(pt.B, c, hi, N, pt.fc, d.fe) < M) { req = Infinity; crit = { comb: cb.n, pieu: q.i, M, N }; ok = false; continue; }
-          for (let it = 0; it < 40; it++) { const m = (lo + hi) / 2; if (mrdCirc(pt.B, c, m, N, pt.fc, d.fe) >= M) hi = m; else lo = m; }
-          if (hi > req) { req = hi; crit = { comb: cb.n, pieu: q.i, M, N }; }
-        }
+      // couples (M, N) étudiés : chaque combinaison ELU, plus l'enveloppe défavorable du pieu (M maxi avec N mini des
+      // combinaisons ELU), comme le fait la note d'origine ; N pris égal à l'effort en tête (poids propre et frottement négligés).
+      const pairs = [];
+      combs.filter((cb) => isELU(cb.type)).forEach((cb) => cb.piles.forEach((q) => pairs.push({ M: q.Mres[k], N: q.N, comb: cb.n, pieu: q.i })));
+      for (let j = 0; j < (p.piles || []).length; j++) {
+        const P = pairs.filter((x) => x.pieu === j + 1); if (!P.length) continue;
+        const a = P.reduce((m, x) => (x.M > m.M ? x : m)), b = P.reduce((m, x) => (x.N < m.N ? x : m));
+        pairs.push({ M: a.M, N: b.N, comb: a.comb + '/' + b.comb, pieu: j + 1 });
       }
-      out.push({ s: k * p.L / n, Aelu: req * 1e4, Amin: Amin * 1e4, A: Math.max(req, Amin) * 1e4, crit });
+      for (const x of pairs) {
+        const M = x.M, N = x.N;
+        if (mrdCirc(pt.B, c, 0, N, pt.fc, d.fe) >= M) continue;
+        let lo = 0, hi = 0.08 * Ac;
+        if (mrdCirc(pt.B, c, hi, N, pt.fc, d.fe) < M) { req = Infinity; crit = x; ok = false; continue; }
+        for (let it = 0; it < 40; it++) { const m = (lo + hi) / 2; if (mrdCirc(pt.B, c, m, N, pt.fc, d.fe) >= M) hi = m; else lo = m; }
+        if (hi > req) { req = hi; crit = x; }
+      }
+      // effort tranchant (BAEL 91 A.5.1 appliqué à une section circulaire : b0 = D/1,4, d = D − c ; k = 0, fet = 400 MPa)
+      let Vu = 0, critV = null;
+      combs.filter((cb) => isELU(cb.type)).forEach((cb) => cb.piles.forEach((q) => { if (q.Vres[k] > Vu) { Vu = q.Vres[k]; critV = cb.n; } }));
+      const b0 = pt.B / 1.4, dd = pt.B - c, tau = Vu / (b0 * dd) / 1000, fet = p.fet || 400;
+      const tauLim = Math.min(0.15 * pt.fc / 1.5, 4), Atst = Math.max(tau * b0 / (0.9 * fet / 1.15), 0.4 * b0 / fet) * 1e4;
+      if (tau > tauLim) ok = false;
+      out.push({ s: k * p.L / n, Aelu: req * 1e4, Amin: Amin * 1e4, A: Math.max(req, Amin) * 1e4, crit, Vu, critV, tau, tauLim, Atst, AtMin: tau * b0 / (0.9 * fet / 1.15) * 1e4 < 0.4 * b0 / fet * 1e4 });
     }
     return { ok, sections: out, Amin: Amin * 1e4 };
   }
