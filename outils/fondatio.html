@@ -110,9 +110,9 @@
     { id: 'ce', label: 'Coefficient d’efficacité Ce', def: 1 },
     { id: 'gsnEls', label: 'Frottement négatif Gsn ELS', unit: 'kN', def: 0 },
     { id: 'gsnElu', label: 'Frottement négatif Gsn ELU', unit: 'kN', def: 0 },
-    { id: 'redX', label: 'Réduction de Kf (groupe) — X', def: 1, help: 'effet de groupe saisi (1 = pieu isolé)' },
-    { id: 'redY', label: 'Réduction de Kf (groupe) — Y', def: 1 },
-    { id: 'palArr', label: 'Palier des files arrière', def: 0.75 },
+    { id: 'redX', label: 'Réduction de Kf (groupe) — X', def: '', help: 'vide : automatique selon la rangée (n, s/B) ; 1 = pieux isolés' },
+    { id: 'redY', label: 'Réduction de Kf (groupe) — Y', def: '', help: 'vide : automatique' },
+    { id: 'palArr', label: 'Palier des files arrière', def: '', help: 'vide : min(1, (s − B)/2B)' },
     { id: 'reale', label: 'Réalésage / rainurage en fin de forage', type: 'chk', def: false, wide: true },
     { id: 'enrob', label: 'Axe des aciers / parement', unit: 'm', def: 0.09 },
     { id: 'pmin', label: 'Ferraillage minimal', unit: '% Ac', def: 0.5 },
@@ -143,6 +143,8 @@
 
   const saved = BA.store.load(KEY) || {};
   const V = Object.assign({}, saved.v || {});
+  // saisies enregistrées avant le calcul automatique de l'effet de groupe (valeurs par défaut 1 / 1 / 0,75) : repasser en automatique
+  if (!saved.gv && V.redX === 1 && V.redY === 1 && V.palArr === 0.75) { V.redX = ''; V.redY = ''; V.palArr = ''; }
   let sps = saved.sps ? Object.assign(S.vide(), saved.sps) : S.exemple(), spsNom = saved.spsNom || 'exemple SONDPRES';
   BA.form(document.getElementById('fGen'), F_GEN, 'i_', V);
   BA.form(document.getElementById('fNiv'), F_NIV, 'i_', V);
@@ -172,7 +174,7 @@
   ALL.forEach((f) => { const e = $(f.id); e && e.addEventListener('change', () => { vis(); persist(); }); });
 
   function readAll() { return BA.read(ALL, 'i_'); }
-  function persist() { BA.store.save(KEY, { v: readAll(), piles: piles.data, comb: comb.data, sps, spsNom, selComb: state.comb, selPieu: state.pieu }); }
+  function persist() { BA.store.save(KEY, { gv: 2, v: readAll(), piles: piles.data, comb: comb.data, sps, spsNom, selComb: state.comb, selPieu: state.pieu }); }
   const fin = (v, d = 0) => (Number.isFinite(+v) && v !== '' ? +v : d);
 
   function combsFromRows() {
@@ -189,7 +191,8 @@
       gamma: v.gamma, gammaSat: v.gammaSat, gammaB: v.gammaB, rapSol: v.rapSol, rapBet: v.rapBet, fcj: v.fcj, fe: v.fe, px: fin(v.px), py: fin(v.py), combs: combsFromRows() };
     d.sup = { forme: v.forme, B: v.B, L: v.L, D: v.D, h: v.h, sol: v.sol, phi: v.phi, c: fin(v.c), methode: v.methode, ibeta: fin(v.ibeta, 1), kp: Number.isFinite(v.kpImp) ? v.kpImp : NaN };
     d.pieux = { type: +v.ptype, B: v.pB, Lb: v.pLb, L: v.pL, nseg: Math.max(4, Math.round(v.nseg || 10)), kbase: fin(v.kbase, 1e8), h0: fin(v.h0), ce: fin(v.ce, 1),
-      frotNeg: { els: fin(v.gsnEls), elu: fin(v.gsnElu) }, reducKf: { x: fin(v.redX, 1), y: fin(v.redY, 1) }, palierArriere: fin(v.palArr, 0.75), reale: v.reale,
+      frotNeg: { els: fin(v.gsnEls), elu: fin(v.gsnElu) }, reducKf: { x: Number.isFinite(v.redX) ? v.redX : undefined, y: Number.isFinite(v.redY) ? v.redY : undefined },
+      palierArriere: Number.isFinite(v.palArr) ? v.palArr : undefined, reale: v.reale,
       enrob: fin(v.enrob, 0.09), pmin: fin(v.pmin, 0.5), piles: piles.data.filter((p) => Number.isFinite(+p.x) && Number.isFinite(+p.y)).map((p) => ({ x: +p.x, y: +p.y })) };
     return d;
   }
@@ -299,6 +302,7 @@ Qtu = Qsu = ${fmt(pt.Qtu, 1)} kN            Qtc = 0,7 Qsu = ${fmt(pt.Qtc, 1)} kN
 Compression : ELU fond. Qu/1,40 = ${fmt(pt.lim['ELU fond'][0], 1)} · ELU acc. Qu/1,20 = ${fmt(pt.lim['ELU acc'][0], 1)} · ELS rare Qc/1,10 = ${fmt(pt.lim['ELS rare'][0], 1)} · ELS q.p. Qc/1,40 = ${fmt(pt.lim['ELS qp'][0], 1)} kN
 Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qtu/1,30 = ${fmt(-pt.lim['ELU acc'][1], 1)} · ELS rare Qtc/1,40 = ${fmt(-pt.lim['ELS rare'][1], 1)} kN (q.p. : pas de traction)</div>`
         + '<div class="sub">Frottement latéral</div>' + BA.table(['Couche', 'de (m)', 'à (m)', 'pl*', 'Courbe', 'qs (kPa)', 'Qs (kN)', 'Remarque'], tr, { leftText: true }))
+      + BA.card('Effet de groupe sous efforts horizontaux', grpTable(r) )
       + BA.card('Charges axiales par combinaison', BA.table(['N°', 'Type', 'N maxi (+Gsn)', 'limite', 'N mini', 'limite', 'Itérations LD + CD', ''], env), 'kN · compression positive')
       + BA.card('Efforts et déplacements en tête', `<div class="sel-row">Combinaison ${sel('comb', r.combs.length, (i) => (i + 1) + ' — ' + r.combs[i].type, ci)}</div>`
         + BA.table(['Pieu', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'dx (mm)', 'dy (mm)', 'dz (mm)', 'Sol'], head)
@@ -313,13 +317,20 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
           + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">Flexion composée ELU, moment résultant √(Mx² + My²) — ${esc(ac.methode || '')} ; fc* = ${fmt(pt.fc, 2)} MPa (k1 = ${fmt(pt.k1, 2)}). At/st : BAEL A.5.1 avec b0 = D/1,4, fet = 400 MPa. Décaler les aciers de 0,8 h et en assurer l’ancrage ; vérification ELS des contraintes non faite ici (module BAEL-EC2).</div>`)
       + perimetre();
   }
+  function grpTable(r) {
+    const G = r.base.groupe || [], rows = [];
+    for (const g of G) for (const w of g.rows) rows.push([g.dir === 'x' ? 'X' : 'Y', w.pieux.join(', '), w.n, Number.isFinite(w.s) ? fmt(w.s, 2) : '—',
+      g.saisi ? '<i>coefficient saisi</i>' : w.coef.map((c) => esc(c.nom) + ' (α ' + fmt(c.alpha, 2) + ') : ' + fmt(c.rho, 4)).join(' · '), fmt(g.palierArriere, 3)]);
+    return BA.table(['Déplacement', 'Pieux', 'n rangée', 'Entraxe s (m)', 'Réduction du module frontal ρ par couche', 'Palier files arrière'], rows, { leftText: true })
+      + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">ρ = g + (1 − g)·min(1, (s − B)/2B) avec g = Kf(n·B)/(n·Kf(B)) : interpolation entre le rideau continu (s = B) et le pieu isolé (s ≥ 3B), n pieux de la rangée perpendiculaire au déplacement. Palier des files arrière : min(1, (s’ − B)/2B), s’ = entraxe des files dans le sens du déplacement. Barrettes : pas de réduction du module.</div>`;
+  }
   function perimetre() {
     return BA.card('Périmètre et hypothèses', `<details class="ref"><summary>Méthodes, hypothèses et limites</summary><ul>
       <li><b>Sol</b> : couches de calcul du sondage SPS (pl* net, pf*, EM, α, classe). Entre le terrain naturel et le terrain définitif, remblai conventionnel pl* = 1 MPa, EM = 10 MPa ; au-dessus de la tête du sondage, la première couche est prolongée ; sous la fin du sondage, la dernière couche.</li>
       <li><b>Semelles et massifs</b> (annexe B) : ple* moyenne géométrique sur 1,5 B, De = ∫pl*/ple*, kp selon la classe (interpolé entre 1,5 et 5 pour De/B), q’u = kp ple* + q’0. Semelle infiniment rigide sur sol sans traction : σ linéaire sur la surface comprimée (itérations), q’ref = (3σmax + σmin)/4, ou Meyerhof. Décompression admise : 0 % fréquent, 25 % rare, 90 % ELU. iδ de l’annexe F1 ; iβ (talus) saisi. Glissement : H ≤ N tan φ’/1,2 + c’A’/1,5. Pour un massif semi-profond, le poids du massif est ajouté ; la butée sur ses faces verticales n’est pas comptée (sécuritaire).</li>
       <li><b>Modules de réaction et tassement</b> (annexe F2, Ménard) : Ec, Ed par tranches de B/2 jusqu’à 8B, λc, λd, α ; kv courte durée = rapport × kv longue durée. Déplacement vertical moyen = σLD/kvLD + σCD/kvCD.</li>
       <li><b>Pieux</b> (annexe C3) : ple* entre pointe + b et pointe − 3a, kp sans refoulement du sol, qs par les courbes Q1 à Q7 choisies selon le sol et le type (ou imposées), Qc = 0,5 Qpu + 0,7 Qsu, coefficients 1,40 / 1,20 / 1,10 / 1,40. Frottement négatif Gsn saisi (la méthode de Combarieu n’est pas programmée).</li>
-      <li><b>Groupe sous semelle rigide</b> : pieux verticaux encastrés en tête ; raideur axiale EA/L en série avec le ressort de pointe ; réaction latérale de Ménard Es = 12 EM / [4/3 (B0/B)(2,65 B/B0)^α + α] (B ≥ 0,6 m), divisée par le rapport des modules pour la longue durée, réduite près de la surface sur 2B, palier = pf* × B (× 0,75 pour les files arrière). Pieu discrétisé en poutre sur ressorts (BA.portique, 4 sous-éléments par élément de sortie), modules sécants itérés ; phase longue durée puis courte durée (sol déjà chargé). Effet de groupe sur Kf : coefficient saisi (1 = pieux isolés).</li>
+      <li><b>Groupe sous semelle rigide</b> : pieux verticaux encastrés en tête ; raideur axiale EA/L en série avec le ressort de pointe ; réaction latérale de Ménard Es = 12 EM / [4/3 (B0/B)(2,65 B/B0)^α + α] (B ≥ 0,6 m), divisée par le rapport des modules pour la longue durée, réduite près de la surface sur 2B, palier = pf* × B (× 0,75 pour les files arrière). Pieu discrétisé en poutre sur ressorts (BA.portique, 4 sous-éléments par élément de sortie), modules sécants itérés ; phase longue durée puis courte durée (sol déjà chargé). Effet de groupe : réduction du module frontal ρ = g + (1 − g)·min(1, (s − B)/2B), g = Kf(nB)/(n Kf(B)) pour les n pieux d’une rangée perpendiculaire au déplacement, et palier des files arrière × min(1, (s’ − B)/2B). Le Fascicule 62 ne chiffre pas cet effet : la règle a été reconstituée à partir des notes du programme d’origine, dont elle retrouve les coefficients (0,8503 / 0,8681 / 0,9104 / 0,9258 et 0,75 pour 2 × 4 pieux Ø 1,20 m à 3,00 m) ; un coefficient saisi la remplace.</li>
       <li><b>Non traités</b> : pieux inclinés et micropieux, fluage et effets du second ordre, séisme spécifique, frottement négatif automatique, vérifications ELS des aciers (utiliser BAEL-EC2), stabilité d’ensemble.</li></ul></details>`);
   }
 

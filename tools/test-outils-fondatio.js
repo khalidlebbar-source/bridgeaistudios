@@ -40,6 +40,12 @@ ok(near(F.lambdas(5.4, 10.4).lc, 1.1926, 1e-4) && near(F.lambdas(5.4, 10.4).ld, 
   ok(near(pt.Qpu, 1.1 * 2 * Math.PI / 4 * 1000, 1e-9) && near(pt.Qsu, F.qsCourbe(2, 2) * Math.PI * 12 * 1000, 1e-9), 'Qpu = kp ple* Ap ; Qsu = qs(Q2) π B L');
 }
 
+// effet de groupe : pas de réduction à s ≥ 3B ni pour un pieu seul dans sa rangée ; rideau continu à s = B
+ok(F.reducGroupe(3, 4.8, 1.6, 0.67) === 1 && F.reducGroupe(1, 1, 1, 0.5) === 1, 'groupe : aucune réduction à s ≥ 3B (notes d’origine à 3B : 1,000)');
+ok(near(F.reducGroupe(3, 1, 1, 0.5), F.esMenard(1, 0.5, 3) / (3 * F.esMenard(1, 0.5, 1))), 'groupe : s = B → rideau continu Kf(nB)/(n Kf(B))');
+ok(near(F.palierArriere(4.8, 1.6), 1) && near(F.palierArriere(3, 1.2), 0.75) && F.palierArriere(Infinity, 1) === 1, 'palier des files arrière : min(1, (s − B)/2B)');
+{ const R = F.rangees([{ x: 0, y: 0 }, { x: 0, y: 2 }, { x: 0, y: 4 }, { x: 3, y: 1 }], 'x'); ok(R.parPieu[0].n === 3 && near(R.parPieu[0].s, 2) && R.parPieu[3].n === 1 && R.sFiles === 3, 'rangées : détection des pieux alignés et de l’entraxe des files'); }
+
 /* ── exemples d'origine (valeurs relevées dans les notes .res/.ndc ; sondage PressioC0 reconstitué) ── */
 const sps = S.vide();
 Object.assign(sps, { z: 160, nappe: 8, fin: 20, finCouches: 20, couches: [{ z: 0, nom: 'limon', pl: 0.40, pf: 0.24, em: 5, alpha: 0.5, classe: 'LA' }, { z: 10.5, nom: 'sable', pl: 3.5, pf: 2.1, em: 20, alpha: 0.33, classe: 'SB' }] });
@@ -90,16 +96,20 @@ const C = [ // 17 combinaisons communes aux trois exemples : [type, LD (Fx Fy Fz
 {
   const piles = []; for (const x of [-1.5, 1.5]) for (const y of [-4.5, -1.5, 1.5, 4.5]) piles.push({ x, y });
   const d = { type: 'pieux', sps, combs: C, zsem: 158, zdef: 162, ztn: 159.5,
-    pieux: { type: 2, B: 1.2, L: 15, nseg: 10, kbase: 1e8, piles, enrob: 0.09,
-      // réduction de groupe du module frontal relevée dans la note d'origine (non programmée ici)
-      reducKf: { x: { limon: 0.8503, sable: 0.8681 }, y: { limon: 0.9104, sable: 0.9258 } } } };
+    pieux: { type: 2, B: 1.2, L: 15, nseg: 10, kbase: 1e8, piles, enrob: 0.09 } }; // effet de groupe calculé automatiquement
   const r = F.calc(d), pt = r.pt;
   console.log('— FondPieux');
   cmp('ple* pointe', pt.ple, 3.5, 1e-6); cmp('De', pt.De, 8.271, 1e-3); cmp('kp', pt.kp, 1.1, 1e-9);
   cmp('Qpu', pt.Qpu, 4354, 1e-3); cmp('Qsu', pt.Qsu, 2553, 1e-3); cmp('Qu', pt.Qu, 6907.1, 1e-4); cmp('Qc', pt.Qc, 3964.1, 1e-4);
   cmp('Qtc', pt.Qtc, 1787.0, 1e-4); cmp('fc* conventionnelle', pt.fc, 20.833, 1e-4); cmp('N ≤ 0,3 fc* Ap', pt.Nbeton, 7068.6, 1e-4);
   cmp('limite ELU fond.', pt.lim['ELU fond'][0], 4933.6, 1e-4); cmp('limite ELS rare', pt.lim['ELS rare'][0], 3603.7, 1e-4); cmp('limite ELS q.p.', pt.lim['ELS qp'][0], 2831.5, 1e-4);
-  cmp('Kf limon (1,20 m, réduction de groupe 0,8503)', F.esMenard(5, 0.5, 1.2) * 0.8503, 25.074, 1e-3); cmp('Kf sable', F.esMenard(20, 0.33, 1.2) * 0.8681, 140.208, 1e-3);
+  // effet de groupe (coefficients de réduction de Kf de la note d'origine) et palier des files arrière
+  const gx = r.base.groupe[0], gy = r.base.groupe[1];
+  cmp('réduction Kf en X, limon (rangée de 4 à 3,00 m)', gx.rows[0].coef[0].rho, 0.8503, 1e-4); cmp('réduction Kf en X, sable', gx.rows[0].coef[1].rho, 0.8681, 1e-4);
+  cmp('réduction Kf en Y, limon (rangée de 2 à 3,00 m)', gy.rows[0].coef[0].rho, 0.9104, 1e-4); cmp('réduction Kf en Y, sable', gy.rows[0].coef[1].rho, 0.9258, 1e-4);
+  cmp('palier des files arrière', gx.palierArriere, 0.75, 1e-9);
+  cmp('Kf limon X (1,20 m, groupe)', F.esMenard(5, 0.5, 1.2) * gx.rows[0].coef[0].rho, 25.074, 1e-3); cmp('Kf sable X', F.esMenard(20, 0.33, 1.2) * gx.rows[0].coef[1].rho, 140.208, 1e-3);
+  cmp('Kf limon Y', F.esMenard(5, 0.5, 1.2) * gy.rows[0].coef[0].rho, 26.846, 1e-3); cmp('Kf sable Y', F.esMenard(20, 0.33, 1.2) * gy.rows[0].coef[1].rho, 149.535, 1e-3);
   // efforts en tête (la note donne Fz, Fy, Mx, My par pieu)
   const c4 = r.combs[3], c5 = r.combs[4], c12 = r.combs[11], c13 = r.combs[12];
   cmp('comb. 4 pieu 4 Fz', -c4.piles[3].N, -2763.50, 5e-3); cmp('comb. 4 pieu 5 Fz', -c4.piles[4].N, -1246.01, 5e-3);

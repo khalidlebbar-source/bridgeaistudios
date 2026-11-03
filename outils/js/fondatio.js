@@ -352,8 +352,42 @@
       fc, k1: ty.k1, k2, Nbeton: 0.3 * fc * Ap * 1000, notes, typeNom: ty.nom };
   }
 
-  /* ressorts latéraux nodaux d'un pieu : k (kN/m) et palier (kN) par nœud, pour une direction donnée */
-  function ressortsLateraux(d, pt, dir) {
+  /* ── effet de groupe sous efforts horizontaux (pieux circulaires) ──
+   * Règle reconstituée à partir des notes du programme d'origine (aucun texte réglementaire public n'a été retrouvé ;
+   * le Fasc. 62 titre V annexe C5 renvoie à une appréciation de l'ingénieur) et vérifiée sur ses exemples :
+   *  - module frontal : les n pieux d'une même rangée perpendiculaire au déplacement, d'entraxe s, sont comparés à un
+   *    rideau continu de largeur n·B ; coefficient du rideau g = Kf(n·B) / (n·Kf(B)) (formule de Ménard, par couche,
+   *    selon α) ; interpolation linéaire entre le rideau (s = B) et le pieu isolé (s ≥ 3B) :
+   *        ρ = g + (1 − g)·min(1, (s − B)/(2B))
+   *    (FondPieux, 2 × 4 pieux Ø 1,20 à 3,00 m : 0,8503 / 0,8681 en X et 0,9104 / 0,9258 en Y, retrouvés à 5·10⁻⁵ près ;
+   *     notes à s ≥ 3B : aucune réduction) ;
+   *  - palier des files arrière (masque) : rapport min(1, (s' − B)/(2B)) avec s' l'entraxe des files dans le sens du
+   *    déplacement (0,75 à 2,5B dans FondPieux, 1,000 à 3B dans les autres notes) ; module inchangé.
+   *  Barrettes : aucune réduction du module frontal (comme le programme d'origine). */
+  function rangees(piles, dir, tol = 0.05) {
+    // dir 'x' : déplacement suivant X → rangées = pieux de même x, alignés suivant Y
+    const a = dir === 'x' ? 'x' : 'y', b = dir === 'x' ? 'y' : 'x', rows = [];
+    piles.forEach((q, i) => { let r = rows.find((R) => Math.abs(R.c - q[a]) <= tol); if (!r) rows.push(r = { c: q[a], idx: [] }); r.idx.push(i); });
+    rows.sort((u, v) => u.c - v.c);
+    const out = piles.map(() => ({ n: 1, s: Infinity }));
+    for (const r of rows) {
+      const v = r.idx.map((i) => piles[i][b]).sort((u, w) => u - w), n = v.length;
+      const s = n > 1 ? (v[n - 1] - v[0]) / (n - 1) : Infinity; // entraxe moyen dans la rangée
+      r.idx.forEach((i) => (out[i] = { n, s }));
+    }
+    const ds = []; for (let k = 1; k < rows.length; k++) ds.push(rows[k].c - rows[k - 1].c);
+    return { parPieu: out, sFiles: ds.length ? Math.min(...ds) : Infinity, nFiles: rows.length };
+  }
+  function reducGroupe(n, s, B, alpha) {
+    if (!(n > 1) || !(s < 3 * B)) return 1;
+    const g = esMenard(1, alpha, n * B) / (n * esMenard(1, alpha, B));
+    return g + (1 - g) * Math.min(1, Math.max(0, (s - B) / (2 * B)));
+  }
+  const palierArriere = (sF, B) => (Number.isFinite(sF) ? Math.min(1, Math.max(0, (sF - B) / (2 * B))) : 1);
+
+  /* ressorts latéraux nodaux d'un pieu : k (kN/m) et palier (kN) par nœud, pour une direction donnée ;
+   * grp = {n, s} : rangée du pieu (réduction de groupe automatique), sauf coefficient saisi p.reducKf[dir] */
+  function ressortsLateraux(d, pt, dir, grp) {
     const p = d.pieux, col = pt.col, n = p.nseg || 10, L = p.L, hseg = L / n, Bw = pt.barr ? (dir === 'x' ? (p.orientBarrette === 'x' ? pt.B : pt.Lb) : (p.orientBarrette === 'x' ? pt.Lb : pt.B)) : pt.B;
     const zc = 2 * Bw, red = p.reducKf || {}, nodes = [];
     for (let k = 0; k <= n; k++) {
@@ -365,7 +399,9 @@
         // réduction près de la surface (z mesuré depuis le terrain définitif) : (1 + z/zc)/2 pour z < zc
         const zm = d.zdef - (a + b) / 2, rs = p.surface === false ? 1 : zm < zc ? (1 + Math.max(0, zm) / zc) / 2 : 1;
         const rr = red[dir];
-        const rk = Number.isFinite(rr) ? rr : (rr && Number.isFinite(rr[sg.nom]) ? rr[sg.nom] : 1); // coefficient de groupe saisi (global ou par couche)
+        // coefficient de groupe : saisi (global ou par couche) ou automatique (rangée du pieu)
+        const rk = Number.isFinite(rr) ? rr : (rr && Number.isFinite(rr[sg.nom])) ? rr[sg.nom]
+          : (grp && !pt.barr ? reducGroupe(grp.n, grp.s, Bw, sg.alpha) : 1);
         K += esMenard(sg.em, sg.alpha, Bw) * rs * rk * (a - b);
         Pf += sg.pf * Bw * rs * (a - b);
       }
@@ -397,10 +433,10 @@
     const EI = { x: E * base.Iy, y: E * base.Ix }, EA = E * pt.Ap, kax = 1 / (p.L / EA + 1 / (p.kbase > 0 ? p.kbase : 1e12));
     const G = E / 2.4, kt = G * base.J / p.L;
     const rows = { x: [...new Set(piles.map((q) => +q.x.toFixed(3)))].sort((a, b) => a - b), y: [...new Set(piles.map((q) => +q.y.toFixed(3)))].sort((a, b) => a - b) };
-    const st = piles.map((q, i) => ({
-      x: { k0: base.spr.x.map((nd) => nd.k * kfac), P: base.spr.x.map((nd) => nd.P), ks: base.spr.x.map((nd) => nd.k * kfac) },
-      y: { k0: base.spr.y.map((nd) => nd.k * kfac), P: base.spr.y.map((nd) => nd.P), ks: base.spr.y.map((nd) => nd.k * kfac) },
-    }));
+    const st = piles.map((q, i) => { const S = base.sprP ? base.sprP[i] : base.spr; return {
+      x: { k0: S.x.map((nd) => nd.k * kfac), P: S.x.map((nd) => nd.P), ks: S.x.map((nd) => nd.k * kfac) },
+      y: { k0: S.y.map((nd) => nd.k * kfac), P: S.y.map((nd) => nd.P), ks: S.y.map((nd) => nd.k * kfac) },
+    }; });
     const pPrev = (i, dir, k) => (prev ? prev.piles[i][dir].p[k] : 0);
     let U = [0, 0, 0, 0, 0, 0], it = 0, conv = false, sol;
     const cache = new Map();
@@ -436,7 +472,7 @@
         for (const dir of ['x', 'y']) {
           const T = heads[i][dir].T, w = T[0].reduce((t, v, k) => t + v * Unew[k], 0), ph = T[1].reduce((t, v, k) => t + v * Unew[k], 0);
           const r = heads[i][dir].m.run({ disp: [{ n: 0, dof: 'uy', v: w }, { n: 0, dof: 'rz', v: ph }] });
-          const fr = rear[dir](dir === 'x' ? q.x : q.y) ? (p.palierArriere || 0.75) : 1;
+          const fr = rear[dir](dir === 'x' ? q.x : q.y) ? (base.fArr ? base.fArr[dir] : (Number.isFinite(p.palierArriere) ? p.palierArriere : 0.75)) : 1;
           const S = st[i][dir], wn = [], pn = [];
           for (let k = 0; k <= n; k++) {
             const wk = r.U[3 * k + 1]; wn.push(wk);
@@ -475,7 +511,20 @@
     const J = pt.barr ? (() => { const a = Math.max(pt.B, pt.Lb), b = Math.min(pt.B, pt.Lb); return a * b * b * b * (1 / 3 - 0.21 * b / a * (1 - Math.pow(b / a, 4) / 12)); })() : Math.PI * Math.pow(pt.B, 4) / 32;
     // discrétisation interne : chaque élément de sortie est subdivisé (ressorts linéiques ≈ répartis), résultats aux nœuds de sortie
     const nOut = p.nseg || 10, sub = p.sub || 4, dI = Object.assign({}, d, { pieux: Object.assign({}, p, { nseg: nOut * sub }) });
-    const base = { Ei, Ix, Iy, J, spr: { x: ressortsLateraux(dI, pt, 'x'), y: ressortsLateraux(dI, pt, 'y') } };
+    const RG = { x: rangees(p.piles, 'x'), y: rangees(p.piles, 'y') };
+    const sprP = p.piles.map((_, i) => ({ x: ressortsLateraux(dI, pt, 'x', RG.x.parPieu[i]), y: ressortsLateraux(dI, pt, 'y', RG.y.parPieu[i]) }));
+    // palier des files arrière : saisi, sinon min(1, (s' − B)/2B)
+    const fArr = { x: Number.isFinite(p.palierArriere) ? p.palierArriere : palierArriere(RG.x.sFiles, pt.barr ? pt.Lb : pt.B),
+      y: Number.isFinite(p.palierArriere) ? p.palierArriere : palierArriere(RG.y.sFiles, pt.barr ? pt.Lb : pt.B) };
+    // tableau de contrôle des coefficients de réduction automatiques par rangée et par couche
+    const groupe = ['x', 'y'].map((dir) => {
+      const rows = [];
+      const same = (r, g) => r.n === g.n && (r.s === g.s || Math.abs(r.s - g.s) < 1e-6);
+      RG[dir].parPieu.forEach((g, i) => { let r = rows.find((x) => same(x, g)); if (!r) rows.push(r = { n: g.n, s: g.s, pieux: [] }); r.pieux.push(i + 1); });
+      return { dir, palierArriere: fArr[dir], sFiles: RG[dir].sFiles, saisi: Number.isFinite((p.reducKf || {})[dir]) || ((p.reducKf || {})[dir] && typeof p.reducKf[dir] === 'object'),
+        rows: rows.map((r) => Object.assign(r, { coef: pt.col.filter((c) => !c.remblai).map((c) => ({ nom: c.nom, alpha: c.alpha, rho: pt.barr ? 1 : reducGroupe(r.n, r.s, pt.B, c.alpha) })) })) };
+    });
+    const base = { Ei, Ix, Iy, J, spr: sprP[0], sprP, fArr, groupe };
     const pick = (a) => a.filter((_, k) => k % sub === 0);
     const fn = p.frotNeg || {};
     const combs = (d.combs || []).map((cb, k) => {
@@ -616,13 +665,13 @@
       fcj: n('fcj', 28), fe: n('fe', 500), px: n('pteffx', 0), py: n('pteffy', 0),
       projet: kv.projet || '', sup,
       pieux: { type: n('lfond', 0) > 0 ? 7 : (tp >= 1 && tp <= 4 ? tp : 2), B: n('dfond', 1), Lb: n('lfond', 0), L: n('htfond', 10), h0: n('hsolcompressible', 0), nseg: Math.round(n('nbelpieuxsol', 10)),
-        kbase: n('ressortfzpointe', 0) || 1e8, kbaseR: n('ressortmypointe', 0), kbaseH: n('ressortfxpointe', 0), ce: n('ce', 1), enrob: n('distacier', 0.09), palierArriere: 0.75,
+        kbase: n('ressortfzpointe', 0) || 1e8, kbaseR: n('ressortmypointe', 0), kbaseH: n('ressortfxpointe', 0), ce: n('ce', 1), enrob: n('distacier', 0.09),
         frotNeg: n('calfrotneg', 0) === 2 ? { els: n('frotnegels', 0), elu: n('frotnegelu', 0) } : {}, piles: piles.length ? piles : [{ x: 0, y: 0 }] },
       combs, avert: [n('calfrotneg', 0) === 1 ? 'Frottement négatif « calcul automatique » (Combarieu) non repris : saisir les valeurs Gsn.' : '', n('pieuxinclines', 0) ? 'Pieux inclinés non traités : calcul en pieux verticaux.' : '', n('tmpieu', 0) ? 'Micropieux non traités.' : '', circ && type !== 'pieux' ? '' : ''].filter(Boolean),
     };
   }
 
-  const api = { calc, colonne, portance, qsCourbe, courbeAuto, kpSup, kpProf, kpDe, iDelta, lambdas, modulesMenard, souplesseMenard, repartition, meyerhof, esMenard, mrdCirc, parseDon, typeComb, transport, TYPES_PIEU, geoMean, arithMean, integ };
+  const api = { calc, rangees, reducGroupe, palierArriere, colonne, portance, qsCourbe, courbeAuto, kpSup, kpProf, kpDe, iDelta, lambdas, modulesMenard, souplesseMenard, repartition, meyerhof, esMenard, mrdCirc, parseDon, typeComb, transport, TYPES_PIEU, geoMean, arithMean, integ };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.fondatio = api; }
 })(typeof window !== 'undefined' ? window : globalThis);

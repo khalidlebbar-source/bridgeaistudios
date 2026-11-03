@@ -15,7 +15,7 @@
     { phase: 2, titre: 'Fondations et appuis' },
     { code: 'SONDPRES', slug: 'sondpres', statut: 'on', nom: 'Sondages pressiométriques', reg: 'Fasc. 62 titre V · NF P 94-262',
       desc: 'Saisie, lecture et impression des sondages pressiométriques (pl, EM, α) au format SPS, profil graphique.' },
-    { code: 'FONDATIO', slug: 'fondatio', statut: 'beta', nom: 'Fondations', reg: 'Fasc. 62 titre V · Livret 2.01 · EN 1992',
+    { code: 'FONDATIO', slug: 'fondatio', statut: 'on', nom: 'Fondations', reg: 'Fasc. 62 titre V · Livret 2.01 · EN 1992',
       desc: 'Semelles superficielles, puits et groupes de pieux ou barrettes sous semelle rigide : portance, tassements, déplacements, frottement négatif, aciers des pieux.' },
     { code: 'APPMOBIL', slug: 'appmobil', statut: 'on', nom: 'Appareils d’appui en élastomère fretté', reg: 'NF EN 1337-3 · guide SETRA 2000 · Livret 2.01',
       desc: 'Dimensionnement et vérification : distorsions, stabilité au flambement, non-glissement, rotation, épaisseur des frettes.' },
