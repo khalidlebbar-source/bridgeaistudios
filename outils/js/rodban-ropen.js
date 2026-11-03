@@ -991,7 +991,8 @@
     const qFrais = (H - tf) * (+d.gb || 25) * R.ent, qCh = 0.5 * R.ent;
     const sigL = gp * Lmax ** 2 / 8 / Wel1 / 1000, sigE = (qFrais + qCh) * Lmax ** 2 / 8 / Wel1 / 1000, sigE15 = (0.15 * (+d.gb || 25) * R.ent + qCh) * Lmax ** 2 / 8 / Wel1 / 1000;
     const sigCrit = IN.Ea / 12 * Math.pow(Math.PI * bP / (0.7 * Lmax), 2);
-    const dev = { Lmax, sigL, sigE, sigF: 1.35 * sigL + 1.6 * sigE, sigF15: 1.35 * sigL + 1.6 * sigE15, sigCrit, sigLim: sigCrit <= fy / 2 ? sigCrit : fy * (1 - fy / (4 * sigCrit)) };
+    // pondérations 1,35 (poutrelles) et 1,5 (béton frais et charges de chantier), retrouvées sur l'exemple d'origine
+    const dev = { Lmax, sigL, sigE, sigF: 1.35 * sigL + 1.5 * sigE, sigF15: 1.35 * sigL + 1.5 * sigE15, sigCrit, sigLim: sigCrit <= fy / 2 ? sigCrit : fy * (1 - fy / (4 * sigCrit)) };
     dev.ok15 = dev.sigF15 <= dev.sigLim; dev.ok = dev.sigF <= dev.sigLim;
     if (!dev.ok) res.alertes.push('Déversement des poutrelles : contrainte critique simplifiée dépassée pour un bétonnage en une phase — calcul fin (moment critique, phasage) ou anti-déversement.');
     const dal = { q: (H - tf) * (+d.gb || 25) + 0.5, portee: R.ent - bP + 2 * 0.05 };
