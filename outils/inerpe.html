@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INERPE — Inerties des poutrelles enrobées · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/inerpe.html">
+<meta name="description" content="Tabliers à poutrelles enrobées : moment résistant plastique ELU (EN 1994-2 §6.2.1.2), inerties et modules I/v homogénéisés à court et long terme, béton fissuré ou non, en travée et sur appui. Catalogue HEA, HEAA, HEB, HEM intégré.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .sec-svg{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px}
+  .sec-svg text{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink3)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin-top:6px}
+  .legend i{display:inline-block;width:16px;height:0;border-top:2px dashed currentColor;vertical-align:middle;margin-right:5px}
+  .prof-info{font-size:11.5px;color:var(--ink3);margin-top:8px;line-height:1.6}
+  .sub{font-size:10.5px;color:var(--ink3);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .hid{display:none!important}
+  td.na{color:#b9bdc6}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Tabliers et murs</div>
+      <div class="eyebrow">INERPE · poutrelles enrobées</div>
+      <h1>Inerties des <em>poutrelles enrobées</em></h1>
+      <p class="lead">Moment résistant plastique et axe neutre à l’ELU, inerties et modules I/v homogénéisés à court et long terme, béton fissuré ou non, en travée et sur appui, pour un tablier ou une bande d’une poutrelle.</p>
+      <div class="badges"><span class="badge">EN 1994-2 §5.4.2.2 · §6.2.1.2 · §6.3</span><span class="badge">EN 1992-1-1 tab. 3.1</span><span class="badge">EN 1993-1-1 tab. 3.1</span><span class="badge">Catalogue HEAA · HEA · HEB · HEM</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDon">Importer un fichier .don</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card">
+      <div class="card-title"><span>Projet</span></div>
+      <div class="fields c1" id="fProj"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Poutrelle</span><small>profilé laminé ou reconstitué</small></div>
+      <div class="fields" id="fProf"></div>
+      <div class="fields" id="fProfCat" style="margin-top:10px"></div>
+      <div class="fields c3" id="fProfSaisi" style="margin-top:10px"></div>
+      <div class="prof-info" id="profInfo"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Section du tablier</span><small>tablier complet ou bande = entraxe</small></div>
+      <div class="fields" id="fTab"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Armatures longitudinales</span><small>nappes, section totale sur la largeur</small></div>
+      <div id="rNap"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Position : distance de l’axe de la nappe à la fibre supérieure du béton (nappe sup.) ou à la sous-face du béton (nappe inf.). Section en cm² sur toute la largeur saisie.</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Matériaux</span></div>
+      <div class="fields" id="fMat"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Coefficients d’équivalence</span><small>Ea / Ec</small></div>
+      <div class="fields" id="fN"></div>
+    </div>
+  </div>
+
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/inerpe.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const E = BA.inerpe, P = E.profiles, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'inerpe';
+
+  /* ── schémas de saisie ── */
+  const F_PROJ = [{ id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: '' }];
+  const F_PROF = [
+    { id: 'pmode', label: 'Définition', type: 'sel', def: 'cat', options: [['cat', 'Catalogue européen'], ['saisi', 'Dimensions saisies (laminé ou PRS)']], wide: true },
+  ];
+  const F_CAT = [
+    { id: 'serie', label: 'Série', type: 'sel', def: 'HEB', options: P.series.map((s) => [s, s]) },
+    { id: 'taille', label: 'Taille', type: 'sel', def: 500, options: P.tailles('HEB').map((t) => [t, String(t)]) },
+  ];
+  const F_SAISI = [
+    { id: 'h', label: 'Hauteur h', unit: 'mm', def: 500 },
+    { id: 'b', label: 'Aile sup. b', unit: 'mm', def: 300 },
+    { id: 'tf', label: 'Aile sup. tf', unit: 'mm', def: 28 },
+    { id: 'tw', label: 'Âme tw', unit: 'mm', def: 14.5 },
+    { id: 'bi', label: 'Aile inf. bi', unit: 'mm', def: 300 },
+    { id: 'tfi', label: 'Aile inf. tfi', unit: 'mm', def: 28 },
+    { id: 'r', label: 'Congé r', unit: 'mm', def: 27, help: '0 pour un PRS' },
+    { id: 'pnom', label: 'Désignation', type: 'txt', def: 'PRS', wide: true },
+  ];
+  const F_TAB = [
+    { id: 'N', label: 'Nombre de poutrelles', def: 8, step: 1 },
+    { id: 'B', label: 'Largeur de la section', unit: 'm', def: 5.6, help: 'largeur du tablier, ou entraxe pour une bande' },
+    { id: 'csup', label: 'Enrobage supérieur cst', unit: 'm', def: 0.12, help: 'béton au-dessus de l’aile supérieure' },
+    { id: 'typeSous', label: 'Sous-face', type: 'sel', def: 'apparente', options: [['apparente', 'Aile inférieure apparente'], ['enrobee', 'Aile inférieure enrobée']] },
+    { id: 'ecof', label: 'Coffrage perdu (non résistant)', unit: 'm', def: 0.02, help: 'épaisseur au-dessus de l’aile inférieure' },
+    { id: 'cinf', label: 'Enrobage inférieur', unit: 'm', def: 0.05, help: 'béton sous l’aile inférieure' },
+  ];
+  const F_MAT = [
+    { id: 'fck', label: 'Béton fck', unit: 'MPa', def: 35 },
+    { id: 'fyk', label: 'Armatures fyk', unit: 'MPa', def: 500 },
+    { id: 'nuance', label: 'Acier de construction', type: 'sel', def: 'S355', options: [['S235', 'S235'], ['S275', 'S275'], ['S355', 'S355'], ['S420', 'S420'], ['S460', 'S460']] },
+    { id: 'fy', label: 'fy imposé (0 = selon tf)', unit: 'MPa', def: 0, help: 'EN 1993-1-1 tab. 3.1 : t ≤ 40 / 40 < t ≤ 80 mm' },
+    { id: 'gammaA', label: 'γa (acier de construction)', def: 1.0, help: 'EN 1994-2 : γM0 = 1,00 (AN)' },
+    { id: 'gammaC', label: 'γc (béton)', def: 1.5 },
+    { id: 'gammaS', label: 'γs (armatures)', def: 1.15 },
+    { id: 'congesELU', label: 'Congés pris en compte à l’ELU', type: 'chk', def: true },
+    { id: 'deduire', label: 'ELS : déduire l’acier noyé de l’aire de béton', type: 'chk', def: false, wide: true },
+  ];
+  const F_N = [
+    { id: 'nMode', label: 'Méthode', type: 'sel', def: 'ec4', wide: true, options: [['ec4', 'EN 1994-2 §5.4.2.2 : n0 = Ea/Ecm, nL = n0 (1 + ψL φt)'], ['saisi', 'Valeurs saisies (n = 6 / 18 du guide de 1995)']] },
+    { id: 'phi', label: 'Fluage φt = φ(∞, t0)', def: 2.0, help: 'EN 1992-1-1 annexe B' },
+    { id: 'psiL', label: 'ψL', def: 1.1, help: '1,1 charges permanentes ; 0,55 retrait ; 1,5 précontrainte par déformation imposée' },
+    { id: 'nCourt', label: 'n court terme', def: 6 },
+    { id: 'nLong', label: 'n long terme', def: 18 },
+  ];
+  const NAP_COLS = [
+    { id: 'pos', label: 'Nappe', type: 'sel', options: [['sup', 'supérieure'], ['inf', 'inférieure']], def: 'sup', w: '34%' },
+    { id: 'As', label: 'As (cm²)', def: 30 },
+    { id: 'd', label: 'Position (m)', def: 0.05 },
+  ];
+  const DEF_NAP = [{ pos: 'sup', As: 56.3, d: 0.05 }, { pos: 'inf', As: 22.6, d: 0.04 }];
+
+  /* ── construction des formulaires ── */
+  const saved = BA.store.load(KEY) || {};
+  const V = Object.assign({}, saved.v || {});
+  BA.form(document.getElementById('fProj'), F_PROJ, 'i_', V);
+  BA.form(document.getElementById('fProf'), F_PROF, 'i_', V);
+  BA.form(document.getElementById('fProfCat'), F_CAT, 'i_', V);
+  BA.form(document.getElementById('fProfSaisi'), F_SAISI, 'i_', V);
+  BA.form(document.getElementById('fTab'), F_TAB, 'i_', V);
+  BA.form(document.getElementById('fMat'), F_MAT, 'i_', V);
+  BA.form(document.getElementById('fN'), F_N, 'i_', V);
+  const nap = BA.rows(document.getElementById('rNap'), NAP_COLS, (saved.nap || DEF_NAP).map((x) => Object.assign({}, x)), { addLabel: 'Ajouter une nappe', onChange: () => persist() });
+  const ALL = [].concat(F_PROJ, F_PROF, F_CAT, F_SAISI, F_TAB, F_MAT, F_N);
+  const $ = (id) => document.getElementById('i_' + id);
+
+  function fillTailles(serie, keep) {
+    const s = $('taille'), cur = keep !== undefined ? keep : +s.value;
+    const t = P.tailles(serie);
+    s.innerHTML = t.map((x) => `<option value="${x}">${x}</option>`).join('');
+    s.value = t.includes(+cur) ? cur : (t.includes(500) ? 500 : t[0]);
+  }
+  fillTailles($('serie').value, V.taille !== undefined ? V.taille : 500);
+
+  function vis() {
+    const cat = $('pmode').value === 'cat';
+    document.getElementById('fProfCat').classList.toggle('hid', !cat);
+    document.getElementById('fProfSaisi').classList.toggle('hid', cat);
+    const app = $('typeSous').value === 'apparente';
+    $('ecof').closest('.field').classList.toggle('hid', !app);
+    $('cinf').closest('.field').classList.toggle('hid', app);
+    const ec4 = $('nMode').value === 'ec4';
+    ['phi', 'psiL'].forEach((k) => $(k).closest('.field').classList.toggle('hid', !ec4));
+    ['nCourt', 'nLong'].forEach((k) => $(k).closest('.field').classList.toggle('hid', ec4));
+    profInfo();
+  }
+  function profInfo() {
+    const el = document.getElementById('profInfo');
+    if ($('pmode').value !== 'cat') { el.innerHTML = 'Profil en I, éventuellement dissymétrique ; A et Iy sont calculés à partir des dimensions (congés compris).'; return; }
+    const p = P.get($('serie').value + ' ' + $('taille').value);
+    if (!p) { el.textContent = ''; return; }
+    el.innerHTML = `<b style="font-weight:500;color:var(--ink2)">${p.nom}</b> — h ${fmt(p.h, 0)} · b ${fmt(p.b, 0)} · tw ${fmt(p.tw, 1)} · tf ${fmt(p.tf, 1)} · r ${fmt(p.r, 0)} mm<br>
+      A ${fmt(p.A, 1)} cm² · Iy ${fmt(p.Iy, 0)} cm⁴ · Wel ${fmt(p.Wel, 0)} cm³ · Wpl ${fmt(p.Wpl, 0)} cm³ · ${fmt(p.A * 0.785, 1)} kg/m`;
+  }
+
+  function readAll() {
+    const v = BA.read(ALL, 'i_');
+    return v;
+  }
+  function toInput(v) {
+    const profil = v.pmode === 'cat' ? { mode: 'cat', nom: v.serie + ' ' + v.taille }
+      : { mode: 'saisi', nom: v.pnom || 'PRS', h: v.h / 1e3, b: v.b / 1e3, tf: v.tf / 1e3, tw: v.tw / 1e3, bi: v.bi / 1e3, tfi: v.tfi / 1e3, r: (v.r || 0) / 1e3 };
+    return {
+      profil, N: v.N, B: v.B, csup: v.csup, typeSous: v.typeSous, ecof: v.ecof || 0, cinf: v.cinf || 0,
+      nappes: nap.data.filter((n) => +n.As > 0).map((n) => ({ pos: n.pos, As: +n.As, d: +n.d })),
+      fck: v.fck, fyk: v.fyk, nuance: v.nuance, fy: v.fy || 0, gammaA: v.gammaA, gammaC: v.gammaC, gammaS: v.gammaS,
+      congesELU: v.congesELU, deduire: v.deduire, nMode: v.nMode, phi: v.phi, psiL: v.psiL, nCourt: v.nCourt, nLong: v.nLong,
+    };
+  }
+  function persist() { BA.store.save(KEY, { v: readAll(), nap: nap.data, tab: state.tab }); }
+
+  /* ── affichage ── */
+  const state = { tab: saved.tab || 'travee', res: null };
+  const f3 = (x) => fmt(x, 3), f4 = (x) => fmt(x, 4), f5 = (x) => fmt(x, 5), f7 = (x) => fmt(x, 7);
+  const W = (f) => f ? (Number.isFinite(f.W) ? f5(f.W) : '∞') : '<span class="na">tendu</span>';
+
+  function svgSection(r) {
+    const S = r.S, pr = S.pr, N = S.N, B = S.B, sw = B / N;
+    const H = S.H, z0 = Math.min(0, S.zb);
+    // largeur représentée : tablier complet si peu élancé, sinon trois entraxes
+    const nShow = (B / (H - z0) <= 7) ? N : Math.min(N, 3);
+    const Wd = nShow * sw, cut = nShow < N;
+    const VW = 760, pad = 34, sc = Math.min((VW - 2 * pad - 90) / Wd, 230 / (H - z0));
+    const VH = (H - z0) * sc + 2 * pad;
+    const X = (x) => pad + x * sc, Y = (y) => pad + (H - y) * sc;
+    let g = '';
+    // béton
+    g += `<rect x="${X(0)}" y="${Y(H)}" width="${Wd * sc}" height="${(H - S.zb) * sc}" fill="#e7e2d6" stroke="#9a937f" stroke-width="1"/>`;
+    if (S.d.typeSous === 'apparente' && S.d.ecof > 0) {
+      for (let i = 0; i < nShow; i++) {
+        const xc = (i + 0.5) * sw;
+        g += `<rect x="${X(xc + pr.bi / 2)}" y="${Y(S.zb)}" width="${(sw - pr.bi) * sc}" height="${S.d.ecof * sc}" fill="#fff" stroke="#b9b29e" stroke-dasharray="3 2"/>`;
+        if (i === 0) g += `<rect x="${X(0)}" y="${Y(S.zb)}" width="${Math.max(0, (sw - pr.bi) / 2) * sc}" height="${S.d.ecof * sc}" fill="#fff" stroke="#b9b29e" stroke-dasharray="3 2"/>`;
+      }
+    }
+    // poutrelles
+    for (let i = 0; i < nShow; i++) {
+      const xc = (i + 0.5) * sw, hw = pr.tw / 2;
+      const pts = [[xc - pr.bi / 2, 0], [xc + pr.bi / 2, 0], [xc + pr.bi / 2, pr.tfi], [xc + hw, pr.tfi], [xc + hw, pr.h - pr.tfs], [xc + pr.bs / 2, pr.h - pr.tfs], [xc + pr.bs / 2, pr.h], [xc - pr.bs / 2, pr.h], [xc - pr.bs / 2, pr.h - pr.tfs], [xc - hw, pr.h - pr.tfs], [xc - hw, pr.tfi], [xc - pr.bi / 2, pr.tfi]];
+      g += `<polygon points="${pts.map(([x, y]) => X(x).toFixed(1) + ',' + Y(y).toFixed(1)).join(' ')}" fill="#4a5168" stroke="#2c3142" stroke-width=".8"/>`;
+    }
+    // armatures (points)
+    for (const a of S.nap) {
+      const nb = Math.max(2, Math.round(Wd / 0.15));
+      for (let k = 0; k < nb; k++) g += `<circle cx="${X((k + 0.5) * Wd / nb)}" cy="${Y(a.y)}" r="2.6" fill="#c0392b"/>`;
+    }
+    if (cut) g += `<path d="M${X(Wd) - 4},${Y(H) - 8} l8,${((H - z0) * sc + 16) / 4} l-8,${((H - z0) * sc + 16) / 4} l8,${((H - z0) * sc + 16) / 4} l-8,${((H - z0) * sc + 16) / 4}" fill="none" stroke="#9a937f" stroke-width="1.2"/>`;
+    // axes neutres
+    const side = r[state.tab];
+    const lines = [
+      { y: side.elu.yn, c: '#a8842a', t: 'ELU plastique' },
+      { y: side.cas.find((c) => c.id === 'ltnf').yG, c: '#0f8f7b', t: 'ELS LT non fissuré' },
+      { y: side.cas.find((c) => c.id === 'ctf').yG, c: '#2d6be4', t: 'ELS CT fissuré' },
+    ];
+    lines.forEach((l, k) => {
+      g += `<line x1="${X(0) - 6}" x2="${X(Wd) + 6}" y1="${Y(l.y)}" y2="${Y(l.y)}" stroke="${l.c}" stroke-width="1.4" stroke-dasharray="6 4"/>`;
+      g += `<text x="${X(Wd) + 12}" y="${Y(l.y) + 4 + (k - 1) * 0}" style="fill:${l.c}">${fmt(l.y, 3)} m</text>`;
+    });
+    // cotes
+    g += `<line x1="${X(0) - 16}" x2="${X(0) - 16}" y1="${Y(H)}" y2="${Y(z0)}" stroke="#9aa0ac"/><text x="${X(0) - 20}" y="${(Y(H) + Y(z0)) / 2}" text-anchor="middle" transform="rotate(-90 ${X(0) - 20} ${(Y(H) + Y(z0)) / 2})">${fmt(H - z0, 3)} m</text>`;
+    g += `<text x="${X(Wd / 2)}" y="${Y(H) - 10}" text-anchor="middle">${cut ? `${nShow} entraxes de ${fmt(sw, 3)} m sur ${N} (largeur totale ${fmt(B, 2)} m)` : `largeur ${fmt(B, 2)} m · ${N} poutrelle${N > 1 ? 's' : ''} · entraxe ${fmt(sw, 3)} m`}</text>`;
+    return `<svg class="sec-svg" viewBox="0 0 ${VW} ${VH.toFixed(0)}" role="img" aria-label="Coupe transversale de la section">${g}</svg>
+      <div class="legend"><span style="color:#a8842a"><i></i>axe neutre plastique ELU</span><span style="color:#0f8f7b"><i></i>ELS long terme non fissuré</span><span style="color:#2d6be4"><i></i>ELS court terme fissuré</span><span><b style="color:#c0392b">●</b> armatures</span><span>cotes depuis la sous-face des poutrelles · ${state.tab === 'travee' ? 'travée (fibre supérieure comprimée)' : 'appui (fibre inférieure comprimée)'}</span></div>`;
+  }
+
+  function tableELS(r, side) {
+    const sens = side === 'travee' ? 1 : -1, d = r[side], S = r.S, s0 = r.seules;
+    const arm = S.nap;
+    const heads = ['Section', 'n', 'A (m²)', 'yG (m)', 'I (m⁴)', 'I / m (m⁴/m)', 'I/v béton sup (m³)', 'I/v béton inf (m³)', 'I/v acier sup (m³)', 'I/v acier inf (m³)']
+      .concat(arm.map((a, k) => `I/v nappe ${a.pos === 'sup' ? 'sup' : 'inf'}${arm.length > 2 ? ' ' + (k + 1) : ''} (m³)`));
+    const rows = [['Poutrelles seules', '—', f5(s0.A), f3(s0.yG), f7(s0.I), f7(s0.Ipm), '—', '—', f5(s0.acierSup.W), f5(s0.acierInf.W)].concat(arm.map(() => '—'))];
+    for (const c of d.cas) rows.push([c.titre, fmt(c.n, 2), f5(c.A), f3(c.yG), f7(c.I), f7(c.Ipm), W(c.betonSup), W(c.betonInf), f5(c.acierSup.W), f5(c.acierInf.W)].concat(c.armatures.map((a) => f5(a.W))));
+    return BA.table(heads, rows, { caption: `Inerties « en acier » (béton divisé par n). Modules béton = n·I/v. ${sens > 0 ? 'Travée : moment positif, béton tendu sous l’axe neutre négligé en section fissurée.' : 'Appui : moment négatif, béton tendu au-dessus de l’axe neutre négligé en section fissurée ; armatures supérieures tendues.'}` });
+  }
+  function tableDetail(r, side) {
+    const d = r[side];
+    const rows = d.cas.map((c) => [c.titre, f3(c.betonSup ? c.betonSup.v : NaN), f3(c.betonInf ? c.betonInf.v : NaN), f3(c.acierSup.v), f3(c.acierInf.v), fmt(c.Ib, 5), f7(c.Ipp)]);
+    return BA.table(['Section', 'v béton sup (m)', 'v béton inf (m)', 'v acier sup (m)', 'v acier inf (m)', 'n·I « en béton » (m⁴)', 'I par poutrelle (m⁴)'], rows);
+  }
+  function tableELU(r) {
+    const row = (t, e) => [t, fmt(e.M, 1), fmt(e.Mpm, 1), fmt(e.Mpp, 1), f4(e.yn), f4(e.xpl), fmt(e.xplRel, 3), e.beta < 1 ? fmt(e.beta, 3) : '1'];
+    return BA.table(['Section', 'Mpl,Rd (kN·m)', 'par m (kN·m/m)', 'par poutrelle (kN·m)', 'axe neutre y (m)', 'xpl (m)', 'xpl / h', 'β'],
+      [row('Travée (moment positif)', r.travee.elu), row('Appui (moment négatif)', r.appui.elu)]);
+  }
+  function tableDomaine(r) {
+    return BA.table(['Condition EN 1994-2 §6.3.1', 'Valeur', 'Verdict'], r.domaine.map((x) => [x.txt, x.val === null ? '—' : fmt(x.val, 3) + ' m', BA.verdict(x.ok, 'Respecté', 'Hors domaine')]), { leftText: true });
+  }
+  function hyp(r) {
+    const S = r.S, e = r.travee.elu;
+    return `<div class="formula">fcd = fck/γc = ${fmt(e.fcd, 2)} MPa → 0,85 fcd = ${fmt(e.sc, 2)} MPa
+fyd = fy/γa = ${fmt(S.fy, 0)}/${fmt(S.d.gammaA, 2)} = ${fmt(e.fyd, 2)} MPa (${esc(S.d.nuance)}, tf max ${fmt(Math.max(S.pr.tfs, S.pr.tfi) * 1000, 1)} mm)
+fsd = fyk/γs = ${fmt(e.fsd, 2)} MPa
+Ecm = 22 (fcm/10)^0,3 = ${fmt(S.Ecm, 0)} MPa ; n0 = Ea/Ecm = ${fmt(S.n0, 3)}
+n court terme = ${fmt(S.nC, 3)} ; n long terme = ${fmt(S.nL, 3)}${S.d.nMode === 'ec4' ? ` = n0 (1 + ${fmt(S.d.psiL, 2)} × ${fmt(S.d.phi, 2)})` : ' (saisi)'}
+Poutrelle : ${esc(S.nomProf)} — Aa = ${fmt(S.Ap * 1e4, 2)} cm², Ia = ${fmt(S.Ip * 1e8, 0)} cm⁴, ya = ${fmt(S.yp, 4)} m
+Béton de y = ${fmt(S.zb, 3)} m à y = ${fmt(S.H, 3)} m (origine : sous-face des poutrelles)</div>`;
+  }
+
+  function render(r) {
+    const S = r.S, t = r.travee, a = r.appui, nc = t.cas.find((c) => c.id === 'ctnf'), lf = t.cas.find((c) => c.id === 'ltf');
+    const warn = r.domaine.filter((x) => !x.ok);
+    const side = state.tab;
+    const html =
+      BA.card('Résultats principaux', BA.kpis([
+        { l: 'Mpl,Rd travée', v: fmt(t.elu.M, 0), u: 'kN·m', n: `${fmt(t.elu.Mpm, 0)} kN·m/m · xpl ${fmt(t.elu.xpl, 3)} m`, hi: true },
+        { l: 'Mpl,Rd appui', v: fmt(a.elu.M, 0), u: 'kN·m', n: `${fmt(a.elu.Mpm, 0)} kN·m/m · xpl ${fmt(a.elu.xpl, 3)} m`, hi: true },
+        { l: 'I court terme non fissuré', v: fmt(nc.I, 5), u: 'm⁴', n: `n = ${fmt(S.nC, 2)} · ${fmt(nc.Ipm, 5)} m⁴/m` },
+        { l: 'I long terme fissuré', v: fmt(lf.I, 5), u: 'm⁴', n: `n = ${fmt(S.nL, 2)} · ${fmt(lf.Ipm, 5)} m⁴/m` },
+      ]) + (warn.length ? `<div class="msg info" style="margin-top:10px">Hors domaine EN 1994-2 §6.3.1 : ${warn.map((x) => x.txt).join(' ; ')}. Les caractéristiques restent calculées, mais les règles simplifiées des tabliers à poutrelles enrobées ne s’appliquent pas sans justification.</div>` : '')
+        + (t.elu.betaKO || a.elu.betaKO ? '<div class="msg err" style="margin-top:10px">xpl/h &gt; 0,40 avec un acier S420/S460 : EN 1994-2 §6.2.1.2(2) exige une analyse non linéaire ou élasto-plastique.</div>' : ''))
+      + BA.card('Coupe de la section', `<div class="tabs no-print" id="tabs"><button data-t="travee" class="${side === 'travee' ? 'on' : ''}">Travée</button><button data-t="appui" class="${side === 'appui' ? 'on' : ''}">Appui</button></div>` + svgSection(r))
+      + BA.card('ELU — moment résistant plastique', tableELU(r) + `<div class="sub">Hypothèses</div>` + hyp(r), 'EN 1994-2 §6.2.1.2')
+      + BA.card(`ELS — ${side === 'travee' ? 'travée' : 'appui'}`, tableELS(r, side) + `<div class="sub">Distances des fibres à l’axe neutre</div>` + tableDetail(r, side)
+        + `<div class="sub">Inertie de déformation (If + Inf)/2</div>` + BA.table(['', 'avec armatures (m⁴)', 'sans armatures (m⁴)'], [['Court terme', f7(r[side].deform.court), f7(r[side].deform.courtSansAs)], ['Long terme', f7(r[side].deform.long), f7(r[side].deform.longSansAs)]]), 'EN 1994-2 §5.4.2.2')
+      + BA.card('Domaine d’application des poutrelles enrobées', tableDomaine(r), 'EN 1994-2 §6.3.1')
+      + BA.card('Périmètre et hypothèses', `<details class="ref" open><summary>Ce que calcule ce module</summary><ul>
+        <li><b>ELU</b> : moment résistant plastique (EN 1994-2 §6.2.1.2) — acier de construction plastifié à fyd en traction et en compression, armatures à fsd, béton comprimé à 0,85 fcd sur toute la hauteur comprimée (bloc rectangulaire), béton tendu négligé. L’aire d’acier noyée dans le béton comprimé est déduite. Sur appui, la fibre inférieure est comprimée et les armatures supérieures sont tendues. Réduction β pour S420/S460 si xpl/h &gt; 0,15.</li>
+        <li><b>ELS</b> : section homogénéisée élastique, inerties exprimées « en acier » (aire de béton divisée par n). Section non fissurée : tout le béton de la section participe. Section fissurée : le béton tendu est négligé (l’axe neutre annule le moment statique de la partie efficace). Les armatures sont comptées avec leur aire réelle.</li>
+        <li><b>Coefficients d’équivalence</b> : n0 = Ea/Ecm (Ea = 210 000 MPa, Ecm selon EN 1992-1-1 tab. 3.1) et nL = n0 (1 + ψL φt) (EN 1994-2 §5.4.2.2), ou valeurs saisies (n = 6 et 18 du guide « Ponts-routes à tablier en poutrelles enrobées », 1995).</li>
+        <li><b>Coffrage perdu</b> (sous-face apparente) : le béton commence au-dessus de l’aile inférieure, augmenté de l’épaisseur du coffrage perdu, sur toute la largeur.</li>
+        <li><b>Catalogue</b> : profilés HEAA, HEA, HEB, HEM de 100 à 1000 mm (Euronorm 53-62) ; A et Iy recalculés à partir des dimensions s’écartent de moins de 1 % des valeurs publiées. Profilé de dimensions quelconques ou PRS dissymétrique par saisie.</li>
+        <li><b>Hors périmètre</b> : vérification des contraintes, effort tranchant, fatigue, flexion transversale, sollicitations (voir RADBAN-RAPEN / RODBAN-ROPEN). Largeur participante non réduite : la largeur saisie est considérée entièrement efficace.</li>
+        <li>Compatibilité avec les anciens fichiers .don : l’import règle γa = 1,05, n = 6 / 18 saisis et les congés ignorés à l’ELU, conventions qui permettent de retrouver les anciens résultats. Dans la table d’origine « ELS / béton », le module béton non fissuré avec armatures n’était pas cohérent avec l’inertie ; ce module donne n·I/v.</li>
+      </ul></details>`)
+      + BA.card('Catalogue des profilés', catalogue(), 'BA.inerpe.profiles');
+    document.getElementById('out').innerHTML = html;
+    document.getElementById('tabs').addEventListener('click', (e) => { const t = e.target.dataset.t; if (!t) return; state.tab = t; render(state.res); persist(); });
+    const cs = document.getElementById('catSerie');
+    cs.value = catSerie; cs.addEventListener('change', () => { catSerie = cs.value; render(state.res); });
+  }
+  let catSerie = 'HEB';
+  function catalogue() {
+    const rows = P.list.filter((p) => p.serie === catSerie).map((p) => [p.nom, fmt(p.h, 0), fmt(p.b, 0), fmt(p.tw, 1), fmt(p.tf, 1), fmt(p.r, 0), fmt(p.A, 1), fmt(p.Iy, 0), fmt(p.Wel, 0), fmt(p.Wpl, 0), fmt(p.Iz, 0), fmt(p.A * 0.785, 1)]);
+    return `<details class="ref"><summary>Afficher la série</summary><div class="field" style="max-width:160px;margin:8px 0"><select id="catSerie">${P.series.map((s) => `<option>${s}</option>`).join('')}</select></div>`
+      + BA.table(['Profilé', 'h (mm)', 'b (mm)', 'tw (mm)', 'tf (mm)', 'r (mm)', 'A (cm²)', 'Iy (cm⁴)', 'Wel,y (cm³)', 'Wpl,y (cm³)', 'Iz (cm⁴)', 'kg/m'], rows) + '</details>';
+  }
+
+  function calc() {
+    try {
+      const v = readAll();
+      state.res = E.calcul(toInput(v));
+      render(state.res);
+      persist();
+    } catch (err) {
+      document.getElementById('out').innerHTML = `<div class="card"><div class="msg err">${esc(err.message || err)}</div></div>`;
+    }
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!state.res) return;
+    const r = state.res, v = readAll(), S = r.S;
+    const data = BA.table(['Donnée', 'Valeur'], [
+      ['Poutrelle', esc(S.nomProf)], ['Nombre de poutrelles', String(S.N)], ['Largeur de la section', fmt(S.B, 3) + ' m'], ['Entraxe', fmt(S.B / S.N, 3) + ' m'],
+      ['Enrobage supérieur', fmt(S.d.csup, 3) + ' m'], ['Sous-face', S.d.typeSous === 'apparente' ? `aile apparente, coffrage perdu ${fmt(S.d.ecof, 3)} m` : `aile enrobée, ${fmt(S.d.cinf, 3)} m`],
+      ['Hauteur totale', fmt(S.H - Math.min(0, S.zb), 3) + ' m'],
+      ['Béton', 'fck = ' + fmt(S.d.fck, 0) + ' MPa'], ['Acier de construction', esc(S.d.nuance) + ', fy = ' + fmt(S.fy, 0) + ' MPa'], ['Armatures', 'fyk = ' + fmt(S.d.fyk, 0) + ' MPa'],
+    ].concat(S.nap.map((a) => [`Nappe ${a.pos === 'sup' ? 'supérieure' : 'inférieure'}`, `${fmt(a.As * 1e4, 2)} cm² à y = ${fmt(a.y, 3)} m`])), { leftText: true });
+    const keep = state.tab;
+    const parts = [];
+    for (const sd of ['travee', 'appui']) { state.tab = sd; parts.push({ titre: 'Coupe — ' + (sd === 'travee' ? 'travée' : 'appui'), html: svgSection(r) }); }
+    state.tab = keep;
+    BA.note({
+      titre: 'Inerties des poutrelles enrobées', code: 'INERPE', regl: 'EN 1994-2 §5.4.2.2, §6.2.1.2, §6.3 · EN 1992-1-1 · EN 1993-1-1', projet: v.projet,
+      sections: [
+        { titre: 'Données', html: data },
+        { titre: 'Matériaux et coefficients', html: hyp(r) },
+        parts[0],
+        { titre: 'ELU — moment résistant plastique', html: tableELU(r) },
+        { titre: 'ELS — travée', html: tableELS(r, 'travee') + tableDetail(r, 'travee') },
+        parts[1],
+        { titre: 'ELS — appui', html: tableELS(r, 'appui') + tableDetail(r, 'appui') },
+        { titre: 'Domaine d’application EN 1994-2 §6.3.1', html: tableDomaine(r) },
+      ],
+    });
+  }
+
+  /* ── fichiers ── */
+  function apply(v, nd) {
+    BA.write(ALL, v, 'i_');
+    if (v.serie) fillTailles(v.serie, v.taille);
+    if (nd) nap.set(nd.map((x) => Object.assign({}, x)));
+    vis(); calc();
+  }
+  document.getElementById('bCalc').onclick = calc;
+  document.getElementById('bNote').onclick = note;
+  document.getElementById('bSave').onclick = () => BA.store.download('inerpe.json', { module: 'inerpe', version: 1, v: readAll(), nap: nap.data });
+  document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => {
+    try { const o = JSON.parse(txt); if (o.module !== 'inerpe') throw new Error('Fichier non reconnu.'); apply(o.v || {}, o.nap || []); } catch (e) { alert('Lecture impossible : ' + e.message); }
+  });
+  document.getElementById('bDon').onclick = () => BA.store.pick('.don', (txt) => {
+    try {
+      const o = E.lireDon(txt), d = o.donnees, v = {};
+      v.projet = o.projet;
+      if (d.profil.mode === 'cat') { const p = P.get(d.profil.nom); v.pmode = 'cat'; v.serie = p.serie; v.taille = p.taille; }
+      else { v.pmode = 'saisi'; v.pnom = d.profil.nom; ['h', 'b', 'tf', 'tw', 'bi', 'tfi', 'r'].forEach((k) => (v[k] = +(d.profil[k] * 1000).toFixed(2))); }
+      Object.assign(v, { N: d.N, B: d.B, csup: d.csup, typeSous: 'apparente', ecof: d.ecof, fck: d.fck, fyk: d.fyk, nuance: d.nuance, fy: d.fy,
+        gammaA: d.gammaA, gammaC: d.gammaC, gammaS: d.gammaS, congesELU: false, deduire: false, nMode: 'saisi', nCourt: d.nCourt, nLong: d.nLong });
+      state.tab = o.section;
+      apply(v, d.nappes);
+    } catch (e) { alert('Lecture du fichier .don impossible : ' + e.message); }
+  });
+  document.querySelector('.col-in').addEventListener('change', (e) => {
+    if (e.target.id === 'i_serie') fillTailles(e.target.value);
+    vis(); calc();
+  });
+  document.querySelector('.col-in').addEventListener('input', () => persist());
+
+  vis(); calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

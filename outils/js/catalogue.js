@@ -27,7 +27,7 @@
       desc: 'Piles, palées, culées enterrées et murs de front, chevêtres sur pieux : stabilité, descente de charges et béton armé.' },
 
     { phase: 3, titre: 'Tabliers et murs' },
-    { code: 'INERPE', slug: 'inerpe', statut: 'dev', nom: 'Inerties des poutrelles enrobées', reg: 'EN 1994-2 · catalogue HEA, HEAA, HEB, HEM',
+    { code: 'INERPE', slug: 'inerpe', statut: 'on', nom: 'Inerties des poutrelles enrobées', reg: 'EN 1994-2 · catalogue HEA, HEAA, HEB, HEM',
       desc: 'Moment résistant ELU, inerties et modules I/v à court et long terme, béton fissuré ou non, en travée et sur appui.' },
     { code: 'RADBAN-RAPEN', slug: 'radban-rapen', statut: 'dev', nom: 'Tabliers de ponts-rails BA et PE', reg: 'EN 1991-2 · EN 1992-2 · Livret 2.01',
       desc: 'Dalles en béton armé et tabliers à poutrelles enrobées, 1 à 7 travées : flexion, aciers, descentes de charges vers REPHOR et APPUI.' },
