@@ -4,12 +4,12 @@
  * les ouvrages par défaut (dalle BA 3 travées, poutrelles enrobées, cadre, portique, ponts-routes) se calculent de bout en bout.
  * Aucun exemple chiffré d'origine n'existe pour ce module. */
 const O = require('../outils/js/ouvrages-types.js');
-const RB = require('../outils/js/radban-rapen.js');
-const RO = require('../outils/js/rodban-ropen.js');
-const RH = require('../outils/js/rephor.js');
-const AM = require('../outils/js/appmobil.js');
-const F = require('../outils/js/fondatio.js');
-const RR = require('../outils/js/racba-rapo.js');
+const RB = require('../outils/js/tablier-rail.js');
+const RO = require('../outils/js/tablier-route.js');
+const RH = require('../outils/js/efforts-horizontaux.js');
+const AM = require('../outils/js/elastomeres.js');
+const F = require('../outils/js/fondations.js');
+const RR = require('../outils/js/cadres-portiques.js');
 let f = 0, n = 0;
 const ok = (c, m) => { n++; console.log((c ? '✓ ' : '✗ ') + m); if (!c) f++; };
 const near = (a, b, t = 1e-9) => Math.abs(a - b) <= t * Math.max(1, Math.abs(b));
@@ -38,7 +38,7 @@ const R1 = O.calcul(s1);
   const inp = R1.rephorInp;
   const v = AM.verifier({ regl: 'en1337', plaque: ap.plaque, combis: ap.combis, opts: { G: inp.Gld, Gd: inp.Gcd, sigLim: inp.sigLim, alpha0: inp.alpha0, hmode: 'v', fy: 235 } });
   ok(v.ok === ap.ok && near(v.tauxMax, ap.taux, 1e-9), `Appareils : vérification directe de ${Math.round(ap.plaque.a * 1000)} × ${Math.round(ap.plaque.b * 1000)} identique (taux ${v.tauxMax.toFixed(3)})`);
-  const pg = O.preremplissage(R1, 'appmobil', 0);
+  const pg = O.preremplissage(R1, 'appareils-appui', 0);
   ok(pg.gen && pg.plaque.a === Math.round(ap.plaque.a * 1000) && pg.combis.length === ap.combis.length && pg.mat.hmode === 'v', 'Appareils : état de page pré-rempli (plaque en mm, combinaisons, effets lents en déplacements)');
 }
 /* ───────── 2. Descente de charges sommaire ───────── */
@@ -65,7 +65,7 @@ const R1 = O.calcul(s1);
   const fj = R1.fond[1], direct = F.calc(fj.inp);
   ok(fj.res.combs.every((c, k) => near(c.qref, direct.combs[k].qref) && near(c.N, direct.combs[k].N)), 'Fondations : résultats identiques à l’appel direct');
   ok(fj.res.combs.every((c, k) => near(c.N, -(R1.appuis[1].combs[k].ld[2] + R1.appuis[1].combs[k].cd[2]), 1e-9)), 'Fondations : N transmis = descente de charges (' + fj.res.combs.map((c) => c.N.toFixed(0)).join(' / ') + ' kN)');
-  const pg = O.preremplissage(R1, 'fondatio', 1);
+  const pg = O.preremplissage(R1, 'fondations', 1);
   ok(pg.v.type === 'sup' && pg.comb.length === 2 * fj.o.combs.length && pg.comb[0].dur === 'LD' && pg.comb[1].dur === 'CD' && pg.sps && pg.v.B === +fj.o.B.toFixed(3), 'Fondations : état de page pré-rempli (lignes LD/CD, sondage, dimensions)');
   // pieux
   const s = O.defaut('radba'); s.fond.type = 'pieux'; s.fond.pieux = { ptype: 2, D: 1.0, L: 12, nx: 2, ny: 3, ex: 3, ey: 4 };
@@ -166,7 +166,7 @@ const R1 = O.calcul(s1);
   const s2 = O.defaut('radba'); s2.travees = [10, 10, 10, 10, 10, 10, 10, 10];
   m = ''; try { O.calcul(s2); } catch (e) { m = e.message; }
   ok(/1 à 7 travées/.test(m), 'Plus de 7 travées refusé');
-  ok(O.preremplissage(R1, 'radban-rapen').travees.join() === '14,20,14' && O.preremplissage(R1, 'rephor').ap.length === 4 && O.preremplissage(R1, 'sondpres').s.couches.length > 0, 'Pré-remplissage des pages tablier, efforts horizontaux et sondage');
+  ok(O.preremplissage(R1, 'tablier-rail').travees.join() === '14,20,14' && O.preremplissage(R1, 'efforts-horizontaux').ap.length === 4 && O.preremplissage(R1, 'sondages-pressio').s.couches.length > 0, 'Pré-remplissage des pages tablier, efforts horizontaux et sondage');
 }
 console.log(f ? `\n${f} échec(s) sur ${n}` : `\nTous les tests passent (${n}).`);
 process.exit(f ? 1 : 0);

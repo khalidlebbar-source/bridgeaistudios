@@ -62,13 +62,13 @@
 
 <script src="js/commun.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/gmslt.js"></script>
+<script src="js/repartition.js"></script>
 <script>
 BA.chrome({ base: '../' });
 (function () {
   'use strict';
-  const GM = BA.gmslt, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
-  const KEY = 'gmslt';
+  const GM = BA.repartition, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
+  const KEY = 'repartition-transversale';
 
   const GEN = [
     { id: 'projet', label: 'Projet / ouvrage', type: 'txt', def: '', wide: true },
@@ -356,7 +356,7 @@ BA.chrome({ base: '../' });
 
   $('b-calc').onclick = run;
   $('b-note').onclick = note;
-  $('b-save').onclick = () => BA.store.download('gmslt.json', state());
+  $('b-save').onclick = () => BA.store.download('repartition.json', state());
   $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
   $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   $('exemple').onchange = (e) => { const k = e.target.value; if (EX[k]) { build(JSON.parse(JSON.stringify(EX[k]))); run(); } e.target.value = ''; };
