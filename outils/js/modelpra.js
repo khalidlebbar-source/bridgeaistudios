@@ -237,7 +237,8 @@
           const l = ((k > 0 ? rx[k] - rx[k - 1] : 0) + (k < rn.length - 1 ? rx[k + 1] - rx[k] : 0)) / 2;
           supports.push({ n, ux: n === mid, uy: r.kv * r.b * l, rz: false, radier: true });
         });
-        appuis.forEach((a) => { const s = supports.findIndex((sp) => sp.n === a.base); a.sup = s >= 0 ? [s] : []; });
+        // descente de charges en pied de piédroit = effort transmis au radier par la barre (voir effets())
+        appuis.forEach((a) => { a.sup = []; a.radier = true; });
       }
       return { nodes, elems, supports, appuis, nodalPP, masses, regime, E };
     }
@@ -614,8 +615,8 @@
     const r = run(m, { nodal }).r;
     let s1 = 0, s2 = 0, Mt = 0; mass.forEach((mm, n) => { if (mm > 0) { const d = r.U[3 * n + dir]; s1 += mm * d * d; s2 += mm * G_ACC * d; Mt += mm; } });
     const T = 2 * Math.PI * Math.sqrt(s1 / s2);
-    const K = Mt * G_ACC / (s2 / (Mt * G_ACC)); // raideur équivalente (déplacement moyen pondéré)
-    const Sa = dir === 1 ? sp.Sve(T) : sp.Sd(T, q);
+    const K = Mt * Mt * G_ACC * G_ACC / s2; // raideur équivalente K = F²/Σ F·d (F = Σ m·g)
+    const Sa = sp.vertical ? sp.Sve(T) : sp.Sd(T, q);
     const f = nodal.map((o) => ({ n: o.n, Fx: o.Fx * Sa / G_ACC, Fy: o.Fy * Sa / G_ACC }));
     const v = run(m, { nodal: f }).v;
     return { modes: [{ T, f: 1 / T, Sa, ratio: 1, cum: 1, meff: Mt, Gam: 1 }], kept: [], E: v.map(Math.abs), Mtot: Mt, T, K, Sa, Ftot: Mt * Sa, methode: 'mode fondamental' };

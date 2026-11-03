@@ -467,13 +467,16 @@
     const Iy = pt.barr ? (p.orientBarrette === 'x' ? pt.B * Math.pow(pt.Lb, 3) / 12 : pt.Lb * Math.pow(pt.B, 3) / 12) : Ix;
     // Ix : flexion dans le plan YZ (déplacement Y) ; Iy : flexion dans le plan XZ (déplacement X)
     const J = pt.barr ? (() => { const a = Math.max(pt.B, pt.Lb), b = Math.min(pt.B, pt.Lb); return a * b * b * b * (1 / 3 - 0.21 * b / a * (1 - Math.pow(b / a, 4) / 12)); })() : Math.PI * Math.pow(pt.B, 4) / 32;
-    const base = { Ei, Ix, Iy, J, spr: { x: ressortsLateraux(d, pt, 'x'), y: ressortsLateraux(d, pt, 'y') } };
+    // discrétisation interne : chaque élément de sortie est subdivisé (ressorts linéiques ≈ répartis), résultats aux nœuds de sortie
+    const nOut = p.nseg || 10, sub = p.sub || 4, dI = Object.assign({}, d, { pieux: Object.assign({}, p, { nseg: nOut * sub }) });
+    const base = { Ei, Ix, Iy, J, spr: { x: ressortsLateraux(dI, pt, 'x'), y: ressortsLateraux(dI, pt, 'y') } };
+    const pick = (a) => a.filter((_, k) => k % sub === 0);
     const fn = p.frotNeg || {};
     const combs = (d.combs || []).map((cb, k) => {
       const t = typeComb(cb.type);
       const Fld = transport(cb.ld, d.px || 0, d.py || 0, d.zsem, 0, 0, d.zsem), Fcd = transport(cb.cd, d.px || 0, d.py || 0, d.zsem, 0, 0, d.zsem);
-      const ld = phaseGroupe(d, pt, base, Fld, 'ld', null);
-      const cd = phaseGroupe(d, pt, base, Fcd, 'cd', ld);
+      const ld = phaseGroupe(dI, pt, base, Fld, 'ld', null);
+      const cd = phaseGroupe(dI, pt, base, Fcd, 'cd', ld);
       const gsn = isELU(t) ? (fn.elu || 0) : (fn.els || 0);
       const piles = p.piles.map((q, i) => {
         const a = ld.piles[i], b = cd.piles[i];
@@ -482,8 +485,11 @@
         const dgy = a.y.dg.map((g, k) => ({ s: g.s, M: g.M + b.y.dg[k].M, V: g.V + b.y.dg[k].V }));
         const Mres = dgx.map((g, k) => Math.hypot(g.M, dgy[k].M)), Vres = dgx.map((g, k) => Math.hypot(g.V, dgy[k].V));
         const plast = a.x.plast.some(Boolean) || b.x.plast.some(Boolean) || a.y.plast.some(Boolean) || b.y.plast.some(Boolean);
+        const Mfull = Mres, Vfull = Vres;
         return { i: i + 1, N, Ng: N + gsn, Fx, Fy, Mx, My, Mz: a.T + b.T, dx: a.x.w + b.x.w, dy: a.y.w + b.y.w, dz: a.dz + b.dz,
-          dgx, dgy, Mres, Vres, wx: a.x.wn.map((v, k) => v + b.x.wn[k]), wy: a.y.wn.map((v, k) => v + b.y.wn[k]), px: a.x.p.map((v, k) => v + b.x.p[k]), py: a.y.p.map((v, k) => v + b.y.p[k]), plast };
+          dgx: pick(dgx), dgy: pick(dgy), Mres: pick(Mfull), Vres: pick(Vfull), MmaxSeg: Math.max(...Mfull), sFine: dgx.map((g) => g.s), MresFine: Mfull,
+          wx: pick(a.x.wn.map((v, k) => v + b.x.wn[k])), wy: pick(a.y.wn.map((v, k) => v + b.y.wn[k])),
+          px: pick(a.x.p.map((v, k) => v + b.x.p[k])), py: pick(a.y.p.map((v, k) => v + b.y.p[k])), plast };
       });
       const [qmax, qmin] = pt.lim[t];
       const Nmax = Math.max(...piles.map((q) => q.Ng)), Nmin = Math.min(...piles.map((q) => q.N));
