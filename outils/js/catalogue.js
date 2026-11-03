@@ -21,7 +21,7 @@
       desc: 'Dimensionnement et vérification : distorsions, stabilité au flambement, non-glissement, rotation, épaisseur des frettes.' },
     { code: 'REPHOR', slug: 'rephor', statut: 'on', nom: 'Efforts horizontaux et appareils d’appui', reg: 'EN 1991-2 · EN 1337-3 · Livret 2.01',
       desc: 'Répartition des efforts de freinage, retrait, dilatation et interaction voie-ouvrage entre les appuis d’un ouvrage multi-travées.' },
-    { code: 'MODELPRA', slug: 'modelpra', statut: 'dev', nom: 'Modélisation des ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1998-2',
+    { code: 'MODELPRA', slug: 'modelpra', statut: 'on', nom: 'Modélisation des ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1998-2',
       desc: 'Structure plane (poutre continue, portique, cadre multiple) sous charges ferroviaires, dénivellations, retrait, dilatation et séisme.' },
     { code: 'APPUI', slug: 'appui', statut: 'dev', nom: 'Piles et culées', reg: 'EN 1992-2 · EN 1998-2 · Fasc. 62',
       desc: 'Piles, palées, culées enterrées et murs de front, chevêtres sur pieux : stabilité, descente de charges et béton armé.' },

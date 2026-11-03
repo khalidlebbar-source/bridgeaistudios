@@ -42,9 +42,9 @@
     const dx = xs[1] - xs[0];
     const F = new Float64Array(ys.length); // intégrale cumulée
     for (let k = 1; k < ys.length; k++) F[k] = F[k - 1] + (ys[k] + ys[k - 1]) / 2 * dx;
-    const x0 = xs[0], xn = xs[xs.length - 1];
+    const x0 = xs[0], xn = xs[xs.length - 1], tol = 1e-9 * Math.max(1, xn - x0);
     const at = (x) => {
-      if (x < x0 - 1e-12 || x > xn + 1e-12) return 0;
+      if (x < x0 - tol || x > xn + tol) return 0;
       const t = (x - x0) / dx, k = Math.min(ys.length - 2, Math.floor(t)), r = t - k;
       return ys[k] + (ys[k + 1] - ys[k]) * r;
     };
