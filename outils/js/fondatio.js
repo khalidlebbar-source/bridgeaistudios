@@ -20,6 +20,9 @@
   'use strict';
   const SP = (typeof module !== 'undefined' && module.exports) ? require('./sondpres.js') : (root.BA && root.BA.sondpres);
   const PQ = (typeof module !== 'undefined' && module.exports) ? require('./portique.js') : (root.BA && root.BA.portique);
+  /* moteur de sections BA (facultatif) : utilisé pour les aciers des pieux quand il est chargé */
+  let SBA = null;
+  try { SBA = (typeof module !== 'undefined' && module.exports) ? require('./bael-ec2.js') : (root.BA && root.BA.sectionBA); } catch (e) { SBA = null; }
   const B0 = 0.60; // largeur de référence de Ménard (m)
   const REMBLAI = { nom: 'remblai (entre terrain définitif et terrain naturel)', pl: 1.0, pf: 0.5, em: 10, alpha: 0.5, classe: 'LA', nature: 'L', groupe: 'argile', categorie: 'A', remblai: true };
 
@@ -526,24 +529,37 @@
     const p = d.pieux, c = p.enrob || 0.09, out = [];
     if (pt.barr) return { ok: true, sections: [], note: 'Aciers des barrettes non calculés par ce module (section rectangulaire : utiliser le module BAEL-EC2).' };
     const n = p.nseg || 10, Ac = pt.Ap, Amin = (p.pmin != null ? p.pmin : 0.5) / 100 * Ac;
+    // Moment résistant MRd(As, N) : moteur BA.sectionBA (BAEL 91 mod. 99, section circulaire, 24 barres, fc* du pieu)
+    // si disponible, sinon méthode simplifiée interne (bloc rectangulaire, mrdCirc).
+    const SB = d.sectionBA === false ? null : SBA;
+    const mat = SB ? SB.materiau({ regl: 'BAEL', fck: d.fcj, fyk: d.fe, fissuration: 1, pieu: { actif: true, k1: pt.k1, k2: pt.k2, fclim: 25 } }) : null;
+    const memo = new Map();
+    const MRd = (As, N, type) => {
+      if (!SB) return mrdCirc(pt.B, c, As, N, pt.fc, d.fe);
+      const key = As.toPrecision(6) + '|' + type;
+      let g = memo.get(key); if (!g) { g = SB.cercle({ D: pt.B, a: c, As: As * 1e4, nb: 24 }); memo.set(key, g); }
+      const r = SB.MRdAt(g, mat, type, N); return r ? r.pos : 0;
+    };
     let ok = true;
     for (let k = 0; k <= n; k++) {
       let req = 0, crit = null;
       // couples (M, N) étudiés : chaque combinaison ELU, plus l'enveloppe défavorable du pieu (M maxi avec N mini des
       // combinaisons ELU), comme le fait la note d'origine ; N pris égal à l'effort en tête (poids propre et frottement négligés).
+      // type de combinaison BAEL : actions de courte durée présentes → « < 1 h » (θ = 0,85), sinon « > 24 h »
+      const ty = (cb) => (cb.cd && cb.cd.some((v) => Math.abs(v) > 1e-9) ? 3 : 1);
       const pairs = [];
-      combs.filter((cb) => isELU(cb.type)).forEach((cb) => cb.piles.forEach((q) => pairs.push({ M: q.Mres[k], N: q.N, comb: cb.n, pieu: q.i })));
+      combs.filter((cb) => isELU(cb.type)).forEach((cb) => cb.piles.forEach((q) => pairs.push({ M: q.Mres[k], N: q.N, comb: cb.n, pieu: q.i, type: ty(d.combs[cb.n - 1]) })));
       for (let j = 0; j < (p.piles || []).length; j++) {
         const P = pairs.filter((x) => x.pieu === j + 1); if (!P.length) continue;
         const a = P.reduce((m, x) => (x.M > m.M ? x : m)), b = P.reduce((m, x) => (x.N < m.N ? x : m));
-        pairs.push({ M: a.M, N: b.N, comb: a.comb + '/' + b.comb, pieu: j + 1 });
+        pairs.push({ M: a.M, N: b.N, comb: a.comb + '/' + b.comb, pieu: j + 1, type: Math.min(a.type, b.type) });
       }
       for (const x of pairs) {
         const M = x.M, N = x.N;
-        if (mrdCirc(pt.B, c, 0, N, pt.fc, d.fe) >= M) continue;
+        if (MRd(0, N, x.type) >= M) continue;
         let lo = 0, hi = 0.08 * Ac;
-        if (mrdCirc(pt.B, c, hi, N, pt.fc, d.fe) < M) { req = Infinity; crit = x; ok = false; continue; }
-        for (let it = 0; it < 40; it++) { const m = (lo + hi) / 2; if (mrdCirc(pt.B, c, m, N, pt.fc, d.fe) >= M) hi = m; else lo = m; }
+        if (MRd(hi, N, x.type) < M) { req = Infinity; crit = x; ok = false; continue; }
+        for (let it = 0; it < 30; it++) { const m = (lo + hi) / 2; if (MRd(m, N, x.type) >= M) hi = m; else lo = m; }
         if (hi > req) { req = hi; crit = x; }
       }
       // effort tranchant (BAEL 91 A.5.1 appliqué à une section circulaire : b0 = D/1,4, d = D − c ; k = 0, fet = 400 MPa)
@@ -554,7 +570,7 @@
       if (tau > tauLim) ok = false;
       out.push({ s: k * p.L / n, Aelu: req * 1e4, Amin: Amin * 1e4, A: Math.max(req, Amin) * 1e4, crit, Vu, critV, tau, tauLim, Atst, AtMin: tau * b0 / (0.9 * fet / 1.15) * 1e4 < 0.4 * b0 / fet * 1e4 });
     }
-    return { ok, sections: out, Amin: Amin * 1e4 };
+    return { ok, sections: out, Amin: Amin * 1e4, methode: SB ? 'BA.sectionBA (BAEL 91 mod. 99, section circulaire, 24 barres)' : 'méthode simplifiée interne (bloc rectangulaire 0,8x, 0,85 fc*/1,5, fe/1,15)' };
   }
 
   /* ══════════════ point d'entrée ══════════════ */
