@@ -82,17 +82,17 @@ details.ref ul{columns:1}
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/gmslt.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/fondatio.js"></script>
-<script src="js/racba-rapo.js"></script>
+<script src="js/repartition.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/fondations.js"></script>
+<script src="js/cadres-portiques.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const RR = BA.racbaRapo, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
-  const KEY = 'racba-rapo';
+  const RR = BA.cadres, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
+  const KEY = 'cadres-portiques';
 
   /* ── schémas de saisie ── */
   const F = {
@@ -374,7 +374,7 @@ details.ref ul{columns:1}
   $('b-calc').onclick = calculer;
   $('b-note').onclick = note;
   $('b-def').onclick = () => { st = RR.defauts(st.type); render(); calculer(); };
-  $('b-save').onclick = () => { collect(); BA.store.download((st.projet || 'racba-rapo').replace(/[^\w-]+/g, '_') + '.json', st); };
+  $('b-save').onclick = () => { collect(); BA.store.download((st.projet || 'cadres-portiques').replace(/[^\w-]+/g, '_') + '.json', st); };
   $('b-open').onclick = () => BA.store.pick('.json', (txt) => { try { const o = JSON.parse(txt); st = Object.assign(RR.defauts(o.type || 'cadre'), o); render(); calculer(); } catch (e) { $('msg').innerHTML = `<div class="msg err">Fichier illisible : ${esc(e.message)}</div>`; } });
   $('b-don').onclick = () => BA.store.pick('.don', (txt, nom) => { try { const x = RR.lireDon(txt); st = x.d; if (!st.projet) st.projet = nom; render(); calculer(); $('msg').innerHTML = `<div class="msg info">Fichier ${esc(nom)} importé (${st.type === 'cadre' ? 'cadre' : 'portique'}). Vérifier les données non reprises : séisme, fatigue, charges quelconques en phase provisoire, sondage pressiométrique.</div>`; } catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; } });
   render();

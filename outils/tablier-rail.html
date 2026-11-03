@@ -104,16 +104,16 @@
 <script src="js/commun.js"></script>
 <script src="js/charges.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/poutre.js"></script>
-<script src="js/gmslt.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/inerpe.js"></script>
-<script src="js/radban-rapen.js"></script>
+<script src="js/poutres-continues.js"></script>
+<script src="js/repartition.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/poutrelles-enrobees.js"></script>
+<script src="js/tablier-rail.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.radbanRapen, fmt = BA.fmt, esc = BA.esc, KEY = 'radban-rapen';
+  const E = BA.tablierRail, fmt = BA.fmt, esc = BA.esc, KEY = 'tablier-rail';
   const f0 = (v) => fmt(v, 0), f1 = (v) => fmt(v, 1), f2 = (v) => fmt(v, 2), f3 = (v) => fmt(v, 3);
   const $ = (id) => document.getElementById(id);
   let type = 'radba', last = null, lastErr = null;
@@ -162,7 +162,7 @@
     { id: 'alpha', label: 'α (LM71, SW/0)', def: 1 },
     { id: 'entretien', label: 'Entretien de la voie', type: 'sel', def: 'soigne', options: [['soigne', 'soigné (Φ2)'], ['courant', 'courant (Φ3)']] },
     { id: 'uicReparti', label: 'Charge de la locomotive répartie sur 6,40 m', type: 'chk', def: true },
-    { id: 'repartition', label: 'Répartition transversale', type: 'sel', def: 'gmslt', options: [['gmslt', 'Guyon-Massonnet (RÉPARTITION)'], ['saisi', 'coefficient K saisi']] },
+    { id: 'repartition', label: 'Répartition transversale', type: 'sel', def: 'repartition-transversale', options: [['repartition-transversale', 'Guyon-Massonnet (RÉPARTITION)'], ['saisi', 'coefficient K saisi']] },
     { id: 'Ksaisi', label: 'K saisi', def: 1 },
     { id: 'qAcc', label: 'Charge sur accotements', unit: 'kN/m²', def: 5 },
     { id: 'lAcc', label: 'Largeur d’un accotement', unit: 'm', def: 0.85 },
@@ -348,15 +348,15 @@
   const dl = (name, txt, mime) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
   $('bCalc').onclick = calc;
   $('bNote').onclick = note;
-  $('bSave').onclick = () => BA.store.download('radban-rapen.json', Object.assign({ module: 'radban-rapen', version: 1 }, fromForm()));
+  $('bSave').onclick = () => BA.store.download('tablier-rail.json', Object.assign({ module: 'tablier-rail', version: 1 }, fromForm()));
   $('bOpen').onclick = () => BA.store.pick('.json,application/json', (t) => { try { const o = JSON.parse(t); build(o); calc(); } catch (e) { alert('Fichier illisible : ' + e.message); } });
   $('bDon').onclick = () => BA.store.pick('.don', (t) => {
     try { build(E.lireDon(t)); calc(); const n = document.createElement('div'); n.className = 'msg info'; n.style.marginBottom = '10px'; n.textContent = 'Fichier .don importé : les charges de superstructures et de ballast sont estimées à partir des équipements saisis ; à contrôler.'; $('out').prepend(n); }
     catch (e) { alert('Fichier .don illisible : ' + e.message); }
   });
-  $('bRephor').onclick = () => { if (last) BA.store.download('rephor-depuis-radban.json', E.exportRephor(last)); };
-  $('bAppui').onclick = () => { if (last) BA.store.download('radban-appuis.json', { format: 'BA.radbanRapen.appuis', version: 1, appuis: E.exportAppuis(last) }); };
-  $('bDxf').onclick = () => { if (!last) return; const v = E.vues(last); if (last.d.type === 'rapen') v.push(E.vuePercage(last)); dl('radban-rapen-plans.dxf', E.dxf(v), 'application/dxf'); };
+  $('bRephor').onclick = () => { if (last) BA.store.download('horizontal-depuis-tablier-rail.json', E.exportRephor(last)); };
+  $('bAppui').onclick = () => { if (last) BA.store.download('tablier-rail-appuis.json', { format: 'BA.tablierRail.appuis', version: 1, appuis: E.exportAppuis(last) }); };
+  $('bDxf').onclick = () => { if (!last) return; const v = E.vues(last); if (last.d.type === 'rapen') v.push(E.vuePercage(last)); dl('tablier-rail-plans.dxf', E.dxf(v), 'application/dxf'); };
   $('bDef').onclick = () => { build(type === 'rapen' ? E.DEF_RAPEN : E.DEF_RADBA); calc(); };
   $('segType').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.dataset.t === type) return; build(b.dataset.t === 'rapen' ? E.DEF_RAPEN : E.DEF_RADBA); calc(); };
   document.querySelector('.col-in').addEventListener('change', () => { vis(); persist(); });

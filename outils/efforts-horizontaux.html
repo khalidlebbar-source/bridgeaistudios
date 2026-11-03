@@ -107,14 +107,14 @@
 
 <script src="js/commun.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/appmobil.js"></script>
-<script src="js/rephor.js"></script>
+<script src="js/elastomeres.js"></script>
+<script src="js/efforts-horizontaux.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.rephor, fmt = BA.fmt, esc = BA.esc;
-  const KEY = 'rephor';
+  const E = BA.horizontal, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'efforts-horizontaux';
 
   /* ── schémas de saisie ── */
   const F_GEN = [
@@ -416,7 +416,7 @@ Interaction voie-ouvrage : q = ${inp.qInter} kN/m par voie × (L2 − L1) — m�
   function exportAppuis() {
     if (!last) return;
     const ex = E.exportAppuis(last);
-    BA.store.download('rephor-appuis.json', { format: 'BA.rephor.appuis', version: 1, projet: last.inp.projet || '', appuis: ex });
+    BA.store.download('horizontal-appuis.json', { format: 'BA.horizontal.appuis', version: 1, projet: last.inp.projet || '', appuis: ex });
   }
 
   function load(obj) {
@@ -453,7 +453,7 @@ Interaction voie-ouvrage : q = ${inp.qInter} kN/m par voie × (L2 − L1) — m�
   document.getElementById('bCalc').onclick = calc;
   document.getElementById('bNote').onclick = note;
   document.getElementById('bExport').onclick = exportAppuis;
-  document.getElementById('bSave').onclick = () => BA.store.download('rephor.json', { module: 'rephor', version: 1, v: readAll(), ap: apRows.data });
+  document.getElementById('bSave').onclick = () => BA.store.download('efforts-horizontaux.json', { module: 'efforts-horizontaux', version: 1, v: readAll(), ap: apRows.data });
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { load(JSON.parse(txt)); } catch (e) { alert('Fichier illisible : ' + e.message); } });
   document.getElementById('bDon').onclick = () => BA.store.pick('.don', (txt) => { try { fromDon(txt); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   document.getElementById('bDef').onclick = () => load({ v: DEF_V, ap: DEF_AP });

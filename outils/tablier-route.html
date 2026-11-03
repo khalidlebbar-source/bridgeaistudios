@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <link rel="canonical" href="https://www.bridgeaistudios.com/outils/tablier-route.html">
-<meta name="description" content="Tabliers de ponts-routes en dalle béton armé ou à poutrelles enrobées, 1 à 7 travées biaises : calcul en plaque (éléments finis MITC4, surfaces d’influence, LM1, LM2, LM4, LM3, EN 1991-2) ou en poutre (Fascicule 61 : A(l), Bc, Bt, Mc80, Mc120, Guyon-Massonnet), aciers BAEL/EC2, vérification des poutrelles, descentes de charges sur appareils d’appui, plans de coffrage et de perçage, export REPHOR et APPUI.">
+<meta name="description" content="Tabliers de ponts-routes en dalle béton armé ou à poutrelles enrobées, 1 à 7 travées biaises : calcul en plaque (éléments finis MITC4, surfaces d’influence, LM1, LM2, LM4, LM3, EN 1991-2) ou en poutre (Fascicule 61 : A(l), Bc, Bt, Mc80, Mc120, Guyon-Massonnet), aciers BAEL/EC2, vérification des poutrelles, descentes de charges sur appareils d’appui, plans de coffrage et de perçage, export HORIZONTAL et PILES-CULÉES.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -41,7 +41,7 @@
       <button class="btn" id="bSave">Enregistrer</button>
       <button class="btn" id="bOpen">Ouvrir</button>
       <button class="btn" id="bDon">Importer un fichier .don</button>
-      <button class="btn" id="bRephor">Exporter vers REPHOR</button>
+      <button class="btn" id="bRephor">Exporter vers HORIZONTAL</button>
       <button class="btn" id="bAppui">Exporter les fichiers appui</button>
       <button class="btn sm" id="bDef">Exemple par défaut</button>
     </div>
@@ -64,7 +64,7 @@
       <div class="fields" id="fTr"></div>
     </div>
     <div class="card" id="cPE">
-      <div class="card-title"><span>Poutrelles enrobées</span><small>catalogue INERPE</small></div>
+      <div class="card-title"><span>Poutrelles enrobées</span><small>catalogue ENROBÉES</small></div>
       <div class="fields" id="fPE"></div>
     </div>
     <div class="card">
@@ -96,15 +96,15 @@
     <details class="ref card">
       <summary>Périmètre et hypothèses</summary>
       <ul>
-        <li><b>Calcul en plaque</b> (biais 20 à 180 gr, Eurocodes) : éléments finis de plaque épaisse de Reissner-Mindlin MITC4 (Bathe-Dvorkin, sans verrouillage en cisaillement), maillage biais suivant les lignes d’appui (biais interpolé entre deux lignes), encorbellements d’épaisseur variable, appareils d’appui ponctuels rigides (ou de raideur verticale saisie). Poutrelles enrobées : plaque orthotrope, Dx = Ea·I/Bs avec I de la section homogénéisée court terme (n = 6, béton non fissuré, INERPE), Dy et Dxy du béton d’épaisseur h. Coefficient de Poisson 0 (comme l’original).</li>
+        <li><b>Calcul en plaque</b> (biais 20 à 180 gr, Eurocodes) : éléments finis de plaque épaisse de Reissner-Mindlin MITC4 (Bathe-Dvorkin, sans verrouillage en cisaillement), maillage biais suivant les lignes d’appui (biais interpolé entre deux lignes), encorbellements d’épaisseur variable, appareils d’appui ponctuels rigides (ou de raideur verticale saisie). Poutrelles enrobées : plaque orthotrope, Dx = Ea·I/Bs avec I de la section homogénéisée court terme (n = 6, béton non fissuré, ENROBÉES), Dy et Dxy du béton d’épaisseur h. Coefficient de Poisson 0 (comme l’original).</li>
         <li><b>Surfaces d’influence</b> exactes du modèle (méthode adjointe, Maxwell-Betti) de mx, my, mxy et qx en 9 fibres (dalle BA) ou au droit de chaque poutrelle (poutrelles enrobées) à chaque dixième de travée, des réactions de chaque appareil et des rotations sur appui ; rééchantillonnées sur une grille de 0,10 m × 0,20 m. Les roues sont diffusées à 45° jusqu’au feuillet moyen (EN 1991-2 §4.3.6).</li>
-        <li><b>Charges EN 1991-2 + AN</b> : LM1 (voies conventionnelles de 3 m placées et numérotées au plus défavorable par programmation dynamique, TS centré dans sa voie et placé indépendamment dans chaque voie, UDL sur les parties défavorables, αQ et αq de l’AN pour les classes de trafic 1 et 2) ; LM2 (essieu 400·βQ, βQ = αQ1) ; trottoirs : gr1a avec 3 kN/m², gr3 avec qfk ; LM4 (foule 5 kN/m², gr4) ; LM3 (véhicules du tableau A1, lignes d’essieux de 150/200 kN réparties sur 3,00 m et de 240 kN sur 4,50 m, φ = 1,40 − L/500 à vitesse normale ; sans la circulation concomitante LM1 hors zone de 25 m). Les charges sont majorées dynamiquement (valeurs EN). Charges horizontales et thermiques : module REPHOR.</li>
-        <li><b>Calcul en poutre</b> (biais 70 à 130 gr, Fascicule 61 titre II) : poutre continue à inertie constante (POUTRE, lignes d’influence exactes), A(l), Bc (bc, δ), Bt, Mc80, Mc120 (δ), trottoirs 1,5 kN/m² ; moment par mètre (dalle BA) ou par poutrelle (poutrelles enrobées) à la fibre la plus sollicitée = K·M/Bs (K de Guyon-Massonnet à mi-travée de chaque travée, dalle isotrope α = 1, appliqué sur toute la travée) ; flexion transversale à mi-travée (GMSLT). Biais non pris en compte dans la flexion longitudinale. Convois exceptionnels C, D, E de l’instruction du 20/07/1983 : <b>non traités</b>.</li>
+        <li><b>Charges EN 1991-2 + AN</b> : LM1 (voies conventionnelles de 3 m placées et numérotées au plus défavorable par programmation dynamique, TS centré dans sa voie et placé indépendamment dans chaque voie, UDL sur les parties défavorables, αQ et αq de l’AN pour les classes de trafic 1 et 2) ; LM2 (essieu 400·βQ, βQ = αQ1) ; trottoirs : gr1a avec 3 kN/m², gr3 avec qfk ; LM4 (foule 5 kN/m², gr4) ; LM3 (véhicules du tableau A1, lignes d’essieux de 150/200 kN réparties sur 3,00 m et de 240 kN sur 4,50 m, φ = 1,40 − L/500 à vitesse normale ; sans la circulation concomitante LM1 hors zone de 25 m). Les charges sont majorées dynamiquement (valeurs EN). Charges horizontales et thermiques : module HORIZONTAL.</li>
+        <li><b>Calcul en poutre</b> (biais 70 à 130 gr, Fascicule 61 titre II) : poutre continue à inertie constante (POUTRE, lignes d’influence exactes), A(l), Bc (bc, δ), Bt, Mc80, Mc120 (δ), trottoirs 1,5 kN/m² ; moment par mètre (dalle BA) ou par poutrelle (poutrelles enrobées) à la fibre la plus sollicitée = K·M/Bs (K de Guyon-Massonnet à mi-travée de chaque travée, dalle isotrope α = 1, appliqué sur toute la travée) ; flexion transversale à mi-travée (RÉPARTITION). Biais non pris en compte dans la flexion longitudinale. Convois exceptionnels C, D, E de l’instruction du 20/07/1983 : <b>non traités</b>.</li>
         <li><b>Combinaisons</b> : plaque — EN 1990 annexe A2 + AN : ELU 1,35 Gk,sup / 1,00 Gk,inf + 1,35 max(gr1a, LM2, gr3, gr4, gr5) + 1,2 Δ ; ELS caractéristique, fréquente (ψ1 = 0,75 TS, 0,40 UDL et trottoirs, 0,75 LM2), quasi permanente. Poutre — BAEL / Fasc. 62 : ELU 1,35 Gmax + Gmin + max(1,6 (A|B + trottoirs) ; 1,35 Mc), ELS G + max(1,2 (A|B) + trottoirs ; Mc). Charges permanentes : poids propre + équipements avec kmax / kmin par catégorie ; dans les descentes de charges, poids propre × 1,05 / 1,00 (valeurs maxi / mini retrouvées sur l’exemple d’origine, saisissables). Dénivellations d’appui (facultatives) : poutre continue, module différé, réparties uniformément sur la largeur.</li>
-        <li><b>Dalle BA</b> : ferraillage orthogonal (axe de l’ouvrage et perpendiculaire) avec les moments de Wood-Armer m ± |mxy| (enveloppes non concomitantes : majorant), pire des fibres de chaque section ; sections par mètre (BAEL-EC2) : ELU, ELS (σs, σc caractéristique et quasi permanente, n = 15), non-fragilité ; effort tranchant à la distance d des appareils (EN 1992-1-1 §6.2.1 (8)), dalle sans armatures d’effort tranchant si VEd ≤ VRd,c, bielles à 45°. effort tranchant sur appui au centre de la première maille (défaut, comme l’original) ou à la distance d ; avec armatures d’effort tranchant, ΔFtd = 0,5·VEd·cot θ ajouté aux aciers tendus (§6.2.3 (7)). Les moments au droit d’un appareil ponctuel dépendent du maillage (pic) : le maillage par défaut (≈ 0,38 m près des appuis) est celui de l’original.</li>
-        <li><b>Poutrelles enrobées</b> : par poutrelle (moment de plaque × entraxe) : phase 1 : dalle résistante (largeur Bs) et poutrelles portées par les poutrelles seules (poutre continue, part égale), encorbellements coulés en seconde phase ; vide sous les dallettes non déduit par défaut (comme l’original) ; superstructures et trafic sur la section mixte, section fissurée (n = 6) sur 0,15 L de part et d’autre des appuis intermédiaires dans la plaque (EN 1994-1-1 §5.4.2.3 (3), désactivable) ; fy selon la nuance et l’épaisseur (NF EN 10025-2) ; contraintes ELS (n = 18 / 6, béton tendu négligé), moment résistant plastique (INERPE) avec chapeaux en zone de moment négatif, Mpl des poutrelles seules au bétonnage, Vpl,Rd des poutrelles seules, déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée, σ = 1,35 σpoutrelles + 1,5 σbéton frais), dallettes, contre-flèches (fb + fp + fq/4).</li>
+        <li><b>Dalle BA</b> : ferraillage orthogonal (axe de l’ouvrage et perpendiculaire) avec les moments de Wood-Armer m ± |mxy| (enveloppes non concomitantes : majorant), pire des fibres de chaque section ; sections par mètre (SECTIONS) : ELU, ELS (σs, σc caractéristique et quasi permanente, n = 15), non-fragilité ; effort tranchant à la distance d des appareils (EN 1992-1-1 §6.2.1 (8)), dalle sans armatures d’effort tranchant si VEd ≤ VRd,c, bielles à 45°. effort tranchant sur appui au centre de la première maille (défaut, comme l’original) ou à la distance d ; avec armatures d’effort tranchant, ΔFtd = 0,5·VEd·cot θ ajouté aux aciers tendus (§6.2.3 (7)). Les moments au droit d’un appareil ponctuel dépendent du maillage (pic) : le maillage par défaut (≈ 0,38 m près des appuis) est celui de l’original.</li>
+        <li><b>Poutrelles enrobées</b> : par poutrelle (moment de plaque × entraxe) : phase 1 : dalle résistante (largeur Bs) et poutrelles portées par les poutrelles seules (poutre continue, part égale), encorbellements coulés en seconde phase ; vide sous les dallettes non déduit par défaut (comme l’original) ; superstructures et trafic sur la section mixte, section fissurée (n = 6) sur 0,15 L de part et d’autre des appuis intermédiaires dans la plaque (EN 1994-1-1 §5.4.2.3 (3), désactivable) ; fy selon la nuance et l’épaisseur (NF EN 10025-2) ; contraintes ELS (n = 18 / 6, béton tendu négligé), moment résistant plastique (ENROBÉES) avec chapeaux en zone de moment négatif, Mpl des poutrelles seules au bétonnage, Vpl,Rd des poutrelles seules, déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée, σ = 1,35 σpoutrelles + 1,5 σbéton frais), dallettes, contre-flèches (fb + fp + fq/4).</li>
         <li><b>Non traités</b> : consoles de rive sous charge accidentelle de roue (EN 1991-2 §4.7.3.1) et efforts sur garde-corps (l’encorbellement est inclus dans la plaque sous les charges ci-dessus), fatigue, ouverture des fissures, flèches fissurées en plaque (flèches non fissurées avec Ecm, et × (1 + φ) pour les charges permanentes).</li>
-        <li><b>Appareils d’appui</b> : réaction de chaque appareil et de chaque file (surfaces d’influence), excentricité concomitante de la file sous LM1 et sous trottoirs, rotations. Export JSON vers REPHOR (G, Q, rotation par file) et vers APPUI (réactions par file et par appareil).</li>
+        <li><b>Appareils d’appui</b> : réaction de chaque appareil et de chaque file (surfaces d’influence), excentricité concomitante de la file sous LM1 et sous trottoirs, rotations. Export JSON vers HORIZONTAL (G, Q, rotation par file) et vers PILES-CULÉES (réactions par file et par appareil).</li>
       </ul>
     </details>
   </div>
@@ -115,16 +115,16 @@
 <script src="js/commun.js"></script>
 <script src="js/charges.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/poutre.js"></script>
-<script src="js/gmslt.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/inerpe.js"></script>
-<script src="js/rodban-ropen.js"></script>
+<script src="js/poutres-continues.js"></script>
+<script src="js/repartition.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/poutrelles-enrobees.js"></script>
+<script src="js/tablier-route.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.rodbanRopen, fmt = BA.fmt, esc = BA.esc, KEY = 'rodban-ropen';
+  const E = BA.tablierRoute, fmt = BA.fmt, esc = BA.esc, KEY = 'tablier-route';
   const f0 = (v) => fmt(v, 0), f1 = (v) => fmt(v, 1), f2 = (v) => fmt(v, 2), f3 = (v) => fmt(v, 3);
   const $ = (id) => document.getElementById(id);
   let type = 'rodba', last = null, lastErr = null;
@@ -392,14 +392,14 @@
   /* ── fichiers ── */
   $('bCalc').onclick = calc;
   $('bNote').onclick = note;
-  $('bSave').onclick = () => BA.store.download('rodban-ropen.json', Object.assign({ module: 'rodban-ropen', version: 1 }, fromForm()));
+  $('bSave').onclick = () => BA.store.download('tablier-route.json', Object.assign({ module: 'tablier-route', version: 1 }, fromForm()));
   $('bOpen').onclick = () => BA.store.pick('.json,application/json', (t) => { try { build(JSON.parse(t)); calc(); } catch (e) { alert('Fichier illisible : ' + e.message); } });
   $('bDon').onclick = () => BA.store.pick('.don', (t) => {
     try { build(E.lireDon(t)); calc(); setTimeout(() => { const n = document.createElement('div'); n.className = 'msg info'; n.style.marginBottom = '10px'; n.textContent = 'Fichier .don importé : géométrie, équipements, matériaux, appareils et poutrelles repris ; charges d’exploitation et maillage à contrôler.'; $('out').prepend(n); }, 60); }
     catch (e) { alert('Fichier .don illisible : ' + e.message); }
   });
-  $('bRephor').onclick = () => { if (last) BA.store.download('rephor-depuis-rodban.json', E.exportRephor(last)); };
-  $('bAppui').onclick = () => { if (last) BA.store.download('rodban-appuis.json', { format: 'BA.rodbanRopen.appuis', version: 1, appuis: E.exportAppuis(last) }); };
+  $('bRephor').onclick = () => { if (last) BA.store.download('horizontal-depuis-tablier-route.json', E.exportRephor(last)); };
+  $('bAppui').onclick = () => { if (last) BA.store.download('tablier-route-appuis.json', { format: 'BA.tablierRoute.appuis', version: 1, appuis: E.exportAppuis(last) }); };
   $('bDef').onclick = () => { build(type === 'ropen' ? E.DEF_ROPEN : E.DEF_RODBA); calc(); };
   $('segType').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.dataset.t === type) return; build(b.dataset.t === 'ropen' ? E.DEF_ROPEN : E.DEF_RODBA); calc(); };
   document.querySelector('.col-in').addEventListener('change', () => { vis(); persist(); });

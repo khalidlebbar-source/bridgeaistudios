@@ -75,15 +75,15 @@
 
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/fondatio.js"></script>
-<script src="js/mur3d.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/fondations.js"></script>
+<script src="js/murs-soutenement.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const M = BA.mur3d, f = BA.fmt, $ = (id) => document.getElementById(id), KEY = 'mur3d';
+  const M = BA.soutenement, f = BA.fmt, $ = (id) => document.getElementById(id), KEY = 'murs-soutenement';
   const GEN = [
     { id: 'projet', label: 'Projet', type: 'txt', def: '', wide: true },
     { id: 'regl', label: 'Référentiel', type: 'sel', def: 'LIVRET', options: [['LIVRET', 'Livret 2.01 + BAEL 91 + Fasc. 62'], ['EC', 'Eurocodes + AN française']], wide: true },
@@ -292,7 +292,7 @@
     if (d.avertissements && d.avertissements.length) alert(d.avertissements.join('\n'));
   }
   $('b-calc').onclick = run; $('b-note').onclick = note;
-  $('b-save').onclick = () => BA.store.download('mur3d.json', state());
+  $('b-save').onclick = () => BA.store.download('murs-soutenement.json', state());
   $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
   $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   $('b-sps').onclick = () => BA.store.pick('.sps,.SPS', (t) => { try { const s = M.lireSPS(t); if (!s.couches.length) throw new Error('aucune couche de calcul ($$TVCC)'); sps = s; spsInfo(); run(); } catch (e) { alert('Sondage illisible : ' + e.message); } });

@@ -1,5 +1,3 @@
 # Fichiers de développement des outils de calculs des ponts : non publiés
 tools/test-outils-*.js
 outils/README.md
-# Modules encore en développement (publiés une fois terminés et renommés)
-outils/rodban-ropen.html

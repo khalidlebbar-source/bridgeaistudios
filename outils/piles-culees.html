@@ -98,16 +98,16 @@
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/fondatio.js"></script>
-<script src="js/modelpra.js"></script>
-<script src="js/appui.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/fondations.js"></script>
+<script src="js/modele-rail.js"></script>
+<script src="js/piles-culees.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.appui, S = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'appui';
+  const E = BA.pilesCulees, S = BA.sondages, fmt = BA.fmt, esc = BA.esc, KEY = 'appui';
   const sel = (o) => Object.entries(o);
 
   /* ── schémas de saisie : identifiant = chemin dans le jeu de données (points remplacés par « _ ») ── */
@@ -431,7 +431,7 @@
     catch (e) { alert('Lecture impossible : ' + e.message); }
   });
   document.getElementById('bSps').onclick = () => BA.store.pick('.sps,.SPS', (txt, name) => { try { sps = S.parse(txt); spsNom = name; spsInfo(); persist(); calc(); } catch (e) { alert('Lecture impossible : ' + e.message); } });
-  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); persist(); calc(); };
+  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondages-pressio'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); persist(); calc(); };
   const importJson = (fn, txt) => {
     const j = JSON.parse(txt), arr = Array.isArray(j) ? j : [j];
     let item = arr[0];

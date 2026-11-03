@@ -2,10 +2,10 @@
  * (moteur pur, aucun DOM ; node → module.exports, navigateur → window.BA.ouvragesTypes).
  *
  * Ce module ENCHAÎNE les modules de parties d'ouvrage sans réécrire leurs calculs :
- *   tablier          BA.radbanRapen (RADBAn, RAPEn) — BA.rodbanRopen (RODBAn, ROPEn) dès que son module est validé ;
- *   efforts horizontaux et appareils d'appui   BA.rephor (répartition) qui appelle BA.appmobil (dimensionnement EN 1337-3) ;
- *   cadres et portiques                         BA.racbaRapo (RACBA, RAPO) ;
- *   fondations       BA.fondatio (Fascicule 62 titre V) sur le sondage pressiométrique BA.sondpres (.sps).
+ *   tablier          BA.tablierRail (RADBAn, RAPEn) — BA.tablierRoute (RODBAn, ROPEn) dès que son module est validé ;
+ *   efforts horizontaux et appareils d'appui   BA.horizontal (répartition) qui appelle BA.elastomeres (dimensionnement EN 1337-3) ;
+ *   cadres et portiques                         BA.cadres (RACBA, RAPO) ;
+ *   fondations       BA.fondations (Fascicule 62 titre V) sur le sondage pressiométrique BA.sondages (.sps).
  * Les piles et culées (module APPUI) sont en cours de développement : en attendant, le module établit une DESCENTE DE
  * CHARGES SOMMAIRE jusqu'à la sous-face des semelles (réactions du tablier, efforts horizontaux de REPHOR, poids propres
  * calculés sur la géométrie, terres sur les semelles, poussée des terres de Rankine sur les culées) pour vérifier les
@@ -31,8 +31,8 @@
   const NODE = typeof module !== 'undefined' && module.exports && typeof require === 'function';
   const opt = (file, name) => { try { return NODE ? require('./' + file) : (root.BA && root.BA[name]) || null; } catch (e) { return null; } };
   const mod = {
-    radban: () => opt('radban-rapen.js', 'radbanRapen'), rodban: () => opt('rodban-ropen.js', 'rodbanRopen'), rephor: () => opt('rephor.js', 'rephor'), appmobil: () => opt('appmobil.js', 'appmobil'),
-    fondatio: () => opt('fondatio.js', 'fondatio'), sondpres: () => opt('sondpres.js', 'sondpres'), racba: () => opt('racba-rapo.js', 'racbaRapo'),
+    radban: () => opt('tablier-rail.js', 'tablierRail'), rodban: () => opt('tablier-route.js', 'tablierRoute'), rephor: () => opt('efforts-horizontaux.js', 'horizontal'), appmobil: () => opt('elastomeres.js', 'elastomeres'),
+    fondatio: () => opt('fondations.js', 'fondations'), sondpres: () => opt('sondages.js', 'sondages'), racba: () => opt('cadres-portiques.js', 'cadres'),
   };
   const GR = Math.PI / 200, HRAIL = 0.172, HTRAV = 0.23, ACIER = 7850;
   const sum = (a) => a.reduce((s, v) => s + v, 0);
@@ -46,20 +46,20 @@
   };
   /* pages des modules (liens « Ouvrir dans le module ») : clé de sauvegarde BA.store → page et code affiché */
   const MODULES = {
-    'radban-rapen': { page: 'tablier-rail.html', code: 'TABLIER RAIL' }, 'rodban-ropen': { page: 'tablier-route.html', code: 'TABLIER ROUTE' },
-    rephor: { page: 'efforts-horizontaux.html', code: 'HORIZONTAL' }, appmobil: { page: 'appareils-appui.html', code: 'ÉLASTOMÈRES' },
-    fondatio: { page: 'fondations.html', code: 'FONDATIONS' }, 'racba-rapo': { page: 'cadres-portiques.html', code: 'CADRES' },
-    sondpres: { page: 'sondages-pressio.html', code: 'PRESSIO' }, appui: { page: 'piles-culees.html', code: 'PILES-CULÉES' },
+    'tablier-rail': { page: 'tablier-rail.html', code: 'TABLIER RAIL' }, 'tablier-route': { page: 'tablier-route.html', code: 'TABLIER ROUTE' },
+    'efforts-horizontaux': { page: 'efforts-horizontaux.html', code: 'HORIZONTAL' }, 'appareils-appui': { page: 'appareils-appui.html', code: 'ÉLASTOMÈRES' },
+    fondations: { page: 'fondations.html', code: 'FONDATIONS' }, 'cadres-portiques': { page: 'cadres-portiques.html', code: 'CADRES' },
+    'sondages-pressio': { page: 'sondages-pressio.html', code: 'PRESSIO' }, appui: { page: 'piles-culees.html', code: 'PILES-CULÉES' },
   };
 
   /* ═══════════════════════ 1. Types d'ouvrages et données par défaut ═══════════════════════ */
   const TYPES = {
-    radba: { nom: 'Pont-rail dalle BA', desc: 'tablier en dalle béton armé, 1 à 7 travées', famille: 'tablier', ouvrage: 'rail', module: 'radban-rapen', requis: [] },
-    rapen: { nom: 'Pont-rail poutrelles enrobées', desc: 'tablier à poutrelles enrobées, 1 à 7 travées', famille: 'tablier', ouvrage: 'rail', module: 'radban-rapen', requis: [] },
-    rodba: { nom: 'Pont-route dalle BA', desc: 'tablier en dalle béton armé, 1 à 7 travées', famille: 'tablier', ouvrage: 'route', module: 'rodban-ropen', requis: ['rodbanRopen'] },
-    ropen: { nom: 'Pont-route poutrelles enrobées', desc: 'tablier à poutrelles enrobées, 1 à 7 travées', famille: 'tablier', ouvrage: 'route', module: 'rodban-ropen', requis: ['rodbanRopen'] },
-    racba: { nom: 'Cadre fermé pont-rail', desc: 'cadre en béton armé sous voies ferrées, ouverture 1 à 15 m', famille: 'cadre', ouvrage: 'rail', module: 'racba-rapo', requis: [] },
-    rapo: { nom: 'Portique ouvert pont-rail', desc: 'portique en béton armé sur semelles, portée 5 à 25 m', famille: 'cadre', ouvrage: 'rail', module: 'racba-rapo', requis: [] },
+    radba: { nom: 'Pont-rail dalle BA', desc: 'tablier en dalle béton armé, 1 à 7 travées', famille: 'tablier', ouvrage: 'rail', module: 'tablier-rail', requis: [] },
+    rapen: { nom: 'Pont-rail poutrelles enrobées', desc: 'tablier à poutrelles enrobées, 1 à 7 travées', famille: 'tablier', ouvrage: 'rail', module: 'tablier-rail', requis: [] },
+    rodba: { nom: 'Pont-route dalle BA', desc: 'tablier en dalle béton armé, 1 à 7 travées', famille: 'tablier', ouvrage: 'route', module: 'tablier-route', requis: ['rodbanRopen'] },
+    ropen: { nom: 'Pont-route poutrelles enrobées', desc: 'tablier à poutrelles enrobées, 1 à 7 travées', famille: 'tablier', ouvrage: 'route', module: 'tablier-route', requis: ['rodbanRopen'] },
+    racba: { nom: 'Cadre fermé pont-rail', desc: 'cadre en béton armé sous voies ferrées, ouverture 1 à 15 m', famille: 'cadre', ouvrage: 'rail', module: 'cadres-portiques', requis: [] },
+    rapo: { nom: 'Portique ouvert pont-rail', desc: 'portique en béton armé sur semelles, portée 5 à 25 m', famille: 'cadre', ouvrage: 'rail', module: 'cadres-portiques', requis: [] },
   };
   function disponible(type) {
     const t = TYPES[type]; if (!t) return { ok: false, msg: 'Type d’ouvrage inconnu.' };
@@ -323,7 +323,7 @@
     const s = R.s, route = R.t.ouvrage === 'route', RB = route ? mod.rodban() : mod.radban(), RH = mod.rephor(), F = mod.fondatio();
     if (!RB || !RH || !F) throw new Error('Modules TABLIER, HORIZONTAL ou FONDATIONS indisponibles.');
     // 1. tablier
-    const din = tablierInput(s); R.tabInp = din; R.tabCle = route ? 'rodban-ropen' : 'radban-rapen';
+    const din = tablierInput(s); R.tabInp = din; R.tabCle = route ? 'tablier-route' : 'tablier-rail';
     const T = RB.calcul(din); R.tab = T; R.tabMod = RB;
     T.alertes.forEach((m) => R.alertes.push('Tablier : ' + m));
     R.tabA = adapter(R);
@@ -563,27 +563,27 @@
         if (A.ropen) { okS = T.pe.secs.every((p) => p.okELS && p.okELU) && T.pe.okV; txt = `${T.R.N} ${T.R.prof.nom} : contraintes ELS, moments ELU ${okS ? 'vérifiés' : 'NON vérifiés'} ; VEd/Vpl,Rd = ${(T.pe.Vsd / T.pe.VplRd).toFixed(2)}`; }
         else { const all = T.ba.lon.concat(T.ba.tra); okS = all.every((a) => a.verdict !== false); txt = `aciers longitudinaux maxi ${Math.max(...T.ba.lon.map((a) => Math.max(a.As[0], a.As[1]))).toFixed(1)} cm²/m, transversaux maxi ${Math.max(0, ...T.ba.tra.map((a) => Math.max(a.As[0], a.As[1]))).toFixed(1)} cm²/m ; sections ${okS ? 'vérifiées' : 'NON vérifiées'}`; }
         const fl = T.fl.reduce((m, f) => (f.ratioQ < m.ratioQ ? f : m), T.fl[0]);
-        push('Tablier', okS && !T.alertes.length ? 'ok' : 'ko', txt + ` ; flèche sous trafic L/${Math.round(fl.ratioQ)} (travée ${fl.t + 1})`, 'rodban-ropen', 1);
+        push('Tablier', okS && !T.alertes.length ? 'ok' : 'ko', txt + ` ; flèche sous trafic L/${Math.round(fl.ratioQ)} (travée ${fl.t + 1})`, 'tablier-route', 1);
       } else {
       const okFl = T.fl.travees.every((t) => t.ok), okExt = T.ext.every((e) => e.dH <= e.limH);
       let okS = true, txt;
       if (rapen) { okS = T.pe.secs.every((p) => p.okELS && p.okELU) && T.pe.okV; txt = `${T.d.nPout} ${T.prof.nom} : contraintes ELS, moments ELU ${okS ? 'vérifiés' : 'NON vérifiés'} ; VEd/Vpl,Rd = ${(T.pe.Vsd / T.pe.VplRd).toFixed(2)}`; }
       else { const sc = Math.max(...T.ba.secs.map((a) => a.sc)); okS = !T.alertes.length; txt = `As sup. maxi ${Math.max(...T.ba.secs.map((a) => a.As[0])).toFixed(0)} cm², As inf. maxi ${Math.max(...T.ba.secs.map((a) => a.As[1])).toFixed(0)} cm², σbc ${sc.toFixed(1)} MPa`; }
-      push('Tablier', okS && okFl && okExt ? 'ok' : 'ko', txt + ` ; flèche de confort ${okFl ? 'vérifiée' : 'NON vérifiée'}`, 'radban-rapen', 1);
+      push('Tablier', okS && okFl && okExt ? 'ok' : 'ko', txt + ` ; flèche de confort ${okFl ? 'vérifiée' : 'NON vérifiée'}`, 'tablier-rail', 1);
       }
       const okA = R.appareils.every((a) => a.ok);
-      push('Appareils d’appui', okA ? 'ok' : 'ko', R.appareils.filter((a) => a.app === 'elasto').length + ' files en élastomère fretté dimensionnées (EN 1337-3)' + (okA ? '' : ' — au moins une vérification non satisfaite'), 'appmobil', 2);
+      push('Appareils d’appui', okA ? 'ok' : 'ko', R.appareils.filter((a) => a.app === 'elasto').length + ' files en élastomère fretté dimensionnées (EN 1337-3)' + (okA ? '' : ' — au moins une vérification non satisfaite'), 'appareils-appui', 2);
       const vr = R.rephor.verifsRail;
-      if (vr) { const ok = vr.every((x) => x.okB && x.okLT && x.okH); push('Interaction voie-ouvrage', ok ? 'ok' : 'ko', `δB = ${(Math.max(...vr.map((x) => x.deltaB)) * 1000).toFixed(2)} mm, longueur dilatable ${Math.max(...vr.map((x) => x.LT)).toFixed(1)} m`, 'rephor', 2); }
+      if (vr) { const ok = vr.every((x) => x.okB && x.okLT && x.okH); push('Interaction voie-ouvrage', ok ? 'ok' : 'ko', `δB = ${(Math.max(...vr.map((x) => x.deltaB)) * 1000).toFixed(2)} mm, longueur dilatable ${Math.max(...vr.map((x) => x.LT)).toFixed(1)} m`, 'efforts-horizontaux', 2); }
       push('Piles et culées', 'bientot', 'Justification béton armé et stabilité propre : module PILES-CULÉES bientôt intégré. Descente de charges sommaire établie pour les fondations.', 'appui', 3);
     }
     if (R.cadre) {
       const C = R.cadre, okJ = C.justif.every((j) => j.ok !== false && !j.erreur);
-      push(R.cadre.G.cadre ? 'Cadre' : 'Portique', okJ && C.fleche.ok ? 'ok' : 'ko', `${C.justif.length} sections justifiées (ELU, ELS, effort tranchant) ${okJ ? '' : '— au moins une NON vérifiée'} ; flèche ${(C.fleche.delta * 1000).toFixed(1)} mm (limite ${(C.fleche.admConfort * 1000).toFixed(1)} mm)`, 'racba-rapo', 1);
+      push(R.cadre.G.cadre ? 'Cadre' : 'Portique', okJ && C.fleche.ok ? 'ok' : 'ko', `${C.justif.length} sections justifiées (ELU, ELS, effort tranchant) ${okJ ? '' : '— au moins une NON vérifiée'} ; flèche ${(C.fleche.delta * 1000).toFixed(1)} mm (limite ${(C.fleche.admConfort * 1000).toFixed(1)} mm)`, 'cadres-portiques', 1);
     }
     R.fond.forEach((f) => {
       const typ = f.o.type === 'pieux' ? `${f.o.piles.length} pieux Ø ${s.fond.pieux.D} m` : `semelle ${f.o.B.toFixed(2)} × ${f.o.L.toFixed(2)} m`;
-      push('Fondation ' + f.nom, f.err ? 'ko' : f.ok ? 'ok' : 'ko', f.err ? f.err : typ + ' — ' + (f.ok ? 'portance, décompression et glissement vérifiés' : 'au moins un critère NON vérifié'), 'fondatio', 4);
+      push('Fondation ' + f.nom, f.err ? 'ko' : f.ok ? 'ok' : 'ko', f.err ? f.err : typ + ' — ' + (f.ok ? 'portance, décompression et glissement vérifiés' : 'au moins un critère NON vérifié'), 'fondations', 4);
     });
     if (R.gabarit) { const g = R.gabarit; push('Gabarit ' + (g.type === 'rail' ? 'ferroviaire' : 'routier'), g.ok ? 'ok' : 'ko', `hauteur libre ${g.Hdispo.toFixed(2)} m (requis ${g.Hreq.toFixed(2)}), marges latérales ${g.margeG.toFixed(2)} / ${g.margeD.toFixed(2)} m`, null, 1); }
     V.forEach((v) => { v.texte = v.texte.replace(/(\d)\.(\d)/g, '$1,$2'); });   // virgule décimale
@@ -950,12 +950,12 @@
     };
   }
   function preremplissage(R, quoi, idx = 0) {
-    if (quoi === 'radban-rapen' || quoi === 'rodban-ropen') return R.tabInp && R.tabCle === quoi ? Object.assign(clone(R.tabInp), { _v: 1 }) : null;
-    if (quoi === 'rephor') return R.rephorPage ? clone(R.rephorPage) : null;
-    if (quoi === 'appmobil') { const ap = (R.appareils || []).filter((a) => a.app === 'elasto')[idx]; return ap ? appmobilPage(R, ap) : null; }
-    if (quoi === 'fondatio') { const f = R.fond[idx]; return f ? clone(f.page) : null; }
-    if (quoi === 'racba-rapo') return R.cadInp ? clone(R.cadInp) : null;
-    if (quoi === 'sondpres') return { s: clone(R.sps) };
+    if (quoi === 'tablier-rail' || quoi === 'tablier-route') return R.tabInp && R.tabCle === quoi ? Object.assign(clone(R.tabInp), { _v: 1 }) : null;
+    if (quoi === 'efforts-horizontaux') return R.rephorPage ? clone(R.rephorPage) : null;
+    if (quoi === 'appareils-appui') { const ap = (R.appareils || []).filter((a) => a.app === 'elasto')[idx]; return ap ? appmobilPage(R, ap) : null; }
+    if (quoi === 'fondations') { const f = R.fond[idx]; return f ? clone(f.page) : null; }
+    if (quoi === 'cadres-portiques') return R.cadInp ? clone(R.cadInp) : null;
+    if (quoi === 'sondages-pressio') return { s: clone(R.sps) };
     return null;
   }
 

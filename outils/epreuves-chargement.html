@@ -97,7 +97,7 @@
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/epreuves.js"></script>
+<script src="js/epreuves-chargement.js"></script>
 <script>
 (function () {
   'use strict';
@@ -358,7 +358,7 @@
 
   $('b-calc').addEventListener('click', calc);
   $('b-note').addEventListener('click', note);
-  $('b-save').addEventListener('click', () => BA.store.download('epreuves.json', etat()));
+  $('b-save').addEventListener('click', () => BA.store.download('epreuves-chargement.json', etat()));
   $('b-open').addEventListener('click', () => BA.store.pick('.json', (txt) => { try { const d = JSON.parse(txt); load(d); } catch (e) { alert('Fichier non valide : ' + e.message); } }));
   $('b-def').addEventListener('click', () => load(clone(DEF)));
   function load(d) {

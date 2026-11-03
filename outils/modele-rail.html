@@ -81,12 +81,12 @@
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
 <script src="js/charges.js"></script>
-<script src="js/modelpra.js"></script>
+<script src="js/modele-rail.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.modelpra, fmt = BA.fmt, esc = BA.esc, KEY = 'modelpra';
+  const E = BA.modeleRail, fmt = BA.fmt, esc = BA.esc, KEY = 'modele-rail';
   const f0 = (x) => fmt(x, 0), f1 = (x) => fmt(x, 1), f2 = (x) => fmt(x, 2), f3 = (x) => fmt(x, 3);
 
   const F_GEN = [
@@ -208,7 +208,7 @@
 
   function readAll() { const v = {}; FORMS.forEach(([, F, pre]) => (v[pre] = BA.read(F, pre))); return v; }
   function persist() { BA.store.save(KEY, state()); }
-  function state() { return { module: 'modelpra', version: 1, v: readAll(), ap: rowsAp.data, gou: rowsGou.data, qq: rowsQQ.data }; }
+  function state() { return { module: 'modele-rail', version: 1, v: readAll(), ap: rowsAp.data, gou: rowsGou.data, qq: rowsQQ.data }; }
   function load(s) {
     FORMS.forEach(([el, F, pre]) => BA.form(document.getElementById(el), F, pre, (s.v || {})[pre] || {}));
     rowsAp.set(JSON.parse(JSON.stringify(s.ap || DEF_AP))); rowsGou.set(JSON.parse(JSON.stringify(s.gou || DEF_GOU))); rowsQQ.set(JSON.parse(JSON.stringify(s.qq || DEF_QQ)));
@@ -436,7 +436,7 @@
   bind();
   document.getElementById('bCalc').onclick = () => { persist(); calc(); };
   document.getElementById('bNote').onclick = note;
-  document.getElementById('bSave').onclick = () => BA.store.download('modelpra.json', state());
+  document.getElementById('bSave').onclick = () => BA.store.download('modele-rail.json', state());
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (t) => { try { load(JSON.parse(t)); } catch (e) { alert('Fichier illisible : ' + e.message); } });
   document.getElementById('bDon').onclick = () => BA.store.pick('.don', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   document.getElementById('bDef').onclick = () => load({ v: {}, ap: DEF_AP, gou: DEF_GOU, qq: DEF_QQ });

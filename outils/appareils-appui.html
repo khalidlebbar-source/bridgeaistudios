@@ -65,13 +65,13 @@
 </div></div>
 
 <script src="js/commun.js"></script>
-<script src="js/appmobil.js"></script>
+<script src="js/elastomeres.js"></script>
 <script>
 BA.chrome({ base: '../' });
 (function () {
   'use strict';
-  const AM = BA.appmobil, fmt = BA.fmt, esc = BA.esc;
-  const KEY = 'appmobil';
+  const AM = BA.elastomeres, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'appareils-appui';
   const GEN = [
     { id: 'regl', label: 'Référentiel', type: 'sel', def: 'en1337', wide: true, options: [['en1337', 'NF EN 1337-3 + guide Sétra 2007'], ['setra2000', 'Guide Sétra septembre 2000'], ['livret', 'Livret 2.01 (BT4 Sétra)']] },
     { id: 'mode', label: 'Mode', type: 'sel', def: 'dim', options: [['dim', 'Dimensionnement'], ['verif', 'Vérification']] },
@@ -347,7 +347,7 @@ BA.chrome({ base: '../' });
 
   $('b-calc').onclick = run;
   $('b-note').onclick = note;
-  $('b-save').onclick = () => BA.store.download('appmobil.json', state());
+  $('b-save').onclick = () => BA.store.download('elastomeres.json', state());
   $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
   $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   $('b-def').onclick = () => { build(DEFAULT()); run(); };

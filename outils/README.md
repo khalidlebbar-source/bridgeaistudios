@@ -5,7 +5,7 @@ Page d'accueil : `/outils-ponts.html`. Chaque module a :
 | Fichier | Rôle |
 |---|---|
 | `outils/<slug>.html` | page du module (saisie, résultats, note de calcul) |
-| `outils/js/<slug>.js` | moteur de calcul **pur** (aucun accès au DOM), UMD : `module.exports` pour node, `window.BA.<nom>` dans le navigateur |
+| `outils/js/<moteur>.js` | moteur de calcul **pur** (aucun accès au DOM), UMD : `module.exports` pour node, `window.BA.<nom>` dans le navigateur |
 | `tools/test-outils-<slug>.js` | tests node : cas analytiques + cas de référence chiffrés |
 
 ## Socle partagé (ne pas modifier sans coordination)

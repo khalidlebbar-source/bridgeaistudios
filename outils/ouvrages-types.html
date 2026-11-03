@@ -138,24 +138,24 @@
 <script src="js/commun.js"></script>
 <script src="js/charges.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/poutre.js"></script>
-<script src="js/gmslt.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/inerpe.js"></script>
-<script src="js/radban-rapen.js"></script>
-<script src="js/rodban-ropen.js"></script>
-<script src="js/appmobil.js"></script>
-<script src="js/rephor.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/fondatio.js"></script>
-<script src="js/modelpra.js"></script>
-<script src="js/racba-rapo.js"></script>
+<script src="js/poutres-continues.js"></script>
+<script src="js/repartition.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/poutrelles-enrobees.js"></script>
+<script src="js/tablier-rail.js"></script>
+<script src="js/tablier-route.js"></script>
+<script src="js/elastomeres.js"></script>
+<script src="js/efforts-horizontaux.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/fondations.js"></script>
+<script src="js/modele-rail.js"></script>
+<script src="js/cadres-portiques.js"></script>
 <script src="js/ouvrages-types.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const O = BA.ouvragesTypes, SP = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'ouvrages-types';
+  const O = BA.ouvragesTypes, SP = BA.sondages, fmt = BA.fmt, esc = BA.esc, KEY = 'ouvrages-types';
   const f0 = (v) => fmt(v, 0), f1 = (v) => fmt(v, 1), f2 = (v) => fmt(v, 2), f3 = (v) => fmt(v, 3);
   const $ = (id) => document.getElementById(id);
   let s = null, last = null, lastErr = null, step = 1, vueSel = 0;
@@ -197,7 +197,7 @@
       { p: 'app.culee.phi', label: 'φ du remblai', unit: '°' }, { p: 'app.culee.gamma', label: 'γ du remblai', unit: 'kN/m³' }],
     fond: (t) => [{ p: 'fond.type', label: 'Type', type: 'sel', options: t.famille === 'cadre' ? [['sup', 'Superficielle (radier ou semelles)']] : [['sup', 'Superficielle (semelles)'], ['pieux', 'Profonde (pieux forés)']] }]
       .concat(t.famille === 'tablier' ? [{ p: 'fond.ancrage', label: 'Sous-face / terrain naturel', unit: 'm', help: 'profondeur de la sous-face des semelles' }, { p: 'fond.es', label: 'Épaisseur des semelles', unit: 'm' }, { p: 'fond.debord', label: 'Débord des semelles de piles', unit: 'm' }] : []),
-    pieux: () => [{ p: 'fond.pieux.ptype', label: 'Type de pieu', type: 'sel', wide: true, options: Object.entries(BA.fondatio.TYPES_PIEU).filter(([k]) => !['7', '8'].includes(k)).map(([k, v]) => [k, v.nom]) },
+    pieux: () => [{ p: 'fond.pieux.ptype', label: 'Type de pieu', type: 'sel', wide: true, options: Object.entries(BA.fondations.TYPES_PIEU).filter(([k]) => !['7', '8'].includes(k)).map(([k, v]) => [k, v.nom]) },
       { p: 'fond.pieux.D', label: 'Diamètre', unit: 'm' }, { p: 'fond.pieux.L', label: 'Longueur', unit: 'm' }, { p: 'fond.pieux.nx', label: 'Files (⊥ ligne d’appui)', step: 1 }, { p: 'fond.pieux.ny', label: 'Pieux par file', step: 1 },
       { p: 'fond.pieux.ex', label: 'Entraxe des files', unit: 'm' }, { p: 'fond.pieux.ey', label: 'Entraxe dans la file', unit: 'm' }],
   };
@@ -289,7 +289,7 @@
 
   /* ── tableaux réutilisés par l'écran et la note ── */
   function tabVerdicts(R, liens) {
-    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.module === 'fondatio' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
+    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.module === 'fondations' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
     return `<div class="tbl-wrap"><table class="res dash"><thead><tr><th>Partie</th><th style="text-align:left">Statut</th><th style="text-align:left">Résultat</th>${liens ? '<th></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function tabGeo(R) {
@@ -356,7 +356,7 @@
       const p = a.plaque;
       return [a.nom + (a.cote ? ' ' + a.cote : ''), a.app === 'elasto' ? 'élastomère fretté' : a.app === 'fixe' ? 'fixe' : 'glissant', a.n,
         p ? `${Math.round(p.a * 1000)} × ${Math.round(p.b * 1000)} × ${p.n}(${f0(p.ti * 1000)} + ${f0(p.ts * 1000)})` : a.app === 'fixe' ? `H/V = ${f2(a.HV)} (≤ ${f2(a.HVlim)})` : '—',
-        a.taux !== undefined ? f2(a.taux) : '', BA.verdict(a.ok)].concat(liens ? [a.app === 'elasto' ? go('appmobil', k) : ''] : []);
+        a.taux !== undefined ? f2(a.taux) : '', BA.verdict(a.ok)].concat(liens ? [a.app === 'elasto' ? go('appareils-appui', k) : ''] : []);
     }), { caption: 'Appareils dimensionnés sur le catalogue NF EN 1337-3 sous les combinaisons issues de la répartition des efforts horizontaux' });
   }
   function critAppareils(R) {
@@ -378,7 +378,7 @@
   function tabFond(R, liens) {
     return R.fond.map((f, k) => {
       const r = f.res;
-      let h = `<div class="sub">${esc(f.nom)} — ${f.o.type === 'pieux' ? f.o.piles.length + ' pieux Ø ' + f2(R.s.fond.pieux.D) + ' m, L = ' + f2(R.s.fond.pieux.L) + ' m' : 'semelle ' + f2(f.o.B) + ' × ' + f2(f.o.L) + ' m'} — sous-face ${f2(f.o.zsem)} m ${liens ? go('fondatio', k) : ''}</div>`;
+      let h = `<div class="sub">${esc(f.nom)} — ${f.o.type === 'pieux' ? f.o.piles.length + ' pieux Ø ' + f2(R.s.fond.pieux.D) + ' m, L = ' + f2(R.s.fond.pieux.L) + ' m' : 'semelle ' + f2(f.o.B) + ' × ' + f2(f.o.L) + ' m'} — sous-face ${f2(f.o.zsem)} m ${liens ? go('fondations', k) : ''}</div>`;
       if (f.err || !r) return h + `<div class="msg err">${esc(f.err || 'Calcul impossible')}</div>`;
       if (f.o.type === 'pieux') {
         h += `<p style="font-size:12px;color:var(--ink3)">Qu = ${f0(r.pt.Qu)} kN, Qc = ${f0(r.pt.Qc)} kN par pieu (${esc(r.pt.typeNom)})</p>`;
@@ -421,11 +421,11 @@
       h += BA.card('Coordonnées d’implantation', tabImpl(R));
     } else if (step === 2) {
       if (R.tab) h += BA.card('Tablier', tabTablier(R) + '<div class="linkrow">' + go(R.tabCle) + '</div>', 'module ' + O.MODULES[R.tabCle].code);
-      else h += BA.card(s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert', tabCadre(R) + '<div class="linkrow">' + go('racba-rapo') + '</div>', 'module CADRES');
+      else h += BA.card(s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert', tabCadre(R) + '<div class="linkrow">' + go('cadres-portiques') + '</div>', 'module CADRES');
       h += BA.card('Coffrage', LEG + plans(R, R.tab ? ['tab-*'] : ['coupe', 'implantation']));
     } else if (step === 3) {
       if (R.tab) {
-        h += BA.card('Efforts horizontaux', tabHoriz(R) + '<div class="linkrow">' + go('rephor') + '</div>', 'module HORIZONTAL');
+        h += BA.card('Efforts horizontaux', tabHoriz(R) + '<div class="linkrow">' + go('efforts-horizontaux') + '</div>', 'module HORIZONTAL');
         h += BA.card('Appareils d’appui', tabAppareils(R, true), 'module ÉLASTOMÈRES');
         h += BA.card('Descente de charges sommaire', '<div class="msg info" style="margin-bottom:8px">Piles et culées non justifiées : module PILES-CULÉES bientôt intégré. ' + go('appui', 0, 'Voir PILES-CULÉES ↗') + '</div>' + tabDescente(R));
         h += BA.card('Coffrage des appuis', LEG + plans(R, ['culee-*', 'pile-*']));
@@ -477,7 +477,7 @@
   $('steps').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; lire(); step = +b.dataset.s; steps(); };
   document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.closest('.fields')) { vis(); calc(); } });
   // tablier : ouvrir / reprendre les données du module
-  $('bOpenTab').onclick = () => { if (!last) return; ouvrir(last.tab ? last.tabCle : 'racba-rapo'); };
+  $('bOpenTab').onclick = () => { if (!last) return; ouvrir(last.tab ? last.tabCle : 'cadres-portiques'); };
   $('bPullTab').onclick = () => {
     const t = T(), cle = t.module, o = BA.store.load(cle);
     if (!o) { alert('Aucune donnée enregistrée dans le module ' + O.MODULES[cle].code + ' sur ce navigateur.'); return; }
@@ -497,9 +497,9 @@
   };
   // sondage
   $('bSps').onclick = () => BA.store.pick('.sps,.SPS,.txt', (txt, name) => { try { const p = SP.parse(txt); const sp = p.s || p; if (!sp.couches || !sp.couches.length) throw new Error('aucune couche de calcul ($$TVCC)'); s.sps = sp; s.spsNom = name; spsInfo(); calc(); } catch (e) { alert('Fichier .sps illisible : ' + e.message); } });
-  $('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } s.sps = o.s; s.spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); calc(); };
+  $('bSpsMod').onclick = () => { const o = BA.store.load('sondages-pressio'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } s.sps = o.s; s.spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); calc(); };
   $('bSpsDef').onclick = () => { s.sps = null; s.spsNom = ''; spsInfo(); calc(); };
-  $('bSpsOpen').onclick = () => { BA.store.save('sondpres', { s: s.sps && s.sps.couches ? s.sps : SP.exemple() }); window.open(O.MODULES.sondpres.page, '_blank'); };
+  $('bSpsOpen').onclick = () => { BA.store.save('sondages-pressio', { s: s.sps && s.sps.couches ? s.sps : SP.exemple() }); window.open(O.MODULES['sondages-pressio'].page, '_blank'); };
 
   /* ── démarrage ── */
   try { const o = BA.store.load(KEY); s = o && O.TYPES[o.type] && O.disponible(o.type).ok ? o : O.defaut('radba'); } catch (e) { s = O.defaut('radba'); }

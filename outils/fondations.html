@@ -67,14 +67,14 @@
 
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/fondatio.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/fondations.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const F = BA.fondatio, S = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'fondatio';
+  const F = BA.fondations, S = BA.sondages, fmt = BA.fmt, esc = BA.esc, KEY = 'fondations';
 
   const F_GEN = [
     { id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: 'Pile P1 — fondation', wide: true },
@@ -360,8 +360,8 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
   document.getElementById('bNote').onclick = note;
   document.getElementById('bGrid').onclick = () => { const v = readAll(); const n = Math.round(v.gnx) * Math.round(v.gny); if (n > 24 || n < 1) { alert('1 à 24 pieux.'); return; } piles.set(gridPiles(Math.round(v.gnx), Math.round(v.gny), v.gex, v.gey)); run(); };
   document.getElementById('bSps').onclick = () => BA.store.pick('.sps,.SPS', (txt, name) => { try { sps = S.parse(txt); spsNom = name; run(); } catch (e) { alert('Lecture impossible : ' + e.message); } });
-  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); run(); };
-  document.getElementById('bSave').onclick = () => BA.store.download('fondatio.json', { module: 'fondatio', version: 1, v: readAll(), piles: piles.data, comb: comb.data, sps, spsNom });
+  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondages-pressio'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); run(); };
+  document.getElementById('bSave').onclick = () => BA.store.download('fondations.json', { module: 'fondations', version: 1, v: readAll(), piles: piles.data, comb: comb.data, sps, spsNom });
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { loadState(JSON.parse(txt)); } catch (e) { alert('Fichier JSON illisible.'); } });
   document.getElementById('bDon').onclick = () => BA.store.pick('.don,.DON', (txt) => {
     try {

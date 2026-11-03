@@ -64,16 +64,16 @@
 
 <script src="js/commun.js"></script>
 <script src="js/portique.js"></script>
-<script src="js/bael-ec2.js"></script>
-<script src="js/sondpres.js"></script>
-<script src="js/fondatio.js"></script>
-<script src="js/mur3d.js"></script>
-<script src="js/muru.js"></script>
+<script src="js/sections-ba.js"></script>
+<script src="js/sondages.js"></script>
+<script src="js/fondations.js"></script>
+<script src="js/murs-soutenement.js"></script>
+<script src="js/murs-u.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const U = BA.muru, M = BA.mur3d, f = BA.fmt, $ = (id) => document.getElementById(id), KEY = 'muru';
+  const U = BA.murU, M = BA.soutenement, f = BA.fmt, $ = (id) => document.getElementById(id), KEY = 'murs-u';
   const GEN = [
     { id: 'projet', label: 'Projet', type: 'txt', def: '', wide: true },
     { id: 'regl', label: 'Référentiel', type: 'sel', def: 'EC', options: [['LIVRET', 'Livret 2.01 + BAEL 91 + Fasc. 62'], ['EC', 'Eurocodes + AN française']], wide: true },
@@ -169,7 +169,7 @@
     BA.note({ titre: 'Mur en U sur radier', code: 'MUR EN U', regl: s.gen.regl === 'EC' ? 'EN 1990 A2 · EN 1992-1-1 · Fasc. 62 titre V' : 'Livret 2.01 · BAEL 91 mod. 99 · Fasc. 62 titre V', projet: s.gen.projet, sections: [{ titre: 'Données', html: don }].concat(sections(R)) });
   }
   $('b-calc').onclick = run; $('b-note').onclick = note;
-  $('b-save').onclick = () => BA.store.download('muru.json', state());
+  $('b-save').onclick = () => BA.store.download('murs-u.json', state());
   $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
   $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { build(fromData(U.donVersDonnees(t))); run(); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   $('b-sps').onclick = () => BA.store.pick('.sps,.SPS', (t) => { try { const x = M.lireSPS(t); if (!x.couches.length) throw new Error('aucune couche de calcul ($$TVCC)'); sps = x; spsInfo(); run(); } catch (e) { alert('Sondage illisible : ' + e.message); } });

@@ -80,13 +80,13 @@
 </div></div>
 
 <script src="js/commun.js"></script>
-<script src="js/inerpe.js"></script>
+<script src="js/poutrelles-enrobees.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const E = BA.inerpe, P = E.profiles, fmt = BA.fmt, esc = BA.esc;
-  const KEY = 'inerpe';
+  const E = BA.enrobees, P = E.profiles, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'poutrelles-enrobees';
 
   /* ── schémas de saisie ── */
   const F_PROJ = [{ id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: '' }];
@@ -312,7 +312,7 @@ Béton de y = ${fmt(S.zb, 3)} m à y = ${fmt(S.H, 3)} m (origine : sous-face des
         <li><b>Hors périmètre</b> : vérification des contraintes, effort tranchant, fatigue, flexion transversale, sollicitations (voir TABLIER RAIL / TABLIER ROUTE). Largeur participante non réduite : la largeur saisie est considérée entièrement efficace.</li>
         <li>Compatibilité avec les anciens fichiers .don : l’import règle γa = 1,05, n = 6 / 18 saisis et les congés ignorés à l’ELU, conventions qui permettent de retrouver les anciens résultats. Dans la table d’origine « ELS / béton », le module béton non fissuré avec armatures n’était pas cohérent avec l’inertie ; ce module donne n·I/v.</li>
       </ul></details>`)
-      + BA.card('Catalogue des profilés', catalogue(), 'BA.inerpe.profiles');
+      + BA.card('Catalogue des profilés', catalogue(), 'BA.enrobees.profiles');
     document.getElementById('out').innerHTML = html;
     document.getElementById('tabs').addEventListener('click', (e) => { const t = e.target.dataset.t; if (!t) return; state.tab = t; render(state.res); persist(); });
     const cs = document.getElementById('catSerie');
@@ -374,9 +374,9 @@ Béton de y = ${fmt(S.zb, 3)} m à y = ${fmt(S.H, 3)} m (origine : sous-face des
   }
   document.getElementById('bCalc').onclick = calc;
   document.getElementById('bNote').onclick = note;
-  document.getElementById('bSave').onclick = () => BA.store.download('inerpe.json', { module: 'inerpe', version: 1, v: readAll(), nap: nap.data });
+  document.getElementById('bSave').onclick = () => BA.store.download('poutrelles-enrobees.json', { module: 'poutrelles-enrobees', version: 1, v: readAll(), nap: nap.data });
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => {
-    try { const o = JSON.parse(txt); if (o.module !== 'inerpe') throw new Error('Fichier non reconnu.'); apply(o.v || {}, o.nap || []); } catch (e) { alert('Lecture impossible : ' + e.message); }
+    try { const o = JSON.parse(txt); if (o.module !== 'poutrelles-enrobees') throw new Error('Fichier non reconnu.'); apply(o.v || {}, o.nap || []); } catch (e) { alert('Lecture impossible : ' + e.message); }
   });
   document.getElementById('bDon').onclick = () => BA.store.pick('.don', (txt) => {
     try {

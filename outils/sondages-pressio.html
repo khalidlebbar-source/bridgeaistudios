@@ -63,12 +63,12 @@
 </div></div>
 
 <script src="js/commun.js"></script>
-<script src="js/sondpres.js"></script>
+<script src="js/sondages.js"></script>
 <script>
 (function () {
   'use strict';
   BA.chrome({ base: '../' });
-  const S = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'sondpres';
+  const S = BA.sondages, fmt = BA.fmt, esc = BA.esc, KEY = 'sondages-pressio';
 
   const F_ID = [
     { id: 'entreprise', label: 'Entreprise / laboratoire', type: 'txt', def: '' },
@@ -262,7 +262,7 @@
     try { const s = S.parse(txt); load(s); if (s._avert && s._avert.length) alert('Fichier lu avec avertissements :\n' + s._avert.join('\n')); } catch (e) { alert('Lecture impossible : ' + e.message); }
   });
   document.getElementById('bSpsOut').onclick = () => { const s = readS(); dl((s.sondage || 'sondage').replace(/[^\w.-]+/g, '_') + '.sps', S.write(s), 'sps'); };
-  document.getElementById('bSave').onclick = () => BA.store.download('sondpres.json', { module: 'sondpres', version: 1, s: readS() });
+  document.getElementById('bSave').onclick = () => BA.store.download('sondage.json', { module: 'sondages-pressio', version: 1, s: readS() });
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { const o = JSON.parse(txt); load(Object.assign(S.vide(), o.s || o)); } catch (e) { alert('Fichier JSON illisible.'); } });
   document.getElementById('bNew').onclick = () => { if (confirm('Effacer la saisie et repartir de l’exemple ?')) load(S.exemple()); };
   run();

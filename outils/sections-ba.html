@@ -97,12 +97,12 @@
 </div></div>
 
 <script src="js/commun.js"></script>
-<script src="js/bael-ec2.js"></script>
+<script src="js/sections-ba.js"></script>
 <script>
 BA.chrome({ base: '../' });
 (function () {
   'use strict';
-  const S = BA.sectionBA, $ = (id) => document.getElementById(id), fmt = BA.fmt, KEY = 'bael-ec2';
+  const S = BA.sectionBA, $ = (id) => document.getElementById(id), fmt = BA.fmt, KEY = 'sections-ba';
   const f1 = (x) => fmt(x, 1), f2 = (x) => fmt(x, 2), f3 = (x) => fmt(x, 3), f0 = (x) => fmt(x, 0);
 
   /* ── schémas de saisie ── */
@@ -492,7 +492,7 @@ BA.chrome({ base: '../' });
   document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.closest('.grid-in')) return; majVisibilite(); save(); });
   $('b-calc').onclick = run;
   $('b-note').onclick = note;
-  $('b-save').onclick = () => BA.store.download('bael-ec2.json', lire());
+  $('b-save').onclick = () => BA.store.download('sections-ba.json', lire());
   $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
   $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
   $('b-reset').onclick = () => { build(null); run(); };

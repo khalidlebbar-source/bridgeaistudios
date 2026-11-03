@@ -81,12 +81,12 @@
 </div></div>
 
 <script src="js/commun.js"></script>
-<script src="js/cedypia.js"></script>
+<script src="js/dynamique-rail.js"></script>
 <script>
 BA.chrome({ base: '../' });
 (function () {
   'use strict';
-  const D = BA.cedypia, fmt = BA.fmt, KEY = 'cedypia';
+  const D = BA.dynamique, fmt = BA.fmt, KEY = 'dynamique-rail';
   const GEN = [
     { id: 'projet', label: 'Ouvrage', type: 'txt', def: 'PRA — travée isostatique 18 m', wide: true },
     { id: 'vmax', label: 'Vitesse maximale de la ligne V', unit: 'km/h', def: 300 },
@@ -165,7 +165,7 @@ BA.chrome({ base: '../' });
     const local = () => setTimeout(() => { try { const r = D.calcul(inp); if (id === jobId) { done(); show(r, inp); } } catch (e) { fail(e); } }, 20);
     if (typeof Worker === 'undefined') return local();
     try {
-      if (!worker) worker = new Worker('js/cedypia-worker.js');
+      if (!worker) worker = new Worker('js/dynamique-rail-worker.js');
       worker.onmessage = (ev) => {
         const m = ev.data; if (m.id !== jobId) return;
         if (m.progress !== undefined) progress(m.progress);
@@ -262,7 +262,7 @@ Calcul dynamique : max (1 + φ'dyn) = ${fmt(1 + s.phiDyn, 3)} au point ${s.nom} 
   $('go').onclick = run; $('note').onclick = note;
   $('tAll').onclick = () => { document.querySelectorAll('#trains input').forEach((i) => (i.checked = true)); persist(); };
   $('tNone').onclick = () => { document.querySelectorAll('#trains input').forEach((i) => (i.checked = false)); persist(); };
-  $('save').onclick = () => { persist(); BA.store.download('cedypia.json', S); };
+  $('save').onclick = () => { persist(); BA.store.download('dynamique-rail.json', S); };
   $('open').onclick = () => BA.store.pick('.json', (t) => { try { S = Object.assign(DEF(), JSON.parse(t)); drawInputs(); run(); } catch (e) { fail(new Error('Fichier illisible : ' + e.message)); } });
   $('reset').onclick = () => { S = DEF(); drawInputs(); run(); };
   run();
