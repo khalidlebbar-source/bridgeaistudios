@@ -79,11 +79,11 @@
         { nom: 'C.P. tablier maxi', cat: 'Gmax', V: -675.3, dy: 0.007 },
         { nom: 'C.P. tablier mini', cat: 'Gmin', V: -610.8, dy: 0.005 },
         { nom: 'Retrait', cat: 'R', HX: 4.7 },
-        { nom: 'A(l) maxi', cat: 'Q', qt: 'A', etatG: 'max', V: -481.4, dy: 0.02 },
-        { nom: 'A(l) mini', cat: 'Q', qt: 'A', etatG: 'min', V: 88.9, dy: 0.02 },
+        { nom: 'A(l) maxi', cat: 'Q', qt: 'A', etatG: 'max', V: -481.4 },
+        { nom: 'A(l) mini', cat: 'Q', qt: 'A', etatG: 'min', V: 88.9 },
         { nom: 'Freinage A(l)', cat: 'F', qt: 'A', HX: 6.8 },
-        { nom: 'Bc maxi', cat: 'Q', qt: 'B', etatG: 'max', V: -509.4, dy: 0.02 },
-        { nom: 'Bc mini', cat: 'Q', qt: 'B', etatG: 'min', V: 63.5, dy: 0.02 },
+        { nom: 'Bc maxi', cat: 'Q', qt: 'B', etatG: 'max', V: -509.4, dy: -0.02 },
+        { nom: 'Bc mini', cat: 'Q', qt: 'B', etatG: 'min', V: 63.5, dy: -0.02 },
         { nom: 'Freinage Bc', cat: 'F', qt: 'B', HX: 22.2 },
         { nom: 'Mc 120 maxi', cat: 'Q', qt: 'M', etatG: 'max', V: -540.2, dy: 0.655 },
         { nom: 'Mc 120 mini', cat: 'Q', qt: 'M', etatG: 'min', V: 80.1, dy: 0.655 },
@@ -95,7 +95,7 @@
         { nom: 'Trottoir droit maxi', cat: 'QT', etatG: 'max', V: -9.2, dy: 3.08 },
         { nom: 'Trottoir gauche mini', cat: 'QT', etatG: 'min', V: 1.8, dy: -3.08 },
         { nom: 'Trottoir droit mini', cat: 'QT', etatG: 'min', V: 1.8, dy: 3.08 },
-        { nom: 'Surcharge dalle de transition', cat: 'QD', V: 470.9, dy: 0.02, dx: -0.95 },
+        { nom: 'Surcharge dalle de transition', cat: 'QD', V: 470.9, dy: -0.02, dx: -0.95 },
         { nom: 'Dilatation', cat: 'Td', HX: -8.4 },
         { nom: 'Contraction', cat: 'Tc', HX: 8.4 },
       ],
@@ -112,9 +112,9 @@
         actions: [
           { nom: 'C.P. tablier maxi', cat: 'Gmax', V: -2209.3, dy: 0.007 }, { nom: 'C.P. tablier mini', cat: 'Gmin', V: -1998.4, dy: 0.005 },
           { nom: 'Retrait', cat: 'R', HX: 11.9 },
-          { nom: 'A(l) maxi', cat: 'Q', qt: 'A', etatG: 'max', V: -934.7, dy: 0.02 }, { nom: 'A(l) mini', cat: 'Q', qt: 'A', etatG: 'min', V: 74.2, dy: 0.02 },
+          { nom: 'A(l) maxi', cat: 'Q', qt: 'A', etatG: 'max', V: -934.7 }, { nom: 'A(l) mini', cat: 'Q', qt: 'A', etatG: 'min', V: 74.2 },
           { nom: 'Freinage A(l)', cat: 'F', qt: 'A', HX: 39.9 },
-          { nom: 'Bc maxi', cat: 'Q', qt: 'B', etatG: 'max', V: -820.5, dy: 0.02 }, { nom: 'Bc mini', cat: 'Q', qt: 'B', etatG: 'min', V: 65.0, dy: 0.02 },
+          { nom: 'Bc maxi', cat: 'Q', qt: 'B', etatG: 'max', V: -820.5, dy: -0.02 }, { nom: 'Bc mini', cat: 'Q', qt: 'B', etatG: 'min', V: 65.0, dy: -0.02 },
           { nom: 'Freinage Bc', cat: 'F', qt: 'B', HX: 129.9 },
           { nom: 'Mc 120 maxi', cat: 'Q', qt: 'M', etatG: 'max', V: -691.0, dy: 0.655 }, { nom: 'Mc 120 mini', cat: 'Q', qt: 'M', etatG: 'min', V: 72.9, dy: 0.655 },
           { nom: 'Convoi C maxi', cat: 'Q', qt: 'E', etatG: 'max', V: -988.7, dy: 0.88 }, { nom: 'Convoi C mini', cat: 'Q', qt: 'E', etatG: 'min', V: 77.4, dy: 0.88 },
@@ -128,11 +128,11 @@
     // pile de pont-rail, Eurocodes, deux poteaux ronds et chevêtre, séisme et choc
     return Object.assign(base, {
       projet: 'Pile de pont-rail 2 voies (Eurocodes)', regl: 'EC', ouvrage: 'rail', nVoies: 2, livret: false, type: 'pile', biais: 100,
-      geo: { zBase: 0, ep: 1.2, B: 4.0, L: 9.0, talon: 0, exF: 0, fut: { forme: 'rond', n: 2, D: 1.4, b: 1.4, e: 1.4, entraxe: 5.0, h: 6.0 },
+      geo: { zBase: 0, ep: 1.5, B: 6.0, L: 9.5, talon: 0, exF: 0, fut: { forme: 'rond', n: 2, D: 1.4, b: 1.4, e: 1.4, entraxe: 5.0, h: 6.0 },
         chev: { actif: true, L: 9.0, l: 2.0, h: 1.4, xArr: 1.0, hpm: 0, lpm: 0 }, gg: { h: 0, e: 0, L: 0 }, retour: { actif: false, Lr: 0, Hr: 0, e: 0.3 },
         app: { n: 4, e: 2.4, xApp: 0, a0: 0.5, b0: 0.6, a: 0.8, b: 0.9, hb: 0.15, hApp: 0.1 }, zdef: 1.5, zAvant: 1.5, ztn: 1.5, zeau: -1000 },
       mat: Object.assign({}, base.mat, { fck: 35, cFut: 0.06, ssFut: 0, kf: 2 }),
-      fond: Object.assign({}, base.fond, { qu: 1.5, De: 1.5, kv: 30 }),
+      fond: Object.assign({}, base.fond, { qu: 2.5, De: 1.5, kv: 30 }),
       sismique: { actif: true, zone: 3, sol: 'B', classe: 'II', r: 1, khAppui: 0 },
       choc: { actif: true, Fdx: 1000, Fdy: 500, h: 1.25 }, vent: { q: 1.5 },
       actions: [
@@ -160,7 +160,7 @@
     const hF = nF ? num(f.h) : 0, zTF = zTS + hF;               // sommet des fûts = dessous du chevêtre
     const chev = ch.actif ? { L: ch.L, l: ch.l, h: ch.h, x0: xF - ch.xArr, x1: xF - ch.xArr + ch.l, z0: zTF, z1: zTF + ch.h, hpm: num(ch.hpm), lpm: num(ch.lpm) } : null;
     const zTop = chev ? chev.z1 : zTF;                          // sommet de la structure porteuse (sous bossages)
-    const zApp = zTop + num(ap.hb) + num(ap.hApp) / 2;          // niveau d'application des actions du tablier
+    const zApp = zTop + num(ap.hb);                             // niveau d'application des actions du tablier (dessus des bossages)
     const xApp = xF + num(ap.xApp);
     const yF = []; for (let i = 0; i < nF; i++) yF.push((i - (nF - 1) / 2) * num(f.entraxe));
     // aire et inerties d'un fût (section supposée constante) ; oblong : rectangle b × e à extrémités demi-circulaires
@@ -338,8 +338,9 @@
    * Un effort longitudinal H du tablier donne HX = H cos ε, HY = H sin ε ; une excentricité transversale dy du tablier
    * devient dy / cos ε le long de l'appui. Les saisies « repère appui » sont prises telles quelles. */
   function actionsTablier(d, G) {
-    const e = (100 - num(d.biais, 100)) * GR, c = Math.cos(e), s = Math.sin(e), rep = d.repereTablier !== false;
+    const e = (100 - num(d.biais, 100)) * GR, c = Math.cos(e), s = Math.sin(e);
     return (d.actions || []).map((a, k) => {
+      const rep = d.repereTablier !== false && a.rep !== 'a';   // a.rep = 'a' : action déjà exprimée dans le repère de l'appui
       const HXt = num(a.HX), HYt = num(a.HY);
       const HX = rep ? HXt * c - HYt * s : HXt, HY = rep ? HXt * s + HYt * c : HYt, dy = rep ? num(a.dy) / c : num(a.dy);
       const cdDef = { Gmax: 0, Gmin: 0, GD: 0, R: 0, Td: d.partCDT, Tc: d.partCDT }[a.cat];
@@ -365,7 +366,7 @@
       },
       QT: { ELU: 1.605, CAR: 1, FRE: 0, QP: 0, ACC: 0, SIS: 0 }, QD: { ELU: 1.605, CAR: 1.2, FRE: 0, QP: 0, ACC: 0, SIS: 0 },
       PQ: { fond: { ELU: 1.605, CAR: 1.2, FRE: 0.48, QP: 0, ACC: 0, SIS: 0 }, struct: { ELU: 1.35, CAR: 1, FRE: 0.4, QP: 0, ACC: 0, SIS: 0 } },
-      T: { ELU: [1.35, 0.81], CAR: [1, 0.6], FRE: [0.5, 0.5], QP: [0.5, 0.5], ACC: [0.5, 0.5], SIS: [0, 0] },
+      T: { ELU: [1.35, 0.8], CAR: [1, 0.6], FRE: [0.5, 0.5], QP: [0.5, 0.5], ACC: [0.5, 0.5], SIS: [0, 0] },
       W: { ELU: [1.5, 0], CAR: [1, 0], FRE: [0.2, 0], QP: [0, 0], ACC: [0.2, 0] },
       AD: 1, E: 1,
     };
@@ -523,7 +524,7 @@
   }
   function fondation(d, G, combs, sps) {
     const f = d.fond, g = d.geo;
-    if (f.type === 'sup' && (f.mode !== 'sps' || !sps)) return fondSaisie(d, G, combs);
+    if (f.type === 'sup' && f.mode !== 'sps') return fondSaisie(d, G, combs);
     if (!sps) throw new Error('Fondation ' + (f.type === 'semi' ? 'semi-profonde' : 'profonde') + ' : charger un sondage pressiométrique (.sps).');
     const zdefF = d.type === 'pile' ? g.zdef : Math.min(g.zdef, num(g.zAvant, g.zdef));
     const base = { sps, zsem: g.zBase, zdef: zdefF, ztn: num(g.ztn, zdefF), gamma: d.sol.gamma, gammaSat: d.sol.gammaSat, gammaB: d.mat.gammaB, rapSol: num(f.rapSol, 2), fcj: d.mat.fck, fe: d.mat.fe,
@@ -849,11 +850,15 @@
       cells.push({ x, y, A, wb, wt });
     }
     const aEq = (G.nF && g.fut.forme === 'rond') ? Math.sqrt(Math.PI) / 2 * G.dimX : G.dimX, bEq = (G.nF && g.fut.forme === 'rond') ? Math.sqrt(Math.PI) / 2 * G.dimY : G.dimY;
-    const cutsX = G.nF ? [{ dir: 'x', v: G.xF + aEq / 2, cote: 'avant' }, { dir: 'x', v: G.xF - aEq / 2, cote: 'arrière' }] : [];
+    // coupures : side = côté de la partie isolée (+1 : u > 0) ; consoles au nu des fûts du côté opposé au fût
+    const cutsX = G.nF ? [{ dir: 'x', v: G.xF + aEq / 2, side: 1, cote: 'nu avant des fûts' }, { dir: 'x', v: G.xF - aEq / 2, side: -1, cote: 'nu arrière des fûts' }] : [];
     const cutsY = [];
     if (G.nF) {
-      G.yF.forEach((y, i) => { cutsY.push({ dir: 'y', v: y + bEq / 2, cote: 'nu fût ' + (i + 1) }); cutsY.push({ dir: 'y', v: y - bEq / 2, cote: 'nu fût ' + (i + 1) }); if (i) cutsY.push({ dir: 'y', v: (y + G.yF[i - 1]) / 2, cote: 'entre fûts ' + i + '-' + (i + 1) }); });
-    }
+      G.yF.forEach((y, i) => {
+        cutsY.push({ dir: 'y', v: y + bEq / 2, side: 1, cote: 'nu fût ' + (i + 1) + ' (Y+)' }); cutsY.push({ dir: 'y', v: y - bEq / 2, side: -1, cote: 'nu fût ' + (i + 1) + ' (Y−)' });
+        if (i) cutsY.push({ dir: 'y', v: (y + G.yF[i - 1]) / 2, side: 1, entre: true, cote: 'entre fûts ' + i + ' et ' + (i + 1) });
+      });
+    } else if (pieuxPlan) cutsY.push({ dir: 'y', v: 0, side: 1, entre: true, cote: 'milieu' });
     const cuts = cutsX.concat(cutsY).filter((k) => Math.abs(k.v) < (k.dir === 'x' ? B : L) / 2 - 1e-6);
     const K = coefs(d), pieux = fond && fond.combs && fond.combs[0] && fond.combs[0].piles;
     const piles = pieux ? pieuxPlan(d.fond.pieux) : null;
@@ -872,16 +877,16 @@
         let M = 0, V = 0, len = ct.dir === 'x' ? L : B;
         const dd = ep - c;
         for (const q of cells) {
-          const u = ct.dir === 'x' ? q.x - ct.v : q.y - ct.v, side = ct.v >= 0 ? u > 0 : u < 0;
+          const u = ct.dir === 'x' ? q.x - ct.v : q.y - ct.v, side = ct.side > 0 ? u > 0 : u < 0;
           if (!side) continue;
           const p = (sig ? sig(q.x, q.y) : 0) - gb * q.wb - gt * q.wt;
           M += p * q.A * Math.abs(u);
           if (Math.abs(u) >= dd) V += p * q.A;
         }
         if (pieux) {
-          fr.piles.forEach((pl, j) => { const P = piles[j]; const u = ct.dir === 'x' ? P.x - ct.v : P.y - ct.v; if (ct.v >= 0 ? u > 0 : u < 0) { M += pl.N * Math.abs(u); if (Math.abs(u) >= dd) V += pl.N; } });
+          fr.piles.forEach((pl, j) => { const P = piles[j]; const u = ct.dir === 'x' ? P.x - ct.v : P.y - ct.v; if (ct.side > 0 ? u > 0 : u < 0) { M += pl.N * Math.abs(u); if (Math.abs(u) >= dd) V += pl.N; } });
         }
-        if (ct.dir === 'y') pieds.forEach((pd) => { const u = pd.y - ct.v; if (ct.v >= 0 ? u > 0 : u < 0) M += -pd.N * Math.abs(u) + (ct.v >= 0 ? 1 : -1) * pd.Mx; });
+        if (ct.dir === 'y') pieds.forEach((pd) => { const u = pd.y - ct.v; if (ct.side > 0 ? u > 0 : u < 0) { M += -pd.N * Math.abs(u) + ct.side * pd.Mx; if (Math.abs(u) >= dd) V -= pd.N; } });
         M /= len; V /= len;
         const e = env[m], t = isU ? 'ELU' : 'ELS';
         if (M > e[t][0]) { e[t][0] = M; e.crit[t + '+'] = cb.n; }
@@ -897,7 +902,7 @@
       const Ainf = Math.max(dimFlexion(mat, 1, ep, c, e.ELU[0], t) || 0, dimFlexion(mat, 1, ep, c, e.ELS[0], 'ELS', ssLim, sbc) || 0);
       const Asup = Math.max(dimFlexion(mat, 1, ep, c, e.ELU[1], t) || 0, dimFlexion(mat, 1, ep, c, e.ELS[1], 'ELS', ssLim, sbc) || 0);
       const tau = e.V / dd / 1000, tlim = d.regl === 'EC' ? vRdcDalle(d.mat.fck, dd, Ainf) : 0.07 * d.mat.fck / 1.5;   // BAEL A.5.2,2 ; EC2 6.2.2
-      return Object.assign({}, ct, { env: e, Ainf, Asup, tau, tlim, okV: tau <= tlim + 1e-9 });
+      return Object.assign({}, ct, { env: e, Ainf, Asup, tau, tlim, okV: ct.entre || tau <= tlim + 1e-9 });
     });
     const dirs = { x: out.filter((o) => o.dir === 'x'), y: out.filter((o) => o.dir === 'y') };
     const mx = (arr, k) => Math.max(0, ...arr.map((o) => o[k]));
@@ -912,13 +917,13 @@
   function vRdcDalle(fck, dd, Asl) { const k = Math.min(2, 1 + Math.sqrt(0.2 / dd)), rho = Math.min(0.02, Asl * 1e-4 / dd); return Math.max(0.18 / 1.5 * k * Math.cbrt(100 * rho * fck), 0.053 / 1.5 * Math.pow(k, 1.5) * Math.sqrt(fck)); }
 
   /* ══════════════════════ appareils d'appui : pressions localisées, frettage, éclatement ══════════════════════
-   * BAEL 91 A.8.4,1 : σ ≤ K·fbu, K = 1 + (3 − 4/3·(a0/a + b0/b))·√((1 − 4a0/(3a))(1 − 4b0/(3b))) ≤ 3,3 ;
+   * BAEL 91 A.8.4,1 : σ ≤ K·fbu (fbu avec θ = 0,85, réaction ELU de courte durée), K = 1 + (3 − 4/3·(a0/a + b0/b))·√((1 − 4a0/(3a))(1 − 4b0/(3b))) ≤ 3,3 ;
    * annexe E.8 (et guide SETRA BAEL ponts) : σb = Pu/(d1 e) ≤ 0,9 fcj ; σte = 0,5(1 − b/d1)Pu/(d1 e) ≤ 1,7 ftj ;
    * As = 0,04 Pu/fsu ; Ae = max(0,25(1 − b/d1), 0,15)·Pu/fsu ; Al = 0,5 Pu/fsu.
    * EC2 §6.7 : FRdu = Ac0·fcd·√(Ac1/Ac0) ≤ 3 fcd Ac0. */
   function frettage(o) {
     const { a0, b0, a, b, Pu, fck, fe, livret, regl, e1, e2, d1, d2 } = o;
-    const fbu = 0.85 * fck / 1.5, fsu = fe / 1.15 * (livret ? 0.8 : 1), ftj = 0.6 + 0.06 * fck;
+    const fbu = 0.85 * fck / (0.85 * 1.5), fsu = fe / 1.15 * (livret ? 0.8 : 1), ftj = 0.6 + 0.06 * fck;
     const K = Math.min(3.3, 1 + (3 - 4 / 3 * (a0 / a + b0 / b)) * Math.sqrt(Math.max(0, (1 - 4 * a0 / (3 * a)) * (1 - 4 * b0 / (3 * b)))));
     const sig = Pu / (a0 * b0) / 1000;
     const fcd = fck / 1.5, Ac0 = a0 * b0, Ac1 = Math.min(a * b, 9 * Ac0), FRdu = Math.min(Ac0 * fcd * Math.sqrt(Ac1 / Ac0), 3 * fcd * Ac0) * 1000;
@@ -1014,11 +1019,11 @@
   /* ══════════════════════ imports ══════════════════════ */
   /* fichiers d'appui exportés par REPHOR (format 'BA.rephor.appui') : efforts horizontaux en tête (HX, HY), repère appui */
   function depuisRephor(j) {
-    if (!j || j.format !== 'BA.rephor.appui') throw new Error('Fichier non reconnu (format BA.rephor.appui attendu).');
+    if (!j || j.format !== 'BA.rephor.appui') throw new Error('Fichier non reconnu : export « fichiers appui » du module Efforts horizontaux attendu.');
     const out = [], map = { retrait: 'R', dilatation: 'Td', contraction: 'Tc', freinage: 'F', interaction: 'F' };
     for (const a of j.actions || []) {
       const cat = map[a.id]; if (!cat) continue;
-      out.push({ nom: a.nom + ' (REPHOR)', cat, qt: cat === 'F' ? '*' : '', HX: +(a.HX || 0).toFixed(2), HY: +(a.HY || 0).toFixed(2), cd: cat === 'R' ? 0 : undefined });
+      out.push({ nom: a.nom + ' (efforts horizontaux)', cat, rep: 'a', qt: cat === 'F' ? '*' : '', HX: +(a.HX || 0).toFixed(2), HY: +(a.HY || 0).toFixed(2), cd: cat === 'R' ? 0 : undefined });
     }
     return { actions: out, biais: j.biais_gr, repereTablier: false, nom: j.nom };
   }
@@ -1029,19 +1034,19 @@
     const mm = (nom, cat, o, qt) => { if (!o) return; out.push({ nom: nom + ' maxi', cat, qt, etatG: 'max', V: -(+o.max) }); if (Math.abs(+o.min) > 1e-9) out.push({ nom: nom + ' mini', cat, qt, etatG: 'min', V: -(+o.min) }); };
     if (j && j.format === 'BA.radbanRapen.appui') {
       const g = j.global || {};
-      out.push({ nom: 'G tablier maxi (RADBAN-RAPEN)', cat: 'Gmax', V: -((g.pp || 0) + (g.superstructuresMax || 0)) });
-      out.push({ nom: 'G tablier mini (RADBAN-RAPEN)', cat: 'Gmin', V: -((g.pp || 0) + (g.superstructuresMin || 0)) });
+      out.push({ nom: 'G tablier maxi (tablier rail)', cat: 'Gmax', V: -((g.pp || 0) + (g.superstructuresMax || 0)) });
+      out.push({ nom: 'G tablier mini (tablier rail)', cat: 'Gmin', V: -((g.pp || 0) + (g.superstructuresMin || 0)) });
       mm('Groupe gr12 (LM71/SW0)', 'Q', g.gr12, 'rail'); mm('Groupe gr14 (SW/2)', 'Q', g.gr14, 'sw2'); mm('Accotements', 'QT', g.accotements, '');
       return { actions: out, biais: j.biais_gr, ouvrage: 'rail', repereTablier: true, nom: j.nom };
     }
     if (j && j.format === 'BA.rodbanRopen.appui') {
       const l = j.ligne || {};
-      out.push({ nom: 'G tablier maxi (RODBAN-ROPEN)', cat: 'Gmax', V: -(+(l.G || {}).max || 0) });
-      out.push({ nom: 'G tablier mini (RODBAN-ROPEN)', cat: 'Gmin', V: -(+(l.G || {}).min || 0) });
-      Object.entries(l.charges || {}).forEach(([k, v]) => mm(k + ' (RODBAN-ROPEN)', /trot/i.test(k) ? 'QT' : 'Q', v, /A/.test(k) && !/B/.test(k) ? 'A' : 'B'));
+      out.push({ nom: 'G tablier maxi (tablier route)', cat: 'Gmax', V: -(+(l.G || {}).max || 0) });
+      out.push({ nom: 'G tablier mini (tablier route)', cat: 'Gmin', V: -(+(l.G || {}).min || 0) });
+      Object.entries(l.charges || {}).forEach(([k, v]) => mm(k + ' (tablier route)', /trot/i.test(k) ? 'QT' : 'Q', v, /A/.test(k) && !/B/.test(k) ? 'A' : 'B'));
       return { actions: out, biais: j.biais_gr, ouvrage: 'route', repereTablier: true, nom: j.nom };
     }
-    throw new Error('Fichier non reconnu (formats BA.radbanRapen.appui ou BA.rodbanRopen.appui attendus).');
+    throw new Error('Fichier non reconnu : export « appui » des modules Tablier rail ou Tablier route attendu.');
   }
 
   /* fichier de données .don d'origine (format « mot-clé ; commentaire » puis valeur) */
@@ -1066,7 +1071,7 @@
     d.biais = d.type !== 'pile' && Math.round(n('numappui', 0)) === 0 ? 200 - biais : biais;
     const zb = n('zbasem'), ep = n('epsem'), zsc = n('zsousche'), hap = n('hap'), hb = n('happapp'), hch = n('hauche');
     const rond = n('larfut', 0) === 0, nF = Math.round(n('nbfut', 1));
-    const hF = zsc > 0 ? zsc - zb - ep : hap - hb - ep - hch;
+    const hF = zsc > 0 ? zsc - zb - ep : hap - ep - hch;          // hap : de la sous-face de semelle au sommet (hors bossages)
     d.geo = Object.assign(d.geo, {
       zBase: zb, ep, B: n('larsem'), L: n('lonsem'), talon: n('lartal'), exF: 0,
       fut: { forme: rond ? 'rond' : 'rect', n: nF, D: n('epfutb'), b: n('larfut') || n('epfutb'), e: n('epfutb'), entraxe: n('eaxefut'), h: hF },
@@ -1089,10 +1094,9 @@
     const A = [];
     const add = (k, nom, cat, extra = {}) => {
       const v = vec(k + 'c'); if (!v.length || v.every((x) => x === 0)) return;
-      const pos = vec(k + 'd'), p1 = pos[0] || 0, p2 = pos[1] || 0;
-      const o = Object.assign({ nom, cat, V: v[0], HX: v[1], HY: v[2], MX: v[3], MY: v[4], dy: p2 }, extra);
-      if (cat === 'Q' && Math.abs(p1 - p2) > 1e-6 && Math.abs(p1) > 1e-6) { A.push(Object.assign({}, o, { nom: nom + ' (dY+)' })); A.push(Object.assign({}, o, { nom: nom + ' (dY−)', dy: p1 })); }
-      else A.push(Object.assign(o, { dy: Math.abs(p2) > 1e-9 ? p2 : p1 }));
+      const pos = vec(k + 'd'), p2 = pos[1] || 0;
+      // la seconde position (colonne « DY+ » des notes d'origine) est celle retenue par le programme d'origine
+      A.push(Object.assign({ nom, cat, V: v[0], HX: v[1], HY: v[2], MX: v[3], MY: v[4], dy: p2 }, extra));
     };
     add('gmax', 'C.P. tablier maxi', 'Gmax'); add('gmin', 'C.P. tablier mini', 'Gmin'); add('retrait', 'Retrait', 'R');
     add('gamoviblemax', 'Charges amovibles maxi', 'Gmax'); add('gamoviblemin', 'Charges amovibles mini', 'Gmin');
@@ -1123,7 +1127,7 @@
     d.sismique = Object.assign(d.sismique, { actif: A.some((a) => a.cat === 'EX' || a.cat === 'EY') && n('zonseism', 0) > 0 });
     d.avert = [];
     if (d.fond.mode === 'sps') d.avert.push('Fondation calculée sur sondage : charger le fichier ' + (d.spsNom.split(/[\\/]/).pop() || '.sps') + '.');
-    if (n('choc', 0) || n('chocpile', 0)) d.avert.push('Choc saisi dans le fichier d’origine : renseigner Fdx, Fdy et la hauteur dans le module.');
+    if (n('choc', 0) || n('chocpile', 0)) d.avert.push('Choc saisi dans le fichier .don : renseigner Fdx, Fdy et la hauteur dans le module.');
     if (n('hauplaqremb') > 0) d.avert.push('Plaques de remblaiement non modélisées (poussée sur les plaques ignorée).');
     if (n('epfuth') && Math.abs(n('epfuth') - n('epfutb')) > 1e-6) d.avert.push('Fûts d’épaisseur variable : épaisseur de base retenue sur toute la hauteur.');
     return d;
