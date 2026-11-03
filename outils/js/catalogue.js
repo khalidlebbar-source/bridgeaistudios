@@ -33,9 +33,9 @@
       desc: 'Dalles en béton armé et tabliers à poutrelles enrobées, 1 à 7 travées : flexion, aciers, descentes de charges vers REPHOR et APPUI.' },
     { code: 'RODBAN-ROPEN', slug: 'rodban-ropen', statut: 'dev', nom: 'Tabliers de ponts-routes BA et PE', reg: 'EN 1991-2 · Fasc. 61 titre II · EN 1992-2',
       desc: 'Dalles en béton armé et poutrelles enrobées, portées de 1 à 35 m : LM1, LM2, LM3, A(l), Bc, Bt, Mc, convois exceptionnels.' },
-    { code: 'MUR3D', slug: 'mur3d', statut: 'dev', nom: 'Murs de soutènement', reg: 'EN 1997 · EN 1992 · EN 1998 · Fasc. 62',
+    { code: 'MUR3D', slug: 'mur3d', statut: 'beta', nom: 'Murs de soutènement', reg: 'EN 1997 · EN 1992 · EN 1998 · Fasc. 62',
       desc: 'Murs en béton armé sur semelle, puits, pieux ou barrettes : poussées, eau, séisme, stabilité, aciers, déplacement en tête.' },
-    { code: 'MURU', slug: 'muru', statut: 'dev', nom: 'Murs en U', reg: 'EN 1997 · EN 1992 · Fasc. 62',
+    { code: 'MURU', slug: 'muru', statut: 'beta', nom: 'Murs en U', reg: 'EN 1997 · EN 1992 · Fasc. 62',
       desc: 'Deux voiles sur radier partiel ou total : stabilité, réaction du sol, sollicitations et aciers du radier et des voiles.' },
 
     { phase: 4, titre: 'Compléments', sous: 'modules qui n’étaient pas livrés dans la version de 2015' },
