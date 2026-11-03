@@ -16,7 +16,7 @@
  *    minimal As,min = kc·k·fct,eff·Act/σs, tableau 7.2N) et §7.3.4 (wk), effort tranchant §6.2.
  *  - Fascicule 62 titre V : fondations superficielles (q'ref, iδ annexe F1, décompression, glissement), modules
  *    de réaction depuis le pressiomètre (annexe F2, Ménard).
- *  - Livret 2.01 (option du programme d'origine conservée) : coefficients de variation des terres (1,05 / 0,95),
+ *  - Livret 2.01 (option du programme de référence conservée) : coefficients de variation des terres (1,05 / 0,95),
  *    K0 = Ka (1 + 2/3 sin φ), minoration du freinage par la couverture Kd = 2/3 (2,50 − H1).
  *
  * Modèle : cadre ou portique plan (BA.portique), barres au feuillet moyen, goussets par inertie variable
@@ -62,14 +62,14 @@
     engin: false, Pav: 200, Par: 200, voieAv: 2.5, voieAr: 2.5, empat: 3, aImp: 0.6, bImp: 0.6, epRembPro: 0.3,
     fsAngles: true, hPhi: 'EN', Ldelta: 1500, kLdelta: 0.7, bv: 1, Ld600: true,
   };
-  /* cadre : jeu inspiré de l'exemple d'origine « Racba » (cadre de 5 m sous 2 voies, 1 m de remblai) */
+  /* cadre : jeu inspiré de l'cas de référence « Racba » (cadre de 5 m sous 2 voies, 1 m de remblai) */
   const CADRE = Object.assign({}, COMMUN, {
     type: 'cadre', mode: 'troncon', biais: 80, ouv: 5, hauint: 4, eptra: 0.5, eppied: 0.5, eprad: 0.5,
     haugousup: 0.2, longousup: 0.3, haugouinf: 0.2, longouinf: 0.8, hauterint: 0,
     axevoi1: -2.405, axevoi2: 2.395, vmax: 350, epbal: 0.68, hautraverse: 0.23, eprem: 1.0, lontottab: 12.3, lonpied: 13.3, lonrad: 13.3,
     gTer: 19, charexpint: 10, fyk: 400, ksol: 30, Kmarston: 1,
   });
-  /* portique : jeu inspiré de l'exemple d'origine « RapoSup » (portique de 8 m sur semelles) */
+  /* portique : jeu inspiré de l'cas de référence « RapoSup » (portique de 8 m sur semelles) */
   const PORTIQUE = Object.assign({}, COMMUN, {
     type: 'portique', mode: 'troncon', biais: 100, ouv: 8, hauint: 8, eptra: 0.65, eppied: 0.65, hausem: 1.2, larpat: 1.2, lartal: 1.75,
     haugousup: 0.3, longousup: 1.0, haugouinf: 0, longouinf: 0, hauterint: 1, fond: 'superficielle', Kv: 2e6, Kh: 1e6, Kr: 5e6,
@@ -129,8 +129,8 @@
       out.info = `bande de 1 m : charge d'une voie répartie sur ${larRep.toFixed(3)} m` + (nOver > 1 ? ' (bandes des deux voies superposées)' : '');
     } else {
       const B = G.Btrav, Leq = 0.8 * (d.ouv + d.eppied);                                    // portée équivalente 0,8 × portée droite
-      // largeur de chargement au feuillet moyen (GMSLT) : 2,25 m + diffusion 4:1 sur la hauteur ballast + remblai sous les
-      // traverses, 1:1 dans le béton jusqu'au feuillet moyen (hypothèses qui restituent les tables K du programme d'origine)
+      // largeur de chargement au feuillet moyen (RÉPARTITION) : 2,25 m + diffusion 4:1 sur la hauteur ballast + remblai sous les
+      // traverses, 1:1 dans le béton jusqu'au feuillet moyen (hypothèses qui restituent les tables K du programme de référence)
       const lt = 2.25 + 2 * (hb + d.eprem) / 4 + d.eptra / 2;
       const g = gm();
       let K = 1, K1 = 1, yK = 0, note = '';
@@ -144,7 +144,7 @@
           if (ks[0] > K1 || i === 0) K1 = ks[0];
         }
         out.theta = b / Leq;
-      } else note = 'Module GMSLT indisponible : coefficient de Guyon-Massonnet pris égal à 1.';
+      } else note = 'Module RÉPARTITION indisponible : coefficient de Guyon-Massonnet pris égal à 1.';
       out.K = K; out.K1 = K1; out.yK = yK; out.Leq = Leq; out.lt = lt; out.nOver = voies.length;
       out.cN = voies.length * K; out.c1 = K1; out.info = note;
     }
@@ -369,7 +369,7 @@
     /* ── actions variables unitaires (courte durée) ── */
     mk('FR', 'Freinage / démarrage unitaire (1 kN en tête)', 'CD', (L) => L.node(nCG, 1, 0));
     /* surcharge ferroviaire sur le remblai (EN 1991-2 §6.3.6.4) : poussée uniforme sur le piédroit + réaction triangulaire
-     * du remblai opposé (hypothèse du programme d'origine), intensité unitaire 1 kN/m de hauteur */
+     * du remblai opposé (hypothèse du programme de référence), intensité unitaire 1 kN/m de hauteur */
     for (const [nomc, side] of [['QRG', -1], ['QRD', 1]]) mk(nomc, `Surcharge du remblai ${side < 0 ? 'à gauche' : 'à droite'} (1 kN/m)`, 'CD', (L) => {
       const nom = side < 0 ? 'piédroit gauche' : 'piédroit droit', opp = side < 0 ? 'piédroit droit' : 'piédroit gauche';
       L.horiz(nom, side, yInfP, yHaut, () => 1);
@@ -777,7 +777,7 @@
     const pm = (o) => ({ M: o.M / w, N: -o.N / w, V: Math.abs(o.V) / w });     // par mètre ; N > 0 compression pour sectionBA
     const VmaxELU = Math.max(Math.abs(ev.ELU.Vmax.V), Math.abs(ev.ELU.Vmin.V)) / w;
     // sections d'angle (nus et goussets des nœuds traverse – piédroit et radier – piédroit) : flexion simple, l'effort normal
-    // transitant par le nœud n'étant pas mobilisable au nu (option, comme le programme d'origine, manuel IV.6.1)
+    // transitant par le nœud n'étant pas mobilisable au nu (option, comme le programme de référence, manuel IV.6.1)
     const fs = d.fsAngles !== false && /^(trav-nu|trav-gou|pied-gouh|pied-haut|rad-nu|rad-gou)$/.test(sec.cle);
     const pm2 = (o) => { const x = pm(o); if (fs) x.N = 0; return x; };
     const elu = ['Mmax', 'Mmin', 'Nmax', 'Nmin'].map((k) => Object.assign(pm2(ev.ELU[k]), { V: VmaxELU, type: 1, src: k }));

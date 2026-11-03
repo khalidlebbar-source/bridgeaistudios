@@ -99,7 +99,7 @@
       g.amin = Math.min(g.ap, g.bp);
     }
     // EN 1337-3 §5.3.3.1 : facteur de forme S = A'/(lp·te) ; pour les feuillets extérieurs, épaisseur 1,4·e.
-    // Les enrobages normalisés de 2,5 mm ne sont pas des feuillets : facteur 1,4 appliqué au-delà (comme le programme d'origine).
+    // Les enrobages normalisés de 2,5 mm ne sont pas des feuillets : facteur 1,4 appliqué au-delà (comme le programme de référence).
     g.S = g.Ap / (g.lp * g.ti);
     g.kext = g.te > DEF.enrobNorme + 1e-9 ? 1.4 : 1;
     g.Se = g.te > 0 ? g.Ap / (g.lp * g.kext * g.te) : 0;

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MURU — Mur en U sur radier — BridgeAI Studios</title>
+<title>MUR EN U — Mur en U sur radier — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Calcul d'un mur en U (deux voiles en béton armé sur radier) fondé superficiellement : poussée par la méthode des coins sur talus brisé, radier sur sol élastique sans traction, contraintes et portance Fascicule 62 titre V, ferraillage du radier et des voiles (BAEL 91 / EC2).">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/muru.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/murs-u.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -22,7 +22,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Murs et soutènements</div>
-      <div class="eyebrow">MURU</div>
+      <div class="eyebrow">MUR EN U</div>
       <h1>Mur en U <em>sur radier</em></h1>
       <div class="badges"><span class="badge">Livret 2.01 · BAEL 91 mod. 99</span><span class="badge">EN 1990 A2 · EN 1992-1-1</span><span class="badge">Fasc. 62 titre V</span><span class="badge">EN 1998-5 annexe E</span></div>
     </div>
@@ -54,7 +54,7 @@
       <li>Chaque bande : portique plan (BA.portique) — radier sur ressorts de Winkler k = kv·b·Δy, ressorts tendus supprimés par itérations (sol sans traction) ; voiles encastrés dans le radier, inertie variable.</li>
       <li>Poussée sur le parement extérieur de chaque voile : méthode des coins (talus brisé, surcharges en bande, nappe), δ saisi ; séisme : incrément Mononobe-Okabe (EN 1998-5 annexe E) à mi-hauteur et inertie horizontale des voiles.</li>
       <li>Fondation : contraintes sous le radier issues des ressorts ; q′ref = (3σmax + σmin)/4 ≤ q′0 + iδ (q′u − q′0)/γq (Fascicule 62 titre V, annexe F1) ; décompression = part de radier soulevée.</li>
-      <li>Aciers par mètre linéaire avec le moteur BAEL-EC2 : radier (11 sections entre les axes des voiles), voiles (pied, H/4, H/2) ; effort tranchant sans armatures (BAEL A.5.2.2 / EC2 §6.2.2).</li>
+      <li>Aciers par mètre linéaire avec le moteur SECTIONS : radier (11 sections entre les axes des voiles), voiles (pied, H/4, H/2) ; effort tranchant sans armatures (BAEL A.5.2.2 / EC2 §6.2.2).</li>
       <li>Non traités : radier partiel (deux semelles), joints, consoles de voile dépassant le radier, glissement (équilibré par symétrie des poussées).</li>
     </ul>
   </details>
@@ -166,7 +166,7 @@
     const don = BA.table(['Donnée', 'Valeur'], [['Ouverture', f(d.ouv, 2) + ' m'], ['Radier', `z = ${f(d.radier.z, 2)} m, e = ${f(d.radier.e, 2)} m, L = ${f(d.radier.L, 2)} m`], ['Bandes', R.nb + ' × ' + f(R.b, 2) + ' m'],
       ['Remblai', `φ = ${f(d.sol.phi, 1)}°, γ = ${f(d.sol.g, 1)} kN/m³`], ['Exploitation', `${f(d.q.exp, 2)} kN/m² sur ${f(d.q.larg, 2)} m`], ['Béton / acier', `${f(d.beton.fck, 0)} / ${f(d.beton.fyk, 0)} MPa`], ['Sol', `q′u = ${f(R.fond.qu, 3)} MPa, kv = ${f(d.fond.kv / 1000, 1)} MPa/m`]], { leftText: true })
       + BA.table(VC.map((c) => c.label), vrows.map((r) => VC.map((c) => (c.type === 'txt' ? r[c.id] : f(r[c.id], 3)))));
-    BA.note({ titre: 'Mur en U sur radier', code: 'MURU', regl: s.gen.regl === 'EC' ? 'EN 1990 A2 · EN 1992-1-1 · Fasc. 62 titre V' : 'Livret 2.01 · BAEL 91 mod. 99 · Fasc. 62 titre V', projet: s.gen.projet, sections: [{ titre: 'Données', html: don }].concat(sections(R)) });
+    BA.note({ titre: 'Mur en U sur radier', code: 'MUR EN U', regl: s.gen.regl === 'EC' ? 'EN 1990 A2 · EN 1992-1-1 · Fasc. 62 titre V' : 'Livret 2.01 · BAEL 91 mod. 99 · Fasc. 62 titre V', projet: s.gen.projet, sections: [{ titre: 'Données', html: don }].concat(sections(R)) });
   }
   $('b-calc').onclick = run; $('b-note').onclick = note;
   $('b-save').onclick = () => BA.store.download('muru.json', state());

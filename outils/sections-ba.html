@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BAEL-EC2 — Sections en béton armé — BridgeAI Studios</title>
+<title>SECTIONS — Sections en béton armé — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Justification des sections en béton armé : rectangulaires, en T, circulaires (pieux) et quelconques. Flexion simple, composée et déviée à l'ELU et à l'ELS, diagramme d'interaction, dimensionnement des aciers, ouverture des fissures, effort tranchant et torsion — EN 1992-1-1 / EN 1992-2 et BAEL 91 révisé 99.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/bael-ec2.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/sections-ba.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -32,7 +32,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Socle de calcul</div>
-      <div class="eyebrow">BAEL-EC2</div>
+      <div class="eyebrow">SECTIONS</div>
       <h1>Sections en <em>béton armé</em></h1>
       <div class="badges"><span class="badge">EN 1992-1-1 · EN 1992-2 · AN française</span><span class="badge">BAEL 91 révisé 99</span><span class="badge">Livret 2.01 (σs ELU)</span><span class="badge">Fasc. 62 titre V (pieux)</span></div>
     </div>
@@ -465,7 +465,7 @@ BA.chrome({ base: '../' });
       if (R.pr) secs.push({ titre: 'Caractéristiques homogénéisées', html: propsTable(R) });
       secs.push({ titre: 'Conclusion', html: `<p class="${R.verdict ? 'ok' : 'ko'}"><b>${R.verdict ? 'Section vérifiée sous l’ensemble des combinaisons.' : 'Au moins une vérification n’est pas satisfaite.'}</b></p>` + (R.alertes.length ? `<p class="ko">${R.alertes.map(BA.esc).join('<br>')}</p>` : '') });
     }
-    BA.note({ titre: 'Justification d’une section en béton armé', code: 'BAEL-EC2', regl: s.gen.regl === 'EC2' ? 'EN 1992-1-1, EN 1992-2 et annexes nationales françaises' : 'BAEL 91 révisé 99' + (s.mat.livret ? ' — Livret 2.01' : ''), projet: s.gen.projet, sections: secs });
+    BA.note({ titre: 'Justification d’une section en béton armé', code: 'SECTIONS', regl: s.gen.regl === 'EC2' ? 'EN 1992-1-1, EN 1992-2 et annexes nationales françaises' : 'BAEL 91 révisé 99' + (s.mat.livret ? ' — Livret 2.01' : ''), projet: s.gen.projet, sections: secs });
   }
 
   /* ── import .don ── */

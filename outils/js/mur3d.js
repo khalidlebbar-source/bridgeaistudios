@@ -193,7 +193,7 @@
 
   /* ═══════════════════════ MODÈLE ANALYTIQUE « LIVRET 2.01 » (talus brisé, surcharges) ═══════════════════════
    * Écran T (tête, sur le terrain) → B (pied) ; profondeur comptée verticalement. Identifié sur les notes de calcul
-   * d'origine (MUR3D, édition 2011) et conforme au principe du Livret 2.01 (édition 2004) :
+   * d'origine (SOUTÈNEMENT, édition 2011) et conforme au principe du Livret 2.01 (édition 2004) :
    *  - terres : chaque pente j du talus, prolongée jusqu'à l'écran, donne σv,j(z) (γ au-dessus de la nappe, γsat − γw
    *    dessous) et un coefficient (Kh,j ; Kv,j) ; la pression est Kj σv,j sous la profondeur où la droite inclinée à
    *    45° + φ/2 issue du début de la pente j recoupe l'écran, K(j−1) σv,(j−1) au-dessus ;
@@ -310,7 +310,7 @@
     // terre sur patin (remblai avant)
     const solAv = { g: d.sol.g, gsat: d.sol.gsat, zw: d.eau.av };
     if (g.zav > g.zsem && g.p > 0) {
-      const Qp = [[-g.p, g.zsem], [0, g.zsem], [0, g.zav], [-g.p, g.zav]];   // rectangle sur le patin (comme le programme d'origine)
+      const Qp = [[-g.p, g.zsem], [0, g.zsem], [0, g.zav], [-g.p, g.zav]];   // rectangle sur le patin (comme le programme de référence)
       const wp = poidsSol(Qp, solAv); GT.push({ Fy: 0, Fz: -wp.W, y: wp.y, z: wp.z, nom: 'patin' });
     }
     // ── poussée sur l'écran fictif (stabilité, talon) ──
@@ -379,7 +379,7 @@
    *  'origine' : pondération identifiée sur les notes de calcul d'origine — P = λ P(δ0) + (1 − λ) P(δ = β) avec
    *              λ = 1 − ℓtalon·tan(45° + φ/2)/H (part de l'écran située sous le coin de Rankine issu du talon,
    *              δ0 = 2φ/3 par défaut). Cette règle reproduit les coefficients d'origine à quelques % près. */
-  /* pondération δ0 / δ = β identifiée sur les notes d'origine : λ = 1 − c·ℓtalon/H (c = 2,12) */
+  /* pondération δ0 / δ = β identifiée sur les note de référence : λ = 1 − c·ℓtalon/H (c = 2,12) */
   function lamLivret(d, g, zt) { const H = zt - g.zf, talon = Math.max(0, g.yt - g.yb(g.zsem)); return clamp(1 - (+d.options.cLambda || 2.12) * talon / H, 0, 1); }
   function mixe(d, g, P, run) {
     const yt = g.yt, h = 0.01, b = Math.atan((solZ(P, yt + h) - solZ(P, yt - h)) / (2 * h)) / D2R;
@@ -414,7 +414,7 @@
       [' + chantier', { Cp: gV * g }], [' + chantier + q av.', { Cp: gV * g, QP: gV * g }], [' + chantier (talon)', { Cp: gV * g, Cw: gV * g }],
       [' + chantier (talon) + q av.', { Cp: gV * g, Cw: gV * g, QP: gV * g }]];
     for (const [kt, kp] of K.slice(0, 2)) add(`ELS fréquent, terres ×${kt}`, 'ELSf', { Tt: kt, Tp: kp, Tpou: kt, Qw: psi1, Qp: psi1 });
-    for (const [n, v] of VAR(1)) for (const [kt, kp] of K.slice(0, 2)) {   // ordre des notes d'origine (3 à 16)
+    for (const [n, v] of VAR(1)) for (const [kt, kp] of K.slice(0, 2)) {   // ordre des note de référence (3 à 16)
       const c = Object.assign({ Tt: kt, Tp: kp, Tpou: kt }, v);
       for (const k of ['QP', 'Cp', 'Cw']) if (c[k]) c[k] = rV;
       if (c.Qw) { c.Qw = 1; c.Qp = 1; }
@@ -516,7 +516,7 @@
     for (const c of elu) {
       if (!(Math.abs(c.M) > 1e-6 || Math.abs(c.N) > 1e-6)) continue;
       // Livret 2.01 chap. 2A : réduction 0,8 fe/γs aux combinaisons fondamentales de longue durée seulement ; les
-      // combinaisons avec action variable de courte durée (type 3, « < 1 h ») gardent fe/γs (comme le programme d'origine)
+      // combinaisons avec action variable de courte durée (type 3, « < 1 h ») gardent fe/γs (comme le programme de référence)
       const r = S.dimELU2(base, geo0, (c.type || 1) === 3 ? matCD : mat, { N: c.N, M: c.M, type: c.type || 1 }, false);
       for (let i = 0; i < 2; i++) if (r.As[i] > As[i]) { As[i] = r.As[i]; lign.elu[i] = r.As[i]; cas[i] = c.nom || ''; }
     }
@@ -525,7 +525,7 @@
       const dd = i === 0 ? sec.h - sec.dSup : sec.dInf;
       const nf = regl === 'EC2' ? Math.max(0.26 * mat.fctm / mat.fyk, 0.0013) * dd * 1e4 : 0.23 * mat.ftj / mat.fyk * dd * 1e4;
       const tendue = elu.concat(els).some((c) => (i === 0 ? c.M > 1e-6 : c.M < -1e-6));
-      return o.AminSeul ? +o.Amin || 0 : Math.max(+o.Amin || 0, tendue ? nf : 0);   // AminSeul : minimum forfaitaire saisi (notes d’origine)
+      return o.AminSeul ? +o.Amin || 0 : Math.max(+o.Amin || 0, tendue ? nf : 0);   // AminSeul : minimum forfaitaire saisi (note de référence)
     });
     As = As.map((v, i) => Math.max(v, Amin[i]));
     // ELS : contrainte des aciers tendus puis du béton
@@ -610,7 +610,7 @@
     const cs = cells.map((c) => ({ x: c.x - xg, y: c.y - yg, A: c.A, k: c.k }));
     const gq = Object.assign({ els: 3, elu: 2, acc: 1.5 }, d.fond.gq || {});
     const B0 = Math.min(...tr.map((g) => g.B)), B1 = Math.max(...tr.map((g) => g.B)), Bm = Aplan / L;
-    // terrain définitif : moyenne des niveaux de remblai avant des sections haute et basse (comme le programme d'origine)
+    // terrain définitif : moyenne des niveaux de remblai avant des sections haute et basse (comme le programme de référence)
     const zdef = (+d.haute.zav + +d.basse.zav) / 2;
     const q0 = d.fond.q0 !== undefined && d.fond.q0 !== '' ? +d.fond.q0 : d.sol.g * Math.max(0, zdef - zf) / 1000;
     const De = +d.fond.De || Math.max(0, zdef - zf);
@@ -623,7 +623,7 @@
       const sv = cs.map((c) => Math.max(0, st.v[0] + st.v[1] * c.x + st.v[2] * c.y));
       r.smax = Math.max(...sv) / 1000; r.smin = Math.min(...sv) / 1000;
       r.coins = [[0, -tr[0].p], [0, tr[0].yt], [L, tr[n - 1].yt], [L, -tr[n - 1].p]].map(([x, y]) => Math.max(0, st.v[0] + st.v[1] * (x - xg) + st.v[2] * (y - yg)) / 1000);
-      // σmax, σmin aux sommets de la semelle (contrainte linéaire tronquée à 0), comme le programme d'origine
+      // σmax, σmin aux sommets de la semelle (contrainte linéaire tronquée à 0), comme le programme de référence
       r.smax = Math.max(r.smax, ...r.coins); r.smin = Math.min(...r.coins);
       r.q34 = (3 * r.smax + r.smin) / 4;
       r.delta = Math.atan2(Math.abs(r.Hy), r.N) / D2R;
@@ -710,7 +710,7 @@
   function voileTranche(d, g, pt, c, h, flecheSeule) {
     // flèche en tête du voile (console encastrée dans la semelle) par intégration de M/EI
     const n = 12, H = g.Hv; let th = 0, u = 0, Mprev = null, zprev = null;
-    const Ei = 11000 * Math.pow(d.beton.fck, 1 / 3) * 1000;   // kPa — module instantané (BAEL A.2.1.21), comme le programme d'origine
+    const Ei = 11000 * Math.pow(d.beton.fck, 1 / 3) * 1000;   // kPa — module instantané (BAEL A.2.1.21), comme le programme de référence
     const pts = [];
     for (let i = 0; i <= n; i++) { const z = i * H / n; const e = voileEfforts(d, g, c, z); pts.push({ z, k: e.M / (Ei * Math.pow(e.h, 3) / 12) }); }
     for (let i = 1; i <= n; i++) { const a = pts[i - 1], b = pts[i], dz = b.z - a.z; u += th * dz + dz * dz * (2 * a.k + b.k) / 6; th += dz * (a.k + b.k) / 2; }
@@ -742,7 +742,7 @@
     }
     const fr = [0, 1 / 8, 1 / 4, 1 / 2];
     // niveaux de calcul : pied, H/8, H/4, H/2 de la hauteur du voile de la section haute (communs à toutes les tranches,
-    // comme le programme d'origine) ; un niveau au-dessus de la tête d'une tranche y est ramené
+    // comme le programme de référence) ; un niveau au-dessus de la tête d'une tranche y est ramené
     const Hh = Math.max(...tr.map((g) => g.Hv));
     const voile = tr.map((g) => fr.map((f) => {
       const h = Math.min(f * Hh, 0.98 * g.Hv), z0 = g.zsem + h, ep = g.ep(z0);
@@ -788,7 +788,7 @@
       for (const l of loads) { V += l.Fz; M += l.Fz * (l.y - yS); }
       return { V, M };   // M > 0 : moment ascendant (tend la fibre inférieure du patin)
     };
-    /* talon par équilibre du nœud (comme le programme d'origine) : la section d'encastrement du talon équilibre le patin,
+    /* talon par équilibre du nœud (comme le programme de référence) : la section d'encastrement du talon équilibre le patin,
      * l'élément de liaison sous le voile et le voile (poids, poussées sur le parement arrière, eau, séisme). La part du
      * déséquilibre propre à la tranche (effets 3D de la semelle rigide) est ainsi reportée sur le talon. */
     const console = (g, r, side) => {
@@ -837,7 +837,7 @@
    * efforts et aciers des pieux). Part de longue durée : actions permanentes ; courte durée : le reste.
    * Repère FONDATIO : X le long du mur (= x), Y transversal (= y), Fz < 0 descendant ; Mx = Σ (y Fz − z Fy). */
   function fondationProfonde(d, tr, res, xg, yg, zf) {
-    if (!FD) throw new Error('Module FONDATIO non chargé.');
+    if (!FD) throw new Error('Module FONDATIONS non chargé.');
     const F = d.fond, alertes = [];
     if (!F.sps || !F.sps.couches || !F.sps.couches.length) throw new Error('Fondation profonde : charger un sondage pressiométrique .SPS.');
     // implantation : file avant à disAv du bord avant, file arrière à disAr du bord arrière (abscisses x le long du mur)
@@ -891,7 +891,7 @@
       if (cmax) verifs.push({ nom: `${nom} : effort maxi en tête`, comb: combs[R.combs.indexOf(cmax)].no, par: 'N (kN)', val: cmax.Nmax, adm: cmax.qmax, ok: cmax.Nmax <= cmax.qmax + 1e-6 });
       if (cmin) verifs.push({ nom: `${nom} : effort mini en tête`, comb: combs[R.combs.indexOf(cmin)].no, par: 'N (kN), ≥', val: cmin.Nmin, adm: cmin.qmin, ok: cmin.Nmin >= cmin.qmin - 1e-6 });
     }
-    if (!R.acier.ok) alertes.push('Pieux : ferraillage insuffisant ou non vérifié (voir FONDATIO).');
+    if (!R.acier.ok) alertes.push('Pieux : ferraillage insuffisant ou non vérifié (voir FONDATIONS).');
     return { R, piles: piles.map((q) => ({ x: q.x + xg, y: q.y + yg, file: q.file })), combs, verifs, ok: R.synth.ok, alertes };
   }
 
@@ -900,7 +900,7 @@
    * Fasc. 62 titre V), ple* = moyenne géométrique de pl* entre D et D + 1,5 B (annexe C1), De = (intégrale de pl*) / ple*, kp(De/B, B/L)
    * (interpolation superficielle / profonde de FONDATIO). Renvoie q'u − q'0 (MPa). */
   function portanceSPS(sps, zf, B, L, De0, zdef, ztn) {
-    if (!FD) throw new Error('Module FONDATIO non chargé.');
+    if (!FD) throw new Error('Module FONDATIONS non chargé.');
     const col = FD.colonne(sps, Number.isFinite(zdef) ? zdef : zf + De0, Number.isFinite(ztn) ? ztn : (Number.isFinite(zdef) ? zdef : zf + De0));
     const ple = FD.geoMean(col, zf, zf - 1.5 * B);
     const zd = Number.isFinite(zdef) ? zdef : zf + De0;
@@ -910,13 +910,13 @@
     return { ple, kp: kd.kp, domaine: kd.domaine, De, qu: kd.kp * ple, groupe: seg.groupe, categorie: seg.categorie, couche: seg.nom };
   }
   function lireSPS(txt) {
-    if (!SP) throw new Error('Module SONDPRES non chargé.');
+    if (!SP) throw new Error('Module PRESSIO non chargé.');
     const r = SP.parse(txt), s = r.sps || r;
     if (!s.couches || !s.couches.length) throw new Error('aucune couche de calcul ($$TVCC)');
     return s;
   }
 
-  /* ═══════════════════════ LECTURE D'UN FICHIER .don D'ORIGINE (MUR3D) ═══════════════════════ */
+  /* ═══════════════════════ LECTURE D'UN FICHIER .don D'ORIGINE (SOUTÈNEMENT) ═══════════════════════ */
   function lireKV(txt) {
     const L = String(txt).replace(/\r/g, '').split('\n'), kv = {};
     for (let i = 0; i < L.length - 1; i++) {
@@ -944,10 +944,10 @@
       ec: f('epcour', 0.3), hc: f('haucour', 0.2), haute: sec(true), basse: sec(false),
       sol: { phi: f('angfrot', 35), g: f('poivolter', 19), gsat: f('poivoltersat', 22), dg: (f('deltapoivolter', 0) ? 0.05 : 0) },
       eau: { am: f('zeau', -1e9), av: f('zeau', -1e9) },
-      // charge d'exploitation : bande biaise ; intensité ramenée à q·sin a (convention du programme d'origine : charge par mètre de voie)
+      // charge d'exploitation : bande biaise ; intensité ramenée à q·sin a (convention du programme de référence : charge par mètre de voie)
       q: { type: f('typchgexp', 1) === 0 ? 'route' : 'fer', voies: f('typchgexp', 1) === 2 ? 2 : 1, y: f('yexp') / sa, dydx: cot, larg: f('larexp') / sa, exp: f('chgexp') * sa, chantier: f('qchantier'), av: f('qexpav') },
       beton: { fck: f('fcj', 25), fyk: f('fe', 500), n: f('nbael', 15), g: f('poivolbet', 25), rapmod: f('rapmodbet', 3), fiss: f('fissur', 1), livret: f('patrim', 0) === 1,
-        ssLim: f('patrim', 0) === 1 ? f('limitefissur', 240) : NaN, // axes des aciers du voile : le programme d'origine place la nappe arrière à enrobage « face avant » + 0,03 et la nappe
+        ssLim: f('patrim', 0) === 1 ? f('limitefissur', 240) : NaN, // axes des aciers du voile : le programme de référence place la nappe arrière à enrobage « face avant » + 0,03 et la nappe
         // avant à enrobage « arrière » + 0,03 (hauteurs utiles relevées dans la note : 0,075 / 0,683 pour e = 0,738)
         enrob: { fouille: f('enrcoffouil', 0.03) + 0.025, terre: f('enrcofterre', 0.025) + 0.03, avant: f('enrcofterre', 0.025) + 0.03, arriere: f('enrcofavant', 0.045) + 0.03 },
         AminVoile: 4, AminSemelle: f('patrim', 0) === 1 ? 8.35 : 3, AminSeul: f('patrim', 0) === 1 },
@@ -960,12 +960,12 @@
       limites: { decFreq: f('declim1', 0), decRare: f('declim2', 25), decELU: f('renlim', 90), deplac: f('deplaclim', 0.01) },
       seisme: { kh: 0, kv: 0, aN: f('zonseism', 0) > 0 ? f('anseism', 0) : 0 },
       options: { modele: 'livret', deltaFictif: f('reglement', 0) === 1 ? 'culmann' : 'origine', delta0: f('angdelta0', 2 * f('angfrot', 35) / 3), deltaVoile: 0 },
-      avertissements: [typ > 0 ? 'Fondation profonde : charger le sondage ' + (k.nomficsps || '.SPS') + ' pour le calcul du groupe de pieux (FONDATIO).' : '', f('anghsem', 100) !== 100 || f('angbsem', 100) !== 100 ? 'Semelle biaise (angle ≠ 100 gr) : modélisée à bords droits.' : ''].filter(Boolean),
+      avertissements: [typ > 0 ? 'Fondation profonde : charger le sondage ' + (k.nomficsps || '.SPS') + ' pour le calcul du groupe de pieux (FONDATIONS).' : '', f('anghsem', 100) !== 100 || f('angbsem', 100) !== 100 ? 'Semelle biaise (angle ≠ 100 gr) : modélisée à bords droits.' : ''].filter(Boolean),
     };
   }
 
   /* ═══════════════════════ JEU DE DONNÉES PAR DÉFAUT ═══════════════════════
-   * Cas « fondation superficielle » des exemples d'origine (talus biais ramené dans les coupes droites). */
+   * Cas « fondation superficielle » des cas de référence (talus biais ramené dans les coupes droites). */
   function exemple() {
     return {
       projet: 'Mur de soutènement — exemple', regl: 'LIVRET', L: 8.5, nsec: 10, zsem: 52.7, fav: 2, far: 4.66, ec: 0.3, hc: 0.2, lch: 1.0, lcb: 0.5,

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>REPHOR — Efforts horizontaux et appareils d'appui · BridgeAI Studios</title>
+<title>HORIZONTAL — Efforts horizontaux et appareils d'appui · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/rephor.html">
-<meta name="description" content="Répartition des efforts horizontaux longitudinaux entre les appuis d'un pont multi-travées : retrait, dilatation, freinage-démarrage EN 1991-2, interaction voie-ouvrage, point fixe, raideurs des piles et culées, appareils d'appui en élastomère fretté EN 1337-3, export vers le module APPUI.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/efforts-horizontaux.html">
+<meta name="description" content="Répartition des efforts horizontaux longitudinaux entre les appuis d'un pont multi-travées : retrait, dilatation, freinage-démarrage EN 1991-2, interaction voie-ouvrage, point fixe, raideurs des piles et culées, appareils d'appui en élastomère fretté EN 1337-3, export vers le module PILES-CULÉES.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -32,7 +32,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
-      <div class="eyebrow">REPHOR · efforts horizontaux</div>
+      <div class="eyebrow">HORIZONTAL · efforts horizontaux</div>
       <h1>Efforts horizontaux et <em>appareils d’appui</em></h1>
       <p class="lead">Répartition des efforts longitudinaux (retrait, dilatation, freinage-démarrage, interaction voie-ouvrage) entre les piles et culées d’un ouvrage multi-travées, point fixe, déplacements, souffle des joints et appareils d’appui en élastomère fretté.</p>
       <div class="badges"><span class="badge">EN 1991-2 §4.4.1 · §6.5.3 · §6.5.4</span><span class="badge">EN 1991-1-5</span><span class="badge">EN 1992-1-1 annexe B</span><span class="badge">EN 1337-3</span><span class="badge">Fasc. 61 titre II</span><span class="badge">Livret 2.01</span></div>
@@ -96,8 +96,8 @@
         <li>Ponts-rails : freinage 20 kN/m ≤ 6000 kN (×α), SW/2 35 kN/m, démarrage 33 kN/m ≤ 1000 kN, coefficient de transmission voie-tablier ξ (0,5 pour voie ballastée en long rail soudé, règle du Livret 2.01). Interaction voie-ouvrage : règle simplifiée q·(L2 − L1) par voie (Livret 2.01 art. 1.4.3.2) et contrôles EN 1991-2 §6.5.4 (δB, δH, longueur dilatable). <b>Pas de modèle non linéaire voie-ouvrage complet</b> : les contraintes additionnelles dans le rail (72 / 92 MPa) ne sont pas calculées ; au-delà des domaines simplifiés, une étude d’interaction spécifique est requise.</li>
         <li>Ponts-routes : Qlk EN 1991-2 (4.6) avec les α de l’AN française ; Fascicule 61 : A(l) sur la longueur du tablier et un camion Bc.</li>
         <li>Combinaisons des efforts horizontaux : enveloppes ± sur dilatation/contraction et freinage ; le retrait (γ = 1) est toujours présent. Les efforts verticaux sont saisis par file (descente de charges du tablier).</li>
-        <li>Appareils en élastomère : vérification et dimensionnement par le module APPMOBIL (EN 1337-3 ou guide Sétra 2000), avec les distorsions lentes (glissements imposés) et rapides calculées ici ; les rotations sont saisies par file. Appareils fixes : rapport H/V ELS.</li>
-        <li>Séisme non traité (modèle EN 1998-2 à faire dans APPUI).</li>
+        <li>Appareils en élastomère : vérification et dimensionnement par le module ÉLASTOMÈRES (EN 1337-3 ou guide Sétra 2000), avec les distorsions lentes (glissements imposés) et rapides calculées ici ; les rotations sont saisies par file. Appareils fixes : rapport H/V ELS.</li>
+        <li>Séisme non traité (modèle EN 1998-2 à faire dans PILES-CULÉES).</li>
       </ul>
     </details>
   </div>
@@ -201,7 +201,7 @@
     { id: 'Qmax', label: 'Q (kN)', def: 2000 },
     { id: 'rot', label: 'α (rad)', def: 0.001 },
   ];
-  // exemple par défaut : pont-rail 4 travées de 13,90 m, biais 84,15 gr (géométrie de l'exemple d'origine), charges indicatives
+  // exemple par défaut : pont-rail 4 travées de 13,90 m, biais 84,15 gr (géométrie de l'cas de référence), charges indicatives
   const DEF_V = { projet: 'Pont-rail 4 travées — exemple', ouvrage: 'rail', nvoies: 2, biais: 84.15, travees: '13.9 13.9 13.9 13.9', about0: 0.72227, aboutn: 0.72227, joints: '', modeApp: 'dim' };
   const DEF_AP = [
     { nom: 'C0', type: 'culee', nfut: 3, larfut: 1, esup: 0.8, einf: 1.4, hfut: 9, Khcd: 0, Krcd: 0, app: 'elasto', appD: '', napp: 4, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3, Gmax: 3200, Qmax: 2600, rot: 0.0015 },
@@ -409,7 +409,7 @@ ${rep.rail ? `Freinage EN 1991-2 §6.5.3 : 20 kN/m ≤ 6000 kN ×α (α = ${inp.
 Interaction voie-ouvrage : q = ${inp.qInter} kN/m par voie × (L2 − L1) — méthode simplifiée, pas de modèle non linéaire.` : 'Freinage EN 1991-2 (4.6) : Qlk = 0,6 αQ1 2Q1k + 0,10 αq1 q1k w1 L, 180 αQ1 ≤ Qlk ≤ 900 kN ; Fasc. 61 : A(l)·S/(20 + 0,0035 S), Bc 300 kN.'}</div>`;
     const data = BA.table(['Appui', 'Type', 'Fûts', 'Ép. haut / bas', 'h', 'Appareils', 'G (kN)', 'Q (kN)'], inp.appuis.map((a, j) => [esc(a.nom || 'A' + j), E.TYPES_APPUI[a.type], a.type === 'autre' ? '—' : `${a.nfut} × ${f2(a.larfut)}`, a.type === 'autre' ? '—' : `${f2(a.esup)} / ${f2(a.einf)}`, f2(a.hfut), `${a.napp} × ${APPL[a.app]}${a.appD ? ' | ' + APPL[a.appD] : ''}`, f0(a.Gmax), f0(a.Qmax)]), { leftText: true })
       + `<p>Portées : ${rep.G.L.map((l) => f2(l)).join(' + ')} m ; abouts ${f2(inp.about0 || 0)} / ${f2(inp.aboutn || 0)} m.</p>`;
-    BA.note({ titre: 'Efforts horizontaux et appareils d’appui', code: 'REPHOR', regl: 'EN 1991-2 · EN 1991-1-5 · EN 1992-1-1 · EN 1337-3 · Fasc. 61 · Livret 2.01', projet: inp.projet,
+    BA.note({ titre: 'Efforts horizontaux et appareils d’appui', code: 'HORIZONTAL', regl: 'EN 1991-2 · EN 1991-1-5 · EN 1992-1-1 · EN 1337-3 · Fasc. 61 · Livret 2.01', projet: inp.projet,
       sections: [{ titre: 'Hypothèses', html: hyp }, { titre: 'Données', html: data }].concat(secs) });
   }
 

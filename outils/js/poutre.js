@@ -626,7 +626,7 @@
     return { K, p1, p2, phi: p1 + (soigne ? 0.5 : 1) * p2 };
   }
   /* fréquence propre par défaut (EN 1991-2 fig. 6.10) : limite supérieure 94,76·L^−0,748 jusqu'à 20 m,
-   * limite inférieure 23,58·L^−0,592 au-delà (règle retrouvée dans les exemples d'origine) */
+   * limite inférieure 23,58·L^−0,592 au-delà (règle retrouvée dans les cas de référence) */
   const n0Defaut = (L) => L <= 20 ? 94.76 * Math.pow(L, -0.748) : 23.58 * Math.pow(L, -0.592);
   const n0Limites = (L) => ({ sup: 94.76 * Math.pow(L, -0.748), inf: L <= 20 ? 80 / L : 23.58 * Math.pow(L, -0.592) });
   /* poutre isostatique : n0 = π/(2L²)·√(EI/μ) (EI en N·m², μ en kg/m) */
@@ -840,7 +840,7 @@
   }
   /* vitesse admissible : plus grande vitesse ≤ vEtud telle que le rapport dynamique à plein reste ≤ 1.
    * Dichotomie sur [0, vEtud] arrêtée à la précision vEtud/256 et arrondie par défaut (même règle que les
-   * exemples d'origine, dont les vitesses sont des multiples de 160/256 = 0,625 km/h). « Aucune » si même
+   * cas de référence, dont les vitesses sont des multiples de 160/256 = 0,625 km/h). « Aucune » si même
    * une vitesse nulle ne suffit pas. */
   function vitesseAdmissible(rStat, Lphi, n0, vEtud, unPlusPhiRef, soigne) {
     const r = (v) => rStat * (1 + phiReel(v, Lphi, n0, soigne).phi) / unPlusPhiRef;
@@ -896,7 +896,7 @@
     return uniq(out.filter((L) => L > 0));
   }
 
-  /* ══════════════════ 9. Lecture des fichiers d'origine (.don, .cnv) ══════════════════ */
+  /* ══════════════════ 9. Lecture des fichiers de référence (.don, .cnv) ══════════════════ */
 
   /* fichier « clé ; commentaire » puis valeur(s) à la ligne suivante */
   function lireDico(txt) {

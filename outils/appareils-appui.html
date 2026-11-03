@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APPMOBIL — Appareils d’appui en élastomère fretté — BridgeAI Studios</title>
+<title>ÉLASTOMÈRES — Appareils d’appui en élastomère fretté — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Dimensionnement et vérification des appareils d’appui en élastomère fretté (rectangulaires et circulaires) : NF EN 1337-3, guide Sétra 2000, Livret 2.01. Distorsions, frettes, rotation, flambement, glissement, soulèvement, raideurs.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/appmobil.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/appareils-appui.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -30,7 +30,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
-      <div class="eyebrow">APPMOBIL</div>
+      <div class="eyebrow">ÉLASTOMÈRES</div>
       <h1>Appareils d’appui en <em>élastomère fretté</em></h1>
       <div class="badges"><span class="badge">NF EN 1337-3 (2005)</span><span class="badge">Guide Sétra 2007</span><span class="badge">Guide Sétra sept. 2000</span><span class="badge">Livret 2.01 · BT4</span></div>
     </div>
@@ -285,7 +285,7 @@ BA.chrome({ base: '../' });
       <li><b>Livret 2.01</b> (méthode du BT4 Sétra) : a/10 ≤ T ≤ a/5 ; σm ≤ σadm (11, 12 ou 15 MPa selon la taille en pont-rail, 15 MPa en pont-route) ; rotation limite (αT + α0)/n ≤ 3/β (t/a)² σmin/G ; τH1 = G u1/T ≤ 0,7G ; τH = τH1 + 0,5 τH2 ≤ G ; τN + τH + τα ≤ 5G ; ts ≥ a′/β · σm/σe (σe = 215 ou 235 MPa selon l’épaisseur, Fe 360) ; non-cheminement σmin ≥ 2 MPa et H ≤ (0,10 + 0,60/σmin) Nmin à l’ELES. Raideur verticale a³bG/(t³K1 n).</li>
       <li><b>Dimensionnement</b> : parcours des dimensions courantes (EN 1337-3 tableau 3, ou NF T 47-815 pour le Livret 2.01) par surface croissante puis nombre de feuillets croissant ; l’épaisseur des frettes est augmentée au millimètre si nécessaire. La contrainte minimale sous charges permanentes n’est pas un critère de choix (elle s’aggrave quand l’appareil grandit) : elle est signalée.</li>
       <li><b>Appareils circulaires</b> : S = D′/(4ti), Ar par segment de cercle, εα = 3D′² α ti/(8 Σti³) ; flambement avec a′ = D′ ; pas de vérification de soulèvement ; liste de diamètres indicative.</li>
-      <li><b>Raideurs</b> (pour REPHOR) : K = G·A/Te (A surface en plan, Te épaisseur totale d’élastomère) et Kv = 1/Σvz.</li>
+      <li><b>Raideurs</b> (pour HORIZONTAL) : K = G·A/Te (A surface en plan, Te épaisseur totale d’élastomère) et Kv = 1/Σvz.</li>
       <li><b>Hors périmètre</b> : séisme (EN 1998-2, G sismique, distorsion ≤ 2), appareils glissants (type C, D, E), appareils à pot, frettes perforées (Kh ≠ 1), tassements différés par fluage.</li>
     </ul></details>`);
   }
@@ -322,7 +322,7 @@ BA.chrome({ base: '../' });
       ['Raideur horizontale', `${fmt(r.rd.Kh, 0)} kN/m (rapide ${fmt(r.rd.Khd, 0)} kN/m)`], ['Raideur verticale', `${fmt(r.rd.Kv / 1000, 1)} kN/mm (module G)${r.tass ? ` ; ${fmt(r.tass.Kv / 1000, 1)} kN/mm sous ELS max, tassement ${fmt(r.tass.vz * 1000, 2)} mm` : ''}`],
       ['Bossage proposé', `${fmt(r.bossage.a * 1000, 0)} × ${fmt(r.bossage.b * 1000, 0)} mm`],
     ], { leftText: true });
-    BA.note({ titre: 'Appareils d’appui en élastomère fretté', code: 'APPMOBIL', regl: REGL[inp.regl], projet: s.gen.projet,
+    BA.note({ titre: 'Appareils d’appui en élastomère fretté', code: 'ÉLASTOMÈRES', regl: REGL[inp.regl], projet: s.gen.projet,
       sections: [
         { titre: 'Données', html: donnees },
         { titre: 'Sollicitations', html: sollic },

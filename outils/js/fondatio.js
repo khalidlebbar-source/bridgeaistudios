@@ -4,7 +4,7 @@
  *
  * Unités : kN, m, kPa ; pressions pressiométriques et résistances des matériaux en MPa (comme le sondage).
  * Repère : X, Y horizontaux, Z vertical ascendant ; torseurs (Fx, Fy, Fz, Mx, My, Mz) donnés au point (px, py) du
- * plan de la sous-face de semelle, Fz < 0 = charge descendante (convention des fichiers d'origine).
+ * plan de la sous-face de semelle, Fz < 0 = charge descendante (convention des fichiers de référence).
  * Chaque combinaison comprend une part de longue durée (ld) et une part de courte durée (cd).
  *
  * Périmètre :
@@ -28,11 +28,11 @@
 
   /* ── colonne de sol depuis le terrain définitif ──
    * Fasc. 62 titre V : entre le terrain définitif et le terrain naturel (remblai), pl* = 1 MPa et EM = 10 MPa (hypothèse
-   * conventionnelle reprise par le programme d'origine) ; sous le terrain naturel, valeurs des couches de calcul (TVCC)
+   * conventionnelle reprise par le programme de référence) ; sous le terrain naturel, valeurs des couches de calcul (TVCC)
    * du sondage, exploitées comme pl* (pressions limites nettes). Renvoie des segments par cotes décroissantes. */
   function colonne(sps, zdef, zr) {
     // zr : cote de la base du remblai conventionnel (terrain naturel pour les semelles, tête du sondage pour les pieux,
-    // comme dans le programme d'origine) ; au-dessus de la tête du sondage, la première couche est prolongée.
+    // comme dans le programme de référence) ; au-dessus de la tête du sondage, la première couche est prolongée.
     const C = SP.couches(sps), zs = sps.z, segs = [];
     if (!C.length) throw new Error('Le sondage ne comporte aucune couche de calcul (section $$TVCC).');
     let z = zdef;
@@ -100,7 +100,7 @@
 
   /* Modules Ec et Ed sous la fondation (annexe F2) : tranches d'épaisseur B/2 jusqu'à 8B ; le module d'une tranche est la
    * moyenne harmonique des valeurs EM des couches de calcul lues à ses deux limites (valeurs connues seulement, comme le
-   * programme d'origine) ; les tranches au-delà du sondage sont ignorées et le numérateur 4 est ramené à 3,6 ou 3,2. */
+   * programme de référence) ; les tranches au-delà du sondage sont ignorées et le numérateur 4 est ramené à 3,6 ou 3,2. */
   function modulesMenard(col, zf, B) {
     const h = B / 2, Ez = (z) => (z < col.zFinSondage - 1e-9 ? NaN : segAt(col, z).em);
     const Et = [];
@@ -353,7 +353,7 @@
   }
 
   /* ── effet de groupe sous efforts horizontaux (pieux circulaires) ──
-   * Règle reconstituée à partir des notes du programme d'origine (aucun texte réglementaire public n'a été retrouvé ;
+   * Règle reconstituée à partir des notes du programme de référence (aucun texte réglementaire public n'a été retrouvé ;
    * le Fasc. 62 titre V annexe C5 renvoie à une appréciation de l'ingénieur) et vérifiée sur ses exemples :
    *  - module frontal : les n pieux d'une même rangée perpendiculaire au déplacement, d'entraxe s, sont comparés à un
    *    rideau continu de largeur n·B ; coefficient du rideau g = Kf(n·B) / (n·Kf(B)) (formule de Ménard, par couche,
@@ -363,7 +363,7 @@
    *     notes à s ≥ 3B : aucune réduction) ;
    *  - palier des files arrière (masque) : rapport min(1, (s' − B)/(2B)) avec s' l'entraxe des files dans le sens du
    *    déplacement (0,75 à 2,5B dans FondPieux, 1,000 à 3B dans les autres notes) ; module inchangé.
-   *  Barrettes : aucune réduction du module frontal (comme le programme d'origine). */
+   *  Barrettes : aucune réduction du module frontal (comme le programme de référence). */
   function rangees(piles, dir, tol = 0.05) {
     // dir 'x' : déplacement suivant X → rangées = pieux de même x, alignés suivant Y
     const a = dir === 'x' ? 'x' : 'y', b = dir === 'x' ? 'y' : 'x', rows = [];
@@ -576,7 +576,7 @@
   }
   function aciersPieux(d, pt, combs) {
     const p = d.pieux, c = p.enrob || 0.09, out = [];
-    if (pt.barr) return { ok: true, sections: [], note: 'Aciers des barrettes non calculés par ce module (section rectangulaire : utiliser le module BAEL-EC2).' };
+    if (pt.barr) return { ok: true, sections: [], note: 'Aciers des barrettes non calculés par ce module (section rectangulaire : utiliser le module SECTIONS).' };
     const n = p.nseg || 10, Ac = pt.Ap, Amin = (p.pmin != null ? p.pmin : 0.5) / 100 * Ac;
     // Moment résistant MRd(As, N) : moteur BA.sectionBA (BAEL 91 mod. 99, section circulaire, 24 barres, fc* du pieu)
     // si disponible, sinon méthode simplifiée interne (bloc rectangulaire, mrdCirc).
@@ -593,7 +593,7 @@
     for (let k = 0; k <= n; k++) {
       let req = 0, crit = null;
       // couples (M, N) étudiés : chaque combinaison ELU, plus l'enveloppe défavorable du pieu (M maxi avec N mini des
-      // combinaisons ELU), comme le fait la note d'origine ; N pris égal à l'effort en tête (poids propre et frottement négligés).
+      // combinaisons ELU), comme le fait la note de référence ; N pris égal à l'effort en tête (poids propre et frottement négligés).
       // type de combinaison BAEL : actions de courte durée présentes → « < 1 h » (θ = 0,85), sinon « > 24 h »
       const ty = (cb) => (cb.cd && cb.cd.some((v) => Math.abs(v) > 1e-9) ? 3 : 1);
       const pairs = [];

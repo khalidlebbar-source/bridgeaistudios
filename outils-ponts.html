@@ -39,9 +39,10 @@
 
   <div class="phase"><h2>Comment les outils s’enchaînent</h2></div>
   <div class="flow">
-    <b>Ouvrage à tablier</b> — RADBAN-RAPEN ou RODBAN-ROPEN (tablier, avec POUTRE, GMSLT et BAEL-EC2) → REPHOR (efforts horizontaux, avec APPMOBIL) → APPUI (piles et culées, avec MODELPRA, FONDATIO et BAEL-EC2).<br>
-    <b>Cadre ou portique en béton armé</b> — RACBA-RAPO (avec GMSLT, MODELPRA, BAEL-EC2 et FONDATIO) → MUR3D pour les murs en aile.<br>
-    <b>Sol</b> — SONDPRES décrit les sondages pressiométriques utilisés par FONDATIO, APPUI, RACBA-RAPO, MUR3D et MURU.
+    <b>Ouvrage à tablier</b> — TABLIER RAIL ou TABLIER ROUTE (avec TRAVÉES, RÉPARTITION et SECTIONS) → HORIZONTAL (freinage, retrait, dilatation, avec ÉLASTOMÈRES) → PILES-CULÉES (avec MODÈLE RAIL, FONDATIONS et SECTIONS).<br>
+    <b>Cadre ou portique en béton armé</b> — CADRES (avec RÉPARTITION, SECTIONS et FONDATIONS) → SOUTÈNEMENT pour les murs en aile.<br>
+    <b>Sol</b> — PRESSIO décrit les sondages pressiométriques utilisés par FONDATIONS, PILES-CULÉES, CADRES, SOUTÈNEMENT et MUR EN U.<br>
+    <b>Ouvrage complet</b> — OUVRAGES TYPES enchaîne tous les modules et produit notes, plans et avant-métrés.
   </div>
   <p style="font-size:11.5px;color:var(--ink3);margin-top:14px;line-height:1.6">Programmes développés par BridgeAI Studios à partir des textes réglementaires publics, indépendants de tout éditeur et de tout maître d’ouvrage. Chaque module est validé sur des cas de référence avant d’être marqué « Disponible ». Les résultats doivent être vérifiés par un ingénieur qualifié avant tout usage contractuel.</p>
 </div>
@@ -62,7 +63,7 @@ BA.chrome({ base: '', hub: true });
     const live = m.statut !== 'dev';
     const tag = live ? 'a' : 'div';
     html += `<${tag} class="tile${live ? '' : ' dev'}"${live ? ` href="outils/${m.slug}.html"` : ' aria-disabled="true"'}>
-      <div class="tile-top"><span class="status ${m.statut === 'dev' ? '' : m.statut}">${lbl[m.statut]}</span></div>
+      <div class="tile-top"><span class="status ${m.statut === 'dev' ? '' : m.statut}">${lbl[m.statut]}</span><span class="ico">${BA.icone(m.slug, 46)}</span></div>
       <div class="code">${m.code}</div>
       <div class="name">${m.nom}</div>
       <p class="desc">${m.desc}</p>

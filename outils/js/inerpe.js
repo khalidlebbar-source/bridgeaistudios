@@ -5,7 +5,7 @@
  *    §6.3 (poutrelles enrobées « filler beam decks » : domaine d'application §6.3.1).
  *  - EN 1992-1-1 tableau 3.1 (Ecm = 22 (fcm/10)^0,3 GPa), EN 1993-1-1 tableau 3.1 (fy selon l'épaisseur).
  *  - Document commun « Ponts-routes à tablier en poutrelles enrobées » (1995) et Livret 2.01 pour les conventions
- *    reprises par le programme d'origine : n = 6 / 18, inertie de déformation (I fissurée + I non fissurée)/2.
+ *    reprises par le programme de référence : n = 6 / 18, inertie de déformation (I fissurée + I non fissurée)/2.
  *
  * Repère : y vertical, origine à la sous-face des poutrelles, vers le haut. Unités : m, m², m⁴, kN, kN·m ; MPa pour
  * les matériaux (1 MPa = 1000 kPa). Les inerties ELS sont exprimées « en acier » (aire de béton divisée par n).
@@ -55,7 +55,7 @@
       let s = norm(nom).replace(/^HE\s*(\d+)\s*(AA|A|B|M)$/, 'HE$2 $1').replace(/^HE(AA|A|B|M)\s*(\d+)$/, 'HE$1 $2');
       return list.find((p) => p.nom === s) || null;
     }
-    /** Profilé en unités SI (m, m², m⁴) pour les autres modules (RADBAN-RAPEN, RODBAN-ROPEN). */
+    /** Profilé en unités SI (m, m², m⁴) pour les autres modules (TABLIER RAIL, RODBAN-ROPEN). */
     function si(nom) {
       const p = typeof nom === 'string' ? get(nom) : nom;
       if (!p) return null;
@@ -299,7 +299,7 @@
       const by = (id) => cas.find((c) => c.id === id);
       // inertie de déformation (I fissurée + I non fissurée)/2 — convention du guide « Ponts-routes à tablier en poutrelles enrobées » (1995) (flèches)
       const deform = { court: (by('ctf').I + by('ctnf').I) / 2, long: (by('ltf').I + by('ltnf').I) / 2 };
-      // même moyenne sans les armatures passives (convention de la table « inertie de déformation » du programme d'origine)
+      // même moyenne sans les armatures passives (convention de la table « inertie de déformation » du programme de référence)
       const S0 = Object.assign({}, S, { nap: [] });
       deform.courtSansAs = (els(S0, S.nC, true, sens).I + els(S0, S.nC, false, sens).I) / 2;
       deform.longSansAs = (els(S0, S.nL, true, sens).I + els(S0, S.nL, false, sens).I) / 2;
@@ -320,7 +320,7 @@
       if (!(k in kv)) kv[k] = v; else kv[k + rep[k]] = v;
     }
     const f = (k, def = 0) => { const x = parseFloat(String(kv[k] ?? '').replace(',', '.')); return Number.isFinite(x) ? x : def; };
-    if (!/INERPE/i.test(kv.application || '') && !('eptab' in kv)) throw new Error('Ce fichier ne semble pas être un fichier de données INERPE.');
+    if (!/INERPE/i.test(kv.application || '') && !('eptab' in kv)) throw new Error('Ce fichier ne semble pas être un fichier de données .don de poutrelles enrobées.');
     const h = f('haupout'), tf = f('epaile');
     const appui = f('typesec') === 1;
     const nom = String(kv.typepout || '').trim();

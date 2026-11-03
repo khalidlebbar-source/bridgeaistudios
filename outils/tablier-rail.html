@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RADBAN-RAPEN — Tabliers de ponts-rails BA et poutrelles enrobées · BridgeAI Studios</title>
+<title>TABLIER RAIL — Tabliers de ponts-rails BA et poutrelles enrobées · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/radban-rapen.html">
-<meta name="description" content="Tabliers de ponts-rails en dalle béton armé ou à poutrelles enrobées, 1 à 7 travées : flexion longitudinale sous UIC 71, SW/0, SW/2 (Livret 2.01, EN 1991-2), répartition transversale Guyon-Massonnet, aciers BAEL/EC2, contraintes et moments résistants des poutrelles, flèches, contre-flèches, descentes de charges, plans de coffrage et de perçage, export vers REPHOR et APPUI.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/tablier-rail.html">
+<meta name="description" content="Tabliers de ponts-rails en dalle béton armé ou à poutrelles enrobées, 1 à 7 travées : flexion longitudinale sous UIC 71, SW/0, SW/2 (Livret 2.01, EN 1991-2), répartition transversale Guyon-Massonnet, aciers BAEL/EC2, contraintes et moments résistants des poutrelles, flèches, contre-flèches, descentes de charges, plans de coffrage et de perçage, export vers HORIZONTAL et PILES-CULÉES.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -28,7 +28,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Tabliers et murs</div>
-      <div class="eyebrow">RADBAN-RAPEN · tabliers de ponts-rails</div>
+      <div class="eyebrow">TABLIER RAIL · tabliers de ponts-rails</div>
       <h1>Tabliers de ponts-rails en <em>dalle BA</em> et à <em>poutrelles enrobées</em></h1>
       <p class="lead">Calcul en poutre continue de 1 à 7 travées : flexion longitudinale sous UIC 71, SW/0 et SW/2, répartition transversale Guyon-Massonnet, aciers de la dalle ou vérification des poutrelles enrobées, flèches et contre-flèches, réactions des appareils d’appui, plans de coffrage et de perçage.</p>
       <div class="badges"><span class="badge">Livret 2.01</span><span class="badge">EN 1991-2 §6.3 · §6.4.5</span><span class="badge">EN 1990 A2</span><span class="badge">BAEL 91 mod. 99</span><span class="badge">EN 1992-2</span><span class="badge">EN 1994-2 §6.3</span><span class="badge">Fasc. 61 titre V</span></div>
@@ -39,7 +39,7 @@
       <button class="btn" id="bSave">Enregistrer</button>
       <button class="btn" id="bOpen">Ouvrir</button>
       <button class="btn" id="bDon">Importer un fichier .don</button>
-      <button class="btn" id="bRephor">Exporter vers REPHOR</button>
+      <button class="btn" id="bRephor">Exporter vers HORIZONTAL</button>
       <button class="btn" id="bAppui">Exporter les fichiers appui</button>
       <button class="btn" id="bDxf">Plans DXF</button>
       <button class="btn sm" id="bDef">Exemple par défaut</button>
@@ -51,7 +51,7 @@
   <div class="col-in">
     <div class="card">
       <div class="card-title"><span>Type de tablier</span></div>
-      <div class="seg" id="segType"><button data-t="radba">Dalle béton armé (RADBA)</button><button data-t="rapen">Poutrelles enrobées (RAPEN)</button></div>
+      <div class="seg" id="segType"><button data-t="radba">Dalle béton armé</button><button data-t="rapen">Poutrelles enrobées</button></div>
       <div class="fields" id="fGen"></div>
     </div>
     <div class="card">
@@ -59,7 +59,7 @@
       <div class="fields" id="fGeo"></div>
     </div>
     <div class="card" id="cPE">
-      <div class="card-title"><span>Poutrelles enrobées</span><small>catalogue INERPE</small></div>
+      <div class="card-title"><span>Poutrelles enrobées</span><small>catalogue ENROBÉES</small></div>
       <div class="fields" id="fPE"></div>
     </div>
     <div class="card">
@@ -85,15 +85,15 @@
     <details class="ref card">
       <summary>Périmètre et hypothèses</summary>
       <ul>
-        <li><b>Calcul en poutre</b> (biais 70 à 130 gr) : poutre continue à inertie constante (1 à 7 travées + consoles), lignes d’influence exactes (module POUTRE). Le calcul en plaque (biais 20 à 180 gr) n’est pas proposé : au-delà du domaine du calcul en poutre, le module refuse le calcul.</li>
-        <li><b>Répartition transversale</b> : coefficient K de Guyon-Massonnet à l’axe de la dalle (module GMSLT, α = 1, dalle équivalente de largeur 2b, portée équivalente L, 0,9 L en travée de rive, 0,8 L en travée intermédiaire) pour chaque voie, charge répartie sur ltrav + 2·hb/4 + 2·(h/2)/4 (EN 1991-2 §6.3.6.3). Les moments sont ceux de la dalle entière (largeur équivalente), sans prise en compte du biais dans la flexion longitudinale. K peut être saisi.</li>
+        <li><b>Calcul en poutre</b> (biais 70 à 130 gr) : poutre continue à inertie constante (1 à 7 travées + consoles), lignes d’influence exactes (module TRAVÉES). Le calcul en plaque (biais 20 à 180 gr) n’est pas proposé : au-delà du domaine du calcul en poutre, le module refuse le calcul.</li>
+        <li><b>Répartition transversale</b> : coefficient K de Guyon-Massonnet à l’axe de la dalle (module RÉPARTITION, α = 1, dalle équivalente de largeur 2b, portée équivalente L, 0,9 L en travée de rive, 0,8 L en travée intermédiaire) pour chaque voie, charge répartie sur ltrav + 2·hb/4 + 2·(h/2)/4 (EN 1991-2 §6.3.6.3). Les moments sont ceux de la dalle entière (largeur équivalente), sans prise en compte du biais dans la flexion longitudinale. K peut être saisi.</li>
         <li><b>Charges</b> : UIC 71 (LM71) avec la charge de la locomotive répartie sur 6,40 m (EN 1991-2 §6.3.6.2), SW/0, SW/2, α et Φ2 ou Φ3 (LΦ du tableau 6.2). Groupes : Gr12 = UIC/SW0 sur les voies chargées, Gr14 = SW/2 sur une voie + UIC/SW0 sur l’autre. Accotements 5 kN/m² chargés sur toute la longueur. Dénivellation aléatoire d’un appui (module différé, enveloppe des appuis pris un à un). Vent, force centrifuge, gradient thermique et fatigue non calculés.</li>
         <li><b>Combinaisons</b> : Livret 2.01 tableau 1 (ELU 1,35 G / 1,00 G ; 1,45 Gr12 ; 1,35 Gr14 ; 1,16 Gr12 d’accompagnement ; accotements 1,20 / 1,50 ; dénivellations 1,35) ou EN 1990 annexe A2. Charges amovibles (ballast, caniveaux, voie) majorées de 30 %.</li>
-        <li><b>RADBA</b> : aciers longitudinaux de la section rectangulaire équivalente (même aire et même inertie que la coupe) par BAEL-EC2 : ELU (BAEL, charges de durée &lt; 1 h, fsu = 0,8 fe/γs du Livret 2.01 chap. 2A), ELS (σs ≤ fissuration peu préjudiciable ou préjudiciable, σbc ≤ 0,6 fc28, n = 15), non-fragilité, aciers de construction. Effort tranchant BAEL A.5.1 (fet saisi). Aciers transversaux, chevêtres incorporés et encorbellements : non calculés.</li>
-        <li><b>RAPEN</b> : contraintes ELS par phases (poids propre sur poutrelles seules, actions de longue durée n = 18, de courte durée n = 6, béton tendu négligé) avec les inerties d’INERPE ; moment résistant plastique (INERPE, EN 1994-2 §6.2.1.2) avec chapeaux dans les zones de moment négatif ; Mpl des poutrelles seules au bétonnage ; effort tranchant repris par les poutrelles seules (EN 1993-1-1 §6.2.6) ; déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée) ; contre-flèche = f(béton mou) + f(superstructures) + f(exploitation)/2.</li>
+        <li><b>dalle BA</b> : aciers longitudinaux de la section rectangulaire équivalente (même aire et même inertie que la coupe) par SECTIONS : ELU (BAEL, charges de durée &lt; 1 h, fsu = 0,8 fe/γs du Livret 2.01 chap. 2A), ELS (σs ≤ fissuration peu préjudiciable ou préjudiciable, σbc ≤ 0,6 fc28, n = 15), non-fragilité, aciers de construction. Effort tranchant BAEL A.5.1 (fet saisi). Aciers transversaux, chevêtres incorporés et encorbellements : non calculés.</li>
+        <li><b>poutrelles enrobées</b> : contraintes ELS par phases (poids propre sur poutrelles seules, actions de longue durée n = 18, de courte durée n = 6, béton tendu négligé) avec les inerties d’ENROBÉES ; moment résistant plastique (ENROBÉES, EN 1994-2 §6.2.1.2) avec chapeaux dans les zones de moment négatif ; Mpl des poutrelles seules au bétonnage ; effort tranchant repris par les poutrelles seules (EN 1993-1-1 §6.2.6) ; déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée) ; contre-flèche = f(béton mou) + f(superstructures) + f(exploitation)/2.</li>
         <li><b>Flèches</b> : UIC 71 sur une voie avec Φ et K, inertie moyenne (fissurée + non fissurée)/2 ; limite de confort EN 1990 A2.4.4.3 (L/δ saisi, × 0,9 pour 3 travées ou plus, × 0,7 sinon). Rotations d’about et δH (Livret 2.01 art. 1.8.1.2.2).</li>
-        <li><b>Appareils d’appui</b> : réactions globales par lignes d’influence ; répartition transversale rigide (Navier) entre les appareils d’une file, charges permanentes réparties uniformément ; appareil le plus et le moins chargé. Export vers REPHOR (G, Q, rotation par file) et APPUI (JSON).</li>
-        <li><b>Plans</b> : coffrage (élévation, vue en plan biaise, coupe) et, pour RAPEN, perçage et cintrage d’une poutrelle (entretoises, aciers inférieurs, contre-flèche) en SVG et DXF R12 simple.</li>
+        <li><b>Appareils d’appui</b> : réactions globales par lignes d’influence ; répartition transversale rigide (Navier) entre les appareils d’une file, charges permanentes réparties uniformément ; appareil le plus et le moins chargé. Export vers HORIZONTAL (G, Q, rotation par file) et PILES-CULÉES (JSON).</li>
+        <li><b>Plans</b> : coffrage (élévation, vue en plan biaise, coupe) et, pour les poutrelles enrobées, perçage et cintrage d’une poutrelle (entretoises, aciers inférieurs, contre-flèche) en SVG et DXF R12 simple.</li>
       </ul>
     </details>
   </div>
@@ -162,7 +162,7 @@
     { id: 'alpha', label: 'α (LM71, SW/0)', def: 1 },
     { id: 'entretien', label: 'Entretien de la voie', type: 'sel', def: 'soigne', options: [['soigne', 'soigné (Φ2)'], ['courant', 'courant (Φ3)']] },
     { id: 'uicReparti', label: 'Charge de la locomotive répartie sur 6,40 m', type: 'chk', def: true },
-    { id: 'repartition', label: 'Répartition transversale', type: 'sel', def: 'gmslt', options: [['gmslt', 'Guyon-Massonnet (GMSLT)'], ['saisi', 'coefficient K saisi']] },
+    { id: 'repartition', label: 'Répartition transversale', type: 'sel', def: 'gmslt', options: [['gmslt', 'Guyon-Massonnet (RÉPARTITION)'], ['saisi', 'coefficient K saisi']] },
     { id: 'Ksaisi', label: 'K saisi', def: 1 },
     { id: 'qAcc', label: 'Charge sur accotements', unit: 'kN/m²', def: 5 },
     { id: 'lAcc', label: 'Largeur d’un accotement', unit: 'm', def: 0.85 },
@@ -341,7 +341,7 @@
     sec.push({ titre: 'Flèches et déplacements', html: tabFl(R) });
     sec.push({ titre: 'Descentes de charges', html: tabApp(R) });
     sec.push({ titre: 'Plans', html: plans(R) });
-    BA.note({ titre: 'Tablier de pont-rail ' + (rapen ? 'à poutrelles enrobées' : 'en dalle béton armé'), code: 'RADBAN-RAPEN', regl: d.regl === 'ec' ? 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1994-2' : 'Livret 2.01 · BAEL 91 mod. 99 · EN 1991-2', projet: d.projet, sections: sec });
+    BA.note({ titre: 'Tablier de pont-rail ' + (rapen ? 'à poutrelles enrobées' : 'en dalle béton armé'), code: 'TABLIER RAIL', regl: d.regl === 'ec' ? 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1994-2' : 'Livret 2.01 · BAEL 91 mod. 99 · EN 1991-2', projet: d.projet, sections: sec });
   }
 
   /* ── fichiers ── */

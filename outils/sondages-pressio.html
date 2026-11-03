@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SONDPRES — Sondages pressiométriques · BridgeAI Studios</title>
+<title>PRESSIO — Sondages pressiométriques · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/sondpres.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/sondages-pressio.html">
 <meta name="description" content="Éditeur de sondages pressiométriques au format SPS : identification, coupe, essais pl, pf, EM, couches de calcul (classe de sol du Fascicule 62 titre V, α de Ménard), profils graphiques, fiche imprimable, export .sps et JSON.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
@@ -27,9 +27,9 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
-      <div class="eyebrow">SONDPRES · sondages pressiométriques</div>
+      <div class="eyebrow">PRESSIO · sondages pressiométriques</div>
       <h1>Sondages <em>pressiométriques</em></h1>
-      <p class="lead">Saisie, lecture et écriture des fichiers SPS : coupe, essais Ménard (pl, pf, EM), couches de calcul avec leur classe de sol et leur coefficient rhéologique α. Profils, contrôles, fiche imprimable. Le fichier produit alimente FONDATIO, APPUI, RACBA-RAPO et MUR3D.</p>
+      <p class="lead">Saisie, lecture et écriture des fichiers SPS : coupe, essais Ménard (pl, pf, EM), couches de calcul avec leur classe de sol et leur coefficient rhéologique α. Profils, contrôles, fiche imprimable. Le fichier produit alimente FONDATIONS, PILES-CULÉES, CADRES et SOUTÈNEMENT.</p>
       <div class="badges"><span class="badge">Fasc. 62 titre V annexes C1 et F2</span><span class="badge">NF P 94-110 (essai Ménard)</span><span class="badge">Format SPS</span></div>
     </div>
     <div class="actions">
@@ -54,7 +54,7 @@
       <button class="btn sm" id="bPaste" style="margin-top:6px">Remplacer les essais par le texte collé</button></div>
     <div class="card"><div class="card-title"><span>Couches de calcul</span><small>valeurs caractéristiques retenues</small></div>
       <div class="scroll-in" id="rCou"></div>
-      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Classe : nature (A argile, L limon, S sable, G grave, C craie, M marne, R roche altérée) + catégorie A, B ou C du Fascicule 62. pl est la pression limite nette pl* utilisée par les calculs de fondations. γ, φ, c sont facultatifs (FONDATIO, MUR3D).</div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Classe : nature (A argile, L limon, S sable, G grave, C craie, M marne, R roche altérée) + catégorie A, B ou C du Fascicule 62. pl est la pression limite nette pl* utilisée par les calculs de fondations. γ, φ, c sont facultatifs (FONDATIONS, SOUTÈNEMENT).</div>
       <button class="btn sm" id="bAuto" style="margin-top:6px">Proposer pl, pf, EM, α et catégorie d’après les essais</button>
     </div>
     <div class="card"><div class="card-title"><span>Remarques</span></div><div class="fields c1" id="fRem"></div></div>
@@ -203,10 +203,10 @@
           + '<div style="font-size:11px;color:var(--ink3);margin-top:6px">Colonnes « pl géom. » et « EM harm. » : moyennes géométrique de pl et harmonique de EM des essais de la couche, pour contrôle des valeurs retenues.</div>', 'profondeurs en m, pressions et modules en MPa')
         + BA.card('Essais', BA.table(['Profondeur', 'Cote', 'pl', 'pf', 'EM', 'EM/pl', 'Couche'], essRows), 'MPa')
         + BA.card('Périmètre et hypothèses', `<details class="ref" open><summary>Ce que fait le module</summary><ul>
-          <li>Lecture et écriture du format texte SPS (6 lignes d’identification, X Y Z, nappe, coupe jusqu’à « *** », essais jusqu’à « £££ », remarques, section « $$TVCC » des caractéristiques de calcul). Le fichier exporté est relu à l’identique par le programme d’origine ; γ, φ et c, quand ils sont saisis, sont ajoutés dans une section « $$GPC » placée en fin de fichier.</li>
+          <li>Lecture et écriture du format texte SPS (6 lignes d’identification, X Y Z, nappe, coupe jusqu’à « *** », essais jusqu’à « £££ », remarques, section « $$TVCC » des caractéristiques de calcul). Le fichier exporté est relu à l’identique par le programme de référence ; γ, φ et c, quand ils sont saisis, sont ajoutés dans une section « $$GPC » placée en fin de fichier.</li>
           <li>Contrôles : profondeurs croissantes, essais au-dessus de la fin du sondage, pf ≤ pl, classe reconnue, cohérence de la catégorie avec pl (tableau des classes de sols du Fascicule 62 titre V, annexe C1), 0 &lt; α ≤ 1.</li>
           <li>Proposition automatique (bouton sous les couches) : pl* et pf* = moyenne géométrique des essais de la couche, EM = moyenne harmonique, α d’après EM/pl et la nature (Fasc. 62 annexe F2), catégorie d’après pl. À valider par le géotechnicien : les valeurs caractéristiques restent un choix d’ingénieur.</li>
-          <li>Les pressions de la section de calcul sont des pressions limites <b>nettes</b> (pl* = pl − p0) : FONDATIO les utilise telles quelles.</li></ul></details>`);
+          <li>Les pressions de la section de calcul sont des pressions limites <b>nettes</b> (pl* = pl − p0) : FONDATIONS les utilise telles quelles.</li></ul></details>`);
     } catch (e) { out.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; console.error(e); }
   }
 
@@ -216,7 +216,7 @@
     const ident = BA.table(['Rubrique', 'Valeur'], [['Entreprise', esc(s.entreprise)], ['Projet', esc(s.projet)], ['Ouvrage', esc(s.ouvrage)], ['Sondage', esc(s.sondage)], ['Date', esc(s.date)],
       ['Coordonnées X / Y', fmt(s.x, 3) + ' / ' + fmt(s.y, 3)], ['Cote de tête', fmt(s.z, 3) + ' m'], ['Nappe', s.nappe > 0 ? fmt(s.nappe, 2) + ' m (cote ' + fmt(s.z - s.nappe, 2) + ')' : 'non relevée'], ['Fin du sondage', fmt(s.fin, 2) + ' m']], { leftText: true });
     BA.note({
-      titre: 'Fiche de sondage pressiométrique ' + (s.sondage || ''), code: 'SONDPRES', regl: 'Fascicule 62 titre V · essai pressiométrique Ménard', projet: [s.projet, s.ouvrage].filter(Boolean).join(' — '),
+      titre: 'Fiche de sondage pressiométrique ' + (s.sondage || ''), code: 'PRESSIO', regl: 'Fascicule 62 titre V · essai pressiométrique Ménard', projet: [s.projet, s.ouvrage].filter(Boolean).join(' — '),
       sections: [
         { titre: 'Identification', html: ident },
         { titre: 'Coupe et profils', html: `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">${coupe(s)}${profil(s, { keys: ['pl', 'pf'], title: 'pl, pf (MPa)' })}${profil(s, { keys: ['em'], title: 'EM (MPa) — log', log: true })}</div>` },

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CEDYPIA — Dynamique des ponts-rails — BridgeAI Studios</title>
+<title>DYNAMIQUE — Dynamique des ponts-rails — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<meta name="description" content="CEDYPIA : calcul dynamique des ponts-rails sous trains réels et trains universels HSLM-A (EN 1991-2 §6.4.6, annexe E) par superposition modale et intégration analytique : flèches et accélérations en fonction de la vitesse, coefficient dynamique, poutres continues jusqu'à 9 travées.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/cedypia.html">
+<meta name="description" content="DYNAMIQUE : calcul dynamique des ponts-rails sous trains réels et trains universels HSLM-A (EN 1991-2 §6.4.6, annexe E) par superposition modale et intégration analytique : flèches et accélérations en fonction de la vitesse, coefficient dynamique, poutres continues jusqu'à 9 travées.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/dynamique-rail.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -29,7 +29,7 @@
 <header class="head">
   <div class="head-inner">
     <div>
-      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › CEDYPIA</div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › DYNAMIQUE</div>
       <div class="eyebrow">Compléments · calcul dynamique</div>
       <h1>Dynamique des <em>ponts-rails</em></h1>
       <div class="badges"><span class="badge">EN 1991-2 §6.4.4 à §6.4.6</span><span class="badge">EN 1991-2 annexe E (HSLM)</span><span class="badge">EN 1990 A2.4.4.2</span></div>
@@ -242,7 +242,7 @@ Calcul dynamique : max (1 + φ'dyn) = ${fmt(1 + s.phiDyn, 3)} au point ${s.nom} 
     const conv = BA.table(['Convoi', 'Essieux', 'Longueur (m)'], r.trains.map((t) => [t.nom, String(t.nAx), fmt(t.long, 2)]));
     const charts = r.pts.map((p, j) => j === r.iA || j === r.iY ? `<h3 style="font-size:11px;margin:8px 0 4px">${BA.esc(p.nom)}</h3>${chartsVitesse(r, j)}` : '').join('');
     BA.note({
-      titre: 'Dynamique des ponts-rails — CEDYPIA', code: 'CEDYPIA', projet: g.projet, regl: 'EN 1991-2 §6.4.4 à §6.4.6 et annexe E · EN 1990 annexe A2',
+      titre: 'Dynamique des ponts-rails — DYNAMIQUE', code: 'DYNAMIQUE', projet: g.projet, regl: 'EN 1991-2 §6.4.4 à §6.4.6 et annexe E · EN 1990 annexe A2',
       sections: [
         { titre: 'Hypothèses', html: `<p>Poutre continue d’Euler-Bernoulli sur appuis simples, forces ponctuelles mobiles à vitesse constante. Superposition modale : modes ${r.analytique ? 'analytiques (sinus)' : 'par éléments finis d’Hermite à masse cohérente'}, ${r.nModes} modes jusqu’à ${fmt(r.fmax, 1)} Hz ; réponse de chaque mode intégrée exactement par pas (force linéaire par morceaux). Amortissement ζ = ${fmt(r.zeta, 2)} % (tableau 6.6 : ${fmt(r.zTab, 2)} % pour L = ${fmt(r.Lz, 2)} m${r.dZ ? `, Δζ = ${fmt(r.dZ, 3)} % éq. 6.13` : ''}). Vitesses de ${fmt(r.vit[0], 0)} à ${fmt(r.vit[r.vit.length - 1], 0)} km/h (V = ${fmt(g.vmax, 0)} km/h). Voie ${g.ballast ? 'ballastée' : 'sans ballast'} : a lim = ${fmt(r.aAdm, 1)} m/s².</p>` },
         { titre: 'Données', html: don + conv },

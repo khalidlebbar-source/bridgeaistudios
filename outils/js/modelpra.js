@@ -2,7 +2,7 @@
  * Moteur pur (aucun accès au DOM). Node : module.exports ; navigateur : window.BA.modelpra.
  * Dépend de BA.portique (solveur) et BA.charges (UIC 71, SW/0, SW/2, convois, Φ).
  *
- * API réutilisable (RACBA-RAPO, APPUI) :
+ * API réutilisable (CADRES, APPUI) :
  *   genere(params)                     → modèle {long:{LD,CD,SIS}, trans:{CD,SIS}, geo, params}
  *   calcule(modele[, options])         → résultats (cas élémentaires, rail, séisme, combinaisons)
  *   enveloppesFerroviaires(modele, o)  → enveloppes UIC 71 / SW/0 / SW/2 / convois (max, min, concomitants)
@@ -753,7 +753,7 @@
       const t1 = run(mT, { elem: dE.map((e) => ({ e, type: 'u', q: 1 })) });
       trans = { unit: t1.v, vent: add(new Float64Array(t1.v.length), t1.v, a.qvent || 0), layout: layout(mT), sis: sis && sis.trans ? sis.trans : null, modele: mT };
     }
-    // chargements libres fournis par un module appelant (RACBA-RAPO, APPUI) : {nom, modele:'LD'|'CD'|'SIS'|'TCD', loads}
+    // chargements libres fournis par un module appelant (CADRES, APPUI) : {nom, modele:'LD'|'CD'|'SIS'|'TCD', loads}
     const libres = (o.chargements || []).map((ch) => {
       const mm = ch.modele === 'CD' ? M.long.CD : ch.modele === 'SIS' ? M.long.SIS : ch.modele === 'TCD' ? M.trans.CD : M.long.LD;
       const rr = run(mm, ch.loads || {});

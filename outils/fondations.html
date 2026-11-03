@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FONDATIO — Fondations superficielles et profondes · BridgeAI Studios</title>
+<title>FONDATIONS — Fondations superficielles et profondes · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/fondatio.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/fondations.html">
 <meta name="description" content="Vérification des fondations selon le Fascicule 62 titre V à partir d'un sondage pressiométrique : semelles et puits (ple*, De, kp, q'u, q'ref, iδ, glissement, tassement de Ménard), groupes de pieux et barrettes sous semelle rigide (Qu, Qc, frottement Q1 à Q7, réaction latérale élasto-plastique, efforts en tête, M et V le long des pieux, aciers).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
-      <div class="eyebrow">FONDATIO · fondations</div>
+      <div class="eyebrow">FONDATIONS · fondations</div>
       <h1>Fondations <em>superficielles et profondes</em></h1>
       <p class="lead">Méthode pressiométrique du Fascicule 62 titre V à partir d’un sondage SPS : semelles et puits sous torseur quelconque, groupes de pieux forés et de barrettes encastrés dans une semelle infiniment rigide, avec réaction latérale élasto-plastique du sol.</p>
       <div class="badges"><span class="badge">Fasc. 62 titre V · annexes B, C, F</span><span class="badge">Livret 2.01</span><span class="badge">BAEL 91 mod. 99 (aciers des pieux)</span></div>
@@ -48,7 +48,7 @@
   <div class="col-in">
     <div class="card"><div class="card-title"><span>Projet et type de fondation</span></div><div class="fields" id="fGen"></div></div>
     <div class="card"><div class="card-title"><span>Sondage pressiométrique</span><small>format SPS</small></div>
-      <div class="actions"><button class="btn sm" id="bSps">Charger un .sps</button><button class="btn sm" id="bSpsMod">Reprendre le sondage de SONDPRES</button><a class="btn sm" href="sondpres.html">Ouvrir SONDPRES</a></div>
+      <div class="actions"><button class="btn sm" id="bSps">Charger un .sps</button><button class="btn sm" id="bSpsMod">Reprendre le sondage de PRESSIO</button><a class="btn sm" href="sondages-pressio.html">Ouvrir PRESSIO</a></div>
       <div class="sps-info" id="spsInfo"></div></div>
     <div class="card"><div class="card-title"><span>Niveaux et sol</span><small>cotes en m</small></div><div class="fields" id="fNiv"></div></div>
     <div class="card" id="cSup"><div class="card-title"><span>Semelle ou massif</span><small>repère centré</small></div><div class="fields" id="fSup"></div></div>
@@ -59,7 +59,7 @@
     <div class="card"><div class="card-title"><span>Matériaux et hypothèses</span></div><div class="fields" id="fMat"></div></div>
     <div class="card"><div class="card-title"><span>Combinaisons d’actions</span><small>kN, kN·m · au point (px, py) en sous-face de semelle</small></div>
       <div class="fields" id="fPt"></div>
-      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin:6px 0">Fz &lt; 0 : charge descendante. Deux lignes par combinaison dans le fichier d’origine ; ici « LD » = actions de longue durée, « CD » = actions de courte durée.</div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin:6px 0">Fz &lt; 0 : charge descendante. Deux lignes par combinaison dans le fichiers de référence ; ici « LD » = actions de longue durée, « CD » = actions de courte durée.</div>
       <div class="scroll-in" id="rComb" style="max-height:380px"></div></div>
   </div>
   <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
@@ -131,7 +131,7 @@
     .concat(K6.map((k) => ({ id: k, label: k, def: 0 })));
   const ALL = [].concat(F_GEN, F_NIV, F_SUP, F_PIEUX, F_GRID, F_MAT, F_PT);
 
-  /* jeu par défaut : sondage d'exemple de SONDPRES, 6 pieux forés boue Ø 1,00 m */
+  /* jeu par défaut : sondage d'exemple de PRESSIO, 6 pieux forés boue Ø 1,00 m */
   const DEF_COMB = [
     ['ELS Rare', [0, 0, -9000, 0, -1500, 0], [350, 40, -1200, 300, 2600, 0]],
     ['ELS QP', [0, 0, -9000, 0, -1500, 0], [0, 0, 0, 0, 0, 0]],
@@ -145,7 +145,7 @@
   const V = Object.assign({}, saved.v || {});
   // saisies enregistrées avant le calcul automatique de l'effet de groupe (valeurs par défaut 1 / 1 / 0,75) : repasser en automatique
   if (!saved.gv && V.redX === 1 && V.redY === 1 && V.palArr === 0.75) { V.redX = ''; V.redY = ''; V.palArr = ''; }
-  let sps = saved.sps ? Object.assign(S.vide(), saved.sps) : S.exemple(), spsNom = saved.spsNom || 'exemple SONDPRES';
+  let sps = saved.sps ? Object.assign(S.vide(), saved.sps) : S.exemple(), spsNom = saved.spsNom || 'exemple PRESSIO';
   BA.form(document.getElementById('fGen'), F_GEN, 'i_', V);
   BA.form(document.getElementById('fNiv'), F_NIV, 'i_', V);
   BA.form(document.getElementById('fSup'), F_SUP, 'i_', V);
@@ -237,7 +237,7 @@
       out.innerHTML = d.type === 'pieux' ? viewPieux(d, r) : viewSup(d, r);
       out.querySelectorAll('select[data-sel]').forEach((s) => s.addEventListener('change', () => { state[s.dataset.sel] = +s.value; persist(); out.innerHTML = d.type === 'pieux' ? viewPieux(d, r) : viewSup(d, r); bindSel(); }));
       bindSel();
-      console.info('FONDATIO calculé en', Date.now() - t0, 'ms');
+      console.info('FONDATIONS calculé en', Date.now() - t0, 'ms');
     } catch (e) { last = null; out.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; console.error(e); }
   }
   function bindSel() {
@@ -306,7 +306,7 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
       + BA.card('Charges axiales par combinaison', BA.table(['N°', 'Type', 'N maxi (+Gsn)', 'limite', 'N mini', 'limite', 'Itérations LD + CD', ''], env), 'kN · compression positive')
       + BA.card('Efforts et déplacements en tête', `<div class="sel-row">Combinaison ${sel('comb', r.combs.length, (i) => (i + 1) + ' — ' + r.combs[i].type, ci)}</div>`
         + BA.table(['Pieu', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'dx (mm)', 'dy (mm)', 'dz (mm)', 'Sol'], head)
-        + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">Efforts appliqués par la semelle sur la tête des pieux (Fz &lt; 0 : compression), convention du programme d’origine. Semelle : Ux = ${fmt(U[0] * 1000, 3)} mm, Uy = ${fmt(U[1] * 1000, 3)} mm, Uz = ${fmt(U[2] * 1000, 3)} mm, θx = ${fmt(U[3] * 1e3, 4)} mrad, θy = ${fmt(U[4] * 1e3, 4)} mrad.</div>`
+        + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">Efforts appliqués par la semelle sur la tête des pieux (Fz &lt; 0 : compression), convention du programme de référence. Semelle : Ux = ${fmt(U[0] * 1000, 3)} mm, Uy = ${fmt(U[1] * 1000, 3)} mm, Uz = ${fmt(U[2] * 1000, 3)} mm, θx = ${fmt(U[3] * 1e3, 4)} mrad, θy = ${fmt(U[4] * 1e3, 4)} mrad.</div>`
         + `<div style="margin-top:10px">${plan(d, r)}</div>`)
       + BA.card('Sollicitations le long du pieu', `<div class="sel-row">Pieu ${sel('pieu', c.piles.length, (i) => String(i + 1), pi)} · combinaison ${c.n} (${c.type})</div>`
         + BA.chart([{ x: sx, y: q.dgx.map((g) => g.M), label: 'My (direction X)' }, { x: sx, y: q.dgy.map((g) => g.M), label: 'Mx (direction Y)' }], { title: 'Moments de flexion', unit: 'kN·m, abscisse : profondeur sous la semelle (m)', h: 200 })
@@ -314,7 +314,7 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
         + BA.chart([{ x: sx, y: q.wx.map((w) => w * 1000), label: 'dx' }, { x: sx, y: q.wy.map((w) => w * 1000), label: 'dy' }], { title: 'Déplacements horizontaux', unit: 'mm', h: 160 }))
       + BA.card('Aciers des pieux', pt.barr ? `<div class="msg info">${esc(ac.note)}</div>`
         : BA.table(['Prof. (m)', 'As ELU (cm²)', 'As min', 'As retenue', 'Couple dimensionnant', 'Vu (kN)', 'τu / τlim (MPa)', 'At/st (cm²/m)'], acRows)
-          + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">Flexion composée ELU, moment résultant √(Mx² + My²) — ${esc(ac.methode || '')} ; fc* = ${fmt(pt.fc, 2)} MPa (k1 = ${fmt(pt.k1, 2)}). At/st : BAEL A.5.1 avec b0 = D/1,4, fet = 400 MPa. Décaler les aciers de 0,8 h et en assurer l’ancrage ; vérification ELS des contraintes non faite ici (module BAEL-EC2).</div>`)
+          + `<div style="font-size:11px;color:var(--ink3);margin-top:6px">Flexion composée ELU, moment résultant √(Mx² + My²) — ${esc(ac.methode || '')} ; fc* = ${fmt(pt.fc, 2)} MPa (k1 = ${fmt(pt.k1, 2)}). At/st : BAEL A.5.1 avec b0 = D/1,4, fet = 400 MPa. Décaler les aciers de 0,8 h et en assurer l’ancrage ; vérification ELS des contraintes non faite ici (module SECTIONS).</div>`)
       + perimetre();
   }
   function grpTable(r) {
@@ -330,8 +330,8 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
       <li><b>Semelles et massifs</b> (annexe B) : ple* moyenne géométrique sur 1,5 B, De = ∫pl*/ple*, kp selon la classe (interpolé entre 1,5 et 5 pour De/B), q’u = kp ple* + q’0. Semelle infiniment rigide sur sol sans traction : σ linéaire sur la surface comprimée (itérations), q’ref = (3σmax + σmin)/4, ou Meyerhof. Décompression admise : 0 % fréquent, 25 % rare, 90 % ELU. iδ de l’annexe F1 ; iβ (talus) saisi. Glissement : H ≤ N tan φ’/1,2 + c’A’/1,5. Pour un massif semi-profond, le poids du massif est ajouté ; la butée sur ses faces verticales n’est pas comptée (sécuritaire).</li>
       <li><b>Modules de réaction et tassement</b> (annexe F2, Ménard) : Ec, Ed par tranches de B/2 jusqu’à 8B, λc, λd, α ; kv courte durée = rapport × kv longue durée. Déplacement vertical moyen = σLD/kvLD + σCD/kvCD.</li>
       <li><b>Pieux</b> (annexe C3) : ple* entre pointe + b et pointe − 3a, kp sans refoulement du sol, qs par les courbes Q1 à Q7 choisies selon le sol et le type (ou imposées), Qc = 0,5 Qpu + 0,7 Qsu, coefficients 1,40 / 1,20 / 1,10 / 1,40. Frottement négatif Gsn saisi (la méthode de Combarieu n’est pas programmée).</li>
-      <li><b>Groupe sous semelle rigide</b> : pieux verticaux encastrés en tête ; raideur axiale EA/L en série avec le ressort de pointe ; réaction latérale de Ménard Es = 12 EM / [4/3 (B0/B)(2,65 B/B0)^α + α] (B ≥ 0,6 m), divisée par le rapport des modules pour la longue durée, réduite près de la surface sur 2B, palier = pf* × B (× 0,75 pour les files arrière). Pieu discrétisé en poutre sur ressorts (BA.portique, 4 sous-éléments par élément de sortie), modules sécants itérés ; phase longue durée puis courte durée (sol déjà chargé). Effet de groupe : réduction du module frontal ρ = g + (1 − g)·min(1, (s − B)/2B), g = Kf(nB)/(n Kf(B)) pour les n pieux d’une rangée perpendiculaire au déplacement, et palier des files arrière × min(1, (s’ − B)/2B). Le Fascicule 62 ne chiffre pas cet effet : la règle a été reconstituée à partir des notes du programme d’origine, dont elle retrouve les coefficients (0,8503 / 0,8681 / 0,9104 / 0,9258 et 0,75 pour 2 × 4 pieux Ø 1,20 m à 3,00 m) ; un coefficient saisi la remplace.</li>
-      <li><b>Non traités</b> : pieux inclinés et micropieux, fluage et effets du second ordre, séisme spécifique, frottement négatif automatique, vérifications ELS des aciers (utiliser BAEL-EC2), stabilité d’ensemble.</li></ul></details>`);
+      <li><b>Groupe sous semelle rigide</b> : pieux verticaux encastrés en tête ; raideur axiale EA/L en série avec le ressort de pointe ; réaction latérale de Ménard Es = 12 EM / [4/3 (B0/B)(2,65 B/B0)^α + α] (B ≥ 0,6 m), divisée par le rapport des modules pour la longue durée, réduite près de la surface sur 2B, palier = pf* × B (× 0,75 pour les files arrière). Pieu discrétisé en poutre sur ressorts (BA.portique, 4 sous-éléments par élément de sortie), modules sécants itérés ; phase longue durée puis courte durée (sol déjà chargé). Effet de groupe : réduction du module frontal ρ = g + (1 − g)·min(1, (s − B)/2B), g = Kf(nB)/(n Kf(B)) pour les n pieux d’une rangée perpendiculaire au déplacement, et palier des files arrière × min(1, (s’ − B)/2B). Le Fascicule 62 ne chiffre pas cet effet : la règle a été reconstituée à partir des notes du programme de référence, dont elle retrouve les coefficients (0,8503 / 0,8681 / 0,9104 / 0,9258 et 0,75 pour 2 × 4 pieux Ø 1,20 m à 3,00 m) ; un coefficient saisi la remplace.</li>
+      <li><b>Non traités</b> : pieux inclinés et micropieux, fluage et effets du second ordre, séisme spécifique, frottement négatif automatique, vérifications ELS des aciers (utiliser SECTIONS), stabilité d’ensemble.</li></ul></details>`);
   }
 
   function note() {
@@ -340,7 +340,7 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
     const cards = [...out.querySelectorAll('.card')].filter((c) => !/Périmètre/.test(c.textContent.slice(0, 40)));
     const C = S.couches(sps);
     BA.note({
-      titre: 'Fondation ' + (d.type === 'pieux' ? 'sur pieux' : d.type === 'semi' ? 'semi-profonde' : 'superficielle'), code: 'FONDATIO', regl: 'Fascicule 62 titre V · Livret 2.01 · BAEL 91 mod. 99', projet: readAll().projet,
+      titre: 'Fondation ' + (d.type === 'pieux' ? 'sur pieux' : d.type === 'semi' ? 'semi-profonde' : 'superficielle'), code: 'FONDATIONS', regl: 'Fascicule 62 titre V · Livret 2.01 · BAEL 91 mod. 99', projet: readAll().projet,
       sections: [
         { titre: 'Données', html: BA.table(['Rubrique', 'Valeur'], [['Sondage', esc(spsNom + ' — tête ' + fmt(sps.z, 2) + ' m')], ['Sous-face de semelle', fmt(d.zsem, 2) + ' m'], ['Terrain définitif / naturel', fmt(d.zdef, 2) + ' / ' + fmt(d.ztn, 2) + ' m'], ['γ / γsat / γb', fmt(d.gamma, 1) + ' / ' + fmt(d.gammaSat, 1) + ' / ' + fmt(d.gammaB, 1) + ' kN/m³']], { leftText: true })
           + BA.table(['Couche', 'Toit (cote)', 'Classe', 'pl*', 'pf*', 'EM', 'α'], C.map((c) => [esc(c.nom), fmt(sps.z - c.haut, 2), esc(c.classe), fmt(c.pl, 2), fmt(c.pf, 2), fmt(c.em, 1), fmt(c.alpha, 2)]))
@@ -360,7 +360,7 @@ Traction : ELU fond. Qtu/1,40 = ${fmt(-pt.lim['ELU fond'][1], 1)} · ELU acc. Qt
   document.getElementById('bNote').onclick = note;
   document.getElementById('bGrid').onclick = () => { const v = readAll(); const n = Math.round(v.gnx) * Math.round(v.gny); if (n > 24 || n < 1) { alert('1 à 24 pieux.'); return; } piles.set(gridPiles(Math.round(v.gnx), Math.round(v.gny), v.gex, v.gey)); run(); };
   document.getElementById('bSps').onclick = () => BA.store.pick('.sps,.SPS', (txt, name) => { try { sps = S.parse(txt); spsNom = name; run(); } catch (e) { alert('Lecture impossible : ' + e.message); } });
-  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans SONDPRES sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'SONDPRES — ' + (o.s.sondage || 'sondage'); run(); };
+  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); run(); };
   document.getElementById('bSave').onclick = () => BA.store.download('fondatio.json', { module: 'fondatio', version: 1, v: readAll(), piles: piles.data, comb: comb.data, sps, spsNom });
   document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { loadState(JSON.parse(txt)); } catch (e) { alert('Fichier JSON illisible.'); } });
   document.getElementById('bDon').onclick = () => BA.store.pick('.don,.DON', (txt) => {

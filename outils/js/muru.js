@@ -295,7 +295,7 @@
       fond: { q0, qu, De, zdef, Bm, geo, gq }, nb, b, ok, alertes };
   }
 
-  /* lecture d'un fichier .don d'origine (MURU) */
+  /* lecture d'un fichier .don d'origine (MUR EN U) */
   function donVersDonnees(txt) {
     const k = M3.lireKV(txt), f = (n, def = 0) => { const v = parseFloat(String(k[n] ?? '').replace(',', '.')); return Number.isFinite(v) ? v : def; };
     if (String(k.application || '').toUpperCase().indexOf('MURU') < 0 && !('ouvdroi' in k)) throw new Error('Ce fichier ne semble pas être un fichier de données MURU.');

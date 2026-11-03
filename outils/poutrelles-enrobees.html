@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INERPE — Inerties des poutrelles enrobées · BridgeAI Studios</title>
+<title>ENROBÉES — Inerties des poutrelles enrobées · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/inerpe.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/poutrelles-enrobees.html">
 <meta name="description" content="Tabliers à poutrelles enrobées : moment résistant plastique ELU (EN 1994-2 §6.2.1.2), inerties et modules I/v homogénéisés à court et long terme, béton fissuré ou non, en travée et sur appui. Catalogue HEA, HEAA, HEB, HEM intégré.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Tabliers et murs</div>
-      <div class="eyebrow">INERPE · poutrelles enrobées</div>
+      <div class="eyebrow">ENROBÉES · poutrelles enrobées</div>
       <h1>Inerties des <em>poutrelles enrobées</em></h1>
       <p class="lead">Moment résistant plastique et axe neutre à l’ELU, inerties et modules I/v homogénéisés à court et long terme, béton fissuré ou non, en travée et sur appui, pour un tablier ou une bande d’une poutrelle.</p>
       <div class="badges"><span class="badge">EN 1994-2 §5.4.2.2 · §6.2.1.2 · §6.3</span><span class="badge">EN 1992-1-1 tab. 3.1</span><span class="badge">EN 1993-1-1 tab. 3.1</span><span class="badge">Catalogue HEAA · HEA · HEB · HEM</span></div>
@@ -309,7 +309,7 @@ Béton de y = ${fmt(S.zb, 3)} m à y = ${fmt(S.H, 3)} m (origine : sous-face des
         <li><b>Coefficients d’équivalence</b> : n0 = Ea/Ecm (Ea = 210 000 MPa, Ecm selon EN 1992-1-1 tab. 3.1) et nL = n0 (1 + ψL φt) (EN 1994-2 §5.4.2.2), ou valeurs saisies (n = 6 et 18 du guide « Ponts-routes à tablier en poutrelles enrobées », 1995).</li>
         <li><b>Coffrage perdu</b> (sous-face apparente) : le béton commence au-dessus de l’aile inférieure, augmenté de l’épaisseur du coffrage perdu, sur toute la largeur.</li>
         <li><b>Catalogue</b> : profilés HEAA, HEA, HEB, HEM de 100 à 1000 mm (Euronorm 53-62) ; A et Iy recalculés à partir des dimensions s’écartent de moins de 1 % des valeurs publiées. Profilé de dimensions quelconques ou PRS dissymétrique par saisie.</li>
-        <li><b>Hors périmètre</b> : vérification des contraintes, effort tranchant, fatigue, flexion transversale, sollicitations (voir RADBAN-RAPEN / RODBAN-ROPEN). Largeur participante non réduite : la largeur saisie est considérée entièrement efficace.</li>
+        <li><b>Hors périmètre</b> : vérification des contraintes, effort tranchant, fatigue, flexion transversale, sollicitations (voir TABLIER RAIL / TABLIER ROUTE). Largeur participante non réduite : la largeur saisie est considérée entièrement efficace.</li>
         <li>Compatibilité avec les anciens fichiers .don : l’import règle γa = 1,05, n = 6 / 18 saisis et les congés ignorés à l’ELU, conventions qui permettent de retrouver les anciens résultats. Dans la table d’origine « ELS / béton », le module béton non fissuré avec armatures n’était pas cohérent avec l’inertie ; ce module donne n·I/v.</li>
       </ul></details>`)
       + BA.card('Catalogue des profilés', catalogue(), 'BA.inerpe.profiles');
@@ -351,7 +351,7 @@ Béton de y = ${fmt(S.zb, 3)} m à y = ${fmt(S.H, 3)} m (origine : sous-face des
     for (const sd of ['travee', 'appui']) { state.tab = sd; parts.push({ titre: 'Coupe — ' + (sd === 'travee' ? 'travée' : 'appui'), html: svgSection(r) }); }
     state.tab = keep;
     BA.note({
-      titre: 'Inerties des poutrelles enrobées', code: 'INERPE', regl: 'EN 1994-2 §5.4.2.2, §6.2.1.2, §6.3 · EN 1992-1-1 · EN 1993-1-1', projet: v.projet,
+      titre: 'Inerties des poutrelles enrobées', code: 'ENROBÉES', regl: 'EN 1994-2 §5.4.2.2, §6.2.1.2, §6.3 · EN 1992-1-1 · EN 1993-1-1', projet: v.projet,
       sections: [
         { titre: 'Données', html: data },
         { titre: 'Matériaux et coefficients', html: hyp(r) },

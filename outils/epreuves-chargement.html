@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPREUVES — Épreuves de chargement des ponts — BridgeAI Studios</title>
+<title>ÉPREUVES — Épreuves de chargement des ponts — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Carnet d'épreuves de chargement des ponts-routes et ponts-rails : position optimale des camions ou locomotives par lignes d'influence, taux d'efficacité par rapport à A(l), Bc, Bt, Mc120 ou UIC 71 × Φ, flèches et rotations attendues, schémas cotés, fiche de relevés.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/epreuves.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/epreuves-chargement.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -31,7 +31,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> · Compléments</div>
-      <div class="eyebrow">EPREUVES · carnet d’épreuves réglementaires</div>
+      <div class="eyebrow">ÉPREUVES · carnet d’épreuves réglementaires</div>
       <h1>Épreuves de <em>chargement</em></h1>
       <div class="badges"><span class="badge">Fascicule 61 titre II</span><span class="badge">Livret 2.01 · EN 1991-2</span><span class="badge">BAEL 91 mod. 99 · EN 1992-1-1</span><span class="badge">Courbon</span></div>
     </div>
@@ -326,7 +326,7 @@
       <li>Effets réglementaires non pondérés et sans majoration dynamique pour les ponts-routes : A(l) (a1, a2, nombre de voies chargées optimisé), Bc (bc, 1 ou 2 camions par file), Bt (bt), Mc80, Mc120 (Fascicule 61 titre II). Ponts-rails : UIC 71 × α × Φ, SW/0 × α × Φ sur ouvrages continus, LΦ du tableau 6.2 de l’EN 1991-2 (Livret 2.01).</li>
       <li>Nombre de véhicules : si nF ou nL n’est pas imposé, le plus petit nombre de véhicules donnant une intensité η comprise dans la cible (par défaut 2/3 à 1, valeurs à fixer par le marché) ; à défaut, le plus fort η sous la borne supérieure.</li>
       <li>Flèches et rotations : calcul élastique linéaire, béton non fissuré, module instantané (BAEL A.2.1.21 ou EN 1992-1-1 tab. 3.1 ou saisi), flèches relatives à la ligne des appuis. Les inerties saisies doivent être celles de la section brute (ou homogénéisée) de l’ouvrage entier ; en béton armé fortement sollicité, comparer aussi à un calcul en section fissurée.</li>
-      <li>Répartition transversale : ouvrage entier (pas de répartition, cas des dalles larges vérifiées globalement), Courbon (entretoisement rigide : K<sub>i</sub> = 1 + n·ē·y<sub>i</sub>/Σy²) ou coefficients saisis (Kép pour l’épreuve, Krég pour le réglementaire, issus par exemple de GMSLT). η = (M<sub>ép</sub>·Kép)/(M<sub>rég</sub>·Krég).</li>
+      <li>Répartition transversale : ouvrage entier (pas de répartition, cas des dalles larges vérifiées globalement), Courbon (entretoisement rigide : K<sub>i</sub> = 1 + n·ē·y<sub>i</sub>/Σy²) ou coefficients saisis (Kép pour l’épreuve, Krég pour le réglementaire, issus par exemple de RÉPARTITION). η = (M<sub>ép</sub>·Kép)/(M<sub>rég</sub>·Krég).</li>
       <li>Biais (30 à 170 gr) : prise en compte simplifiée — calcul en poutre suivant l’axe avec les portées biaises, lignes d’appui biaises sur la vue en plan. Hors de 70–130 gr, le modèle surestime moments et flèches de travée : un calcul en plaque est recommandé.</li>
       <li>Tolérances sur les flèches, rémanence admise, durées de stabilisation : paramètres de programme à fixer par le marché ou le guide d’épreuves applicable ; les valeurs par défaut sont des usages courants, pas des valeurs réglementaires.</li></ul></details>`;
   }
@@ -353,7 +353,7 @@
     sections.push({ titre: '7. Déroulement et programme des mesures', html: programme(r) });
     sections.push({ titre: '8. Fiche de relevés', html: `<p>Date : ……………… Température : ……… °C &nbsp; Opérateur : ……………… Appareil : ………………</p>` + ficheVierge(r).replace('class="tbl-wrap"', 'class="tbl-wrap" style="font-size:9px"') });
     sections.push({ titre: '9. Hypothèses de calcul', html: perimetre(r).replace(' open', ' open style="font-size:10px"') });
-    BA.note({ titre: 'Carnet d’épreuves — ' + (o.projet || ''), code: 'EPREUVES', regl: rail ? 'Livret 2.01 · EN 1991-2' : 'Fascicule 61 titre II', projet: o.projet, sections });
+    BA.note({ titre: 'Carnet d’épreuves — ' + (o.projet || ''), code: 'ÉPREUVES', regl: rail ? 'Livret 2.01 · EN 1991-2' : 'Fascicule 61 titre II', projet: o.projet, sections });
   }
 
   $('b-calc').addEventListener('click', calc);

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GMSLT — Répartition et flexion transversales (Guyon-Massonnet) — BridgeAI Studios</title>
+<title>RÉPARTITION — Répartition et flexion transversales (Guyon-Massonnet) — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Coefficients de répartition transversale K et moments de flexion transversale des tabliers de ponts (dalles, poutres multiples) par la méthode de Guyon-Massonnet-Barès, calcul analytique exact, placement automatique des charges Fascicule 61, LM1, UIC 71, SW/0, SW/2.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/gmslt.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/repartition-transversale.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -30,7 +30,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Socle de calcul</div>
-      <div class="eyebrow">GMSLT</div>
+      <div class="eyebrow">RÉPARTITION</div>
       <h1>Répartition et flexion <em>transversales</em></h1>
       <div class="badges"><span class="badge">Guyon-Massonnet-Barès</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 1991-2 LM1</span><span class="badge">EN 1991-2 §6.3 · UIC 71, SW/0, SW/2</span></div>
     </div>
@@ -325,7 +325,7 @@ BA.chrome({ base: '../' });
     for (const [k, c] of cas) sec.push({ titre: c.titre, html: `<p>${esc(c.info || '')}</p>` + BA.table(['y (m)', 'K max', 'My min (kN·m/m)', 'My max (kN·m/m)', 'position (max)'], c.res.map((x) => [fmt(x.y, 3), fmt(x.Kmax, 4), fmt(x.Mmin, 2), fmt(x.Mmax, 2), esc(cfgTxt(x.cfgMax))])) });
     sec.push({ titre: 'Enveloppe des charges d’exploitation', html: BA.table(['y (m)', 'K max', 'My min', 'My max'], r.env.map((x) => [fmt(x.y, 3), fmt(x.Kmax, 4), fmt(x.Mmin, 2), fmt(x.Mmax, 2)])) });
     sec.push({ titre: 'Méthode', html: '<p>Méthode de Guyon-Massonnet-Barès, solution analytique exacte de la plaque orthotrope à bords libres, série de Fourier longitudinale. Placement transversal défavorable des charges réglementaires fibre par fibre (Fascicule 61 titre II, EN 1991-2).</p>' });
-    BA.note({ titre: 'Répartition et flexion transversales — Guyon-Massonnet', code: 'GMSLT', regl: 'Guyon-Massonnet-Barès · Fasc. 61 titre II · EN 1991-2', projet: s.gen.projet, sections: sec });
+    BA.note({ titre: 'Répartition et flexion transversales — Guyon-Massonnet', code: 'RÉPARTITION', regl: 'Guyon-Massonnet-Barès · Fasc. 61 titre II · EN 1991-2', projet: s.gen.projet, sections: sec });
   }
 
   /* import du format d'origine */

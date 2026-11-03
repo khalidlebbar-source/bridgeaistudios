@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MUR3D — Mur de soutènement en béton armé — BridgeAI Studios</title>
+<title>SOUTÈNEMENT — Mur de soutènement en béton armé — BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Calcul d'un tronçon de mur de soutènement en béton armé sur semelle superficielle : poussée par la méthode des coins (Culmann) sur talus brisé, surcharges, nappe, séisme Mononobe-Okabe, stabilité Fascicule 62 titre V, ferraillage du voile, du patin et du talon (BAEL 91 / EC2).">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/mur3d.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/murs-soutenement.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -27,7 +27,7 @@
   <div class="head-inner">
     <div>
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Murs et soutènements</div>
-      <div class="eyebrow">MUR3D</div>
+      <div class="eyebrow">SOUTÈNEMENT</div>
       <h1>Mur de soutènement <em>en béton armé</em></h1>
       <div class="badges"><span class="badge">Livret 2.01 · BAEL 91 mod. 99</span><span class="badge">EN 1990 A2 · EN 1992-1-1</span><span class="badge">Fasc. 62 titre V</span><span class="badge">EN 1998-5 annexe E</span></div>
     </div>
@@ -56,17 +56,17 @@
   </div>
   <details class="ref card"><summary>Périmètre et hypothèses</summary>
     <ul>
-      <li><b>Fondations :</b> semelle superficielle (q′u saisi ou sondage .SPS) ; pieux, barrettes et puits par le module FONDATIO (portance Qu/Qc du Fascicule 62, groupe sous semelle rigide, réaction latérale de Ménard) à partir des torseurs des combinaisons enveloppes. La semelle biaise (angle ≠ 100 gr) est modélisée à bords droits.</li>
-      <li><b>Modèle de poussée « Livret 2.01 »</b> (par défaut) : diagrammes par pente du talus avec transition à 45° + φ/2, surcharges en bande Ka·q (montée entre φ et 45° + φ/2, arrêt à 45° + φ/2 sous le bord arrière), obliquité pondérée δ0 / β sur l’écran fictif — identifiés sur les notes d’origine (charges élémentaires retrouvées à 0,5 % près). Le modèle « méthode des coins » reste disponible.</li>
-      <li><b>Écart connu :</b> la limite de q′ref du programme d’origine utilise un γq variable non documenté (2,3 au lieu de 3 à l’ELS, 1,6 au lieu de 2 à l’ELU) ; ici γq = 3 / 2 du Fascicule 62 (saisissables), donc plus sévère.</li>
+      <li><b>Fondations :</b> semelle superficielle (q′u saisi ou sondage .SPS) ; pieux, barrettes et puits par le module FONDATIONS (portance Qu/Qc du Fascicule 62, groupe sous semelle rigide, réaction latérale de Ménard) à partir des torseurs des combinaisons enveloppes. La semelle biaise (angle ≠ 100 gr) est modélisée à bords droits.</li>
+      <li><b>Modèle de poussée « Livret 2.01 »</b> (par défaut) : diagrammes par pente du talus avec transition à 45° + φ/2, surcharges en bande Ka·q (montée entre φ et 45° + φ/2, arrêt à 45° + φ/2 sous le bord arrière), obliquité pondérée δ0 / β sur l’écran fictif — identifiés sur les note de référence (charges élémentaires retrouvées à 0,5 % près). Le modèle « méthode des coins » reste disponible.</li>
+      <li><b>Écart connu :</b> la limite de q′ref du programme de référence utilise un γq variable non documenté (2,3 au lieu de 3 à l’ELS, 1,6 au lieu de 2 à l’ELU) ; ici γq = 3 / 2 du Fascicule 62 (saisissables), donc plus sévère.</li>
       <li>Le mur est découpé en tranches (2 à 20) ; chaque tranche est une coupe plane, la semelle est supposée infiniment rigide et le sol sans traction (contraintes linéaires sur la surface comprimée, recherche itérative).</li>
-      <li>Poussée sur l’écran fictif vertical passant par l’extrémité du talon (stabilité, talon) et sur le parement arrière du voile (ferraillage du voile) : méthode des coins de Coulomb généralisée, pour chaque point de l’écran, avec talus brisé, surcharges en bande et nappe (γ′ = γsat − γw). L’obliquité sur l’écran fictif est soit la pente du terrain (Rankine), soit imposée, soit la règle identifiée sur les notes d’origine (option « origine »).</li>
+      <li>Poussée sur l’écran fictif vertical passant par l’extrémité du talon (stabilité, talon) et sur le parement arrière du voile (ferraillage du voile) : méthode des coins de Coulomb généralisée, pour chaque point de l’écran, avec talus brisé, surcharges en bande et nappe (γ′ = γsat − γw). L’obliquité sur l’écran fictif est soit la pente du terrain (Rankine), soit imposée, soit la règle identifiée sur les note de référence (option « origine »).</li>
       <li>Séisme : kh, kv saisis (EN 1998-5 §7.3.2.2 : kh = α·S/r, kv = ±0,5 kh) ; incrément dynamique de Mononobe-Okabe (annexe E) obtenu par la méthode des coins avec gravité inclinée et appliqué à mi-hauteur ; inertie du mur et des terres sur le talon.</li>
       <li>Combinaisons : Livret 2.01 (trafic 1,45 ; autres actions 1,605 à l’ELU, 1,2 à l’ELS rare) ou EN 1990 A2 + approche 2 de la NF P 94-281 ; poids des terres pondéré de ±Δ (coefficient saisi).</li>
-      <li>Portance : q′ref = (3σmax + σmin)/4 ≤ q′0 + iδ (q′u − q′0)/γq (γq = 3 ELS, 2 ELU, 1,5 accidentel) ; iδ de l’annexe F1 du Fascicule 62 titre V. Avec un sondage .SPS : q′u − q′0 = kp·ple* (ple* moyenne géométrique sur 1,5 B, kp de l’annexe C1 — version simplifiée intégrée en attendant le module FONDATIO).</li>
+      <li>Portance : q′ref = (3σmax + σmin)/4 ≤ q′0 + iδ (q′u − q′0)/γq (γq = 3 ELS, 2 ELU, 1,5 accidentel) ; iδ de l’annexe F1 du Fascicule 62 titre V. Avec un sondage .SPS : q′u − q′0 = kp·ple* (ple* moyenne géométrique sur 1,5 B, kp de l’annexe C1 — version simplifiée intégrée en attendant le module FONDATIONS).</li>
       <li>Glissement : H ≤ N tgφ′/1,2 + c′A′/1,5 ; glissement en rotation (torsion) autour des milieux des bords haut et bas de la semelle.</li>
       <li>Déplacement en tête à l’ELS fréquent : rotation de la semelle (module de réaction kv) + flexion du voile (module différé Ei/rapport).</li>
-      <li>Béton armé par mètre linéaire, flexion composée, avec le moteur BAEL-EC2 du site ; enveloppe des combinaisons extrêmes ; effort tranchant sans armatures (BAEL A.5.2.2 / EC2 §6.2.2).</li>
+      <li>Béton armé par mètre linéaire, flexion composée, avec le moteur SECTIONS du site ; enveloppe des combinaisons extrêmes ; effort tranchant sans armatures (BAEL A.5.2.2 / EC2 §6.2.2).</li>
     </ul>
   </details>
 </div>
@@ -112,7 +112,7 @@
     { id: 'qch', label: 'Charge de chantier (tout le talus)', unit: 'kN/m²', def: 10 }, { id: 'qav', label: 'Charge sur remblai avant', unit: 'kN/m²', def: 10 },
   ];
   const FOND = [
-    { id: 'ftype', label: 'Type de fondation', type: 'sel', def: 'superficielle', options: [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux (FONDATIO)'], ['barrettes', 'Barrettes (FONDATIO)'], ['puits', 'Puits (FONDATIO)']], wide: true },
+    { id: 'ftype', label: 'Type de fondation', type: 'sel', def: 'superficielle', options: [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux (FONDATIONS)'], ['barrettes', 'Barrettes (FONDATIONS)'], ['puits', 'Puits (FONDATIONS)']], wide: true },
     { id: 'D', label: 'Pieux : diamètre / barrette : épaisseur', unit: 'm', def: 0.9 }, { id: 'Lb', label: 'Barrette / puits : longueur', unit: 'm', def: 0 },
     { id: 'H', label: 'Hauteur des pieux', unit: 'm', def: 12.2 }, { id: 'typePieu', label: 'Type de pieu', type: 'sel', def: 2, options: [[1, 'Foré simple'], [2, 'Foré boue'], [3, 'Foré tubé récupéré'], [4, 'Foré tubé perdu']] },
     { id: 'disAv', label: 'Axe file avant / bord avant', unit: 'm', def: 0.6 }, { id: 'disAr', label: 'Axe file arrière / bord arrière', unit: 'm', def: 0.6 },
@@ -138,7 +138,7 @@
   const OPT = [
     { id: 'kh', label: 'Séisme : kh', unit: '—', def: 0 }, { id: 'kv', label: 'Séisme : kv', unit: '—', def: 0, help: 'EN 1998-5 : kh = α S / r, kv = ±0,5 kh' },
     { id: 'modele', label: 'Modèle de poussée', type: 'sel', def: 'livret', options: [['livret', 'Diagrammes du Livret 2.01 (éd. 2004)'], ['coins', 'Méthode des coins (Culmann numérique)']], wide: true },
-    { id: 'deltaFictif', label: 'Obliquité sur l’écran fictif', type: 'sel', def: 'origine', options: [['origine', 'Règle des notes d’origine'], ['culmann', 'Option Culmann : δ = β ≥ 0'], ['beta', 'Pente du terrain (Rankine)'], ['0', 'δ = 0'], ['23.33', 'δ = 2φ/3']], wide: true },
+    { id: 'deltaFictif', label: 'Obliquité sur l’écran fictif', type: 'sel', def: 'origine', options: [['origine', 'Règle des note de référence'], ['culmann', 'Option Culmann : δ = β ≥ 0'], ['beta', 'Pente du terrain (Rankine)'], ['0', 'δ = 0'], ['23.33', 'δ = 2φ/3']], wide: true },
     { id: 'deltaVoile', label: 'Obliquité δ sur le voile', unit: '°', def: 0 }, { id: 'nCoins', label: 'Points de calcul sur l’écran', def: 16, step: 1 },
   ];
   let sec = [], tal = [], sps = null, R = null;
@@ -218,9 +218,9 @@
       { l: 'Pieux', v: String(P.piles.length), n: r.d.fond.type }, { l: 'Qmax ELU', v: f(R2.pt.lim['ELU fond'][0], 0), u: 'kN' }, { l: 'Qmax ELS rare', v: f(R2.pt.lim['ELS rare'][0], 0), u: 'kN' }])
       + (r.alertes.length ? `<div class="msg err" style="margin-top:10px">${r.alertes.map(BA.esc).join('<br>')}</div>` : '') });
     out.push({ titre: 'Coupe de la section haute', html: coupe(r) });
-    out.push({ titre: 'Efforts en tête des pieux (Fasc. 62 titre V, FONDATIO)', html: BA.table(['Vérification', 'Comb.', 'Paramètre', 'Calculé', 'Limite', ''], P.verifs.map((x) => [x.nom, x.comb, x.par, f(x.val, 1), f(x.adm, 1), BA.verdict(x.ok)]), { leftText: true })
+    out.push({ titre: 'Efforts en tête des pieux (Fasc. 62 titre V, FONDATIONS)', html: BA.table(['Vérification', 'Comb.', 'Paramètre', 'Calculé', 'Limite', ''], P.verifs.map((x) => [x.nom, x.comb, x.par, f(x.val, 1), f(x.adm, 1), BA.verdict(x.ok)]), { leftText: true })
       + BA.table(['Pieu', 'x (m)', 'y (m)', 'File'].concat(P.combs.slice(0, 6).map((c) => 'N c.' + c.no)), P.piles.map((q, i) => [i + 1, f(q.x, 2), f(q.y, 2), q.file].concat(R2.combs.slice(0, 6).map((c) => f(c.piles[i].N, 0)))), { leftText: true })
-      + `<div class="sub">Combinaisons enveloppes transmises à FONDATIO (${P.combs.length}). Aciers des pieux : ${R2.acier.ok ? 'vérifiés' : 'à reprendre'} (voir le module FONDATIO pour le détail).</div>` });
+      + `<div class="sub">Combinaisons enveloppes transmises à FONDATIONS (${P.combs.length}). Aciers des pieux : ${R2.acier.ok ? 'vérifiés' : 'à reprendre'} (voir le module FONDATIONS pour le détail).</div>` });
     const all = sections(Object.assign({}, r, { verifs: null }));
     return out.concat(all.filter((x) => /Voile|Patin|Talon|Plans|Charges élémentaires/.test(x.titre)));
   }
@@ -284,7 +284,7 @@
       ['Nappe amont / aval', (d.eau.am > -1e8 ? f(d.eau.am, 2) : '—') + ' / ' + (d.eau.av > -1e8 ? f(d.eau.av, 2) : '—')], ['Exploitation', `${f(d.q.exp, 2)} kN/m² sur ${f(d.q.larg, 2)} m à partir de y = ${f(d.q.y, 2)} m`],
       ['Béton / acier', `${f(d.beton.fck, 0)} / ${f(d.beton.fyk, 0)} MPa`], ['Sol de fondation', `q′u = ${f(R.fond.qu, 3)} MPa, tgφ′ = ${f(d.fond.mu, 3)}, kv = ${f(d.fond.kv / 1000, 1)} MPa/m`]], { leftText: true })
       + BA.table(['Section', 'z couron.', 'e voile', 'e semelle', 'patin', 'B', 'z remblai av.'], sec.map((r) => [r.nom, f(r.zc, 2), f(r.ep, 3), f(r.es, 2), f(r.patin, 2), f(r.B, 2), f(r.zav, 2)]), { leftText: true });
-    BA.note({ titre: 'Mur de soutènement en béton armé', code: 'MUR3D', regl: s.gen.regl === 'EC' ? 'EN 1990 A2 · EN 1992-1-1 · NF P 94-281 · EN 1998-5' : 'Livret 2.01 · BAEL 91 mod. 99 · Fascicule 62 titre V', projet: s.gen.projet,
+    BA.note({ titre: 'Mur de soutènement en béton armé', code: 'SOUTÈNEMENT', regl: s.gen.regl === 'EC' ? 'EN 1990 A2 · EN 1992-1-1 · NF P 94-281 · EN 1998-5' : 'Livret 2.01 · BAEL 91 mod. 99 · Fascicule 62 titre V', projet: s.gen.projet,
       sections: [{ titre: 'Données', html: don }].concat(sections(R).filter((x) => !x.titre.startsWith('Plans'))) });
   }
   function fromDon(t) {

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>POUTRE — Poutres continues · BridgeAI Studios</title>
+<title>TRAVÉES — Poutres continues · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Poutres continues de 1 à 20 travées à inertie constante ou variable : charges fixes, dénivellations, lignes d'influence, enveloppes UIC 71, SW/0, SW/2, LM1, A(l), Bc, Bt, Br, Mc80, Mc120, combinaisons et études de circulation (EN 15528, EN 1991-2 annexe C).">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/poutre.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/poutres-continues.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -32,8 +32,8 @@
 <header class="head">
   <div class="head-inner">
     <div>
-      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › POUTRE</div>
-      <div class="eyebrow">Socle de calcul · module POUTRE</div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › TRAVÉES</div>
+      <div class="eyebrow">Socle de calcul · module TRAVÉES</div>
       <h1>Poutres <em>continues</em></h1>
       <div class="badges"><span class="badge">EN 1991-2 §6.3, §6.4.5, annexe C</span><span class="badge">Livret 2.01</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 15528</span></div>
     </div>
@@ -111,8 +111,8 @@
       <li>Fascicule 61 titre II : A(l) avec a1, a2 (art. 4.2), lobes de même signe combinés pour l’effet maximal ; Bc 1 ou 2 camions par file, même sens, distance ≥ 4,50 m entre essieux de camions voisins, coefficient bc ; Bt avec bt ; Br ; Mc80 et Mc120 (un char ou une file de chars espacés de 30,50 m / 36,60 m). δ (art. 5.5) calculé par travée avec G = g·L et S = poids maximal du système B placé sur la travée. LM1 : TS + UDL par voie avec les α de l’AN française, voies de 3 m (sans répartition transversale).</li>
       <li>Pas de répartition transversale : la charge d’une file ou d’une voie est multipliée par le nombre de files (avec les coefficients réglementaires) puis par le facteur de répartition saisi.</li>
       <li>Concomitants : V concomitant de M max/min, M concomitant de V max/min, rotation sur appui concomitante de la réaction max/min (même position du convoi).</li>
-      <li>Études de circulation : wagon de référence de la catégorie EN 15528 à 4 essieux (1,50 m tampon-essieu, empattement de bogie 1,80 m, longueur 4P/p), convois illimités, g = 9,81 m/s². Majoration dynamique EN 1991-2 annexe C (φ’ + r·φ’’, r = 1 entretien courant, 0,5 soigné) avec LΦ et n0 (n0 par défaut : limite supérieure 94,76·L<sup>−0,748</sup> jusqu’à 20 m, limite inférieure 23,58·L<sup>−0,592</sup> au-delà, comme les exemples d’origine). Vitesse admissible par dichotomie au 1/256 de la vitesse étudiée. Rapports calculés sur M⁺, M⁻ et |V| maximaux de l’ouvrage.</li>
-      <li>Non traités : convois exceptionnels C, D, E et LM2, LM3, LM4 (prévus ailleurs), effets dynamiques au-delà de l’annexe C (calcul dynamique : module CEDYPIA).</li>
+      <li>Études de circulation : wagon de référence de la catégorie EN 15528 à 4 essieux (1,50 m tampon-essieu, empattement de bogie 1,80 m, longueur 4P/p), convois illimités, g = 9,81 m/s². Majoration dynamique EN 1991-2 annexe C (φ’ + r·φ’’, r = 1 entretien courant, 0,5 soigné) avec LΦ et n0 (n0 par défaut : limite supérieure 94,76·L<sup>−0,748</sup> jusqu’à 20 m, limite inférieure 23,58·L<sup>−0,592</sup> au-delà, comme les cas de référence). Vitesse admissible par dichotomie au 1/256 de la vitesse étudiée. Rapports calculés sur M⁺, M⁻ et |V| maximaux de l’ouvrage.</li>
+      <li>Non traités : convois exceptionnels C, D, E et LM2, LM3, LM4 (prévus ailleurs), effets dynamiques au-delà de l’annexe C (calcul dynamique : module DYNAMIQUE).</li>
     </ul>
   </details>
 </div>
@@ -497,7 +497,7 @@ BA.chrome({ base: '../' });
       + `<p>E = ${fmt(m.E, 0)} MPa · consoles ${fmt(m.consoles.g, 2)} / ${fmt(m.consoles.d, 2)} m · ${m.ns} sections par travée${st.Ix && st.Ix.length ? ' · tableau d’inertie importé (' + st.Ix.length + ' éléments)' : ''}.</p>` + $('schema').innerHTML });
     const sch = { fixes: 'Charges fixes', mob: 'Charges mobiles', comb: 'Combinaisons', circ: 'Étude de circulation' }[st.tab];
     secs.push({ titre: sch, html: $('out').innerHTML.replace(/<div class="selrow">[\s\S]*?<\/div>/, '') });
-    BA.note({ titre: 'Poutre continue — ' + sch, code: 'POUTRE', regl: 'EN 1991-2 · Livret 2.01 · Fascicule 61 titre II · EN 15528', projet: st.poutre.projet, sections: secs });
+    BA.note({ titre: 'Poutre continue — ' + sch, code: 'TRAVÉES', regl: 'EN 1991-2 · Livret 2.01 · Fascicule 61 titre II · EN 15528', projet: st.poutre.projet, sections: secs });
   }
 
   /* ── imports ── */

@@ -5,7 +5,7 @@
  *
  * Unités : profondeurs et cotes en m ; pl, pf, EM en MPa (usage pressiométrique) ; γ en kN/m³ ; φ en degrés ; c en kPa.
  *
- * Format SPS (fichier texte, CRLF, Windows-1252) tel que lu dans les fichiers d'origine :
+ * Format SPS (fichier texte, CRLF, Windows-1252) tel que lu dans les fichiers de référence :
  *   1 entreprise · 2 adresse · 3 projet / affaire · 4 ouvrage · 5 nom du sondage · 6 date
  *   7 « X  Y  Z »  (Z = cote de la tête du sondage)
  *   8 profondeur de la nappe (0 = pas de nappe relevée)

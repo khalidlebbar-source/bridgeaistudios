@@ -121,6 +121,7 @@ a.tile:hover{border-color:rgba(168,132,42,.45);box-shadow:0 14px 34px -14px rgba
 .status::before{content:"";width:6px;height:6px;border-radius:50%;background:#c3c7cf}
 .status.on{color:var(--teal)}.status.on::before{background:var(--teal)}
 .status.beta{color:var(--orange)}.status.beta::before{background:var(--orange)}
+.tile .ico{color:#b7a06a;display:inline-flex}.tile.dev .ico{color:#c3c7cf}
 .tile .code{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:var(--gold)}
 .tile.dev .code{color:#8a8f9c}
 .tile .name{font-size:13px;font-weight:400;line-height:1.35}

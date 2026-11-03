@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RACBA-RAPO — Cadres et portiques ponts-rails · BridgeAI Studios</title>
+<title>CADRES — Cadres et portiques ponts-rails · BridgeAI Studios</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
 <meta name="description" content="Cadres fermés (1 à 15 m) et portiques ouverts (5 à 25 m) en béton armé sous voies ferrées : LM71, SW/0, SW/2, Φ réduit sous remblai, Guyon-Massonnet, poussées des terres, lignes d'influence, combinaisons EN 1990 A2, ferraillage EC2, fissuration, flèche et fondations.">
-<link rel="canonical" href="https://www.bridgeaistudios.com/outils/racba-rapo.html">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/cadres-portiques.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="outils.css">
@@ -32,8 +32,8 @@ details.ref ul{columns:1}
 <header class="head">
   <div class="head-inner">
     <div>
-      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › RACBA-RAPO</div>
-      <div class="eyebrow">Socle de calcul · module RACBA-RAPO</div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › CADRES</div>
+      <div class="eyebrow">Socle de calcul · module CADRES</div>
       <h1>Cadres et <em>portiques</em> ponts-rails</h1>
       <div class="badges"><span class="badge">EN 1990 annexe A2 + AN</span><span class="badge">EN 1991-2 §6.3 à §6.5</span><span class="badge">EN 1992-1-1 / 1992-2</span><span class="badge">Fasc. 62 titre V</span><span class="badge">Livret 2.01</span></div>
     </div>
@@ -44,7 +44,7 @@ details.ref ul{columns:1}
 <div class="wrap"><div class="layout">
 <div class="col-in">
   <div class="card">
-    <div class="seg" id="seg"><button data-t="cadre">Cadre fermé (RACBA)</button><button data-t="portique">Portique ouvert (RAPO)</button></div>
+    <div class="seg" id="seg"><button data-t="cadre">Cadre fermé</button><button data-t="portique">Portique ouvert</button></div>
     <div class="actions">
       <button class="btn primary" id="b-calc">Calculer</button>
       <button class="btn gold" id="b-note">Note de calcul</button>
@@ -63,14 +63,14 @@ details.ref ul{columns:1}
   <div class="card">
     <details class="ref"><summary>Périmètre et hypothèses</summary>
       <ul>
-        <li><b>Modèle</b> : barres au feuillet moyen (BA.portique), traverse de portée LarCal = (ouverture + épaisseur du piédroit)/sin(biais), largeur LonDal·sin(biais) ; piédroits de largeur variable de la longueur biaise des piédroits à celle de la traverse ; goussets par épaisseur effective (pente limitée à 1/3) ; radier ou semelles sur appuis élastiques (k × aire d’influence), ressorts doublés pour les actions de courte durée ; béton Ecm (courte durée) et Ecm/(1+φ) (longue durée). Portique : semelles sur sol élastique, ou ressorts (Kv, Kh, Kθ issus de FONDATIO pour des fondations semi-profondes ou profondes), ou encastrement.</li>
-        <li><b>Mode « tronçon »</b> : sollicitations totales de l’ouvrage, charges ferroviaires × n voies × Φ × α × K de Guyon-Massonnet (GMSLT, dalle isotrope α = 1, portée équivalente 0,8 × portée droite, largeur de chargement 2,25 m + diffusion 4:1 dans ballast et remblai + 1:1 dans le béton, 17 fibres). <b>Mode « tranche de 1 m »</b> (cadre) : biais pris à 100 gr, charge d’une voie répartie sur 2,25 m + 1/4 dans le ballast, 1/2 (ou 30°) dans le remblai, 1/4 (ou 45°) dans le béton jusqu’au feuillet moyen (EN 1991-2 §6.3.6.2, §6.3.6.3), recouvrement des bandes des deux voies.</li>
+        <li><b>Modèle</b> : barres au feuillet moyen (BA.portique), traverse de portée LarCal = (ouverture + épaisseur du piédroit)/sin(biais), largeur LonDal·sin(biais) ; piédroits de largeur variable de la longueur biaise des piédroits à celle de la traverse ; goussets par épaisseur effective (pente limitée à 1/3) ; radier ou semelles sur appuis élastiques (k × aire d’influence), ressorts doublés pour les actions de courte durée ; béton Ecm (courte durée) et Ecm/(1+φ) (longue durée). Portique : semelles sur sol élastique, ou ressorts (Kv, Kh, Kθ issus de FONDATIONS pour des fondations semi-profondes ou profondes), ou encastrement.</li>
+        <li><b>Mode « tronçon »</b> : sollicitations totales de l’ouvrage, charges ferroviaires × n voies × Φ × α × K de Guyon-Massonnet (RÉPARTITION, dalle isotrope α = 1, portée équivalente 0,8 × portée droite, largeur de chargement 2,25 m + diffusion 4:1 dans ballast et remblai + 1:1 dans le béton, 17 fibres). <b>Mode « tranche de 1 m »</b> (cadre) : biais pris à 100 gr, charge d’une voie répartie sur 2,25 m + 1/4 dans le ballast, 1/2 (ou 30°) dans le remblai, 1/4 (ou 45°) dans le béton jusqu’au feuillet moyen (EN 1991-2 §6.3.6.2, §6.3.6.3), recouvrement des bandes des deux voies.</li>
         <li><b>Charges</b> : LM71 à essieux répartis sur 6,40 m (156,25 kN/m) + 80 kN/m fractionnable, SW/0, SW/2 par lignes d’influence ; Φ2 ou Φ3 (LΦ = max[1,3·(L + 2H)/3 ; L ; H]) réduit sous remblai (§6.4.5.3) ; groupe gr11/gr21 : vertical + freinage/démarrage (33 kN/m × α ou 35 kN/m pour SW/2, × longueur de l’ouvrage × Kd du Livret 2.01) + surcharge des remblais (150 kN/m par voie diffusée sur 3 m à 0,70 m sous le rail puis à 2:1, poussée uniforme × k et réaction triangulaire du remblai opposé) ; avec deux voies, SW/2 sur une voie + LM71 sur l’autre (gr26). Quand le freinage agit, la charge verticale favorable est conservée à 0,5.</li>
         <li><b>Permanentes</b> : poids propre (le radier, coulé sur le sol, n’est pas porté par le cadre), étanchéité, remblai sur traverse × Kter (1,05/0,95) × coefficient de Marston, ballast et équipements (1,3/0,7), poussées Ka et K0 = Ka(1 + 2/3 sin φ) avec φ ± Δφ (dissymétrie gauche/droite), terres sur talons et patins, eau (pression latérale et sous-pression), retrait. Actions de même origine pondérées ensemble (ballast + poussées du ballast, talon + poussée).</li>
         <li><b>Combinaisons</b> : construites section par section pour chaque grandeur (M, N, V) avec choix des valeurs sup/inf selon le signe de l’effet et des familles Ka / K0 ; ELU 6.10 (γG = 1,35/1,00, γQ trafic 1,45, SW/2 1,20 modifiable, surcharge des remblais 1,45, température 1,50, ψ0 = 0,8 / 0,6), ELS caractéristiques, fréquentes (ψ1 = 0,8 / 0,7 selon le nombre de voies), quasi permanentes (ψ2 = 0 trafic, 0,5 température). Température : ΔTN et ΔTM combinés (EN 1991-1-5 §6.1.5, ωN = 0,35, ωM = 0,75).</li>
         <li><b>Justifications</b> : BA.sectionBA (EN 1992) — dimensionnement ELU en flexion composée (flexion simple aux sections d’angle, option), contraintes ELS (0,6 fck ; 0,45 fck QP ; 0,8 fyk), ouverture des fissures §7.3.4 ou contrainte limite de l’acier, ferraillage minimal de maîtrise de la fissuration §7.3.2 (σs du tableau 7.2N), non-fragilité §9.2.1.1, effort tranchant §6.2 (dalle). Fatigue et séisme non traités.</li>
         <li><b>Flèche</b> : LM71 × Φ × α sur une voie (K de la voie la plus excentrée), rigidité interpolée entre états non fissuré et fissuré (§7.4.3), comparée à L/600 et à L/δ de la figure A2.3 de l’EN 1990 (saisi, × 0,7 pour une travée isolée, ÷ bv).</li>
-        <li><b>Fondations</b> : contraintes locales des appuis élastiques ; vérification globale du Fascicule 62 titre V (q’ref = (3σmax + σmin)/4, q’adm = q’0 + (q’u − q’0)·iδ/γ avec iδ de l’annexe F1, décompression 0 / 25 / 90 %, glissement tan φ/1,2). Pour un calcul complet avec sondage pressiométrique, utiliser FONDATIO.</li>
+        <li><b>Fondations</b> : contraintes locales des appuis élastiques ; vérification globale du Fascicule 62 titre V (q’ref = (3σmax + σmin)/4, q’adm = q’0 + (q’u − q’0)·iδ/γ avec iδ de l’annexe F1, décompression 0 / 25 / 90 %, glissement tan φ/1,2). Pour un calcul complet avec sondage pressiométrique, utiliser FONDATIONS.</li>
       </ul>
     </details>
   </div>
@@ -125,7 +125,7 @@ details.ref ul{columns:1}
       { id: 'poicor', label: 'Corniches + garde-corps', unit: 'kN/m', help: 'total des deux rives (valeurs types : fichier EquipementRail)' },
       { id: 'vmax', label: 'Vitesse de la ligne', unit: 'km/h' },
       { id: 'entretien', label: 'Entretien de la voie', type: 'sel', options: [['soigne', 'soigné (Φ2)'], ['courant', 'courant (Φ3)']] },
-      { id: 'hPhi', label: 'Couverture h pour Φred', type: 'sel', options: [['EN', 'EN : extrados → dessus traverses'], ['origine', 'programme d’origine (sous traverses)']] },
+      { id: 'hPhi', label: 'Couverture h pour Φred', type: 'sel', options: [['EN', 'EN : extrados → dessus traverses'], ['origine', 'programme de référence (sous traverses)']] },
       { id: 'alpha', label: 'α (LM71, SW/0)' },
       { id: 'LM71', label: 'LM71', type: 'chk' }, { id: 'SW0', label: 'SW/0', type: 'chk' }, { id: 'SW2', label: 'SW/2', type: 'chk' },
       { id: 'freinLM', label: 'Démarrage LM71', unit: 'kN/m' },
@@ -364,7 +364,7 @@ details.ref ul{columns:1}
     secs.push({ titre: '7. Flèche', html: `<p>δ = ${fmt(f.dGross * 1000, 3)} mm × ${fmt(f.ratioI, 3)} = ${fmt(f.delta * 1000, 2)} mm ; admissible ${fmt(f.admConfort * 1000, 2)} mm (confort) et ${fmt(f.adm600 * 1000, 2)} mm (L/600) : ${BA.verdict(f.ok)}</p>` });
     secs.push({ titre: '8. Fondations', html: r.sol.fond.map((fd) => `<p><b>${esc(fd.nom)}</b></p>` + T(['État', 'Cible', 'N', 'H', 'M', 'σmax', 'Décomp.', 'q’ref', 'q’adm', 'Verdict'], fd.lignes.map((l) => [l.et, l.cible, fmt(l.N, 0), fmt(l.H, 0), fmt(l.M, 0), fmt(l.smax, 0), fmt(l.dec, 1), fmt(l.qref, 3), d.qu > 0 ? fmt(l.qadm, 3) : '—', BA.verdict(l.okP && l.okD && l.okG)]))).join('') });
     if (r.alertes.length) secs.push({ titre: 'Alertes', html: r.alertes.map(esc).join('<br>') });
-    BA.note({ titre: (d.type === 'cadre' ? 'Cadre fermé' : 'Portique ouvert') + ' sous voies ferrées', code: 'RACBA-RAPO', regl: 'EN 1990 A2 · EN 1991-2 · EN 1992 · Fascicule 62 titre V', projet: d.projet, sections: secs });
+    BA.note({ titre: (d.type === 'cadre' ? 'Cadre fermé' : 'Portique ouvert') + ' sous voies ferrées', code: 'CADRES', regl: 'EN 1990 A2 · EN 1991-2 · EN 1992 · Fascicule 62 titre V', projet: d.projet, sections: secs });
   }
 
   /* ── événements ── */

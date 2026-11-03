@@ -17,6 +17,30 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   BA.fmt = fmt; BA.num = num; BA.esc = esc;
 
+
+  /* ── pictogrammes des modules (dessins propres à BridgeAI Studios, viewBox 0 0 48 32) ── */
+  BA.ICONES = {
+    'sections-ba': '<rect x="14" y="3" width="20" height="26" rx="1"/><circle cx="18.5" cy="24.5" r="1.6"/><circle cx="24" cy="24.5" r="1.6"/><circle cx="29.5" cy="24.5" r="1.6"/><circle cx="18.5" cy="7.5" r="1.1"/><circle cx="29.5" cy="7.5" r="1.1"/><path d="M14 13h20" stroke-dasharray="2 2"/>',
+    'poutres-continues': '<path d="M3 12h42" stroke-width="2.4"/><path d="M5 14l-2.5 4h5zM24 14l-2.5 4h5zM43 14l-2.5 4h5z"/><path d="M3 12q10.5 10 21 0q10.5 10 21 0" stroke-dasharray="2 1.6"/>',
+    'repartition-transversale': '<path d="M4 9h40M4 13h40"/><path d="M8 13v5M18 13v5M30 13v5M40 13v5"/><path d="M6 27q18 -10 36 0" /><path d="M14 4v4M24 4v4"/><path d="M12 6l2 2 2-2M22 6l2 2 2-2"/>',
+    'cadres-portiques': '<path d="M2 6h44" opacity=".5"/><rect x="9" y="9" width="30" height="20"/><rect x="13" y="13" width="22" height="12"/><path d="M15 6v-2h6v2M27 6v-2h6v2"/>',
+    'sondages-pressio': '<path d="M10 3v26" stroke-width="2"/><path d="M14 8h6M14 13h12M14 18h9M14 23h18M14 28h14"/><path d="M4 11h10M4 21h10" opacity=".5"/>',
+    'fondations': '<path d="M12 4h24v8H12z"/><path d="M16 12v17M24 12v17M32 12v17"/><path d="M2 14h44" opacity=".45" stroke-dasharray="3 2"/>',
+    'appareils-appui': '<path d="M8 6h32v4H8zM8 22h32v4H8z"/><path d="M10 10h28v12H10z"/><path d="M10 14h28M10 18h28" stroke-width="1.6"/>',
+    'efforts-horizontaux': '<path d="M3 10h42" stroke-width="2.2"/><path d="M8 12v16M24 12v16M40 12v16"/><path d="M30 5h12M38 2l4 3-4 3"/><path d="M5 30h38" opacity=".5"/>',
+    'modele-rail': '<circle cx="6" cy="10" r="1.6"/><circle cx="24" cy="10" r="1.6"/><circle cx="42" cy="10" r="1.6"/><circle cx="6" cy="28" r="1.6"/><circle cx="42" cy="28" r="1.6"/><path d="M7.6 10h14.8M25.6 10h14.8M6 11.6v14.8M42 11.6v14.8"/><path d="M14 4h4M30 4h4M15 2v4M31 2v4" opacity=".6"/>',
+    'piles-culees': '<path d="M6 6h36v5H6z"/><path d="M20 11h8v14h-8z"/><path d="M14 25h20v5H14z"/>',
+    'poutrelles-enrobees': '<rect x="4" y="5" width="40" height="22" rx="1" opacity=".55"/><path d="M9 10h8M13 10v12M9 22h8M20 10h8M24 10v12M20 22h8M31 10h8M35 10v12M31 22h8" stroke-width="1.8"/>',
+    'tablier-rail': '<path d="M3 15h42v5H3z"/><path d="M6 12h3M14 12h3M22 12h3M30 12h3M38 12h3" stroke-width="2"/><path d="M4 10h40" stroke-width="1"/><path d="M8 20v9M40 20v9"/>',
+    'tablier-route': '<path d="M3 15h42v5H3z"/><path d="M10 12h6M22 12h6M34 12h6" stroke-width="1.4" stroke-dasharray="3 2"/><path d="M8 20v9M40 20v9"/><path d="M3 15l-1-3M45 15l1-3"/>',
+    'murs-soutenement': '<path d="M14 3h6v20h-6z"/><path d="M6 23h24v6H6z"/><path d="M20 8l24 -4M20 23h26" opacity=".5"/><path d="M26 12l6 3M26 17l8 3" opacity=".6"/>',
+    'murs-u': '<path d="M8 4h5v20H8zM35 4h5v20h-5zM8 24h32v5H8z"/><path d="M2 4l6 2M46 4l-6 2" opacity=".5"/>',
+    'dynamique-rail': '<path d="M3 16q4 -10 8 0t8 0t8 0t8 0t8 0" /><path d="M3 26h42" opacity=".5"/><path d="M6 4h12v5H6z"/><circle cx="9" cy="10.5" r="1.2"/><circle cx="15" cy="10.5" r="1.2"/>',
+    'epreuves-chargement': '<path d="M3 18h42" stroke-width="2"/><path d="M6 20v9M42 20v9"/><path d="M15 7h14v6H15zM29 9h5l2 4h-7z"/><circle cx="18" cy="15" r="1.6"/><circle cx="32" cy="15" r="1.6"/><path d="M24 22v6M22 26l2 2 2-2" opacity=".7"/>',
+    'ouvrages-types': '<path d="M2 10h44" stroke-width="2"/><path d="M4 12v14M44 12v14M18 12v14h4V12M26 12v14h4V12"/><path d="M14 26h12M2 29h44" opacity=".5"/>',
+  };
+  BA.icone = (slug, size = 44) => BA.ICONES[slug] ? `<svg viewBox="0 0 48 32" width="${size}" height="${Math.round(size * 2 / 3)}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${BA.ICONES[slug]}</svg>` : '';
+
   if (typeof document === 'undefined') { if (typeof module !== 'undefined') module.exports = BA; return; }
 
   /* ── habillage : menu, en-tête, pied ── */
@@ -40,6 +64,14 @@
     foot.innerHTML = `<div class="footer-bottom"><p>Bridge<span style="color:#c9a84c">AI</span> Studios · Outils de calculs des ponts · résultats à vérifier par un ingénieur qualifié avant tout usage contractuel</p>
       <p><a href="mailto:contact@bridgeaistudios.com">contact@bridgeaistudios.com</a> · <a href="${base}mentions-legales.html">Mentions légales</a> · © 2026 BridgeAI Studios</p></div>`;
     document.body.append(foot);
+    // pictogramme du module à côté du titre
+    const slug = (location.pathname.split('/').pop() || '').replace(/\.html$/, '');
+    const h = document.querySelector('.head h1');
+    if (!o.hub && h && BA.ICONES[slug] && !document.querySelector('.head .mod-ico')) {
+      const s2 = document.createElement('span'); s2.className = 'mod-ico'; s2.innerHTML = BA.icone(slug, 54);
+      s2.style.cssText = 'display:inline-block;vertical-align:middle;margin-right:14px;color:#a8842a';
+      h.prepend(s2);
+    }
   };
 
   /* ── formulaires décrits par un schéma ──

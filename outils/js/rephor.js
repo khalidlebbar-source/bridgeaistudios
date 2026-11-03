@@ -432,7 +432,7 @@
     let plaques = inp.appuis.map((a) => (a.app === 'elasto' || a.appD === 'elasto' ? (a.plaque && a.plaque.a > 0 ? Object.assign({}, a.plaque) : null) : null));
     const mode = inp.modeApp || 'verif';
     if (mode !== 'verif' || plaques.some((p, j) => p === null && (inp.appuis[j].app === 'elasto' || inp.appuis[j].appD === 'elasto'))) {
-      if (!M) throw new Error('Module APPMOBIL (appmobil.js) indisponible pour dimensionner les appareils.');
+      if (!M) throw new Error('Module ÉLASTOMÈRES (appmobil.js) indisponible pour dimensionner les appareils.');
       inp.appuis.forEach((a, j) => {
         if (!(a.app === 'elasto' || a.appD === 'elasto')) return;
         if (mode === 'verif' && plaques[j]) return;
@@ -492,7 +492,7 @@
       const nl = rep.G.lignes.filter((x) => x.j === l.j).length;
       const rec = { j: l.j, li: i, cote: l.cote, app: l.app, n };
       if (l.app === 'elasto') {
-        if (!M) { rec.err = 'APPMOBIL indisponible'; out.push(rec); return; }
+        if (!M) { rec.err = 'ÉLASTOMÈRES indisponible'; out.push(rec); return; }
         const combis = combisAppareil(rep, i, inp);
         const opts = { G: inp.Gld ?? 0.9, Gd: inp.Gcd ?? 1.8, sigLim: inp.sigLim ?? 15, alpha0: inp.alpha0 ?? 0.003, hmode: 'v', fy: inp.fyFrette ?? 235 };
         const regl = inp.reglApp === 'setra2000' ? 'setra2000' : 'en1337';
@@ -516,7 +516,7 @@
     return out;
   }
 
-  /* ── export « fichiers appui » (relus par le module APPUI) ── */
+  /* ── export « fichiers appui » (relus par le module PILES-CULÉES) ── */
   function exportAppuis(R) {
     const { rep, parAppui, inp } = R;
     return rep.app.map((ap, j) => {
@@ -524,7 +524,7 @@
       const act = (id, nom, H, w, duree) => ({ id, nom, duree, H, HX: H * sx, HY: H * sy, w });
       const lignes = rep.G.lignes.map((l, i) => [l, i]).filter(([l]) => l.j === j).map(([l, i]) => ({ cote: l.cote || 'unique', type: l.app, nombre: ap.napp || 1, plaque: l.app === 'elasto' ? (R.plaques[j] || null) : null, Kcd: rep.RB[i].cd, Kld: rep.RB[i].ld }));
       return {
-        format: 'BA.rephor.appui', version: 1, module: 'REPHOR', projet: inp.projet || '', appui: j, nom: ap.nom || `Appui ${j}`,
+        format: 'BA.rephor.appui', version: 1, module: 'HORIZONTAL', projet: inp.projet || '', appui: j, nom: ap.nom || `Appui ${j}`,
         x: rep.G.x[j], biais_gr: phi / GR, type: ap.type, typeLibelle: TYPES_APPUI[ap.type],
         convention: 'H > 0 dans le sens des abscisses croissantes ; HX perpendiculaire à la file d’appuis, HY parallèle (HX = H·sinφ, HY = H·cosφ) ; kN, m',
         raideurs: { futCD: RA.Kfcd, futLD: RA.Kfld, teteCD: RA.Kcd, teteLD: RA.Kld, totaleCD: rep.Keq[j].cd, totaleLD: rep.Keq[j].ld },
@@ -542,7 +542,7 @@
     });
   }
 
-  /* ── lecture d'un fichier .don d'origine (REPHOR) ── */
+  /* ── lecture d'un fichier .don d'origine (HORIZONTAL) ── */
   function parseDon(txt) {
     const lines = String(txt).replace(/\r/g, '').split('\n');
     const kv = {};

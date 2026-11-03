@@ -20,7 +20,7 @@
  * Solution exacte : W = Wh + G(u − uₑ), G solution fondamentale de la bande infinie (amortie), Wh solution homogène
  * fixée par les 4 conditions de bord (bases amorties depuis chaque bord : numériquement stable quel que soit θ).
  * Charge hors de la dalle (encorbellement) : « prolongé » (prolongement analytique de la formule, comme les abaques
- * et le programme d'origine) ou « statique » (force et moment ramenés au bord).
+ * et le programme de référence) ou « statique » (force et moment ramenés au bord).
  *
  * Unités : m, kN, kN/m², moments transversaux en kN·m/m.
  */
@@ -147,7 +147,7 @@
 
   /* ── 4. modèle d'un tablier : tables K(y, e) et μn(y, e) ──
    * p = {b, L, theta, alpha, nu, N (harmoniques), xs (section, défaut L/2), pas : 'table' (b/8, comme les abaques et
-   *      le programme d'origine, interpolation linéaire en e) ou 'fin' (b/64), interp, hors, fibres:[y], emin, emax} */
+   *      le programme de référence, interpolation linéaire en e) ou 'fin' (b/64), interp, hors, fibres:[y], emin, emax} */
   function modele(p) {
     const b = p.b, L = p.L, th = p.theta, al = p.alpha === undefined ? 1 : p.alpha, nu = p.nu || 0, N = p.N || 5;
     const xs = p.xs === undefined ? L / 2 : p.xs, o = { interp: p.interp, hors: p.hors };
@@ -440,7 +440,7 @@
 
   /* ponts-rails : voie d'excentricité ey ; largeur de répartition transversale au plan moyen de la dalle
    *  lt = ltrav + 2·hb/4 + 2·(hd/2)/pb  (EN 1991-2 §6.3.6.3 et fig. 6.6 : diffusion 4:1 dans le ballast sous la traverse ;
- *  dans le béton jusqu'au plan moyen, pente pb = 4 (4:1, hypothèse du programme d'origine) ou 1 (45°)).
+ *  dans le béton jusqu'au plan moyen, pente pb = 4 (4:1, hypothèse du programme de référence) ou 1 (45°)).
    * longitudinalement : LM71 = 4 essieux de 250 kN répartis uniformément sur 6,40 m (156,25 kN/m, §6.3.6.2 (2))
    * + 80 kN/m de part et d'autre ; SW/0 = 2 × 133 kN/m sur 15 m séparés de 5,30 m ; SW/2 = 2 × 150 kN/m sur 25 m
    * séparés de 7,00 m. Recherche de la position longitudinale la plus défavorable à la section xs. */
@@ -492,7 +492,7 @@
     return res;
   }
 
-  /* ── 7. API pour les autres modules (RACBA-RAPO, RADBAN…) ──
+  /* ── 7. API pour les autres modules (CADRES, RADBAN…) ──
    * K(p, y, e) : coefficient de répartition transversale à la fibre y pour une charge en ligne d'excentricité e
    * Kcharge(p, y, e1, e2) : K moyen pour une charge répartie uniformément sur [e1, e2]
    * enveloppe(p, charges) : calcul complet (voir calcul) */
@@ -530,7 +530,7 @@
     return out;
   }
 
-  /* lecture d'un fichier .don du programme d'origine (format « clé ;commentaire » puis valeur) */
+  /* lecture d'un fichier .don du programme de référence (format « clé ;commentaire » puis valeur) */
   function lireDon(txt) {
     const lines = String(txt).replace(/\r/g, '').split('\n'), v = {};
     for (let i = 0; i < lines.length - 1; i++) {

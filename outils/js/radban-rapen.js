@@ -129,7 +129,7 @@
    * dalle orthotrope isotrope (α = 1) de largeur 2b, portée équivalente Le = L (1 travée), 0,9 L (travée de rive),
    * 0,8 L (travée intermédiaire) ; θ = b/Le. Pour chaque voie d'excentricité e, la charge est répartie sur la largeur
    * lt = ltrav + 2·hb/4 + 2·(hd/2)/4 (EN 1991-2 §6.3.6.3, diffusion 4:1 dans le ballast et le béton) ; le coefficient
-   * appliqué au moment global de la dalle est K à l'axe de la dalle (y = 0), comme le programme d'origine. */
+   * appliqué au moment global de la dalle est K à l'axe de la dalle (y = 0), comme le programme de référence. */
   function coefK(d, g) {
     const nT = d.travees.length;
     const b = (d.type === 'rapen' ? g.Bres : g.beq) / 2, hd = d.type === 'rapen' ? +d.h : g.hm;
@@ -233,7 +233,7 @@
     const ph = phi(d), Kt = coefK(d, g);
     const mods = ['UIC71', 'SW0', 'SW2'];
     const kSec = (s) => s.kind === 'cg' ? 0 : s.kind === 'cd' ? nT - 1 : s.travee;
-    // K appliqué à une section : celui de la travée à laquelle elle appartient (convention du programme d'origine)
+    // K appliqué à une section : celui de la travée à laquelle elle appartient (convention du programme de référence)
     const Kof = (s, v) => Kt[kSec(s)].K[v];
     const voiesCh = Array.from({ length: d.nCharge }, (_, v) => v);
     const fA = ph.phi * ph.alpha, fB = ph.phi;          // α appliqué à LM71 et SW/0 (EN 1991-2 §6.3.2 (3))
@@ -251,7 +251,7 @@
       return { e, u, A, B };
     }
     /* accotements : 5 kN/m² sur les deux pistes, chargés sur toute la longueur du tablier (charge non fractionnée,
-     * présente ou absente : convention retrouvée sur les exemples d'origine) */
+     * présente ou absente : convention retrouvée sur les cas de référence) */
     const qAcc = (+d.qAcc || 0) * 2 * (+d.lAcc || 0);
     const envAcc = (li) => { const v = qAcc * li.integ(li.x0, li.xn); return { max: Math.max(0, v), min: Math.min(0, v) }; };
 
@@ -505,10 +505,10 @@
         app: a.j === (d.appuiFixe || 0) ? 'fixe' : 'elasto', appD: '', napp: a.n, pa: 0, pb: 0, pn: 0, pti: 12, pts: 3,
         Gmax: Math.round(G * 10) / 10, Qmax: Math.round(Q * 10) / 10, rot: +(a.rot.G + a.rot.Q).toFixed(6) };
     });
-    return { module: 'rephor', version: 1, source: 'RADBAN-RAPEN',
+    return { module: 'rephor', version: 1, source: 'TABLIER RAIL',
       v: { projet: d.projet || '', ouvrage: 'rail', nvoies: d.nVoies, biais: d.biais, travees: d.travees.join(' '), about0: d.cg, aboutn: d.cd, joints: '', modeApp: 'dim' }, ap };
   }
-  /* Descente de charges par file pour le module APPUI : réactions globales et par appareil (kN, rad), convention
+  /* Descente de charges par file pour le module PILES-CULÉES : réactions globales et par appareil (kN, rad), convention
    * « réaction » (changer le signe pour l'action sur l'appui). */
   function exportAppuis(R) {
     const d = R.d;
@@ -516,7 +516,7 @@
       const pa = a.parApp[a.iMax], pm = a.parApp[a.iMin];
       const r1 = (o) => ({ max: +o.max.toFixed(2), min: +o.min.toFixed(2) });
       return {
-        format: 'BA.radbanRapen.appui', version: 1, module: 'RADBAN-RAPEN', projet: d.projet || '', appui: a.j, nom: a.nom, x: a.x, biais_gr: d.biais,
+        format: 'BA.radbanRapen.appui', version: 1, module: 'TABLIER RAIL', projet: d.projet || '', appui: a.j, nom: a.nom, x: a.x, biais_gr: d.biais,
         convention: 'Réactions verticales positives vers le haut (kN) ; groupes de charges majorés dynamiquement (Φ) et répartis transversalement ; rotations en rad.',
         global: { pp: +a.R.pp.toFixed(2), superstructuresMax: +a.R.supMax.toFixed(2), superstructuresMin: +a.R.supMin.toFixed(2), denivellations: r1(a.R.den), gr12: r1(a.R.A), gr14: r1(a.R.B), accotements: r1(a.R.acc),
           combinaisons: Object.fromEntries(Object.entries(a.cmb).map(([k, v]) => [k, r1(v)])) },
@@ -700,7 +700,7 @@
       i++;
     }
     const n = (k, def = 0) => { const x = parseFloat(String(v[k] ?? '').replace(',', '.')); return Number.isFinite(x) ? x : def; };
-    if (v.application && !/RADBAN/i.test(v.application)) throw new Error('Ce fichier n’est pas un fichier de données RADBAN-RAPEN.');
+    if (v.application && !/RADBAN/i.test(v.application)) throw new Error('Ce fichier n’est pas un fichier de données .don de tablier rail.');
     const rapen = n('typstruct') === 1;
     const nt = Math.max(1, Math.min(7, Math.round(n('nbtrav', 1))));
     const trav = Array.from({ length: nt }, (_, k) => n('lontrav' + (k + 1)));
