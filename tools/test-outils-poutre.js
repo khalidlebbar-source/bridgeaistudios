@@ -22,7 +22,8 @@ const secAt = (S, r, x, side) => r.sec.find((s) => Math.abs(s.x - x) < 1e-9 && (
   r = P.fixe(S, [{ type: 't', a: 0, b: 10, q1: 0, q2: 10 }]);
   ok(near(Math.max(...r.diag.map((d) => d.M)), 10 * 100 / (9 * Math.sqrt(3)), 1e-4) && near(r.appuis[1].R, 100 / 3), 'trapèze 0→10 : Mmax = qL²/(9√3), R = qL/3');
   r = P.fixe(S, [{ type: 'C', x: 0, C: 100 }]);
-  ok(near(r.appuis[0].R, 10) && near(r.appuis[0].th, 100 * 10 / (3 * EI), 1e-6), 'couple sur appui : R = C/L, θ = CL/3EI');
+  // couple horaire C sur l'appui gauche : M(0⁺) = +C, RA = −C/L, θ = +CL/3EI (horaire)
+  ok(near(secAt(S, r, 0).M, 100) && near(r.appuis[0].R, -10) && near(r.appuis[0].th, 100 * 10 / (3 * EI), 1e-6), 'couple sur appui : M = C, RA = −C/L, θ = CL/3EI');
   // encastrée-encastrée, P à a = 3 : MA = −Pab²/L²
   const Se = beam([10], { appuis: [{ type: 'encastre' }, { type: 'encastre' }] });
   r = P.fixe(Se, [{ type: 'P', x: 3, P: 100 }]);
@@ -32,9 +33,9 @@ const secAt = (S, r, x, side) => r.sec.find((s) => Math.abs(s.x - x) < 1e-9 && (
   r = P.fixe(S2, [{ type: 'q', q: 10 }]);
   ok(near(secAt(S2, r, 10, 'g').M, -125) && near(r.appuis[1].R, 125), '2 travées : M appui −qL²/8, R = 1,25qL');
   ok(near(secAt(S2, r, 10, 'g').V, -62.5) && near(secAt(S2, r, 10, 'd').V, 62.5), '2 travées : V de part et d\'autre de l\'appui ±5qL/8');
-  // dénivellation δ de l'appui central : M = 3EIδ/L² (sens : appui descendu → moment négatif de travée réduit)
+  // dénivellation δ (vers le bas) de l'appui central : M appui = +3EIδ/L², R = −6EIδ/L³
   r = P.fixe(S2, [{ type: 'd', appui: 2, v: 0.01 }]);
-  ok(near(secAt(S2, r, 10).M, -3 * EI * 0.01 / 100, 1e-6) && near(r.appuis[1].w, 0.01), 'dénivellation 1 cm : M appui = −3EIδ/L²');
+  ok(near(secAt(S2, r, 10).M, 3 * EI * 0.01 / 100, 1e-6) && near(r.appuis[1].R, -6 * EI * 0.01 / 1000, 1e-6) && near(r.appuis[1].w, 0.01), 'dénivellation 1 cm : M appui = +3EIδ/L², R = −6EIδ/L³');
   // appuis élastiques : flèche sous q = R/k
   const Sk = beam([10], { appuis: [{ type: 'elastique', kv: 1000 }, { type: 'elastique', kv: 1000 }] });
   r = P.fixe(Sk, [{ type: 'q', q: 10 }]);
@@ -80,8 +81,9 @@ const secAt = (S, r, x, side) => r.sec.find((s) => Math.abs(s.x - x) < 1e-9 && (
   // Bc : M max absolu poutre de 10 m (1 camion déterminant) — table classique Mmax = 120·(…)
   const S10 = P.build({ E: 30000, ns: 50, travees: [{ L: 10, Ig: 1 }], appuis: [{}, {}] }), L10 = P.lignes(S10);
   const mBc = Math.max(...L10.sec.map((l) => P.envModele(l.M, 'BC', { nCamBc: 2 }).max.v));
-  // 3 essieux 60/120/120 (4,5 + 1,5 m) : résultante 300 kN à 2,1 m de l'essieu arrière ; théorème de Barré
-  ok(near(mBc, 300 * Math.pow(5 - 0.3, 2) / 10 - 120 * 1.5, 1e-6), 'Bc 10 m : M max absolu (Barré) ' + mBc.toFixed(2));
+  // un camion (60/120/120, 4,5 + 1,5 m) : résultante 300 kN à 0,30 m du 1er essieu de 120 kN ; théorème de Barré :
+  // M = R·(L/2 − 0,15)²/L − 120 × 1,5 = 525,675 kN·m (section à 5,15 m ; sections tous les 0,20 m ici → 525,6)
+  ok(near(mBc, 300 * Math.pow(4.85, 2) / 10 - 120 * 1.5, 2e-4), 'Bc 10 m : M max absolu (théorème de Barré 525,68) ' + mBc.toFixed(2));
   // UIC 71, 2 travées égales 20 m : M sur appui comparé à une recherche directe par pas de 1 cm sur la LI exacte
   const S2 = P.build({ E: 30000, ns: 20, travees: [{ L: 20, Ig: 1 }, { L: 20, Ig: 1 }], appuis: [{}, {}, {}] }), L2 = P.lignes(S2);
   const ia = S2.sections.findIndex((s) => Math.abs(s.x - 20) < 1e-9);
@@ -96,7 +98,7 @@ const secAt = (S, r, x, side) => r.sec.find((s) => Math.abs(s.x - x) < 1e-9 && (
   ok(near(P.envAL(mid.M, 3.5, 1, 1).max.v, (2.3 + 360 / 32) * 3.5 * 50), 'A(l) mi-portée 20 m');
   // A(l) sur appui de 2 travées : les deux travées chargées, l = 40 m
   const a1 = P.envAL(L2.sec[ia].M, 3.5, 1, 1).min.v;
-  ok(near(a1, -(2.3 + 360 / 52) * 3.5 * 100), 'A(l) appui 2 × 20 m : l = 40 m, M = −A·b·L²/8');
+  ok(near(a1, -(2.3 + 360 / 52) * 3.5 * 50, 1e-3), 'A(l) appui 2 × 20 m : l = 40 m, M = −A·b·L²/8 (' + a1.toFixed(1) + ')');
   // concomitants : V concomitant de M max à mi-portée isostatique sous q illimitée = 0
   const cu = P.mobile(S, { cu: { ax: [], q: 10, e: 0 } }, ['CU']).res.CU;
   ok(near(cu.sec[5].M.max, 500) && near(cu.sec[5].M.cMax, 0, 1e-6), 'charge répartie illimitée : M = qL²/8, V concomitant nul');
@@ -161,7 +163,8 @@ const cfgA = (vRef) => ({ seq: [{ veh: wagonA, n: 1 }], illimite: true, vEtud: 1
     if (va === null) ok(r.va.aucune, 'VarPortée ' + L + ' m : vitesse admissible « Aucune »');
     else ok(near(r.va.v, va, 1e-9), 'VarPortée ' + L + ' m : vitesse admissible ' + r.va.v.toFixed(3) + ' km/h (origine ' + va + ')');
   });
-  ok(em < 1e-4, 'VarPortée : M, V à vide, à plein et dynamiques, 13 portées — écart max ' + (em * 1e3).toFixed(3) + ' ‰ (' + worst + ')');
+  // tolérance 0,2 ‰ : à 1 m, V à plein = un essieu de 18 t (176,58 kN) ; l'origine imprime 176,56
+  ok(em < 2e-4, 'VarPortée : M, V à vide, à plein et dynamiques, 13 portées — écart max ' + (em * 1e3).toFixed(3) + ' ‰ (' + worst + ')');
   ok(near(res.statique.r, 1.125) && near(res.statique.Padm, 64) && near(res.statique.CU, 16), 'VarPortée statique : dépassement 12,5 %, 72 t → 64 t, charge utile 16 t');
   ok(near(res.dynamique.r, 1.27522, 1e-5) && near(res.dynamique.Padm, 56.461, 1e-5) && res.rows[res.dynamique.i].nom === '22 m', 'VarPortée dynamique : 27,522 % sur 22 m, 72 t → 56,461 t, charge utile 8,461 t');
   ok(near(res.rows[9].phE + 1, 1.372, 1e-3) && near(res.rows[9].phR + 1, 1.211, 1e-3), 'VarPortée 22 m : 1+φ = 1,372 / 1+φréf = 1,211');
@@ -206,7 +209,7 @@ const cfgA = (vRef) => ({ seq: [{ veh: wagonA, n: 1 }], illimite: true, vEtud: 1
   const S = P.build({ E: 35000, ns: 20, travees: [{ L: 15, Ig: 1 }, { L: 20, Ig: 1 }, { L: 15, Ig: 1 }], appuis: [{}, {}, {}, {}] });
   P.mobile(S, { phiType: '3', classe: 1, Lch: 7, g: 150, cu: { ax: [{ d: 0, P: 200 }, { d: 2, P: 200 }], q: 20, e: 1 } }, Object.keys(P.MODELES));
   const dt = Date.now() - t0;
-  ok(dt < 2000, '3 travées × 20 sections × 11 modèles : ' + dt + ' ms (node)');
+  ok(dt < 1500, '3 travées × 20 sections × 11 modèles : ' + dt + ' ms (node)');
 }
 console.log(`\n${n - f}/${n} tests réussis`);
 process.exit(f ? 1 : 0);

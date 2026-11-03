@@ -5,7 +5,7 @@
     { phase: 1, titre: 'Socle de calcul', sous: 'les briques utilisées par tous les autres modules' },
     { code: 'BAEL-EC2', slug: 'bael-ec2', statut: 'dev', nom: 'Sections en béton armé', reg: 'EN 1992-2 · BAEL 91 mod. 99 · Livret 2.01',
       desc: 'Sections rectangulaires, en T, circulaires et quelconques : flexion simple, composée et déviée, ELU, ELS, fatigue, diagrammes d’interaction, effort tranchant, torsion, consoles courtes.' },
-    { code: 'POUTRE', slug: 'poutre', statut: 'dev', nom: 'Poutres continues', reg: 'EN 1991-2 · Livret 2.01 · Fasc. 61 titre II',
+    { code: 'POUTRE', slug: 'poutre', statut: 'on', nom: 'Poutres continues', reg: 'EN 1991-2 · Livret 2.01 · Fasc. 61 titre II',
       desc: 'Poutres de 1 à 20 travées à inertie constante ou variable : charges fixes et mobiles, UIC 71, SW/0, SW/2, LM1, A(l), Bc, Bt, Mc80, Mc120, enveloppes et combinaisons.' },
     { code: 'GMSLT', slug: 'gmslt', statut: 'on', nom: 'Répartition transversale', reg: 'Guyon-Massonnet-Barès',
       desc: 'Coefficients de répartition transversale et moments de flexion transversale des tabliers de ponts-rails et ponts-routes sous charges réglementaires.' },

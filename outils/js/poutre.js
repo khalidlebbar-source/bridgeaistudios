@@ -48,7 +48,7 @@
     const ns = Math.max(2, Math.min(50, Math.round(+m.ns || 10)));
     const E = (+m.E || 0) * 1000;
     if (!(E > 0)) throw new Error('Module d’élasticité E non valide.');
-    const sub = Math.max(1, Math.ceil(40 / ns));             // éléments entre deux sections
+    const sub = Math.max(1, Math.ceil((+m.nel || 80) / ns));  // éléments entre deux sections (≥ 80 par travée)
     const cg = Math.max(0, +(m.consoles && m.consoles.g) || 0), cd = Math.max(0, +(m.consoles && m.consoles.d) || 0);
     const segs = [];
     if (cg > 0) segs.push({ kind: 'cg', L: cg, t: tr[0], x0: -cg, If: () => inertie(tr[0], 0) });
@@ -126,8 +126,19 @@
       }
     }
     const dmax = Math.max(1, ...Array.from({ length: nf }, (_, i) => Math.abs(A[i * (P + 1)])));
+    const A0 = Float64Array.from(A);
     cholBand(A, nf, P, dmax);
-    const solveF = (b) => solveBand(A, nf, P, b);
+    /* résolution + un pas de raffinement itératif (appuis élastiques très souples devant la rigidité des éléments) */
+    const solveF = (b) => {
+      const x = solveBand(A, nf, P, b), r = Float64Array.from(b), w = P + 1;
+      for (let i = 0; i < nf; i++) {
+        const xi = x[i]; r[i] -= A0[i * w] * xi;
+        for (let k = 1; k <= P && i + k < nf; k++) { const a = A0[i * w + k]; if (a) { r[i] -= a * x[i + k]; r[i + k] -= a * xi; } }
+      }
+      const d = solveBand(A, nf, P, r);
+      for (let i = 0; i < nf; i++) x[i] += d[i];
+      return x;
+    };
     const kGet = (i, j) => { if (j < i) [i, j] = [j, i]; return j - i > 3 ? 0 : Kb[i * 4 + (j - i)]; };
     return { X, el, segs, sections, app, N, nd, fixed, map, free, solveF, kGet, Ltot, x0: X[0], xn: X[N - 1], ns, sub, nTrav: tr.length, travees: tr, E, cache: {} };
   }
@@ -942,14 +953,13 @@
     if (+d.typpoutre === 1) model.Ix = (d._rep.ELEMENTS || []).map(nums).filter((r) => r.length >= 4).map(([x0, x1, , Ii]) => ({ x0, x1, I: Ii }));
     // ouvrages (liste d'ouvrages ou variation de portée)
     const ouvrages = (d._rep.POUTRETRAVELAGES || []).filter((l) => l.trim()).map((l) => {
-      const c = l.split('\t').map((s) => s.trim()).filter((s, i, a) => s !== '' || i === a.length);
       const t = l.trim().split(/\t+/).map((s) => s.trim());
       const n = +t[0], spans = nums(t[1]).slice(0, n);
       const r = t.slice(2);
       // champs : I, EBi, EBd, ?, ?, nbsec, Q_M, Q_V, ?, ?, φ étudié, ?, φ réf., ?, n0, masse, nom, typapp0, lcons0, typapp1, lcons1
       const f = (k) => r[k];
       return { nom: f(16) || '', spans, I: +f(0) || 1, ns: +f(5) || ns, QM: +f(6) || 1, QV: +f(7) || 1, phiE: +f(10) || 0, phiR: +f(12) || 0, n0: +f(14) || 0, masse: +f(15) || 0,
-        consoles: { g: +f(17) === 1 ? +f(18) || 0 : 0, d: +f(19) === 1 ? +f(20) || 0 : 0 }, encG: +f(17) === 2, encD: +f(19) === 2, _c: c.length };
+        consoles: { g: +f(17) === 1 ? +f(18) || 0 : 0, d: +f(19) === 1 ? +f(20) || 0 : 0 }, encG: +f(17) === 2, encD: +f(19) === 2 };
     });
     const charges = (d._suite || []).join('\n').split('LISTE_CHARGES')[1];
     const liste = charges ? charges.split('\n').map((l) => l.trim()).filter((l) => /^\d+\s+\S/.test(l)).map((l) => { const m = l.match(/^(\d+)\s+([^\t]*)\t?(.*)$/); return { code: +m[1], nom: m[2].trim(), fichier: (m[3] || '').trim() }; }) : [];
