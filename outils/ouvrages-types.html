@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<meta name="description" content="Calcul et dessin automatiques des ouvrages types : ponts-rails et ponts-routes en dalle BA ou à poutrelles enrobées (1 à 7 travées), cadres fermés et portiques ouverts sous voies ferrées. Enchaînement tablier, efforts horizontaux, appareils d’appui, descente de charges et fondations ; note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage (SVG, DXF), vérification des gabarits et avant-métré.">
+<meta name="description" content="Calcul et dessin automatiques des ouvrages types : ponts-rails et ponts-routes en dalle BA ou à poutrelles enrobées (1 à 7 travées), cadres fermés et portiques ouverts sous voies ferrées. Enchaînement tablier, efforts horizontaux, appareils d’appui, piles, culées et fondations ; note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage (SVG, DXF), vérification des gabarits et avant-métré.">
 <link rel="canonical" href="https://www.bridgeaistudios.com/outils/ouvrages-types.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
@@ -42,6 +42,8 @@
   .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin:-4px 0 10px}
   .legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
   table.res td.wrap{white-space:normal}
+  .pc table.res td{white-space:normal}
+  .pc table.res td:first-child{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -51,7 +53,7 @@
       <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Compléments</div>
       <div class="eyebrow">OUVRAGES TYPES · chaîne complète</div>
       <h1>Calcul et dessin des <em>ouvrages types</em></h1>
-      <p class="lead">Une seule saisie de l’ouvrage, puis l’enchaînement des modules : tablier, efforts horizontaux et appareils d’appui, descente de charges et fondations — ou cadre et portique complets. Note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage, gabarits et avant-métré.</p>
+      <p class="lead">Une seule saisie de l’ouvrage, puis l’enchaînement des modules : tablier, efforts horizontaux et appareils d’appui, piles et culées, fondations — ou cadre et portique complets. Note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage, gabarits et avant-métré.</p>
       <div class="badges"><span class="badge">Livret 2.01</span><span class="badge">EN 1990 A2</span><span class="badge">EN 1991-2</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 1992-2 · BAEL 91 mod. 99</span><span class="badge">EN 1337-3</span><span class="badge">Fasc. 62 titre V</span></div>
     </div>
     <div class="actions">
@@ -95,7 +97,7 @@
         <div class="card"><div class="card-title"><span>Appareils d’appui</span></div><div class="fields" id="fAppG"></div></div>
         <div class="card"><div class="card-title"><span>Piles</span><small>voile ou fûts sur semelle</small></div><div class="fields" id="fPile"></div></div>
         <div class="card"><div class="card-title"><span>Culées</span><small>mur de front, garde-grève, murs en retour</small></div><div class="fields" id="fCulee"></div></div>
-        <div class="msg info">Justification des piles et culées en béton armé : module PILES-CULÉES bientôt intégré. La chaîne établit dès maintenant une descente de charges sommaire jusqu’aux fondations.</div>
+        <div class="msg info">Piles et culées calculées par le module PILES-CULÉES (fûts ou mur de front, garde-grève, murs en retour, semelle, pressions localisées, fondations).</div>
       </div>
       <div id="cAppC" class="card hid"><div class="card-title"><span>Appuis du cadre ou du portique</span></div><p style="font-size:12.5px;color:var(--ink2)">Les piédroits, le radier ou les semelles sont calculés avec la traverse par le module CADRES (étape Tablier).</p></div>
     </div>
@@ -123,10 +125,10 @@
       <ul>
         <li><b>Enchaînement sans recalcul</b> : le tablier est calculé par TABLIER RAIL ou TABLIER ROUTE, les efforts horizontaux par HORIZONTAL (qui dimensionne les élastomères avec ÉLASTOMÈRES, NF EN 1337-3), les cadres et portiques par CADRES, les fondations par FONDATIONS sur le sondage .sps (PRESSIO). Les données non saisies ici prennent les valeurs par défaut de chaque module.</li>
         <li><b>Géométrie</b> : la cote du rail (ou de la chaussée) suit le profil en long ; sous-face du tablier = rail − (ballast sous traverse + traverse 0,23 m + rail 0,172 m) − épaisseur du tablier dans l’axe (chaussée : − 0,09 m de revêtement et d’étanchéité). Sommiers sous les appareils (hauteur appareil + bossage saisie), semelles à la profondeur d’ancrage sous le terrain naturel. Cadres : remblai sur la traverse déduit du profil en long.</li>
-        <li><b>Piles et culées</b> : le module PILES-CULÉES n’est pas encore intégré. La descente de charges jusqu’à la sous-face des semelles est sommaire : réactions du tablier (G, Q comme dans les exports des modules de tablier), efforts horizontaux de HORIZONTAL au niveau des appareils (H·sinφ perpendiculaire à la ligne d’appui), poids propres sur la géométrie (25 kN/m³), terres sur les semelles, poussée de Rankine Ka sur la hauteur des culées (contre-poussée active devant le patin, butée négligée) avec la charge d’exploitation sur remblai (ferroviaire : EN 1991-2 §6.3.6.4 ; routière : 10 kN/m²). Ni vent, ni séisme, ni effets transversaux, ni excentricité transversale des charges. Les fûts, murs et semelles ne sont pas justifiés en béton armé.</li>
-        <li><b>Combinaisons des fondations</b> : ELS caractéristique G + Q + H(ELS) ; quasi permanent G + H(QP) ; ELU 1,35 G + γQ Q + H(ELU) + 1,35 poussée et ELU G min + H(ELU) (glissement), γQ = 1,45 (rail), 1,35 (route, Eurocodes) ou 1,6 (route, BAEL). Cadres et portiques : torseurs du module CADRES (caractéristiques, fréquents, ELU), entièrement en longue durée.</li>
+        <li><b>Piles et culées</b> : chaque appui est calculé par PILES-CULÉES. Les actions du tablier sont importées de l’export « appui » du module de tablier (G maxi / mini, groupes de trafic), les efforts longitudinaux de l’export de HORIZONTAL (retrait, dilatation, contraction, freinage, interaction ; HX déjà projeté perpendiculairement à la ligne d’appui, signe inversé sur la culée d’extrémité). Piles : voile ou fûts rectangulaires sur semelle ; culées : mur de front avec garde-grève et murs en retour, poussée des terres et de la charge sur remblai (rail : LM71 sur 3 m par voie ; route : 10 kN/m²). Appareils : plaques retenues par ÉLASTOMÈRES, bossages 4a/3 ; appareils fixes : surface chargée pour 20 MPa. Sans séisme, vent ni choc ; aucun chevêtre.</li>
+        <li><b>Combinaisons</b> : piles et culées — combinaisons de PILES-CULÉES selon le référentiel (Livret 2.01 ou Fascicule 61 + BAEL, ou EN 1990 annexe A2) ; cadres et portiques — torseurs du module CADRES (caractéristiques, fréquents, ELU), entièrement en longue durée.</li>
         <li><b>Gabarit</b> : hauteur libre = sous-face au sommet le plus bas de l’emprise du gabarit (biais et pente compris) − cote de la voie franchie ; largeur libre mesurée perpendiculairement à la voie franchie entre les faces des appuis. Cadres : hauteur intérieure moins la terre sur le radier, goussets déduits.</li>
-        <li><b>Avant-métré</b> : béton, coffrages et étanchéité sur la géométrie ; aciers du tablier et des cadres à partir des sections calculées (+ 10 % de recouvrements), aciers des appuis par ratios forfaitaires signalés comme tels, poutrelles, appareils, pieux. Ordre de grandeur pour un avant-projet.</li>
+        <li><b>Avant-métré</b> : béton, coffrages et étanchéité sur la géométrie ; aciers du tablier, des cadres, des fûts, murs, semelles et pieux à partir des sections calculées (+ 10 % de recouvrements ; aciers de répartition et cadres des appuis : forfait 25 %), poutrelles, appareils, pieux. Ordre de grandeur pour un avant-projet.</li>
         <li><b>Plans</b> : plan d’implantation (axes d’appuis biais, coordonnées), plan d’ensemble (élévation, coupe transversale), coffrages hors détails (tablier, culées, piles, cadre), vérification du gabarit ; SVG et DXF R12 (calques COFFRAGE, CACHE, AXES, TERRAIN, GABARIT, FONDATIONS…).</li>
       </ul>
     </details>
@@ -150,6 +152,7 @@
 <script src="js/fondations.js"></script>
 <script src="js/modele-rail.js"></script>
 <script src="js/cadres-portiques.js"></script>
+<script src="js/piles-culees.js"></script>
 <script src="js/ouvrages-types.js"></script>
 <script>
 (function () {
@@ -272,7 +275,6 @@
   /* ── ouverture des modules pré-remplis ── */
   function ouvrir(cle, idx) {
     if (!last) return;
-    if (cle === 'appui') { window.open(O.MODULES.appui.page, '_blank'); return; }
     const data = O.preremplissage(last, cle, idx || 0);
     if (!data) { alert('Rien à transmettre pour ce module.'); return; }
     BA.store.save(cle, data);
@@ -289,7 +291,7 @@
 
   /* ── tableaux réutilisés par l'écran et la note ── */
   function tabVerdicts(R, liens) {
-    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.module === 'fondations' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
+    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.idx || 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
     return `<div class="tbl-wrap"><table class="res dash"><thead><tr><th>Partie</th><th style="text-align:left">Statut</th><th style="text-align:left">Résultat</th>${liens ? '<th></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function tabGeo(R) {
@@ -363,17 +365,35 @@
     return R.appareils.filter((a) => a.res && a.res.crit && a.res.crit.length).map((a) => `<div class="sub">${esc(a.nom)} — ${a.plaque ? Math.round(a.plaque.a * 1000) + ' × ' + Math.round(a.plaque.b * 1000) : ''}</div>`
       + BA.table(['Critère', 'Valeur', 'Limite', 'Taux', ''], a.res.crit.map((c) => [esc(c.nom), f3(c.val), f3(c.lim), f2(c.taux), BA.verdict(c.ok)]), { leftText: true })).join('');
   }
-  function tabDescente(R) {
-    return R.appuis.map((D) => {
-      const a = R.geo.appuis[D.j];
-      return `<div class="sub">${esc(D.nom)} — sous-face ${f2(a.zsem)} m</div>` + BA.table(['Action', 'Valeur'], [
-        ['Tablier G max / G min / Q', `${f0(D.Gtab)} / ${f0(D.GtabMin)} / ${f0(D.Qtab)} kN`],
-        ['Poids propres', D.pp.map((e) => `${e.nom.toLowerCase()} ${f0(e.W)}`).join(' ; ') + ' kN'],
-        ['Terres sur la semelle', D.ter.length ? D.ter.map((e) => `${e.nom.toLowerCase()} ${f0(e.W)}`).join(' ; ') + ' kN' : '—'],
-        ['Poussée des terres', D.pous ? `Ka = ${f3(D.pous.Ka)}, H = ${f2(D.pous.Ht)} m : ${f0(D.pous.P)} kN ; contre-poussée ${f0(D.pous.Pf)} kN ; charge sur remblai ${f1(D.pous.q)} kN/m² → ${f0(D.pous.Pq)} kN` : '—'],
-        ['H tablier (ELU / ELS / QP)', `${f0(D.H.ELU1)} / ${f0(D.H.ELS1)} / ${f0(D.H.QP)} kN`],
-      ], { leftText: true }) + BA.table(['Combinaison', 'Fx', 'Fy', 'Fz', 'Mx', 'My'], D.combs.map((c) => [esc(c.nom)].concat([0, 1, 2, 3, 4].map((i) => f0(c.ld[i] + c.cd[i])))), { caption: 'Torseurs au centre de la sous-face (kN, kN·m ; Fz < 0 descendant ; X ⊥ ligne d’appui)', leftText: true });
-    }).join('');
+  function tabAppuis(R, liens) {
+    return R.appuis.map((A) => {
+      const a = R.geo.appuis[A.j], r = A.res, nom = (A.culee ? 'Culée ' : 'Pile ') + A.nom;
+      let h = `<div class="sub">${esc(nom)} — ${A.culee ? 'mur de front ' + f2(a.ef) + ' × ' + f2(a.hMur) + ' m' : (a.nfut > 1 ? a.nfut + ' fûts ' + f2(a.larfut) : 'voile ' + f2(a.larfut)) + ' × ' + f2(a.e) + ' m, h = ' + f2(a.hfut) + ' m'} ; semelle ${f2(a.B)} × ${f2(a.L)} × ${f2(a.es)} m ${liens ? go('appui', A.j) : ''}</div>`;
+      if (!r) return h + `<div class="msg err">${esc(A.err || 'Calcul impossible')}</div>`;
+      const sumV = (f) => f0(-r.acts.filter(f).reduce((t, x) => t + x.F[2], 0)), sumH = (f) => f0(r.acts.filter(f).reduce((t, x) => t + x.F[0], 0));
+      h += BA.table(['Actions', 'Valeur'], [
+        ['Tablier : G max / G min (kN)', `${sumV((x) => x.cat === 'Gmax')} / ${sumV((x) => x.cat === 'Gmin')}`],
+        ['Tablier : groupes de trafic maxi (kN)', r.acts.filter((x) => x.cat === 'Q' && x.etatG === 'max').map((x) => esc(x.nom.replace(/ maxi.*$/, '')) + ' ' + f0(-x.F[2])).join(' ; ') || '—'],
+        ['Efforts horizontaux HX (kN)', r.acts.filter((x) => ['R', 'Td', 'Tc', 'F'].includes(x.cat)).map((x) => esc(x.nom.replace(/ \(efforts horizontaux\)/, '')) + ' ' + f0(x.F[0])).join(' ; ')],
+        ['Poids propres + terres (kN)', `${sumV((x) => x.cat === 'PP')} + ${sumV((x) => x.cat === 'GT')}`],
+        ['Poussées terres / surcharge (kN)', A.culee ? `${sumH((x) => x.cat === 'PT')} / ${sumH((x) => x.cat === 'PQ')} (Ka = ${f3(r.Ka)})` : '—'],
+        ['Combinaisons', `${r.combs.length} (${esc(r.coefs.nom)})`],
+      ], { leftText: true });
+      const rows = [];
+      if (r.futs) {
+        const tot = (sc) => 2 * sc.A.ret + 2 * (sc.A.petite || 0), s0 = r.futs.futs[0].secs[0];
+        rows.push([A.culee ? 'Mur de front (pied)' : 'Fûts (pied)', `${f1(s0.A.ret / (A.d.geo.fut.b))} cm²/m par face ; total ${f0(r.futs.AsMax)} cm² (${f2(100 * r.futs.pctMax)} %, maxi ${f0(100 * r.futs.pmax)} %)`, BA.verdict(r.futs.ok)]);
+        void tot;
+      }
+      if (r.chev) rows.push(['Chevêtre', `inf. ${f1(r.chev.Ainf)} / sup. ${f1(r.chev.Asup)} cm²`, BA.verdict(r.chev.ok)]);
+      if (r.sem) rows.push(['Semelle', `⊥ ligne : inf. ${f1(r.sem.trans.inf)} / sup. ${f1(r.sem.trans.sup)} cm²/m ; ∥ ligne : inf. ${f1(r.sem.long.inf)} / sup. ${f1(r.sem.long.sup)} cm²/m`, BA.verdict(r.sem.ok)]);
+      if (r.gg) rows.push(['Mur garde-grève', `${f1(r.gg.A)} cm²/m (M ELU ${f1(r.gg.Melu)} kN·m/m)`, '']);
+      if (r.retour) rows.push(['Murs en retour', `horizontaux ${f1(r.retour.AhMl)} cm²/m, tête ${f1(r.retour.Av)} cm²`, '']);
+      if (r.app) rows.push(['Pressions localisées sous appareils', `Pu = ${f0(r.app.Pu)} kN ; σ = ${f1(r.app.sig)} ≤ ${f1(r.app.sigAdm)} MPa`, BA.verdict(r.app.ok)]);
+      if (r.fond && r.fond.acier) rows.push(['Pieux', `As ${f0(Math.max(...r.fond.acier.sections.map((x) => x.A)))} cm²`, BA.verdict(r.fond.acier.ok)]);
+      if (r.fond && r.fond.synth) rows.push(['Fondation (FONDATIONS)', r.fond.type === 'pieux' ? 'portance des pieux' : 'portance, décompression, glissement', BA.verdict(r.fond.synth.ok)]);
+      return h + BA.table(['Élément', 'Aciers calculés / résultat', ''], rows, { leftText: true });
+    }).map((x) => `<div class="pc">${x}</div>`).join('');
   }
   function tabFond(R, liens) {
     return R.fond.map((f, k) => {
@@ -427,7 +447,7 @@
       if (R.tab) {
         h += BA.card('Efforts horizontaux', tabHoriz(R) + '<div class="linkrow">' + go('efforts-horizontaux') + '</div>', 'module HORIZONTAL');
         h += BA.card('Appareils d’appui', tabAppareils(R, true), 'module ÉLASTOMÈRES');
-        h += BA.card('Descente de charges sommaire', '<div class="msg info" style="margin-bottom:8px">Piles et culées non justifiées : module PILES-CULÉES bientôt intégré. ' + go('appui', 0, 'Voir PILES-CULÉES ↗') + '</div>' + tabDescente(R));
+        h += BA.card('Piles et culées', tabAppuis(R, true), 'module PILES-CULÉES');
         h += BA.card('Coffrage des appuis', LEG + plans(R, ['culee-*', 'pile-*']));
       } else h += BA.card('Appuis', '<p style="font-size:12.5px">Piédroits et ' + (R.geo.cadre ? 'radier' : 'semelles') + ' : voir l’étape Tablier (module CADRES) et les fondations.</p>' + tabCadre(R));
     } else if (step === 4) {
@@ -450,7 +470,7 @@
       sec.push({ titre: 'Tablier (module ' + O.MODULES[R.tabCle].code + ')', html: tabTablier(R) + (R.tab.C && R.tab.C.txt ? `<div class="formula">${R.tab.C.txt.join('\n')}</div>` : '') });
       sec.push({ titre: 'Efforts horizontaux (module HORIZONTAL)', html: tabHoriz(R) });
       sec.push({ titre: 'Appareils d’appui (module ÉLASTOMÈRES)', html: tabAppareils(R, false) + critAppareils(R) });
-      sec.push({ titre: 'Descente de charges sur les appuis', html: '<p>Descente de charges sommaire (justification des piles et culées en béton armé à établir avec le module PILES-CULÉES).</p>' + tabDescente(R) });
+      sec.push({ titre: 'Piles et culées (module PILES-CULÉES)', html: '<p>Actions du tablier et efforts horizontaux importés par les fonctions d’import du module ; combinaisons, stabilité des fondations et aciers par PILES-CULÉES.</p>' + tabAppuis(R, false) });
     } else sec.push({ titre: (s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert') + ' (module CADRES)', html: tabCadre(R) });
     sec.push({ titre: 'Fondations (module FONDATIONS)', html: `<p>Sondage : ${esc([R.sps.projet, R.sps.ouvrage, R.sps.sondage].filter(Boolean).join(' · '))}</p>` + tabFond(R, false) });
     sec.push({ titre: 'Vérification des gabarits', html: tabGabarit(R) + plans(R, ['gabarit']) });

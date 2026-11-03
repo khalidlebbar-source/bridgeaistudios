@@ -6,19 +6,12 @@
  *   efforts horizontaux et appareils d'appui   BA.horizontal (répartition) qui appelle BA.elastomeres (dimensionnement EN 1337-3) ;
  *   cadres et portiques                         BA.cadres (RACBA, RAPO) ;
  *   fondations       BA.fondations (Fascicule 62 titre V) sur le sondage pressiométrique BA.sondages (.sps).
- * Les piles et culées (module APPUI) sont en cours de développement : en attendant, le module établit une DESCENTE DE
- * CHARGES SOMMAIRE jusqu'à la sous-face des semelles (réactions du tablier, efforts horizontaux de REPHOR, poids propres
- * calculés sur la géométrie, terres sur les semelles, poussée des terres de Rankine sur les culées) pour vérifier les
- * fondations avec FONDATIO. Les fûts, murs et semelles ne sont pas justifiés en béton armé (aciers par ratio forfaitaire
- * dans l'avant-métré, signalé comme tel).
+ *   piles et culées  BA.pilesCulees (PILES-CULÉES) : actions du tablier et efforts horizontaux importés par ses fonctions
+ *                    depuisTablier / depuisRephor, puis stabilité, fondations (BA.fondations) et aciers des éléments.
  *
  * Références propres à ce module (le reste relève des modules appelés, voir leurs en-têtes) :
- *  - poussée des terres : Rankine, Ka = tan²(π/4 − φ/2) (EN 1997-1 annexe C, écran vertical lisse, terre-plein horizontal) ;
- *  - charge ferroviaire sur remblai : EN 1991-2 §6.3.6.4, LM71 réparti sur 3,00 m de largeur, soit α·4·250/(6,40·3,00)
- *    = 52,1 kN/m² par voie (la part « wagons » 80 kN/m, plus faible, n'est pas retenue séparément) ;
- *  - combinaisons de la descente de charges : EN 1990 annexe A2 / Livret 2.01 (ELU : 1,35 G + 1,45 Q trafic ferroviaire ;
- *    poussée des terres γ = 1,35 ; ELS caractéristique G + Q ; quasi permanent G + ψ2 T), efforts horizontaux de REPHOR
- *    pris avec leurs propres combinaisons (ELU1, ELS1, QP) ;
+ *  - charge ferroviaire sur remblai transmise à PILES-CULÉES : EN 1991-2 §6.3.6.4, LM71 réparti sur 3,00 m par voie,
+ *    α·4·250/6,40 = 156,25 kN/ml par voie (la part « wagons » 80 kN/m, plus faible, n'est pas retenue séparément) ;
  *  - gabarits : hauteur libre et largeur libre comparées aux valeurs requises saisies (gabarit routier ou ferroviaire de la
  *    voie franchie) : la géométrie est linéaire par morceaux, le minimum est cherché aux sommets de l'emprise du gabarit.
  *
@@ -33,6 +26,7 @@
   const mod = {
     radban: () => opt('tablier-rail.js', 'tablierRail'), rodban: () => opt('tablier-route.js', 'tablierRoute'), rephor: () => opt('efforts-horizontaux.js', 'horizontal'), appmobil: () => opt('elastomeres.js', 'elastomeres'),
     fondatio: () => opt('fondations.js', 'fondations'), sondpres: () => opt('sondages.js', 'sondages'), racba: () => opt('cadres-portiques.js', 'cadres'),
+    appui: () => opt('piles-culees.js', 'pilesCulees'),
   };
   const GR = Math.PI / 200, HRAIL = 0.172, HTRAV = 0.23, ACIER = 7850;
   const sum = (a) => a.reduce((s, v) => s + v, 0);
@@ -42,7 +36,7 @@
   /* ── modules encore en développement : activés seulement quand leurs tests (tools/test-outils-<slug>.js) passent ── */
   const EN_COURS = {
     rodbanRopen: { pret: true, code: 'TABLIER ROUTE', page: 'tablier-route' },
-    appui: { pret: false, code: 'PILES-CULÉES', page: 'piles-culees' },
+    appui: { pret: true, code: 'PILES-CULÉES', page: 'piles-culees' },
   };
   /* pages des modules (liens « Ouvrir dans le module ») : clé de sauvegarde BA.store → page et code affiché */
   const MODULES = {
@@ -78,8 +72,8 @@
       tab: {},
       app: { appuiFixe: 1, hApp: 0.25, fck: 32,
         pile: { nfut: 1, larfut: 0, e: 0.8 },
-        culee: { ef: 1.3, eGG: 0.3, joint: 0.05, lr: 3.0, er: 0.5, patin: 1.5, talon: 4.0, phi: 30, gamma: 20 } },
-      fond: { type: 'sup', ancrage: 4.5, es: 1.2, debord: 2.0, pieux: { ptype: 2, D: 1.0, L: 12, nx: 2, ny: 4, ex: 3.0, ey: 3.0 } },
+        culee: { ef: 1.3, eGG: 0.3, joint: 0.05, lr: 3.0, er: 0.5, patin: 2.0, talon: 4.0, phi: 30, gamma: 20 } },
+      fond: { type: 'sup', ancrage: 4.5, es: 1.2, debord: 2.5, pieux: { ptype: 2, D: 1.0, L: 12, nx: 2, ny: 4, ex: 3.0, ey: 3.0 } },
       cad: {}, sps: null,
     };
     if (type === 'radba') { s.projet = 'Pont-rail dalle BA — 3 travées 14 + 20 + 14 m'; s.tab = { h: 1.15 }; }
@@ -255,49 +249,6 @@
   /* plan : point local (u perpendiculaire à la ligne d'appui, vers l'ouvrage pour une culée ; w le long de la ligne) */
   const plan = (G, a, u, w) => { const uu = a.culee ? a.side * u : u; return [a.x + uu * G.sn + w * G.cs, -uu * G.cs + w * G.sn]; };
 
-  /* ═══════════════════════ 4. Descente de charges sommaire sur les appuis ═══════════════════════ */
-  /* Torseur (Fx, Fy, Fz, Mx, My, Mz) au centre de la sous-face de semelle, Fz < 0 descendant (convention FONDATIO) ;
-   * X perpendiculaire à la ligne d'appui (vers l'ouvrage pour une culée), Y le long de la ligne. */
-  function descente(R, j) {
-    const F = mod.fondatio(), s = R.s, G = R.geo, a = G.appuis[j], AD = R.tabA, Tj = AD.app[j], H = R.rephor, gB = 25, gQ = AD.gQ;
-    const tp = (T, u, z) => F.transport(T, u - a.uc, 0, z, 0, 0, a.zsem);
-    const add = (A, B) => A.map((v, k) => v + B[k]);
-    const Z = [0, 0, 0, 0, 0, 0];
-    // tablier (convention et valeurs des exports vers REPHOR des modules de tablier)
-    const Gtab = Tj.Gk, GtabMin = Tj.GkMin, Qtab = Tj.Q;
-    const uApp = 0;
-    // poids propres et terres
-    const pp = a.el.map((e) => { const V = (e.u1 - e.u0) * (e.z1 - e.z0) * e.L; return { nom: e.nom, V, W: gB * V, u: (e.u0 + e.u1) / 2, z: (e.z0 + e.z1) / 2 }; });
-    const ter = a.terres.map((t) => {
-      let V = (t.u1 - t.u0) * (t.z1 - t.z0) * t.L; if (t.deduire) V -= (t.deduire.u1 - t.deduire.u0) * (t.z1 - t.z0) * t.deduire.L;
-      return { nom: t.nom, V, W: (a.culee ? s.app.culee.gamma : 19) * V, u: (t.u0 + t.u1) / 2, z: (t.z0 + t.z1) / 2 };
-    });
-    let Tg = Z.slice(); for (const e of pp.concat(ter)) Tg = add(Tg, tp([0, 0, -e.W, 0, 0, 0], e.u, e.z));
-    const Ttab = (N) => tp([0, 0, -N, 0, 0, 0], uApp, a.zApp);
-    // poussée des terres (culées) : Rankine, sur la hauteur sous-face de semelle → niveau du ballast
-    let Tp = Z.slice(), Tq = Z.slice(), pous = null;
-    if (a.culee) {
-      const c = s.app.culee, Ka = Math.pow(Math.tan(Math.PI / 4 - c.phi * Math.PI / 360), 2), Ht = a.zGG - a.zsem;
-      const P = 0.5 * Ka * c.gamma * Ht * Ht * a.Lm;
-      const q = AD.qRemblai, bq = Math.min(a.Lm, AD.largeurQ / G.sn), Pq = Ka * q * Ht * bq;
-      // contre-poussée active du terrain devant le patin (du terrain naturel à la sous-face), butée négligée
-      const hf = Math.max(0, s.zTN - a.zsem), Pf = 0.5 * Ka * c.gamma * hf * hf * a.Lm;
-      Tp = add(tp([P, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 3), tp([-Pf, 0, 0, 0, 0, 0], a.uc, a.zsem + hf / 3)); Tq = tp([Pq, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 2);
-      pous = { Ka, Ht, P, hf, Pf, q, bq, Pq };
-    }
-    // efforts horizontaux longitudinaux de REPHOR (|H| dans le sens défavorable), au niveau des appareils
-    const pa = H.parAppui[j], Hc = (id) => { const c = pa.combs.find((x) => x.id === id); return c ? Math.abs(c.H.abs ?? Math.max(Math.abs(c.H.max), Math.abs(c.H.min))) : 0; };
-    const Th = (Hv) => tp([Hv * G.sn, Hv * G.cs, 0, 0, 0, 0], uApp, a.zApp);
-    const Gpp = sum(pp.map((e) => e.W)), Gter = sum(ter.map((e) => e.W));
-    const combs = [
-      { type: 'ELS Rare', nom: 'ELS caractéristique : G + Q + H(ELS1) + poussée', ld: add(add(Tg, Ttab(Gtab)), Tp), cd: add(add(Ttab(Qtab), Th(Hc('ELS1'))), Tq) },
-      { type: 'ELS QP', nom: 'ELS quasi permanent : G + H(QP) + poussée', ld: add(add(add(Tg, Ttab(Gtab)), Tp), Th(Hc('QP'))), cd: Z.slice() },
-      { type: 'ELU Fond', nom: `ELU : 1,35 G + ${String(gQ).replace('.', ',')} Q + H(ELU1) + 1,35 poussée`, ld: add(add(Tg, Ttab(Gtab)).map((v) => 1.35 * v), Tp.map((v) => 1.35 * v)), cd: add(add(Ttab(Qtab).map((v) => gQ * v), Th(Hc('ELU1'))), Tq.map((v) => gQ * v)) },
-      { type: 'ELU Fond', nom: 'ELU : G min + H(ELU1) + 1,35 poussée (glissement)', ld: add(add(Tg, Ttab(GtabMin)), Tp.map((v) => 1.35 * v)), cd: add(Th(Hc('ELU1')), Tq.map((v) => gQ * v)) },
-    ];
-    return { j, nom: a.nom, Gtab, GtabMin, Qtab, gQ, pp, ter, Gpp, Gter, pous, H: { ELS1: Hc('ELS1'), QP: Hc('QP'), ELU1: Hc('ELU1') }, combs };
-  }
-
   /* ═══════════════════════ 5. Fondations : données FONDATIO ═══════════════════════ */
   function fondatioInput(s, sps, o) {
     const P = s.fond.pieux;
@@ -350,16 +301,69 @@
       else { o.ok = true; o.Hf = rec.Hf; }
       return o;
     });
-    // 5. descente de charges et fondations
-    const sps = R.sps;
-    R.appuis = G.appuis.map((a, j) => descente(R, j));
-    R.fond = G.appuis.map((a, j) => {
-      const o = { type: s.fond.type === 'pieux' ? 'pieux' : 'sup', zsem: a.zsem, zdef: s.zTN, ztn: s.zTN, B: a.B, L: a.L, piles: a.piles, combs: R.appuis[j].combs };
-      const inp = fondatioInput(s, sps, o);
+    // 5. piles et culées (PILES-CULÉES) : descentes de charges du tablier et efforts de HORIZONTAL importés par les
+    //    fonctions d'import du module ; fondations calculées par PILES-CULÉES (qui appelle FONDATIONS sur le sondage)
+    const PC = mod.appui();
+    if (!PC) throw new Error('Module PILES-CULÉES indisponible.');
+    const expT = RB.exportAppuis(T), expH = RH.exportAppuis(H);
+    R.appuis = G.appuis.map((a, j) => {
+      const d = appuiInput(R, j, expT[j], expH[j]);
       let res = null, err = null;
-      try { res = F.calc(inp); } catch (e) { err = e.message; }
-      return { j, nom: a.nom, o, inp, res, err, page: fondatioPage(s, sps, o, (s.projet || '') + ' — ' + a.nom), ok: !!(res && res.synth && res.synth.ok) };
+      try { res = PC.calc(d, { sps: R.sps }); } catch (e) { err = e.message; }
+      if (res) res.alertes.forEach((m) => R.alertes.push(`${a.culee ? 'Culée' : 'Pile'} ${a.nom} : ${m}`));
+      return { j, nom: a.nom, culee: a.culee, d, res, err, ok: !!(res && res.ok) };
     });
+    R.fond = R.appuis.map((A, j) => {
+      const a = G.appuis[j], r = A.res, fr = r && r.fond;
+      const combs = r ? r.combs.map((c) => ({ type: c.type, nom: c.nom, ld: c.T.ld.slice(), cd: c.T.cd.slice() })) : [];
+      const o = { type: s.fond.type === 'pieux' ? 'pieux' : 'sup', zsem: a.zsem, zdef: A.d.type === 'pile' ? A.d.geo.zdef : Math.min(A.d.geo.zdef, A.d.geo.zAvant), ztn: s.zTN, B: a.B, L: a.L, piles: a.piles, combs };
+      const err = A.err || (!fr ? (r && r.alertes.find((m) => /ondage|ondation/.test(m))) || 'Fondation non calculée' : null);
+      return { j, nom: a.nom, o, res: fr, err, page: fondatioPage(s, R.sps, o, (s.projet || '') + ' — ' + a.nom), ok: !!(fr && fr.synth && fr.synth.ok) };
+    });
+  }
+  /* Données PILES-CULÉES d'un appui de l'ouvrage (repère de l'appui : origine au centre de la sous-face de semelle,
+   * X perpendiculaire à la ligne d'appui vers l'ouvrage, Y le long de la ligne ; longueurs mesurées le long de la ligne). */
+  function appuiInput(R, j, eT, eH) {
+    const s = R.s, G = R.geo, a = G.appuis[j], A = R.tabA, PC = mod.appui(), c = s.app.culee, P = s.fond.pieux;
+    const sp = R.sps, zeau = sp && sp.nappe > 0 ? sp.z - sp.nappe : -1000;
+    const tab = PC.depuisTablier(eT), hor = PC.depuisRephor(eH);
+    // HORIZONTAL : H > 0 vers les abscisses croissantes ; PILES-CULÉES : X > 0 vers l'ouvrage (culée d'extrémité : signe inversé)
+    const sg = a.culee && a.side < 0 ? -1 : 1;
+    const actions = tab.actions.concat(hor.actions.map((x) => Object.assign({}, x, { HX: sg * x.HX })));
+    // appareils : nombre, entraxe le long de la ligne, plaque retenue par HORIZONTAL / ÉLASTOMÈRES, bossage 4a/3
+    const yA = A.app[j].y.slice().sort((p, q) => p - q), nA = yA.length;
+    const ent = nA > 1 ? (yA[nA - 1] - yA[0]) / (nA - 1) / G.sn : 0;
+    const ap = (R.appareils || []).find((x) => x.j === j && x.plaque);
+    // appareil fixe (pot) : surface chargée carrée pour une pression de 20 MPa sous la réaction ELS de l'appareil le plus chargé (≈ 1,5 × moyenne)
+    const aFixe = Math.ceil(Math.sqrt(1.5 * (A.app[j].Gk + A.app[j].Q) / Math.max(1, nA) / 20000) * 20) / 20;
+    const pl = ap ? ap.plaque : { a: aFixe, b: aFixe };
+    const app = { n: nA, e: r3(ent), xApp: 0, a0: pl.a, b0: pl.b, a: Math.ceil(Math.max(4 / 3 * pl.a, pl.a + 0.1) * 100) / 100, b: Math.ceil(Math.max(4 / 3 * pl.b, pl.b + 0.1) * 100) / 100, hb: r3(a.zApp - a.zSom), hApp: 0 };
+    const rail = A.route ? false : true;
+    const d = {
+      projet: (s.projet || '') + ' — ' + a.nom, regl: s.regl === 'ec' ? 'EC' : 'ANC', ouvrage: rail ? 'rail' : 'route', livret: rail && s.regl !== 'ec',
+      nVoies: rail ? s.nVoies : Math.max(1, Math.floor((A.largeurQ || 3) / 3)), partCDT: 10 / 35, biais: s.biais, repereTablier: false,
+      type: a.culee ? 'mur' : 'pile',
+      sol: { gamma: c.gamma, gammaSat: c.gamma + 2, phi: c.phi, delta: 0, beta: 0, qRoute: 10, qRail: rail ? A.qRemblai * 3 : 150, largRail: 3, butee: false, kf3D: 3 },
+      mat: { gammaB: 25, fck: s.app.fck, fe: 500, fiss: 1, cSem: 0.05, cFut: 0.05, cChev: 0.05, ssFut: 0, ssSem: 0, kf: a.culee ? 1 : 2 },
+      fond: s.fond.type === 'pieux'
+        ? { type: 'pieux', mode: 'sps', rapSol: 2, phi: 30, c: 0, sol: 'frottant', massif: { B: 0, L: 0, h: 0 }, pieux: { type: +P.ptype || 2, D: P.D, Lp: P.L, nFiles: Math.round(P.nx), nParFile: Math.round(P.ny), eFile: P.ex, ePieu: P.ey, enrob: 0.09 } }
+        : { type: 'sup', mode: 'sps', rapSol: 2, phi: 30, c: 0, sol: 'frottant', massif: { B: 0, L: 0, h: 0 }, pieux: {} },
+      sismique: { actif: false }, choc: { actif: false }, vent: { q: 0 },
+      actions,
+    };
+    if (a.culee) {
+      d.geo = { zBase: a.zsem, ep: a.es, B: a.B, L: a.L, talon: r3(a.xb - a.u0), exF: 0,
+        fut: { forme: 'rect', n: 1, D: a.ef, b: r3(a.Lm), e: a.ef, entraxe: 0, h: r3(a.hMur) },
+        chev: { actif: false, L: 0, l: 0, h: 0, xArr: 0, hpm: 0, lpm: 0 },
+        gg: { h: r3(a.hGG), e: c.eGG, L: r3(a.Lm) }, retour: { actif: c.lr > 0, Lr: c.lr, Hr: r3(a.zGG - a.zst), e: c.er },
+        app: Object.assign(app, { xApp: r3(-(a.xb + a.ef / 2)) }), zdef: r3(a.zGG), zAvant: s.zTN, ztn: s.zTN, zeau };
+    } else {
+      d.geo = { zBase: a.zsem, ep: a.es, B: a.B, L: a.L, talon: 0, exF: r3(-a.uc),
+        fut: { forme: 'rect', n: a.nfut, D: a.e, b: r3(a.larfut), e: a.e, entraxe: r3(a.entraxeFut), h: r3(a.hfut) },
+        chev: { actif: false, L: 0, l: 0, h: 0, xArr: 0, hpm: 0, lpm: 0 }, gg: { h: 0, e: 0, L: 0 }, retour: { actif: false, Lr: 0, Hr: 0, e: 0.3 },
+        app, zdef: s.zTN, zAvant: s.zTN, ztn: s.zTN, zeau };
+    }
+    return d;
   }
 
   /* ═══════════════════════ 7. Chaîne d'un cadre ou d'un portique ═══════════════════════ */
@@ -485,12 +489,14 @@
       });
       // appuis
       G.appuis.forEach((a, j) => {
-        const partie = (a.culee ? 'Culée ' : 'Pile ') + a.nom, D = R.appuis[j];
-        a.el.forEach((e, k) => {
-          const V = D.pp[k].V;
+        const partie = (a.culee ? 'Culée ' : 'Pile ') + a.nom, ac = aciersAppui(R, j);
+        a.el.forEach((e) => {
+          const V = (e.u1 - e.u0) * (e.z1 - e.z0) * e.L;
           add(partie, 'Béton : ' + e.nom.toLowerCase(), 'm³', V, 'géométrie');
           add(partie, 'Coffrage : ' + e.nom.toLowerCase(), 'm²', e.coff, 'géométrie');
-          add(partie, 'Aciers : ' + e.nom.toLowerCase(), 'kg', V * e.ratio, `ratio forfaitaire ${e.ratio} kg/m³ (PILES-CULÉES à venir)`);
+          const k = e.semelle ? 'sem' : /garde/.test(e.nom) ? 'gg' : /retour/.test(e.nom) ? 'retour' : 'fut', x = ac[k];
+          if (x) { add(partie, 'Aciers : ' + e.nom.toLowerCase(), 'kg', x.kg, x.origine); if (x.rep) add(partie, 'Aciers de répartition et cadres : ' + e.nom.toLowerCase(), 'kg', x.rep, 'forfait 25 % des aciers calculés'); }
+          else add(partie, 'Aciers : ' + e.nom.toLowerCase(), 'kg', V * e.ratio, `ratio forfaitaire ${e.ratio} kg/m³ (calcul PILES-CULÉES indisponible)`);
         });
         add(partie, 'Béton de propreté (0,10 m)', 'm³', a.B * a.L * 0.10, 'géométrie');
         add(partie, 'Bossages d’appareils', 'm³', R.appareils.filter((x) => x.j === j && x.plaque).reduce((t, x) => t + x.n * (x.plaque.a + 0.10) * (x.plaque.b + 0.10) * 0.10, 0), 'géométrie (débord 5 cm, épaisseur 10 cm)');
@@ -530,6 +536,28 @@
       aciers: tot('kg', (r) => /^Aciers/.test(r.designation)), poutrelles: tot('kg', (r) => /^Poutrelles/.test(r.designation)), appareils: tot('u', (r) => r.partie === 'Appareils d’appui') };
     return { rows, recap };
   }
+  /* aciers des éléments d'un appui à partir des sections calculées par PILES-CULÉES (kg, + 10 % de recouvrements) */
+  function aciersAppui(R, j) {
+    const A = R.appuis[j], r = A && A.res, o = {};
+    if (!r) return o;
+    const a = R.geo.appuis[j], g = A.d.geo, kg = (cm2, L) => cm2 * 1e-4 * L * ACIER * 1.10;
+    const org = 'calcul PILES-CULÉES + 10 % recouvrements';
+    if (r.futs) {
+      // section longitudinale totale d'un fût (2 faces + 2 petites faces), moyenne sur la hauteur, × nombre de fûts
+      const tot = (sc) => 2 * sc.A.ret + 2 * (sc.A.petite || 0);
+      const As = sum(r.futs.futs.map((F) => sum(F.secs.map(tot)) / F.secs.length));
+      const x = kg(As, g.fut.h + 0.5); o.fut = { kg: x, rep: 0.25 * x, origine: org + ' (longitudinaux des fûts / du mur, moyenne sur la hauteur)' };
+    }
+    if (r.sem) {
+      const t = r.sem.trans, l = r.sem.long;
+      const x = kg(t.inf + t.sup, g.L * g.B) + kg(l.inf + l.sup, g.B * g.L);
+      o.sem = { kg: x, rep: 0, origine: org + ` (nappes ${fm(t.inf, 1)} / ${fm(t.sup, 1)} cm²/m ⊥ et ${fm(l.inf, 1)} / ${fm(l.sup, 1)} cm²/m ∥ à la ligne d’appui)` };
+    }
+    if (r.gg) { const x = kg(r.gg.A, g.gg.L * (g.gg.h + 0.3)); o.gg = { kg: x, rep: x, origine: org + ` (${fm(r.gg.A, 1)} cm²/m, face arrière)` }; }
+    if (r.retour) { const x = 2 * kg(r.retour.Ah + r.retour.Av, g.retour.Lr); o.retour = { kg: x, rep: 0.25 * x, origine: org + ' (aciers horizontaux et de tête, 2 murs)' }; }
+    void a;
+    return o;
+  }
   function pieuxMetre(R, add, partie, j) {
     const f = R.fond[j], P = R.s.fond.pieux;
     if (!f || f.o.type !== 'pieux') return;
@@ -555,7 +583,7 @@
   /* ═══════════════════════ 10. Verdicts par partie ═══════════════════════ */
   function verdicts(R) {
     const V = [], s = R.s;
-    const push = (partie, statut, texte, module, etape) => V.push({ partie, statut, texte, module, etape });
+    const push = (partie, statut, texte, module, etape, idx) => V.push({ partie, statut, texte, module, etape, idx: idx || 0 });
     if (R.tab) {
       const T = R.tab, A = R.tabA, rapen = T.d.type === 'rapen';
       if (A.route) {
@@ -575,7 +603,20 @@
       push('Appareils d’appui', okA ? 'ok' : 'ko', R.appareils.filter((a) => a.app === 'elasto').length + ' files en élastomère fretté dimensionnées (EN 1337-3)' + (okA ? '' : ' — au moins une vérification non satisfaite'), 'appareils-appui', 2);
       const vr = R.rephor.verifsRail;
       if (vr) { const ok = vr.every((x) => x.okB && x.okLT && x.okH); push('Interaction voie-ouvrage', ok ? 'ok' : 'ko', `δB = ${(Math.max(...vr.map((x) => x.deltaB)) * 1000).toFixed(2)} mm, longueur dilatable ${Math.max(...vr.map((x) => x.LT)).toFixed(1)} m`, 'efforts-horizontaux', 2); }
-      push('Piles et culées', 'bientot', 'Justification béton armé et stabilité propre : module PILES-CULÉES bientôt intégré. Descente de charges sommaire établie pour les fondations.', 'appui', 3);
+      R.appuis.forEach((A) => {
+        const r = A.res, nom = (A.culee ? 'Culée ' : 'Pile ') + A.nom;
+        if (!r) { push(nom, 'ko', A.err || 'calcul impossible', 'appui', 3, A.j); return; }
+        const it = [];
+        if (r.futs) it.push(`${A.culee ? 'mur de front' : r.futs.futs.length > 1 ? r.futs.futs.length + ' fûts' : 'voile'} As ${r.futs.AsMax.toFixed(0)} cm² (${(100 * r.futs.pctMax).toFixed(2)} %) ${r.futs.ok ? '✓' : '✗'}`);
+        if (r.chev) it.push(`chevêtre ${r.chev.ok ? '✓' : '✗'}`);
+        if (r.sem) it.push(`semelle ${r.sem.trans.inf.toFixed(1)} / ${r.sem.long.inf.toFixed(1)} cm²/m ${r.sem.ok ? '✓' : '✗'}`);
+        if (r.gg) it.push(`garde-grève ${r.gg.A.toFixed(1)} cm²/m`);
+        if (r.retour) it.push(`retours ${r.retour.AhMl.toFixed(1)} cm²/m`);
+        if (r.app) it.push(`frettage ${r.app.ok ? '✓' : '✗'}`);
+        if (r.fond && r.fond.acier) it.push(`pieux As ${Math.max(...r.fond.acier.sections.map((x) => x.A)).toFixed(0)} cm²`);
+        const okEl = r.verdicts.filter((v) => v.el !== 'Fondation').every((v) => v.ok);
+        push(nom, okEl ? 'ok' : 'ko', it.join(' ; '), 'appui', 3, A.j);
+      });
     }
     if (R.cadre) {
       const C = R.cadre, okJ = C.justif.every((j) => j.ok !== false && !j.erreur);
@@ -583,7 +624,7 @@
     }
     R.fond.forEach((f) => {
       const typ = f.o.type === 'pieux' ? `${f.o.piles.length} pieux Ø ${s.fond.pieux.D} m` : `semelle ${f.o.B.toFixed(2)} × ${f.o.L.toFixed(2)} m`;
-      push('Fondation ' + f.nom, f.err ? 'ko' : f.ok ? 'ok' : 'ko', f.err ? f.err : typ + ' — ' + (f.ok ? 'portance, décompression et glissement vérifiés' : 'au moins un critère NON vérifié'), 'fondations', 4);
+      push('Fondation ' + f.nom, f.err ? 'ko' : f.ok ? 'ok' : 'ko', f.err ? f.err : typ + ' — ' + (f.ok ? 'portance, décompression et glissement vérifiés' : 'au moins un critère NON vérifié'), 'fondations', 4, f.j);
     });
     if (R.gabarit) { const g = R.gabarit; push('Gabarit ' + (g.type === 'rail' ? 'ferroviaire' : 'routier'), g.ok ? 'ok' : 'ko', `hauteur libre ${g.Hdispo.toFixed(2)} m (requis ${g.Hreq.toFixed(2)}), marges latérales ${g.margeG.toFixed(2)} / ${g.margeD.toFixed(2)} m`, null, 1); }
     V.forEach((v) => { v.texte = v.texte.replace(/(\d)\.(\d)/g, '$1,$2'); });   // virgule décimale
@@ -955,11 +996,12 @@
     if (quoi === 'appareils-appui') { const ap = (R.appareils || []).filter((a) => a.app === 'elasto')[idx]; return ap ? appmobilPage(R, ap) : null; }
     if (quoi === 'fondations') { const f = R.fond[idx]; return f ? clone(f.page) : null; }
     if (quoi === 'cadres-portiques') return R.cadInp ? clone(R.cadInp) : null;
+    if (quoi === 'appui') { const A = (R.appuis || [])[idx]; return A && A.d ? { v: 1, d: clone(A.d), sps: clone(R.sps), spsNom: 'OUVRAGES TYPES — ' + (R.sps.sondage || 'sondage') } : null; }
     if (quoi === 'sondages-pressio') return { s: clone(R.sps) };
     return null;
   }
 
-  const api = { TYPES, EN_COURS, MODULES, adapter, tablierInputRoute, disponible, defaut, normaliser, tablierInput, rephorInput, REPHOR_V, cadreInput, geoTablier, descente, fondatioInput, fondatioPage,
+  const api = { appuiInput, TYPES, EN_COURS, MODULES, adapter, tablierInputRoute, disponible, defaut, normaliser, tablierInput, rephorInput, REPHOR_V, cadreInput, geoTablier, fondatioInput, fondatioPage,
     gabarit, metres, metresCSV, integ, verdicts, calcul, implantation, vues, svgVue, dxf, preremplissage, appmobilPage, HRAIL, HTRAV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.ouvragesTypes = api; }
