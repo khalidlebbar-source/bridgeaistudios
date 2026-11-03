@@ -73,7 +73,7 @@
     classe: 2, charges: { LM1: true, LM2: true, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
     appareils: { yC: [1.38, 3.48, 5.58, 7.68], yP: [1.38, 3.58, 5.48, 7.68], kv: 0 },
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
-    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
   };
   const DEF_ROPEN = {
     type: 'ropen', projet: 'Pont-route à poutrelles enrobées — 3 travées biaises', methode: 'plaque', regl: 'ec',
@@ -85,7 +85,7 @@
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
     ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 345, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10,
       percage: { espEnt: 4.85, rangEnt: 0.2, dTrouEnt: 0.03, zEnt: 0.09, espFer: 0.3, dTrouFer: 0.04, zFer: 0.05, aboutFer: 0.1 } },
-    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
   };
 
   /* ══════════════════ 2. Géométrie transversale, charges permanentes ══════════════════ */
@@ -267,20 +267,22 @@
   }
   /* résolution simultanée de m seconds membres (B : tableau de Float64Array) — une seule lecture du facteur par passe */
   function solveBandMulti(A, n, p, Bs) {
-    const w = p + 1, m = Bs.length, Y = Bs.map((b) => Float64Array.from(b));
-    const t = new Float64Array(m);
-    for (let i = 0; i < n; i++) {
-      for (let r = 0; r < m; r++) t[r] = Y[r][i];
-      for (let k = Math.max(0, i - p); k < i; k++) { const a = A[k * w + (i - k)]; if (a) for (let r = 0; r < m; r++) t[r] -= a * Y[r][k]; }
-      const di = A[i * w]; for (let r = 0; r < m; r++) Y[r][i] = t[r] / di;
+    const m = Bs.length;
+    if (m !== 4) return Bs.map((b) => solveBand(A, n, p, b));
+    const w = p + 1, y0 = Float64Array.from(Bs[0]), y1 = Float64Array.from(Bs[1]), y2 = Float64Array.from(Bs[2]), y3 = Float64Array.from(Bs[3]);
+    // descente Uᵀ y = b, par colonnes (lecture contiguë des lignes de U), quatre seconds membres à la fois
+    for (let k = 0; k < n; k++) {
+      const dk = A[k * w], jm = Math.min(n - 1, k + p), wk = k * w - k;
+      const a0 = (y0[k] /= dk), a1 = (y1[k] /= dk), a2 = (y2[k] /= dk), a3 = (y3[k] /= dk);
+      for (let j = k + 1; j <= jm; j++) { const a = A[wk + j]; y0[j] -= a * a0; y1[j] -= a * a1; y2[j] -= a * a2; y3[j] -= a * a3; }
     }
     for (let i = n - 1; i >= 0; i--) {
-      for (let r = 0; r < m; r++) t[r] = Y[r][i];
-      const jm = Math.min(n - 1, i + p);
-      for (let j = i + 1; j <= jm; j++) { const a = A[i * w + (j - i)]; if (a) for (let r = 0; r < m; r++) t[r] -= a * Y[r][j]; }
-      const di = A[i * w]; for (let r = 0; r < m; r++) Y[r][i] = t[r] / di;
+      const jm = Math.min(n - 1, i + p), wi = i * w - i;
+      let s0 = y0[i], s1 = y1[i], s2 = y2[i], s3 = y3[i];
+      for (let j = i + 1; j <= jm; j++) { const a = A[wi + j]; s0 -= a * y0[j]; s1 -= a * y1[j]; s2 -= a * y2[j]; s3 -= a * y3[j]; }
+      const di = A[i * w]; y0[i] = s0 / di; y1[i] = s1 / di; y2[i] = s2 / di; y3[i] = s3 / di;
     }
-    return Y;
+    return [y0, y1, y2, y3];
   }
   function solveBand(A, n, p, b) {
     const w = p + 1, y = Float64Array.from(b);
@@ -403,10 +405,13 @@
 
 
   /* effort tranchant qx au nœud (moyenne des éléments adjacents, déformations de cisaillement MITC4 aux coins) : g·U */
-  function gShear(M, S, node) {
-    const g = new Float64Array(S.nd), L = S.adj[node];
+  /* effort tranchant qx (kN/m) : au nœud (moyenne des éléments adjacents, déformations de cisaillement MITC4 aux coins) ;
+   * avec « cote » ('g' | 'd') : au centre des éléments situés de ce côté de la ligne de nœuds, soit à une demi-maille de la
+   * ligne d'appui (≈ d, EN 1992-1-1 §6.2.1 (8)) : la valeur au droit d'un appui ponctuel est singulière. */
+  function gShear(M, S, node, cote) {
+    const g = new Float64Array(S.nd), L = S.adj[node].filter(([, a]) => !cote || (cote === 'g' ? a === 1 || a === 2 : a === 0 || a === 3));
     for (const [ie, a] of L) {
-      const e = M.elems[ie], [r, s] = CORN[a], b = Bshear(e.X, e.Y, r, s);
+      const e = M.elems[ie], [r, s] = cote ? [0, 0] : CORN[a], b = Bshear(e.X, e.Y, r, s);
       for (let k = 0; k < 12; k++) g[e.dofs[k]] += e.D.Ds[0] * b.B[0][k] / L.length;
     }
     return g;
@@ -583,7 +588,11 @@
     const pick = (keys, f = 1) => { let mx = 0, mn = 0; for (const k of keys) { const v = q[k]; if (!v) continue; mx = Math.max(mx, f * v.max); mn = Math.min(mn, f * v.min); } return { max: mx, min: mn }; };
     let Qc, Qf, QU;
     if (regime === 'ec') {
-      Qc = pick(['LM1', 'LM2', 'qfk', 'LM4', 'LM3']); Qf = pick(['LM1f', 'LM2f']); QU = { max: 1.35 * Qc.max, min: 1.35 * Qc.min };
+      // gr1a = LM1 + trottoirs 3 kN/m² ; gr1b = LM2 ; gr3 = qfk ; gr4 = LM4 ; gr5 = LM3 (EN 1991-2 tableau 4.4a)
+      const t3 = q.tr3 || z, g1 = q.LM1 ? { max: q.LM1.max + t3.max, min: q.LM1.min + t3.min } : null, g1f = q.LM1f ? { max: q.LM1f.max + 0.4 * t3.max, min: q.LM1f.min + 0.4 * t3.min } : null;
+      const qq = Object.assign({}, q, { gr1a: g1, gr1af: g1f });
+      const pk = (keys) => { let mx = 0, mn = 0; for (const k of keys) { const v = qq[k]; if (!v) continue; mx = Math.max(mx, v.max); mn = Math.min(mn, v.min); } return { max: mx, min: mn }; };
+      Qc = pk(['gr1a', 'LM2', 'qfk', 'LM4', 'LM3']); Qf = pk(['gr1af', 'LM2f']); QU = { max: 1.35 * Qc.max, min: 1.35 * Qc.min };
     } else {
       const AB = pick(['AL', 'Bc', 'Bt']), tr = q.trott || z, Mc = pick(['Mc80', 'Mc120']);
       Qc = { max: Math.max(1.2 * AB.max + tr.max, Mc.max), min: Math.min(1.2 * AB.min + tr.min, Mc.min) };
@@ -719,7 +728,8 @@
     function cases(eta) {
       const Su = surface(M, Gr, eta), q = {};
       const lm = (sg, f1, f2, qt) => placeLM1(Gr, Su, { sg, fTS: f1, fUDL: f2, qtr: qt, classe: cl, ch: chC, tr: trC, a: aTS });
-      if (ch.LM1) { q.LM1 = { max: lm(1, 1, 1, 3).v, min: lm(-1, 1, 1, 3).v }; q.LM1f = { max: lm(1, 0.75, 0.4, 0.4 * 3).v, min: lm(-1, 0.75, 0.4, 0.4 * 3).v }; }
+      if (ch.LM1) { q.LM1 = { max: lm(1, 1, 1, 0).v, min: lm(-1, 1, 1, 0).v }; q.LM1f = { max: lm(1, 0.75, 0.4, 0).v, min: lm(-1, 0.75, 0.4, 0).v }; }
+      if (trC.length) q.tr3 = { max: placeRep(Gr, Su, trC, 3, 1), min: placeRep(Gr, Su, trC, 3, -1) };   // trottoirs, valeur de combinaison de gr1a
       if (ch.LM2) { const f = (sg, ff) => placeLM2(Gr, Su, { sg, beta, f: ff, e2, ch: chC }); q.LM2 = { max: f(1, 1), min: f(-1, 1) }; q.LM2f = { max: 0.75 * q.LM2.max, min: 0.75 * q.LM2.min }; }
       if (+ch.qfk > 0 && trC.length) q.qfk = { max: placeRep(Gr, Su, trC, +ch.qfk, 1), min: placeRep(Gr, Su, trC, +ch.qfk, -1) };
       if (ch.LM4) q.LM4 = { max: placeRep(Gr, Su, allC, 5, 1), min: placeRep(Gr, Su, allC, 5, -1) };
@@ -734,11 +744,17 @@
       const kb = spIdx(s.x, s.side);
       s.fib = fibJ.map((j) => {
         const node = M.id(s.i, j), f = { y: M.yy[j], node };
-        const noms = ['mx', 'my', 'mxy', 'qx'], gs = [gMoment(M, S, node, 0), gMoment(M, S, node, 1), gMoment(M, S, node, 2), gShear(M, S, node)];
+        // effort tranchant : sur une ligne d'appui, de chaque côté (la moyenne des deux côtés s'annulerait)
+        const surApp = s.k === 0 || s.k === d.sections;
+        // sur appui : effort tranchant à une distance ≈ d de la ligne d'appui, de part et d'autre (EN 1992-1-1 §6.2.1 (8))
+        const mD = Math.max(1, Math.round((G.h - +d.mat.dInf) / (M.xi[s.i] - M.xi[s.i - 1] || M.xi[s.i + 1] - M.xi[s.i])));
+        const nG = s.i - mD >= 0 ? M.id(s.i - mD, j) : node, nD = s.i + mD < M.nx ? M.id(s.i + mD, j) : node;
+        const noms = ['mx', 'my', 'mxy', 'qx'], gs = [gMoment(M, S, node, 0), gMoment(M, S, node, 1), gMoment(M, S, node, 2), gShear(M, S, surApp ? nG : node)];
         const Us = S.solveN(gs);
-        for (let a = 0; a < 4; a++) {
+        if (surApp) { noms.push('qx2'); const g2 = gShear(M, S, nD); gs.push(g2); Us.push(S.solve(g2)); }
+        for (let a = 0; a < noms.length; a++) {
           const nom = noms[a], g = gs[a], c = cases(etaOf(Us[a]));
-          const den = nom === 'mx' ? denEnv((r) => r.sec[kb].M / G.Bs) : nom === 'qx' ? denEnv((r) => r.sec[kb].V / G.Bs) : { max: 0, min: 0 };
+          const den = nom === 'mx' ? denEnv((r) => r.sec[kb].M / G.Bs) : nom === 'qx' || nom === 'qx2' ? denEnv((r) => r.sec[kb].V / G.Bs) : { max: 0, min: 0 };
           f[nom] = { g: caseU.map((u) => dot(g, u.U)), den, q: c.q };
           f[nom].c = combiner(f[nom], cats, 'ec');
         }
@@ -751,7 +767,7 @@
       } else {
         s.Mx = envMax(s.fib.map((f) => f.mx.c)); s.My = envMax(s.fib.map((f) => f.my.c));
       }
-      s.V = envMax(s.fib.map((f) => f.qx.c));
+      s.V = envMax(s.fib.flatMap((f) => (f.qx2 ? [f.qx.c, f.qx2.c] : [f.qx.c])));
     }
     // appareils d'appui : réaction de chaque appareil, réaction globale et moment transversal de la file, rotation
     const app = d._app.map((li, j) => {
@@ -1167,7 +1183,7 @@
       charges: { LM1: true, LM2: false, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
       appareils: { yC: posApp(nC, ecart('dishouapprivcul', 1), ecart('eaxeapprivcul', 2), ecart('eaxeappcencul', 2)), yP: posApp(nP, ecart('dishouapprivpil', 1), ecart('eaxeapprivpil', 2), ecart('eaxeappcenpil', 2)), kv: 0 },
       mat: { fck: n('fc28tab', 32), fe: n('fetab', 500), fissuration: Math.max(0, Math.round(n('fissur', 2)) - 1), dSup: n('dcdgsup', 0.07), dInf: n('dcdginf', 0.07), phi: n('coeffluage', 2) },
-      plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
+      plaque: { nLon: 30, nLar: 24, nu: 0 }, sections: 10,
     };
     d.appareils.yC = ySym(d.appareils.yC); d.appareils.yP = ySym(d.appareils.yP);
     if (ropen) {
