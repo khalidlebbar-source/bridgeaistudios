@@ -112,11 +112,12 @@
     }
     const eyd = fy / Es;
     const euk = mat.regl === 'EC2' ? mat.euk : eud;
-    const rect = mat.regl === 'EC2' && mat.diagramme === 'rect';
-    const lam = B.lam, eta = B.eta;
-    const sigC = (e, emax) => {
+    const rect = mat.diagramme === 'rect';
+    const lam = mat.regl === 'EC2' ? B.lam : 0.8, eta = mat.regl === 'EC2' ? B.eta : 1; // BAEL A.4.3.42 : 0,8 y
+    const sigC = (e, emax, emin) => {
       if (e <= 0) return 0;
-      if (rect) return e >= (1 - lam) * emax - 1e-15 ? eta * fc : 0;
+      // diagramme rectangulaire simplifié : valable pour une section partiellement comprimée (axe neutre dans la section)
+      if (rect && !(emin > 0)) return e >= (1 - lam) * emax - 1e-15 ? eta * fc : 0;
       if (e >= ec2) return fc;
       return fc * (1 - Math.pow(1 - e / ec2, n));
     };
@@ -154,7 +155,7 @@
     const yG = fib.reduce((s, f) => s + f.A * f.dep, 0) / Ac;        // profondeur du c.d.g. béton
     const h = Math.max(...zones.map((z) => z.y2));
     const conc = fib.map((f) => ({ x: 0, y: yG - f.dep, A: f.A, t: f.t, w: f.w }));
-    const bars = (nappes || []).filter((n) => n && Number.isFinite(+n.d) && +n.As > 0).map((n, i) => ({ x: 0, y: yG - n.d, A: n.As * 1e-4, d: +n.d, nom: n.nom || `Nappe ${i + 1}` }));
+    const bars = (nappes || []).filter((n) => n && Number.isFinite(+n.d) && +n.d > 0 && +n.As >= 0).map((n, i) => ({ x: 0, y: yG - n.d, A: n.As * 1e-4, d: +n.d, nom: n.nom || `Nappe ${i + 1}` }));
     const width = (dep) => { for (const z of zones) if (dep >= z.y1 - 1e-12 && dep <= z.y2 + 1e-12) return z.w1 + (z.w2 - z.w1) * (dep - z.y1) / Math.max(z.y2 - z.y1, EPS); return 0; };
     const I = conc.reduce((s, f) => s + f.A * f.y * f.y + f.w * Math.pow(f.t, 3) / 12, 0);
     return Object.assign({ kind, plan: true, conc, bars, yG, h, Ac, Ic: I, width, zones, ref: { x: 0, y: 0 }, yTop: yG, yBot: yG - h }, extra);
@@ -250,9 +251,9 @@
   /* ════════════════════════════ INTÉGRATION ════════════════════════════ */
   /* plan de déformation : ε(x,y) = e0 − ky·y + kx·x  (compression > 0) ; N = Σσ A ; Mx = −Σσ A y ; My = Σσ A x (kN, kN·m) */
   function integre(geo, sc, ss, e0, ky, kx = 0) {
-    let N = 0, Mx = 0, My = 0, emax = -Infinity;
-    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; if (e > emax) emax = e; }
-    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; const s = sc(e, emax); if (s) { const F = s * f.A * 1000; N += F; Mx -= F * f.y; My += F * f.x; } }
+    let N = 0, Mx = 0, My = 0, emax = -Infinity, emin = Infinity;
+    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; if (e > emax) emax = e; if (e < emin) emin = e; }
+    for (const f of geo.conc) { const e = e0 - ky * f.y + kx * f.x; const s = sc(e, emax, emin); if (s) { const F = s * f.A * 1000; N += F; Mx -= F * f.y; My += F * f.x; } }
     for (const b of geo.bars) { const e = e0 - ky * b.y + kx * b.x; const F = ss(e) * b.A * 1000; N += F; Mx -= F * b.y; My += F * b.x; }
     return { N, Mx, My };
   }
@@ -260,10 +261,9 @@
   function planUltime(geo, L, u, t) {
     const s = (p) => u[0] * p.x + u[1] * p.y;
     let sTop = -Infinity, sBot = Infinity;
-    for (const f of geo.conc) { const v = s(f.x !== undefined ? f : f) + (f.t && geo.plan ? Math.abs(u[1]) * f.t / 2 : 0); if (v > sTop) sTop = v; const w = s(f) - (f.t && geo.plan ? Math.abs(u[1]) * f.t / 2 : 0); if (w < sBot) sBot = w; }
-    if (geo.points) { sTop = -Infinity; sBot = Infinity; for (const p of geo.points) { const v = u[0] * (p[0] - geo.ref.x) + u[1] * (p[1] - geo.ref.y); sTop = Math.max(sTop, v); sBot = Math.min(sBot, v); } }
+    if (geo.points) { for (const p of geo.points) { const v = u[0] * (p[0] - geo.ref.x) + u[1] * (p[1] - geo.ref.y); sTop = Math.max(sTop, v); sBot = Math.min(sBot, v); } }
     else if (geo.kind === 'cercle') { sTop = geo.D / 2; sBot = -geo.D / 2; }
-    else if (geo.plan) { sTop = u[1] > 0 ? geo.yTop : -geo.yBot; sBot = u[1] > 0 ? geo.yBot : -geo.yTop; }
+    else { sTop = u[1] > 0 ? geo.yTop : -geo.yBot; sBot = u[1] > 0 ? geo.yBot : -geo.yTop; }
     let sSt = sBot; if (geo.bars.length) sSt = Math.min(...geo.bars.map(s));
     if (sSt >= sTop - 1e-6) sSt = sBot;
     const H = sTop - sBot, { ecu, ec2, eud } = L;
@@ -409,12 +409,13 @@
     const eTop = Math.max(...ext), eBot = Math.min(...ext);
     sc = Math.max(0, Ec * eTop);
     const ss = geo.bars.map((b) => Es * (v.e0 - v.ky * b.y + v.kx * b.x));
+    const ssA = ss.filter((_, i) => geo.bars[i].A > 0);
     // hauteur comprimée mesurée depuis la fibre la plus comprimée, perpendiculairement à l'axe neutre
     const k = Math.hypot(v.ky, v.kx);
     if (k > EPS) xC = clamp(eTop / k, 0, (eTop - eBot) / k);
     else xC = v.e0 > 0 ? Infinity : 0;
     const smoy = Ac > 0 ? Fc / Ac / 1000 : 0;
-    return { N, M: Mx, My, n, sc, ss, ssMin: ss.length ? Math.min(...ss) : 0, ssMax: ss.length ? Math.max(...ss) : 0, x: xC, Ac, smoy, plan: v, eTop, eBot, conv: v.conv };
+    return { N, M: Mx, My, n, sc, ss, ssMin: ssA.length ? Math.min(...ssA) : 0, ssMax: ssA.length ? Math.max(...ssA) : 0, x: xC, Ac, smoy, plan: v, eTop, eBot, conv: v.conv };
   }
   /* caractéristiques homogénéisées : non fissurée (béton entier + n·As) et fissurée en flexion simple (béton comprimé + n·As) */
   function props(geo, n = 15) {
@@ -448,20 +449,17 @@
     let As = 0, ss = 0, hceff, Aceff, h, d, x = e.x, k2 = 0.5;
     if (geo.kind === 'cercle') {
       h = geo.D; x = Math.min(e.x, h);
-      const tension = e.ss.some((s) => s < 0); if (!tension) return { wk: 0, sr: 0, dEps: 0, ss: 0, k3, sansTraction: true };
-      ss = -Math.min(...e.ss); As = geo.AsTot * 1e-4;
+      const tension = e.ssMin < 0; if (!tension) return { wk: 0, sr: 0, dEps: 0, ss: 0, k3, sansTraction: true };
+      ss = -e.ssMin; As = geo.AsTot * 1e-4;
       const t = Math.min(2.5 * geo.a, geo.D / 2), r = geo.D / 2;
       hceff = t; Aceff = Math.PI * (r * r - sq(r - t));                     // couronne d'épaisseur 2,5 a (hypothèse)
       d = geo.D - geo.a;
     } else {
       if (!geo.plan) return null;
-      const inf = e.plan.ky < 0 ? false : true; // ky>0 ⇒ ε décroît vers le haut ⇒ fibre inférieure comprimée ⇒ face tendue = supérieure
-      // face tendue : 'sup' si M>0 (inférieure comprimée)
-      const faceSup = (e.eTop === v_eps(e, geo.yBot)) ? true : (v_eps(e, geo.yTop) < v_eps(e, geo.yBot));
-      void inf;
+      const faceSup = v_eps(e, geo.yTop) < v_eps(e, geo.yBot);   // fibre supérieure la plus tendue
       const yFace = faceSup ? geo.yTop : geo.yBot;
       h = geo.h;
-      const barsT = geo.bars.map((b, i) => ({ b, s: e.ss[i] })).filter((z) => z.s < 0);
+      const barsT = geo.bars.map((b, i) => ({ b, s: e.ss[i] })).filter((z) => z.s < 0 && z.b.A > 0);
       if (!barsT.length) return { wk: 0, sr: 0, dEps: 0, ss: 0, k3, sansTraction: true };
       // aciers de la face tendue : à moins de h/2 de la face
       const near = barsT.filter((z) => Math.abs(z.b.y - yFace) <= h / 2 + 1e-9);
@@ -470,13 +468,13 @@
       const dist = grp.reduce((s, z) => s + z.b.A * Math.abs(z.b.y - yFace), 0) / As; // h − d
       d = h - dist;
       const xx = Number.isFinite(x) ? x : 0;
-      hceff = Math.min(2.5 * dist, (h - xx) / 3, h / 2);
+      hceff = o.xDansHceff === false ? Math.min(2.5 * dist, h / 2) : Math.min(2.5 * dist, (h - xx) / 3, h / 2);
       if (xx <= 0) { hceff = Math.min(2.5 * dist, h / 2); const e1 = Math.max(-e.eTop, -e.eBot), e2 = Math.min(-e.eTop, -e.eBot); k2 = e1 > 0 ? (e1 + Math.max(e2, 0)) / (2 * e1) : 0.5; }
-      const dep = faceSup ? 0 : h; let bt = geo.width(faceSup ? 1e-6 : h - 1e-6);
+      let bt = geo.width(faceSup ? 1e-6 : h - 1e-6);
       if (geo.kind === 'te') { // largeur moyenne sur hc,eff
         let A = 0; const nS = 40; for (let i = 0; i < nS; i++) { const z = (i + 0.5) / nS * hceff; A += geo.width(faceSup ? z : h - z) * hceff / nS; } bt = A / hceff;
       }
-      void dep; Aceff = bt * hceff;
+      Aceff = bt * hceff;
     }
     const rho = As / Aceff;
     const dEps = Math.max((ss - kt * fct / rho * (1 + ae * rho)) / mat.Es, 0.6 * ss / mat.Es);
@@ -495,7 +493,7 @@
     const V = Math.abs(+o.V || 0), T = Math.abs(+o.T || 0), N = +o.N || 0;
     const k = Math.min(1 + Math.sqrt(0.2 / d), 2);
     const rho = Math.min((+o.Asl || 0) * 1e-4 / (bw * d), 0.02);
-    const scp = Math.min(N / Ac / 1000, 0.2 * fcd);                         // MPa, compression > 0
+    const scp = Math.max(Math.min(N / Ac / 1000, 0.2 * fcd), -Infinity);  // MPa, compression > 0 (traction < 0)
     const vmin = o.element === 'dalle' ? 0.34 / gc * Math.sqrt(fck) : 0.053 / gc * Math.pow(k, 1.5) * Math.sqrt(fck);
     const vrdc = Math.max(0.18 / gc * k * Math.pow(100 * rho * fck, 1 / 3) + 0.15 * scp, vmin + 0.15 * scp);
     const VRdc = Math.max(vrdc, 0) * bw * d * 1000;
@@ -568,37 +566,39 @@
   function secondOrdre(geo, mat, c, o) {
     const N = +c.N || 0, M = +c.M || 0, L = +o.L || 0, lf = +o.lf || 0;
     const h = geo.kind === 'cercle' ? geo.D : geo.h || 1;
-    if (!(N > 0) || !(lf > 0)) return { M, e: 0, detail: 'sans objet' };
+    if (o.actif === false) return { M, e: 0, detail: 'excentricités additionnelles non prises en compte' };
+    if (!(N > 0) || !(lf > 0)) return { M, e: 0, detail: N > 0 ? 'sans objet (lf = 0)' : 'sans objet (N ≤ 0)' };
     const sg = M < 0 ? -1 : 1, e1 = Math.abs(M) / N;
+    const alpha = Math.abs(M) > EPS ? clamp((+c.Mcp || 0) / M, 0, 1) : 0;
     if (mat.regl === 'BAEL') {
       const ea = Math.max(0.02, L / 250);
-      const alpha = Math.abs(M) > EPS ? clamp((+c.Mcp || 0) / M, 0, 1) : 0;
       const app = lf / h <= Math.max(15, 20 * (e1 + ea) / h);
       const e2 = app ? 3 * lf * lf * (2 + alpha * 2) / (1e4 * h) : 0;
-      return { M: sg * N * (e1 + ea + e2), e: ea + e2, ea, e2, detail: app ? 'BAEL A.4.3.5 : e2 forfaitaire' : 'élancement hors domaine forfaitaire (non traité)', horsDomaine: !app };
+      return { M: sg * N * (e1 + ea + e2), e: ea + e2, ea, e2, detail: app ? 'ea + e2 forfaitaire (BAEL A.4.3.5)' : 'élancement hors domaine forfaitaire : e2 non calculé', horsDomaine: !app };
     }
     const Lc = lois(mat, 1);
-    const ah = clamp(2 / Math.sqrt(Math.max(L || lf, 1e-6)), 2 / 3, 1);
-    const ei = ah / 200 * lf / 2;
-    const i = Math.sqrt((geo.Ic || 1) / geo.Ac);
-    const lam = lf / i;
+    let ea, detA;
+    if (o.ea === 'forfait') { ea = Math.max(0.02, L / 250); detA = 'ea = max(2 cm ; L/250)'; }
+    else {
+      const ah = clamp(2 / Math.sqrt(Math.max(L || lf, 1e-6)), 2 / 3, 1);
+      ea = ah / 200 * lf / 2; detA = 'ei = θi·l0/2 (§5.2)';
+    }
+    const i = Math.sqrt((geo.Ic || 1) / geo.Ac), lam = lf / i;
     const As = geo.bars.reduce((s, b) => s + b.A, 0);
-    const omega = As * Lc.fy / (geo.Ac * Lc.fc);
-    const nrel = N / 1000 / (geo.Ac * Lc.fc);
-    const phiEf = Math.abs(M) > EPS ? mat.phi * clamp((+c.Mcp || 0) / M, 0, 1) : 0;
-    const Ac = 1 / (1 + 0.2 * phiEf), Bc = Math.sqrt(1 + 2 * omega), Cc = 0.7;
-    const lamLim = 20 * Ac * Bc * Cc / Math.sqrt(Math.max(nrel, 1e-9));
+    const omega = As * Lc.fy / (geo.Ac * Lc.fc), nrel = N / 1000 / (geo.Ac * Lc.fc);
+    const phiEf = mat.phi * alpha;
+    const lamLim = 20 * (1 / (1 + 0.2 * phiEf)) * Math.sqrt(1 + 2 * omega) * 0.7 / Math.sqrt(Math.max(nrel, 1e-9));  // §5.8.3.1
     let e2 = 0;
     if (lam > lamLim) {
-      const dd = geo.kind === 'cercle' ? geo.D / 2 + geo.rs / 2 : Math.max(...geo.bars.map((b) => b.d || 0), 0.9 * h) || 0.9 * h; // §5.8.8.3 (2) approx.
+      const dd = geo.kind === 'cercle' ? geo.D / 2 + geo.rs / 2 : (Math.max(0, ...geo.bars.map((b) => Math.max(b.d || 0, h - (b.d || 0)))) || 0.9 * h);
       const nu = 1 + omega, Kr = clamp((nu - nrel) / (nu - 0.4), 0, 1);
       const beta = 0.35 + mat.fc / 200 - lam / 150, Kphi = Math.max(1, 1 + beta * phiEf);
-      const r1 = Kr * Kphi * Lc.eyd / (0.45 * dd);
-      e2 = r1 * lf * lf / (o.c || 8);
+      e2 = Kr * Kphi * Lc.eyd / (0.45 * dd) * lf * lf / (+o.c || 8);                     // §5.8.8.2, 5.8.8.3
     }
-    const e0 = Math.max(h / 30, 0.02);
-    const etot = Math.max(e1 + ei + e2, e0);
-    return { M: sg * N * etot, e: etot - e1, ei, e2, lam, lamLim, e0, detail: lam > lamLim ? 'second ordre (courbure nominale)' : 'imperfection seule (λ ≤ λlim)' };
+    let e = ea + e2;
+    const e0 = o.ea === 'forfait' ? 0 : Math.max(h / 30, 0.02);                            // §6.1 (4)
+    if (e1 + e < e0) e = e0 - e1;
+    return { M: sg * N * (e1 + e), e, ea, e2, lam, lamLim, e0, detail: detA + (lam > lamLim ? ' + e2 (courbure nominale §5.8.8)' : ' (λ ≤ λlim, pas de second ordre)') };
   }
 
   /* ════════════════════════════ FATIGUE (simplifiée) ════════════════════════════ */
@@ -702,10 +702,10 @@
     const EL = (d.elu || []).filter((r) => r && [r.N, r.M, r.My, r.V, r.T].some((v) => Number.isFinite(+v) && +v !== 0));
     const ES = (d.els || []).filter((r) => r && [r.N, r.M, r.My].some((v) => Number.isFinite(+v) && +v !== 0));
     const FT = (d.fat || []).filter((r) => r && [r.M1, r.M2, r.N1, r.N2].some((v) => Number.isFinite(+v) && +v !== 0));
-    const so = (r) => secondOrdre(geo, mat, r, { L: o.L, lf: o.lf, c: o.cCourbure });
+    const so = (r) => secondOrdre(geo, mat, r, { L: o.L, lf: o.lf, c: o.cCourbure, ea: o.ea, actif: o.excAdd !== false && !(o.pieu && o.pieu.actif) });
     const fiss = o.fissu || {};
     const faceOf = (r) => (+r.M || 0) >= 0 ? 'sup' : 'inf';                 // face tendue en flexion
-    const wkOpts = (face) => { const f = fiss[face] || fiss.sup || {}; return { c: +f.c || 30, phi: +f.phi || 20, s: +f.s || 200, kt: o.kt ?? 0.4, wmax: +o.wmax || 0.3 }; };
+    const wkOpts = (face) => { const f = fiss[face] || fiss.sup || {}; return { c: +f.c || 30, phi: +f.phi || 20, s: +f.s || 200, kt: o.kt ?? 0.4, wmax: +o.wmax || 0.3, xDansHceff: o.xDansHceff }; };
     let dim = null;
 
     /* ── dimensionnement (rect, T : deux nappes ; cercle : section totale) ── */
@@ -741,7 +741,11 @@
         }
       } else {
         const Nmax = Math.max(0, ...EL.map((r) => +r.N || 0));
-        req.min[0] = Math.max(0.002 * geo.Ac, 0.10 * Nmax / 1000 / lois(mat, 1).fy) * 1e4;
+        req.min[0] = Math.max(0.002 * geo.Ac, 0.10 * Nmax / 1000 / lois(mat, 1).fy) * 1e4;      // §9.5.2 (2)
+        if (o.pieu && o.pieu.actif && mat.regl === 'EC2') {                                     // §9.8.5 (3) tableau 9.6N
+          const Ac = geo.Ac; req.minPieu = Ac <= 0.5 ? 0.005 * Ac * 1e4 : Ac <= 1 ? 25 : 0.0025 * Ac * 1e4;
+          req.min[0] = Math.max(req.min[0], req.minPieu);
+        }
       }
       As = As.map((v, i) => Math.max(v, req.min[i]));
       // ELS : contraintes (aciers tendus, puis béton avec aciers comprimés)
@@ -783,7 +787,7 @@
       if (o.sym && plan2) { const m = Math.max(...As); As = [m, m]; }
       const Amax = 0.04 * geo.Ac * 1e4;
       if (As.reduce((s, v) => s + v, 0) > Amax) alertes.push(`Section d'acier totale supérieure à 4 % de la section de béton (${Amax.toFixed(1)} cm²).`);
-      dim = { As, req };
+      dim = { As, req, AsELU: req.elu.slice() };
       geo = avecAciers(geo, sec, As);
       if (plan2) sec.nappes.forEach((n, i) => (n.As = As[i])); else sec.As = As[0];
     }
@@ -817,16 +821,18 @@
       if (geo.kind === 'cercle') { const R = geo.D / 2; bw = geo.D / 1.4; dd = R + geo.rs / Math.PI; h = geo.D; z = 0.9 * dd; Asl = geo.AsTot / 2; }
       else if (geo.plan) {
         bw = geo.kind === 'te' ? geo.bw : geo.b; h = geo.h;
-        const tendue = geo.bars.filter((b) => ((+r.M || 0) >= 0 ? b.y > 0 : b.y < 0));
-        const grp = tendue.length ? tendue : geo.bars;
+        const Mr = +r.M || 0;
+        // face tendue : supérieure si M > 0 ; si M = 0, nappe la plus basse (plus grande hauteur utile)
+        const tendue = geo.bars.filter((b) => b.A > 0 && (Mr > 0 ? b.y > 0 : b.y < 0));
+        const grp = tendue.length ? tendue : geo.bars.filter((b) => b.A > 0);
         Asl = grp.reduce((s, b) => s + b.A, 0) * 1e4;
-        dd = grp.length ? grp.reduce((s, b) => s + b.A * ((+r.M || 0) >= 0 ? geo.h - b.d : b.d), 0) / grp.reduce((s, b) => s + b.A, 0) : 0.9 * h;
+        dd = grp.length ? grp.reduce((s, b) => s + b.A * (Mr > 0 ? geo.h - b.d : b.d), 0) / grp.reduce((s, b) => s + b.A, 0) : 0.9 * h;
         if (!(dd > 0)) dd = 0.9 * h;
         z = 0.9 * dd;
       } else continue;
       if (geo.kind === 'cercle' && +r.T) alertes.push('Torsion non traitée pour la section circulaire.');
       const x = mat.regl === 'EC2'
-        ? tranchantEC2({ bw, h, d: dd, z, b: geo.kind === 'te' ? geo.bw : bw, Ac: geo.Ac, Asl: o.AslCis ?? Asl, N: r.N, V: r.V, T: geo.kind === 'cercle' ? 0 : r.T, fck: mat.fc, fyk: mat.fyk, gc: L.gc, gs: L.gs, cot: o.cot ?? 'libre', element: o.element || 'poutre' })
+        ? tranchantEC2({ bw, h, d: dd, z, b: geo.kind === 'te' ? geo.bw : bw, Ac: geo.Ac, Asl: o.AslCis ?? (dim && geo.kind !== 'cercle' ? Math.min(Asl, Math.max(...dim.AsELU.map((v) => v || 0))) || Asl : Asl), N: r.N, V: r.V, T: geo.kind === 'cercle' ? 0 : r.T, fck: mat.fc, fyk: mat.fyk, gc: L.gc, gs: L.gs, cot: o.cot ?? 'libre', element: o.element || 'poutre' })
         : tranchantBAEL({ b0: bw, h, d: dd, fc28: mat.fc, fe: mat.fyk, gb: lois(mat, 1).gc, gs: L.gs, fissuration: mat.fissuration, N: r.N, V: r.V, T: geo.kind === 'cercle' ? 0 : r.T, reprise: o.reprise || 0 });
       resCis.push(Object.assign(x, { no: EL.indexOf(r) + 1, bw, d: dd }));
     }
