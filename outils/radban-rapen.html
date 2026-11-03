@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RADBAN-RAPEN — Tabliers de ponts-rails BA et poutrelles enrobées · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/radban-rapen.html">
+<meta name="description" content="Tabliers de ponts-rails en dalle béton armé ou à poutrelles enrobées, 1 à 7 travées : flexion longitudinale sous UIC 71, SW/0, SW/2 (Livret 2.01, EN 1991-2), répartition transversale Guyon-Massonnet, aciers BAEL/EC2, contraintes et moments résistants des poutrelles, flèches, contre-flèches, descentes de charges, plans de coffrage et de perçage, export vers REPHOR et APPUI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .hid{display:none!important}
+  svg.plan{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px;margin:4px 0 10px}
+  .sub{font-size:10.5px;color:var(--ink3);margin:12px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .seg{display:flex;gap:4px;margin-bottom:10px}
+  .seg button{flex:1;padding:7px 8px;border-radius:8px;border:1px solid var(--border);background:transparent;font-family:'Outfit',sans-serif;font-size:12.5px;color:var(--ink2);cursor:pointer}
+  .seg button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+  td.ko{color:#c0392b}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Tabliers et murs</div>
+      <div class="eyebrow">RADBAN-RAPEN · tabliers de ponts-rails</div>
+      <h1>Tabliers de ponts-rails en <em>dalle BA</em> et à <em>poutrelles enrobées</em></h1>
+      <p class="lead">Calcul en poutre continue de 1 à 7 travées : flexion longitudinale sous UIC 71, SW/0 et SW/2, répartition transversale Guyon-Massonnet, aciers de la dalle ou vérification des poutrelles enrobées, flèches et contre-flèches, réactions des appareils d’appui, plans de coffrage et de perçage.</p>
+      <div class="badges"><span class="badge">Livret 2.01</span><span class="badge">EN 1991-2 §6.3 · §6.4.5</span><span class="badge">EN 1990 A2</span><span class="badge">BAEL 91 mod. 99</span><span class="badge">EN 1992-2</span><span class="badge">EN 1994-2 §6.3</span><span class="badge">Fasc. 61 titre V</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDon">Importer un fichier .don</button>
+      <button class="btn" id="bRephor">Exporter vers REPHOR</button>
+      <button class="btn" id="bAppui">Exporter les fichiers appui</button>
+      <button class="btn" id="bDxf">Plans DXF</button>
+      <button class="btn sm" id="bDef">Exemple par défaut</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card">
+      <div class="card-title"><span>Type de tablier</span></div>
+      <div class="seg" id="segType"><button data-t="radba">Dalle béton armé (RADBA)</button><button data-t="rapen">Poutrelles enrobées (RAPEN)</button></div>
+      <div class="fields" id="fGen"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Travées et coupe transversale</span><small>m</small></div>
+      <div class="fields" id="fGeo"></div>
+    </div>
+    <div class="card" id="cPE">
+      <div class="card-title"><span>Poutrelles enrobées</span><small>catalogue INERPE</small></div>
+      <div class="fields" id="fPE"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Voies et charges d’exploitation</span></div>
+      <div class="fields" id="fCh"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Charges permanentes</span><small>kN/ml de tablier</small></div>
+      <div class="fields" id="fG"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Matériaux et sections</span></div>
+      <div class="fields" id="fMat"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>Appareils d’appui</span></div>
+      <div class="fields" id="fApp"></div>
+    </div>
+    <div class="card" id="cPerc">
+      <div class="card-title"><span>Perçage des poutrelles</span><small>m</small></div>
+      <div class="fields" id="fPerc"></div>
+    </div>
+    <details class="ref card">
+      <summary>Périmètre et hypothèses</summary>
+      <ul>
+        <li><b>Calcul en poutre</b> (biais 70 à 130 gr) : poutre continue à inertie constante (1 à 7 travées + consoles), lignes d’influence exactes (module POUTRE). Le calcul en plaque (biais 20 à 180 gr) n’est pas proposé : au-delà du domaine du calcul en poutre, le module refuse le calcul.</li>
+        <li><b>Répartition transversale</b> : coefficient K de Guyon-Massonnet à l’axe de la dalle (module GMSLT, α = 1, dalle équivalente de largeur 2b, portée équivalente L, 0,9 L en travée de rive, 0,8 L en travée intermédiaire) pour chaque voie, charge répartie sur ltrav + 2·hb/4 + 2·(h/2)/4 (EN 1991-2 §6.3.6.3). Les moments sont ceux de la dalle entière (largeur équivalente), sans prise en compte du biais dans la flexion longitudinale. K peut être saisi.</li>
+        <li><b>Charges</b> : UIC 71 (LM71) avec la charge de la locomotive répartie sur 6,40 m (EN 1991-2 §6.3.6.2), SW/0, SW/2, α et Φ2 ou Φ3 (LΦ du tableau 6.2). Groupes : Gr12 = UIC/SW0 sur les voies chargées, Gr14 = SW/2 sur une voie + UIC/SW0 sur l’autre. Accotements 5 kN/m² chargés sur toute la longueur. Dénivellation aléatoire d’un appui (module différé, enveloppe des appuis pris un à un). Vent, force centrifuge, gradient thermique et fatigue non calculés.</li>
+        <li><b>Combinaisons</b> : Livret 2.01 tableau 1 (ELU 1,35 G / 1,00 G ; 1,45 Gr12 ; 1,35 Gr14 ; 1,16 Gr12 d’accompagnement ; accotements 1,20 / 1,50 ; dénivellations 1,35) ou EN 1990 annexe A2. Charges amovibles (ballast, caniveaux, voie) majorées de 30 %.</li>
+        <li><b>RADBA</b> : aciers longitudinaux de la section rectangulaire équivalente (même aire et même inertie que la coupe) par BAEL-EC2 : ELU (BAEL, charges de durée &lt; 1 h, fsu = 0,8 fe/γs du Livret 2.01 chap. 2A), ELS (σs ≤ fissuration peu préjudiciable ou préjudiciable, σbc ≤ 0,6 fc28, n = 15), non-fragilité, aciers de construction. Effort tranchant BAEL A.5.1 (fet saisi). Aciers transversaux, chevêtres incorporés et encorbellements : non calculés.</li>
+        <li><b>RAPEN</b> : contraintes ELS par phases (poids propre sur poutrelles seules, actions de longue durée n = 18, de courte durée n = 6, béton tendu négligé) avec les inerties d’INERPE ; moment résistant plastique (INERPE, EN 1994-2 §6.2.1.2) avec chapeaux dans les zones de moment négatif ; Mpl des poutrelles seules au bétonnage ; effort tranchant repris par les poutrelles seules (EN 1993-1-1 §6.2.6) ; déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée) ; contre-flèche = f(béton mou) + f(superstructures) + f(exploitation)/2.</li>
+        <li><b>Flèches</b> : UIC 71 sur une voie avec Φ et K, inertie moyenne (fissurée + non fissurée)/2 ; limite de confort EN 1990 A2.4.4.3 (L/δ saisi, × 0,9 pour 3 travées ou plus, × 0,7 sinon). Rotations d’about et δH (Livret 2.01 art. 1.8.1.2.2).</li>
+        <li><b>Appareils d’appui</b> : réactions globales par lignes d’influence ; répartition transversale rigide (Navier) entre les appareils d’une file, charges permanentes réparties uniformément ; appareil le plus et le moins chargé. Export vers REPHOR (G, Q, rotation par file) et APPUI (JSON).</li>
+        <li><b>Plans</b> : coffrage (élévation, vue en plan biaise, coupe) et, pour RAPEN, perçage et cintrage d’une poutrelle (entretoises, aciers inférieurs, contre-flèche) en SVG et DXF R12 simple.</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/poutre.js"></script>
+<script src="js/gmslt.js"></script>
+<script src="js/bael-ec2.js"></script>
+<script src="js/inerpe.js"></script>
+<script src="js/radban-rapen.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const E = BA.radbanRapen, fmt = BA.fmt, esc = BA.esc, KEY = 'radban-rapen';
+  const f0 = (v) => fmt(v, 0), f1 = (v) => fmt(v, 1), f2 = (v) => fmt(v, 2), f3 = (v) => fmt(v, 3);
+  const $ = (id) => document.getElementById(id);
+  let type = 'radba', last = null, lastErr = null;
+
+  /* ── schémas de saisie ── */
+  const F_GEN = [
+    { id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: '', wide: true },
+    { id: 'regl', label: 'Règlement', type: 'sel', def: 'livret', options: [['livret', 'Livret 2.01 + BAEL 91 mod. 99'], ['ec', 'Eurocodes (EN 1990 A2, EN 1992-2)']], wide: true },
+  ];
+  const F_GEO = [
+    { id: 'travees', label: 'Portées (1 à 7)', unit: 'm', type: 'txt', def: '14 20 14', wide: true },
+    { id: 'cg', label: 'Console côté C0', unit: 'm', def: 0.45 },
+    { id: 'cd', label: 'Console côté Cn', unit: 'm', def: 0.45 },
+    { id: 'biais', label: 'Biais', unit: 'gr', def: 110, help: '70 à 130 gr' },
+    { id: 'Btot', label: 'Largeur droite totale', unit: 'm', def: 11.88 },
+    { id: 'h', label: 'Épaisseur (mini) de la dalle', unit: 'm', def: 1.15 },
+    { id: 'lc', label: 'Longueur des consoles de rive', unit: 'm', def: 0.8 },
+    { id: 'er', label: 'Épaisseur en rive', unit: 'm', def: 0.325 },
+    { id: 'penteC', label: 'Pente sous console (V/H)', def: 0.5 },
+    { id: 'penteExt', label: 'Forme de pente extrados', unit: 'm/m', def: 0.01 },
+    { id: 'dRebord', label: 'Départ de la forme de pente', unit: 'm', def: 0.2 },
+  ];
+  const F_PE = [
+    { id: 'profil', label: 'Profilé', type: 'txt', def: 'HEA 1000' },
+    { id: 'nPout', label: 'Nombre de poutrelles', def: 14, step: 1 },
+    { id: 'nuance', label: 'Nuance', type: 'sel', def: 'S355', options: [['S235', 'S235'], ['S275', 'S275'], ['S355', 'S355'], ['S420', 'S420'], ['S460', 'S460']] },
+    { id: 'fy', label: 'fy (0 = selon nuance)', unit: 'MPa', def: 345 },
+    { id: 'csup', label: 'Béton au-dessus des poutrelles', unit: 'm', def: 0.1277 },
+    { id: 'ecof', label: 'Épaisseur des dallettes', unit: 'm', def: 0.02 },
+    { id: 'debLat', label: 'Débord latéral / poutrelle de rive', unit: 'm', def: 0.12 },
+    { id: 'AsChap', label: 'Chapeaux sur appuis', unit: 'cm²', def: 94.26 },
+    { id: 'AsMinM', label: 'Aciers supérieurs mini', unit: 'cm²/m', def: 4 },
+    { id: 'dAs', label: 'Enrobage des aciers supérieurs', unit: 'm', def: 0.0603 },
+    { id: 'nCourt', label: 'n court terme', def: 6 },
+    { id: 'nLong', label: 'n long terme', def: 18 },
+    { id: 'gammaA', label: 'γa (ELU)', def: 1.05 },
+    { id: 'sigS', label: 'σ limite des chapeaux', unit: 'MPa', def: 270 },
+  ];
+  const F_CH = [
+    { id: 'nVoies', label: 'Voies sur l’ouvrage', type: 'sel', def: 2, options: [[1, '1 voie'], [2, '2 voies']] },
+    { id: 'nCharge', label: 'Voies chargées (Gr12)', type: 'sel', def: 2, options: [[1, '1'], [2, '2']] },
+    { id: 'e1', label: 'Excentricité voie 1', unit: 'm', def: -2.4 },
+    { id: 'e2', label: 'Excentricité voie 2', unit: 'm', def: 2.4 },
+    { id: 'hb', label: 'Ballast sous traverse', unit: 'm', def: 0.35 },
+    { id: 'ltrav', label: 'Longueur des traverses', unit: 'm', def: 2.25 },
+    { id: 'alpha', label: 'α (LM71, SW/0)', def: 1 },
+    { id: 'entretien', label: 'Entretien de la voie', type: 'sel', def: 'soigne', options: [['soigne', 'soigné (Φ2)'], ['courant', 'courant (Φ3)']] },
+    { id: 'uicReparti', label: 'Charge de la locomotive répartie sur 6,40 m', type: 'chk', def: true },
+    { id: 'repartition', label: 'Répartition transversale', type: 'sel', def: 'gmslt', options: [['gmslt', 'Guyon-Massonnet (GMSLT)'], ['saisi', 'coefficient K saisi']] },
+    { id: 'Ksaisi', label: 'K saisi', def: 1 },
+    { id: 'qAcc', label: 'Charge sur accotements', unit: 'kN/m²', def: 5 },
+    { id: 'lAcc', label: 'Largeur d’un accotement', unit: 'm', def: 0.85 },
+    { id: 'Ldelta', label: 'Confort : L/δ (fig. A2.3)', def: 1500 },
+  ];
+  const F_G = [
+    { id: 'gBeton', label: 'Poids volumique du béton', unit: 'kN/m³', def: 25 },
+    { id: 'Gna', label: 'Superstructures non amovibles', unit: 'kN/m', def: 20.83, help: 'étanchéité, rebords, garde-corps, corniches' },
+    { id: 'Gb', label: 'Ballast', unit: 'kN/m', def: 112.4 },
+    { id: 'Ga', label: 'Autres amovibles', unit: 'kN/m', def: 9.39, help: 'caniveaux, armement des voies' },
+    { id: 'kAmov', label: 'Majoration des amovibles', def: 1.3 },
+    { id: 'den', label: 'Dénivellation d’appui', unit: 'm', def: 0.01 },
+  ];
+  const F_MAT = [
+    { id: 'fck', label: 'fc28 / fck', unit: 'MPa', def: 32 },
+    { id: 'fe', label: 'fe / fyk', unit: 'MPa', def: 500 },
+    { id: 'fissuration', label: 'Fissuration', type: 'sel', def: 1, options: [[0, 'peu préjudiciable'], [1, 'préjudiciable'], [2, 'très préjudiciable']] },
+    { id: 'fet', label: 'fe des aciers d’effort tranchant', unit: 'MPa', def: 400 },
+    { id: 'dSup', label: 'Enrobage (c.d.g.) aciers sup.', unit: 'm', def: 0.06 },
+    { id: 'dInf', label: 'Hauteur utile aciers inf.', unit: 'm', def: 1.09 },
+    { id: 'AsMin', label: 'Aciers de construction', unit: 'cm²/m', def: 3 },
+  ];
+  const F_APP = [
+    { id: 'nCulee', label: 'Appareils par culée', def: 4, step: 1 },
+    { id: 'nPile', label: 'Appareils par pile', def: 4, step: 1 },
+    { id: 'yApp', label: 'Positions transversales', unit: 'm', type: 'txt', def: '-4.65 -1.55 1.55 4.65', wide: true, help: 'depuis l’axe du tablier ; vide = répartition régulière' },
+    { id: 'appuiFixe', label: 'Appui fixe n°', def: 0, step: 1 },
+  ];
+  const F_PERC = [
+    { id: 'espEnt', label: 'Espacement des entretoises', def: 4.85 },
+    { id: 'rangEnt', label: 'Écart des 2 rangées', def: 0.2 },
+    { id: 'dTrouEnt', label: 'Ø trous d’entretoises', def: 0.03 },
+    { id: 'zEnt', label: 'Axe / sous-face aile sup.', def: 0.09 },
+    { id: 'espFer', label: 'Espacement aciers inf.', def: 0.3 },
+    { id: 'dTrouFer', label: 'Ø trous aciers inf.', def: 0.04 },
+    { id: 'zFer', label: 'Axe / dessus dallettes', def: 0.05 },
+    { id: 'aboutFer', label: '1er trou / extrémité', def: 0.1 },
+  ];
+  const GROUPS = [['fGen', F_GEN], ['fGeo', F_GEO], ['fPE', F_PE], ['fCh', F_CH], ['fG', F_G], ['fMat', F_MAT], ['fApp', F_APP], ['fPerc', F_PERC]];
+  const ALL = GROUPS.flatMap((g) => g[1]);
+  const nums = (s) => String(s || '').split(/[\s;]+/).map((x) => parseFloat(x.replace(',', '.'))).filter(Number.isFinite);
+
+  /* données moteur ↔ formulaire */
+  function toForm(d) {
+    const v = Object.assign({}, d, { travees: d.travees.join(' '), e1: d.eV[0], e2: d.eV[1] ?? 0, nCulee: d.appuis.nCulee, nPile: d.appuis.nPile,
+      yApp: d.appuis.y ? d.appuis.y.map((x) => +(+x).toFixed(4)).join(' ') : '', appuiFixe: d.appuiFixe || 0 });
+    Object.assign(v, d.percage || {});
+    return v;
+  }
+  function fromForm() {
+    const v = BA.read(ALL, 'i_');
+    const d = Object.assign({}, v, { type, travees: nums(v.travees), eV: [v.e1, v.e2], uicReparti: !!v.uicReparti,
+      appuis: { nCulee: Math.round(v.nCulee), nPile: Math.round(v.nPile), y: nums(v.yApp).length ? nums(v.yApp) : null } });
+    if (type === 'rapen') d.percage = Object.fromEntries(F_PERC.map((f) => [f.id, v[f.id]]));
+    return d;
+  }
+  function build(d) {
+    type = d.type || 'radba';
+    const v = toForm(Object.assign({}, type === 'rapen' ? E.DEF_RAPEN : E.DEF_RADBA, d));
+    for (const [id, F] of GROUPS) BA.form($(id), F, 'i_', v);
+    vis();
+  }
+  function vis() {
+    document.querySelectorAll('#segType button').forEach((b) => b.classList.toggle('on', b.dataset.t === type));
+    $('cPE').classList.toggle('hid', type !== 'rapen'); $('cPerc').classList.toggle('hid', type !== 'rapen');
+    ['dSup', 'dInf', 'AsMin'].forEach((k) => $('i_' + k).closest('.field').classList.toggle('hid', type === 'rapen'));
+    $('i_Ksaisi').closest('.field').classList.toggle('hid', $('i_repartition').value !== 'saisi');
+  }
+  const persist = () => BA.store.save(KEY, Object.assign(fromForm(), { _v: 1 }));
+
+  /* ── calcul et affichage ── */
+  function calc() {
+    const out = $('out');
+    try { last = E.calcul(fromForm()); lastErr = null; }
+    catch (e) { last = null; lastErr = e; out.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+    persist();
+    out.innerHTML = render(last);
+    out.querySelectorAll('.tabs').forEach((t) => t.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button'); if (!b) return;
+      t.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      const box = t.parentElement; box.querySelectorAll('[data-pane]').forEach((p) => p.classList.toggle('hid', p.dataset.pane !== b.dataset.p));
+    }));
+  }
+
+  const mainSecs = (R) => R.secs.filter((s) => s.kind === 't' && (s.side !== 'g' || s.travee === R.d.travees.length - 1 || true));
+  function tabSoll(R) {
+    const rows = R.secs.filter((s) => s.kind === 't').map((s) => [f2(s.x) + (s.side === 'g' ? ' g' : s.side === 'd' ? ' d' : ''), f0(s.M.pp), f0(Math.max(s.M.supMax, s.M.supMin)), f0(s.M.den.min) + ' / ' + f0(s.M.den.max), f0(s.M.A.min) + ' / ' + f0(s.M.A.max), f0(s.M.B.min) + ' / ' + f0(s.M.B.max), f0(s.cM.ELS.min) + ' / ' + f0(s.cM.ELS.max), f0(s.cM.ELU.min) + ' / ' + f0(s.cM.ELU.max), f0(Math.max(Math.abs(s.cV.ELU.min), Math.abs(s.cV.ELU.max)))]);
+    return BA.table(['x (m)', 'M pp', 'M sup.', 'M Δ min/max', 'Gr12 min/max', 'Gr14 min/max', 'ELS min/max', 'ELU min/max', '|V| ELU'], rows, { caption: 'Moments en kN·m (M > 0 : fibre inférieure tendue), efforts tranchants en kN ; « g / d » : à gauche / à droite de l’appui' });
+  }
+  function tabBA(R) {
+    const rows = R.ba.secs.map((a, k) => [R.secs[k], a]).filter(([s]) => s.kind === 't').map(([s, a]) => [f2(s.x) + (s.side ? ' ' + s.side : ''), f2(a.As[0]), f2(a.As[1]), f2(a.sc), f3(a.tau), f2(a.AtB0)]);
+    return BA.table(['x (m)', 'As sup. (cm²)', 'As inf. (cm²)', 'σbc ELS (MPa)', 'τu (MPa)', 'At/(b0·st) (cm²/m²)'], rows, { caption: `Sections pour toute la largeur équivalente (${f3(R.ba.b)} m) ; σs,lim = ${f1(R.ba.ssLim)} MPa, σbc,lim = ${f1(R.ba.scLim)} MPa` });
+  }
+  function tabPE(R) {
+    const L = R.pe.lim;
+    const rows = R.pe.secs.map((p, k) => [R.secs[k], p]).filter(([s]) => s.kind === 't').map(([s, p]) => {
+      const F = p.sigma, ko = !p.okELS || !p.okELU;
+      return [f2(s.x) + (s.side ? ' ' + s.side : ''), f2(F.betonSup.tot > 0 ? F.betonSup.tot : F.betonInf.tot), f1(F.aileSup.tot), f1(F.aileInf.tot), f1(F.HA.tot), f0(p.MuMin) + ' / ' + f0(p.MuMax), f0(p.MRdN) + ' / ' + f0(p.MRdP), p.chap ? f2(p.As) : '—', ko ? '<span class="tag ko">non</span>' : '<span class="tag ok">oui</span>'];
+    });
+    return BA.table(['x (m)', 'σ béton', 'σ aile sup.', 'σ aile inf.', 'σ HA', 'M ELU min/max', 'MRd − / +', 'chapeaux (cm²)', 'Vérifié'], rows, { caption: `Contraintes ELS (MPa, + compression) : limites béton ${f1(L.beton)}, acier ${f1(L.acier)}, HA ${f1(L.HA)} MPa — moments en kN·m` });
+  }
+  function tabApp(R) {
+    const rows = R.app.map((a) => { const q = a.parApp[a.iMax], m = a.parApp[a.iMin]; return [a.nom, a.n, f1(q.r.pp + q.r.supMax), f1(q.r.pp + q.r.supMin), f1(q.r.den.max) + ' / ' + f1(q.r.den.min), f1(q.r.A.max) + ' / ' + f1(q.r.A.min), f1(q.r.B.max) + ' / ' + f1(q.r.B.min), f1(q.r.acc.max), f1(q.elsMax), f1(m.elsMin), (a.rot.G + a.rot.Q).toExponential(2)]; });
+    const g = R.app.map((a) => [a.nom, f1(a.R.pp + a.R.supMax), f1(a.R.pp + a.R.supMin), f1(a.env.UIC71.max) + ' / ' + f1(a.env.UIC71.min), f1(a.env.SW0.max) + ' / ' + f1(a.env.SW0.min), f1(a.env.SW2.max) + ' / ' + f1(a.env.SW2.min), f1(a.cmb.ELU1.max)]);
+    return BA.table(['Appui', 'n', 'G max', 'G min', 'Δ max / min', 'Gr12 max / min', 'Gr14 max / min', 'Acc.', 'ELS max', 'ELS min (appareil le moins chargé)', 'Rotation (rad)'], rows, { caption: 'Réactions par appareil (kN) — appareil le plus chargé ; trafic majoré (Φ) et réparti transversalement' })
+      + BA.table(['Appui', 'G max', 'G min', 'UIC 71 max/min', 'SW/0 max/min', 'SW/2 max/min', 'ELU1 max'], g, { caption: 'Réactions globales par file (kN) : charges roulantes non majorées, une voie' });
+  }
+  function render(R) {
+    const d = R.d, rapen = d.type === 'rapen';
+    const maxE = Math.max(...R.secs.map((s) => s.cM.ELU.max)), minE = Math.min(...R.secs.map((s) => s.cM.ELU.min));
+    const fl = R.fl.travees.reduce((a, t) => (t.w / t.lim > a.w / a.lim ? t : a), R.fl.travees[0]);
+    let k = [
+      { l: 'Φ (LΦ = ' + f1(R.ph.Lphi) + ' m)', v: f3(R.ph.phi) },
+      { l: 'K (travée 1, voie 1)', v: f3(R.Kt[0].K[0]) },
+      { l: 'M ELU maxi', v: f0(maxE), u: 'kN·m' },
+      { l: 'M ELU mini', v: f0(minE), u: 'kN·m' },
+      { l: 'Flèche de confort', v: f2(fl.w * 100), u: 'cm', n: `limite ${f2(fl.lim * 100)} cm (travée ${fl.t + 1})`, cls: fl.ok ? 'ok' : 'ko' },
+    ];
+    if (rapen) {
+      const okE = R.pe.secs.every((p) => p.okELS), okU = R.pe.secs.every((p) => p.okELU), wr = Math.max(...R.pe.secs.map((p) => p.worst.ratio));
+      k.push({ l: 'ELS poutrelles', v: f2(wr), n: 'taux maxi', cls: okE ? 'ok' : 'ko' }, { l: 'ELU flexion', v: okU ? 'vérifié' : 'non vérifié', cls: okU ? 'ok' : 'ko' }, { l: 'Effort tranchant', v: f2(R.pe.Vsd / R.pe.VplRd), n: 'VEd / Vpl,Rd', cls: R.pe.okV ? 'ok' : 'ko' });
+    } else {
+      k.push({ l: 'As sup. maxi', v: f0(Math.max(...R.ba.secs.map((a) => a.As[0]))), u: 'cm²' }, { l: 'As inf. maxi', v: f0(Math.max(...R.ba.secs.map((a) => a.As[1]))), u: 'cm²' }, { l: 'σbc maxi', v: f2(Math.max(...R.ba.secs.map((a) => a.sc))), u: 'MPa' });
+    }
+    let h = R.alertes.map((a) => `<div class="msg err" style="margin-bottom:8px">${esc(a)}</div>`).join('');
+    h += BA.card('Synthèse', BA.kpis(k), rapen ? `${d.nPout} ${R.prof.nom}` : 'dalle béton armé');
+    // courbes
+    const ts = R.secs.filter((s) => s.kind !== '' || true);
+    const xs = ts.map((s) => s.x);
+    h += BA.card('Moments fléchissants', BA.chart([{ x: xs, y: ts.map((s) => s.cM.ELU.max), label: 'ELU max', color: '#c0392b', fill: false }, { x: xs, y: ts.map((s) => s.cM.ELU.min), label: 'ELU min', color: '#2d6be4', fill: false }, { x: xs, y: ts.map((s) => s.M.pp + Math.max(s.M.supMax, s.M.supMin)), label: 'G', color: '#a8842a' }], { invert: true, unit: 'kN·m' })
+      + BA.chart([{ x: xs, y: ts.map((s) => s.cV.ELU.max), label: 'V ELU max', color: '#c0392b', fill: false }, { x: xs, y: ts.map((s) => s.cV.ELU.min), label: 'V ELU min', color: '#2d6be4', fill: false }], { unit: 'kN' }));
+    h += `<div class="card"><div class="card-title"><span>Résultats</span></div><div class="tabs"><button class="on" data-p="s">Sollicitations</button><button data-p="v">${rapen ? 'Poutrelles' : 'Aciers'}</button><button data-p="f">Flèches</button><button data-p="a">Appuis</button><button data-p="p">Plans</button></div>
+      <div data-pane="s">${tabSoll(R)}<div class="sub">Répartition transversale</div>${BA.table(['Travée', 'L (m)', 'Portée équivalente (m)', 'θ', 'K voie 1', 'K voie 2'], R.Kt.map((t, i) => [i + 1, f2(d.travees[i]), f2(t.Le), f3(t.theta), f3(t.K[0]), t.K[1] !== undefined ? f3(t.K[1]) : '—']))}</div>
+      <div data-pane="v" class="hid">${rapen ? tabPE(R) + peExtra(R) : tabBA(R)}</div>
+      <div data-pane="f" class="hid">${tabFl(R)}</div>
+      <div data-pane="a" class="hid">${tabApp(R)}</div>
+      <div data-pane="p" class="hid">${plans(R)}</div></div>`;
+    return h;
+  }
+  function peExtra(R) {
+    const p = R.pe, dv = p.dev;
+    return `<div class="sub">Effort tranchant (poutrelles seules)</div><p style="font-size:12.5px">Av = ${f3(p.Av * 1e4 / 100)} dm² ; Vpl,Rd = ${f0(p.VplRd)} kN ; VEd = ${f0(p.Vsd)} kN ${BA.verdict(p.okV)}</p>
+      <div class="sub">Déversement au bétonnage (Fasc. 61 titre V art. 19)</div><p style="font-size:12.5px">σf = 1,35 σL + 1,6 σE : ${f1(dv.sigF15)} MPa (bétonnage sur 15 cm), ${f1(dv.sigF)} MPa (bétonnage total) ; σ*f = E/12·(π b/0,7 L)² = ${f1(dv.sigCrit)} MPa ${BA.verdict(dv.ok15, 'Vérifié (15 cm)', 'Dispositif anti-déversement ou calcul fin')}</p>
+      <div class="sub">Dallettes de coffrage perdu</div><p style="font-size:12.5px">Charge ${f2(p.dal.q)} kN/m² sur une portée de ${f2(p.dal.portee)} m (à choisir dans un catalogue de fournisseur).</p>`;
+  }
+  function tabFl(R) {
+    const rapen = R.d.type === 'rapen';
+    let h = BA.table(['Travée', 'L (m)', 'Flèche UIC (cm)', 'Limite (cm)', ''], R.fl.travees.map((t) => [t.t + 1, f2(t.L), f2(t.w * 100), f2(t.lim * 100), BA.verdict(t.ok)]), { caption: `UIC 71 sur une voie (Φ et K compris), inertie moyenne (non fissurée + fissurée)/2${rapen ? '' : ' — If = ' + f3(R.ba.Ifiss) + ' m⁴'} ; limite L/(${R.fl.Ldelta} × ${R.fl.coef})` });
+    h += BA.table(['About', 'θ trafic (rad)', 'v (m)', 'δH (mm)', 'limite (mm)', ''], R.ext.map((e) => [e.nom + (e.fixe ? ' (fixe)' : ''), e.theta.toExponential(3), f3(e.v), f2(e.dH * 1000), f1(e.limH * 1000), BA.verdict(e.dH <= e.limH)]), { caption: 'Déplacements de la surface supérieure du tablier sous trafic (Livret 2.01 art. 1.8.1.2.2)' });
+    if (rapen) {
+      h += BA.table(['x (m)', 'f béton mou', 'f superstr.', 'f exploit.', 'Contre-flèche'], R.pe.cf.filter((c) => c.kind === 't').map((c) => [f2(c.x), f2(c.fb * 100), f2(c.fp * 100), f2(c.fq * 100), f2(c.tot * 100)]), { caption: 'Contre-flèches des poutrelles (cm) = fb + fp + fq/2 — hors profil en long' });
+    }
+    return h;
+  }
+  function plans(R) {
+    let h = E.vues(R).map((v) => `<div class="sub">${esc(v.titre)}</div>${E.svgVue(v)}`).join('');
+    if (R.d.type === 'rapen') {
+      const v = E.vuePercage(R), pz = v.pz;
+      h += `<div class="sub">${esc(v.titre)}</div>${E.svgVue(v, { hmax: 220 })}<p style="font-size:12px;color:var(--ink3)">Longueur ${f2(pz.L)} m ; ${pz.ent.length} paires de trous Ø${f0(pz.dTrouEnt * 1000)} mm pour entretoises à ${f3(pz.zEnt)} m de la sous-face ; ${pz.fer.length} trous Ø${f0(pz.dTrouFer * 1000)} mm pour aciers inférieurs à ${f3(pz.zFer)} m.</p>`;
+    }
+    return h;
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!last) { alert(lastErr ? lastErr.message : 'Lancer le calcul.'); return; }
+    const R = last, d = R.d, rapen = d.type === 'rapen';
+    const sec = [];
+    sec.push({ titre: 'Données', html: BA.table(['Grandeur', 'Valeur'], [['Type', rapen ? `Poutrelles enrobées : ${d.nPout} ${R.prof.nom} ${d.nuance}` : 'Dalle béton armé'], ['Travées (m)', d.travees.join(' + ') + ` ; consoles ${d.cg} / ${d.cd}`], ['Biais', d.biais + ' gr'],
+      ['Coupe', `B = ${d.Btot} m, h = ${d.h} m ; A = ${f3(R.g.A)} m², I = ${f3(R.g.I)} m⁴, dalle équivalente ${f3(R.g.beq)} × ${f3(R.g.hm)} m`],
+      ['Voies', `${d.nVoies} (excentricités ${d.eV.slice(0, d.nVoies).join(' / ')} m), ${d.nCharge} chargée(s) pour Gr12`], ['Φ', `${f3(R.ph.phi)} (LΦ = ${f2(R.ph.Lphi)} m, entretien ${d.entretien})`],
+      ['Charges permanentes', `pp ${f1(R.pp)} ; superstructures max ${f1(R.supMax)} / min ${f1(R.supMin)} kN/m`], ['Matériaux', `fc28 ${d.fck} MPa ; fe ${d.fe} MPa${rapen ? ` ; fy ${R.pe.fy} MPa` : ''}`]], { leftText: true }) });
+    sec.push({ titre: 'Combinaisons', html: `<div class="formula">${R.C.txt.join('\n')}</div>` });
+    sec.push({ titre: 'Sollicitations longitudinales', html: tabSoll(R) });
+    sec.push({ titre: rapen ? 'Vérification des poutrelles enrobées' : 'Sections d’acier', html: rapen ? tabPE(R) + peExtra(R) : tabBA(R) });
+    sec.push({ titre: 'Flèches et déplacements', html: tabFl(R) });
+    sec.push({ titre: 'Descentes de charges', html: tabApp(R) });
+    sec.push({ titre: 'Plans', html: plans(R) });
+    BA.note({ titre: 'Tablier de pont-rail ' + (rapen ? 'à poutrelles enrobées' : 'en dalle béton armé'), code: 'RADBAN-RAPEN', regl: d.regl === 'ec' ? 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1994-2' : 'Livret 2.01 · BAEL 91 mod. 99 · EN 1991-2', projet: d.projet, sections: sec });
+  }
+
+  /* ── fichiers ── */
+  const dl = (name, txt, mime) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  $('bCalc').onclick = calc;
+  $('bNote').onclick = note;
+  $('bSave').onclick = () => BA.store.download('radban-rapen.json', Object.assign({ module: 'radban-rapen', version: 1 }, fromForm()));
+  $('bOpen').onclick = () => BA.store.pick('.json,application/json', (t) => { try { const o = JSON.parse(t); build(o); calc(); } catch (e) { alert('Fichier illisible : ' + e.message); } });
+  $('bDon').onclick = () => BA.store.pick('.don', (t) => {
+    try { build(E.lireDon(t)); calc(); const n = document.createElement('div'); n.className = 'msg info'; n.style.marginBottom = '10px'; n.textContent = 'Fichier .don importé : les charges de superstructures et de ballast sont estimées à partir des équipements saisis ; à contrôler.'; $('out').prepend(n); }
+    catch (e) { alert('Fichier .don illisible : ' + e.message); }
+  });
+  $('bRephor').onclick = () => { if (last) BA.store.download('rephor-depuis-radban.json', E.exportRephor(last)); };
+  $('bAppui').onclick = () => { if (last) BA.store.download('radban-appuis.json', { format: 'BA.radbanRapen.appuis', version: 1, appuis: E.exportAppuis(last) }); };
+  $('bDxf').onclick = () => { if (!last) return; const v = E.vues(last); if (last.d.type === 'rapen') v.push(E.vuePercage(last)); dl('radban-rapen-plans.dxf', E.dxf(v), 'application/dxf'); };
+  $('bDef').onclick = () => { build(type === 'rapen' ? E.DEF_RAPEN : E.DEF_RADBA); calc(); };
+  $('segType').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.dataset.t === type) return; build(b.dataset.t === 'rapen' ? E.DEF_RAPEN : E.DEF_RADBA); calc(); };
+  document.querySelector('.col-in').addEventListener('change', () => { vis(); persist(); });
+
+  const saved = BA.store.load(KEY);
+  try { build(saved && saved.travees ? saved : E.DEF_RADBA); } catch (e) { build(E.DEF_RADBA); }
+  calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

@@ -291,7 +291,6 @@
       for (let a = 0; a < 12; a++) { const fa = map[e.dofs[a]]; if (fa < 0) continue; for (let b = 0; b < 12; b++) { const fb = map[e.dofs[b]]; if (fb < fa) continue; A[fa * w + (fb - fa)] += e.K[a][b]; } }
     });
     sup.forEach((s) => { if (s.kv > 0) A[map[3 * s.node] * w] += s.kv; });
-    const A0 = Float64Array.from(A);
     cholBand(A, nf, p);
     const solve = (F) => { // F : vecteur global (nd) → U global (nd)
       const b = new Float64Array(nf); for (let g = 0; g < nd; g++) if (map[g] >= 0) b[map[g]] = F[g];
@@ -299,11 +298,14 @@
       for (let g = 0; g < nd; g++) if (map[g] >= 0) U[g] = x[map[g]];
       return U;
     };
-    const Ku = (U, g) => { let s = 0; for (const e of M.elems) { const a = e.dofs.indexOf(g); if (a < 0) continue; for (let b = 0; b < 12; b++) s += e.K[a][b] * U[e.dofs[b]]; } return s; };
     // éléments adjacents à chaque nœud (pour les moments aux nœuds et les réactions)
     const adj = Array.from({ length: nn }, () => []);
     M.elems.forEach((e, ie) => e.n.forEach((k, a) => adj[k].push([ie, a])));
-    return { nd, nf, p, map, fixed, solve, sup, Ku, adj, A0 };
+    /* (K·U)_g pour le ddl g = 3·nœud + c */
+    const Ku = (U, g) => { let s = 0; const c = g % 3; for (const [ie, a] of adj[(g - c) / 3]) { const e = M.elems[ie], row = e.K[3 * a + c]; for (let b = 0; b < 12; b++) s += row[b] * U[e.dofs[b]]; } return s; };
+    /* ligne de K (vecteur global) pour le ddl g : sert aux surfaces d'influence des réactions */
+    const Krow = (g) => { const v = new Float64Array(nd), c = g % 3; for (const [ie, a] of adj[(g - c) / 3]) { const e = M.elems[ie], row = e.K[3 * a + c]; for (let b = 0; b < 12; b++) v[e.dofs[b]] += row[b]; } return v; };
+    return { nd, nf, p, map, fixed, solve, sup, Ku, Krow, adj };
   }
   /* coordonnées naturelles des coins */
   const CORN = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
@@ -338,48 +340,33 @@
     return { e: i * (M.ny - 1) + j, r: 2 * s - 1, s: 2 * t - 1 };
   }
 
-  /* vecteur de charges nodales équivalentes : forces ponctuelles [{x,y,P}], surfaces [{x1,x2,y1,y2,q}] (rectangles
-   * axe × transversal, intégration de Gauss 3×3 par élément touché), lignes [{y, q}] le long de l'axe (toute la longueur) */
+  /* vecteur de charges nodales équivalentes : forces ponctuelles [{x,y,P}], surfaces [{y1,y2,x1?,x2?,q (nombre ou
+   * fonction (x,y))}] intégrées par Gauss 3×3 dans chaque élément, lignes [{y, q}] (kN/m le long de l'axe, à l'ordonnée y) */
+  const G3 = [[-0.7745966692414834, 5 / 9], [0, 8 / 9], [0.7745966692414834, 5 / 9]];
   function chargePlaque(M, S, ch) {
     const F = new Float64Array(S.nd);
     const addAt = (x, y, P) => { const L = locate(M, x, y); if (!L) return; const e = M.elems[L.e], N = NN(L.r, L.s); for (let k = 0; k < 4; k++) F[3 * e.n[k]] += P * N[k]; };
     for (const p of ch.points || []) addAt(p.x, p.y, p.P);
-    const G3 = [[-0.7745966692414834, 5 / 9], [0, 8 / 9], [0.7745966692414834, 5 / 9]];
-    for (const q of ch.surf || []) {
-      M.elems.forEach((e) => {
-        for (const [r, wr] of G3) for (const [s, ws] of G3) {
-          const N = NN(r, s); let x = 0, y = 0; for (let k = 0; k < 4; k++) { x += N[k] * e.X[k]; y += N[k] * e.Y[k]; }
+    const surf = (ch.surf || []).concat((ch.lignes || []).map((l) => ({ y1: l.y - 0.05, y2: l.y + 0.05, q: l.q / 0.1 })));
+    if (surf.length) M.elems.forEach((e) => {
+      for (const [r, wr] of G3) for (const [s, ws] of G3) {
+        const N = NN(r, s); let x = 0, y = 0; for (let k = 0; k < 4; k++) { x += N[k] * e.X[k]; y += N[k] * e.Y[k]; }
+        const dA = wr * ws * Math.abs(jac(e.X, e.Y, r, s).det);
+        for (const q of surf) {
           if (y < q.y1 - EPS || y > q.y2 + EPS) continue;
           if (q.x1 !== undefined && (x < q.x1 - EPS || x > q.x2 + EPS)) continue;
-          const qq = typeof q.q === 'function' ? q.q(x, y) : q.q;
-          const wgt = wr * ws * Math.abs(jac(e.X, e.Y, r, s).det) * qq;
-          for (let k = 0; k < 4; k++) F[3 * e.n[k]] += wgt * N[k];
+          const qq = (typeof q.q === 'function' ? q.q(x, y) : q.q) * dA;
+          for (let k = 0; k < 4; k++) F[3 * e.n[k]] += qq * N[k];
         }
-      });
-    }
-    for (const l of ch.lignes || []) { // charge linéique le long de l'axe à l'ordonnée y : intégrée sur les arêtes j
-      for (let i = 0; i < M.nx - 1; i++) {
-        const p0 = locate(M, M.nodes[M.id(i, 0)].x + (l.y - M.nodes[M.id(i, 0)].y) * M.cotAt(M.xi[i]), l.y);
-        const p1 = locate(M, M.nodes[M.id(i + 1, 0)].x + (l.y - M.nodes[M.id(i + 1, 0)].y) * M.cotAt(M.xi[i + 1]), l.y);
-        if (!p0 || !p1) continue;
-        const xa = M.xi[i] + (l.y - M.yy[0] - (M.nodes[M.id(i, 0)].y - M.yy[0])) * 0, xs0 = M.nodes[M.id(i, 0)].x + (l.y - M.nodes[M.id(i, 0)].y) * M.cotAt(M.xi[i]);
-        const xs1 = M.nodes[M.id(i + 1, 0)].x + (l.y - M.nodes[M.id(i + 1, 0)].y) * M.cotAt(M.xi[i + 1]);
-        void xa;
-        for (const [t, wt] of G3) { const x = (xs0 + xs1) / 2 + t * (xs1 - xs0) / 2; addAt(x, l.y, l.q * wt * (xs1 - xs0) / 2); }
       }
-    }
+    });
     return F;
   }
-  /* réaction d'un appareil pour un champ U et un vecteur de charges F */
+  /* réaction d'un appareil (> 0 vers le haut) pour un champ U et un vecteur de charges F */
   function reaction(S, U, F, s) {
     if (s.kv > 0) return s.kv * U[3 * s.node];
-    return S.Ku(U, 3 * s.node) - F[3 * s.node];
+    return F[3 * s.node] - S.Ku(U, 3 * s.node);
   }
 
-  const api0 = { PROFILS, profil, profilNom, geoTrans, permanentes, maillage, plaque, kElem, gMoment, momentsNoeud, locate, chargePlaque, reaction, cholBand, solveBand };
-  root.__RR0 = api0;
-  /* la suite du moteur (charges, enveloppes, sections, dessins) est définie plus bas */
-  if (typeof module !== 'undefined' && module.exports) module.exports = api0;
-  // eslint-disable-next-line no-unused-vars
-  function homogene() { throw new Error('défini plus bas'); }
+/*__SUITE__*/
 })(typeof window !== 'undefined' ? window : globalThis);

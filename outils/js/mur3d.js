@@ -174,25 +174,87 @@
   /* résultante d'une courbe P(s) entre la tête et l'abscisse sc (écran supérieur au-dessus d'une section) :
    * force (Fy, Fz) et point d'application sur l'écran. Moment au point sc : cosδ∫P ds ⇒ position s̄ = sc − ∫P/P */
   function resultante(cu, sc = cu.L) {
-    const { s, P } = cu; let Ps = 0, I = 0;
+    const { s } = cu, Pm = cu.Py || cu.P;
+    let Ps = 0, I = 0, Pz = 0;
     for (let k = 1; k < s.length; k++) {
       const a = s[k - 1], b = Math.min(s[k], sc); if (b <= a) break;
-      const pa = P[k - 1], pb = P[k - 1] + (P[k] - P[k - 1]) * (b - a) / (s[k] - a);
+      const t = (b - a) / (s[k] - a), pa = Pm[k - 1], pb = pa + (Pm[k] - pa) * t;
       I += (pa + pb) / 2 * (b - a); Ps = pb;
+      if (cu.Pz) Pz = cu.Pz[k - 1] + (cu.Pz[k] - cu.Pz[k - 1]) * t;
     }
-    const sb = Ps > 1e-12 ? sc - I / Ps : sc;
+    const sb = Math.abs(Ps) > 1e-12 ? sc - I / Ps : sc;
     const t = sb / cu.L, y = lerp(cu.T[0], cu.B[0], t), z = lerp(cu.T[1], cu.B[1], t);
+    if (cu.Py) return { F: Math.hypot(Ps, Pz), Fy: -Ps, Fz: -Pz, y, z };   // modèle Livret : composantes exactes
     return { F: Ps, Fy: Ps * cu.f[0], Fz: Ps * cu.f[1], y, z };
   }
+
+  /* ═══════════════════════ MODÈLE ANALYTIQUE « LIVRET 2.01 » (talus brisé, surcharges) ═══════════════════════
+   * Écran T (tête, sur le terrain) → B (pied) ; profondeur comptée verticalement. Identifié sur les notes de calcul
+   * d'origine (MUR3D, édition 2011) et conforme au principe du Livret 2.01 (édition 2004) :
+   *  - terres : chaque pente j du talus, prolongée jusqu'à l'écran, donne σv,j(z) (γ au-dessus de la nappe, γsat − γw
+   *    dessous) et un coefficient (Kh,j ; Kv,j) ; la pression est Kj σv,j sous la profondeur où la droite inclinée à
+   *    45° + φ/2 issue du début de la pente j recoupe l'écran, K(j−1) σv,(j−1) au-dessus ;
+   *  - surcharge q en bande [y1, y2] au niveau du terrain zl : p = Ka q avec Ka = tan²(45° − φ/2) (terrain horizontal,
+   *    pas de composante verticale), nulle au-dessus de zl − a tanφ, croissant linéairement jusqu'à zl − a tan(45° + φ/2),
+   *    constante ensuite, arrêtée à zl − (y2 − ys) tan(45° + φ/2) (a = y1 − ys, ys abscisse de l'écran) ;
+   *    une surcharge uniforme sur le talus est découpée par pente (une bande par pente).
+   * Kfun(beta°) → [Kh, Kv]. Renvoie une courbe cumulée compatible avec resultante(). */
+  function ecranLivret(o) {
+    const { T, B, sol } = o, P = sol.P, n = o.n || 200, phi = sol.phi * D2R;
+    const t45 = Math.tan(Math.PI / 4 + phi / 2), tphi = Math.tan(phi), Ka = Math.pow(Math.tan(Math.PI / 4 - phi / 2), 2);
+    const L = Math.hypot(T[0] - B[0], T[1] - B[1]), H = T[1] - B[1], ys = T[0];
+    const yAt = (z) => T[0] + (B[0] - T[0]) * (T[1] - z) / (H || 1);
+    const segs = [];
+    for (let j = 0; j < P.length - 1; j++) if (P[j + 1][0] > ys + 1e-9) segs.push(j);
+    const pend = (j) => (P[j + 1][1] - P[j][1]) / (P[j + 1][0] - P[j][0]);
+    const sv = (j, z) => { const y = yAt(z), zg = P[j][1] + pend(j) * (y - P[j][0]), h = Math.max(0, zg - z), hw = Math.max(0, Math.min(h, sol.zw - z)); return sol.g * (h - hw) + (sol.gsat - GW) * hw; };
+    const K = segs.map((j) => o.Kfun(Math.atan(pend(j)) / D2R));
+    const ramp = (z, zl, a, step) => { if (a <= 1e-12) return 1; const e0 = zl - a * (step ? t45 : tphi), e1 = zl - a * t45; return z > e0 ? 0 : z > e1 ? (e0 - z) / (e0 - e1) : 1; };
+    const pres = (z) => {
+      let ph = 0, pv = 0;
+      if (o.terres !== false && segs.length) {
+        let kh = K[0][0] * sv(segs[0], z), kv = K[0][1] * sv(segs[0], z);
+        for (let i = 1; i < segs.length; i++) {
+          const j = segs[i], w = ramp(z, P[j][1], P[j][0] - ys, true);
+          kh += w * (K[i][0] * sv(j, z) - K[i - 1][0] * sv(segs[i - 1], z)); kv += w * (K[i][1] * sv(j, z) - K[i - 1][1] * sv(segs[i - 1], z));
+        }
+        ph += kh; pv += kv;
+      }
+      for (const b of o.q || []) {
+        const y1 = Math.max(b.y1, ys), y2 = b.y2; if (y2 <= y1) continue;
+        const zl = solZ(P, y1), a = y1 - ys;
+        ph += Ka * b.q * (ramp(z, zl, a, false) - (y2 < 1e3 ? ramp(z, zl, y2 - ys, true) : 0));
+      }
+      return [ph, pv];
+    };
+    const s = [0], Py = [0], Pz = [0];
+    let Iy = 0, Fy = 0, Fz = 0;
+    for (let k = 1; k <= n; k++) {
+      const za = T[1] - H * (k - 1) / n, zb = T[1] - H * k / n, pa = pres(za), pb = pres(zb), dz = H / n;
+      Fy += (pa[0] + pb[0]) / 2 * dz; Fz += (pa[1] + pb[1]) / 2 * dz;
+      s.push(L * k / n); Py.push(Fy); Pz.push(Fz);
+    }
+    const F = Math.hypot(Fy, Fz) || 1, f = [-Fy / F, -Fz / F];
+    void Iy;
+    return { s, P: Py.map((v, k) => Math.hypot(v, Pz[k])), Py, Pz, L, I: 0, f, T, B, Fy, Fz };
+  }
+  /* découpe d'une surcharge uniforme sur le talus en une bande par pente (Livret 2.01) */
+  const bandesParPente = (P, ys, q) => { const L = []; for (let j = 0; j < P.length - 1; j++) if (P[j + 1][0] > ys + 1e-9) L.push({ y1: P[j][0], y2: j === P.length - 2 ? 1e4 : P[j + 1][0], q }); return L; };
 
   /* ═══════════════════════ GÉOMÉTRIE D'UNE TRANCHE ═══════════════════════ */
   /* g : tranche interpolée. Champs : zsem, es (épaisseur semelle), p (patin), B (largeur), e0 (voile en pied),
    *   fav, far (fruits, m/m), zc (couronnement), ec, hc (couronnement), zav (remblai avant), talus [[y,z]…],
    *   beche {e, h, y}. */
+  /* cote du couronnement : palier horizontal de longueur lch côté haut et lcb côté bas, pente entre les deux */
+  function zCour(d, t) {
+    const L = +d.L || 1, x = t * L, a = +d.lch || 0, b = L - (+d.lcb || 0), zh = +d.haute.zc, zb = +d.basse.zc;
+    if (!(b > a)) return lerp(zh, zb, t);
+    return x <= a ? zh : x >= b ? zb : zh + (zb - zh) * (x - a) / (b - a);
+  }
   function tranche(d, t) {
     const H = d.haute, Bs = d.basse, I = (k) => lerp(+H[k] || 0, +Bs[k] || 0, t);
     const g = { zsem: d.zsem, es: I('es'), p: I('patin'), B: I('B'), e0: I('ep'), fav: d.fav / 100, far: d.far / 100,
-      zc: I('zc'), ec: d.ec, hc: d.hc, zav: I('zav'), bec: { e: I('bece'), h: I('bech'), y: I('becy') } };
+      zc: zCour(d, t), ec: d.ec, hc: d.hc, zav: I('zav'), bec: { e: I('bece'), h: I('bech'), y: I('becy') } };
     g.zf = g.zsem - g.es;
     const n = Math.max(H.talus.length, Bs.talus.length);
     g.talus = []; for (let i = 0; i < n; i++) { const a = H.talus[Math.min(i, H.talus.length - 1)], b = Bs.talus[Math.min(i, Bs.talus.length - 1)]; g.talus.push([lerp(a[0], b[0], t), lerp(a[1], b[1], t)]); }
@@ -245,14 +307,20 @@
     // terre sur patin (remblai avant)
     const solAv = { g: d.sol.g, gsat: d.sol.gsat, zw: d.eau.av };
     if (g.zav > g.zsem && g.p > 0) {
-      const Qp = [[-g.p, g.zsem], [g.yf(g.zsem), g.zsem], [g.yf(g.zav), g.zav], [-g.p, g.zav]];
+      const Qp = [[-g.p, g.zsem], [0, g.zsem], [0, g.zav], [-g.p, g.zav]];   // rectangle sur le patin (comme le programme d'origine)
       const wp = poidsSol(Qp, solAv); GT.push({ Fy: 0, Fz: -wp.W, y: wp.y, z: wp.z, nom: 'patin' });
     }
     // ── poussée sur l'écran fictif (stabilité, talon) ──
     const ecr = { T: [g.yt, zt], B: [g.yt, g.zf], sol, n: opt.n || 20 };
-    const cuL = (extra) => mixe(d, g, sol.P, (dl) => culmann(Object.assign({}, ecr, extra, { delta: dl })));
+    const livret = d.options.modele === 'livret';
+    const Kecr = (beta) => { const b = clamp(beta, -d.sol.phi + 0.01, d.sol.phi - 0.01), lam = lamLivret(d, g, zt);
+      const a = coulomb(d.sol.phi, b, +d.options.delta0 || 2 * d.sol.phi / 3), c = coulomb(d.sol.phi, b, b);
+      return [lam * a.Kh + (1 - lam) * c.Kh, lam * a.Kv + (1 - lam) * c.Kv]; };
+    const cuL = livret
+      ? (extra) => ecranLivret(Object.assign({}, ecr, { Kfun: Kecr, terres: !(extra.q || extra.kh), q: extra.q }))
+      : (extra) => mixe(d, g, sol.P, (dl) => culmann(Object.assign({}, ecr, extra, { delta: dl })));
     const cu = cuL({});
-    const r0 = resultante(cu);
+    const r0 = resultante(cu);   // (Livret : composantes exactes Fy, Fz)
     GT.push({ Fy: r0.Fy, Fz: r0.Fz, y: r0.y, z: r0.z, nom: 'poussée' });
     out.GT = GT; out.poussee = { cu, delta: cu.delta, Ph: -r0.Fy, Pv: -r0.Fz, Kh: -r0.Fy / (0.5 * d.sol.g * Math.pow(zt - g.zf, 2)), Kv: -r0.Fz / (0.5 * d.sol.g * Math.pow(zt - g.zf, 2)) };
     // ── eau : poussée hydrostatique amont sur l'écran fictif, aval sur le parement du patin, sous-pression ──
@@ -271,17 +339,17 @@
     if (g.zav > g.zsem && g.p > 0) { const iP = imm([[-g.p, g.zsem], [0, g.zsem], [0, g.zav], [-g.p, g.zav]], d.eau.av); if (iP.A > 0) W.push({ Fy: 0, Fz: -GW * iP.A, y: iP.y, z: iP.z }); }
     out.W = W;
     // ── exploitation sur talus (bande) : poids sur le talon + supplément de poussée ──
-    const surch = (bandes, key) => {
+    const surch = (bandes, key, bTalon) => {
       const L = [];
-      for (const b of bandes) { const a = Math.max(b.y1, yTete), c = Math.min(b.y2, g.yt); if (c > a) L.push({ Fy: 0, Fz: -b.q * (c - a), y: (a + c) / 2, z: solZ(sol.P, (a + c) / 2), nom: 'sur talon' }); }
+      for (const b of bTalon || bandes) { const a = Math.max(b.y1, yTete), c = Math.min(b.y2, g.yt); if (c > a) L.push({ Fy: 0, Fz: -b.q * (c - a), y: (a + c) / 2, z: solZ(sol.P, (a + c) / 2), nom: 'sur talon' }); }
       const cq = cuL({ q: bandes });
-      const dq = { s: cq.s, P: cq.P.map((v, k) => Math.max(0, v - cu.P[k])), L: cq.L, f: cq.f, T: cq.T, B: cq.B };
+      const dq = livret ? cq : { s: cq.s, P: cq.P.map((v, k) => Math.max(0, v - cu.P[k])), L: cq.L, f: cq.f, T: cq.T, B: cq.B };
       const r = resultante(dq); if (r.F > 1e-9) L.push({ Fy: r.Fy, Fz: r.Fz, y: r.y, z: r.z, nom: 'poussée' });
       out[key + 'cu'] = dq; return L;
     };
     const yq = d.q.y + (+d.q.dydx || 0) * g.x;
     out.Q = d.q.exp > 0 && d.q.larg > 0 ? surch([{ y1: yq, y2: yq + d.q.larg, q: d.q.exp }], 'Q') : [];
-    out.QC = d.q.chantier > 0 ? surch([{ y1: yTete, y2: 1e4, q: d.q.chantier }], 'QC') : [];
+    out.QC = d.q.chantier > 0 ? surch(livret ? bandesParPente(sol.P, g.yt, d.q.chantier) : [{ y1: yTete, y2: 1e4, q: d.q.chantier }], 'QC', [{ y1: yTete, y2: 1e4, q: d.q.chantier }]) : [];
     out.QP = d.q.av > 0 && g.p > 0 ? [{ Fy: 0, Fz: -d.q.av * g.p, y: -g.p / 2, z: g.zav }] : [];
     // ── séisme : inertie du mur et du sol sur talon + incrément dynamique de poussée (M-O, à mi-hauteur) ──
     out.E = [];
@@ -290,8 +358,9 @@
         const kh = d.seisme.kh, kv = sgn * d.seisme.kv, L = [];
         const mass = G.concat([GT[0]]);
         for (const f of mass) L.push({ Fy: kh * f.Fz, Fz: kv * f.Fz, y: f.y, z: f.z });   // Fz < 0 : inertie vers l'avant (−y)
-        const ce = cuL({ kh, kv });
-        const dP = Math.max(0, ce.P[ce.P.length - 1] - cu.P[cu.P.length - 1]);
+        const ce = livret ? culmann(Object.assign({}, ecr, { delta: cu.delta || 0, kh, kv })) : cuL({ kh, kv });
+        const c0 = livret ? culmann(Object.assign({}, ecr, { delta: cu.delta || 0 })) : cu;
+        const dP = Math.max(0, ce.P[ce.P.length - 1] - c0.P[c0.P.length - 1]);
         if (dP > 0) L.push({ Fy: dP * ce.f[0], Fz: dP * ce.f[1], y: g.yt, z: (zt + g.zf) / 2, nom: 'ΔPAE' });
         out[sgn > 0 ? 'E1' : 'E2'] = L;
       }
@@ -305,6 +374,8 @@
    *  'origine' : pondération identifiée sur les notes de calcul d'origine — P = λ P(δ0) + (1 − λ) P(δ = β) avec
    *              λ = 1 − ℓtalon·tan(45° + φ/2)/H (part de l'écran située sous le coin de Rankine issu du talon,
    *              δ0 = 2φ/3 par défaut). Cette règle reproduit les coefficients d'origine à quelques % près. */
+  /* pondération δ0 / δ = β identifiée sur les notes d'origine : λ = 1 − c·ℓtalon/H (c = 2,12) */
+  function lamLivret(d, g, zt) { const H = zt - g.zf, talon = Math.max(0, g.yt - g.yb(g.zsem)); return clamp(1 - (+d.options.cLambda || 2.12) * talon / H, 0, 1); }
   function mixe(d, g, P, run) {
     const yt = g.yt, h = 0.01, b = Math.atan((solZ(P, yt + h) - solZ(P, yt - h)) / (2 * h)) / D2R;
     const bb = clamp(b, -d.sol.phi, d.sol.phi), mode = d.options.deltaFictif;
@@ -338,7 +409,7 @@
       [' + chantier', { Cp: gV * g }], [' + chantier + q av.', { Cp: gV * g, QP: gV * g }], [' + chantier (talon)', { Cp: gV * g, Cw: gV * g }],
       [' + chantier (talon) + q av.', { Cp: gV * g, Cw: gV * g, QP: gV * g }]];
     for (const [kt, kp] of K.slice(0, 2)) add(`ELS fréquent, terres ×${kt}`, 'ELSf', { Tt: kt, Tp: kp, Tpou: kt, Qw: psi1, Qp: psi1 });
-    for (const [kt, kp] of K.slice(0, 2)) for (const [n, v] of VAR(1)) {
+    for (const [n, v] of VAR(1)) for (const [kt, kp] of K.slice(0, 2)) {   // ordre des notes d'origine (3 à 16)
       const c = Object.assign({ Tt: kt, Tp: kp, Tpou: kt }, v);
       for (const k of ['QP', 'Cp', 'Cw']) if (c[k]) c[k] = rV;
       if (c.Qw) { c.Qw = 1; c.Qp = 1; }
@@ -541,6 +612,8 @@
       const sv = cs.map((c) => Math.max(0, st.v[0] + st.v[1] * c.x + st.v[2] * c.y));
       r.smax = Math.max(...sv) / 1000; r.smin = Math.min(...sv) / 1000;
       r.coins = [[0, -tr[0].p], [0, tr[0].yt], [L, tr[n - 1].yt], [L, -tr[n - 1].p]].map(([x, y]) => Math.max(0, st.v[0] + st.v[1] * (x - xg) + st.v[2] * (y - yg)) / 1000);
+      // σmax, σmin aux sommets de la semelle (contrainte linéaire tronquée à 0), comme le programme d'origine
+      r.smax = Math.max(r.smax, ...r.coins); r.smin = Math.min(...r.coins);
       r.q34 = (3 * r.smax + r.smin) / 4;
       r.delta = Math.atan2(Math.abs(r.Hy), r.N) / D2R;
       const gqv = r.type === 'ELUs' ? gq.acc : r.type === 'ELU' ? gq.elu : gq.els;
@@ -643,10 +716,12 @@
     for (const g of tr) {
       const sol = g.ch.sol, T = [g.yb(Math.min(g.zTete, g.zsem + g.Hv)), g.zTete], B = [g.yb(g.zsem), g.zsem];
       const dv = +d.options.deltaVoile || 0;
-      g.cuV = culmann({ T, B, sol, delta: dv, n: 16 });
-      const sur = (q) => { const c = culmann({ T, B, sol, delta: dv, q, n: 16 }); return { s: c.s, P: c.P.map((v, k) => Math.max(0, v - g.cuV.P[k])), L: c.L, f: c.f, T, B }; };
+      const liv = d.options.modele === 'livret', th = Math.atan(g.far) / D2R;
+      const KV = (beta) => { const c = coulomb(d.sol.phi, clamp(beta, -d.sol.phi + 0.01, d.sol.phi - 0.01), dv, th); return [c.Kh, c.Kv]; };
+      g.cuV = liv ? ecranLivret({ T, B, sol, Kfun: KV, n: 120 }) : culmann({ T, B, sol, delta: dv, n: 16 });
+      const sur = (q) => { if (liv) return ecranLivret({ T, B, sol, Kfun: KV, terres: false, q, n: 120 }); const c = culmann({ T, B, sol, delta: dv, q, n: 16 }); return { s: c.s, P: c.P.map((v, k) => Math.max(0, v - g.cuV.P[k])), L: c.L, f: c.f, T, B }; };
       if (d.q.exp > 0 && d.q.larg > 0) { const yq = d.q.y + (+d.q.dydx || 0) * g.x; g.cuVQ = sur([{ y1: yq, y2: yq + d.q.larg, q: d.q.exp }]); }
-      if (d.q.chantier > 0) g.cuVC = sur([{ y1: T[0], y2: 1e4, q: d.q.chantier }]);
+      if (d.q.chantier > 0) g.cuVC = sur(liv ? bandesParPente(sol.P, T[0], d.q.chantier) : [{ y1: T[0], y2: 1e4, q: d.q.chantier }]);
       if (d.seisme.kh > 0) {
         const beta = Math.atan((solZ(sol.P, T[0] + 1) - solZ(sol.P, T[0])) / 1) / D2R, th = Math.atan(g.far) / D2R;
         g.KAE = mononobeOkabe(d.sol.phi, beta, dv, th, d.seisme.kh, d.seisme.kv).K * Math.cos((dv) * D2R) || 0;
@@ -762,7 +837,7 @@
     const regl = f('reglement', 0) === 1 ? 'EC' : 'LIVRET';
     const typ = f('typfond', 0);
     return {
-      projet: [k.projet, k.commentaire].filter(Boolean).join(' — '), regl, L, nsec: f('nbsecmur', 10), zsem, fav, far,
+      projet: [k.projet, k.commentaire].filter(Boolean).join(' — '), regl, L, nsec: f('nbsecmur', 10), zsem, fav, far, lch: f('lonhcour', 0), lcb: f('lonbcour', 0),
       ec: f('epcour', 0.3), hc: f('haucour', 0.2), haute: sec(true), basse: sec(false),
       sol: { phi: f('angfrot', 35), g: f('poivolter', 19), gsat: f('poivoltersat', 22), dg: (f('deltapoivolter', 0) ? 0.05 : 0) },
       eau: { am: f('zeau', -1e9), av: f('zeau', -1e9) },
@@ -774,7 +849,7 @@
       fond: { type: typ === 0 ? 'superficielle' : typ <= 2 ? 'semi-profonde' : 'profonde', qu: f('qu', 1), mu: f('frotsolsem', 0.6), c: f('cohesolfond', 0), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: f('declim1', 0), decRare: f('declim2', 25), decELU: f('renlim', 90), deplac: f('deplaclim', 0.01) },
       seisme: { kh: 0, kv: 0, aN: f('zonseism', 0) > 0 ? f('anseism', 0) : 0 },
-      options: { deltaFictif: 'origine', delta0: f('angdelta0', 2 * f('angfrot', 35) / 3), deltaVoile: 0 },
+      options: { modele: 'livret', deltaFictif: 'origine', delta0: f('angdelta0', 2 * f('angfrot', 35) / 3), deltaVoile: 0 },
       avertissements: typ > 0 ? ['Fondation profonde ou semi-profonde dans le fichier : seule la fondation superficielle est traitée par ce module.'] : [],
     };
   }
@@ -783,7 +858,7 @@
    * Cas « fondation superficielle » des exemples d'origine (talus biais ramené dans les coupes droites). */
   function exemple() {
     return {
-      projet: 'Mur de soutènement — exemple', regl: 'LIVRET', L: 8.5, nsec: 10, zsem: 52.7, fav: 2, far: 4.66, ec: 0.3, hc: 0.2,
+      projet: 'Mur de soutènement — exemple', regl: 'LIVRET', L: 8.5, nsec: 10, zsem: 52.7, fav: 2, far: 4.66, ec: 0.3, hc: 0.2, lch: 1.0, lcb: 0.5,
       haute: { es: 0.8, patin: 1.8, B: 4.2, ep: 0.75, zc: 59.6, zav: 56.45, bece: 0, bech: 0, becy: 0, talus: [[-13.011, 53.924], [0.707, 59.006], [10.677, 59.47], [20.648, 59.243]] },
       basse: { es: 0.8, patin: 0.8, B: 2.0, ep: 0.517, zc: 56.1, zav: 56.0, bece: 0, bech: 0, becy: 0, talus: [[-4.511, 53.827], [9.207, 58.91], [19.177, 59.373], [29.148, 59.147]] },
       sol: { phi: 35, g: 19, gsat: 22, dg: 0.05 },
@@ -793,7 +868,7 @@
       fond: { type: 'superficielle', qu: 1.2, mu: 0.6, c: 0, frottant: true, kv: 10000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: 0, decRare: 25, decELU: 90, deplac: 0.01 },
       seisme: { kh: 0, kv: 0 },
-      options: { deltaFictif: 'origine', delta0: 23.333, deltaVoile: 0, nCoins: 16 },
+      options: { modele: 'livret', deltaFictif: 'origine', delta0: 23.333, deltaVoile: 0, nCoins: 16 },
     };
   }
   /* coefficients sismiques EN 1998-5 §7.3.2.2 : kh = α S / r ; kv = ±0,5 kh (avg/ag > 0,6) sinon ±0,33 kh */
