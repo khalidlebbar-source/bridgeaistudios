@@ -72,18 +72,18 @@
     const s = {
       type, projet: '', regl: 'livret',
       travees: [14, 20, 14], biais: 90, nVoies: 2, entraxe: 4.8, Btot: 11.88,
-      zRail0: 109.70, pente: 0, zTN: 100,
+      zRail0: 106.90, pente: 0, zTN: 100,
       gab: { type: 'route', travee: 2, zObs: 100, H: 4.75, W: 9.0, dec: 0 },
       imp: { E0: 0, N0: 0, gis: 100 },
       tab: {},
-      app: { appuiFixe: 0, hApp: 0.25, fck: 32,
+      app: { appuiFixe: 1, hApp: 0.25, fck: 32,
         pile: { nfut: 1, larfut: 0, e: 0.8 },
-        culee: { ef: 1.3, eGG: 0.3, joint: 0.05, lr: 3.0, er: 0.5, patin: 1.0, talon: 2.0, phi: 30, gamma: 20 } },
-      fond: { type: 'sup', ancrage: 4.5, es: 1.2, debord: 1.5, pieux: { ptype: 2, D: 1.0, L: 12, nx: 2, ny: 4, ex: 3.0, ey: 3.0 } },
+        culee: { ef: 1.3, eGG: 0.3, joint: 0.05, lr: 3.0, er: 0.5, patin: 1.5, talon: 4.0, phi: 30, gamma: 20 } },
+      fond: { type: 'sup', ancrage: 4.5, es: 1.2, debord: 2.0, pieux: { ptype: 2, D: 1.0, L: 12, nx: 2, ny: 4, ex: 3.0, ey: 3.0 } },
       cad: {}, sps: null,
     };
     if (type === 'radba') { s.projet = 'Pont-rail dalle BA — 3 travées 14 + 20 + 14 m'; s.tab = { h: 1.15 }; }
-    if (type === 'rapen') { s.projet = 'Pont-rail poutrelles enrobées — 3 travées 15 + 25 + 15 m'; s.travees = [15, 25, 15]; s.tab = { profil: 'HEA 1000', nPout: 14 }; s.zRail0 = 109.60; }
+    if (type === 'rapen') { s.projet = 'Pont-rail poutrelles enrobées — 3 travées 15 + 25 + 15 m'; s.travees = [15, 25, 15]; s.tab = { profil: 'HEA 1000', nPout: 14 }; s.zRail0 = 106.90; }
     if (type === 'rodba' || type === 'ropen') {
       s.projet = (type === 'rodba' ? 'Pont-route dalle BA' : 'Pont-route poutrelles enrobées') + ' — 3 travées 11,27 + 15,06 + 11,27 m'; s.travees = [11.27, 15.06, 11.27];
       s.Btot = 9.06; s.nVoies = 2; s.zRail0 = 106.90; s.tab = {}; s.app.culee.gamma = 20;
@@ -96,9 +96,9 @@
       s.fond.type = 'sup';
     }
     if (type === 'rapo') {
-      s.projet = 'Portique ouvert pont-rail — portée 8,00 m'; s.travees = []; s.Btot = 11.88; s.zRail0 = 108.65;
-      s.gab = { type: 'route', travee: 1, zObs: 100, H: 4.75, W: 7.0, dec: 0 };
-      s.cad = { ouv: 8, hauint: 8, eptra: 0.65, eppied: 0.65, hausem: 1.2, larpat: 1.2, lartal: 1.75, haugousup: 0.3, longousup: 1.0, hauterint: 1, epbal: 0.6, hautraverse: 0.2, surlong: 1.0 };
+      s.projet = 'Portique ouvert pont-rail — portée 8,00 m'; s.travees = []; s.Btot = 11.88; s.zRail0 = 105.15; s.zTN = 96.5;
+      s.gab = { type: 'route', travee: 1, zObs: 96.5, H: 4.75, W: 7.0, dec: 0 };   // route en déblai : semelles dans les sables
+      s.cad = { ouv: 8, hauint: 8, eptra: 0.65, eppied: 0.65, hausem: 1.2, larpat: 2.0, lartal: 3.0, haugousup: 0.3, longousup: 1.0, hauterint: 1, epbal: 0.6, hautraverse: 0.2, surlong: 1.0 };
     }
     return s;
   }
@@ -133,6 +133,51 @@
     if (d.type === 'radba' && !(s.tab && s.tab.dInf)) d.dInf = +(d.h - 0.06).toFixed(4);
     return d;
   }
+  /* Tablier TABLIER ROUTE (rodban-ropen) : référentiel « livret » de l'ouvrage → calcul en poutre, charges du Fascicule 61
+   * titre II, BAEL ; « ec » → calcul en plaque, EN 1991-2 + EN 1992. Largeur : la chaussée absorbe l'écart avec le profil
+   * en travers par défaut (rives et trottoirs conservés) ; appareils répartis régulièrement sous la sous-face si la largeur change. */
+  function tablierInputRoute(s) {
+    const RO = mod.rodban(), base = clone(s.type === 'ropen' ? RO.DEF_ROPEN : RO.DEF_RODBA);
+    const d = Object.assign(base, clone(s.tab || {}));
+    d.trans = Object.assign({}, base.trans, (s.tab || {}).trans || {});
+    Object.assign(d, { type: s.type, projet: s.projet, travees: s.travees.slice(), biais: s.biais, biaisApp: null });
+    if (!(s.tab && s.tab.methode)) d.methode = s.regl === 'ec' ? 'plaque' : 'poutre';
+    if (!(s.tab && s.tab.regl)) d.regl = s.regl === 'ec' ? 'ec' : 'bael';
+    // raccourcis de la saisie de l'assistant : épaisseur, profilé et nombre de poutrelles
+    const tb = s.tab || {};
+    if (+tb.hDalle > 0) d.trans.h = +tb.hDalle;
+    if (d.type === 'ropen') { d.ropen = Object.assign({}, base.ropen || {}, d.ropen || {}); if (tb.profil) d.ropen.profil = tb.profil; if (+tb.nPout > 0) d.ropen.n = Math.round(+tb.nPout); }
+    ['hDalle', 'profil', 'nPout'].forEach((k) => delete d[k]);
+    const t = d.trans, B0 = t.dG + t.tG + t.lc + t.tD + t.dD, dB = s.Btot - B0;
+    if (Math.abs(dB) > 1e-9 && !((s.tab || {}).trans)) {
+      t.lc = +(t.lc + dB).toFixed(4); t.Bs = +(t.Bs + dB).toFixed(4);
+      if (!(t.lc >= 3)) throw new Error('Largeur du tablier trop faible pour une chaussée de 3 m avec les trottoirs du profil en travers par défaut.');
+      if (!(s.tab && s.tab.appareils)) {
+        const lcg = (s.Btot - t.Bs) / 2, n = d.type === 'ropen' ? 0 : 4;
+        d.appareils = n ? { yC: Array.from({ length: n }, (_, k) => r3(lcg + t.Bs * (k + 0.5) / n)), yP: Array.from({ length: n }, (_, k) => r3(lcg + t.Bs * (k + 0.5) / n)), kv: 0 } : { yC: null, yP: null, kv: 0 };
+      }
+    }
+    return d;
+  }
+  /* Vue commune des deux moteurs de tablier : largeur, hauteurs, réactions par file (convention de leurs exports REPHOR),
+   * profil de la coupe (top : au-dessus de l'extrados de rive, bot : sous l'extrados de rive), voies ou chaussée. */
+  function adapter(R) {
+    const T = R.tab, d = T.d;
+    if (R.t.ouvrage !== 'route') {
+      const rapen = d.type === 'rapen', B = d.Btot;
+      const top = (y) => { if (rapen) return T.pe.H - d.h; const u = Math.min(y + B / 2, B / 2 - y); return u > d.dRebord ? d.penteExt * (u - d.dRebord) : 0; };
+      const bot = (y) => { if (rapen) return d.h; const u = Math.min(y + B / 2, B / 2 - y); return u < d.lc ? Math.min(d.h, d.er + d.penteC * u) : d.h; };
+      const al = +d.alpha || 1;
+      return { route: false, d, B, cg: d.cg, cd: d.cd, hT: rapen ? T.pe.H : T.g.hAxe, hRive: d.h, hV: (+d.hb || 0) + HTRAV + HRAIL, hb: +d.hb || 0, top, bot,
+        app: T.app.map((a) => ({ nom: a.nom, culee: a.culee, n: a.n, y: a.y.slice(), Gk: a.R.pp + a.R.supMax + a.R.den.max, GkMin: a.R.pp + a.R.supMin, Q: Math.max(a.R.A.max, a.R.B.max) + 0.8 * a.R.acc.max })),
+        voies: d.eV.slice(0, d.nVoies), gQ: 1.45, qRemblai: al * 4 * 250 / (6.4 * 3.0), largeurQ: d.nVoies * 3.0, cRemblai: 'EN 1991-2 §6.3.6.4 : LM71 réparti sur 3,00 m par voie' };
+    }
+    const G = T.G, ropen = d.type === 'ropen';
+    return { route: true, d, B: G.B, cg: d.cg, cd: d.cd, hT: G.h, hRive: G.h, hV: 0.09, hb: 0, top: () => 0, bot: (y) => G.ep(G.yc - y),
+      app: T.app.map((a) => ({ nom: a.nom, culee: a.culee, n: a.n, y: a.bear.map((b) => r3(G.yc - b.y)), Gk: a.ligne.c.Gk.max, GkMin: a.ligne.c.Gk.min, Q: a.ligne.c.Q.max })),
+      voies: [G.yc - G.chaussee[0], G.yc - G.chaussee[1]], gQ: T.regime === 'f61' ? 1.6 : 1.35, qRemblai: 10, largeurQ: G.lch, ropen,
+      cRemblai: 'surcharge conventionnelle de 10 kN/m² sur la chaussée (dossier pilote PP 73)' };
+  }
   /* valeurs par défaut de la page REPHOR (formulaire), reprises pour l'enchaînement et pour « Ouvrir dans REPHOR » */
   const REPHOR_V = {
     Emode: 'bael', fck: 32, phi: 2, kbutLong: 1.825, kbutTran: 2.54, Gld: 0.9, Gcd: 1.8, modeApp: 'dim', reglApp: 'en1337', sigLim: 15, alpha0: 0.003, mu: 0.05, hvMax: 0.25,
@@ -156,22 +201,22 @@
   }
 
   /* ═══════════════════════ 3. Géométrie d'un ouvrage à tablier ═══════════════════════ */
-  function geoTablier(s, T) {
-    const d = T.d, nT = d.travees.length, rapen = d.type === 'rapen';
+  function geoTablier(s, A) {
+    const d = A.d, nT = d.travees.length;
     const X = [0]; d.travees.forEach((L) => X.push(X[X.length - 1] + L));
     const phi = s.biais * GR, sn = Math.sin(phi), cs = Math.cos(phi);
-    const hT = rapen ? T.pe.H : T.g.hAxe, hV = (+d.hb || 0) + HTRAV + HRAIL;
+    const hT = A.hT, hV = A.hV;
     const zR = (x) => s.zRail0 + (+s.pente || 0) / 100 * x;
     const zSF = (x) => zR(x) - hV - hT;
     const f = s.fond, c = s.app.culee, p = s.app.pile, P = f.pieux, hApp = +s.app.hApp || 0.25;
-    const ymin = Math.min(...T.app.flatMap((a) => a.y)), ymax = Math.max(...T.app.flatMap((a) => a.y));
-    const appuis = T.app.map((a, j) => {
+    const ymin = Math.min(...A.app.flatMap((a) => a.y)), ymax = Math.max(...A.app.flatMap((a) => a.y));
+    const appuis = A.app.map((a, j) => {
       const culee = j === 0 || j === nT, x = X[j], side = j === 0 ? 1 : -1;
       const zApp = zSF(x), zSom = zApp - hApp, zsem = s.zTN - f.ancrage, zst = zsem + f.es;
       const o = { j, nom: a.nom, culee, side, x, zR: zR(x), zApp, zSom, zsem, zst, es: f.es, zTN: s.zTN, el: [], terres: [] };
       if (culee) {
-        const cg = j === 0 ? d.cg : d.cd, Lm = d.Btot / sn;
-        const xb = -(cg + c.joint + c.eGG), xf = xb + c.ef, zGG = zApp + hT + (+d.hb || 0);
+        const cg = j === 0 ? A.cg : A.cd, Lm = A.B / sn;
+        const xb = -(cg + c.joint + c.eGG), xf = xb + c.ef, zGG = zApp + hT + (A.route ? A.hV : A.hb);
         Object.assign(o, { type: 'culee', xb, xf, ef: c.ef, Lm, zGG, hMur: zSom - zst, hGG: zGG - zSom, lr: c.lr, er: c.er, talon: c.talon, patin: c.patin, faceAv: xf });
         o.u0 = xb - c.talon; o.u1 = xf + c.patin; o.B = o.u1 - o.u0; o.L = Lm + 2 * c.er;
         if (o.hMur <= 0) throw new Error(`Culée ${a.nom} : hauteur de mur négative — profil en long trop bas ou fondation trop haute.`);
@@ -205,7 +250,7 @@
       o.el.push({ nom: 'Semelle', u0: o.u0, u1: o.u1, z0: zsem, z1: zst, L: o.L, ratio: 80, coff: 2 * (o.B + o.L) * f.es, semelle: true });
       return o;
     });
-    return { X, Ltot: X[nT], xa: -d.cg, xb: X[nT] + d.cd, sn, cs, phi, hT, hV, zR, zSF, appuis, Btot: d.Btot, ymin, ymax };
+    return { X, Ltot: X[nT], xa: -A.cg, xb: X[nT] + A.cd, sn, cs, phi, hT, hV, zR, zSF, appuis, Btot: A.B, ymin, ymax };
   }
   /* plan : point local (u perpendiculaire à la ligne d'appui, vers l'ouvrage pour une culée ; w le long de la ligne) */
   const plan = (G, a, u, w) => { const uu = a.culee ? a.side * u : u; return [a.x + uu * G.sn + w * G.cs, -uu * G.cs + w * G.sn]; };
@@ -214,12 +259,12 @@
   /* Torseur (Fx, Fy, Fz, Mx, My, Mz) au centre de la sous-face de semelle, Fz < 0 descendant (convention FONDATIO) ;
    * X perpendiculaire à la ligne d'appui (vers l'ouvrage pour une culée), Y le long de la ligne. */
   function descente(R, j) {
-    const F = mod.fondatio(), s = R.s, G = R.geo, a = G.appuis[j], Tj = R.tab.app[j], H = R.rephor, gB = 25;
+    const F = mod.fondatio(), s = R.s, G = R.geo, a = G.appuis[j], AD = R.tabA, Tj = AD.app[j], H = R.rephor, gB = 25, gQ = AD.gQ;
     const tp = (T, u, z) => F.transport(T, u - a.uc, 0, z, 0, 0, a.zsem);
     const add = (A, B) => A.map((v, k) => v + B[k]);
     const Z = [0, 0, 0, 0, 0, 0];
-    // tablier (convention et valeurs de l'export REPHOR de RADBAN-RAPEN)
-    const Gtab = Tj.R.pp + Tj.R.supMax + Tj.R.den.max, GtabMin = Tj.R.pp + Tj.R.supMin, Qtab = Math.max(Tj.R.A.max, Tj.R.B.max) + 0.8 * Tj.R.acc.max;
+    // tablier (convention et valeurs des exports vers REPHOR des modules de tablier)
+    const Gtab = Tj.Gk, GtabMin = Tj.GkMin, Qtab = Tj.Q;
     const uApp = 0;
     // poids propres et terres
     const pp = a.el.map((e) => { const V = (e.u1 - e.u0) * (e.z1 - e.z0) * e.L; return { nom: e.nom, V, W: gB * V, u: (e.u0 + e.u1) / 2, z: (e.z0 + e.z1) / 2 }; });
@@ -234,9 +279,11 @@
     if (a.culee) {
       const c = s.app.culee, Ka = Math.pow(Math.tan(Math.PI / 4 - c.phi * Math.PI / 360), 2), Ht = a.zGG - a.zsem;
       const P = 0.5 * Ka * c.gamma * Ht * Ht * a.Lm;
-      const q = (R.tab.d.alpha || 1) * 4 * 250 / (6.4 * 3.0), bq = Math.min(a.Lm, s.nVoies * 3.0), Pq = Ka * q * Ht * bq;
-      Tp = tp([P, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 3); Tq = tp([Pq, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 2);
-      pous = { Ka, Ht, P, q, bq, Pq };
+      const q = AD.qRemblai, bq = Math.min(a.Lm, AD.largeurQ / G.sn), Pq = Ka * q * Ht * bq;
+      // contre-poussée active du terrain devant le patin (du terrain naturel à la sous-face), butée négligée
+      const hf = Math.max(0, s.zTN - a.zsem), Pf = 0.5 * Ka * c.gamma * hf * hf * a.Lm;
+      Tp = add(tp([P, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 3), tp([-Pf, 0, 0, 0, 0, 0], a.uc, a.zsem + hf / 3)); Tq = tp([Pq, 0, 0, 0, 0, 0], a.uc, a.zsem + Ht / 2);
+      pous = { Ka, Ht, P, hf, Pf, q, bq, Pq };
     }
     // efforts horizontaux longitudinaux de REPHOR (|H| dans le sens défavorable), au niveau des appareils
     const pa = H.parAppui[j], Hc = (id) => { const c = pa.combs.find((x) => x.id === id); return c ? Math.abs(c.H.abs ?? Math.max(Math.abs(c.H.max), Math.abs(c.H.min))) : 0; };
@@ -245,10 +292,10 @@
     const combs = [
       { type: 'ELS Rare', nom: 'ELS caractéristique : G + Q + H(ELS1) + poussée', ld: add(add(Tg, Ttab(Gtab)), Tp), cd: add(add(Ttab(Qtab), Th(Hc('ELS1'))), Tq) },
       { type: 'ELS QP', nom: 'ELS quasi permanent : G + H(QP) + poussée', ld: add(add(add(Tg, Ttab(Gtab)), Tp), Th(Hc('QP'))), cd: Z.slice() },
-      { type: 'ELU Fond', nom: 'ELU : 1,35 G + 1,45 Q + H(ELU1) + 1,35 poussée', ld: add(add(Tg, Ttab(Gtab)).map((v) => 1.35 * v), Tp.map((v) => 1.35 * v)), cd: add(add(Ttab(Qtab).map((v) => 1.45 * v), Th(Hc('ELU1'))), Tq.map((v) => 1.45 * v)) },
-      { type: 'ELU Fond', nom: 'ELU : G min + H(ELU1) + 1,35 poussée (glissement)', ld: add(add(Tg, Ttab(GtabMin)), Tp.map((v) => 1.35 * v)), cd: add(Th(Hc('ELU1')), Tq.map((v) => 1.45 * v)) },
+      { type: 'ELU Fond', nom: `ELU : 1,35 G + ${String(gQ).replace('.', ',')} Q + H(ELU1) + 1,35 poussée`, ld: add(add(Tg, Ttab(Gtab)).map((v) => 1.35 * v), Tp.map((v) => 1.35 * v)), cd: add(add(Ttab(Qtab).map((v) => gQ * v), Th(Hc('ELU1'))), Tq.map((v) => gQ * v)) },
+      { type: 'ELU Fond', nom: 'ELU : G min + H(ELU1) + 1,35 poussée (glissement)', ld: add(add(Tg, Ttab(GtabMin)), Tp.map((v) => 1.35 * v)), cd: add(Th(Hc('ELU1')), Tq.map((v) => gQ * v)) },
     ];
-    return { j, nom: a.nom, Gtab, GtabMin, Qtab, pp, ter, Gpp, Gter, pous, H: { ELS1: Hc('ELS1'), QP: Hc('QP'), ELU1: Hc('ELU1') }, combs };
+    return { j, nom: a.nom, Gtab, GtabMin, Qtab, gQ, pp, ter, Gpp, Gter, pous, H: { ELS1: Hc('ELS1'), QP: Hc('QP'), ELU1: Hc('ELU1') }, combs };
   }
 
   /* ═══════════════════════ 5. Fondations : données FONDATIO ═══════════════════════ */
@@ -273,18 +320,20 @@
 
   /* ═══════════════════════ 6. Chaîne d'un ouvrage à tablier ═══════════════════════ */
   function chaineTablier(R) {
-    const s = R.s, RB = mod.radban(), RH = mod.rephor(), F = mod.fondatio();
-    if (!RB || !RH || !F) throw new Error('Modules RADBAN-RAPEN, REPHOR ou FONDATIO indisponibles.');
+    const s = R.s, route = R.t.ouvrage === 'route', RB = route ? mod.rodban() : mod.radban(), RH = mod.rephor(), F = mod.fondatio();
+    if (!RB || !RH || !F) throw new Error('Modules TABLIER, HORIZONTAL ou FONDATIONS indisponibles.');
     // 1. tablier
-    const din = tablierInput(s); R.tabInp = din;
-    const T = RB.calcul(din); R.tab = T;
+    const din = tablierInput(s); R.tabInp = din; R.tabCle = route ? 'rodban-ropen' : 'radban-rapen';
+    const T = RB.calcul(din); R.tab = T; R.tabMod = RB;
     T.alertes.forEach((m) => R.alertes.push('Tablier : ' + m));
+    R.tabA = adapter(R);
     // 2. géométrie des appuis
-    const G = geoTablier(s, T); R.geo = G;
-    // 3. efforts horizontaux et appareils d'appui : export REPHOR de RADBAN-RAPEN complété par la géométrie des appuis
+    const G = geoTablier(s, R.tabA); R.geo = G;
+    // 3. efforts horizontaux et appareils d'appui : export vers REPHOR du module de tablier, complété par la géométrie des appuis
     const exp = RB.exportRephor(T);
-    const ex = T.ext.reduce((m, e) => (e.theta * e.v > m.theta * m.v ? e : m), T.ext[0]);
-    const v = Object.assign({}, REPHOR_V, exp.v, { Emode: s.regl === 'ec' ? 'ec2' : 'bael', fck: s.app.fck, nVoiesFrein: s.nVoies, thetaExt: +ex.theta.toExponential(4), eExt: r3(ex.v) });
+    const v = Object.assign({}, REPHOR_V, exp.v, { Emode: s.regl === 'ec' ? 'ec2' : 'bael', fck: s.app.fck });
+    if (route) Object.assign(v, { gQ: 1.35, psi0Q: 0, nvoies: 1 });
+    else { const ex = T.ext.reduce((m, e) => (e.theta * e.v > m.theta * m.v ? e : m), T.ext[0]); Object.assign(v, { nVoiesFrein: s.nVoies, thetaExt: +ex.theta.toExponential(4), eExt: r3(ex.v) }); }
     const rows = exp.ap.map((a, j) => {
       const g = G.appuis[j];
       return Object.assign({}, a, g.culee ? { type: 'mur', nfut: 1, larfut: r3(g.Lm), esup: g.ef, einf: g.ef, hfut: r3(g.hMur) } : { type: 'pile', nfut: g.nfut, larfut: r3(g.larfut), esup: g.e, einf: g.e, hfut: r3(g.hfut) });
@@ -292,7 +341,7 @@
     R.rephorPage = { v, ap: rows };
     R.rephorInp = rephorInput(v, rows);
     const H = RH.calc(R.rephorInp); R.rephor = H;
-    H.msgs.forEach((m) => R.alertes.push('REPHOR : ' + m));
+    H.msgs.forEach((m) => R.alertes.push('Efforts horizontaux : ' + m));
     // 4. appareils (dimensionnés par APPMOBIL à travers REPHOR)
     R.appareils = H.app.map((rec) => {
       const a = G.appuis[rec.j], o = { j: rec.j, nom: a.nom, cote: rec.cote, app: rec.app, n: rec.n };
@@ -330,7 +379,7 @@
   }
   function chaineCadre(R) {
     const s = R.s, RR = mod.racba(), F = mod.fondatio();
-    if (!RR || !F) throw new Error('Modules RACBA-RAPO ou FONDATIO indisponibles.');
+    if (!RR || !F) throw new Error('Modules CADRES ou FONDATIONS indisponibles.');
     const ci = cadreInput(s); R.cadInp = ci.d;
     const C = RR.calcul(ci.d); R.cadre = C;
     C.alertes.forEach((m) => R.alertes.push('Cadre / portique : ' + m));
@@ -389,39 +438,50 @@
     const rows = [], add = (partie, designation, unite, q, origine) => rows.push({ partie, designation, unite, q, origine });
     const s = R.s, kRec = 1.10;
     if (R.tab) {
-      const T = R.tab, d = T.d, G = R.geo, Lt = G.xb - G.xa, rapen = d.type === 'rapen';
-      // coupe : longueur développée de la sous-face et des rives (même profil que les plans de RADBAN-RAPEN)
-      const B = d.Btot, n = 400, bot = (y) => { const u = Math.min(y + B / 2, B / 2 - y); return u < d.lc ? Math.min(d.h, d.er + d.penteC * u) : d.h; };
-      let dev = 0; for (let k = 0; k < n; k++) { const y0 = -B / 2 + B * k / n, y1 = -B / 2 + B * (k + 1) / n; dev += Math.hypot(y1 - y0, bot(y1) - bot(y0)); }
-      const partie = 'Tablier';
-      if (rapen) {
-        const pr = T.prof, gp = pr.A * 0.785;                       // kg/m (7850 kg/m³)
-        const Vb = (T.pp - d.nPout * T.ine.gp) / d.gBeton * Lt;
-        add(partie, 'Béton du tablier (poutrelles déduites)', 'm³', Vb, 'géométrie + RADBAN-RAPEN (poids propre)');
-        add(partie, `Poutrelles ${pr.nom} ${d.nuance} (${d.nPout} × ${r3(Lt)} m)`, 'kg', d.nPout * Lt * gp, 'géométrie');
-        add(partie, 'Dallettes de coffrage perdu', 'm²', T.g.Bres * Lt, 'géométrie');
-        add(partie, 'Coffrage des rives et des abouts', 'm²', 2 * d.er * Lt + (dev - T.g.Bres) * Lt + 2 * T.g.A / G.sn, 'géométrie');
-        // aciers : chapeaux sur les zones de moment négatif + aciers supérieurs minimaux + transversaux (forfait 2 × mini)
-        const xs = T.secs.map((sc, k) => [sc.x, T.pe.secs[k].chap ? T.pe.secs[k].As : 0]);
-        const Lch = integ(xs);
-        add(partie, 'Aciers : chapeaux sur appuis', 'kg', Lch * 1e-4 * ACIER * kRec, 'calcul RADBAN-RAPEN (sections) + 10 % recouvrements');
-        add(partie, 'Aciers : nappe supérieure minimale et transversaux', 'kg', 3 * d.AsMinM * T.g.Bres * Lt * 1e-4 * ACIER * kRec, 'forfait : 3 × mini (longitudinal + 2 nappes transversales)');
+      const T = R.tab, A = R.tabA, d = T.d, G = R.geo, Lt = G.xb - G.xa, B = A.B, partie = 'Tablier', route = A.route;
+      const pe = route ? A.ropen : d.type === 'rapen', modT = route ? 'TABLIER ROUTE' : 'TABLIER RAIL';
+      // coupe : aire et longueur développée de la sous-face (profil des plans du module de tablier)
+      const n = 400; let dev = 0, Ac = 0;
+      for (let k = 0; k < n; k++) { const y0 = -B / 2 + B * k / n, y1 = -B / 2 + B * (k + 1) / n; dev += Math.hypot(y1 - y0, A.bot(y1) - A.bot(y0)); Ac += (y1 - y0) * (A.top((y0 + y1) / 2) + A.bot((y0 + y1) / 2)); }
+      Ac = route ? T.G.A : T.g.A;                                    // aire de la coupe : valeur du module (contrôlée par les tests)
+      const eRive = A.bot(-B / 2 + 1e-6);
+      const coff = (dev + 2 * eRive) * Lt + 2 * Ac / G.sn;
+      if (pe) {
+        const pr = route ? T.R.prof : T.prof, N = route ? T.R.N : d.nPout, gp = pr.A * 0.785;   // kg/m (7850 kg/m³)
+        const Ap = pr.A / 1e4, tf = pr.tf / 1e3, Bs = route ? T.G.Bs : T.g.Bres;
+        const Vb = (Ac - N * Ap - (Bs - N * pr.b / 1e3) * tf) * Lt;
+        add(partie, 'Béton du tablier (poutrelles et vides sous dallettes déduits)', 'm³', Vb, 'géométrie');
+        add(partie, `Poutrelles ${pr.nom} (${N} × ${fm(Lt)} m)`, 'kg', N * Lt * gp, 'géométrie');
+        add(partie, 'Dallettes de coffrage perdu', 'm²', Bs * Lt, 'géométrie');
+        add(partie, 'Coffrage des rives, encorbellements et abouts', 'm²', coff - Bs * Lt, 'géométrie');
+        const AsChap = route ? +d.ropen.AsChap : +d.AsChap, AsMinM = route ? +d.ropen.AsMinM || 0 : +d.AsMinM;
+        const xs = T.secs.map((sc, k) => [sc.x, T.pe.secs[k].chap ? AsChap : 0]);
+        add(partie, 'Aciers : chapeaux sur appuis', 'kg', integ(xs) * 1e-4 * ACIER * kRec, `calcul ${modT} (zones de chapeaux) + 10 % recouvrements`);
+        add(partie, 'Aciers : nappe supérieure et transversaux', 'kg', Math.max(3 * AsMinM, 12) * Bs * Lt * 1e-4 * ACIER * kRec, 'forfait : 3 × mini (≥ 12 cm²/m) longitudinal et transversal');
       } else {
-        add(partie, 'Béton du tablier', 'm³', T.g.A * Lt, 'géométrie');
-        add(partie, 'Coffrage (sous-face, rives, abouts)', 'm²', (dev + 2 * d.er) * Lt + 2 * T.g.A / G.sn, 'géométrie');
-        const xs = T.secs.map((sc, k) => [sc.x, T.ba.secs[k].As[0] + T.ba.secs[k].As[1]]);
-        add(partie, 'Aciers longitudinaux (sections calculées)', 'kg', integ(xs) * 1e-4 * ACIER * kRec, 'calcul RADBAN-RAPEN + 10 % recouvrements');
-        add(partie, 'Aciers transversaux (2 nappes de construction)', 'kg', 2 * d.AsMin * Lt * B * 1e-4 * ACIER * kRec, `forfait ${d.AsMin} cm²/m par nappe`);
-        const xt = T.secs.map((sc, k) => [sc.x, (T.ba.secs[k].AtB0 || 0) * T.ba.b * 0.9 * T.g.hm]);
-        const At = integ(xt);
-        if (At > 0) add(partie, 'Aciers d’effort tranchant', 'kg', At * 1e-4 * ACIER * 1.2, 'calcul RADBAN-RAPEN (At/b0·st) + 20 % façonnage');
+        add(partie, 'Béton du tablier', 'm³', Ac * Lt, 'géométrie');
+        add(partie, 'Coffrage (sous-face, rives, abouts)', 'm²', coff, 'géométrie');
+        if (route) {
+          // sections par mètre de largeur (cm²/m), longitudinales intégrées sur x × largeur ; transversales moyennes × surface
+          const xs = T.ba.lon.map((a) => [a.x, a.As[0] + a.As[1]]);
+          add(partie, 'Aciers longitudinaux (sections calculées)', 'kg', integ(xs) * B * 1e-4 * ACIER * kRec, `calcul ${modT} + 10 % recouvrements`);
+          const tr = T.ba.tra.length ? sum(T.ba.tra.map((a) => a.As[0] + a.As[1])) / T.ba.tra.length : 0;
+          add(partie, 'Aciers transversaux (sections calculées, moyenne)', 'kg', tr * B * Lt * 1e-4 * ACIER * kRec, `calcul ${modT} + 10 % recouvrements`);
+        } else {
+          const xs = T.secs.map((sc, k) => [sc.x, T.ba.secs[k].As[0] + T.ba.secs[k].As[1]]);
+          add(partie, 'Aciers longitudinaux (sections calculées)', 'kg', integ(xs) * 1e-4 * ACIER * kRec, `calcul ${modT} + 10 % recouvrements`);
+          add(partie, 'Aciers transversaux (2 nappes de construction)', 'kg', 2 * d.AsMin * Lt * B * 1e-4 * ACIER * kRec, `forfait ${d.AsMin} cm²/m par nappe`);
+          const xt = T.secs.map((sc, k) => [sc.x, (T.ba.secs[k].AtB0 || 0) * T.ba.b * 0.9 * T.g.hm]);
+          const At = integ(xt);
+          if (At > 0) add(partie, 'Aciers d’effort tranchant', 'kg', At * 1e-4 * ACIER * 1.2, `calcul ${modT} (At/b0·st) + 20 % façonnage`);
+        }
       }
       add(partie, 'Étanchéité (surface de l’extrados)', 'm²', B * Lt, 'géométrie');
       // appareils
       R.appareils.forEach((ap) => {
-        if (ap.app !== 'elasto') { add('Appareils d’appui', `${ap.nom} : appareils ${ap.app === 'fixe' ? 'fixes' : 'glissants'}`, 'u', ap.n, 'REPHOR'); return; }
+        if (ap.app !== 'elasto') { add('Appareils d’appui', `${ap.nom} : appareils ${ap.app === 'fixe' ? 'fixes' : 'glissants'}`, 'u', ap.n, 'HORIZONTAL'); return; }
         const p = ap.plaque;
-        add('Appareils d’appui', `${ap.nom} : élastomère fretté ${p ? `${Math.round(p.a * 1000)} × ${Math.round(p.b * 1000)} × ${p.n}(${Math.round(p.ti * 1000)} + ${Math.round(p.ts * 1000)})` : '(non dimensionné)'}`, 'u', ap.n, 'calcul REPHOR / APPMOBIL');
+        add('Appareils d’appui', `${ap.nom} : élastomère fretté ${p ? `${Math.round(p.a * 1000)} × ${Math.round(p.b * 1000)} × ${p.n}(${Math.round(p.ti * 1000)} + ${Math.round(p.ts * 1000)})` : '(non dimensionné)'}`, 'u', ap.n, 'calcul HORIZONTAL / ÉLASTOMÈRES');
       });
       // appuis
       G.appuis.forEach((a, j) => {
@@ -430,7 +490,7 @@
           const V = D.pp[k].V;
           add(partie, 'Béton : ' + e.nom.toLowerCase(), 'm³', V, 'géométrie');
           add(partie, 'Coffrage : ' + e.nom.toLowerCase(), 'm²', e.coff, 'géométrie');
-          add(partie, 'Aciers : ' + e.nom.toLowerCase(), 'kg', V * e.ratio, `ratio forfaitaire ${e.ratio} kg/m³ (APPUI à venir)`);
+          add(partie, 'Aciers : ' + e.nom.toLowerCase(), 'kg', V * e.ratio, `ratio forfaitaire ${e.ratio} kg/m³ (PILES-CULÉES à venir)`);
         });
         add(partie, 'Béton de propreté (0,10 m)', 'm³', a.B * a.L * 0.10, 'géométrie');
         add(partie, 'Bossages d’appareils', 'm³', R.appareils.filter((x) => x.j === j && x.plaque).reduce((t, x) => t + x.n * (x.plaque.a + 0.10) * (x.plaque.b + 0.10) * 0.10, 0), 'géométrie (débord 5 cm, épaisseur 10 cm)');
@@ -458,7 +518,7 @@
       const lib = { trav: 'traverse', pied: 'piédroits', radier: 'radier', sem: 'semelles' };
       for (const [k, L] of Object.entries(par)) {
         const As = sum(L.map((j) => j.As[0] + j.As[1])) / L.length, w = L[0].w;
-        add(partie, 'Aciers principaux : ' + lib[k], 'kg', As * 1e-4 * ACIER * (lon[k] || 0) * w * kRec, 'calcul RACBA-RAPO (moyenne des sections) + 10 %');
+        add(partie, 'Aciers principaux : ' + lib[k], 'kg', As * 1e-4 * ACIER * (lon[k] || 0) * w * kRec, 'calcul CADRES (moyenne des sections) + 10 %');
         add(partie, 'Aciers de répartition : ' + lib[k], 'kg', 0.25 * As * 1e-4 * ACIER * (lon[k] || 0) * w * kRec, 'forfait 25 % des aciers principaux');
       }
       add(partie, 'Étanchéité de la traverse', 'm²', (Lc + 2 * d.eptra) * d.lontottab, 'géométrie');
@@ -477,7 +537,7 @@
     add(partie, `Pieux forés Ø ${P.D} m (${n} × ${Lp} m)`, 'm', n * Lp, 'géométrie');
     add(partie, 'Béton des pieux', 'm³', n * Lp * Ap, 'géométrie');
     const As = f.res && f.res.acier ? Math.max(...f.res.acier.sections.map((x) => x.A)) : 0.005 * Ap * 1e4;
-    add(partie, 'Aciers des pieux', 'kg', n * Lp * As * 1e-4 * ACIER * 1.15, f.res && f.res.acier ? 'calcul FONDATIO (section maxi) + 15 % cerces' : 'minimum 0,5 % + 15 %');
+    add(partie, 'Aciers des pieux', 'kg', n * Lp * As * 1e-4 * ACIER * 1.15, f.res && f.res.acier ? 'calcul FONDATIONS (section maxi) + 15 % cerces' : 'minimum 0,5 % + 15 %');
   }
   /* intégrale ∫ v(x) dx sur des points [x, v] (doublons aux appuis : valeur maxi) */
   function integ(pts) {
@@ -497,17 +557,25 @@
     const V = [], s = R.s;
     const push = (partie, statut, texte, module, etape) => V.push({ partie, statut, texte, module, etape });
     if (R.tab) {
-      const T = R.tab, rapen = T.d.type === 'rapen';
+      const T = R.tab, A = R.tabA, rapen = T.d.type === 'rapen';
+      if (A.route) {
+        let okS, txt;
+        if (A.ropen) { okS = T.pe.secs.every((p) => p.okELS && p.okELU) && T.pe.okV; txt = `${T.R.N} ${T.R.prof.nom} : contraintes ELS, moments ELU ${okS ? 'vérifiés' : 'NON vérifiés'} ; VEd/Vpl,Rd = ${(T.pe.Vsd / T.pe.VplRd).toFixed(2)}`; }
+        else { const all = T.ba.lon.concat(T.ba.tra); okS = all.every((a) => a.verdict !== false); txt = `aciers longitudinaux maxi ${Math.max(...T.ba.lon.map((a) => Math.max(a.As[0], a.As[1]))).toFixed(1)} cm²/m, transversaux maxi ${Math.max(0, ...T.ba.tra.map((a) => Math.max(a.As[0], a.As[1]))).toFixed(1)} cm²/m ; sections ${okS ? 'vérifiées' : 'NON vérifiées'}`; }
+        const fl = T.fl.reduce((m, f) => (f.ratioQ < m.ratioQ ? f : m), T.fl[0]);
+        push('Tablier', okS && !T.alertes.length ? 'ok' : 'ko', txt + ` ; flèche sous trafic L/${Math.round(fl.ratioQ)} (travée ${fl.t + 1})`, 'rodban-ropen', 1);
+      } else {
       const okFl = T.fl.travees.every((t) => t.ok), okExt = T.ext.every((e) => e.dH <= e.limH);
       let okS = true, txt;
       if (rapen) { okS = T.pe.secs.every((p) => p.okELS && p.okELU) && T.pe.okV; txt = `${T.d.nPout} ${T.prof.nom} : contraintes ELS, moments ELU ${okS ? 'vérifiés' : 'NON vérifiés'} ; VEd/Vpl,Rd = ${(T.pe.Vsd / T.pe.VplRd).toFixed(2)}`; }
       else { const sc = Math.max(...T.ba.secs.map((a) => a.sc)); okS = !T.alertes.length; txt = `As sup. maxi ${Math.max(...T.ba.secs.map((a) => a.As[0])).toFixed(0)} cm², As inf. maxi ${Math.max(...T.ba.secs.map((a) => a.As[1])).toFixed(0)} cm², σbc ${sc.toFixed(1)} MPa`; }
       push('Tablier', okS && okFl && okExt ? 'ok' : 'ko', txt + ` ; flèche de confort ${okFl ? 'vérifiée' : 'NON vérifiée'}`, 'radban-rapen', 1);
+      }
       const okA = R.appareils.every((a) => a.ok);
       push('Appareils d’appui', okA ? 'ok' : 'ko', R.appareils.filter((a) => a.app === 'elasto').length + ' files en élastomère fretté dimensionnées (EN 1337-3)' + (okA ? '' : ' — au moins une vérification non satisfaite'), 'appmobil', 2);
       const vr = R.rephor.verifsRail;
       if (vr) { const ok = vr.every((x) => x.okB && x.okLT && x.okH); push('Interaction voie-ouvrage', ok ? 'ok' : 'ko', `δB = ${(Math.max(...vr.map((x) => x.deltaB)) * 1000).toFixed(2)} mm, longueur dilatable ${Math.max(...vr.map((x) => x.LT)).toFixed(1)} m`, 'rephor', 2); }
-      push('Piles et culées', 'bientot', 'Justification béton armé et stabilité propre : module APPUI bientôt disponible. Descente de charges sommaire établie pour les fondations.', 'appui', 3);
+      push('Piles et culées', 'bientot', 'Justification béton armé et stabilité propre : module PILES-CULÉES bientôt intégré. Descente de charges sommaire établie pour les fondations.', 'appui', 3);
     }
     if (R.cadre) {
       const C = R.cadre, okJ = C.justif.every((j) => j.ok !== false && !j.erreur);
@@ -561,7 +629,7 @@
   function vues(R) { return R.tab ? vuesTablier(R) : vuesCadre(R); }
 
   function vuesTablier(R) {
-    const s = R.s, G = R.geo, T = R.tab, d = T.d, V = [], X = G.X, nT = d.travees.length;
+    const s = R.s, G = R.geo, T = R.tab, A = R.tabA, d = T.d, V = [], X = G.X, nT = d.travees.length;
     const Lx = (a, u) => a.x + (a.culee ? a.side : 1) * u / G.sn;     // abscisse sur l'axe d'un point local u
     /* ── plan d'implantation ── */
     const pl = [], B = G.Btot, off = (y) => y * G.cs / G.sn;
@@ -580,9 +648,9 @@
         pl.push({ p: [[e.u0, -e.L / 2], [e.u1, -e.L / 2], [e.u1, e.L / 2], [e.u0, e.L / 2]].map(([u, w]) => plan(G, a, u, w)), calque: 'CACHE', ferme: true });
       });
       if (a.piles) a.piles.forEach((q) => { const [x, y] = plan(G, a, a.uc + q.x, q.y); pl.push({ c: [x, y, s.fond.pieux.D / 2, 'FONDATIONS'] }); });
-      T.app[a.j].y.forEach((y) => pl.push({ c: [a.x + off(y), y, 0.15, 'APPAREILS'] }));
+      A.app[a.j].y.forEach((y) => pl.push({ c: [a.x + off(y), y, 0.15, 'APPAREILS'] }));
     });
-    d.eV.slice(0, d.nVoies).forEach((e, v) => { pl.push({ l: [G.xa - 3, e, G.xb + 3, e, 'AXES'] }); pl.push({ t: [G.xa - 3.2, e + 0.15, 'V' + (v + 1), 0.35, 'TEXTE', 'end'] }); });
+    A.voies.forEach((e, v) => { pl.push({ l: [G.xa - 3, e, G.xb + 3, e, A.route ? 'CACHE' : 'AXES'] }); pl.push({ t: [G.xa - 3.2, e + 0.15, A.route ? (v ? '' : 'chaussée') : 'V' + (v + 1), 0.35, 'TEXTE', 'end'] }); });
     const g = R.gabarit;
     if (g) {
       const yy = B / 2 + 4, a0 = g.xc - g.Wreq / 2 / G.sn, a1 = g.xc + g.Wreq / 2 / G.sn;
@@ -627,14 +695,13 @@
     /* ── coupe transversale au droit de la pile la plus haute (ou d'une culée) ── */
     const piles = G.appuis.filter((a) => !a.culee), a = piles.length ? piles.reduce((m, p) => (p.hfut > m.hfut ? p : m)) : G.appuis[0];
     const ct = [], zE = a.zApp + G.hT;
-    const top = (y) => { const u = Math.min(y + B / 2, B / 2 - y); return u > d.dRebord ? d.penteExt * (u - d.dRebord) : 0; };
-    const bot = (y) => { const u = Math.min(y + B / 2, B / 2 - y); return u < d.lc ? Math.min(d.h, d.er + d.penteC * u) : d.h; };
-    const hAx = d.type === 'rapen' ? G.hT : T.g.hAxe, z0 = a.zApp + d.h;   // extrados en rive
-    const pts = []; for (let k = 0; k <= 120; k++) { const y = -B / 2 + B * k / 120; pts.push([y, z0 + (d.type === 'rapen' ? G.hT - d.h : top(y))]); }
-    for (let k = 120; k >= 0; k--) { const y = -B / 2 + B * k / 120; pts.push([y, z0 - (d.type === 'rapen' ? d.h : bot(y))]); }
+    const z0 = a.zApp + A.hRive;   // extrados en rive
+    const pts = []; for (let k = 0; k <= 120; k++) { const y = -B / 2 + B * k / 120; pts.push([y, z0 + A.top(y)]); }
+    for (let k = 120; k >= 0; k--) { const y = -B / 2 + B * k / 120; pts.push([y, z0 - A.bot(y)]); }
     ct.push({ p: pts, calque: 'COFFRAGE', ferme: true });
-    d.eV.slice(0, d.nVoies).forEach((e, v) => { ct.push({ l: [e, zE + 1.4, e, a.zApp - 0.3, 'AXES'] }); ct.push({ l: [e - 0.75, zE + d.hb + HTRAV + HRAIL, e + 0.75, zE + d.hb + HTRAV + HRAIL, 'PROFIL'] }); ct.push({ t: [e, zE + 1.55, 'V' + (v + 1), 0.3, 'TEXTE', 'middle'] }); });
-    T.app[a.j].y.forEach((y) => ct.push(rect(y - 0.2, a.zSom, y + 0.2, a.zApp, 'APPAREILS')));
+    if (A.route) { ct.push({ l: [A.voies[0], zE + A.hV, A.voies[1], zE + A.hV, 'PROFIL'] }); ct.push({ t: [(A.voies[0] + A.voies[1]) / 2, zE + A.hV + 0.3, 'chaussée ' + fm(Math.abs(A.voies[0] - A.voies[1])), 0.3, 'TEXTE', 'middle'] }); }
+    else A.voies.forEach((e, v) => { ct.push({ l: [e, zE + 1.4, e, a.zApp - 0.3, 'AXES'] }); ct.push({ l: [e - 0.75, zE + A.hV, e + 0.75, zE + A.hV, 'PROFIL'] }); ct.push({ t: [e, zE + 1.55, 'V' + (v + 1), 0.3, 'TEXTE', 'middle'] }); });
+    A.app[a.j].y.forEach((y) => ct.push(rect(y - 0.2, a.zSom, y + 0.2, a.zApp, 'APPAREILS')));
     const wv = (a.culee ? a.Lm : a.Lp) * G.sn, wsem = a.L * G.sn;
     if (a.culee) ct.push(rect(-wv / 2, a.zst, wv / 2, a.zSom, 'COFFRAGE'));
     else for (let k = 0; k < a.nfut; k++) { const wc = (-a.Lp / 2 + a.larfut / 2 + k * a.entraxeFut) * G.sn, hw = a.larfut * G.sn / 2; ct.push(rect(wc - hw, a.zst, wc + hw, a.zSom, 'COFFRAGE')); }
@@ -648,7 +715,7 @@
     V.push({ id: 'coupe', groupe: 'ensemble', titre: `Plan d’ensemble : coupe transversale au droit de ${a.nom} (section droite)`, prim: ct });
 
     /* ── coffrage du tablier : vues de RADBAN-RAPEN ── */
-    mod.radban().vues(T).forEach((v) => V.push(Object.assign({}, v, { id: 'tab-' + v.id, groupe: 'coffrage', titre: 'Tablier — ' + v.titre })));
+    R.tabMod.vues(T).forEach((v) => V.push(Object.assign({}, v, { id: 'tab-' + v.id, groupe: 'coffrage', titre: 'Tablier — ' + v.titre })));
     /* ── coffrage des appuis ── */
     G.appuis.forEach((a) => V.push(a.culee ? vueCulee(R, a) : vuePile(R, a)));
     /* ── gabarit ── */
@@ -681,7 +748,7 @@
     // élévation dans le plan de la ligne d'appui (w), puis coupe (u) décalée
     P.push(rect(-a.L / 2, a.zsem, a.L / 2, a.zst, 'COFFRAGE'));
     for (let k = 0; k < a.nfut; k++) { const wc = -a.Lp / 2 + a.larfut / 2 + k * a.entraxeFut; P.push(rect(wc - a.larfut / 2, a.zst, wc + a.larfut / 2, a.zSom, 'COFFRAGE')); }
-    R.tab.app[a.j].y.forEach((y) => P.push(rect(y / R.geo.sn - 0.25, a.zSom, y / R.geo.sn + 0.25, a.zApp, 'APPAREILS')));
+    R.tabA.app[a.j].y.forEach((y) => P.push(rect(y / R.geo.sn - 0.25, a.zSom, y / R.geo.sn + 0.25, a.zApp, 'APPAREILS')));
     if (a.piles) [...new Set(a.piles.map((q) => q.y))].forEach((w) => P.push(rect(w - s.fond.pieux.D / 2, a.zsem - s.fond.pieux.L, w + s.fond.pieux.D / 2, a.zsem, 'FONDATIONS')));
     P.push({ l: [-a.L / 2 - 1, s.zTN, a.L / 2 + 1, s.zTN, 'TERRAIN'] });
     P.push({ cote: [-a.L / 2, a.L / 2, a.zsem - 0.7 - (a.piles ? s.fond.pieux.L : 0), 'semelle ' + fm(a.L)] });
@@ -865,7 +932,7 @@
     const p = ap.plaque || { a: 0.4, b: 0.5, n: 4, ti: 0.012, ts: 0.004, te: 0.0025, c: 0.005 };
     const v = R.rephorInp;
     return {
-      gen: { regl: v.reglApp === 'setra2000' ? 'setra2000' : 'en1337', mode: ap.plaque ? 'verif' : 'dim', forme: 'rect', ouvrage: 'rail', projet: (R.s.projet || '') + ' — ' + ap.nom },
+      gen: { regl: v.reglApp === 'setra2000' ? 'setra2000' : 'en1337', mode: ap.plaque ? 'verif' : 'dim', forme: 'rect', ouvrage: R.t.ouvrage, projet: (R.s.projet || '') + ' — ' + ap.nom },
       plaque: { a: Math.round(p.a * 1000), b: Math.round(p.b * 1000), D: Math.round(p.a * 1000), n: p.n, ti: +(p.ti * 1000).toFixed(1), ts: +(p.ts * 1000).toFixed(1), te: +((p.te ?? 0.0025) * 1000).toFixed(1), c: +((p.c ?? 0.005) * 1000).toFixed(1) },
       mat: { G: v.Gld ?? 0.9, Gd: v.Gcd ?? 1.8, fy: v.fyFrette ?? 235, acier: 'fe360', sigLim: v.sigLim ?? 15, alpha0: v.alpha0 ?? 0.003, kAlpha0: 1.35, Kf: 0.6, Eb: 2000, gm: 1, hmode: 'v', soulev: true },
       combis: (ap.combis || []).map((c) => ({ type: c.type, Nld: +c.Nld.toFixed(2), Ncd: +c.Ncd.toFixed(2), Hxld: +c.Hxld.toFixed(5), Hyld: +c.Hyld.toFixed(5), Hxcd: +c.Hxcd.toFixed(2), Hycd: +c.Hycd.toFixed(2), aa: c.aa, ab: c.ab, vx: +(c.Hxld || 0).toFixed(5), vy: +(c.Hyld || 0).toFixed(5) })),
@@ -874,7 +941,7 @@
     };
   }
   function preremplissage(R, quoi, idx = 0) {
-    if (quoi === 'radban-rapen') return R.tabInp ? Object.assign(clone(R.tabInp), { _v: 1 }) : null;
+    if (quoi === 'radban-rapen' || quoi === 'rodban-ropen') return R.tabInp && R.tabCle === quoi ? Object.assign(clone(R.tabInp), { _v: 1 }) : null;
     if (quoi === 'rephor') return R.rephorPage ? clone(R.rephorPage) : null;
     if (quoi === 'appmobil') { const ap = (R.appareils || []).filter((a) => a.app === 'elasto')[idx]; return ap ? appmobilPage(R, ap) : null; }
     if (quoi === 'fondatio') { const f = R.fond[idx]; return f ? clone(f.page) : null; }
@@ -883,7 +950,7 @@
     return null;
   }
 
-  const api = { TYPES, EN_COURS, disponible, defaut, normaliser, tablierInput, rephorInput, REPHOR_V, cadreInput, geoTablier, descente, fondatioInput, fondatioPage,
+  const api = { TYPES, EN_COURS, MODULES, adapter, tablierInputRoute, disponible, defaut, normaliser, tablierInput, rephorInput, REPHOR_V, cadreInput, geoTablier, descente, fondatioInput, fondatioPage,
     gabarit, metres, metresCSV, integ, verdicts, calcul, implantation, vues, svgVue, dxf, preremplissage, appmobilPage, HRAIL, HTRAV };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.ouvragesTypes = api; }
