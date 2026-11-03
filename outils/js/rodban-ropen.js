@@ -80,18 +80,22 @@
   function geoTrans(d) {
     const t = d.trans, B = t.dG + t.tG + t.lc + t.tD + t.dD;
     const Bs = Math.min(B, t.Bs > 0 ? t.Bs : B), lcg = (B - Bs) / 2;
-    const h = t.h, hr = t.hr > 0 ? Math.min(t.hr, h) : h;
-    const ep = (y) => { // épaisseur structurelle à l'ordonnée y
-      if (y < lcg) return hr + (h - hr) * clamp(y / Math.max(lcg, EPS), 0, 1);
-      if (y > B - lcg) return hr + (h - hr) * clamp((B - y) / Math.max(lcg, EPS), 0, 1);
+    const h = t.h, hr = t.hr > 0 ? Math.min(t.hr, h) : h, hcr = t.hcr > 0 ? Math.min(t.hcr, h) : h;
+    const ep = (y) => { // épaisseur structurelle à l'ordonnée y (encorbellements linéaires de hr au bord à hcr à l'encastrement)
+      if (y < lcg - EPS) return hr + (hcr - hr) * clamp(y / Math.max(lcg, EPS), 0, 1);
+      if (y > B - lcg + EPS) return hr + (hcr - hr) * clamp((B - y) / Math.max(lcg, EPS), 0, 1);
       return h;
     };
-    const A = Bs * h + 2 * lcg * (h + hr) / 2;
+    const A = Bs * h + 2 * lcg * (hcr + hr) / 2;
+    // inertie de flexion longitudinale de la section brute (encorbellements trapézoïdaux, fibre supérieure commune)
+    const parts = [[Bs, h]].concat(lcg > 0 ? [[2 * lcg, (hcr + hr) / 2]] : []);
+    const yg = sum(parts.map(([b, e]) => b * e * e / 2)) / sum(parts.map(([b, e]) => b * e));
+    const I = sum(parts.map(([b, e]) => b * e ** 3 / 12 + b * e * (e / 2 - yg) ** 2));
     const chaussee = [t.dG + t.tG, t.dG + t.tG + t.lc];
     const trottoirs = [];
     if (t.tG > 0) trottoirs.push([t.dG, t.dG + t.tG]);
     if (t.tD > 0) trottoirs.push([B - t.dD - t.tD, B - t.dD]);
-    return { B, Bs, lcg, h, hr, ep, A, chaussee, trottoirs, yc: B / 2 };
+    return { B, Bs, lcg, h, hr, hcr, ep, A, I, vSup: yg, chaussee, trottoirs, yc: B / 2 };
   }
   /* Charges permanentes : catégories {nom, type:'lin'|'surf', q (kN/m ou kN/m²), y (lin : ordonnée depuis le bord
    * gauche ; « sym » = présente des deux côtés), y1,y2 (surf), kmax, kmin}. Poids propre : γb·A (kpp). */
