@@ -56,7 +56,9 @@
   </div>
   <details class="ref card"><summary>Périmètre et hypothèses</summary>
     <ul>
-      <li><b>Fondation superficielle uniquement.</b> Les fondations semi-profondes (puits) et profondes (pieux, barrettes) du programme d’origine ne sont pas traitées ici : utiliser le module FONDATIO avec les torseurs en sous-face fournis par cette page.</li>
+      <li><b>Fondations :</b> semelle superficielle (q′u saisi ou sondage .SPS) ; pieux, barrettes et puits par le module FONDATIO (portance Qu/Qc du Fascicule 62, groupe sous semelle rigide, réaction latérale de Ménard) à partir des torseurs des combinaisons enveloppes. La semelle biaise (angle ≠ 100 gr) est modélisée à bords droits.</li>
+      <li><b>Modèle de poussée « Livret 2.01 »</b> (par défaut) : diagrammes par pente du talus avec transition à 45° + φ/2, surcharges en bande Ka·q (montée entre φ et 45° + φ/2, arrêt à 45° + φ/2 sous le bord arrière), obliquité pondérée δ0 / β sur l’écran fictif — identifiés sur les notes d’origine (charges élémentaires retrouvées à 0,5 % près). Le modèle « méthode des coins » reste disponible.</li>
+      <li><b>Écart connu :</b> la limite de q′ref du programme d’origine utilise un γq variable non documenté (2,3 au lieu de 3 à l’ELS, 1,6 au lieu de 2 à l’ELU) ; ici γq = 3 / 2 du Fascicule 62 (saisissables), donc plus sévère.</li>
       <li>Le mur est découpé en tranches (2 à 20) ; chaque tranche est une coupe plane, la semelle est supposée infiniment rigide et le sol sans traction (contraintes linéaires sur la surface comprimée, recherche itérative).</li>
       <li>Poussée sur l’écran fictif vertical passant par l’extrémité du talon (stabilité, talon) et sur le parement arrière du voile (ferraillage du voile) : méthode des coins de Coulomb généralisée, pour chaque point de l’écran, avec talus brisé, surcharges en bande et nappe (γ′ = γsat − γw). L’obliquité sur l’écran fictif est soit la pente du terrain (Rankine), soit imposée, soit la règle identifiée sur les notes d’origine (option « origine »).</li>
       <li>Séisme : kh, kv saisis (EN 1998-5 §7.3.2.2 : kh = α·S/r, kv = ±0,5 kh) ; incrément dynamique de Mononobe-Okabe (annexe E) obtenu par la méthode des coins avec gravité inclinée et appliqué à mi-hauteur ; inertie du mur et des terres sur le talon.</li>
@@ -92,6 +94,7 @@
     { id: 'far', label: 'Fruit arrière', unit: '%', def: 4.66 },
     { id: 'ec', label: 'Couronnement : épaisseur', unit: 'm', def: 0.3 },
     { id: 'hc', label: 'Couronnement : hauteur', unit: 'm', def: 0.2 },
+    { id: 'lch', label: 'Palier du couronnement côté haut', unit: 'm', def: 1.0 }, { id: 'lcb', label: 'Palier côté bas', unit: 'm', def: 0.5 },
   ];
   const SEC = [
     { id: 'nom', label: 'Section', type: 'txt', w: '58px' }, { id: 'zc', label: 'z couron.', def: 59.6 }, { id: 'ep', label: 'e voile pied', def: 0.75 },
@@ -109,6 +112,11 @@
     { id: 'qch', label: 'Charge de chantier (tout le talus)', unit: 'kN/m²', def: 10 }, { id: 'qav', label: 'Charge sur remblai avant', unit: 'kN/m²', def: 10 },
   ];
   const FOND = [
+    { id: 'ftype', label: 'Type de fondation', type: 'sel', def: 'superficielle', options: [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux (FONDATIO)'], ['barrettes', 'Barrettes (FONDATIO)'], ['puits', 'Puits (FONDATIO)']], wide: true },
+    { id: 'D', label: 'Pieux : diamètre / barrette : épaisseur', unit: 'm', def: 0.9 }, { id: 'Lb', label: 'Barrette / puits : longueur', unit: 'm', def: 0 },
+    { id: 'H', label: 'Hauteur des pieux', unit: 'm', def: 12.2 }, { id: 'typePieu', label: 'Type de pieu', type: 'sel', def: 2, options: [[1, 'Foré simple'], [2, 'Foré boue'], [3, 'Foré tubé récupéré'], [4, 'Foré tubé perdu']] },
+    { id: 'disAv', label: 'Axe file avant / bord avant', unit: 'm', def: 0.6 }, { id: 'disAr', label: 'Axe file arrière / bord arrière', unit: 'm', def: 0.6 },
+    { id: 'xAv', label: 'Abscisses file avant', type: 'txt', def: '0.5 2.5 4.8 7.0', unit: 'm' }, { id: 'xAr', label: 'Abscisses file arrière', type: 'txt', def: '1.8 3.7 6.0', unit: 'm' },
     { id: 'qu', label: 'Contrainte de rupture q′u', unit: 'MPa', def: 1.2 }, { id: 'frottant', label: 'Sol d’assise frottant (iδ)', type: 'chk', def: true },
     { id: 'mu', label: 'Coefficient tgφ′ sol / semelle', unit: '—', def: 0.6 }, { id: 'c', label: 'Cohésion c′', unit: 'kPa', def: 0 },
     { id: 'kv', label: 'Module de réaction kv (longue durée)', unit: 'MPa/m', def: 10 },
@@ -124,11 +132,13 @@
     { id: 'n', label: 'Coefficient n', unit: '—', def: 15 }, { id: 'livret', label: 'Livret 2.01 chap. 2A (0,8 fe/γs)', type: 'chk', def: true },
     { id: 'eAv', label: 'Axe aciers face avant voile', unit: 'm', def: 0.075 }, { id: 'eAr', label: 'Axe aciers face arrière voile', unit: 'm', def: 0.075 },
     { id: 'eTe', label: 'Axe aciers dessus semelle', unit: 'm', def: 0.055 }, { id: 'eFo', label: 'Axe aciers dessous semelle', unit: 'm', def: 0.055 },
-    { id: 'AminV', label: 'Aciers mini voile', unit: 'cm²/ml', def: 4 }, { id: 'AminS', label: 'Aciers mini semelle', unit: 'cm²/ml', def: 3 },
+    { id: 'AminV', label: 'Aciers mini voile', unit: 'cm²/ml', def: 4 }, { id: 'AminS', label: 'Aciers mini semelle', unit: 'cm²/ml', def: 8.35 },
+    { id: 'AminSeul', label: 'Minimums forfaitaires seuls (sans non-fragilité calculée)', type: 'chk', def: true, wide: true },
   ];
   const OPT = [
     { id: 'kh', label: 'Séisme : kh', unit: '—', def: 0 }, { id: 'kv', label: 'Séisme : kv', unit: '—', def: 0, help: 'EN 1998-5 : kh = α S / r, kv = ±0,5 kh' },
-    { id: 'deltaFictif', label: 'Obliquité sur l’écran fictif', type: 'sel', def: 'origine', options: [['origine', 'Règle des notes d’origine'], ['beta', 'Pente du terrain (Rankine)'], ['0', 'δ = 0'], ['23.33', 'δ = 2φ/3']], wide: true },
+    { id: 'modele', label: 'Modèle de poussée', type: 'sel', def: 'livret', options: [['livret', 'Diagrammes du Livret 2.01 (éd. 2004)'], ['coins', 'Méthode des coins (Culmann numérique)']], wide: true },
+    { id: 'deltaFictif', label: 'Obliquité sur l’écran fictif', type: 'sel', def: 'origine', options: [['origine', 'Règle des notes d’origine'], ['culmann', 'Option Culmann : δ = β ≥ 0'], ['beta', 'Pente du terrain (Rankine)'], ['0', 'δ = 0'], ['23.33', 'δ = 2φ/3']], wide: true },
     { id: 'deltaVoile', label: 'Obliquité δ sur le voile', unit: '°', def: 0 }, { id: 'nCoins', label: 'Points de calcul sur l’écran', def: 16, step: 1 },
   ];
   let sec = [], tal = [], sps = null, R = null;
@@ -138,30 +148,32 @@
     const one = (k) => ({ es: +S(k).es, patin: +S(k).patin, B: +S(k).B, ep: +S(k).ep, zc: +S(k).zc, zav: +S(k).zav, bece: +S(k).bece || 0, bech: +S(k).bech || 0, becy: +S(k).becy || 0, talus: T(k) });
     const num = (v) => (Number.isFinite(v) ? v : -1e9);
     return {
-      projet: s.gen.projet, regl: s.gen.regl, L: s.gen.L, nsec: s.gen.nsec, zsem: s.gen.zsem, fav: s.gen.fav, far: s.gen.far, ec: s.gen.ec, hc: s.gen.hc,
+      projet: s.gen.projet, regl: s.gen.regl, L: s.gen.L, lch: s.gen.lch, lcb: s.gen.lcb, nsec: s.gen.nsec, zsem: s.gen.zsem, fav: s.gen.fav, far: s.gen.far, ec: s.gen.ec, hc: s.gen.hc,
       haute: one(0), basse: one(1),
       sol: { phi: s.sol.phi, g: s.sol.g, gsat: s.sol.gsat, dg: s.sol.dg || 0 }, eau: { am: num(s.sol.eauAm), av: num(s.sol.eauAv) },
       q: { type: s.sol.qtype === 'route' ? 'route' : 'fer', voies: s.sol.qtype === 'fer2' ? 2 : 1, y: s.sol.qy, dydx: s.sol.qdydx || 0, larg: s.sol.qlarg, exp: s.sol.qexp || 0, chantier: s.sol.qch || 0, av: s.sol.qav || 0 },
       beton: { fck: s.ba.fck, fyk: s.ba.fyk, n: s.ba.n, g: s.ba.gb, rapmod: s.ba.rapmod, fiss: s.ba.fiss, livret: s.ba.livret, ssLim: s.ba.ssLim,
-        enrob: { avant: s.ba.eAv, arriere: s.ba.eAr, terre: s.ba.eTe, fouille: s.ba.eFo }, AminVoile: s.ba.AminV, AminSemelle: s.ba.AminS },
-      fond: { qu: s.fond.qu, mu: s.fond.mu, c: s.fond.c, frottant: s.fond.frottant, kv: s.fond.kv * 1000, gq: { els: s.fond.gqELS || 3, elu: s.fond.gqELU || 2, acc: 1.5 }, sps: sps || undefined },
+        enrob: { avant: s.ba.eAv, arriere: s.ba.eAr, terre: s.ba.eTe, fouille: s.ba.eFo }, AminVoile: s.ba.AminV, AminSemelle: s.ba.AminS, AminSeul: !!s.ba.AminSeul },
+      fond: { type: s.fond.ftype, D: s.fond.D, Lb: s.fond.Lb, H: s.fond.H, typePieu: s.fond.typePieu, disAv: s.fond.disAv, disAr: s.fond.disAr, xAv: String(s.fond.xAv || '').split(/[\s;]+/).filter(Boolean).map((v) => +v.replace(',', '.')).filter(Number.isFinite), xAr: String(s.fond.xAr || '').split(/[\s;]+/).filter(Boolean).map((v) => +v.replace(',', '.')).filter(Number.isFinite), ztn: Math.max(+sec[0].zav, +sec[1].zav),
+        qu: s.fond.qu, mu: s.fond.mu, c: s.fond.c, frottant: s.fond.frottant, kv: s.fond.kv * 1000, gq: { els: s.fond.gqELS || 3, elu: s.fond.gqELU || 2, acc: 1.5 }, sps: sps || undefined },
       limites: { decFreq: s.fond.decFreq, decRare: s.fond.decRare, decELU: s.fond.decELU, deplac: s.fond.deplac },
       seisme: { kh: s.opt.kh || 0, kv: s.opt.kv || 0 },
-      options: { deltaFictif: isNaN(+s.opt.deltaFictif) ? s.opt.deltaFictif : +s.opt.deltaFictif, deltaVoile: s.opt.deltaVoile || 0, nCoins: s.opt.nCoins || 16 },
+      options: { modele: s.opt.modele || 'livret', delta0: 2 * s.sol.phi / 3, deltaFictif: isNaN(+s.opt.deltaFictif) ? s.opt.deltaFictif : +s.opt.deltaFictif, deltaVoile: s.opt.deltaVoile || 0, nCoins: s.opt.nCoins || 16 },
     };
   }
   function fromData(d) {
-    const g = { projet: d.projet || '', regl: d.regl, L: d.L, nsec: d.nsec, zsem: d.zsem, fav: d.fav, far: d.far, ec: d.ec, hc: d.hc };
+    const g = { projet: d.projet || '', regl: d.regl, L: d.L, lch: d.lch || 0, lcb: d.lcb || 0, nsec: d.nsec, zsem: d.zsem, fav: d.fav, far: d.far, ec: d.ec, hc: d.hc };
     const row = (nom, x) => ({ nom, zc: x.zc, ep: x.ep, es: x.es, patin: x.patin, B: x.B, zav: x.zav, bece: x.bece || 0, bech: x.bech || 0, becy: x.becy || 0 });
     const trow = (nom, x) => { const r = { nom }; x.talus.forEach((p, i) => { r['y' + i] = +p[0].toFixed(3); r['z' + i] = +p[1].toFixed(3); }); return r; };
     const qt = d.q.type === 'route' ? 'route' : d.q.voies === 2 ? 'fer2' : 'fer';
     return {
       gen: g, sec: [row('haute', d.haute), row('basse', d.basse)], tal: [trow('haute', d.haute), trow('basse', d.basse)],
       sol: { phi: d.sol.phi, g: d.sol.g, gsat: d.sol.gsat, dg: d.sol.dg, eauAm: d.eau.am > -1e8 ? d.eau.am : '', eauAv: d.eau.av > -1e8 ? d.eau.av : '', qtype: qt, qexp: +(+d.q.exp).toFixed(3), qy: +(+d.q.y).toFixed(3), qlarg: +(+d.q.larg).toFixed(3), qdydx: +(+d.q.dydx || 0).toFixed(4), qch: d.q.chantier, qav: d.q.av },
-      fond: { qu: d.fond.qu, mu: d.fond.mu, c: d.fond.c, frottant: d.fond.frottant, kv: d.fond.kv / 1000, gqELS: (d.fond.gq || {}).els || 3, gqELU: (d.fond.gq || {}).elu || 2, decFreq: d.limites.decFreq, decRare: d.limites.decRare, decELU: d.limites.decELU, deplac: d.limites.deplac },
-      ba: { fck: d.beton.fck, fyk: d.beton.fyk, gb: d.beton.g, rapmod: d.beton.rapmod, fiss: d.beton.fiss, ssLim: Number.isFinite(d.beton.ssLim) ? d.beton.ssLim : '', n: d.beton.n, livret: d.beton.livret,
+      fond: { ftype: ['pieux', 'barrettes', 'puits'].includes(d.fond.type) ? d.fond.type : 'superficielle', D: d.fond.D ?? 0.9, Lb: d.fond.Lb ?? 0, H: d.fond.H ?? 12, typePieu: d.fond.typePieu ?? 2, disAv: d.fond.disAv ?? 0.6, disAr: d.fond.disAr ?? 0.6, xAv: (d.fond.xAv || [0.5, 2.5, 4.8, 7.0]).join(' '), xAr: (d.fond.xAr || [1.8, 3.7, 6.0]).join(' '),
+        qu: d.fond.qu, mu: d.fond.mu, c: d.fond.c, frottant: d.fond.frottant, kv: d.fond.kv / 1000, gqELS: (d.fond.gq || {}).els || 3, gqELU: (d.fond.gq || {}).elu || 2, decFreq: d.limites.decFreq, decRare: d.limites.decRare, decELU: d.limites.decELU, deplac: d.limites.deplac },
+      ba: { AminSeul: !!d.beton.AminSeul, fck: d.beton.fck, fyk: d.beton.fyk, gb: d.beton.g, rapmod: d.beton.rapmod, fiss: d.beton.fiss, ssLim: Number.isFinite(d.beton.ssLim) ? d.beton.ssLim : '', n: d.beton.n, livret: d.beton.livret,
         eAv: d.beton.enrob.avant, eAr: d.beton.enrob.arriere, eTe: d.beton.enrob.terre, eFo: d.beton.enrob.fouille, AminV: d.beton.AminVoile, AminS: d.beton.AminSemelle },
-      opt: { kh: d.seisme.kh, kv: d.seisme.kv, deltaFictif: String(d.options.deltaFictif ?? 'origine'), deltaVoile: d.options.deltaVoile || 0, nCoins: d.options.nCoins || 16 },
+      opt: { modele: d.options.modele || 'livret', kh: d.seisme.kh, kv: d.seisme.kv, deltaFictif: String(d.options.deltaFictif ?? 'origine'), deltaVoile: d.options.deltaVoile || 0, nCoins: d.options.nCoins || 16 },
       sps: d.fond.sps || null,
     };
   }
@@ -195,8 +207,27 @@
     return `<div class="coupe"><svg viewBox="0 0 ${W} ${H}">${o}</svg></div>`;
   }
 
+  function chargesTable(r) {
+    return BA.table(['Tr.', 'x (m)', 'Poids mur', 'Terre talon', 'Terre patin', 'Poussée H', 'Poussée V', 'δ (°)', 'Kh éq.', 'Q : poussée H', 'Chantier : poussée H'],
+      r.tr.map((g) => { const c = g.ch, dx = r.plan.L / r.tr.length, s = (L, nom) => (L || []).filter((x) => !nom || x.nom === nom).reduce((t, x) => t + x.Fz, 0) * dx, h = (L) => (L || []).filter((x) => x.nom === 'poussée').reduce((t, x) => t + x.Fy, 0) * dx;
+        return [g.k + 1, f(g.x, 2), f(-s(c.G), 1), f(-s(c.GT, 'talon'), 1), f(-s(c.GT, 'patin'), 1), f(c.poussee.Ph * dx, 1), f(c.poussee.Pv * dx, 1), f(c.poussee.delta, 1), f(c.poussee.Kh, 4), f(-h(c.Q), 1), f(-h(c.QC), 1)]; })) ;
+  }
+  function sectionsProf(r) {
+    const P = r.prof, R2 = P.R, out = [];
+    out.push({ titre: 'Synthèse', html: BA.kpis([{ l: 'Verdict', v: r.ok ? 'Vérifié' : 'Non vérifié', cls: r.ok ? 'ok' : 'ko', hi: true },
+      { l: 'Pieux', v: String(P.piles.length), n: r.d.fond.type }, { l: 'Qmax ELU', v: f(R2.pt.lim['ELU fond'][0], 0), u: 'kN' }, { l: 'Qmax ELS rare', v: f(R2.pt.lim['ELS rare'][0], 0), u: 'kN' }])
+      + (r.alertes.length ? `<div class="msg err" style="margin-top:10px">${r.alertes.map(BA.esc).join('<br>')}</div>` : '') });
+    out.push({ titre: 'Coupe de la section haute', html: coupe(r) });
+    out.push({ titre: 'Efforts en tête des pieux (Fasc. 62 titre V, FONDATIO)', html: BA.table(['Vérification', 'Comb.', 'Paramètre', 'Calculé', 'Limite', ''], P.verifs.map((x) => [x.nom, x.comb, x.par, f(x.val, 1), f(x.adm, 1), BA.verdict(x.ok)]), { leftText: true })
+      + BA.table(['Pieu', 'x (m)', 'y (m)', 'File'].concat(P.combs.slice(0, 6).map((c) => 'N c.' + c.no)), P.piles.map((q, i) => [i + 1, f(q.x, 2), f(q.y, 2), q.file].concat(R2.combs.slice(0, 6).map((c) => f(c.piles[i].N, 0)))), { leftText: true })
+      + `<div class="sub">Combinaisons enveloppes transmises à FONDATIO (${P.combs.length}). Aciers des pieux : ${R2.acier.ok ? 'vérifiés' : 'à reprendre'} (voir le module FONDATIO pour le détail).</div>` });
+    const all = sections(Object.assign({}, r, { verifs: null }));
+    return out.concat(all.filter((x) => /Voile|Patin|Talon|Plans|Charges élémentaires/.test(x.titre)));
+  }
   function sections(r) {
-    const out = [], v = r.verifs, ok = r.ok;
+    if (r.prof && r.verifs !== null) return sectionsProf(r);
+    const out = [], v = r.verifs || [], ok = r.ok;
+    if (r.verifs === null) return sectionsBA(r);
     const k = r.res;
     out.push({ titre: 'Synthèse', html: BA.kpis([
       { l: 'Verdict', v: ok ? 'Vérifié' : 'Non vérifié', cls: ok ? 'ok' : 'ko', hi: true },
@@ -211,10 +242,22 @@
     out.push({ titre: 'Résultantes et contraintes sous la semelle', html: BA.table(['Comb.', 'Libellé', 'N (kN)', 'H (kN)', 'Mx (kN·m)', 'My (kN·m)', 'σmax', 'σmin', 'q′ref', 'Lim.', 'Décomp. %'],
       k.map((x) => [x.no, x.nom, f(x.N, 1), f(x.Hy, 1), f(x.Mx, 1), f(x.My, 1), f(x.smax, 3), f(x.smin, 3), f(x.q34, 3), f(x.qlim, 3), f(x.decomp, 1)]), { leftText: true })
       + '<div class="sub">Moments au centre de gravité de la semelle en sous-face. Mx : autour de l’axe du mur (renversement), My : autour de l’axe transversal. Contraintes en MPa.</div>' });
-    out.push({ titre: 'Charges élémentaires par tranche (kN par tranche)', html: BA.table(['Tr.', 'x (m)', 'Poids mur', 'Terre talon', 'Terre patin', 'Poussée H', 'Poussée V', 'δ (°)', 'Kh éq.', 'Q : poussée H', 'Chantier : poussée H'],
-      r.tr.map((g) => { const c = g.ch, dx = r.plan.L / r.tr.length, s = (L, nom) => (L || []).filter((x) => !nom || x.nom === nom).reduce((t, x) => t + x.Fz, 0) * dx, h = (L) => (L || []).filter((x) => x.nom === 'poussée').reduce((t, x) => t + x.Fy, 0) * dx;
-        return [g.k + 1, f(g.x, 2), f(-s(c.G), 1), f(-s(c.GT, 'talon'), 1), f(-s(c.GT, 'patin'), 1), f(c.poussee.Ph * dx, 1), f(c.poussee.Pv * dx, 1), f(c.poussee.delta, 1), f(c.poussee.Kh, 4), f(-h(c.Q), 1), f(-h(c.QC), 1)]; })) });
+    out.push({ titre: 'Charges élémentaires par tranche (kN par tranche)', html: chargesTable(r) });
     out.push({ titre: 'Déplacement en tête (ELS fréquent)', html: BA.table(['Comb.', 'Rotation semelle (mrad)', 'Déplacement en tête (mm)', 'Limite (mm)', ''], r.deplac.map((x) => [x.no, f(x.rot, 2), f(x.u, 1), f(x.lim, 1), BA.verdict(x.u <= x.lim)])) });
+    const vt = r.ba.voile;
+    out.push({ titre: 'Voile — aciers verticaux (cm²/ml)', html: BA.table(['Tr.'].concat(r.ba.fr.map((x) => `arr. ${x === 0 ? 'pied' : x + '·H'}`)).concat(r.ba.fr.map((x) => `av. ${x === 0 ? 'pied' : x + '·H'}`)).concat(['σbc pied', 'τ pied / lim', '']),
+      vt.map((L, i) => [i + 1].concat(L.map((s) => f(s.Ar, 2))).concat(L.map((s) => f(s.Aav, 2))).concat([f(L[0].sc, 2), f(L[0].tau, 2) + ' / ' + f(L[0].tauLim, 2), BA.verdict(L.every((s) => s.ok !== false))])))
+      + BA.chart([{ x: vt.map((_, i) => i + 1), y: vt.map((L) => L[0].Ar), label: 'face arrière, pied' }, { x: vt.map((_, i) => i + 1), y: vt.map((L) => L[1].Ar), label: 'face arrière, H/8' }], { title: 'Aciers du voile par tranche', unit: 'cm²/ml', h: 180 }) });
+    const sm = (L, nom) => BA.table(['Tr.', 'Aciers sup.', 'Aciers inf.', 'M ELS (kN·m/ml)', 'σbc ELS (MPa)', 'σs ELS (MPa)', 'τ / τlim (MPa)', 'At (cm²/m²)', ''],
+      L.map((s) => [s.k + 1, f(s.sup, 2), f(s.inf, 2), f(s.Mels, 1), f(s.sc, 2), f(s.ss, 1), f(s.tau, 2) + ' / ' + f(s.tauLim, 2), f(s.At, 2), BA.verdict(s.ok)]));
+    out.push({ titre: 'Patin — section d’encastrement (cm²/ml)', html: sm(r.ba.patin) });
+    out.push({ titre: 'Talon — section d’encastrement (cm²/ml)', html: sm(r.ba.talon) });
+    out.push({ titre: 'Plans de ferraillage', html: '<div class="sub">Pour un mur en T de géométrie courante, les plans de coffrage et de ferraillage peuvent être générés avec le module dédié : <a class="btn sm gold" href="../plans-ferraillage.html">Générer les plans de ferraillage</a></div>' });
+    return out;
+  }
+  function sectionsBA(r) {
+    const out = [];
+    out.push({ titre: 'Charges élémentaires par tranche (kN par tranche)', html: chargesTable(r) });
     const vt = r.ba.voile;
     out.push({ titre: 'Voile — aciers verticaux (cm²/ml)', html: BA.table(['Tr.'].concat(r.ba.fr.map((x) => `arr. ${x === 0 ? 'pied' : x + '·H'}`)).concat(r.ba.fr.map((x) => `av. ${x === 0 ? 'pied' : x + '·H'}`)).concat(['σbc pied', 'τ pied / lim', '']),
       vt.map((L, i) => [i + 1].concat(L.map((s) => f(s.Ar, 2))).concat(L.map((s) => f(s.Aav, 2))).concat([f(L[0].sc, 2), f(L[0].tau, 2) + ' / ' + f(L[0].tauLim, 2), BA.verdict(L.every((s) => s.ok !== false))])))

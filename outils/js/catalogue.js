@@ -9,7 +9,7 @@
       desc: 'Poutres de 1 à 20 travées à inertie constante ou variable : charges fixes et mobiles, UIC 71, SW/0, SW/2, LM1, A(l), Bc, Bt, Mc80, Mc120, enveloppes et combinaisons.' },
     { code: 'GMSLT', slug: 'gmslt', statut: 'on', nom: 'Répartition transversale', reg: 'Guyon-Massonnet-Barès',
       desc: 'Coefficients de répartition transversale et moments de flexion transversale des tabliers de ponts-rails et ponts-routes sous charges réglementaires.' },
-    { code: 'RACBA-RAPO', slug: 'racba-rapo', statut: 'dev', nom: 'Cadres et portiques ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1998-2',
+    { code: 'RACBA-RAPO', slug: 'racba-rapo', statut: 'on', nom: 'Cadres et portiques ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1998-2',
       desc: 'Cadres fermés (1 à 15 m) et portiques ouverts (5 à 25 m) sous voies ferrées : sollicitations, ferraillage, fissuration, flèche et fondations.' },
 
     { phase: 2, titre: 'Fondations et appuis' },

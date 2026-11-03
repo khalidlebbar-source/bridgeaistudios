@@ -17,4 +17,14 @@ const near = (a, b, t) => Math.abs(a - b) <= t * Math.max(1e-9, Math.abs(b));
   const a = r.voiles.v0.map((L) => L[0].ext);
   ok(Math.max(...a) < 12 && Math.min(...a) > 6, 'MURU : aciers extérieurs en pied de voile du même ordre que la note d’origine (8,8 à 9,3 cm²/ml) → ' + a.map((x) => x.toFixed(2)).join(' ')); }
 
+/* cas d'origine Muru.don (Eurocodes) : aciers extérieurs au pied du voile M0D, bandes 2 à 5 de la note (9,34 / 9,08 / 8,94 /
+ * 8,80 cm²/ml). Le programme d'origine découpe le voile en bandes le long du voile (et une console) ; ici, bandes du radier. */
+{ const d = U.exemple(); d.ouv = 4.45; d.nbandes = 10; d.radier.L = 8; d.radier.zav = 56.8; d.eau = 52.36;
+  for (const v of [d.v0, d.v1]) { v.ep = { h: 0.71, b: 0.61 }; v.zc = { h: 62.1, b: 57.1 }; v.talus = { h: [[-10.10, 56.85], [-6.62, 56.85], [2.86, 62.53], [16.39, 62.36]], b: [[-10.10, 56.85], [-6.62, 56.85], [2.86, 62.53], [16.39, 62.36]] }; }
+  d.q = { type: 'fer', voies: 2, y: 3.143, larg: 7.295, exp: 44.55, chantier: 0, radier: 0, cote: 2 };
+  d.fond.qu = 3.0; d.beton.fck = 28; d.beton.fyk = 500; d.beton.fiss = 0;
+  const r = U.calc(d), a = r.voiles.v0.map((L) => L[0].ext), ref = [9.34, 9.08, 8.94, 8.80];
+  ok(a.slice(1, 5).every((v, i) => near(v, ref[i], 0.02)), 'MURU : pied du voile M0D, bandes 2 à 5 (± 2 %) → ' + a.slice(1, 5).map((v) => v.toFixed(2)).join(' '));
+  const g = r.verifs.find((v) => v.nom === 'ELU de glissement');
+  ok(g && g.ok, 'MURU : glissement vérifié (poussées symétriques)'); }
 process.exit(f ? 1 : 0);

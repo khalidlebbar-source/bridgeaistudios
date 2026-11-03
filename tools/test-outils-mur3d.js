@@ -46,25 +46,62 @@ ok(near(M.iDelta(30, false, 1), Math.pow(1 - 30 / 90, 2), 1e-12), 'iδ sol cohé
   ok(near(r.lign.elu[1], 8.81 / 0.85, 0.02), 'patin : aciers ELU (comb. < 1 h, fsu = 347,8 MPa) 8,81 cm² / 0,85 m = 10,36 cm²/ml → ' + r.lign.elu[1].toFixed(2));
   ok(r.ss <= 240 + 1e-6, 'σs ELS ≤ 240 MPa (Livret 2.01 chap. 2A)'); }
 
-/* ── 5. MUR3D, exemple d'origine « fondation superficielle » (données de Mur3D_FondSup.don) ── */
+/* ── 5. MUR3D, exemple d'origine « fondation superficielle » (Mur3D_FondSup, version 2011, Livret 2.01) ──
+ * Valeurs relevées dans la note .ndc (charges élémentaires sommées sur les 10 tranches, kN) et le .res. */
 const R = M.calc(M.exemple());
+const rel = (a, b) => (100 * (a / b - 1)).toFixed(2) + ' %';
 { const dx = R.plan.L / R.tr.length, S = (fn) => R.tr.reduce((s, g) => s + fn(g), 0) * dx;
-  ok(near(-S((g) => g.ch.GT[0].Fz), 1045.5, 0.01), 'terre sur talon (somme des 10 tranches) 1045,5 kN → ' + (-S((g) => g.ch.GT[0].Fz)).toFixed(1));
-  ok(near(-S((g) => g.ch.GT.find((x) => x.nom === 'patin').Fz), 746.1, 0.03), 'terre sur patin 746,1 kN → ' + (-S((g) => g.ch.GT.find((x) => x.nom === 'patin').Fz)).toFixed(1));
-  ok(near(-S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fy), 786.4, 0.03), 'poussée horizontale des terres 786,4 kN → ' + (-S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fy)).toFixed(1));
-  ok(near(-S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fz), 251.4, 0.15), 'poussée verticale des terres 251,4 kN → ' + (-S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fz)).toFixed(1));
-  ok(near(R.tr[0].ch.poussee.Ph * dx, 103.35, 0.03) && near(R.tr[9].ch.poussee.Ph * dx, 43.13, 0.03), 'poussée H tranches 1 et 10 : 103,35 / 43,13 kN → ' + (R.tr[0].ch.poussee.Ph * dx).toFixed(2) + ' / ' + (R.tr[9].ch.poussee.Ph * dx).toFixed(2));
+  const cas = (nom, v, ref, tol) => ok(near(v, ref, tol), `${nom} : origine ${ref} → ${v.toFixed(1)} (${rel(v, ref)})`);
+  cas('cas 1 poids du mur (poussée d’Archimède déduite)', -S((g) => g.ch.G.reduce((t, f) => t + f.Fz, 0) + g.ch.W.filter((f) => f.Fz > 0).reduce((t, f) => t + f.Fz, 0)), 925.0, 0.005);
+  cas('cas 2 terre sur talon', -S((g) => g.ch.GT[0].Fz), 1045.5, 0.005);
+  cas('cas 3 terre sur patin', -S((g) => g.ch.GT.find((x) => x.nom === 'patin').Fz), 746.1, 0.005);
+  cas('cas 4 poussée horizontale des terres (modèle Livret)', -S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fy), 786.4, 0.005);
+  cas('cas 5 poussée verticale des terres', -S((g) => g.ch.GT.find((x) => x.nom === 'poussée').Fz), 251.4, 0.015);
+  cas('cas 8 poussée de la charge d’exploitation (Livret 2.01, éd. 2004)', -S((g) => g.ch.Q.filter((f) => f.nom === 'poussée').reduce((t, f) => t + f.Fy, 0)), 193.5, 0.005);
+  cas('cas 16 poussée de la charge de chantier', -S((g) => g.ch.QC.filter((f) => f.nom === 'poussée').reduce((t, f) => t + f.Fy, 0)), 157.5, 0.005);
+  ok(near(R.tr[0].ch.poussee.Ph * dx, 103.348, 0.002) && near(R.tr[9].ch.poussee.Ph * dx, 43.125, 0.002), 'poussée H tranches 1 et 10 : 103,348 / 43,125 → ' + (R.tr[0].ch.poussee.Ph * dx).toFixed(3) + ' / ' + (R.tr[9].ch.poussee.Ph * dx).toFixed(3));
   ok(near(R.fond.q0, 0.082, 0.01) && near(R.fond.De, 4.32, 0.01), "q′0 = 0,082 MPa, De = 4,32 m → " + R.fond.q0.toFixed(3) + ', ' + R.fond.De.toFixed(2));
+  const c12 = R.res[11]; // comb. 12 de la note : coins 0,277 / 0,000 / 0,035 / 0,166 MPa
+  ok(near(c12.coins[0], 0.277, 0.01) && near(c12.coins[3], 0.166, 0.04), 'contraintes aux sommets, comb. 12 : 0,277 / 0,166 → ' + c12.coins[0].toFixed(3) + ' / ' + c12.coins[3].toFixed(3));
   const vs = R.verifs;
-  ok(near(vs[0].val, 0.208, 0.1), "ELS : q′ref maxi 0,208 MPa → " + vs[0].val.toFixed(3));
-  ok(near(vs[3].val, 0.282, 0.12), "ELU : q′ref maxi 0,282 MPa → " + vs[3].val.toFixed(3));
-  ok(near(Math.abs(vs[5].val), 1395.3, 0.08), 'ELU glissement : H maxi 1395,3 kN → ' + Math.abs(vs[5].val).toFixed(1));
-  ok(near(vs[5].adm, 1543.9, 0.06), 'ELU glissement : limite N tgφ′/1,2 1543,9 kN → ' + vs[5].adm.toFixed(1));
-  ok(vs[1].val <= 0.1 + 1e-9 && vs[4].val < 90, 'décompressions : ELS fréquent ≈ 0 %, ELU < 90 % (note : 0,1 % et 12,7 %) → ' + vs[1].val.toFixed(1) + ' %, ' + vs[4].val.toFixed(1) + ' %');
-  ok(near(Math.max(...R.deplac.map((x) => x.u)), 40.9, 0.1), 'déplacement maxi en tête ELS fréquent 40,9 mm → ' + Math.max(...R.deplac.map((x) => x.u)).toFixed(1));
-  ok(near(R.ba.voile[0][0].Ar, 19.83, 0.06), 'voile tranche 1, pied, face arrière 19,83 cm²/ml → ' + R.ba.voile[0][0].Ar.toFixed(2));
-  ok(near(R.ba.voile[0][0].sc, 5.89, 0.08), 'voile tranche 1, pied, σbc ELS 5,89 MPa → ' + R.ba.voile[0][0].sc.toFixed(2));
-  ok(near(R.ba.patin[0].inf, 11.65, 0.08), 'patin tranche 1, aciers inférieurs 11,65 cm²/ml → ' + R.ba.patin[0].inf.toFixed(2));
+  cas("ELS : q′ref (comb. 12)", vs[0].val, 0.208, 0.01);
+  cas("ELU : q′ref (comb. 39)", vs[3].val, 0.282, 0.01);
+  cas('ELU de renversement : décompression (comb. 56)', vs[4].val, 12.7, 0.02);
+  cas('ELU de glissement : H (comb. 28)', Math.abs(vs[5].val), 1395.3, 0.005);
+  cas('ELU de glissement : limite N tgφ′/1,2', vs[5].adm, 1543.9, 0.005);
+  cas('glissement en rotation, section haute : Mz (comb. 46)', vs[6].val, 5017.6, 0.005);
+  cas('glissement en rotation, section basse : Mz (comb. 28)', vs[7].val, 7283.4, 0.005);
+  cas('glissement en rotation, section basse : limite', vs[7].adm, 7643.9, 0.025);
+  // ÉCART CONNU : limite de q′ref. La note imprime iδ identique au nôtre (0,5791 / 0,5106) mais un γq variable (2,335 ELS,
+  // 1,630 ELU au lieu de 3 et 2 du Fasc. 62) ; la règle n'est pas documentée → nos limites sont plus sévères (−17 %).
+  ok(vs[0].adm < 0.359 && vs[3].adm < 0.432, 'limites q′ref ELS/ELU (γq = 3 / 2) plus sévères que l’origine (0,359 / 0,432) → ' + vs[0].adm.toFixed(3) + ' / ' + vs[3].adm.toFixed(3));
+  cas('rotation maxi de la semelle ELS fréquent (mrad)', Math.max(...R.deplac.map((x) => x.rot)), 5.46, 0.02);
+  cas('déplacement maxi en tête ELS fréquent (mm)', Math.max(...R.deplac.map((x) => x.u)), 40.93, 0.02);
+  const vref = [19.828, 19.027, 17.539, 15.057, 12.584, 10.457, 8.611, 6.997, 5.586];
+  ok(R.ba.voile.slice(0, 9).every((L, i) => near(L[0].Ar, vref[i], 0.016)), 'voile, pied, face arrière, tranches 1 à 9 (± 1,6 %) : ' + R.ba.voile.slice(0, 9).map((L, i) => rel(L[0].Ar, vref[i])).join(' '));
+  const sref = [5.892, 5.860, 5.707, 5.374, 5.003, 4.654, 4.319, 3.995, 3.674];
+  ok(R.ba.voile.slice(0, 9).every((L, i) => near(L[0].sc, sref[i], 0.025)), 'voile, pied, σbc ELS (± 2,5 %) : ' + R.ba.voile.slice(0, 9).map((L, i) => rel(L[0].sc, sref[i])).join(' '));
+  const pref = [3.78, 3.41, 3.00, 2.45, 1.98, 1.57, 1.22, 0.93, 0.69, 0.50];
+  ok(R.ba.patin.every((s, i) => Math.abs(s.sc - pref[i]) <= 0.04), 'patin, σbc ELS (± 0,04 MPa) : ' + R.ba.patin.map((s) => s.sc.toFixed(2)).join(' '));
+  ok(near(R.ba.patin[0].inf, 11.65, 0.05) && R.ba.patin.slice(2).every((s) => near(s.inf, 8.35, 1e-6)), 'patin, aciers inférieurs 11,65 / 9,68 / 8,35… → ' + R.ba.patin.map((s) => s.inf.toFixed(2)).join(' '));
+  ok(R.ba.talon.every((s) => near(s.sup, 8.35, 1e-6)), 'talon (équilibre du nœud) : aciers supérieurs 8,35 cm²/ml partout (origine) → ' + R.ba.talon.map((s) => s.sup.toFixed(2)).join(' '));
   ok(R.ok, 'exemple d’origine vérifié (comme la note d’origine)'); }
 
+/* ── 6. option Culmann (Mur3D1_Culmann, sections 3 à 20) : δ = β, β ≥ 0 (Rankine) ── */
+{ const P = [[0.498, 3.069], [14.532, 6.192], [24.554, 6.640], [40.083, 6.360]], ref = [[0.2815, 0.0627], [0.2714, 0.0121], [0.2710, 0.0000]];
+  const K = [0, 1, 2].map((i) => { const b = Math.max(0, Math.atan2(P[i + 1][1] - P[i][1], P[i + 1][0] - P[i][0]) / D2R); return M.coulomb(35, b, b); });
+  ok(K.every((k, i) => Math.abs(k.Kh - ref[i][0]) < 2e-4 && Math.abs(k.Kv - ref[i][1]) < 2e-4), 'Culmann, section 10 : Kh, Kv des trois pentes ' + K.map((k) => k.Kh.toFixed(4) + '/' + k.Kv.toFixed(4)).join(' ')); }
+
+/* ── 7. fondation sur pieux (Mur3D_Pieux, sondage 22035SP0) : portance par FONDATIO ── */
+{ const sps = 'X\r\nX\r\nX\r\nX\r\nSP0\r\n18/05/95\r\n0 0 53.560\r\n5.00\r\n0 0\r\n0.00 LIMON\r\n15.60 ***\r\n1.00 0 0.36 0.21 1.40\r\n£££\r\n$$TVCC\r\n0.00 "LIMON" 0.10 0.05 5.00 0.33 LA\r\n2.40 "ARGILE" 0.50 0.30 12.00 0.33 AA\r\n6.00 "ARGILE MARNEUSE" 0.80 0.50 17.00 0.50 AB\r\n15.60 "***"\r\n';
+  const d = M.exemple(); d.zsem = 53.5; d.haute.es = d.basse.es = 1.2; d.nsec = 6;
+  d.fond = Object.assign(d.fond, { type: 'pieux', D: 0.9, H: 12.2, typePieu: 2, disAv: 0.6, disAr: 0.6, xAv: [0.5, 2.5, 4.8, 7.0], xAr: [1.8, 3.7, 6.0], kbase: 1e8, ztn: 56.45, sps: M.lireSPS(sps) });
+  const Rp = M.calc(d), lim = Rp.prof.R.pt.lim;
+  ok(near(lim['ELU fond'][0], 1081.08, 0.001) && near(lim['ELU fond'][1], -644.84, 0.001), 'pieux Ø 0,90, L = 12,20 : Qmax / Qmin ELU 1081,08 / −644,84 kN → ' + lim['ELU fond'].map((v) => v.toFixed(2)).join(' / '));
+  ok(near(lim['ELS rare'][0], 852.10, 0.001) && near(lim['ELS qp'][0], 669.51, 0.001) && near(lim['ELU acc'][0], 1261.26, 0.001), 'Qmax ELS rare 852,10 ; ELS qp 669,51 ; ELU acc. 1261,26 → ' + [lim['ELS rare'][0], lim['ELS qp'][0], lim['ELU acc'][0]].map((v) => v.toFixed(2)).join(' ; '));
+  const sN = Rp.prof.R.combs.map((c) => c.piles.reduce((t, p) => t + p.N, 0)), sV = Rp.res.filter((r) => r.pieux).map((r) => r.N);
+  ok(sN.every((v, i) => near(v, sV[i], 0.01)), 'groupe de pieux : Σ N en tête = charge verticale de la combinaison');
+  // ÉCART CONNU : efforts par pieu non retrouvés (origine 976 kN ELU / 750 kN ELS rare au pieu 1) : semelle biaise à 70 gr
+  // (non modélisée), diagramme de surcharge rectangulaire et combinaisons de la version 2004 du programme.
+}
 process.exit(f ? 1 : 0);

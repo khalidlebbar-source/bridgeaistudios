@@ -913,7 +913,7 @@
     return { d, brut: v };
   }
 
-  const api = { defauts, calcul, lireDon, geometrie, coefTrafic, ka, k0, Ecm, kdFrein, sigmaT72, gousset, EXPO };
+  const api = { defauts, calcul, lireDon, geometrie, coefTrafic, enveloppesConvois, ka, k0, Ecm, kdFrein, sigmaT72, gousset, EXPO };
   if (NODE) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.racbaRapo = api; }
 })(typeof window !== 'undefined' ? window : globalThis);
