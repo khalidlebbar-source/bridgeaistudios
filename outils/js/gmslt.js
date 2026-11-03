@@ -274,12 +274,14 @@
   /* ── 6. charges réglementaires ── */
   /* géométrie transversale : la chaussée (largeur roulable) est centrée en yc ; largeur chargeable = roulable − 0,50 m
    * le long de chaque dispositif de retenue (Fasc. 61 II art. 2.1) */
-  function f61Geom(Lr, nDisp, yc = 0) {
-    const Lch = Lr - 0.5 * nDisp; // nDisp : nombre de dispositifs de retenue (0, 1 ou 2), répartis symétriquement
-    let Nv = Math.floor(Lch / 3 + 1e-9); if (Lch >= 5 && Lch < 6) Nv = 2; Nv = Math.max(1, Nv);
-    const classe = Lr >= 7 ? 1 : Lr > 5.5 ? 2 : 3;
-    const off = nDisp === 1 ? 0.25 : 0; // un seul dispositif supposé à gauche
-    return { Lr, Lch, Nv, v: Lch / Nv, classe, y1: yc - Lch / 2 + off, y2: yc + Lch / 2 + off };
+  function f61Geom(Lr, nDisp, yc = 0, dG, dD) {
+    // dG, dD : présence d'un dispositif de retenue à gauche / à droite (sinon nDisp réparti : 2 = les deux, 1 = à gauche)
+    if (dG === undefined) { dG = nDisp >= 1; dD = nDisp >= 2; }
+    const Lch = Lr - 0.5 * ((dG ? 1 : 0) + (dD ? 1 : 0));
+    let Nv = Math.floor(Lch / 3 + 1e-9); if (Lch >= 5 && Lch < 6) Nv = 2; Nv = Math.max(1, Nv); // art. 2.2
+    const classe = Lr >= 7 ? 1 : Lr > 5.5 ? 2 : 3;                                              // art. 2.3
+    const y1 = yc - Lr / 2 + (dG ? 0.5 : 0), y2 = yc + Lr / 2 - (dD ? 0.5 : 0);
+    return { Lr, Lch, Nv, v: Lch / Nv, classe, y1, y2 };
   }
   const A1 = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] }, V0 = { 1: 3.5, 2: 3.0, 3: 2.75 };
   const BC = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 0.8] }, BT = { 1: 1.0, 2: 0.9 };
@@ -325,7 +327,8 @@
         M *= a1;
         if (M > r.Mmax) { r.Mmax = M; r.cfgMax = { voies: sel }; }
         if (M < r.Mmin) { r.Mmin = M; r.cfgMin = { voies: sel }; }
-        if (a1 * KP > r.Kglob * P / n * 0 + (r._kp || 0)) { r._kp = a1 * KP; r.Kmax = KP / P; r.Kglob = a1 * KP / ef[0].P1; r.cfgK = { voies: sel }; }
+        // K : configuration qui maximise la part de charge reprise par la fibre, a1(n)·Σ K·P ; K moyen de cette configuration
+        if (a1 * KP > (r._kp || 0)) { r._kp = a1 * KP; r.Kmax = KP / P; r.Kglob = a1 * KP / ef[0].P1; r.cfgK = { voies: sel }; }
       });
     }
     res.forEach((r) => delete r._kp);
@@ -336,7 +339,7 @@
    * o = {Lr, nDisp, yc, classe (facultatif), systemes:{AL,Bc,Bt,Mc80,Mc120,trottoir}, trottoirs:[[y1,y2]…], dif (diffusion
    *      transversale ajoutée aux impacts des roues, m), unitaireAL, delta (coefficient dynamique appliqué à B et M) } */
   function fasc61(m, o) {
-    const g = f61Geom(o.Lr, o.nDisp === undefined ? 2 : o.nDisp, o.yc || 0);
+    const g = f61Geom(o.Lr, o.nDisp === undefined ? 2 : o.nDisp, o.yc || 0, o.dispG, o.dispD);
     if (o.classe) g.classe = o.classe;
     const S = o.systemes || { AL: 1, Bc: 1, Bt: 1, Mc80: 1, Mc120: 1, trottoir: 1 };
     const dif = o.dif || 0, dB = o.deltaB || 1, dM = o.deltaM || 1, pas = o.pas || 0.05, out = { geom: g, cas: {} };
@@ -389,60 +392,60 @@
    * Programmation dynamique sur une grille transversale (cellules de « pas ») : état = ensemble des rangs de voies déjà
    * placées ; une voie occupe 3 m ; hors voies, aire résiduelle. */
   function lm1(m, o) {
-    const w = o.w, y1 = (o.yc || 0) - w / 2, nl = Math.max(1, Math.floor(w / 3 + 1e-9)), pas = o.pas || 0.1;
-    const cl = o.classe || 1, al = o.classe === 2 ? { Q: [0.9, 0.8, 0.8], q1: 0.7, qi: 1.0, qr: 1.0 } : { Q: [1, 1, 1], q1: 1, qi: 1.2, qr: 1.2 };
-    const Qk = [300, 200, 100], L = m.L, nc = Math.round(w / pas), lc = Math.round(3 / pas);
-    const res = vide(m);
-    const xs0 = o.xsTS || [m.xs];
-    // UDL de 1 kN/m² sur chaque cellule (toute la portée)
+    const w = o.w, y1 = (o.yc || 0) - w / 2, nl = Math.max(1, Math.min(6, Math.floor(w / 3 + 1e-9))), pas = o.pas || 0.1;
+    const cl = o.classe || 1, al = cl === 2 ? { Q: [0.9, 0.8, 0.8], q1: 0.7, qi: 1.0, qr: 1.0 } : { Q: [1, 1, 1], q1: 1, qi: 1.2, qr: 1.2 };
+    const L = m.L, nc = Math.round(w / pas), lc = Math.round(3 / pas), dif = o.dif || 0;
+    const qr = [al.q1 * 9].concat(Array(5).fill(al.qi * 2.5)), Qr = [300, 200, 100].map((q, k) => al.Q[k] * q).concat([0, 0, 0]);
+    const qres = 2.5 * al.qr, res = vide(m), xs0 = o.xsTS || [m.xs];
+    // UDL de 1 kN/m² sur chaque cellule de largeur « pas » (toute la portée)
     const udl = Array.from({ length: nc }, (_, c) => m.effet([{ e1: y1 + c * pas, e2: y1 + (c + 1) * pas, lon: [{ x1: 0, x2: L, P: pas * L }] }]));
-    const ncell = nc, nlUse = Math.min(nl, 6);
+    const nS = Math.max(0, nc - lc + 1), NM = 1 << nl;
     for (const xt of xs0) {
-      // TS unitaire (essieu de 1 kN : 2 roues 0,40 × 0,40 m à ±1,00 m, 2 essieux à 1,20 m) centré en c
-      const dif = o.dif || 0, ts = (c) => m.effet([-1, 1].flatMap((dy) => [-0.6, 0.6].map((dx) => ({ e1: c + dy - (0.4 + dif) / 2, e2: c + dy + (0.4 + dif) / 2, lon: [{ x1: xt + dx - 0.2, x2: xt + dx + 0.2, P: 0.5 }] }))));
-      const tsv = Array.from({ length: Math.max(0, ncell - lc + 1) }, (_, s) => ts(y1 + s * pas + 1.5));
+      // TS unitaire : 1 kN par essieu (2 roues 0,40 × 0,40 m à ±1,00 m), 2 essieux à 1,20 m, centré dans sa voie
+      const ts = (c) => m.effet([-1, 1].flatMap((dy) => [-0.6, 0.6].map((dx) => ({ e1: c + dy - (0.4 + dif) / 2, e2: c + dy + (0.4 + dif) / 2, lon: [{ x1: xt + dx - 0.2, x2: xt + dx + 0.2, P: 0.5 }] }))));
+      const tsv = Array.from({ length: nS }, (_, s) => ts(y1 + s * pas + 1.5));
       for (let i = 0; i < m.fibres.length; i++) {
         for (const sens of [1, -1]) {
           const u = udl.map((e) => sens * e.M[i]);
-          // valeur d'une voie de rang r commençant à la cellule s
-          const qr = [al.q1 * 9].concat(Array(5).fill(al.qi * 2.5)), Qr = Qk.map((q, k) => al.Q[k] * q).concat([0, 0, 0]);
-          const res2 = 2.5 * al.qr;
           const lane = (r, s) => { let v = 0; for (let c = s; c < s + lc; c++) v += Math.max(0, qr[r] * u[c]); return v + Math.max(0, Qr[r] * 2 * sens * tsv[s].M[i]); };
-          const nm = 1 << nlUse, NEG = -1e30;
-          // dp[c][mask] meilleur à partir de la cellule c
-          let next = new Float64Array(nm).fill(0); const table = [next];
-          for (let c = ncell - 1; c >= 0; c--) {
-            const cur = new Float64Array(nm);
-            for (let mask = 0; mask < nm; mask++) {
-              let best = Math.max(0, res2 * u[c]) + table[0][mask];
-              if (c + lc <= ncell) for (let r = 0; r < nlUse; r++) if (!(mask & (1 << r))) { const t = table[lc - 1] ? table[lc - 1] : null; const nxt = (c + lc <= ncell) ? (table[lc - 1] !== undefined ? table[lc - 1][mask | (1 << r)] : 0) : NEG; const v = lane(r, c) + nxt; if (v > best) best = v; }
-              cur[mask] = best;
-            }
-            table.unshift(cur); if (table.length > lc + 1) table.pop();
+          // F[c][mask] : meilleure valeur des cellules c…nc−1, « mask » = rangs de voies déjà utilisés
+          const F = Array.from({ length: nc + 1 }, () => new Float64Array(NM));
+          const A = Array.from({ length: nc + 1 }, () => new Int8Array(NM).fill(-1));
+          for (let c = nc - 1; c >= 0; c--) for (let mask = 0; mask < NM; mask++) {
+            let best = Math.max(0, qres * u[c]) + F[c + 1][mask], arg = -1;
+            if (c + lc <= nc) for (let r = 0; r < nl; r++) if (!(mask & (1 << r))) { const v = lane(r, c) + F[c + lc][mask | (1 << r)]; if (v > best) { best = v; arg = r; } }
+            F[c][mask] = best; A[c][mask] = arg;
           }
-          const v = sens * table[0][0];
-          const r = res[i];
-          if (sens > 0 && v > r.Mmax) { r.Mmax = v; r.cfgMax = { xTS: xt }; }
-          if (sens < 0 && v < r.Mmin) { r.Mmin = v; r.cfgMin = { xTS: xt }; }
+          const v = sens * F[0][0], rr = res[i];
+          const cfg = () => { const lanes = []; let c = 0, mask = 0; while (c < nc) { const r = A[c][mask]; if (r >= 0) { lanes.push({ voie: r + 1, y: +(y1 + c * pas + 1.5).toFixed(3) }); mask |= 1 << r; c += lc; } else c++; } return { xTS: xt, voies: lanes }; };
+          if (sens > 0 && v > rr.Mmax) { rr.Mmax = v; rr.cfgMax = cfg(); }
+          if (sens < 0 && v < rr.Mmin) { rr.Mmin = v; rr.cfgMin = cfg(); }
         }
       }
     }
-    // K : voie 1 placée au plus défavorable (TS + UDL de la voie 1), rapporté à la charge de la voie 1
+    // K : voie 1 (TS + UDL de la voie 1) placée au plus défavorable, K rapporté à la charge de la voie 1
+    const tsK = Array.from({ length: nS }, (_, s) => m.effet([-1, 1].map((dy) => ({ e1: y1 + s * pas + 1.5 + dy - 0.2, e2: y1 + s * pas + 1.5 + dy + 0.2, lon: [{ x1: 0, x2: L, P: Qr[0] }] }))));
     for (let i = 0; i < m.fibres.length; i++) {
       let best = 0, bc = null;
-      for (let s = 0; s + lc <= nc; s++) { let KP = 0, P = 0; for (let c = s; c < s + lc; c++) { KP += udl[c].K[i] * udl[c].P1 * al.q1 * 9; P += udl[c].P1 * al.q1 * 9; } const t = m.effet([-1, 1].map((dy) => ({ e1: y1 + s * pas + 1.5 + dy - 0.2, e2: y1 + s * pas + 1.5 + dy + 0.2, lon: [{ x1: 0, x2: L, P: al.Q[0] * 300 }] }))); KP += t.K[i] * t.P1; P += t.P1; if (KP / P > best) { best = KP / P; bc = y1 + s * pas + 1.5; } }
+      for (let s = 0; s < nS; s++) {
+        let KP = 0, P = 0;
+        for (let c = s; c < s + lc; c++) { KP += udl[c].K[i] * udl[c].P1 * qr[0]; P += udl[c].P1 * qr[0]; }
+        KP += tsK[s].K[i] * tsK[s].P1; P += tsK[s].P1;
+        if (KP / P > best) { best = KP / P; bc = +(y1 + s * pas + 1.5).toFixed(3); }
+      }
       res[i].Kmax = best; res[i].cfgK = { voie1: bc };
     }
     return { res, nl, classe: cl, info: `${nl} voie(s) conventionnelle(s) de 3 m sur ${w} m ; αQ = ${al.Q.join('/')}, αq1 = ${al.q1}, αqi = αqr = ${al.qi}` };
   }
 
   /* ponts-rails : voie d'excentricité ey ; largeur de répartition transversale au plan moyen de la dalle
-   *  lt = ltrav + 2·(hb + hd/2)/4  (EN 1991-2 §6.3.6.3, diffusion 4:1 sous la traverse, prolongée jusqu'au plan moyen)
+   *  lt = ltrav + 2·hb/4 + 2·(hd/2)/pb  (EN 1991-2 §6.3.6.3 et fig. 6.6 : diffusion 4:1 dans le ballast sous la traverse ;
+ *  dans le béton jusqu'au plan moyen, pente pb = 4 (4:1, hypothèse du programme d'origine) ou 1 (45°)).
    * longitudinalement : LM71 = 4 essieux de 250 kN répartis uniformément sur 6,40 m (156,25 kN/m, §6.3.6.2 (2))
    * + 80 kN/m de part et d'autre ; SW/0 = 2 × 133 kN/m sur 15 m séparés de 5,30 m ; SW/2 = 2 × 150 kN/m sur 25 m
    * séparés de 7,00 m. Recherche de la position longitudinale la plus défavorable à la section xs. */
   function rail(m, o) {
-    const lt = (o.ltrav || 2.25) + 2 * ((o.hb || 0) + (o.hd || 0) / 2) / 4, aC = o.alphaC || 1, phi = o.phi || 1, L = m.L;
+    const lt = (o.ltrav || 2.25) + 2 * (o.hb || 0) / 4 + 2 * ((o.hd || 0) / 2) / (o.penteBeton || 4), aC = o.alphaC || 1, phi = o.phi || 1, L = m.L;
     const out = [];
     for (const [iv, ey] of o.voies.entries()) {
       const e1 = ey - lt / 2, e2 = ey + lt / 2;
@@ -472,7 +475,7 @@
     return { voies: out, lt };
   }
 
-  /* superstructures : couches transversales [{nom, y1, y2, q (kN/m² ou, si lin, kN/m), gmax, gmin}] sur toute la portée ;
+  /* superstructures et charges quelconques : couches [{nom, y1, y2, q (kN/m² ou, si lin, kN/m), x1, x2, gmax, gmin}] ;
    * chaque couche est pondérée par gmax ou gmin selon le signe de sa contribution (charges amovibles). */
   function superstructures(m, couches) {
     const res = vide(m);
@@ -480,7 +483,8 @@
     for (const c of couches) {
       if (!(c.y2 > c.y1) || !c.q) continue;
       const qa = c.lin ? c.q / (c.y2 - c.y1) : c.q;
-      const e = m.effet([{ e1: c.y1, e2: c.y2, lon: [{ x1: 0, x2: m.L, P: qa * (c.y2 - c.y1) * m.L }] }]);
+      const x1 = c.x1 === undefined ? 0 : c.x1, x2 = c.x2 === undefined ? m.L : c.x2; // étendue longitudinale (défaut : toute la portée)
+      const e = m.effet([{ e1: c.y1, e2: c.y2, lon: [{ x1, x2, P: qa * (c.y2 - c.y1) * (x2 - x1) }] }]);
       e.M.forEach((v, i) => { res[i].Mmax += v * (v > 0 ? c.gmax : c.gmin); res[i].Mmin += v * (v < 0 ? c.gmax : c.gmin); });
       e.K.forEach((k, i) => { KPm[i] += k * e.P1 * c.gmax; }); Pm += e.P1 * c.gmax;
     }
@@ -493,6 +497,8 @@
    * Kcharge(p, y, e1, e2) : K moyen pour une charge répartie uniformément sur [e1, e2]
    * enveloppe(p, charges) : calcul complet (voir calcul) */
   const Kpoint = (p, y, e) => Kalpha(p.alpha === undefined ? 1 : p.alpha, p.theta, y / p.b, e / p.b, p);
+  /* K d'un groupe de charges transversales [{e1, e2, P}] (roues, files, voies) : Σ P·K̄ / Σ P */
+  function Kgroupe(p, y, charges) { let s = 0, P = 0; for (const c of charges) { s += c.P * Kcharge(p, y, c.e1, c.e2 === undefined ? c.e1 : c.e2); P += c.P; } return P ? s / P : 0; }
   function Kcharge(p, y, e1, e2, n = 64) { if (e2 - e1 < 1e-9) return Kpoint(p, y, e1); let s = 0; for (let i = 0; i < n; i++) s += Kpoint(p, y, e1 + (i + 0.5) * (e2 - e1) / n); return s / n; }
 
   /* calcul complet d'un tablier.
@@ -513,6 +519,7 @@
         const res = vide(m);
         for (const fam of ['LM71+SW/0', 'SW/2']) { const parts = r.voies.map((v) => v.conv[fam]).filter(Boolean); if (parts.length < 2) continue;
           res.forEach((x, i) => { const sMax = parts.reduce((a, p) => a + Math.max(0, p[i].Mmax), 0), sMin = parts.reduce((a, p) => a + Math.min(0, p[i].Mmin), 0); if (sMax > x.Mmax) { x.Mmax = sMax; x.cfgMax = { convoi: fam + ' sur toutes les voies' }; } if (sMin < x.Mmin) { x.Mmin = sMin; x.cfgMin = { convoi: fam + ' sur toutes les voies' }; } }); }
+        res.forEach((x) => { x.Kmax = NaN; }); // K sans objet : K de chaque voie dans les cas « voie i »
         out.cas.multi = { titre: 'Voies chargées simultanément', res, info: 'somme des effets défavorables de chaque voie (positions longitudinales indépendantes : majorant)' };
       }
     }
@@ -545,8 +552,15 @@
     return d;
   }
 
+  /* enveloppe par fibre {y, Kmax, Mmax, Mmin, cfg…} de toutes les charges d'exploitation d'un tablier (voir calcul) */
+  const enveloppe = (d) => calcul(d).env;
+  /* enveloppe d'un convoi quelconque sur un tablier p = {b, L, theta, alpha, nu, N, fibres} :
+   * veh = {roues:[{dy, l, P, dx, lx}]}, zone = [cmin, cmax] des centres, nMax véhicules côte à côte espacés de « ecart »,
+   * coefN(n) coefficient global (bc, a1…), xs0 positions longitudinales du repère du véhicule */
+  const enveloppeVehicule = (p, veh, o = {}) => enveloppeConvoi(modele(p), { veh, nMax: o.nMax || 1, ecart: o.ecart || 99, coefN: o.coefN || (() => 1), zone: o.zone || [-p.b, p.b], xs0: o.xs0 || [p.L / 2], pas: o.pas });
+
   const api = { strip, Kexact, MUexact, Kalpha, MUalpha, rigDalle, rigPoutres, kRect, theta, alphaT, modele, placer, enveloppeConvoi,
-    f61Geom, a1F, bcF, AL, VEH, chargeAL, fasc61, lm1, rail, superstructures, calcul, Kpoint, Kcharge, lireDon };
+    f61Geom, a1F, bcF, AL, VEH, chargeAL, fasc61, lm1, rail, superstructures, calcul, enveloppe, enveloppeVehicule, Kpoint, Kcharge, Kgroupe, lireDon };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.gmslt = api; }
 })(typeof window !== 'undefined' ? window : globalThis);
