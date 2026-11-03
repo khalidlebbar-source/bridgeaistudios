@@ -43,8 +43,8 @@
       desc: 'Flèches et accélérations sous trains réels en fonction de la vitesse, par intégration analytique modale, jusqu’à 9 travées.' },
     { code: 'ÉPREUVES', slug: 'epreuves-chargement', statut: 'on', nom: 'Épreuves de chargement', reg: 'Livret 2.01 · Fasc. 61 titre II',
       desc: 'Carnet d’épreuves réglementaires : cas de chargement, positions des camions ou locomotives, flèches et rotations attendues.' },
-    { code: 'OUVRAGES TYPES', slug: 'ouvrages-types', statut: 'dev', nom: 'Calcul et dessin des ouvrages types', reg: 'chaîne complète',
-      desc: 'Enchaîne tablier, appareils d’appui, appuis et fondations, puis produit notes, implantation, coffrages et gabarits.' },
+    { code: 'OUVRAGES TYPES', slug: 'ouvrages-types', statut: 'beta', nom: 'Calcul et dessin des ouvrages complets', reg: 'chaîne complète',
+      desc: 'Six types d’ouvrages (ponts-rails et ponts-routes en dalle BA ou poutrelles enrobées, cadres, portiques) : enchaîne tablier, appareils d’appui et fondations, puis produit note assemblée, plans d’implantation et de coffrage (DXF), gabarit et avant-métré.' },
   ];
   if (typeof module !== 'undefined' && module.exports) module.exports = CATALOGUE;
   if (root) { root.BA = root.BA || {}; root.BA.catalogue = CATALOGUE; }

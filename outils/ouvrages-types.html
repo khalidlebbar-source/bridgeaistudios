@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OUVRAGES TYPES — Calcul et dessin des ouvrages types · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Calcul et dessin automatiques des ouvrages types : ponts-rails et ponts-routes en dalle BA ou à poutrelles enrobées (1 à 7 travées), cadres fermés et portiques ouverts sous voies ferrées. Enchaînement tablier, efforts horizontaux, appareils d’appui, descente de charges et fondations ; note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage (SVG, DXF), vérification des gabarits et avant-métré.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/ouvrages-types.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .hid{display:none!important}
+  svg.plan{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px;margin:4px 0 12px}
+  .sub{font-size:10.5px;color:var(--ink3);margin:14px 0 6px;letter-spacing:.08em;text-transform:uppercase}
+  .types{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .types button{text-align:left;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:#fbfaf7;font-family:'Outfit',sans-serif;cursor:pointer;color:var(--ink2);line-height:1.3}
+  .types button b{display:block;font-weight:400;font-size:12.5px}
+  .types button small{font-size:10.5px;color:var(--ink3)}
+  .types button.on{background:var(--gold-bg);border-color:var(--gold);color:var(--ink)}
+  .types button.on b{color:var(--gold)}
+  .types button:disabled{opacity:.5;cursor:not-allowed}
+  .steps{display:flex;gap:4px;counter-reset:st}
+  .steps button{flex:1;padding:8px 4px 7px;border-radius:9px;border:1px solid var(--border);background:#fff;font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--ink3);cursor:pointer;line-height:1.2}
+  .steps button::before{counter-increment:st;content:counter(st);display:block;font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--gold)}
+  .steps button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+  .steps button.on::before{color:#fff}
+  .dash td.l{white-space:normal;min-width:220px}
+  .dash a.go,.go{color:var(--gold);cursor:pointer;font-size:11.5px;white-space:nowrap}
+  .dash a.go:hover,.go:hover{text-decoration:underline}
+  .tag.bientot{color:var(--orange)}
+  .tag.info{color:var(--blue)}
+  .linkrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .spsinfo{font-size:11.5px;color:var(--ink3);line-height:1.5;margin-top:8px}
+  .vsel{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:12px;color:var(--ink3)}
+  .vsel select{height:30px;border:1px solid var(--border);border-radius:7px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:12.5px;padding:0 8px;max-width:100%}
+  .calc-run{opacity:.5;transition:opacity .2s}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink3);margin:-4px 0 10px}
+  .legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+  table.res td.wrap{white-space:normal}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Compléments</div>
+      <div class="eyebrow">OUVRAGES TYPES · chaîne complète</div>
+      <h1>Calcul et dessin des <em>ouvrages types</em></h1>
+      <p class="lead">Une seule saisie de l’ouvrage, puis l’enchaînement des modules : tablier, efforts horizontaux et appareils d’appui, descente de charges et fondations — ou cadre et portique complets. Note de calcul assemblée, plans d’implantation, d’ensemble et de coffrage, gabarits et avant-métré.</p>
+      <div class="badges"><span class="badge">Livret 2.01</span><span class="badge">EN 1990 A2</span><span class="badge">EN 1991-2</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 1992-2 · BAEL 91 mod. 99</span><span class="badge">EN 1337-3</span><span class="badge">Fasc. 62 titre V</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDxf">Plans DXF</button>
+      <button class="btn" id="bCsv">Avant-métré CSV</button>
+      <button class="btn sm" id="bDef">Exemple par défaut</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card">
+      <div class="card-title"><span>Type d’ouvrage</span></div>
+      <div class="types" id="types"></div>
+    </div>
+    <div class="steps" id="steps"><button data-s="1">Ouvrage</button><button data-s="2">Tablier</button><button data-s="3">Appuis</button><button data-s="4">Fondations</button><button data-s="5">Documents</button></div>
+
+    <!-- 1. Ouvrage -->
+    <div data-step="1">
+      <div class="card"><div class="card-title"><span>Ouvrage</span><small>saisie unique</small></div><div class="fields" id="fOuv"></div></div>
+      <div class="card"><div class="card-title"><span>Profil en long sommaire</span><small>cotes NGF, m</small></div><div class="fields" id="fProf"></div></div>
+      <div class="card"><div class="card-title"><span>Gabarit à dégager sous l’ouvrage</span></div><div class="fields" id="fGab"></div></div>
+      <div class="card"><div class="card-title"><span>Implantation</span><small>origine : axe de l’ouvrage × axe de la première ligne d’appui</small></div><div class="fields" id="fImp"></div></div>
+    </div>
+    <!-- 2. Tablier / cadre -->
+    <div data-step="2" class="hid">
+      <div class="card"><div class="card-title"><span id="tTab">Tablier</span><small id="tTabMod"></small></div>
+        <div class="fields" id="fTab"></div>
+        <p class="help" style="font-size:11px;color:var(--ink3);margin-top:10px;line-height:1.5">Les autres données (charges, matériaux, équipements…) sont celles du jeu par défaut du module. Pour les modifier : ouvrir dans le module, ajuster, puis revenir ici et reprendre ses données.</p>
+        <div class="linkrow"><button class="btn sm gold" id="bOpenTab">Ouvrir dans le module</button><button class="btn sm" id="bPullTab">Reprendre les données du module</button></div>
+      </div>
+    </div>
+    <!-- 3. Appuis -->
+    <div data-step="3" class="hid">
+      <div id="cAppT">
+        <div class="card"><div class="card-title"><span>Appareils d’appui</span></div><div class="fields" id="fAppG"></div></div>
+        <div class="card"><div class="card-title"><span>Piles</span><small>voile ou fûts sur semelle</small></div><div class="fields" id="fPile"></div></div>
+        <div class="card"><div class="card-title"><span>Culées</span><small>mur de front, garde-grève, murs en retour</small></div><div class="fields" id="fCulee"></div></div>
+        <div class="msg info">Justification des piles et culées en béton armé : module PILES-CULÉES bientôt intégré. La chaîne établit dès maintenant une descente de charges sommaire jusqu’aux fondations.</div>
+      </div>
+      <div id="cAppC" class="card hid"><div class="card-title"><span>Appuis du cadre ou du portique</span></div><p style="font-size:12.5px;color:var(--ink2)">Les piédroits, le radier ou les semelles sont calculés avec la traverse par le module CADRES (étape Tablier).</p></div>
+    </div>
+    <!-- 4. Fondations -->
+    <div data-step="4" class="hid">
+      <div class="card"><div class="card-title"><span>Fondations</span></div><div class="fields" id="fFond"></div><div class="fields" id="fPieux" style="margin-top:10px"></div></div>
+      <div class="card"><div class="card-title"><span>Sondage pressiométrique</span><small>format .sps</small></div>
+        <div class="linkrow"><button class="btn sm" id="bSps">Importer un fichier .sps</button><button class="btn sm" id="bSpsMod">Reprendre le sondage de PRESSIO</button><button class="btn sm" id="bSpsDef">Sondage d’exemple</button><button class="btn sm gold" id="bSpsOpen">Ouvrir dans PRESSIO</button></div>
+        <div class="spsinfo" id="spsInfo"></div>
+      </div>
+    </div>
+    <!-- 5. Documents -->
+    <div data-step="5" class="hid">
+      <div class="card"><div class="card-title"><span>Documents générés</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+          <button class="btn gold" id="bNote2">Note de calcul assemblée (PDF)</button>
+          <button class="btn" id="bDxf2">Plans d’implantation, d’ensemble et de coffrage (DXF R12)</button>
+          <button class="btn" id="bCsv2">Avant-métré (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <details class="ref card">
+      <summary>Périmètre et hypothèses</summary>
+      <ul>
+        <li><b>Enchaînement sans recalcul</b> : le tablier est calculé par TABLIER RAIL ou TABLIER ROUTE, les efforts horizontaux par HORIZONTAL (qui dimensionne les élastomères avec ÉLASTOMÈRES, NF EN 1337-3), les cadres et portiques par CADRES, les fondations par FONDATIONS sur le sondage .sps (PRESSIO). Les données non saisies ici prennent les valeurs par défaut de chaque module.</li>
+        <li><b>Géométrie</b> : la cote du rail (ou de la chaussée) suit le profil en long ; sous-face du tablier = rail − (ballast sous traverse + traverse 0,23 m + rail 0,172 m) − épaisseur du tablier dans l’axe (chaussée : − 0,09 m de revêtement et d’étanchéité). Sommiers sous les appareils (hauteur appareil + bossage saisie), semelles à la profondeur d’ancrage sous le terrain naturel. Cadres : remblai sur la traverse déduit du profil en long.</li>
+        <li><b>Piles et culées</b> : le module PILES-CULÉES n’est pas encore intégré. La descente de charges jusqu’à la sous-face des semelles est sommaire : réactions du tablier (G, Q comme dans les exports des modules de tablier), efforts horizontaux de HORIZONTAL au niveau des appareils (H·sinφ perpendiculaire à la ligne d’appui), poids propres sur la géométrie (25 kN/m³), terres sur les semelles, poussée de Rankine Ka sur la hauteur des culées (contre-poussée active devant le patin, butée négligée) avec la charge d’exploitation sur remblai (ferroviaire : EN 1991-2 §6.3.6.4 ; routière : 10 kN/m²). Ni vent, ni séisme, ni effets transversaux, ni excentricité transversale des charges. Les fûts, murs et semelles ne sont pas justifiés en béton armé.</li>
+        <li><b>Combinaisons des fondations</b> : ELS caractéristique G + Q + H(ELS) ; quasi permanent G + H(QP) ; ELU 1,35 G + γQ Q + H(ELU) + 1,35 poussée et ELU G min + H(ELU) (glissement), γQ = 1,45 (rail), 1,35 (route, Eurocodes) ou 1,6 (route, BAEL). Cadres et portiques : torseurs du module CADRES (caractéristiques, fréquents, ELU), entièrement en longue durée.</li>
+        <li><b>Gabarit</b> : hauteur libre = sous-face au sommet le plus bas de l’emprise du gabarit (biais et pente compris) − cote de la voie franchie ; largeur libre mesurée perpendiculairement à la voie franchie entre les faces des appuis. Cadres : hauteur intérieure moins la terre sur le radier, goussets déduits.</li>
+        <li><b>Avant-métré</b> : béton, coffrages et étanchéité sur la géométrie ; aciers du tablier et des cadres à partir des sections calculées (+ 10 % de recouvrements), aciers des appuis par ratios forfaitaires signalés comme tels, poutrelles, appareils, pieux. Ordre de grandeur pour un avant-projet.</li>
+        <li><b>Plans</b> : plan d’implantation (axes d’appuis biais, coordonnées), plan d’ensemble (élévation, coupe transversale), coffrages hors détails (tablier, culées, piles, cadre), vérification du gabarit ; SVG et DXF R12 (calques COFFRAGE, CACHE, AXES, TERRAIN, GABARIT, FONDATIONS…).</li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/poutre.js"></script>
+<script src="js/gmslt.js"></script>
+<script src="js/bael-ec2.js"></script>
+<script src="js/inerpe.js"></script>
+<script src="js/radban-rapen.js"></script>
+<script src="js/rodban-ropen.js"></script>
+<script src="js/appmobil.js"></script>
+<script src="js/rephor.js"></script>
+<script src="js/sondpres.js"></script>
+<script src="js/fondatio.js"></script>
+<script src="js/modelpra.js"></script>
+<script src="js/racba-rapo.js"></script>
+<script src="js/ouvrages-types.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const O = BA.ouvragesTypes, SP = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'ouvrages-types';
+  const f0 = (v) => fmt(v, 0), f1 = (v) => fmt(v, 1), f2 = (v) => fmt(v, 2), f3 = (v) => fmt(v, 3);
+  const $ = (id) => document.getElementById(id);
+  let s = null, last = null, lastErr = null, step = 1, vueSel = 0;
+
+  /* ── schémas de saisie : « p » = chemin dans les données de l'ouvrage ── */
+  const F = {
+    ouv: (t) => [
+      { p: 'projet', label: 'Ouvrage / projet', type: 'txt', wide: true },
+      { p: 'regl', label: 'Référentiel', type: 'sel', wide: true, options: t.ouvrage === 'route' ? [['livret', 'Fascicule 61 titre II + BAEL (calcul en poutre)'], ['ec', 'Eurocodes (calcul en plaque)']] : [['livret', 'Livret 2.01 + BAEL 91 mod. 99'], ['ec', 'Eurocodes (EN 1990 A2, EN 1992-2)']] },
+    ].concat(t.famille === 'tablier' ? [{ p: 'travees', label: 'Portées (1 à 7)', unit: 'm', type: 'txt', wide: true, help: 'entre axes d’appuis, séparées par des espaces' }] : [])
+      .concat([{ p: 'biais', label: 'Biais', unit: 'gr', help: '100 = droit ; 70 à 130 gr' },
+        { p: 'Btot', label: t.ouvrage === 'route' ? 'Largeur totale du tablier' : 'Largeur de la plateforme', unit: 'm' }])
+      .concat(t.ouvrage === 'route' ? [] : [{ p: 'nVoies', label: 'Voies ferrées', type: 'sel', options: [[1, '1 voie'], [2, '2 voies']] }, { p: 'entraxe', label: 'Entraxe des voies', unit: 'm' }]),
+    prof: (t) => [
+      { p: 'zRail0', label: t.ouvrage === 'route' ? 'Cote de la chaussée (axe, origine)' : (t.famille === 'cadre' ? 'Cote du rail au droit de l’ouvrage' : 'Cote du rail (axe, origine)'), unit: 'm' },
+    ].concat(t.famille === 'tablier' ? [{ p: 'pente', label: 'Pente longitudinale', unit: '%', help: '> 0 : montée vers la dernière culée' }, { p: 'zTN', label: 'Terrain naturel sous l’ouvrage', unit: 'm' }] : []),
+    gab: (t) => [
+      { p: 'gab.type', label: 'Voie franchie', type: 'sel', options: [['route', 'Route : gabarit routier'], ['rail', 'Voie ferrée : gabarit ferroviaire'], ['aucun', 'Aucune vérification']] },
+    ].concat(t.famille === 'tablier' ? [{ p: 'gab.travee', label: 'Travée franchie n°', step: 1 }] : [])
+      .concat([{ p: 'gab.zObs', label: 'Cote de la voie franchie', unit: 'm' }, { p: 'gab.H', label: 'Hauteur libre requise', unit: 'm', help: 'route : 4,75 m courant ; voie ferrée : selon électrification' },
+        { p: 'gab.W', label: 'Largeur libre requise', unit: 'm', help: 'perpendiculairement à la voie franchie' }, { p: 'gab.dec', label: 'Décalage de l’axe franchi', unit: 'm', help: '/ milieu de l’ouverture' }]),
+    imp: () => [{ p: 'imp.E0', label: 'X (Est) de l’origine', unit: 'm' }, { p: 'imp.N0', label: 'Y (Nord) de l’origine', unit: 'm' }, { p: 'imp.gis', label: 'Gisement de l’axe', unit: 'gr', help: 'depuis le nord, sens horaire' }],
+    tab: (ty) => ({
+      radba: [{ p: 'tab.h', label: 'Épaisseur de la dalle (rive)', unit: 'm' }, { p: 'tab.cg', label: 'About côté origine', unit: 'm' }, { p: 'tab.cd', label: 'About côté extrémité', unit: 'm' }, { p: 'tab.fck', label: 'fc28 / fck', unit: 'MPa' }, { p: 'app.appuiFixe', label: 'Appareils fixes sur l’appui n°', step: 1, help: '−1 : aucun appui fixe' }],
+      rapen: [{ p: 'tab.profil', label: 'Profilé', type: 'txt' }, { p: 'tab.nPout', label: 'Nombre de poutrelles', step: 1 }, { p: 'tab.h', label: 'Épaisseur de la dalle (rive)', unit: 'm' }, { p: 'tab.csup', label: 'Béton au-dessus des poutrelles', unit: 'm' }, { p: 'tab.cg', label: 'About côté origine', unit: 'm' }, { p: 'tab.cd', label: 'About côté extrémité', unit: 'm' }, { p: 'app.appuiFixe', label: 'Appareils fixes sur l’appui n°', step: 1, help: '−1 : aucun appui fixe' }],
+      rodba: [{ p: 'tab.hDalle', label: 'Épaisseur de la dalle', unit: 'm' }, { p: 'tab.classe', label: 'Classe du pont / de trafic', type: 'sel', options: [[1, '1'], [2, '2'], [3, '3']] }, { p: 'tab.cg', label: 'About côté origine', unit: 'm' }, { p: 'tab.cd', label: 'About côté extrémité', unit: 'm' }],
+      ropen: [{ p: 'tab.profil', label: 'Profilé', type: 'txt' }, { p: 'tab.nPout', label: 'Nombre de poutrelles', step: 1 }, { p: 'tab.hDalle', label: 'Épaisseur de la dalle', unit: 'm' }, { p: 'tab.classe', label: 'Classe du pont / de trafic', type: 'sel', options: [[1, '1'], [2, '2'], [3, '3']] }, { p: 'tab.cg', label: 'About côté origine', unit: 'm' }, { p: 'tab.cd', label: 'About côté extrémité', unit: 'm' }],
+      racba: [{ p: 'cad.ouv', label: 'Ouverture droite', unit: 'm' }, { p: 'cad.hauint', label: 'Hauteur intérieure', unit: 'm' }, { p: 'cad.eptra', label: 'Épaisseur de la traverse', unit: 'm' }, { p: 'cad.eppied', label: 'Épaisseur des piédroits', unit: 'm' }, { p: 'cad.eprad', label: 'Épaisseur du radier', unit: 'm' },
+        { p: 'cad.haugousup', label: 'Gousset haut : hauteur', unit: 'm' }, { p: 'cad.longousup', label: 'Gousset haut : longueur', unit: 'm' }, { p: 'cad.haugouinf', label: 'Gousset bas : hauteur', unit: 'm' }, { p: 'cad.longouinf', label: 'Gousset bas : longueur', unit: 'm' },
+        { p: 'cad.hauterint', label: 'Terre sur le radier', unit: 'm' }, { p: 'cad.epbal', label: 'Ballast (traverse comprise)', unit: 'm' }, { p: 'cad.surlong', label: 'Surlongueur des piédroits', unit: 'm', help: 'au-delà de la plateforme (biais)' }],
+      rapo: [{ p: 'cad.ouv', label: 'Portée droite', unit: 'm' }, { p: 'cad.hauint', label: 'Hauteur des piédroits', unit: 'm' }, { p: 'cad.eptra', label: 'Épaisseur de la traverse', unit: 'm' }, { p: 'cad.eppied', label: 'Épaisseur des piédroits', unit: 'm' }, { p: 'cad.hausem', label: 'Épaisseur des semelles', unit: 'm' },
+        { p: 'cad.lartal', label: 'Largeur du talon', unit: 'm' }, { p: 'cad.larpat', label: 'Largeur du patin', unit: 'm' }, { p: 'cad.haugousup', label: 'Gousset : hauteur', unit: 'm' }, { p: 'cad.longousup', label: 'Gousset : longueur', unit: 'm' },
+        { p: 'cad.hauterint', label: 'Terre sur les patins', unit: 'm' }, { p: 'cad.epbal', label: 'Ballast (traverse comprise)', unit: 'm' }, { p: 'cad.surlong', label: 'Surlongueur des piédroits', unit: 'm' }],
+    }[ty]),
+    appG: () => [{ p: 'app.hApp', label: 'Appareil + bossage', unit: 'm' }, { p: 'app.fck', label: 'fck des appuis', unit: 'MPa' }],
+    pile: () => [{ p: 'app.pile.nfut', label: 'Nombre de fûts', step: 1, help: '1 = voile' }, { p: 'app.pile.larfut', label: 'Largeur d’un fût', unit: 'm', help: '0 : couvre les appareils' }, { p: 'app.pile.e', label: 'Épaisseur', unit: 'm' }],
+    culee: () => [{ p: 'app.culee.ef', label: 'Épaisseur du mur de front', unit: 'm' }, { p: 'app.culee.eGG', label: 'Épaisseur du garde-grève', unit: 'm' }, { p: 'app.culee.joint', label: 'Joint de chaussée / about', unit: 'm' },
+      { p: 'app.culee.lr', label: 'Longueur des murs en retour', unit: 'm' }, { p: 'app.culee.er', label: 'Épaisseur des murs en retour', unit: 'm' }, { p: 'app.culee.talon', label: 'Talon de la semelle', unit: 'm' }, { p: 'app.culee.patin', label: 'Patin de la semelle', unit: 'm' },
+      { p: 'app.culee.phi', label: 'φ du remblai', unit: '°' }, { p: 'app.culee.gamma', label: 'γ du remblai', unit: 'kN/m³' }],
+    fond: (t) => [{ p: 'fond.type', label: 'Type', type: 'sel', options: t.famille === 'cadre' ? [['sup', 'Superficielle (radier ou semelles)']] : [['sup', 'Superficielle (semelles)'], ['pieux', 'Profonde (pieux forés)']] }]
+      .concat(t.famille === 'tablier' ? [{ p: 'fond.ancrage', label: 'Sous-face / terrain naturel', unit: 'm', help: 'profondeur de la sous-face des semelles' }, { p: 'fond.es', label: 'Épaisseur des semelles', unit: 'm' }, { p: 'fond.debord', label: 'Débord des semelles de piles', unit: 'm' }] : []),
+    pieux: () => [{ p: 'fond.pieux.ptype', label: 'Type de pieu', type: 'sel', wide: true, options: Object.entries(BA.fondatio.TYPES_PIEU).filter(([k]) => !['7', '8'].includes(k)).map(([k, v]) => [k, v.nom]) },
+      { p: 'fond.pieux.D', label: 'Diamètre', unit: 'm' }, { p: 'fond.pieux.L', label: 'Longueur', unit: 'm' }, { p: 'fond.pieux.nx', label: 'Files (⊥ ligne d’appui)', step: 1 }, { p: 'fond.pieux.ny', label: 'Pieux par file', step: 1 },
+      { p: 'fond.pieux.ex', label: 'Entraxe des files', unit: 'm' }, { p: 'fond.pieux.ey', label: 'Entraxe dans la file', unit: 'm' }],
+  };
+  const GROUPES = [['fOuv', 'ouv'], ['fProf', 'prof'], ['fGab', 'gab'], ['fImp', 'imp'], ['fTab', 'tab'], ['fAppG', 'appG'], ['fPile', 'pile'], ['fCulee', 'culee'], ['fFond', 'fond'], ['fPieux', 'pieux']];
+  const get = (o, p) => p.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
+  const set = (o, p, v) => { const k = p.split('.'); let a = o; for (let i = 0; i < k.length - 1; i++) { if (a[k[i]] == null || typeof a[k[i]] !== 'object') a[k[i]] = {}; a = a[k[i]]; } a[k[k.length - 1]] = v; };
+  const idOf = (p) => p.replace(/\./g, '_');
+  const nums = (t) => String(t || '').split(/[\s;]+/).map((x) => parseFloat(x.replace(',', '.'))).filter(Number.isFinite);
+  const T = () => O.TYPES[s.type];
+  // valeur affichée d'un champ : saisie, sinon valeur effective du module (jeu par défaut)
+  function valeur(f) {
+    let v = get(s, f.p);
+    if (f.p === 'travees') return (s.travees || []).join(' ');
+    if (v !== undefined && v !== '') return v;
+    try {
+      if (f.p.startsWith('tab.')) {
+        const d = O.tablierInput(O.normaliser(s)), k = f.p.slice(4);
+        if (k === 'hDalle') return d.trans.h; if (k === 'profil' && d.ropen) return d.ropen.profil; if (k === 'nPout' && d.ropen) return d.ropen.n;
+        return d[k];
+      }
+    } catch (e) { /* saisie incomplète */ }
+    return v;
+  }
+  function schema(g) { const t = T(); const r = F[g](g === 'tab' ? s.type : t); return (r || []).map((f) => Object.assign({ id: idOf(f.p) }, f)); }
+  function build() {
+    const t = T();
+    for (const [el, g] of GROUPES) { const fs = schema(g), v = {}; fs.forEach((f) => { v[f.id] = valeur(f); }); BA.form($(el), fs, 'i_', v); }
+    $('types').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.t === s.type));
+    const mc = O.MODULES[t.module];
+    $('tTab').textContent = t.famille === 'cadre' ? (s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert') : 'Tablier — ' + t.nom.toLowerCase();
+    $('tTabMod').textContent = 'module ' + mc.code;
+    $('bOpenTab').textContent = 'Ouvrir dans ' + mc.code;
+    $('cAppT').classList.toggle('hid', t.famille !== 'tablier'); $('cAppC').classList.toggle('hid', t.famille === 'tablier');
+    vis(); spsInfo(); steps();
+  }
+  function vis() { const p = $('i_fond_type'); $('fPieux').classList.toggle('hid', !p || p.value !== 'pieux'); }
+  function lire() {
+    for (const [, g] of GROUPES) for (const f of schema(g)) {
+      const e = $('i_' + f.id); if (!e) continue;
+      let v = f.type === 'chk' ? e.checked : f.type === 'txt' ? e.value : f.type === 'sel' ? (isNaN(+e.value) || e.value === '' ? e.value : +e.value) : (e.value === '' ? undefined : BA.num(e.value, NaN));
+      if (f.p === 'travees') { s.travees = nums(v); continue; }
+      if (f.p.startsWith('tab.') && (v === undefined || (typeof v === 'number' && !Number.isFinite(v)))) { delete s.tab[f.p.slice(4)]; continue; }
+      set(s, f.p, v);
+    }
+    s.tab = s.tab || {};
+  }
+  const persist = () => { try { BA.store.save(KEY, s); } catch (e) { /* stockage indisponible */ } };
+
+  function steps() {
+    $('steps').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.s === step));
+    document.querySelectorAll('[data-step]').forEach((p) => p.classList.toggle('hid', +p.dataset.step !== step));
+    if (last) $('out').innerHTML = render(last); else if (lastErr) $('out').innerHTML = `<div class="msg err">${esc(lastErr.message)}</div>`;
+    bindOut();
+  }
+  function spsInfo() {
+    const sp = s.sps && s.sps.couches && s.sps.couches.length ? s.sps : SP.exemple(), C = SP.couches(sp);
+    $('spsInfo').innerHTML = `<b style="font-weight:500;color:var(--ink2)">${esc(s.sps ? (s.spsNom || 'sondage importé') : 'Sondage d’exemple')}</b> — ${esc([sp.projet, sp.ouvrage, sp.sondage].filter(Boolean).join(' · '))}<br>Tête ${f2(sp.z)} m · nappe ${sp.nappe > 0 ? f2(sp.z - sp.nappe) + ' m' : 'non relevée'}<br>`
+      + C.map((c) => `${f2(sp.z - c.haut)} → ${f2(sp.z - c.bas)} : ${esc(c.nom)} <b style="font-weight:500">${esc(c.classe)}</b> pl* ${f2(c.pl)} MPa · EM ${f1(c.em)} MPa`).join('<br>');
+  }
+
+  /* ── calcul ── */
+  function calc() {
+    lire(); persist();
+    $('out').classList.add('calc-run');
+    setTimeout(() => {
+      try { last = O.calcul(s); lastErr = null; } catch (e) { last = null; lastErr = e; }
+      $('out').classList.remove('calc-run');
+      steps();
+    }, 30);
+  }
+
+  /* ── ouverture des modules pré-remplis ── */
+  function ouvrir(cle, idx) {
+    if (!last) return;
+    if (cle === 'appui') { window.open(O.MODULES.appui.page, '_blank'); return; }
+    const data = O.preremplissage(last, cle, idx || 0);
+    if (!data) { alert('Rien à transmettre pour ce module.'); return; }
+    BA.store.save(cle, data);
+    window.open(O.MODULES[cle].page, '_blank');
+  }
+  function bindOut() {
+    $('out').querySelectorAll('[data-open]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); ouvrir(a.dataset.open, +a.dataset.idx || 0); }));
+    $('out').querySelectorAll('[data-step-go]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); step = +a.dataset.stepGo; steps(); }));
+    const sel = $('vSel'); if (sel) sel.onchange = () => { vueSel = +sel.value; const V = O.vues(last); $('vBox').innerHTML = O.svgVue(V[vueSel] || V[0]); };
+  }
+  const go = (cle, idx, txt) => cle ? `<a class="go" href="#" data-open="${cle}" data-idx="${idx || 0}">${txt || 'Ouvrir dans ' + O.MODULES[cle].code + ' ↗'}</a>` : '';
+  const TAG = { ok: '<span class="tag ok">vérifié</span>', ko: '<span class="tag ko">non vérifié</span>', bientot: '<span class="tag bientot">bientôt</span>', info: '<span class="tag info">info</span>' };
+  const LEG = '<div class="legend"><span><i style="border-color:#14171f"></i>coffrage</span><span><i style="border-color:#6f7484;border-top-style:dashed"></i>parties cachées</span><span><i style="border-color:#c0392b;border-top-style:dashed"></i>axes</span><span><i style="border-color:#c27a12;border-top-style:dashed"></i>gabarit</span><span><i style="border-color:#8a6d3b"></i>terrain</span><span><i style="border-color:#5b4a8a"></i>fondations</span><span><i style="border-color:#2d6be4"></i>rail / chaussée</span></div>';
+
+  /* ── tableaux réutilisés par l'écran et la note ── */
+  function tabVerdicts(R, liens) {
+    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.module === 'fondatio' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
+    return `<div class="tbl-wrap"><table class="res dash"><thead><tr><th>Partie</th><th style="text-align:left">Statut</th><th style="text-align:left">Résultat</th>${liens ? '<th></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function tabGeo(R) {
+    const s = R.s, t = R.t, rows = [['Type', t.nom + ' — ' + t.desc], ['Biais', f2(s.biais) + ' gr'], ['Largeur', f2(s.Btot) + ' m']];
+    if (R.tab) {
+      const G = R.geo;
+      rows.push(['Travées', R.tab.d.travees.map(f2).join(' + ') + ` m (longueur du tablier ${f2(G.xb - G.xa)} m)`], [t.ouvrage === 'route' ? 'Chaussée' : 'Rail', `${f2(s.zRail0)} m à l’origine, pente ${f2(s.pente)} %`], ['Terrain naturel', f2(s.zTN) + ' m'],
+        ['Épaisseur du tablier (axe)', f3(G.hT) + ' m ; ' + (t.ouvrage === 'route' ? 'revêtement + étanchéité ' : 'voie (ballast + traverse + rail) ') + f3(G.hV) + ' m']);
+    } else {
+      const d = R.cadre.d;
+      rows.push(['Ouverture / hauteur', `${f2(d.ouv)} m × ${f2(d.hauint)} m`], ['Épaisseurs', `traverse ${f2(d.eptra)}, piédroits ${f2(d.eppied)}, ${R.geo.cadre ? 'radier ' + f2(d.eprad) : 'semelles ' + f2(d.hausem)} m`],
+        ['Rail', f2(s.zRail0) + ' m ; remblai sur traverse ' + f3(d.eprem) + ' m (déduit du profil en long)'], ['Longueurs biaises', `traverse ${f2(d.lontottab)} m, piédroits ${f2(d.lonpied)} m`]);
+    }
+    return BA.table(['Donnée', 'Valeur'], rows, { leftText: true });
+  }
+  function tabAppuisGeo(R) {
+    return BA.table(['Appui', 'x (m)', 'Rail / chaussée', 'Appareils', 'Arase semelle', 'Sous-face', 'Hauteur', 'Semelle B × L (m)'],
+      R.geo.appuis.map((a) => [a.nom, f2(a.x), f2(a.zR), f2(a.zApp), f2(a.zst), f2(a.zsem), f2(a.culee ? a.hMur : a.hfut) + (a.culee ? ' (mur)' : ' (fût)'), f2(a.B) + ' × ' + f2(a.L)]), { caption: 'Cotes NGF (m) déduites du profil en long et de la profondeur d’ancrage' });
+  }
+  function tabImpl(R) {
+    return BA.table(['Appui', 'Point', 'x axe (m)', 'y (m)', 'X Est (m)', 'Y Nord (m)'], R.implantation.map((p) => [p.appui, p.point, f3(p.x), f3(p.y), f3(p.E), f3(p.N)]), { caption: 'Intersections des axes d’appuis avec l’axe et les rives de l’ouvrage', leftText: true });
+  }
+  function tabGabarit(R) {
+    const g = R.gabarit; if (!g) return '<p style="font-size:12.5px;color:var(--ink3)">Aucune vérification de gabarit demandée.</p>';
+    return BA.table(['Grandeur', 'Disponible', 'Requis', 'Marge', ''], [
+      ['Hauteur libre', f2(g.Hdispo) + ' m', f2(g.Hreq) + ' m', f2(g.margeH) + ' m', BA.verdict(g.okH)],
+      ['Largeur côté origine', '', '', f2(g.margeG) + ' m', BA.verdict(g.margeG >= 0)],
+      ['Largeur côté extrémité', '', '', f2(g.margeD) + ' m', BA.verdict(g.margeD >= 0)],
+      ['Ouverture droite', f2(g.Wdispo) + ' m', f2(g.Wreq) + ' m', f2(g.Wdispo - g.Wreq) + ' m', ''],
+    ], { caption: `Gabarit ${g.type === 'rail' ? 'ferroviaire' : 'routier'}${R.tab ? ' sous la travée ' + g.travee : ''} ; voie franchie à ${f2(g.zObs)} m${g.reducGousset ? ` ; goussets : − ${f3(g.reducGousset)} m` : ''}`, leftText: true });
+  }
+  function tabTablier(R) {
+    const T = R.tab, A = R.tabA;
+    let h = '';
+    if (!A.route) {
+      const t = T.secs.filter((x) => x.kind === 't'), row = (k) => { const ss = t.filter((x) => x.travee === k); return ss; };
+      h += BA.table(['Travée', 'L (m)', 'M ELU max', 'M ELU min', '|V| ELU max', 'Flèche UIC (cm)', 'Limite (cm)', ''], T.d.travees.map((L, k) => { const ss = row(k), fl = T.fl.travees[k];
+        return [k + 1, f2(L), f0(Math.max(...ss.map((x) => x.cM.ELU.max))), f0(Math.min(...ss.map((x) => x.cM.ELU.min))), f0(Math.max(...ss.map((x) => Math.max(Math.abs(x.cV.ELU.max), Math.abs(x.cV.ELU.min))))), f2(fl.w * 100), f2(fl.lim * 100), BA.verdict(fl.ok)]; }),
+      { caption: `Moments (kN·m) et efforts tranchants (kN) de la largeur totale ; Φ = ${f3(T.ph.phi)}, K voie 1 travée 1 = ${f3(T.Kt[0].K[0])}` });
+      if (T.ba) h += BA.table(['Section', 'As sup. (cm²)', 'As inf. (cm²)', 'σbc ELS (MPa)'], T.ba.secs.map((a, k) => [T.secs[k], a]).filter(([x]) => x.kind === 't' && (x.side || Math.abs(((x.x - T.secs.find((y) => y.travee === x.travee).x) / T.d.travees[x.travee]) - 0.5) < 1e-6)).map(([x, a]) => [f2(x.x) + (x.side ? ' ' + x.side : ''), f1(a.As[0]), f1(a.As[1]), f2(a.sc)]), { caption: 'Sections d’acier sur appuis et à mi-travée (largeur équivalente ' + f3(T.ba.b) + ' m)' });
+      if (T.pe) h += BA.table(['Section', 'Taux ELS', 'M ELU min / max', 'MRd − / +', 'Vérifié'], T.pe.secs.map((p, k) => [T.secs[k], p]).filter(([x]) => x.kind === 't').filter((_, i) => i % 3 === 0).map(([x, p]) => [f2(x.x), f2(p.worst.ratio), f0(p.MuMin) + ' / ' + f0(p.MuMax), f0(p.MRdN) + ' / ' + f0(p.MRdP), BA.verdict(p.okELS && p.okELU)]), { caption: `${T.d.nPout} ${T.prof.nom} ; VEd / Vpl,Rd = ${f2(T.pe.Vsd / T.pe.VplRd)}` });
+    } else {
+      if (T.ba) h += BA.table(['x (m)', 'As sup. (cm²/m)', 'As inf. (cm²/m)', 'σc (MPa)', ''], T.ba.lon.filter((_, i) => i % 2 === 0).map((a) => [f2(a.x), f2(a.As[0]), f2(a.As[1]), f2(a.sc), BA.verdict(a.verdict !== false)]), { caption: 'Aciers longitudinaux par mètre de largeur (fibre la plus sollicitée)' })
+        + BA.table(['x (m)', 'As sup. (cm²/m)', 'As inf. (cm²/m)', ''], T.ba.tra.map((a) => [f2(a.x), f2(a.As[0]), f2(a.As[1]), BA.verdict(a.verdict !== false)]), { caption: 'Aciers transversaux' });
+      if (T.pe) h += BA.table(['x (m)', 'Taux ELS', 'M ELU min / max', 'MRd − / +', ''], T.pe.secs.filter((_, i) => i % 3 === 0).map((p) => [f2(p.x), f2(p.worst.ratio), f0(p.MuMin) + ' / ' + f0(p.MuMax), f0(p.MRdN) + ' / ' + f0(p.MRdP), BA.verdict(p.okELS && p.okELU)]), { caption: `${T.R.N} ${T.R.prof.nom} (efforts par poutrelle, kN·m) ; VEd / Vpl,Rd = ${f2(T.pe.Vsd / T.pe.VplRd)}` });
+      h += BA.table(['Travée', 'L (m)', 'Flèche G (mm)', 'Flèche trafic (mm)', 'L / f'], T.fl.map((x) => [x.t + 1, f2(x.L), f1(x.wG * 1000), f1(x.wQ * 1000), f0(x.ratioQ)]), { caption: 'Flèches à mi-travée' });
+    }
+    h += BA.table(['File', 'Appareils', 'G max (kN)', 'G min (kN)', 'Q (kN)'], A.app.map((a) => [a.nom, a.n, f1(a.Gk), f1(a.GkMin), f1(a.Q)]), { caption: 'Réactions verticales par file transmises aux appuis (Q : charges d’exploitation caractéristiques majorées dynamiquement)' });
+    return h;
+  }
+  function tabHoriz(R) {
+    const H = R.rephor, rep = H.rep;
+    let h = BA.table(['Appui', 'K total C.T. (kN/m)', 'Retrait', 'Dilatation', 'Freinage', H.rep.rail ? 'Interaction' : '', 'H ELU', 'H ELS', 'H QP'], H.parAppui.map((p, j) => {
+      const c = (id) => p.combs.find((x) => x.id === id), hv = (x) => (x ? f0(x.H.abs ?? Math.max(Math.abs(x.H.max), Math.abs(x.H.min))) : '—');
+      return [R.geo.appuis[j].nom, rep.Keq[j].cd > 1e12 ? '∞' : f0(rep.Keq[j].cd), f0(Math.abs(p.R)), f0(Math.abs(p.Td)), f0(Math.abs(p.F)), H.rep.rail ? f0(Math.abs(p.I)) : '', hv(c('ELU1')), hv(c('ELS1')), hv(c('QP'))];
+    }), { caption: `Efforts horizontaux longitudinaux en tête d’appui (kN) ; point fixe à x = ${rep.pfLD.map(f2).join(' / ')} m` });
+    if (H.verifsRail) h += BA.table(['Tablier', 'δB (mm)', 'Limite', 'Longueur dilatable (m)', 'Limite', 'δH (mm)', ''], H.verifsRail.map((v) => [v.k + 1, f2(v.deltaB * 1000), f0(v.limB * 1000), f1(v.LT), f0(v.LTmax), f2(v.dH * 1000), BA.verdict(v.okB && v.okLT && v.okH)]), { caption: 'Interaction voie-ouvrage (EN 1991-2 §6.5.4)' });
+    return h;
+  }
+  function tabAppareils(R, liens) {
+    let k = -1;
+    return BA.table(['File', 'Type', 'Nombre', 'Dimensions (mm)', 'Taux maxi', ''].concat(liens ? [''] : []), R.appareils.map((a) => {
+      if (a.app === 'elasto') k++;
+      const p = a.plaque;
+      return [a.nom + (a.cote ? ' ' + a.cote : ''), a.app === 'elasto' ? 'élastomère fretté' : a.app === 'fixe' ? 'fixe' : 'glissant', a.n,
+        p ? `${Math.round(p.a * 1000)} × ${Math.round(p.b * 1000)} × ${p.n}(${f0(p.ti * 1000)} + ${f0(p.ts * 1000)})` : a.app === 'fixe' ? `H/V = ${f2(a.HV)} (≤ ${f2(a.HVlim)})` : '—',
+        a.taux !== undefined ? f2(a.taux) : '', BA.verdict(a.ok)].concat(liens ? [a.app === 'elasto' ? go('appmobil', k) : ''] : []);
+    }), { caption: 'Appareils dimensionnés sur le catalogue NF EN 1337-3 sous les combinaisons issues de la répartition des efforts horizontaux' });
+  }
+  function critAppareils(R) {
+    return R.appareils.filter((a) => a.res && a.res.crit && a.res.crit.length).map((a) => `<div class="sub">${esc(a.nom)} — ${a.plaque ? Math.round(a.plaque.a * 1000) + ' × ' + Math.round(a.plaque.b * 1000) : ''}</div>`
+      + BA.table(['Critère', 'Valeur', 'Limite', 'Taux', ''], a.res.crit.map((c) => [esc(c.nom), f3(c.val), f3(c.lim), f2(c.taux), BA.verdict(c.ok)]), { leftText: true })).join('');
+  }
+  function tabDescente(R) {
+    return R.appuis.map((D) => {
+      const a = R.geo.appuis[D.j];
+      return `<div class="sub">${esc(D.nom)} — sous-face ${f2(a.zsem)} m</div>` + BA.table(['Action', 'Valeur'], [
+        ['Tablier G max / G min / Q', `${f0(D.Gtab)} / ${f0(D.GtabMin)} / ${f0(D.Qtab)} kN`],
+        ['Poids propres', D.pp.map((e) => `${e.nom.toLowerCase()} ${f0(e.W)}`).join(' ; ') + ' kN'],
+        ['Terres sur la semelle', D.ter.length ? D.ter.map((e) => `${e.nom.toLowerCase()} ${f0(e.W)}`).join(' ; ') + ' kN' : '—'],
+        ['Poussée des terres', D.pous ? `Ka = ${f3(D.pous.Ka)}, H = ${f2(D.pous.Ht)} m : ${f0(D.pous.P)} kN ; contre-poussée ${f0(D.pous.Pf)} kN ; charge sur remblai ${f1(D.pous.q)} kN/m² → ${f0(D.pous.Pq)} kN` : '—'],
+        ['H tablier (ELU / ELS / QP)', `${f0(D.H.ELU1)} / ${f0(D.H.ELS1)} / ${f0(D.H.QP)} kN`],
+      ], { leftText: true }) + BA.table(['Combinaison', 'Fx', 'Fy', 'Fz', 'Mx', 'My'], D.combs.map((c) => [esc(c.nom)].concat([0, 1, 2, 3, 4].map((i) => f0(c.ld[i] + c.cd[i])))), { caption: 'Torseurs au centre de la sous-face (kN, kN·m ; Fz < 0 descendant ; X ⊥ ligne d’appui)', leftText: true });
+    }).join('');
+  }
+  function tabFond(R, liens) {
+    return R.fond.map((f, k) => {
+      const r = f.res;
+      let h = `<div class="sub">${esc(f.nom)} — ${f.o.type === 'pieux' ? f.o.piles.length + ' pieux Ø ' + f2(R.s.fond.pieux.D) + ' m, L = ' + f2(R.s.fond.pieux.L) + ' m' : 'semelle ' + f2(f.o.B) + ' × ' + f2(f.o.L) + ' m'} — sous-face ${f2(f.o.zsem)} m ${liens ? go('fondatio', k) : ''}</div>`;
+      if (f.err || !r) return h + `<div class="msg err">${esc(f.err || 'Calcul impossible')}</div>`;
+      if (f.o.type === 'pieux') {
+        h += `<p style="font-size:12px;color:var(--ink3)">Qu = ${f0(r.pt.Qu)} kN, Qc = ${f0(r.pt.Qc)} kN par pieu (${esc(r.pt.typeNom)})</p>`;
+        h += BA.table(['Combinaison', 'N max (kN)', 'Limite', 'N min (kN)', 'Limite', ''], r.combs.map((c, i) => [esc(f.o.combs[i].nom || c.type), f0(c.Nmax), f0(c.qmax), f0(c.Nmin), f0(c.qmin), BA.verdict(c.ok)]), { leftText: true });
+      } else {
+        h += `<p style="font-size:12px;color:var(--ink3)">ple* = ${f3(r.ple)} MPa, De/B = ${f2(r.DeB)}, kp = ${f3(r.kp)} (${esc(r.domaine)}), q'u = ${f3(r.qu)} MPa</p>`;
+        h += BA.table(['Combinaison', 'N (kN)', 'H (kN)', "q'ref (MPa)", 'q adm (MPa)', 'Décompr. (%)', 'Glissement', ''], r.combs.map((c, i) => [esc(f.o.combs[i].nom || c.type), f0(c.N), f0(c.H), f3(c.qref), f3(c.qadm), f0(c.decomp) + ' ≤ ' + f0(c.decompAdm), c.type.startsWith('ELU') ? f2(c.glis) : '—', BA.verdict(c.ok)]), { leftText: true });
+      }
+      return h;
+    }).join('');
+  }
+  function tabCadre(R) {
+    const C = R.cadre;
+    return BA.table(['Section', 'h (m)', 'As int. (cm²/m)', 'As ext. (cm²/m)', 'σs (MPa)', 'wk (mm)', ''], C.justif.map((j) => [esc(j.sec.lib), f2(j.h), j.As ? f2(j.As[0]) : '—', j.As ? f2(j.As[1]) : '—', f0(j.ssMax), f3(j.wkMax), BA.verdict(j.ok)]), { caption: `Sections justifiées par le module CADRES (EN 1992) ; Φ = ${f3(C.cof.phi)}`, leftText: true })
+      + BA.table(['Flèche LM71', 'Limite confort', 'Limite L/600', ''], [[f1(C.fleche.delta * 1000) + ' mm', f1(C.fleche.admConfort * 1000) + ' mm', f1(C.fleche.adm600 * 1000) + ' mm', BA.verdict(C.fleche.ok)]]);
+  }
+  function tabMetres(R) {
+    const M = R.metres;
+    return BA.kpis([{ l: 'Béton', v: f0(M.recap.beton), u: 'm³' }, { l: 'Coffrages', v: f0(M.recap.coffrage), u: 'm²' }, { l: 'Aciers', v: f1(M.recap.aciers / 1000), u: 't', n: M.recap.beton > 0 ? f0(M.recap.aciers / M.recap.beton) + ' kg/m³' : '' }].concat(M.recap.poutrelles ? [{ l: 'Poutrelles', v: f1(M.recap.poutrelles / 1000), u: 't' }] : []).concat(M.recap.appareils ? [{ l: 'Appareils', v: f0(M.recap.appareils), u: 'u' }] : []))
+      + BA.table(['Partie', 'Désignation', 'Unité', 'Quantité', 'Origine'], M.rows.map((r) => [esc(r.partie), esc(r.designation), r.unite, r.unite === 'u' ? f0(r.q) : f2(r.q), esc(r.origine)]), { leftText: true });
+  }
+  const plans = (R, ids) => O.vues(R).filter((v) => !ids || ids.some((i) => (i.endsWith('*') ? v.id.startsWith(i.slice(0, -1)) : v.id === i))).map((v) => `<div class="sub">${esc(v.titre)}</div>${O.svgVue(v)}`).join('');
+
+  /* ── rendu ── */
+  function render(R) {
+    const s = R.s, t = R.t, M = R.metres;
+    const nOk = R.verdicts.filter((v) => v.statut === 'ok').length, nKo = R.verdicts.filter((v) => v.statut === 'ko').length;
+    let h = R.alertes.map((a) => `<div class="msg err" style="margin-bottom:8px">${esc(a)}</div>`).join('');
+    const L = R.tab ? R.geo.xb - R.geo.xa : R.cadre.G.Lstruct;
+    h += BA.card('Tableau de bord', BA.kpis([
+      { l: 'Ouvrage', v: t.famille === 'tablier' ? R.tab.d.travees.length + ' trav.' : (s.type === 'racba' ? 'cadre' : 'portique'), n: t.nom, hi: true },
+      { l: 'Longueur', v: f2(L), u: 'm', n: 'biais ' + f2(s.biais) + ' gr' },
+      { l: 'Vérifications', v: nOk + ' / ' + (nOk + nKo), cls: nKo ? 'ko' : 'ok', n: nKo ? nKo + ' partie(s) à reprendre' : 'toutes satisfaites' },
+      { l: 'Béton', v: f0(M.recap.beton), u: 'm³', n: f1(M.recap.aciers / 1000) + ' t d’aciers' },
+    ]) + '<div style="margin-top:12px"></div>' + tabVerdicts(R, true), esc(s.projet || ''));
+    if (step === 1) {
+      h += BA.card('Plan d’implantation et plan d’ensemble', LEG + plans(R, ['implantation', 'elevation', 'coupe']));
+      h += BA.card('Géométrie', tabGeo(R) + (R.tab ? tabAppuisGeo(R) : ''));
+      h += BA.card('Gabarit', tabGabarit(R) + plans(R, ['gabarit']));
+      h += BA.card('Coordonnées d’implantation', tabImpl(R));
+    } else if (step === 2) {
+      if (R.tab) h += BA.card('Tablier', tabTablier(R) + '<div class="linkrow">' + go(R.tabCle) + '</div>', 'module ' + O.MODULES[R.tabCle].code);
+      else h += BA.card(s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert', tabCadre(R) + '<div class="linkrow">' + go('racba-rapo') + '</div>', 'module CADRES');
+      h += BA.card('Coffrage', LEG + plans(R, R.tab ? ['tab-*'] : ['coupe', 'implantation']));
+    } else if (step === 3) {
+      if (R.tab) {
+        h += BA.card('Efforts horizontaux', tabHoriz(R) + '<div class="linkrow">' + go('rephor') + '</div>', 'module HORIZONTAL');
+        h += BA.card('Appareils d’appui', tabAppareils(R, true), 'module ÉLASTOMÈRES');
+        h += BA.card('Descente de charges sommaire', '<div class="msg info" style="margin-bottom:8px">Piles et culées non justifiées : module PILES-CULÉES bientôt intégré. ' + go('appui', 0, 'Voir PILES-CULÉES ↗') + '</div>' + tabDescente(R));
+        h += BA.card('Coffrage des appuis', LEG + plans(R, ['culee-*', 'pile-*']));
+      } else h += BA.card('Appuis', '<p style="font-size:12.5px">Piédroits et ' + (R.geo.cadre ? 'radier' : 'semelles') + ' : voir l’étape Tablier (module CADRES) et les fondations.</p>' + tabCadre(R));
+    } else if (step === 4) {
+      h += BA.card('Fondations', tabFond(R, true), 'module FONDATIONS · sondage ' + esc(R.sps.sondage || ''));
+    } else {
+      h += BA.card('Avant-métré', tabMetres(R));
+      const V = O.vues(R);
+      h += BA.card('Plans', `<div class="vsel">Vue <select id="vSel">${V.map((v, i) => `<option value="${i}"${i === vueSel ? ' selected' : ''}>${esc(v.titre)}</option>`).join('')}</select></div>${LEG}<div id="vBox">${O.svgVue(V[vueSel] || V[0])}</div>`);
+    }
+    return h;
+  }
+
+  /* ── note de calcul assemblée ── */
+  function note() {
+    if (!last) { alert(lastErr ? lastErr.message : 'Lancer le calcul.'); return; }
+    const R = last, s = R.s, t = R.t, sec = [];
+    sec.push({ titre: 'Présentation de l’ouvrage', html: tabGeo(R) + (R.tab ? tabAppuisGeo(R) : '') + tabImpl(R) });
+    sec.push({ titre: 'Synthèse des vérifications', html: tabVerdicts(R, false) });
+    if (R.tab) {
+      sec.push({ titre: 'Tablier (module ' + O.MODULES[R.tabCle].code + ')', html: tabTablier(R) + (R.tab.C && R.tab.C.txt ? `<div class="formula">${R.tab.C.txt.join('\n')}</div>` : '') });
+      sec.push({ titre: 'Efforts horizontaux (module HORIZONTAL)', html: tabHoriz(R) });
+      sec.push({ titre: 'Appareils d’appui (module ÉLASTOMÈRES)', html: tabAppareils(R, false) + critAppareils(R) });
+      sec.push({ titre: 'Descente de charges sur les appuis', html: '<p>Descente de charges sommaire (justification des piles et culées en béton armé à établir avec le module PILES-CULÉES).</p>' + tabDescente(R) });
+    } else sec.push({ titre: (s.type === 'racba' ? 'Cadre fermé' : 'Portique ouvert') + ' (module CADRES)', html: tabCadre(R) });
+    sec.push({ titre: 'Fondations (module FONDATIONS)', html: `<p>Sondage : ${esc([R.sps.projet, R.sps.ouvrage, R.sps.sondage].filter(Boolean).join(' · '))}</p>` + tabFond(R, false) });
+    sec.push({ titre: 'Vérification des gabarits', html: tabGabarit(R) + plans(R, ['gabarit']) });
+    sec.push({ titre: 'Avant-métré', html: tabMetres(R) });
+    sec.push({ titre: 'Plans', html: plans(R) });
+    const somm = '<ol style="margin:0 0 0 18px;font-size:11px;line-height:1.8">' + sec.map((x) => `<li>${x.titre}</li>`).join('') + '</ol>';
+    sec.forEach((x, i) => { x.titre = (i + 1) + '. ' + x.titre; });
+    sec.unshift({ titre: 'Sommaire', html: somm });
+    BA.note({ titre: 'Ouvrage type — ' + t.nom, code: 'OUVRAGES TYPES', regl: s.regl === 'ec' ? 'EN 1990 A2 · EN 1991-2 · EN 1992-2 · EN 1337-3 · Fasc. 62 titre V' : (t.ouvrage === 'route' ? 'Fasc. 61 titre II · BAEL 91 mod. 99 · EN 1337-3 · Fasc. 62 titre V' : 'Livret 2.01 · BAEL 91 mod. 99 · EN 1337-3 · Fasc. 62 titre V'), projet: s.projet, sections: sec });
+  }
+
+  /* ── fichiers ── */
+  const dl = (name, txt, mime) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], { type: mime })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  const nomF = () => (s.projet || 'ouvrage-type').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50).toLowerCase() || 'ouvrage-type';
+  const dxf = () => { if (last) dl(nomF() + '-plans.dxf', O.dxf(O.vues(last)), 'application/dxf'); };
+  const csv = () => { if (last) dl(nomF() + '-avant-metre.csv', O.metresCSV(last.metres), 'text/csv;charset=utf-8'); };
+  $('bCalc').onclick = calc; $('bNote').onclick = note; $('bNote2').onclick = note;
+  $('bDxf').onclick = dxf; $('bDxf2').onclick = dxf; $('bCsv').onclick = csv; $('bCsv2').onclick = csv;
+  $('bSave').onclick = () => { lire(); BA.store.download(nomF() + '.json', Object.assign({ module: 'ouvrages-types', version: 1 }, s)); };
+  $('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { const o = JSON.parse(txt); if (!O.TYPES[o.type]) throw new Error('type d’ouvrage absent'); s = o; build(); calc(); } catch (e) { alert('Fichier illisible : ' + e.message); } });
+  $('bDef').onclick = () => { s = O.defaut(s.type); build(); calc(); };
+  $('types').innerHTML = Object.entries(O.TYPES).map(([k, t]) => { const d = O.disponible(k); return `<button data-t="${k}"${d.ok ? '' : ' disabled title="' + esc(d.msg) + '"'}><b>${esc(t.nom)}</b><small>${d.ok ? esc(t.desc) : 'bientôt'}</small></button>`; }).join('');
+  $('types').onclick = (e) => { const b = e.target.closest('button'); if (!b || b.disabled || b.dataset.t === s.type) return; const sps = s.sps, nom = s.spsNom; s = O.defaut(b.dataset.t); if (sps) { s.sps = sps; s.spsNom = nom; } build(); calc(); };
+  $('steps').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; lire(); step = +b.dataset.s; steps(); };
+  document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.closest('.fields')) { vis(); calc(); } });
+  // tablier : ouvrir / reprendre les données du module
+  $('bOpenTab').onclick = () => { if (!last) return; ouvrir(last.tab ? last.tabCle : 'racba-rapo'); };
+  $('bPullTab').onclick = () => {
+    const t = T(), cle = t.module, o = BA.store.load(cle);
+    if (!o) { alert('Aucune donnée enregistrée dans le module ' + O.MODULES[cle].code + ' sur ce navigateur.'); return; }
+    if (t.famille === 'tablier') {
+      if (o.type !== s.type) { alert(`Le module contient un autre type de tablier (${o.type}).`); return; }
+      const tab = Object.assign({}, o);
+      ['type', 'travees', 'biais', 'biaisApp', 'Btot', 'nVoies', 'nCharge', 'eV', 'projet', '_v', 'module', 'version'].forEach((k) => delete tab[k]);
+      if (t.ouvrage === 'rail' && Math.abs((+o.Btot || 0) - s.Btot) > 1e-6) delete tab.appuis;
+      if (t.ouvrage === 'rail') { s.app.appuiFixe = o.appuiFixe ?? s.app.appuiFixe; delete tab.appuiFixe; }
+      s.tab = tab;
+    } else {
+      if ((o.type === 'portique') !== (s.type === 'rapo')) { alert('Le module contient un autre type d’ouvrage.'); return; }
+      const cad = Object.assign({}, o); ['type', 'biais', 'nbvoi', 'axevoi1', 'axevoi2', 'lontottab', 'lonpied', 'lonrad', 'eprem', 'projet'].forEach((k) => delete cad[k]);
+      cad.surlong = s.cad.surlong; s.cad = cad;
+    }
+    build(); calc();
+  };
+  // sondage
+  $('bSps').onclick = () => BA.store.pick('.sps,.SPS,.txt', (txt, name) => { try { const p = SP.parse(txt); const sp = p.s || p; if (!sp.couches || !sp.couches.length) throw new Error('aucune couche de calcul ($$TVCC)'); s.sps = sp; s.spsNom = name; spsInfo(); calc(); } catch (e) { alert('Fichier .sps illisible : ' + e.message); } });
+  $('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } s.sps = o.s; s.spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); calc(); };
+  $('bSpsDef').onclick = () => { s.sps = null; s.spsNom = ''; spsInfo(); calc(); };
+  $('bSpsOpen').onclick = () => { BA.store.save('sondpres', { s: s.sps && s.sps.couches ? s.sps : SP.exemple() }); window.open(O.MODULES.sondpres.page, '_blank'); };
+
+  /* ── démarrage ── */
+  try { const o = BA.store.load(KEY); s = o && O.TYPES[o.type] && O.disponible(o.type).ok ? o : O.defaut('radba'); } catch (e) { s = O.defaut('radba'); }
+  s.tab = s.tab || {}; s.cad = s.cad || {};
+  build(); calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

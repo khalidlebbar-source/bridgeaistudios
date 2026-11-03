@@ -69,23 +69,23 @@
     type: 'rodba', projet: 'Pont-route en dalle BA — 3 travées biaises', methode: 'plaque', regl: 'ec',
     travees: [11.27, 15.06, 11.27], cg: 0.45, cd: 0.45, biais: 80, biaisApp: null,
     trans: { dG: 0.53, tG: 1.0, lc: 6.0, tD: 1.0, dD: 0.53, Bs: 7.06, h: 0.6, hr: 0.25, hcr: 0.5727 },
-    gb: 25, equip: EQUIP(true), den: 0,
+    gb: 25, kppMax: 1.05, kppMin: 1.0, equip: EQUIP(true), den: 0,
     classe: 2, charges: { LM1: true, LM2: true, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
     appareils: { yC: [1.38, 3.48, 5.58, 7.68], yP: [1.38, 3.58, 5.48, 7.68], kv: 0 },
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
-    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10, vAppui: 'maille',
   };
   const DEF_ROPEN = {
     type: 'ropen', projet: 'Pont-route à poutrelles enrobées — 3 travées biaises', methode: 'plaque', regl: 'ec',
     travees: [11.27, 15.06, 11.27], cg: 0.45, cd: 0.45, biais: 80, biaisApp: null,
     trans: { dG: 0.53, tG: 1.0, lc: 6.0, tD: 1.0, dD: 0.53, Bs: 7.06, h: 0.61465, hr: 0.25, hcr: 0.5727 },
-    gb: 25, equip: EQUIP(false), den: 0,
+    gb: 25, kppMax: 1.05, kppMin: 1.0, equip: EQUIP(false), den: 0,
     classe: 2, charges: { LM1: true, LM2: true, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
     appareils: { yC: null, yP: null, kv: 0 },
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
-    ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 345, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10,
+    ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 345, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10, deduireVide: false, fissApp: true,
       percage: { espEnt: 4.85, rangEnt: 0.2, dTrouEnt: 0.03, zEnt: 0.09, espFer: 0.3, dTrouFer: 0.04, zFer: 0.05, aboutFer: 0.1 } },
-    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10,
+    plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10, vAppui: 'maille',
   };
 
   /* ══════════════════ 2. Géométrie transversale, charges permanentes ══════════════════ */
@@ -115,15 +115,18 @@
   /* catégories de charges permanentes : poids propre (surfacique γb·e(y), phase 1) puis équipements :
    * {nom, type:'lin' (kN/m à l'ordonnée y, « sym » = des deux côtés) | 'surf' (kN/m² entre y1 et y2), q, kmax, kmin} */
   function permanentes(d, G, R) {
-    const cats = [], gb = +d.gb || 25;
+    const cats = [], gb = +d.gb || 25, kpM = +d.kppMax || 1, kpm = +d.kppMin || 1;
+    const Acons = 2 * G.lcg * (G.hr + G.hcr) / 2;
     if (d.type === 'ropen') {
-      // béton : section pleine moins l'acier des poutrelles et le vide sous les dallettes (hauteur de l'aile inférieure)
+      // phase 1 : dalle résistante (largeur Bs) coulée sur les poutrelles seules ; encorbellements coulés en seconde phase
+      // (« accotements coulés en deuxième phase après durcissement de la dalle résistante », hypothèse de l'original)
       const P = R.prof, N = d.ropen.n, Ap = P.A / 1e4, tf = P.tf / 1e3, b = P.b / 1e3;
-      const vide = G.Bs * tf - N * b * tf;
-      const qb = gb * (G.A - N * Ap - vide), qp = N * Ap * 77;
-      cats.push({ nom: 'Poids propre du béton', type: 'pp', qlin: qb, kmax: 1, kmin: 1, phase: 1, fy: (y) => (y < G.lcg || y > G.B - G.lcg ? gb * G.ep(y) : (qb - gb * 2 * G.lcg * (G.hr + G.hcr) / 2) / G.Bs) });
-      cats.push({ nom: 'Poutrelles', type: 'pp', qlin: qp, kmax: 1, kmin: 1, phase: 1, fy: (y) => (y < G.lcg || y > G.B - G.lcg ? 0 : qp / G.Bs) });
-    } else cats.push({ nom: 'Poids propre', type: 'pp', qlin: gb * G.A, kmax: 1, kmin: 1, phase: 1, fy: (y) => gb * G.ep(y) });
+      const vide = d.ropen.deduireVide ? G.Bs * tf - N * b * tf : 0;     // vide sous les dallettes entre les ailes inférieures
+      const qb = gb * (G.Bs * G.h - N * Ap - vide), qp = N * Ap * 77;
+      cats.push({ nom: 'Poids propre de la dalle résistante', type: 'pp', qlin: qb, kmax: 1, kmin: 1, kmaxR: kpM, kminR: kpm, phase: 1, fy: (y) => (y < G.lcg || y > G.B - G.lcg ? 0 : qb / G.Bs) });
+      cats.push({ nom: 'Poutrelles', type: 'pp', qlin: qp, kmax: 1, kmin: 1, kmaxR: kpM, kminR: kpm, phase: 1, fy: (y) => (y < G.lcg || y > G.B - G.lcg ? 0 : qp / G.Bs) });
+      if (Acons > 0) cats.push({ nom: 'Encorbellements (2e phase)', type: 'pp', qlin: gb * Acons, kmax: 1, kmin: 1, kmaxR: kpM, kminR: kpm, phase: 2, fy: (y) => (y < G.lcg || y > G.B - G.lcg ? gb * G.ep(y) : 0) });
+    } else cats.push({ nom: 'Poids propre', type: 'pp', qlin: gb * G.A, kmax: 1, kmin: 1, kmaxR: kpM, kminR: kpm, phase: 1, fy: (y) => gb * G.ep(y) });
     for (const e of d.equip || []) {
       const q = +e.q; if (!(Math.abs(q) > 0)) continue;
       const kmax = +e.kmax || 1, kmin = +e.kmin || 1;
@@ -242,11 +245,15 @@
    * (Dx = EIx/Bs, EIx de la section homogénéisée court terme ; Dy, Dxy du béton d'épaisseur h), encorbellements isotropes */
   function rigiditesPlaque(d, G, EIx) {
     const E = d._Ecm * 1000, nu = d.plaque.nu ?? 0;
+    // poutrelles enrobées : section fissurée (EIxf) sur 0,15 L de part et d'autre des appuis intermédiaires (EN 1994-1-1 §5.4.2.3 (3))
+    const xa = [0]; d.travees.forEach((L) => xa.push(xa[xa.length - 1] + L));
+    const fiss = (x) => d._EIxf > 0 && xa.slice(1, -1).some((xj, k) => x > xj - 0.15 * d.travees[k] && x < xj + 0.15 * d.travees[k + 1]);
     const iso = (h) => { const D = E * h ** 3 / 12, S = 5 / 6 * E / (2 * (1 + nu)) * h; return { Db: [[D, nu * D, 0], [nu * D, D, 0], [0, 0, D * (1 - nu) / 2]], Ds: [S, S] }; };
     if (d.type === 'ropen' && EIx > 0) {
-      const Dx = EIx / G.Bs, Dy = E * G.h ** 3 / 12, Dt = Dy * (1 - nu) / 2, Dxy = nu * Math.sqrt(Dx * Dy), S = 5 / 6 * E / (2 * (1 + nu)) * G.h;
-      const ortho = { Db: [[Dx, Dxy, 0], [Dxy, Dy, 0], [0, 0, Dt]], Ds: [S, S] };
-      return (y) => (y < G.lcg - EPS || y > G.B - G.lcg + EPS ? iso(G.ep(y)) : ortho);
+      const Dy = E * G.h ** 3 / 12, Dt = Dy * (1 - nu) / 2, S = 5 / 6 * E / (2 * (1 + nu)) * G.h;
+      const orth = (EI) => { const Dx = EI / G.Bs, Dxy = nu * Math.sqrt(Dx * Dy); return { Db: [[Dx, Dxy, 0], [Dxy, Dy, 0], [0, 0, Dt]], Ds: [S, S] }; };
+      const o1 = orth(EIx), o2 = d._EIxf > 0 ? orth(d._EIxf) : o1;
+      return (y, x) => (y < G.lcg - EPS || y > G.B - G.lcg + EPS ? iso(G.ep(y)) : (fiss(x) ? o2 : o1));
     }
     return (y) => iso(G.ep(y));
   }
@@ -300,7 +307,7 @@
     const nn = M.nodes.length, nd = 3 * nn;
     M.elems.forEach((e) => {
       e.X = e.n.map((k) => M.nodes[k].x); e.Y = e.n.map((k) => M.nodes[k].y);
-      e.D = Dof(e.yc); e.K = kElem(e.X, e.Y, e.D.Db, e.D.Ds);
+      e.D = Dof(e.yc, (e.X[0] + e.X[1] + e.X[2] + e.X[3]) / 4 - (e.yc - G.yc) * M.cotAt(M.xi[e.i])); e.K = kElem(e.X, e.Y, e.D.Db, e.D.Ds);
       e.dofs = e.n.flatMap((k) => [3 * k, 3 * k + 1, 3 * k + 2]);
       e.area = Math.abs(jac(e.X, e.Y, 0, 0).det) * 4;
     });
@@ -585,8 +592,9 @@
    * rec = {g:[effet de chaque catégorie permanente (valeur nominale)], den:{max,min}, q:{cas:{max,min}}}
    * EC (EN 1990 A2 + AN) : ELU Σ(1,35·kmax | 1,00·kmin)·G + 1,20 Δ + 1,35 Q ; ELS car. Gk + Δ + Q ; fréq. Gk + Δ + Qfréq ;
    * QP Gk + Δ. Fasc. 61/BAEL : ELU 1,35 Gmax + Gmin + 1,6 (A|B + trottoirs) | 1,35 Mc ; ELS G + 1,2 (A|B) + trottoirs | Mc. */
-  function combiner(rec, cats, regime) {
-    const G = (kU, kF, sg) => sum(rec.g.map((e, c) => { const unf = sg > 0 ? e > 0 : e < 0; return e * (unf ? kU * cats[c].kmax : kF * cats[c].kmin); }));
+  function combiner(rec, cats, regime, reac) {
+    const kx = (c) => (reac && cats[c].kmaxR ? cats[c].kmaxR : cats[c].kmax), kn = (c) => (reac && cats[c].kminR ? cats[c].kminR : cats[c].kmin);
+    const G = (kU, kF, sg) => sum(rec.g.map((e, c) => { const unf = sg > 0 ? e > 0 : e < 0; return e * (unf ? kU * kx(c) : kF * kn(c)); }));
     const q = rec.q, z = { max: 0, min: 0 }, den = rec.den || z;
     const pick = (keys, f = 1) => { let mx = 0, mn = 0; for (const k of keys) { const v = q[k]; if (!v) continue; mx = Math.max(mx, f * v.max); mn = Math.min(mn, f * v.min); } return { max: mx, min: mn }; };
     let Qc, Qf, QU;
@@ -658,13 +666,14 @@
       const yP = Array.from({ length: N }, (_, k) => +(G.lcg + d.ropen.debLat + bP / 2 + k * ent).toFixed(5));
       const csup = G.h - prof.h / 1e3; if (!(csup > 0)) throw new Error('Épaisseur de dalle inférieure à la hauteur des poutrelles.');
       const inp = (As) => ({ profil: { mode: 'cat', nom: prof.nom }, N, B: G.Bs, csup, typeSous: 'apparente', ecof: +d.ropen.ecof, nappes: As > 0 ? [{ pos: 'sup', As, d: +d.ropen.dAs }] : [],
-        fck, fyk: +d.mat.fe, nuance: d.ropen.nuance, fy: +d.ropen.fy || 0, gammaA: +d.ropen.gammaA || 1, gammaC: 1.5, gammaS: 1.15, congesELU: false, nMode: 'saisi', nCourt: +d.ropen.nCourt, nLong: +d.ropen.nLong });
+        fck, fyk: +d.mat.fe, nuance: d.ropen.nuance, fy: +d.ropen.fy > 0 ? +d.ropen.fy : fyNuance(d.ropen.nuance, prof.tf), gammaA: +d.ropen.gammaA || 1, gammaC: 1.5, gammaS: 1.15, congesELU: false, nMode: 'saisi', nCourt: +d.ropen.nCourt, nLong: +d.ropen.nLong });
       const AsM = (+d.ropen.AsMinM || 0) * G.Bs;
       const ine = { courant: IN.calcul(inp(AsM)), chapeau: IN.calcul(inp(Math.max(AsM, +d.ropen.AsChap || 0))) };
       const by = (id) => ine.courant.travee.cas.find((c) => c.id === id);
       ine.Ic = by('ctnf').I; ine.Icf = by('ctf').I; ine.Il = by('ltnf').I; ine.Ilf = by('ltf').I; ine.Is = N * prof.Iy / 1e8; ine.Ea = IN.Ea;
       R = { prof, N, ent, yP, csup, ine, H: G.h };
       d._EIx = IN.Ea * 1000 * ine.Ic;
+      d._EIxf = d.ropen.fissApp !== false && d.travees.length > 1 ? IN.Ea * 1000 * by('ctf').I : 0;
       d._yExtra = yP;
       if (!d.appareils.yC || d.appareils.yC.length < 2) d.appareils.yC = yP.slice();
       if (!d.appareils.yP || d.appareils.yP.length < 2) d.appareils.yP = yP.slice();
@@ -750,7 +759,8 @@
         // effort tranchant : sur une ligne d'appui, de chaque côté (la moyenne des deux côtés s'annulerait)
         const surApp = s.k === 0 || s.k === d.sections;
         // sur appui : effort tranchant à une distance ≈ d de la ligne d'appui, de part et d'autre (EN 1992-1-1 §6.2.1 (8))
-        const dEff = G.h - +d.mat.dInf;
+        // distance de calcul de l'effort tranchant sur appui : d (défaut) ou centre de la première maille (« maille », comme l'original)
+        const dEff = d.vAppui === 'maille' ? Math.abs(M.xi[Math.min(M.nx - 1, s.i + 1)] - M.xi[s.i]) / 2 : G.h - +d.mat.dInf;
         const gAt = (sg) => { // qx interpolé linéairement entre les deux lignes de nœuds encadrant la distance d
           let i = s.i; while (i + sg >= 0 && i + sg < M.nx && Math.abs(M.xi[i + sg] - M.xi[s.i]) < dEff) i += sg;
           const i2 = clamp(i + sg, 0, M.nx - 1), d1 = Math.abs(M.xi[i] - M.xi[s.i]), d2 = Math.abs(M.xi[i2] - M.xi[s.i]);
@@ -790,7 +800,7 @@
       const bear = ss.map((s, k) => {
         const c = cases(surfR[k]);
         const rec = { g: caseU.map((u) => reaction(S, u.U, u.F, s)), den: denEnv((r) => r.appuis[j].R / ss.length), q: c.q };
-        return { y: s.y, node: s.node, rec, c: combiner(rec, cats, 'ec') };
+        return { y: s.y, node: s.node, rec, c: combiner(rec, cats, 'ec', true) };
       });
       // file entière : V et moment transversal / axe (y − B/2) ; configuration LM1 de V max/min → excentricité concomitante
       const nN = M.nodes.length, eV = new Float64Array(nN), eM = new Float64Array(nN);
@@ -808,7 +818,7 @@
       const nAx = ss.reduce((b, s) => (Math.abs(s.y - G.yc) < Math.abs(b.y - G.yc) ? s : b), ss[0]).node;
       const eR = new Float64Array(S.nd); eR[3 * nAx + 1] = 1; const thU = S.solve(eR), cTh = cases(etaOf(thU));
       const rot = { G: caseU.map((u) => u.U[3 * nAx + 1]), q: cTh.q };
-      return { j, nom: (j === 0 || j === nT ? 'C' : 'P') + j, x: M.xa[j], culee: j === 0 || j === nT, n: ss.length, bear, ligne: { rec: recL, c: combiner(recL, cats, 'ec'), gM, ecc, qtr }, rot };
+      return { j, nom: (j === 0 || j === nT ? 'C' : 'P') + j, x: M.xa[j], culee: j === 0 || j === nT, n: ss.length, bear, ligne: { rec: recL, c: combiner(recL, cats, 'ec', true), gM, ecc, qtr }, rot };
     });
     // flèche dans l'axe à mi-travée : G (module instantané) et trafic caractéristique
     const jAx = M.yy.reduce((b, v, j) => (Math.abs(v - G.yc) < Math.abs(M.yy[b] - G.yc) ? j : b), 0);
@@ -880,7 +890,7 @@
       const thLi = LI.app[j].th, qth = envAt(thLi, t);
       const rot = { G: cats.map((c) => c.qlin * unit.appuis[j].th), q: qth };
       return { j, nom: (j === 0 || j === nT ? 'C' : 'P') + j, x: a.x, culee: j === 0 || j === nT, n, y: d._app[j].y,
-        bear: d._app[j].y.map((y) => ({ y, rec: recB, c: combiner(recB, cats, 'f61') })), ligne: { rec: recL, c: combiner(recL, cats, 'f61') }, rot };
+        bear: d._app[j].y.map((y) => ({ y, rec: recB, c: combiner(recB, cats, 'f61', true) })), ligne: { rec: recL, c: combiner(recL, cats, 'f61', true) }, rot };
     });
     const wMid = d.travees.map((L, t) => {
       const k = SP.sections.findIndex((s) => s.kind === 't' && s.travee === t && Math.abs(s.x - (sum(d.travees.slice(0, t)) + L / 2)) < 1e-6);
@@ -901,7 +911,11 @@
     const r = SB.calcul({ forme: 'rect', mode: 'dim', regl: ec ? 'EC2' : 'BAEL', materiau: ec ? { fck: +d.mat.fck, fyk: +d.mat.fe, classe: 'B' } : { fck: +d.mat.fck, fyk: +d.mat.fe, fissuration: +d.mat.fissuration },
       section: { b: 1, h, nStrips: 80, nappes: [{ d: dS, As: 0 }, { d: h - dI, As: 0 }] }, elu, els, options: { nCalcule: false, n: 15, element: 'dalle', cot: ec ? 1 : undefined } });
     const cis = r.cis[0];
-    return { dir, As: r.dim.As, AsELU: r.dim.AsELU, req: r.dim.req, Asw: cis ? (cis.Asw ?? cis.At ?? 0) : 0, AsFtd: cis && cis.AsFtd ? cis.AsFtd : 0, VRdc: cis ? cis.VRdc : null, sc: maxA(r.els.map((e) => e.sc)), verdict: r.verdict, alertes: r.alertes };
+    // effort tranchant avec armatures d'effort tranchant : effort de traction supplémentaire ΔFtd = 0,5·VEd·cot θ ajouté aux
+    // aciers tendus (EN 1992-1-1 §6.2.3 (7), cumul flexion + ΔFtd comme l'original)
+    const As = r.dim.As.slice(), dF = cis && !cis.sansArm && cis.AsFtd ? cis.AsFtd : 0;
+    if (dF) { if (c.ELU.min < 0) As[0] += dF; if (c.ELU.max > 0) As[1] += dF; }
+    return { dir, As, AsFlex: r.dim.As, AsELU: r.dim.AsELU, req: r.dim.req, Asw: cis ? (cis.Asw ?? cis.At ?? 0) : 0, AsFtd: cis && cis.AsFtd ? cis.AsFtd : 0, VRdc: cis ? cis.VRdc : null, sc: maxA(r.els.map((e) => e.sc)), verdict: r.verdict, alertes: r.alertes };
   }
   function sectionsBA(res) {
     const G = res.G, d = res.d;
@@ -911,11 +925,16 @@
     return { lon, tra };
   }
 
+  /* limite d'élasticité selon l'épaisseur (NF EN 10025-2 tableau 7, t en mm) : t ≤ 16 ; 16 < t ≤ 40 ; 40 < t ≤ 63 ; 63 < t ≤ 80 */
+  function fyNuance(nuance, t) {
+    const T = { S235: [235, 225, 215, 215], S275: [275, 265, 255, 245], S355: [355, 345, 335, 325], S420: [420, 400, 390, 370], S460: [460, 440, 430, 410] }[nuance] || [355, 345, 335, 325];
+    return t <= 16 ? T[0] : t <= 40 ? T[1] : t <= 63 ? T[2] : T[3];
+  }
   /* ══════════════════ 10. ROPEN : vérifications des poutrelles ══════════════════ */
   function verifRopen(res) {
     const d = res.d, R = res.R, P = R.prof, N = R.N, ine = R.ine, ec = d.regl !== 'bael';
     const hP = P.h / 1e3, tf = P.tf / 1e3, bP = P.b / 1e3, tw = P.tw / 1e3;
-    const fy = +d.ropen.fy > 0 ? +d.ropen.fy : IN.fyNuance(d.ropen.nuance, P.tf), gA = +d.ropen.gammaA || 1;
+    const fy = +d.ropen.fy > 0 ? +d.ropen.fy : fyNuance(d.ropen.nuance, P.tf), gA = +d.ropen.gammaA || 1;
     const Is1 = P.Iy / 1e8, vS = hP / 2;
     const Wpl = bP * tf * (hP - tf) + tw * (hP - 2 * tf) ** 2 / 4;                           // sans congés
     const MplS = Wpl * fy / gA * 1000;                                                        // par poutrelle, EN 1993-1-1 §6.2.5
@@ -939,7 +958,8 @@
       let worst = null, MuMax = -Infinity, MuMin = Infinity, Vu = 0, yMax = null;
       for (const r of recs) {
         const cM = combiner(sansPP(r.M), res.cats, res.regime), cV = combiner(sansPP(r.V), res.cats, res.regime);
-        const muMax = 1.35 * Math.max(M1, 0) + 1.0 * Math.min(M1, 0) + cM.ELU.max, muMin = 1.35 * Math.min(M1, 0) + Math.max(M1, 0) + cM.ELU.min;
+        const kpM = 1, kpm = 1;
+        const muMax = 1.35 * kpM * Math.max(M1, 0) + kpm * Math.min(M1, 0) + cM.ELU.max, muMin = 1.35 * kpM * Math.min(M1, 0) + kpm * Math.max(M1, 0) + cM.ELU.min;
         if (muMax > MuMax) { MuMax = muMax; yMax = r.y; } MuMin = Math.min(MuMin, muMin);
         Vu = Math.max(Vu, Math.abs(1.35 * V1) + Math.max(Math.abs(cV.ELU.max), Math.abs(cV.ELU.min)));
         // ELS : contraintes par phases (cas 1 poutrelles seules ; cas 3 superstructures + Δ, n long ; cas 4 trafic, n court)
