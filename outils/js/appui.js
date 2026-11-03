@@ -923,7 +923,7 @@
    *  - suivant Y : bande longitudinale chargée par la réaction du bord avant diminuée des poids ; fûts étroits
    *    (b ≤ 2·e semelle) : poutre continue sur appuis ponctuels à l'axe des fûts ; voiles : console au droit de la
    *    section à 0,15·b à l'intérieur du nu extérieur, et moment entre voiles par la statique.
-   * M > 0 : fibre inférieure tendue. */
+   * Effort tranchant à la distance d du nu (BAEL A.5.2,2 ; EC2 6.2.2 (6)). M > 0 : fibre inférieure tendue. */
   function semelleReference(d, G, acts, combs, mat) {
     const g = d.geo, B = g.B, L = g.L, ep = g.ep, c = num(d.mat.cSem, 0.05), dd = ep - c, zeau = num(g.zeau, -1e9);
     const pile = d.type === 'pile';
@@ -960,18 +960,18 @@
       {
         const w = gb * wb + (pile ? gt * wtF : 0), face = G.xF + G.dimX / 2;
         let best = null;
-        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x - xs), xs, xEnd), V = integ((x) => sig(x, y) - w, face, xEnd); if (!best || M > best[0]) best = [M, V]; }
+        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x - xs), xs, xEnd), V = integ((x) => sig(x, y) - w, Math.min(xEnd, face + dd), xEnd); if (!best || M > best[0]) best = [M, V]; }
         put(0, best[0], best[1]);
       }
       // talon arrière (culée) ou débord arrière (pile)
       if (pile) {
         const w = gb * wb + gt * wtF, x2 = 2 * G.xF - xs, face = G.xF - G.dimX / 2;
         let best = null;
-        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x2 - x), -B / 2, x2), V = integ((x) => sig(x, y) - w, -B / 2, face); if (!best || Math.abs(M) > Math.abs(best[0])) best = [M, V]; }
+        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x2 - x), -B / 2, x2), V = integ((x) => sig(x, y) - w, -B / 2, Math.max(-B / 2, face - dd)); if (!best || Math.abs(M) > Math.abs(best[0])) best = [M, V]; }
         put(1, best[0], best[1]);
       } else {
         const w = gb * wb + gt * wtB;
-        put(1, integ((x) => (sig(x, 0) - w) * (G.xF - x), -B / 2, G.xF), integ((x) => sig(x, 0) - w, -B / 2, G.xF - G.dimX / 2));
+        put(1, integ((x) => (sig(x, 0) - w) * (G.xF - x), -B / 2, G.xF), integ((x) => sig(x, 0) - w, -B / 2, Math.max(-B / 2, G.xF - G.dimX / 2 - dd)));
       }
       // suivant Y : réaction du bord avant (moyenne sur la longueur) diminuée des poids
       const q = r.a + r.b * B / 2 - (gb * wb + gt * wtF);
@@ -979,7 +979,7 @@
       else {
         const yo = cuts[2].v, face = G.yF[G.yF.length - 1] + G.dimY / 2, qin = q + gt * wtF;   // pas de terres sur le fût
         const p = (y) => (y > face ? q : qin);
-        put(2, integ((y) => p(y) * (y - yo), yo, L / 2), integ((y) => p(y), face, L / 2));
+        put(2, integ((y) => p(y) * (y - yo), yo, L / 2), integ((y) => p(y), Math.min(L / 2, face + dd), L / 2));
         if (G.nF > 1) {
           // moment au milieu : charges de la demi-bande et réaction du (des) fût(s) de la demi-semelle
           const fl = (y) => (G.yF.some((yf) => Math.abs(y - yf) <= G.dimY / 2) ? qin : q);
