@@ -83,7 +83,7 @@
     classe: 2, charges: { LM1: true, LM2: true, LM4: false, qfk: 5, LM3: '', vitLM3: 'lente', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, qtr: 1.5 },
     appareils: { yC: null, yP: null, kv: 0 },
     mat: { fck: 32, fe: 500, fissuration: 1, dSup: 0.07, dInf: 0.07, phi: 2 },
-    ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 345, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10, deduireVide: false, fissApp: true,
+    ropen: { profil: 'HEM 450', n: 10, nuance: 'S355', fy: 0, ecof: 0.02, AsChap: 94.26, AsMinM: 0, dAs: 0.07, nCourt: 6, nLong: 18, gammaA: 1.0, debLat: 0.10, seuilChap: 0.10, deduireVide: false, fissApp: true,
       percage: { espEnt: 4.85, rangEnt: 0.2, dTrouEnt: 0.03, zEnt: 0.09, espFer: 0.3, dTrouFer: 0.04, zFer: 0.05, aboutFer: 0.1 } },
     plaque: { nLon: 20, nLar: 24, nu: 0 }, sections: 10, vAppui: 'maille',
   };

@@ -100,9 +100,9 @@
         <li><b>Surfaces d’influence</b> exactes du modèle (méthode adjointe, Maxwell-Betti) de mx, my, mxy et qx en 9 fibres (dalle BA) ou au droit de chaque poutrelle (poutrelles enrobées) à chaque dixième de travée, des réactions de chaque appareil et des rotations sur appui ; rééchantillonnées sur une grille de 0,10 m × 0,20 m. Les roues sont diffusées à 45° jusqu’au feuillet moyen (EN 1991-2 §4.3.6).</li>
         <li><b>Charges EN 1991-2 + AN</b> : LM1 (voies conventionnelles de 3 m placées et numérotées au plus défavorable par programmation dynamique, TS centré dans sa voie et placé indépendamment dans chaque voie, UDL sur les parties défavorables, αQ et αq de l’AN pour les classes de trafic 1 et 2) ; LM2 (essieu 400·βQ, βQ = αQ1) ; trottoirs : gr1a avec 3 kN/m², gr3 avec qfk ; LM4 (foule 5 kN/m², gr4) ; LM3 (véhicules du tableau A1, lignes d’essieux de 150/200 kN réparties sur 3,00 m et de 240 kN sur 4,50 m, φ = 1,40 − L/500 à vitesse normale ; sans la circulation concomitante LM1 hors zone de 25 m). Les charges sont majorées dynamiquement (valeurs EN). Charges horizontales et thermiques : module REPHOR.</li>
         <li><b>Calcul en poutre</b> (biais 70 à 130 gr, Fascicule 61 titre II) : poutre continue à inertie constante (POUTRE, lignes d’influence exactes), A(l), Bc (bc, δ), Bt, Mc80, Mc120 (δ), trottoirs 1,5 kN/m² ; moment par mètre (dalle BA) ou par poutrelle (poutrelles enrobées) à la fibre la plus sollicitée = K·M/Bs (K de Guyon-Massonnet à mi-travée de chaque travée, dalle isotrope α = 1, appliqué sur toute la travée) ; flexion transversale à mi-travée (GMSLT). Biais non pris en compte dans la flexion longitudinale. Convois exceptionnels C, D, E de l’instruction du 20/07/1983 : <b>non traités</b>.</li>
-        <li><b>Combinaisons</b> : plaque — EN 1990 annexe A2 + AN : ELU 1,35 Gk,sup / 1,00 Gk,inf + 1,35 max(gr1a, LM2, gr3, gr4, gr5) + 1,2 Δ ; ELS caractéristique, fréquente (ψ1 = 0,75 TS, 0,40 UDL et trottoirs, 0,75 LM2), quasi permanente. Poutre — BAEL / Fasc. 62 : ELU 1,35 Gmax + Gmin + max(1,6 (A|B + trottoirs) ; 1,35 Mc), ELS G + max(1,2 (A|B) + trottoirs ; Mc). Charges permanentes : poids propre + équipements avec kmax / kmin par catégorie. Dénivellations d’appui (facultatives) : poutre continue, module différé, réparties uniformément sur la largeur.</li>
-        <li><b>Dalle BA</b> : ferraillage orthogonal (axe de l’ouvrage et perpendiculaire) avec les moments de Wood-Armer m ± |mxy| (enveloppes non concomitantes : majorant), pire des fibres de chaque section ; sections par mètre (BAEL-EC2) : ELU, ELS (σs, σc caractéristique et quasi permanente, n = 15), non-fragilité ; effort tranchant à la distance d des appareils (EN 1992-1-1 §6.2.1 (8)), dalle sans armatures d’effort tranchant si VEd ≤ VRd,c, bielles à 45°. Les moments au droit d’un appareil ponctuel dépendent du maillage (pic) : le maillage par défaut (≈ 0,38 m près des appuis) est celui de l’original.</li>
-        <li><b>Poutrelles enrobées</b> : par poutrelle (moment de plaque × entraxe) : phase 1 poids propre sur poutrelles seules (poutre continue, part égale), superstructures et trafic sur la section mixte ; contraintes ELS (n = 18 / 6, béton tendu négligé), moment résistant plastique (INERPE) avec chapeaux en zone de moment négatif, Mpl des poutrelles seules au bétonnage, Vpl,Rd des poutrelles seules, déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée, σ = 1,35 σpoutrelles + 1,5 σbéton frais), dallettes, contre-flèches (fb + fp + fq/4).</li>
+        <li><b>Combinaisons</b> : plaque — EN 1990 annexe A2 + AN : ELU 1,35 Gk,sup / 1,00 Gk,inf + 1,35 max(gr1a, LM2, gr3, gr4, gr5) + 1,2 Δ ; ELS caractéristique, fréquente (ψ1 = 0,75 TS, 0,40 UDL et trottoirs, 0,75 LM2), quasi permanente. Poutre — BAEL / Fasc. 62 : ELU 1,35 Gmax + Gmin + max(1,6 (A|B + trottoirs) ; 1,35 Mc), ELS G + max(1,2 (A|B) + trottoirs ; Mc). Charges permanentes : poids propre + équipements avec kmax / kmin par catégorie ; dans les descentes de charges, poids propre × 1,05 / 1,00 (valeurs maxi / mini retrouvées sur l’exemple d’origine, saisissables). Dénivellations d’appui (facultatives) : poutre continue, module différé, réparties uniformément sur la largeur.</li>
+        <li><b>Dalle BA</b> : ferraillage orthogonal (axe de l’ouvrage et perpendiculaire) avec les moments de Wood-Armer m ± |mxy| (enveloppes non concomitantes : majorant), pire des fibres de chaque section ; sections par mètre (BAEL-EC2) : ELU, ELS (σs, σc caractéristique et quasi permanente, n = 15), non-fragilité ; effort tranchant à la distance d des appareils (EN 1992-1-1 §6.2.1 (8)), dalle sans armatures d’effort tranchant si VEd ≤ VRd,c, bielles à 45°. effort tranchant sur appui au centre de la première maille (défaut, comme l’original) ou à la distance d ; avec armatures d’effort tranchant, ΔFtd = 0,5·VEd·cot θ ajouté aux aciers tendus (§6.2.3 (7)). Les moments au droit d’un appareil ponctuel dépendent du maillage (pic) : le maillage par défaut (≈ 0,38 m près des appuis) est celui de l’original.</li>
+        <li><b>Poutrelles enrobées</b> : par poutrelle (moment de plaque × entraxe) : phase 1 : dalle résistante (largeur Bs) et poutrelles portées par les poutrelles seules (poutre continue, part égale), encorbellements coulés en seconde phase ; vide sous les dallettes non déduit par défaut (comme l’original) ; superstructures et trafic sur la section mixte, section fissurée (n = 6) sur 0,15 L de part et d’autre des appuis intermédiaires dans la plaque (EN 1994-1-1 §5.4.2.3 (3), désactivable) ; fy selon la nuance et l’épaisseur (NF EN 10025-2) ; contraintes ELS (n = 18 / 6, béton tendu négligé), moment résistant plastique (INERPE) avec chapeaux en zone de moment négatif, Mpl des poutrelles seules au bétonnage, Vpl,Rd des poutrelles seules, déversement au bétonnage (Fasc. 61 titre V art. 19, méthode simplifiée, σ = 1,35 σpoutrelles + 1,5 σbéton frais), dallettes, contre-flèches (fb + fp + fq/4).</li>
         <li><b>Non traités</b> : consoles de rive sous charge accidentelle de roue (EN 1991-2 §4.7.3.1) et efforts sur garde-corps (l’encorbellement est inclus dans la plaque sous les charges ci-dessus), fatigue, ouverture des fissures, flèches fissurées en plaque (flèches non fissurées avec Ecm, et × (1 + φ) pour les charges permanentes).</li>
         <li><b>Appareils d’appui</b> : réaction de chaque appareil et de chaque file (surfaces d’influence), excentricité concomitante de la file sous LM1 et sous trottoirs, rotations. Export JSON vers REPHOR (G, Q, rotation par file) et vers APPUI (réactions par file et par appareil).</li>
       </ul>
@@ -156,7 +156,7 @@
     { id: 'profil', label: 'Profilé', type: 'txt', def: 'HEM 450' },
     { id: 'n', label: 'Nombre de poutrelles', def: 10, step: 1 },
     { id: 'nuance', label: 'Nuance', type: 'sel', def: 'S355', options: [['S235', 'S235'], ['S275', 'S275'], ['S355', 'S355'], ['S420', 'S420'], ['S460', 'S460']] },
-    { id: 'fy', label: 'fy (0 = selon nuance)', unit: 'MPa', def: 345 },
+    { id: 'fy', label: 'fy (0 = selon nuance et épaisseur)', unit: 'MPa', def: 0, help: 'NF EN 10025-2 : S355, 16 < t ≤ 40 mm → 345 MPa' },
     { id: 'ecof', label: 'Épaisseur des dallettes', unit: 'm', def: 0.02 },
     { id: 'debLat', label: 'Débord de la dalle / poutrelle de rive', unit: 'm', def: 0.1 },
     { id: 'AsChap', label: 'Chapeaux sur appuis (largeur Bs)', unit: 'cm²', def: 94.26 },
@@ -164,6 +164,8 @@
     { id: 'dAs', label: 'Axe des aciers supérieurs / extrados', unit: 'm', def: 0.07 },
     { id: 'nCourt', label: 'n court terme', def: 6 }, { id: 'nLong', label: 'n long terme', def: 18 },
     { id: 'gammaA', label: 'γM0', def: 1 },
+    { id: 'deduireVide', label: 'Déduire le vide sous les dallettes du poids propre', type: 'chk', def: false },
+    { id: 'fissApp', label: 'Section fissurée sur 0,15 L de part et d’autre des appuis (EN 1994-1-1 §5.4.2.3)', type: 'chk', def: true, wide: true },
   ];
   const LM3O = [['', 'aucun']].concat(Object.keys(E.LM3).map((k) => [k, k]));
   const F_CH = [
@@ -181,6 +183,8 @@
     { id: 'gb', label: 'Poids volumique du béton', unit: 'kN/m³', def: 25 },
     { id: 'den', label: 'Dénivellation d’appui', unit: 'm', def: 0, help: 'chaque appui pris seul ; 0 = sans' },
     { id: 'phi', label: 'Coefficient de fluage φ', def: 2 },
+    { id: 'kppMax', label: 'Poids propre : majoration (descentes de charges)', def: 1.05, help: 'Gk,sup = kmax·G dans les réactions d’appui' },
+    { id: 'kppMin', label: 'Poids propre : minoration (descentes de charges)', def: 1 },
   ];
   const EQ_COLS = [
     { id: 'nom', label: 'Équipement', type: 'txt', def: 'Équipement' },
@@ -202,6 +206,7 @@
     { id: 'nLon', label: 'Éléments par travée', def: 20, step: 1, help: 'intervalles d’about raffinés ×2' },
     { id: 'nLar', label: 'Éléments dans la largeur', def: 24, step: 1 },
     { id: 'sections', label: 'Sections de calcul par travée', def: 10, step: 1 },
+    { id: 'vAppui', label: 'Effort tranchant sur appui', type: 'sel', def: 'maille', options: [['maille', 'centre de la première maille'], ['d', 'à la distance d (EN 1992-1-1 §6.2.1 (8))']], wide: true },
   ];
   const F_PERC = [
     { id: 'espEnt', label: 'Espacement des entretoises', def: 4.85 }, { id: 'rangEnt', label: 'Écart des 2 rangées', def: 0.2 },
@@ -216,7 +221,7 @@
 
   /* données moteur ↔ formulaire */
   function toForm(d) {
-    const v = Object.assign({}, d, d.trans, d.charges, d.mat, d.plaque, { travees: d.travees.join(' '), biaisApp: d.biaisApp ? d.biaisApp.join(' ') : '',
+    const v = Object.assign({}, d, d.trans, d.charges, d.mat, d.plaque, { vAppui: d.vAppui || 'maille' }, { travees: d.travees.join(' '), biaisApp: d.biaisApp ? d.biaisApp.join(' ') : '',
       yC: d.appareils.yC ? d.appareils.yC.join(' ') : '', yP: d.appareils.yP ? d.appareils.yP.join(' ') : '', kv: d.appareils.kv || 0, sections: d.sections });
     if (d.ropen) Object.assign(v, d.ropen, d.ropen.percage);
     return v;
@@ -224,7 +229,7 @@
   function fromForm() {
     const v = BA.read(ALL, 'i_'), pick = (F) => Object.fromEntries(F.map((f) => [f.id, v[f.id]]));
     const d = { type, projet: v.projet, methode: v.methode, regl: v.regl, classe: +v.classe, travees: nums(v.travees), cg: v.cg, cd: v.cd, biais: v.biais,
-      biaisApp: nums(v.biaisApp).length ? nums(v.biaisApp) : null, trans: pick(F_TR), charges: pick(F_CH), gb: v.gb, den: v.den,
+      biaisApp: nums(v.biaisApp).length ? nums(v.biaisApp) : null, trans: pick(F_TR), charges: pick(F_CH), gb: v.gb, den: v.den, kppMax: v.kppMax, kppMin: v.kppMin, vAppui: v.vAppui,
       mat: Object.assign(pick(F_MAT), { phi: v.phi }), plaque: { nLon: v.nLon, nLar: v.nLar, nu: 0 }, sections: v.sections,
       appareils: { yC: nums(v.yC).length ? nums(v.yC) : null, yP: nums(v.yP).length ? nums(v.yP) : null, kv: v.kv },
       equip: eqRows.data.map((r) => ({ nom: r.nom, type: r.type, q: +r.q, y: +r.y, sym: +r.sym === 1, y1: +r.y1, y2: +r.y2, kmax: +r.kmax, kmin: +r.kmin })) };
