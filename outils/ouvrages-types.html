@@ -289,7 +289,8 @@
 
   /* ── tableaux réutilisés par l'écran et la note ── */
   function tabVerdicts(R, liens) {
-    return BA.table(['Partie', 'Statut', 'Résultat'].concat(liens ? [''] : []), R.verdicts.map((v) => [v.partie, TAG[v.statut] || '', `<span class="wrap">${esc(v.texte)}</span>`].concat(liens ? [v.module ? go(v.module, v.module === 'fondatio' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`] : [])), { leftText: true });
+    const rows = R.verdicts.map((v) => `<tr><td class="l">${esc(v.partie)}</td><td class="l">${TAG[v.statut] || ''}</td><td class="l wrap">${esc(v.texte)}</td>${liens ? `<td>${v.module ? go(v.module, v.module === 'fondatio' ? R.fond.findIndex((x) => 'Fondation ' + x.nom === v.partie) : 0) : `<a class="go" href="#" data-step-go="${v.etape}">voir</a>`}</td>` : ''}</tr>`).join('');
+    return `<div class="tbl-wrap"><table class="res dash"><thead><tr><th>Partie</th><th style="text-align:left">Statut</th><th style="text-align:left">Résultat</th>${liens ? '<th></th>' : ''}</tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function tabGeo(R) {
     const s = R.s, t = R.t, rows = [['Type', t.nom + ' — ' + t.desc], ['Biais', f2(s.biais) + ' gr'], ['Largeur', f2(s.Btot) + ' m']];
@@ -397,7 +398,7 @@
   function tabMetres(R) {
     const M = R.metres;
     return BA.kpis([{ l: 'Béton', v: f0(M.recap.beton), u: 'm³' }, { l: 'Coffrages', v: f0(M.recap.coffrage), u: 'm²' }, { l: 'Aciers', v: f1(M.recap.aciers / 1000), u: 't', n: M.recap.beton > 0 ? f0(M.recap.aciers / M.recap.beton) + ' kg/m³' : '' }].concat(M.recap.poutrelles ? [{ l: 'Poutrelles', v: f1(M.recap.poutrelles / 1000), u: 't' }] : []).concat(M.recap.appareils ? [{ l: 'Appareils', v: f0(M.recap.appareils), u: 'u' }] : []))
-      + BA.table(['Partie', 'Désignation', 'Unité', 'Quantité', 'Origine'], M.rows.map((r) => [esc(r.partie), esc(r.designation), r.unite, r.unite === 'u' ? f0(r.q) : f2(r.q), `<span style="color:var(--ink3)">${esc(r.origine)}</span>`]), { leftText: true });
+      + BA.table(['Partie', 'Désignation', 'Unité', 'Quantité', 'Origine'], M.rows.map((r) => [esc(r.partie), esc(r.designation), r.unite, r.unite === 'u' ? f0(r.q) : f2(r.q), esc(r.origine)]), { leftText: true });
   }
   const plans = (R, ids) => O.vues(R).filter((v) => !ids || ids.some((i) => (i.endsWith('*') ? v.id.startsWith(i.slice(0, -1)) : v.id === i))).map((v) => `<div class="sub">${esc(v.titre)}</div>${O.svgVue(v)}`).join('');
 

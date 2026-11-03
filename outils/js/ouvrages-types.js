@@ -372,7 +372,7 @@
     // profil en long : remblai sur la traverse déduit de la cote du rail (rail = dessus traverse + étanchéité + remblai + ballast + rail)
     const zBase = s.gab.zObs - (+d.hauterint || 0), zTopTrav = zBase + d.hauint + d.eptra;
     const eprem = s.zRail0 - HRAIL - d.epbal - d.epetan - zTopTrav;
-    if (eprem < -0.005) throw new Error(`Profil en long incompatible : le rail (cote ${s.zRail0}) est ${(-eprem).toFixed(2)} m trop bas pour l’ouverture, la hauteur et les épaisseurs saisies (dessus de traverse ${zTopTrav.toFixed(2)}).`);
+    if (eprem < -0.005) throw new Error(`Profil en long incompatible : le rail (cote ${fm(s.zRail0)}) est ${fm(-eprem)} m trop bas pour l’ouverture, la hauteur et les épaisseurs saisies (dessus de traverse ${fm(zTopTrav)}).`);
     d.eprem = r3(Math.max(0, eprem));
     if (!d.projet) d.projet = s.projet;
     return { d, zBase, zTopTrav };
@@ -585,7 +585,8 @@
       const typ = f.o.type === 'pieux' ? `${f.o.piles.length} pieux Ø ${s.fond.pieux.D} m` : `semelle ${f.o.B.toFixed(2)} × ${f.o.L.toFixed(2)} m`;
       push('Fondation ' + f.nom, f.err ? 'ko' : f.ok ? 'ok' : 'ko', f.err ? f.err : typ + ' — ' + (f.ok ? 'portance, décompression et glissement vérifiés' : 'au moins un critère NON vérifié'), 'fondatio', 4);
     });
-    if (R.gabarit) { const g = R.gabarit; push('Gabarit ' + (g.type === 'rail' ? 'ferroviaire' : 'routier'), g.ok ? 'ok' : 'ko', `hauteur libre ${g.Hdispo.toFixed(2)} m (requis ${g.Hreq.toFixed(2)}), marges latérales ${g.margeG.toFixed(2)} / ${g.margeD.toFixed(2)} m`, null, 5); }
+    if (R.gabarit) { const g = R.gabarit; push('Gabarit ' + (g.type === 'rail' ? 'ferroviaire' : 'routier'), g.ok ? 'ok' : 'ko', `hauteur libre ${g.Hdispo.toFixed(2)} m (requis ${g.Hreq.toFixed(2)}), marges latérales ${g.margeG.toFixed(2)} / ${g.margeD.toFixed(2)} m`, null, 1); }
+    V.forEach((v) => { v.texte = v.texte.replace(/(\d)\.(\d)/g, '$1,$2'); });   // virgule décimale
     return V;
   }
 
@@ -804,7 +805,8 @@
       cp.push({ p: inn, calque: 'COFFRAGE', ferme: true });
     } else {
       const xt = Lc + d.lartal, xp = o / 2 - d.larpat;
-      for (const sg of [-1, 1]) cp.push({ p: [[sg * xt, zs], [sg * xp, zs], [sg * xp, zB], [sg * o / 2, zB], [sg * o / 2, zI - (gs ? gs[0] : 0)], [sg * (o / 2 - (gs ? gs[1] : 0)), zI], [0, zI], [0, zT], [sg * Lc, zT], [sg * Lc, zB], [sg * xt, zB]], calque: 'COFFRAGE', ferme: true });
+      const g0 = gs ? gs[0] : 0, g1 = gs ? gs[1] : 0;
+      cp.push({ p: [[-xt, zs], [-xp, zs], [-xp, zB], [-o / 2, zB], [-o / 2, zI - g0], [-(o / 2 - g1), zI], [o / 2 - g1, zI], [o / 2, zI - g0], [o / 2, zB], [xp, zB], [xp, zs], [xt, zs], [xt, zB], [Lc, zB], [Lc, zT], [-Lc, zT], [-Lc, zB], [-xt, zB]], calque: 'COFFRAGE', ferme: true });
       cp.push({ cote: [Lc, Lc + d.lartal, zs - 1.3, 'talon ' + fm(d.lartal)] }); cp.push({ cote: [o / 2 - d.larpat, o / 2, zs - 1.3, 'patin ' + fm(d.larpat)] });
     }
     void outer;
@@ -872,8 +874,15 @@
     }
     if (!pts.length) return '';
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const sc = Math.min((W - 2 * pad) / Math.max(x1 - x0, 1e-6), (o.hmax || 420) / Math.max(y1 - y0, 1e-6));
+    let x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const y0 = Math.min(...ys), y1 = Math.max(...ys);
+    let sc = Math.min((W - 2 * pad) / Math.max(x1 - x0, 1e-6), (o.hmax || 420) / Math.max(y1 - y0, 1e-6));
+    // place des textes ancrés à gauche ou à droite (largeur estimée 5,6 px par caractère)
+    for (let it = 0; it < 2; it++) {
+      let a0 = x0, a1 = x1;
+      for (const p of v.prim) if (p.t) { const w = String(p.t[2]).length * 5.6 / sc, an = p.t[5] || 'start'; if (an === 'end') a0 = Math.min(a0, p.t[0] - w); else if (an === 'start') a1 = Math.max(a1, p.t[0] + w); else { a0 = Math.min(a0, p.t[0] - w / 2); a1 = Math.max(a1, p.t[0] + w / 2); } }
+      x0 = a0; x1 = a1; sc = Math.min((W - 2 * pad) / Math.max(x1 - x0, 1e-6), (o.hmax || 420) / Math.max(y1 - y0, 1e-6));
+    }
     const H = (y1 - y0) * sc + 2 * pad, id = 'ot' + (++svgN);
     const X = (x) => (pad + (x - x0) * sc).toFixed(1), Y = (y) => (v.flipY ? pad + (y - y0) * sc : pad + (y1 - y) * sc).toFixed(1);
     let s = '';
