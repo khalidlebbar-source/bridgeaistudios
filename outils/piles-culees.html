@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PILES-CULÉES — Piles, palées et culées de ponts · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/piles-culees.html">
+<meta name="description" content="Calcul des piles, palées et culées de ponts-routes et ponts-rails : poids propre, poussée des terres et des surcharges de remblai, Mononobe-Okabe, vent, choc ; combinaisons EN 1990 A2 ou Fascicule 61 / Livret 2.01 ; stabilité des fondations (Fascicule 62), aciers des fûts, chevêtre, semelle, garde-grève et frettages sous appareils d'appui.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .hid{display:none!important}
+  .sub{font-size:10.5px;color:var(--ink3);margin:12px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .schema{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px}
+  .schema text{font-family:'Outfit',sans-serif;font-size:10px;fill:var(--ink3)}
+  .schema .c-beton{fill:#e9e4d6;stroke:#14171f;stroke-width:1}
+  .schema .c-terre{fill:#c9a84c;fill-opacity:.12;stroke:none}
+  .schema .c-trait{stroke:#14171f;stroke-width:1;fill:none}
+  .schema .c-axe{stroke:#a8842a;stroke-width:.8;stroke-dasharray:6 3 1 3;fill:none}
+  .schema .c-cote{stroke:#6f7484;stroke-width:.6;fill:none}
+  .schema .c-app{fill:#2d6be4;fill-opacity:.65}
+  .schema .c-pieu{fill:#fff;stroke:#0f8f7b;stroke-width:1.2}
+  .schema .c-fleche{stroke:#c0392b;stroke-width:1.4;fill:none}
+  .sch-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:700px){.sch-grid{grid-template-columns:1fr}}
+  .rows-scroll{overflow-x:auto}
+  .grid-in.act input{min-width:52px}.grid-in.act td:first-child input{min-width:150px}
+  .verd{display:flex;gap:8px;flex-wrap:wrap}
+  .verd span{font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid currentColor}
+  .busy{opacity:.55;transition:opacity .2s}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
+      <div class="eyebrow">PILES-CULÉES · appuis</div>
+      <h1>Piles, palées <em>et culées</em></h1>
+      <p class="lead">Fûts ronds, rectangulaires ou oblongs, voiles, chevêtre, culées enterrées et murs de front sur semelle, massif ou pieux : actions propres de l’appui, descentes de charges importées des modules tablier et efforts horizontaux, stabilité des fondations et sections d’aciers par élément.</p>
+      <div class="badges"><span class="badge">EN 1990 A2 · AN</span><span class="badge">EN 1992-2</span><span class="badge">EN 1998-2 / 1998-5</span><span class="badge">Fasc. 61 titre II · BAEL 91</span><span class="badge">Livret 2.01</span><span class="badge">Fasc. 62 titre V</span><span class="badge">SETRA PP 73</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDon">Importer un fichier .don</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card"><div class="card-title"><span>Ouvrage et référentiel</span>
+      <small><select id="preset" style="height:26px;border:1px solid var(--border);border-radius:6px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:11.5px">
+        <option value="">Exemples…</option><option value="culee">Culée enterrée pont-route (ancien référentiel)</option><option value="pile">Pile à deux voiles pont-route (ancien référentiel)</option><option value="ec">Pile de pont-rail (Eurocodes, séisme, choc)</option></select></small></div>
+      <div class="fields" id="fGen"></div></div>
+    <div class="card"><div class="card-title"><span>Fûts, chevêtre, murettes</span><small>m</small></div><div class="fields" id="fFut"></div></div>
+    <div class="card"><div class="card-title"><span>Semelle et terrain</span><small>cotes en m</small></div><div class="fields" id="fSem"></div></div>
+    <div class="card"><div class="card-title"><span>Appareils d’appui</span><small>m</small></div><div class="fields" id="fApp"></div></div>
+    <div class="card"><div class="card-title"><span>Remblai et poussées</span></div><div class="fields" id="fSol"></div></div>
+    <div class="card"><div class="card-title"><span>Fondation</span></div><div class="fields" id="fFond"></div>
+      <div class="actions" style="margin-top:8px"><button class="btn sm" id="bSps">Charger un .sps</button><button class="btn sm" id="bSpsMod">Reprendre le sondage de PRESSIO</button></div>
+      <div class="help" id="spsInfo" style="font-size:11px;color:var(--ink3);margin-top:6px"></div></div>
+    <div class="card"><div class="card-title"><span>Matériaux et aciers</span></div><div class="fields" id="fMat"></div></div>
+    <div class="card"><div class="card-title"><span>Séisme, vent, choc</span></div><div class="fields" id="fSis"></div></div>
+    <div class="card"><div class="card-title"><span>Actions du tablier</span><small>kN, kN·m · V &lt; 0 descendant</small></div>
+      <div class="actions" style="margin-bottom:8px"><button class="btn sm" id="bImpH">Importer efforts horizontaux (.json)</button><button class="btn sm" id="bImpT">Importer descente de charges tablier (.json)</button></div>
+      <div class="rows-scroll" id="rAct"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.5">Valeurs caractéristiques au niveau des appareils d’appui (dessus des bossages). Catégories : G maxi / G mini, GD permanente dalle de transition, R retrait, Q trafic (type A, B, militaire, exceptionnel, rail, SW/2 ; « maxi » avec G maxi, « mini » avec G mini), QT trottoirs, QD dalle de transition, F freinage-démarrage (associé au type de trafic ou « tous »), Td/Tc dilatation/contraction, W vent, EX/EY séisme, AD accidentel. dy : excentricité transversale, dx : décalage longitudinal / appareils. Repère « tablier » : HX longitudinal, HY transversal de l’ouvrage, tournés du biais ; « appui » : X perpendiculaire à la file (efforts importés du module Efforts horizontaux).</div>
+    </div>
+  </div>
+
+  <div class="col-out" id="out">
+    <div class="card"><div class="card-title"><span>Schéma de l’appui</span><small>élévation (X-Z) et vue en plan (X-Y), à l’échelle</small></div><div class="sch-grid" id="schema"></div></div>
+    <div id="res"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+    <div class="card"><div class="card-title"><span>Périmètre et hypothèses</span></div>
+      <details class="ref" open><summary>Ce que calcule le module, et ce qu’il ne calcule pas</summary><ul>
+        <li><b>Repère</b> : origine au milieu de la sous-face de semelle, X perpendiculaire à la file d’appuis et positif vers l’ouvrage, Y le long de la file, Z vers le haut. Les actions du tablier saisies dans le repère du tablier sont tournées du biais de l’appui (ε = 100 − biais, en grades).</li>
+        <li><b>Actions propres</b> : poids du béton (déjaugé sous la nappe), poids des terres sur la semelle (remblai à l’arrière, terrain avant à l’avant, sous-face du chevêtre au droit des poteaux de culée enterrée), poussée active de Coulomb-Rankine sur l’écran (chevêtre, murette, garde-grève) ou sur le mur de front, surcharge de remblai (10 kPa route, Q/3 m par voie ferrée), poussée sur les poteaux de culée enterrée suivant PP 73 (largeur fictive 3 D, pression uniforme). Option « butée sur les poteaux » : les efforts horizontaux suivant X ne sont pas repris en sous-face de semelle et leur bras de levier est réduit de Dz = e semelle + h poteaux / 2.</li>
+        <li><b>Séisme</b> : spectre de l’AN française (zone, classe de sol, catégorie d’importance), kh = α·S/r (EN 1998-5 §7.3.2.2), inerties de l’appui, incrément de Mononobe-Okabe uniforme sur la hauteur retenue, efforts du tablier saisis (ou issus du module Modèle rail), combinaison 100 % / 30 % des directions. L’effet vertical kv n’est retenu que dans la poussée dynamique.</li>
+        <li><b>Combinaisons</b> : EN 1990 A2 + AN (ELU fondamental 6.10, accidentel 6.11b, sismique 6.12b, ELS caractéristique, fréquent, quasi permanent) ou ancien référentiel (Fascicule 61 titre II et BAEL pour les ponts-routes, avec terres × 1,05 / 0,95 et surcharges de remblai × 1,2 pour la stabilité ; Livret 2.01 pour les ponts-rails). Pour les fûts, une action variable d’accompagnement favorable au moment recherché est écartée (« γ ou 0 »).</li>
+        <li><b>Fondations</b> : semelle sous contrainte de rupture q’u saisie (q’ref = (3σmax + σmin)/4, iδ du Fasc. 62, décompression, glissement, déplacement par module de réaction), ou calcul complet sur sondage pressiométrique par le module Fondations (semelle, massif semi-profond, groupe de pieux avec effet de groupe, efforts et aciers des pieux). « Chevêtre sur pieux » : appui sans fûts.</li>
+        <li><b>Fûts</b> : portique transversal fûts + chevêtre (encastrés en pied), statique longitudinale (effort horizontal partagé également entre les fûts), excentricités additionnelles ea + e2 (BAEL A.4.3.5 ; EC2 §5.2 et 5.8.8) avec lf = k·h, sections circulaires (aciers totaux) ou rectangulaires (aciers symétriques par face). Les fûts oblongs sont calculés comme le rectangle enveloppe ; les fûts d’épaisseur variable avec l’épaisseur de base.</li>
+        <li><b>Chevêtre</b> : flexion verticale et effort tranchant par le portique, flexion horizontale sous la poussée de l’écran (q·e²/10, console q·c²/2) ; torsion non calculée. <b>Semelle</b> : statique de semelle rigide (sol ou pieux, poids propres déduits) dans des coupures au nu des fûts et entre fûts, aciers par mètre ; méthode des bielles non utilisée. <b>Appareils</b> : pressions localisées et frettage BAEL A.8.4 (EC2 §6.7), éclatement et équilibre du coin (annexe E.8).</li>
+        <li><b>Garde-grève et murs en retour</b> : méthodes simplifiées (console verticale sous poussée et surcharge ; mur en retour suspendu sous pression moyenne). Non traités : plaques de remblaiement, freinage local sur le garde-grève, chocs de bateau autres qu’une force statique équivalente, actions hydrauliques (courant, affouillement), stabilité générale du remblai.</li>
+      </ul></details>
+    </div>
+  </div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/sondpres.js"></script>
+<script src="js/bael-ec2.js"></script>
+<script src="js/fondatio.js"></script>
+<script src="js/modelpra.js"></script>
+<script src="js/appui.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const E = BA.appui, S = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'appui';
+  const sel = (o) => Object.entries(o);
+
+  /* ── schémas de saisie : identifiant = chemin dans le jeu de données (points remplacés par « _ ») ── */
+  const F_GEN = [
+    { id: 'projet', label: 'Projet', type: 'txt', wide: true },
+    { id: 'regl', label: 'Référentiel', type: 'sel', options: [['EC', 'Eurocodes (EN 1990 A2 + AN)'], ['ANC', 'Ancien : Fasc. 61 / Livret 2.01 + BAEL']], wide: true },
+    { id: 'ouvrage', label: 'Ouvrage porté', type: 'sel', options: [['route', 'Pont-route'], ['rail', 'Pont-rail']] },
+    { id: 'nVoies', label: 'Voies ferrées', type: 'num', def: 1 },
+    { id: 'type', label: 'Type d’appui', type: 'sel', options: [['pile', 'Pile ou palée'], ['culee', 'Culée enterrée (poteaux)'], ['mur', 'Culée à mur de front']] },
+    { id: 'biais', label: 'Biais de l’appui', unit: 'gr', type: 'num', def: 100 },
+    { id: 'livret', label: 'Livret 2.01 chap. 2A (fsu = 0,8 fe/γs à l’ELU fondamental)', type: 'chk', wide: true },
+    { id: 'partCDT', label: 'Part courte durée de la température', type: 'num', def: 0.2857, help: '10 °C sur 35 °C dans les cas de référence' },
+    { id: 'psi21', label: 'ψ2,1 trafic en séisme (EC)', type: 'num', help: 'vide : 0,2 route, 0,3 rail' },
+  ];
+  const F_FUT = [
+    { id: 'geo_fut_forme', label: 'Forme des fûts', type: 'sel', options: [['rond', 'Poteaux ronds'], ['rect', 'Rectangulaires / voiles'], ['oblong', 'Oblongs']] },
+    { id: 'geo_fut_n', label: 'Nombre de fûts', type: 'num' },
+    { id: 'geo_fut_D', label: 'Diamètre (ronds)', unit: 'm', type: 'num' },
+    { id: 'geo_fut_entraxe', label: 'Entraxe suivant Y', unit: 'm', type: 'num' },
+    { id: 'geo_fut_b', label: 'Largeur b suivant Y', unit: 'm', type: 'num' },
+    { id: 'geo_fut_e', label: 'Épaisseur e suivant X', unit: 'm', type: 'num' },
+    { id: 'geo_fut_h', label: 'Hauteur des fûts', unit: 'm', type: 'num', help: 'dessus de semelle → dessous du chevêtre' },
+    { id: 'mat_kf', label: 'lf / h (flambement)', type: 'num', help: '1 : tête tenue ; 2 : console' },
+    { id: 'geo_chev_actif', label: 'Chevêtre', type: 'chk', wide: true },
+    { id: 'geo_chev_L', label: 'Longueur suivant Y', unit: 'm', type: 'num' },
+    { id: 'geo_chev_l', label: 'Largeur suivant X', unit: 'm', type: 'num' },
+    { id: 'geo_chev_h', label: 'Hauteur', unit: 'm', type: 'num' },
+    { id: 'geo_chev_xArr', label: 'Arrière / axe des fûts', unit: 'm', type: 'num' },
+    { id: 'geo_chev_hpm', label: 'Petite murette : hauteur', unit: 'm', type: 'num' },
+    { id: 'geo_chev_lpm', label: 'Petite murette : largeur', unit: 'm', type: 'num' },
+    { id: 'geo_gg_h', label: 'Garde-grève : hauteur', unit: 'm', type: 'num' },
+    { id: 'geo_gg_e', label: 'Garde-grève : épaisseur', unit: 'm', type: 'num' },
+    { id: 'geo_retour_actif', label: 'Murs en retour suspendus', type: 'chk', wide: true },
+    { id: 'geo_retour_Lr', label: 'Longueur', unit: 'm', type: 'num' },
+    { id: 'geo_retour_Hr', label: 'Hauteur', unit: 'm', type: 'num' },
+    { id: 'geo_retour_e', label: 'Épaisseur', unit: 'm', type: 'num' },
+  ];
+  const F_SEM = [
+    { id: 'geo_zBase', label: 'Sous-face de semelle', unit: 'm', type: 'num' },
+    { id: 'geo_ep', label: 'Épaisseur', unit: 'm', type: 'num' },
+    { id: 'geo_B', label: 'Largeur B suivant X', unit: 'm', type: 'num' },
+    { id: 'geo_L', label: 'Longueur L suivant Y', unit: 'm', type: 'num' },
+    { id: 'geo_talon', label: 'Talon arrière (culées)', unit: 'm', type: 'num' },
+    { id: 'geo_exF', label: 'Décalage des fûts suivant X', unit: 'm', type: 'num' },
+    { id: 'geo_zdef', label: 'Terrain définitif / remblai arrière', unit: 'm', type: 'num' },
+    { id: 'geo_zAvant', label: 'Terrain avant (culées)', unit: 'm', type: 'num' },
+    { id: 'geo_ztn', label: 'Terrain naturel', unit: 'm', type: 'num' },
+    { id: 'geo_zeau', label: 'Niveau d’eau', unit: 'm', type: 'num', help: '−1000 : pas de nappe' },
+  ];
+  const F_APP = [
+    { id: 'geo_app_n', label: 'Nombre d’appareils', type: 'num' },
+    { id: 'geo_app_e', label: 'Entraxe suivant Y', unit: 'm', type: 'num' },
+    { id: 'geo_app_xApp', label: 'Axe des appareils / axe des fûts', unit: 'm', type: 'num' },
+    { id: 'geo_app_hb', label: 'Hauteur des bossages', unit: 'm', type: 'num' },
+    { id: 'geo_app_a0', label: 'Appareil a0 (suivant X)', unit: 'm', type: 'num' },
+    { id: 'geo_app_b0', label: 'Appareil b0 (suivant Y)', unit: 'm', type: 'num' },
+    { id: 'geo_app_a', label: 'Bossage a (suivant X)', unit: 'm', type: 'num' },
+    { id: 'geo_app_b', label: 'Bossage b (suivant Y)', unit: 'm', type: 'num' },
+  ];
+  const F_SOL = [
+    { id: 'sol_gamma', label: 'γ remblai', unit: 'kN/m³', type: 'num' },
+    { id: 'sol_gammaSat', label: 'γ saturé', unit: 'kN/m³', type: 'num' },
+    { id: 'sol_phi', label: 'φ du remblai', unit: '°', type: 'num' },
+    { id: 'sol_delta', label: 'Obliquité δ', unit: '°', type: 'num' },
+    { id: 'sol_beta', label: 'Pente du terre-plein β', unit: '°', type: 'num' },
+    { id: 'sol_qRoute', label: 'Charge routière sur remblai', unit: 'kPa', type: 'num' },
+    { id: 'sol_qRail', label: 'Charge ferroviaire sur remblai', unit: 'kN/ml/voie', type: 'num' },
+    { id: 'sol_largRail', label: 'Largeur de diffusion par voie', unit: 'm', type: 'num' },
+    { id: 'sol_kf3D', label: 'Largeur fictive des poteaux', unit: '× D', type: 'num' },
+    { id: 'sol_butee', label: 'Butée sur les poteaux (culée enterrée, PP 73)', type: 'chk', wide: true },
+  ];
+  const F_FOND = [
+    { id: 'fond_type', label: 'Type', type: 'sel', options: [['sup', 'Superficielle (semelle)'], ['semi', 'Semi-profonde (massif)'], ['pieux', 'Profonde (pieux)'], ['chevpieux', 'Chevêtre sur pieux']] },
+    { id: 'fond_mode', label: 'Paramètres de sol', type: 'sel', options: [['saisie', 'Saisis (q’u, kv)'], ['sps', 'Sondage pressiométrique']] },
+    { id: 'fond_qu', label: 'q’u', unit: 'MPa', type: 'num' },
+    { id: 'fond_De', label: 'De', unit: 'm', type: 'num' },
+    { id: 'fond_kv', label: 'kv longue durée', unit: 'MPa/m', type: 'num' },
+    { id: 'fond_rapSol', label: 'Rapport kv courte / longue', type: 'num' },
+    { id: 'fond_phi', label: 'φ’ sous la fondation', unit: '°', type: 'num' },
+    { id: 'fond_c', label: 'c’ sous la fondation', unit: 'kPa', type: 'num' },
+    { id: 'fond_sol', label: 'Sol', type: 'sel', options: [['frottant', 'Frottant'], ['coherent', 'Cohérent']] },
+    { id: 'fond_massif_B', label: 'Massif : B (X)', unit: 'm', type: 'num' },
+    { id: 'fond_massif_L', label: 'Massif : L (Y)', unit: 'm', type: 'num' },
+    { id: 'fond_massif_h', label: 'Massif : hauteur', unit: 'm', type: 'num' },
+    { id: 'fond_pieux_type', label: 'Pieux', type: 'sel', options: [[1, 'Foré simple'], [2, 'Foré boue'], [3, 'Foré tubé récupéré'], [4, 'Foré tubé perdu']] },
+    { id: 'fond_pieux_D', label: 'Diamètre', unit: 'm', type: 'num' },
+    { id: 'fond_pieux_Lp', label: 'Longueur', unit: 'm', type: 'num' },
+    { id: 'fond_pieux_nFiles', label: 'Files (suivant X)', type: 'num' },
+    { id: 'fond_pieux_nParFile', label: 'Pieux par file', type: 'num' },
+    { id: 'fond_pieux_eFile', label: 'Entraxe des files', unit: 'm', type: 'num' },
+    { id: 'fond_pieux_ePieu', label: 'Entraxe dans la file', unit: 'm', type: 'num' },
+  ];
+  const F_MAT = [
+    { id: 'mat_gammaB', label: 'γ béton', unit: 'kN/m³', type: 'num' },
+    { id: 'mat_fck', label: 'fc28 / fck', unit: 'MPa', type: 'num' },
+    { id: 'mat_fe', label: 'fe / fyk', unit: 'MPa', type: 'num' },
+    { id: 'mat_fiss', label: 'Fissuration (BAEL)', type: 'sel', options: [[0, 'Peu préjudiciable'], [1, 'Préjudiciable'], [2, 'Très préjudiciable']] },
+    { id: 'mat_cFut', label: 'Axe des aciers / parement : fûts', unit: 'm', type: 'num' },
+    { id: 'mat_cSem', label: 'Axe des aciers : semelle', unit: 'm', type: 'num' },
+    { id: 'mat_cChev', label: 'Axe des aciers : chevêtre, murs', unit: 'm', type: 'num' },
+    { id: 'mat_ssFut', label: 'σs limite ELS des fûts', unit: 'MPa', type: 'num', help: '0 : valeur BAEL ; 240 : cas de référence Livret' },
+  ];
+  const F_SIS = [
+    { id: 'sismique_actif', label: 'Séisme (EN 1998)', type: 'chk', wide: true },
+    { id: 'sismique_zone', label: 'Zone', type: 'sel', options: [[1, '1 très faible'], [2, '2 faible'], [3, '3 modérée'], [4, '4 moyenne'], [5, '5 forte']] },
+    { id: 'sismique_sol', label: 'Classe de sol', type: 'sel', options: [['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D'], ['E', 'E']] },
+    { id: 'sismique_classe', label: 'Catégorie d’importance', type: 'sel', options: [['I', 'I'], ['II', 'II'], ['III', 'III'], ['IV', 'IV']] },
+    { id: 'sismique_r', label: 'r (EN 1998-5)', type: 'num', help: '1 : culée tenue' },
+    { id: 'sismique_khAppui', label: 'kh imposé', type: 'num', help: '0 : α·S/r' },
+    { id: 'vent_q', label: 'Vent sur les fûts', unit: 'kPa', type: 'num' },
+    { id: 'choc_actif', label: 'Choc sur le fût d’extrémité (EN 1991-1-7)', type: 'chk', wide: true },
+    { id: 'choc_Fdx', label: 'Fdx', unit: 'kN', type: 'num' },
+    { id: 'choc_Fdy', label: 'Fdy', unit: 'kN', type: 'num' },
+    { id: 'choc_h', label: 'Hauteur / terrain', unit: 'm', type: 'num' },
+  ];
+  const ACT_COLS = [
+    { id: 'nom', label: 'Action', type: 'txt', def: 'Action' },
+    { id: 'cat', label: 'Cat.', type: 'sel', def: 'Q', options: [['Gmax', 'G maxi'], ['Gmin', 'G mini'], ['GD', 'GD'], ['R', 'R'], ['Q', 'Q'], ['QT', 'QT'], ['QD', 'QD'], ['F', 'F'], ['Td', 'Td'], ['Tc', 'Tc'], ['W', 'W'], ['EX', 'EX'], ['EY', 'EY'], ['AD', 'AD']] },
+    { id: 'qt', label: 'Type', type: 'sel', def: '', options: [['', '—'], ['A', 'A'], ['B', 'B'], ['M', 'mil.'], ['E', 'exc.'], ['rail', 'rail'], ['sw2', 'SW/2'], ['*', 'tous']] },
+    { id: 'etatG', label: 'Avec', type: 'sel', def: '', options: [['', 'tous'], ['max', 'G max'], ['min', 'G min']] },
+    { id: 'V', label: 'V', def: 0 }, { id: 'HX', label: 'HX', def: 0 }, { id: 'HY', label: 'HY', def: 0 }, { id: 'MX', label: 'MX', def: 0 }, { id: 'MY', label: 'MY', def: 0 },
+    { id: 'dy', label: 'dy', def: 0 }, { id: 'dx', label: 'dx', def: 0 },
+    { id: 'rep', label: 'Repère', type: 'sel', def: 't', options: [['t', 'tablier'], ['a', 'appui']] },
+  ];
+  const FORMS = [['fGen', F_GEN], ['fFut', F_FUT], ['fSem', F_SEM], ['fApp', F_APP], ['fSol', F_SOL], ['fFond', F_FOND], ['fMat', F_MAT], ['fSis', F_SIS]];
+  const pathGet = (o, id) => id.split('_').reduce((a, k) => (a == null ? undefined : a[k]), o);
+  const pathSet = (o, id, v) => { const ks = id.split('_'); let a = o; ks.slice(0, -1).forEach((k) => { if (a[k] == null || typeof a[k] !== 'object') a[k] = {}; a = a[k]; }); a[ks[ks.length - 1]] = v; };
+
+  let data = null, sps = null, spsNom = '', last = null;
+  const rowsAct = BA.rows(document.getElementById('rAct'), ACT_COLS, [], { addLabel: 'Ajouter une action', onChange: () => { persist(); sched(); } });
+  document.querySelector('#rAct table').classList.add('act');
+
+  function fill(d) {
+    data = JSON.parse(JSON.stringify(d));
+    FORMS.forEach(([el, F]) => { const v = {}; F.forEach((f) => (v[f.id] = pathGet(data, f.id))); BA.form(document.getElementById(el), F, '', v); });
+    rowsAct.set((data.actions || []).map((a) => Object.assign({ nom: '', cat: 'Q', qt: '', etatG: '', V: 0, HX: 0, HY: 0, MX: 0, MY: 0, dy: 0, dx: 0, rep: 't' }, a)));
+    document.querySelector('#rAct table') && document.querySelector('#rAct table').classList.add('act');
+    spsInfo();
+  }
+  function read() {
+    const d = JSON.parse(JSON.stringify(data || E.exemple('culee')));
+    FORMS.forEach(([, F]) => { const v = BA.read(F, ''); F.forEach((f) => { let x = v[f.id]; if (f.type === 'num' && !Number.isFinite(x)) x = f.id === 'psi21' ? undefined : 0; pathSet(d, f.id, x); }); });
+    d.actions = rowsAct.data.map((r) => { const o = {}; ACT_COLS.forEach((c) => { const v = r[c.id]; o[c.id] = c.type === 'txt' || c.type === 'sel' ? v : (Number.isFinite(+v) ? +v : 0); }); return o; });
+    return d;
+  }
+  function persist() { try { BA.store.save(KEY, { v: 1, d: read(), sps, spsNom }); } catch (e) { /* stockage indisponible */ } }
+  function spsInfo() {
+    const el = document.getElementById('spsInfo');
+    el.innerHTML = sps ? `Sondage : <b style="font-weight:500">${esc(spsNom || 'sondage')}</b> — tête ${fmt(sps.z, 2)} m, ${S.couches(sps).length} couche(s) de calcul.` : 'Aucun sondage chargé : la semelle est calculée avec les paramètres saisis ; massif et pieux demandent un sondage.';
+  }
+  let tmr = null;
+  const sched = () => { clearTimeout(tmr); tmr = setTimeout(() => { schema(read()); }, 150); };
+
+  /* ── schéma coté (élévation X-Z et vue en plan X-Y) ── */
+  function schema(d) {
+    let G;
+    try { G = E.geometrie(JSON.parse(JSON.stringify(d.fond && d.fond.type === 'chevpieux' ? Object.assign({}, d, { geo: Object.assign({}, d.geo, { fut: Object.assign({}, d.geo.fut, { n: 0 }) }) }) : d))); } catch (e) { return; }
+    const g = d.geo, W = 360, H = 300, pad = 34;
+    const C = G.chev, ggH = +(g.gg && g.gg.h) || 0;
+    const zTopAll = Math.max(G.zApp, g.zdef, G.zTop + ggH) + 0.3, pieux = d.fond && /pieux/.test(d.fond.type);
+    const zBot = g.zBase - (pieux ? Math.min(+d.fond.pieux.Lp || 0, 6) : 0.6);
+    const xMin = -g.B / 2 - 1.2, xMax = g.B / 2 + 1.2;
+    const s = Math.min((W - 2 * pad) / (xMax - xMin), (H - 2 * pad) / (zTopAll - zBot));
+    const X = (x) => pad + (x - xMin) * s, Z = (z) => H - pad - (z - zBot) * s;
+    const rect = (x0, z0, x1, z1, cls) => `<rect x="${X(Math.min(x0, x1)).toFixed(1)}" y="${Z(Math.max(z0, z1)).toFixed(1)}" width="${(Math.abs(x1 - x0) * s).toFixed(1)}" height="${(Math.abs(z1 - z0) * s).toFixed(1)}" class="${cls}"/>`;
+    const cote = (x0, z0, x1, z1, t, off = 0) => `<line x1="${X(x0)}" y1="${Z(z0) + off}" x2="${X(x1)}" y2="${Z(z1) + off}" class="c-cote"/><text x="${(X(x0) + X(x1)) / 2}" y="${(Z(z0) + Z(z1)) / 2 + off - 3}" text-anchor="middle">${t}</text>`;
+    let e = '';
+    // terres
+    if (d.type === 'pile') e += rect(xMin, g.zBase + g.ep, xMax, g.zdef, 'c-terre');
+    else { const xb = G.xBack; e += rect(xMin, g.zBase, xb, g.zdef, 'c-terre') + rect(xb, g.zBase, xMax, g.zAvant, 'c-terre'); }
+    e += rect(-g.B / 2, g.zBase, g.B / 2, g.zBase + g.ep, 'c-beton');
+    if (G.nF) e += rect(G.xF - G.dimX / 2, G.zTS, G.xF + G.dimX / 2, G.zTF, 'c-beton');
+    if (C) { e += rect(C.x0, C.z0, C.x1, C.z1, 'c-beton'); if (C.hpm > 0) e += rect(C.x0, C.z1, C.x0 + C.lpm, C.z1 + C.hpm, 'c-beton'); }
+    if (ggH > 0 && g.gg.e > 0) { const x0 = G.xBack !== null ? G.xBack : G.xF; e += rect(x0, G.zTop, x0 + g.gg.e, G.zTop + ggH, 'c-beton'); }
+    if (+g.app.hb > 0 || G.nA) e += rect(G.xApp - (+g.app.a || 0.3) / 2, G.zTop, G.xApp + (+g.app.a || 0.3) / 2, G.zApp, 'c-app');
+    if (pieux) { const P = E.pieuxPlan(d.fond.pieux), xs = [...new Set(P.map((p) => +p.x.toFixed(3)))]; const D = +d.fond.pieux.D || 1; xs.forEach((x) => (e += rect(x - D / 2, zBot, x + D / 2, g.zBase, 'c-pieu'))); }
+    e += `<line x1="${X(G.xF)}" y1="${Z(zBot)}" x2="${X(G.xF)}" y2="${Z(zTopAll)}" class="c-axe"/>`;
+    // poussée (culées) et action du tablier
+    if (d.type !== 'pile') { const xb = G.xBack; e += `<path d="M${X(xb) - 30} ${Z(G.zTF + 0.5)}h24m-6 -4l6 4-6 4" class="c-fleche"/>`; }
+    e += `<path d="M${X(G.xApp)} ${Z(G.zApp) - 24}v20m-4 -6l4 6 4-6" class="c-fleche"/>`;
+    e += cote(-g.B / 2, g.zBase, g.B / 2, g.zBase, 'B = ' + fmt(g.B, 2) + ' m', 14);
+    e += `<text x="${X(g.B / 2) + 4}" y="${Z(g.zBase) + 3}">${fmt(g.zBase, 2)}</text><text x="${X(xMin) + 2}" y="${Z(g.zdef) - 3}">TD ${fmt(g.zdef, 2)}</text>`;
+    if (G.nF) e += `<text x="${X(G.xF + G.dimX / 2) + 4}" y="${(Z(G.zTS) + Z(G.zTF)) / 2}">h = ${fmt(G.hF, 2)}</text>`;
+    e += `<text x="${X(G.xApp) + 6}" y="${Z(G.zApp) - 14}" style="fill:#c0392b">tablier ${fmt(G.zApp, 2)}</text>`;
+    const elev = `<svg class="schema" viewBox="0 0 ${W} ${H}" role="img" aria-label="Élévation de l'appui"><text x="8" y="14" style="fill:#a8842a;font-size:10.5px">ÉLÉVATION (X → ouvrage)</text>${e}</svg>`;
+    // vue en plan
+    const yMin = -g.L / 2 - 0.8, yMax = g.L / 2 + 0.8, Hp = 300;
+    const sp = Math.min((W - 2 * pad) / (yMax - yMin), (Hp - 2 * pad) / (xMax - xMin));
+    const PX = (y) => pad + (y - yMin) * sp, PY = (x) => Hp - pad - (x - xMin) * sp;
+    const prect = (x0, y0, x1, y1, cls) => `<rect x="${PX(Math.min(y0, y1)).toFixed(1)}" y="${PY(Math.max(x0, x1)).toFixed(1)}" width="${(Math.abs(y1 - y0) * sp).toFixed(1)}" height="${(Math.abs(x1 - x0) * sp).toFixed(1)}" class="${cls}"/>`;
+    let p = prect(-g.B / 2, -g.L / 2, g.B / 2, g.L / 2, 'c-beton');
+    if (C) p += prect(C.x0, -C.L / 2, C.x1, C.L / 2, 'c-trait');
+    if (pieux) E.pieuxPlan(d.fond.pieux).forEach((q) => (p += `<circle cx="${PX(q.y)}" cy="${PY(q.x)}" r="${(+d.fond.pieux.D || 1) / 2 * sp}" class="c-pieu"/>`));
+    G.yF.forEach((y) => { p += d.geo.fut.forme === 'rond' ? `<circle cx="${PX(y)}" cy="${PY(G.xF)}" r="${G.dimX / 2 * sp}" class="c-beton"/>` : prect(G.xF - G.dimX / 2, y - G.dimY / 2, G.xF + G.dimX / 2, y + G.dimY / 2, 'c-beton'); });
+    G.yA.forEach((y) => (p += prect(G.xApp - (+g.app.a0 || 0.2) / 2, y - (+g.app.b0 || 0.3) / 2, G.xApp + (+g.app.a0 || 0.2) / 2, y + (+g.app.b0 || 0.3) / 2, 'c-app')));
+    p += `<line x1="${PX(yMin)}" y1="${PY(G.xF)}" x2="${PX(yMax)}" y2="${PY(G.xF)}" class="c-axe"/>`;
+    p += `<line x1="${PX(-g.L / 2)}" y1="${PY(-g.B / 2) + 14}" x2="${PX(g.L / 2)}" y2="${PY(-g.B / 2) + 14}" class="c-cote"/><text x="${PX(0)}" y="${PY(-g.B / 2) + 26}" text-anchor="middle">L = ${fmt(g.L, 2)} m</text>`;
+    if (G.nF > 1) p += `<text x="${(PX(G.yF[0]) + PX(G.yF[1])) / 2}" y="${PY(G.xF) - 6}" text-anchor="middle">${fmt(Math.abs(G.yF[1] - G.yF[0]), 2)}</text>`;
+    p += `<path d="M${W - 26} ${Hp - 40}v-20m-4 6l4-6 4 6" class="c-trait"/><text x="${W - 22}" y="${Hp - 64}">X</text><path d="M${W - 26} ${Hp - 40}h-20m6 -4l-6 4 6 4" class="c-trait"/><text x="${W - 54}" y="${Hp - 44}">Y</text>`;
+    const plan = `<svg class="schema" viewBox="0 0 ${W} ${Hp}" role="img" aria-label="Vue en plan de l'appui"><text x="8" y="14" style="fill:#a8842a;font-size:10.5px">VUE EN PLAN</text>${p}</svg>`;
+    document.getElementById('schema').innerHTML = elev + plan;
+  }
+
+  /* ── calcul et affichage ── */
+  const V = (ok) => BA.verdict(ok);
+  const n1 = (x) => fmt(x, 1), n2 = (x) => fmt(x, 2), n3 = (x) => fmt(x, 3);
+  function calc() {
+    const d = read(); persist(); schema(d);
+    document.getElementById('res').classList.add('busy');
+    setTimeout(() => {
+      try { last = E.calc(d, { sps: d.fond.mode === 'sps' || d.fond.type !== 'sup' ? sps : null }); render(last); }
+      catch (e) { document.getElementById('res').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; last = null; }
+      document.getElementById('res').classList.remove('busy');
+    }, 20);
+  }
+  function sections(r) {
+    const d = r.d, G = r.G, out = {}, F = r.fond;
+    // synthèse
+    out.synth = `<div class="verd">${r.verdicts.map((v) => `<span class="${v.ok ? 'ok' : 'ko'}">${v.el} : ${v.ok ? 'vérifié' : 'non vérifié'}</span>`).join('')}</div>`
+      + (r.alertes.length ? `<div class="msg err" style="margin-top:8px">${r.alertes.map(esc).join('<br>')}</div>` : '')
+      + `<div style="font-size:12px;color:var(--ink3);margin-top:8px">${esc(r.coefs.nom)} · ${r.combs.length} combinaisons · Ka = ${n3(r.Ka)}${r.butee ? ` · butée sur les poteaux, Dz = ${n3(r.Dz)} m` : ''}${r.sis ? ` · séisme : ag = ${n2(r.sis.ag)} m/s², S = ${n2(r.sis.S)}, kh = ${n3(r.sis.kh)}, kv = ±${n3(r.sis.kv)}${r.sis.mo ? `, K_AE = ${n3(r.sis.mo.Ktot)}` : ''}` : ''}</div>`;
+    // actions propres
+    const ap = r.acts.filter((a) => !a.tab && !/^t\d/.test(a.id));
+    out.actions = BA.table(['Action', 'Cat.', 'Fx', 'Fy', 'Fz', 'x', 'y', 'z / semelle'], ap.map((a) => [esc(a.nom), a.cat, n2(a.F[0]), n2(a.F[1]), n2(a.F[2]), n3(a.P[0]), n3(a.P[1]), n3(a.P[2] - d.geo.zBase)]), { leftText: true })
+      + BA.table(['Action du tablier (repère appui)', 'Cat.', 'V', 'HX', 'HY', 'MX', 'MY', 'y', 'part CD'], r.acts.filter((a) => /^t\d/.test(a.id)).map((a) => [esc(a.nom), a.cat + (a.qt ? ' ' + a.qt : ''), n1(a.F[2]), n2(a.F[0]), n2(a.F[1]), n1(a.F[3]), n1(a.F[4]), n3(a.P[1]), n2(a.cd)]), { leftText: true });
+    // fondation
+    if (F && F.mode === 'saisie') {
+      const s = F.synth;
+      out.fond = BA.kpis([
+        { l: 'q’ref ELS maxi', v: n3(s.els.qref), u: 'MPa', n: `limite ${n3(s.els.qadm)} · ${esc(s.els.nom)}`, cls: s.els.okP ? 'ok' : 'ko' },
+        { l: 'q’ref ELU maxi', v: n3(s.elu.qref), u: 'MPa', n: `limite ${n3(s.elu.qadm)} · ${esc(s.elu.nom)}`, cls: s.elu.okP ? 'ok' : 'ko' },
+        { l: 'Glissement Hres/H', v: Number.isFinite(s.glis.glis) ? n2(s.glis.glis) : '∞', n: esc(s.glis.nom), cls: s.glis.okG ? 'ok' : 'ko' },
+        { l: 'Décompression maxi', v: n1(Math.max(...F.combs.map((c) => c.decomp))), u: '%', n: `q’0 = ${n3(F.q0)} MPa`, cls: F.combs.every((c) => c.okD) ? 'ok' : 'ko' },
+      ]) + BA.table(['N°', 'Type', 'Combinaison', 'V', 'HX', 'HY', 'MX', 'MY', 'σmax', 'σmin', 'Décomp. %', 'q’ref', 'q’lim', 'Hres/H', 'w (mm)', ''],
+        F.combs.map((c) => [c.n, c.type, esc(c.nom), n1(-c.T[2]), n1(c.T[0]), n1(c.T[1]), n1(c.T[3]), n1(c.T[4]), n3(c.smax), n3(c.smin), n1(c.decomp), n3(c.qref), n3(c.qadm), c.type.startsWith('ELU') ? (Number.isFinite(c.glis) ? n2(c.glis) : '∞') : '—', n1(c.wz), V(c.ok)]), { leftText: true });
+    } else if (F) {
+      if (F.type === 'pieux') {
+        const pt = F.pt;
+        out.fond = BA.kpis([
+          { l: 'N maxi en tête', v: n1(Math.max(...F.combs.map((c) => c.Nmax))), u: 'kN', n: `Qu = ${n1(pt.Qu)} · Qc = ${n1(pt.Qc)} kN` },
+          { l: 'N mini en tête', v: n1(Math.min(...F.combs.map((c) => c.Nmin))), u: 'kN' },
+          { l: 'Aciers des pieux', v: n1(Math.max(...F.acier.sections.map((s) => s.A))), u: 'cm²', n: F.acier.methode },
+          { l: 'Portance', v: F.synth.ok ? 'vérifiée' : 'non vérifiée', cls: F.synth.ok ? 'ok' : 'ko' },
+        ]) + BA.table(['N°', 'Type', 'Combinaison', 'N maxi', 'N mini', 'limite', ''], F.combs.map((c) => [c.n, c.type, esc(c.nom), n1(c.Nmax), n1(c.Nmin), n1(c.qmax), V(c.ok)]), { leftText: true });
+      } else {
+        out.fond = BA.kpis([{ l: 'q’u', v: n3(F.qu), u: 'MPa', n: `ple* ${n3(F.ple)} · De ${n2(F.De)} · kp ${n3(F.kp)}` }, { l: 'Stabilité', v: F.synth.ok ? 'vérifiée' : 'non vérifiée', cls: F.synth.ok ? 'ok' : 'ko' }])
+          + BA.table(['N°', 'Type', 'Combinaison', 'σmax', 'σmin', 'Décomp. %', 'q’ref', 'q’lim', ''], F.combs.map((c) => [c.n, c.type, esc(c.nom), n3(c.smax), n3(c.smin), n1(c.decomp), n3(c.qref), n3(c.qadm), V(c.ok)]), { leftText: true });
+      }
+    }
+    // fûts
+    if (r.futs) {
+      const rond = d.geo.fut.forme === 'rond';
+      out.futs = r.futs.futs.map((f) => `<div class="sub">Fût ${f.i + 1} (y = ${n2(f.y)} m)</div>` + BA.table(rond
+        ? ['Hauteur / base', 'N ELU', 'M ELU (1er ordre)', 'M ELU + ea + e2', 'As ELU', 'As ELS', 'As mini', 'As retenu', 'τu', 'At/st']
+        : ['Hauteur / base', 'N ELU', 'MY ELU (1er ordre)', 'MY + ea + e2', 'As/face ELU', 'As/face ELS', 'mini', 'retenu / face', 'petites faces (MX)', 'τu'],
+      f.secs.map((s) => rond
+        ? [n2(s.h), s.crit.elu ? n1(s.crit.elu.N) : '—', s.crit.elu ? n1(s.crit.elu.M1) : '—', s.crit.elu ? n1(s.crit.elu.M) : '—', n2(s.A.tot), n2(s.A.els || 0), n2(s.A.min), `<b>${n2(s.A.ret)}</b>`, s.cis ? n2(s.cis.tau ?? s.cis.tauV) : '—', s.cis ? n2(s.cis.AtSurB0 ?? s.cis.Asw) : '—']
+        : [n2(s.h), s.crit.elu ? n1(s.crit.elu.N) : '—', s.crit.elu ? n1(s.crit.elu.M1) : '—', s.crit.elu ? n1(s.crit.elu.M) : '—', n2(s.A.face), n2(s.A.els || 0), n2(s.A.min), `<b>${n2(s.A.ret)}</b>`, n2(s.A.petite), s.cis ? n2(s.cis.tau ?? s.cis.tauV) : '—']))).join('')
+        + `<div class="msg ${r.futs.pctMax > r.futs.pmax ? 'err' : 'info'}" style="margin-top:8px">Pourcentage d’aciers maxi ${n2(100 * r.futs.pctMax)} % (limite ${n1(100 * r.futs.pmax)} %). σs limite ELS = ${n1(r.futs.ssLim)} MPa ; lf = ${n2(r.futs.lf)} m.${d.type === 'culee' ? ' PP 73 : prévoir au moins 2 % de la section des poteaux de culée enterrée (aléas de remblayage).' : ''}</div>`;
+    }
+    if (r.chev) {
+      const c = r.chev;
+      out.chev = BA.kpis([{ l: 'Aciers inférieurs', v: n2(c.Ainf), u: 'cm²' }, { l: 'Aciers supérieurs', v: n2(c.Asup), u: 'cm²' }, { l: 'Flexion horizontale', v: n2(c.AH), u: 'cm²', n: `M = ${n1(c.MH)} kN·m (q = ${n1(c.qH)} kN/m)` }, { l: 'Effort tranchant', v: n1(c.Vmax), u: 'kN', n: c.cis ? `τ = ${n2(c.cis.tau ?? c.cis.tauV)} MPa` : '', cls: c.ok ? 'ok' : 'ko' }])
+        + BA.table(['y (m)', 'M ELU +', 'M ELU −', 'M ELS +', 'M ELS −', 'V ELU', 'A inf', 'A sup'], c.secs.map((s) => [n2(s.y), n1(s.env.ELU[0]), n1(s.env.ELU[1]), n1(s.env.ELS[0]), n1(s.env.ELS[1]), n1(s.env.V), n2(s.Ainf), n2(s.Asup)]))
+        + `<div style="font-size:11.5px;color:var(--ink3);margin-top:6px">M &gt; 0 : fibre inférieure tendue. PP 73 : aciers longitudinaux ≥ 0,5 % (${n1(c.pp73.Along)} cm²), armatures transversales ≥ 0,2 % (${n1(c.pp73.At)} cm²/m).</div>`;
+    }
+    if (r.sem) {
+      const s = r.sem;
+      out.sem = BA.kpis([{ l: 'Aciers inf. suivant X', v: n2(s.trans.inf), u: 'cm²/m' }, { l: 'Aciers sup. suivant X', v: n2(s.trans.sup), u: 'cm²/m' }, { l: 'Aciers inf. suivant Y', v: n2(s.long.inf), u: 'cm²/m' }, { l: 'Aciers sup. suivant Y', v: n2(s.long.sup), u: 'cm²/m' }])
+        + BA.table(['Coupure', 'Dir.', 'Position', 'M ELU +', 'M ELU −', 'M ELS +', 'M ELS −', 'A inf', 'A sup', 'τ', 'τ lim', ''], s.cuts.map((c) => [esc(c.cote), c.dir.toUpperCase(), n2(c.v), n1(c.env.ELU[0]), n1(c.env.ELU[1]), n1(c.env.ELS[0]), n1(c.env.ELS[1]), n2(c.Ainf), n2(c.Asup), c.entre ? '—' : n2(c.tau), c.entre ? '—' : n2(c.tlim), c.entre ? '' : V(c.okV)]), { leftText: true })
+        + `<div style="font-size:11.5px;color:var(--ink3);margin-top:6px">Moments par mètre (kN·m/m), M &gt; 0 : fibre inférieure tendue ; aciers « suivant X » = barres parallèles à X. Minimums : non-fragilité, Fasc. 62 titre V B.4.3 (1 ‰ en partie inférieure, 0,5 ‰ en partie supérieure).</div>`;
+    }
+    if (r.app) {
+      const a = r.app;
+      out.app = BA.kpis([{ l: 'Réaction ELU maxi', v: n1(a.Pu), u: 'kN', n: 'par appareil, comb. ' + a.crit }, { l: d.regl === 'EC' ? 'FRdu (EC2 6.7)' : 'σ / K·fbu', v: d.regl === 'EC' ? n1(a.FRdu) : n2(a.sig) + ' / ' + n2(a.sigAdm), u: d.regl === 'EC' ? 'kN' : 'MPa', n: 'K = ' + fmt(a.K, 4), cls: a.okK ? 'ok' : 'ko' }, { l: 'Frettage de surface', v: n2(a.As), u: 'cm²' }, { l: 'Équilibre du coin', v: n2(a.Al), u: 'cm²' }])
+        + BA.table(['Direction', 'd1 (m)', 'σb', '0,9 fcj', 'σte', '1,7 ftj', 'Ae (cm²)'], [['parallèle à la file', n3(a.par.d1), n3(a.par.sb), n2(a.sbLim), n3(a.par.ste), n3(a.steLim), n2(a.par.Ae)], ['perpendiculaire', n3(a.perp.d1), n3(a.perp.sb), n2(a.sbLim), n3(a.perp.ste), n3(a.steLim), n2(a.perp.Ae)]], { leftText: true });
+    }
+    if (r.gg || r.retour) {
+      out.murs = (r.gg ? BA.table(['Mur garde-grève', 'M terres', 'M surcharge', 'M ELS', 'M ELU', 'As (cm²/m)'], [['console verticale', n2(r.gg.Mt), n2(r.gg.Mq), n2(r.gg.Mels), n2(r.gg.Melu), n2(r.gg.A)]], { leftText: true }) : '')
+        + (r.retour ? BA.table(['Murs en retour', 'Poussée (kN)', 'M horizontal', 'Aciers horizontaux (cm²/m)', 'Poids (kN)', 'M vertical', 'Aciers en tête (cm²)'], [['par mur', n1(r.retour.P), n1(r.retour.Mh), n2(r.retour.AhMl), n1(r.retour.W), n1(r.retour.Mv), n2(r.retour.Av)]], { leftText: true }) : '');
+    }
+    return out;
+  }
+  function render(r) {
+    const s = sections(r);
+    const card = (t, h, sub) => (h ? BA.card(t, h, sub) : '');
+    document.getElementById('res').innerHTML = card('Synthèse', s.synth)
+      + card('Fondation', s.fond, r.fond && r.fond.mode === 'sps' ? 'module Fondations, sondage pressiométrique' : 'paramètres saisis')
+      + card('Fûts', s.futs, 'efforts en pied et le long des fûts')
+      + card('Chevêtre', s.chev, 'portique transversal') + card('Semelle', s.sem, 'semelle rigide')
+      + card('Appareils d’appui : pressions localisées', s.app, 'BAEL A.8.4, annexe E.8 ; EC2 6.7')
+      + card('Garde-grève et murs en retour', s.murs)
+      + `<div class="card"><div class="card-title"><span>Actions élémentaires</span><small>repère de l’appui, kN, m</small></div><details class="ref"><summary>Afficher les actions propres et du tablier</summary>${s.actions}</details></div>`;
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!last) { alert('Lancer le calcul.'); return; }
+    const r = last, d = r.d, s = sections(r), G = r.G;
+    const geo = BA.table(['Rubrique', 'Valeur'], [
+      ['Type d’appui', { pile: 'Pile ou palée', culee: 'Culée enterrée', mur: 'Culée à mur de front' }[d.type]], ['Ouvrage', d.ouvrage === 'rail' ? `pont-rail, ${d.nVoies} voie(s)` : 'pont-route'], ['Référentiel', esc(r.coefs.nom) + (d.livret && d.regl !== 'EC' ? ' — Livret 2.01 chap. 2A' : '')],
+      ['Semelle', `${n2(d.geo.B)} × ${n2(d.geo.L)} × ${n2(d.geo.ep)} m, sous-face ${n3(d.geo.zBase)}`], ['Fûts', G.nF ? `${G.nF} × ${d.geo.fut.forme === 'rond' ? 'Ø ' + n2(d.geo.fut.D) : n2(d.geo.fut.b) + ' × ' + n2(d.geo.fut.e)} m, h = ${n3(G.hF)} m, entraxe ${n2(d.geo.fut.entraxe)} m` : 'sans fûts'],
+      ['Chevêtre', G.chev ? `${n2(G.chev.L)} × ${n2(G.chev.l)} × ${n2(G.chev.h)} m` : '—'], ['Appareils', `${G.nA} au niveau ${n3(G.zApp)}, entraxe ${n2(d.geo.app.e)} m`],
+      ['Terrains', `remblai / TD ${n3(d.geo.zdef)}, avant ${n3(d.geo.zAvant)}, eau ${d.geo.zeau > -999 ? n3(d.geo.zeau) : 'sans'}`], ['Matériaux', `fc ${d.mat.fck} MPa, fe ${d.mat.fe} MPa, γb ${d.mat.gammaB} kN/m³`]], { leftText: true });
+    const svg = document.getElementById('schema').innerHTML;
+    BA.note({ titre: 'Piles, palées et culées', code: 'PILES-CULÉES', regl: r.coefs.nom + ' · Fasc. 62 titre V · EN 1992 / BAEL 91', projet: d.projet,
+      sections: [{ titre: 'Données et géométrie', html: geo + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${svg}</div>` },
+        { titre: 'Actions élémentaires', html: s.actions }, { titre: 'Synthèse des vérifications', html: s.synth },
+        { titre: 'Fondation', html: s.fond || '—' }, s.futs ? { titre: 'Fûts', html: s.futs } : null, s.chev ? { titre: 'Chevêtre', html: s.chev } : null,
+        s.sem ? { titre: 'Semelle', html: s.sem } : null, s.app ? { titre: 'Appareils d’appui', html: s.app } : null, s.murs ? { titre: 'Garde-grève et murs en retour', html: s.murs } : null,
+        { titre: 'Combinaisons', html: BA.table(['N°', 'Type', 'Combinaison'], r.combs.map((c) => [c.n, c.type, esc(c.nom)]), { leftText: true }) }].filter(Boolean) });
+  }
+
+  /* ── boutons ── */
+  document.getElementById('bCalc').onclick = calc;
+  document.getElementById('bNote').onclick = note;
+  document.getElementById('bSave').onclick = () => BA.store.download('piles-culees.json', { module: 'piles-culees', version: 1, d: read(), sps, spsNom });
+  document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { const o = JSON.parse(txt); fill(o.d || o); if (o.sps) { sps = Object.assign(S.vide(), o.sps); spsNom = o.spsNom || 'sondage'; } spsInfo(); calc(); } catch (e) { alert('Fichier JSON illisible : ' + e.message); } });
+  document.getElementById('bDon').onclick = () => BA.store.pick('.don,.DON', (txt) => {
+    try { const d = E.parseDon(txt); fill(d); calc(); const m = ['Fichier .don importé (géométrie, matériaux, sol, actions du tablier).'].concat(d.avert || []); setTimeout(() => alert(m.join('\n')), 50); }
+    catch (e) { alert('Lecture impossible : ' + e.message); }
+  });
+  document.getElementById('bSps').onclick = () => BA.store.pick('.sps,.SPS', (txt, name) => { try { sps = S.parse(txt); spsNom = name; spsInfo(); persist(); calc(); } catch (e) { alert('Lecture impossible : ' + e.message); } });
+  document.getElementById('bSpsMod').onclick = () => { const o = BA.store.load('sondpres'); if (!o || !o.s) { alert('Aucun sondage enregistré dans PRESSIO sur ce navigateur.'); return; } sps = Object.assign(S.vide(), o.s); spsNom = 'PRESSIO — ' + (o.s.sondage || 'sondage'); spsInfo(); persist(); calc(); };
+  const importJson = (fn, txt) => {
+    const j = JSON.parse(txt), arr = Array.isArray(j) ? j : [j];
+    let item = arr[0];
+    if (arr.length > 1) { const k = prompt('Le fichier contient ' + arr.length + ' appuis : ' + arr.map((a, i) => i + ' = ' + (a.nom || 'appui ' + a.appui)).join(', ') + '. Numéro à importer ?', '0'); if (k === null) return; item = arr[+k] || arr[0]; }
+    const x = fn(item), d = read();
+    const keep = (a) => (fn === E.depuisRephor ? !['R', 'Td', 'Tc', 'F'].includes(a.cat) : !['Gmax', 'Gmin', 'Q', 'QT'].includes(a.cat));
+    d.actions = d.actions.filter(keep).concat(x.actions);
+    if (Number.isFinite(+x.biais)) d.biais = d.type !== 'pile' && /C0|origine/i.test(x.nom || '') ? 200 - x.biais : +x.biais;
+    if (x.ouvrage) d.ouvrage = x.ouvrage;
+    fill(d); calc();
+  };
+  document.getElementById('bImpH').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { importJson(E.depuisRephor, txt); } catch (e) { alert(e.message); } });
+  document.getElementById('bImpT').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { importJson(E.depuisTablier, txt); } catch (e) { alert(e.message); } });
+  document.getElementById('preset').onchange = (e) => { if (!e.target.value) return; fill(E.exemple(e.target.value)); e.target.value = ''; calc(); };
+  document.querySelector('.col-in').addEventListener('input', () => { persist(); sched(); });
+  document.querySelector('.col-in').addEventListener('change', () => { persist(); sched(); });
+
+  /* ── chargement initial : saisies sauvegardées, sinon culée d'exemple ── */
+  const saved = BA.store.load(KEY);
+  if (saved && saved.sps) { try { sps = Object.assign(S.vide(), saved.sps); spsNom = saved.spsNom || 'sondage'; } catch (e) { sps = null; } }
+  fill(saved && saved.d ? saved.d : E.exemple('culee'));
+  calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

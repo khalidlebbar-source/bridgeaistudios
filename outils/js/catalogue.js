@@ -23,7 +23,7 @@
       desc: 'Répartition des efforts de freinage, retrait, dilatation et interaction voie-ouvrage entre les appuis d’un ouvrage multi-travées.' },
     { code: 'MODÈLE RAIL', slug: 'modele-rail', statut: 'on', nom: 'Modélisation des ponts-rails', reg: 'EN 1990 A2 · EN 1991-2 · EN 1998-2',
       desc: 'Structure plane (poutre continue, portique, cadre multiple) sous charges ferroviaires, dénivellations, retrait, dilatation et séisme.' },
-    { code: 'PILES-CULÉES', slug: 'piles-culees', statut: 'dev', nom: 'Piles et culées', reg: 'EN 1992-2 · EN 1998-2 · Fasc. 62',
+    { code: 'PILES-CULÉES', slug: 'piles-culees', statut: 'beta', nom: 'Piles et culées', reg: 'EN 1992-2 · EN 1998-2 · Fasc. 62',
       desc: 'Piles, palées, culées enterrées et murs de front, chevêtres sur pieux : stabilité, descente de charges et béton armé.' },
 
     { phase: 3, titre: 'Tabliers et murs' },
