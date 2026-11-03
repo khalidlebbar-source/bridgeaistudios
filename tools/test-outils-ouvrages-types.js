@@ -10,6 +10,7 @@ const RH = require('../outils/js/efforts-horizontaux.js');
 const AM = require('../outils/js/elastomeres.js');
 const F = require('../outils/js/fondations.js');
 const RR = require('../outils/js/cadres-portiques.js');
+const PC = require('../outils/js/piles-culees.js');
 let f = 0, n = 0;
 const ok = (c, m) => { n++; console.log((c ? '✓ ' : '✗ ') + m); if (!c) f++; };
 const near = (a, b, t = 1e-9) => Math.abs(a - b) <= t * Math.max(1, Math.abs(b));
@@ -41,30 +42,44 @@ const R1 = O.calcul(s1);
   const pg = O.preremplissage(R1, 'appareils-appui', 0);
   ok(pg.gen && pg.plaque.a === Math.round(ap.plaque.a * 1000) && pg.combis.length === ap.combis.length && pg.mat.hmode === 'v', 'Appareils : état de page pré-rempli (plaque en mm, combinaisons, effets lents en déplacements)');
 }
-/* ───────── 2. Descente de charges sommaire ───────── */
+/* ───────── 2. Piles et culées (PILES-CULÉES) ───────── */
 {
-  const j = 1, a = R1.geo.appuis[j], D = R1.appuis[j], Tj = R1.tab.app[j];
-  ok(near(D.Gtab, Tj.R.pp + Tj.R.supMax + Tj.R.den.max) && Math.abs(D.Gtab - R1.rephorPage.ap[j].Gmax) < 0.051, 'Descente : G du tablier = valeur exportée (' + D.Gtab.toFixed(1) + ' kN)');
-  // poids propre recalculé à la main : fût + semelle
-  const Vf = a.e * a.hfut * a.larfut * a.nfut, Vs = a.B * a.L * a.es;
-  ok(near(D.Gpp, 25 * (Vf + Vs), 1e-9), `Descente : poids propre de ${a.nom} = 25 × (${Vf.toFixed(2)} + ${Vs.toFixed(2)}) m³`);
-  const qp = D.combs.find((c) => c.type === 'ELS QP');
-  ok(near(-qp.ld[2], D.Gtab + D.Gpp + D.Gter, 1e-9) && qp.cd.every((x) => x === 0), 'Descente : ELS q.-perm. Fz = −(G tablier + poids propres + terres)');
-  const els = D.combs[0];
-  ok(near(-(els.ld[2] + els.cd[2]), D.Gtab + D.Gpp + D.Gter + D.Qtab, 1e-9), 'Descente : ELS caractéristique Fz = −(G + Q)');
-  // H longitudinal au niveau des appareils → moment en sous-face = H·sinφ·(zApp − zsem)
-  const elsQP = D.combs[1], Hx = D.H.QP * Math.sin(s1.biais * GR);
-  ok(near(elsQP.ld[0] - (qp.ld[0] - Hx), Hx, 1e-9) || near(elsQP.ld[0], Hx, 1e-6), 'Descente : effort horizontal projeté perpendiculairement à la ligne d’appui (H·sinφ)');
-  // culée : poussée de Rankine
-  const c = R1.appuis[0];
+  const T = R1.tab, H = R1.rephor, expT = RB.exportAppuis(T), expH = RH.exportAppuis(H);
+  ok(R1.appuis.length === 4 && R1.appuis.every((A) => A.res && A.res.futs && A.res.sem && A.res.fond), 'Piles et culées : 4 appuis calculés par PILES-CULÉES (fûts ou mur, semelle, fondation)');
+  // actions transmises = fonctions d'import du module appliquées aux exports des modules de tablier et d'efforts horizontaux
+  const j = 1, A = R1.appuis[j], tab = PC.depuisTablier(expT[j]).actions, hor = PC.depuisRephor(expH[j]).actions;
+  const vT = (cat) => A.d.actions.filter((x) => x.cat === cat).reduce((t, x) => t + x.V, 0);
+  ok(near(vT('Gmax'), tab.find((x) => x.cat === 'Gmax').V) && Math.abs(-vT('Gmax') - (T.app[j].R.pp + T.app[j].R.supMax)) < 0.006, `Pile P1 : G tablier maxi transmis = pp + superstructures du tablier (${(-vT('Gmax')).toFixed(1)} kN)`);
+  ok(tab.every((x) => A.d.actions.some((y) => y.nom === x.nom && y.V === x.V)), 'Pile P1 : groupes de trafic transmis = import depuisTablier (' + tab.length + ' actions)');
+  ok(hor.every((x) => A.d.actions.some((y) => y.nom === x.nom && near(y.HX, x.HX) && near(y.HY, x.HY))), 'Pile P1 : efforts horizontaux transmis = import depuisRephor');
+  const fr = hor.find((x) => x.cat === 'F'), Hf = H.parAppui[j].F;
+  ok(near(Math.hypot(fr.HX, fr.HY), Math.abs(Hf), 2e-3), `Pile P1 : freinage |H| = HORIZONTAL (${Math.abs(Hf).toFixed(1)} kN)`);
+  const C3 = R1.appuis[3], h3 = PC.depuisRephor(expH[3]).actions.find((x) => x.cat === 'Td'), a3 = C3.d.actions.find((x) => x.cat === 'Td' && /efforts/.test(x.nom));
+  ok(near(a3.HX, -h3.HX), 'Culée d’extrémité : HX inversé (X vers l’ouvrage)');
+  // résultats = appel direct du module avec les mêmes données
+  const D = PC.calc(A.d, { sps: R1.sps });
+  ok(near(D.futs.AsMax, A.res.futs.AsMax) && near(D.sem.trans.inf, A.res.sem.trans.inf) && D.combs.every((c, k) => near(c.T.tot[2], A.res.combs[k].T.tot[2])), 'Pile P1 : aciers et torseurs identiques à l’appel direct de PILES-CULÉES');
+  // géométrie transmise
+  const a = R1.geo.appuis[j];
+  ok(near(A.d.geo.zBase, a.zsem) && Math.abs(A.d.geo.zBase + A.d.geo.ep + A.d.geo.fut.h - a.zSom) < 1e-3 && Math.abs(A.res.G.zApp - a.zApp) < 2e-3, 'Pile P1 : semelle, fût et niveau des appareils = géométrie de l’ouvrage');
+  // poids propres : 25 kN/m³, déjaugés (15 kN/m³) sous la nappe du sondage
+  const zw = R1.sps.z - R1.sps.nappe, col = (z0, z1) => 25 * (z1 - z0) - 10 * Math.max(0, Math.min(z1, zw) - z0);
+  const pp = A.res.acts.filter((x) => x.cat === 'PP').reduce((t, x) => t - x.F[2], 0);
+  const ppAtt = a.e * a.larfut * a.nfut * col(a.zst, a.zSom) + a.B * a.L * col(a.zsem, a.zst);
+  ok(near(pp, ppAtt, 2e-4), `Pile P1 : poids propres = volumes de la géométrie, déjaugés sous la nappe (${pp.toFixed(0)} kN)`);
+  const c0 = R1.appuis[0], g0 = R1.geo.appuis[0];
+  ok(c0.d.type === 'mur' && Math.abs(c0.res.G.xBack - (g0.xb - g0.uc)) < 1e-3 && Math.abs(c0.res.G.xApp - (0 - g0.uc)) < 1e-3 && c0.res.gg && c0.res.retour, 'Culée C0 : mur de front, garde-grève et murs en retour ; dos du mur et axe des appareils = géométrie de l’ouvrage');
   const Ka = Math.pow(Math.tan(Math.PI / 4 - Math.PI / 12), 2);
-  ok(near(c.pous.Ka, Ka) && near(c.pous.P, 0.5 * Ka * 20 * c.pous.Ht ** 2 * R1.geo.appuis[0].Lm), 'Culée : poussée ½·Ka·γ·H²·L, Ka = 1/3 pour φ = 30°');
+  ok(near(c0.res.Ka, Ka), 'Culée : Ka = 1/3 pour φ = 30°');
+  ok(R1.verdicts.filter((v) => v.module === 'appui').length === 4 && R1.verdicts.filter((v) => v.module === 'appui').every((v) => v.statut === 'ok'), 'Tableau de bord : un verdict par pile ou culée');
+  const pg = O.preremplissage(R1, 'appui', 1);
+  ok(pg.v === 1 && pg.d.type === 'pile' && pg.d.actions.length === A.d.actions.length && pg.sps, 'Pré-remplissage de la page PILES-CULÉES (données de l’appui et sondage)');
 }
 /* ───────── 3. Fondations ───────── */
 {
-  const fj = R1.fond[1], direct = F.calc(fj.inp);
+  const fj = R1.fond[1], direct = F.calc(O.fondatioInput(R1.s, R1.sps, fj.o));
   ok(fj.res.combs.every((c, k) => near(c.qref, direct.combs[k].qref) && near(c.N, direct.combs[k].N)), 'Fondations : résultats identiques à l’appel direct');
-  ok(fj.res.combs.every((c, k) => near(c.N, -(R1.appuis[1].combs[k].ld[2] + R1.appuis[1].combs[k].cd[2]), 1e-9)), 'Fondations : N transmis = descente de charges (' + fj.res.combs.map((c) => c.N.toFixed(0)).join(' / ') + ' kN)');
+  ok(fj.res.combs.every((c, k) => near(c.N, -R1.appuis[1].res.combs[k].T.tot[2], 1e-9)), 'Fondations : N = torseurs des combinaisons de PILES-CULÉES (' + fj.res.combs.length + ' combinaisons)');
   const pg = O.preremplissage(R1, 'fondations', 1);
   ok(pg.v.type === 'sup' && pg.comb.length === 2 * fj.o.combs.length && pg.comb[0].dur === 'LD' && pg.comb[1].dur === 'CD' && pg.sps && pg.v.B === +fj.o.B.toFixed(3), 'Fondations : état de page pré-rempli (lignes LD/CD, sondage, dimensions)');
   // pieux
@@ -72,7 +87,8 @@ const R1 = O.calcul(s1);
   const R = O.calcul(s), fp = R.fond[1];
   ok(fp.o.type === 'pieux' && fp.o.piles.length === 6 && fp.res && fp.res.type === 'pieux', 'Fondations profondes : groupe de 6 pieux calculé');
   const sN = fp.res.combs[0].piles.reduce((t, p) => t + p.N, 0);
-  ok(near(sN, fp.res.combs[0].piles.length ? -(fp.inp.combs[0].ld[2] + fp.inp.combs[0].cd[2]) : 0, 1e-3), 'Fondations profondes : Σ N en tête des pieux = Fz transmis (' + sN.toFixed(0) + ' kN)');
+  ok(near(sN, -(fp.o.combs[0].ld[2] + fp.o.combs[0].cd[2]), 1e-3), 'Fondations profondes : Σ N en tête des pieux = Fz transmis (' + sN.toFixed(0) + ' kN)');
+  ok(R.metres.rows.some((r) => /Aciers des pieux/.test(r.designation) && /FONDATIONS/.test(r.origine)), 'Avant-métré : aciers des pieux calculés');
   ok(R.metres.rows.some((r) => /Pieux forés/.test(r.designation) && near(r.q, 6 * 12)), 'Avant-métré : longueur de pieux 6 × 12 m');
 }
 /* ───────── 4. Quantités ───────── */
@@ -84,6 +100,9 @@ const R1 = O.calcul(s1);
   ok(near(Ac, T.g.A, 2e-3), 'Coupe du tablier : aire du profil des plans = aire du module (' + Ac.toFixed(3) + ' m²)');
   const a = R1.geo.appuis[1];
   ok(near(row(/^Béton : semelle/, 'Pile P1').q, a.B * a.L * a.es), 'Semelle de P1 : B × L × e');
+  const sm = R1.appuis[1].res.sem, Asem = sm.trans.inf + sm.trans.sup + sm.long.inf + sm.long.sup;
+  ok(near(row(/^Aciers : semelle/, 'Pile P1').q, Asem * 1e-4 * a.B * a.L * 7850 * 1.1, 1e-9), `Aciers de la semelle de P1 = sections de PILES-CULÉES (${Asem.toFixed(1)} cm²/m cumulés) × B × L`);
+  ok(!R1.metres.rows.some((r) => /ratio forfaitaire/.test(r.origine)), 'Avant-métré : plus aucun ratio forfaitaire pour les appuis');
   ok(near(R1.metres.recap.appareils, R1.appareils.reduce((t, x) => t + x.n, 0)), 'Appareils d’appui : nombre total = somme des files (' + R1.metres.recap.appareils + ')');
   // aciers longitudinaux : ∫ As dx ≥ As maxi × portée la plus courte (ordre de grandeur)
   const al = row(/^Aciers longitudinaux/).q;
@@ -137,7 +156,8 @@ const R1 = O.calcul(s1);
   const T = RO.calcul(O.tablierInput(O.normaliser(s)));
   const exp = RO.exportRephor(T);
   ok(exp.ap.every((a, j) => a.Gmax === R.rephorPage.ap[j].Gmax && a.Qmax === R.rephorPage.ap[j].Qmax), 'Pont-route dalle BA : G et Q transmis = export du module TABLIER ROUTE');
-  ok(R.appuis.every((D, j) => near(D.Gtab, T.app[j].ligne.c.Gk.max)), 'Pont-route : G du tablier dans la descente de charges = Gk du module');
+  ok(R.appuis.every((A, j) => Math.abs(-A.d.actions.find((x) => x.cat === 'Gmax').V - T.app[j].ligne.c.Gk.max) < 0.006), 'Pont-route : G du tablier transmis à PILES-CULÉES = Gk du module');
+  ok(R.appuis.every((A) => A.res && A.d.ouvrage === 'route'), 'Pont-route : piles et culées calculées (combinaisons routières)');
   ok(R.rephorInp.ouvrage === 'route' && R.rephor.parAppui.length === 4, 'Pont-route : freinage routier dans la répartition des efforts horizontaux');
   const s2 = O.defaut('ropen'); s2.Btot = 10;
   const R2 = O.calcul(s2);
@@ -158,7 +178,7 @@ const R1 = O.calcul(s1);
 }
 /* ───────── 9. Disponibilité et contrôles ───────── */
 {
-  ok(R1.verdicts.some((v) => v.statut === 'bientot' && v.module === 'appui'), 'Piles et culées : signalées « bientôt » tant que le module n’est pas intégré');
+  ok(!R1.verdicts.some((v) => v.statut === 'bientot'), 'Plus aucune partie « bientôt »');
   ok(O.disponible('rodba').ok && O.disponible('racba').ok, 'Types disponibles : ponts-routes, cadres et portiques');
   const s = O.defaut('radba'); s.zRail0 = 97;
   let m = ''; try { O.calcul(s); } catch (e) { m = e.message; }
