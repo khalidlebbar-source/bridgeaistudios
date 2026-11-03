@@ -861,6 +861,7 @@
     } else if (pieuxPlan) cutsY.push({ dir: 'y', v: 0, side: 1, entre: true, cote: 'milieu' });
     const cuts = cutsX.concat(cutsY).filter((k) => Math.abs(k.v) < (k.dir === 'x' ? B : L) / 2 - 1e-6);
     const K = coefs(d), pieux = fond && fond.combs && fond.combs[0] && fond.combs[0].piles;
+    if (!pieux && G.nF && d.semelleMethode !== 'statique') return semelleReference(d, G, acts, combs, mat);
     const piles = pieux ? pieuxPlan(d.fond.pieux) : null;
     const env = cuts.map(() => ({ ELU: [0, 0], ELS: [0, 0], V: 0, crit: {} }));
     combs.forEach((cb, k) => {
@@ -911,6 +912,97 @@
     return { cuts: out, dd, Amin, AminInf, AminSup, ssLim,
       trans: { inf: Math.max(mx(dirs.x, 'Ainf'), AminInf), sup: Math.max(mx(dirs.x, 'Asup'), AminSup), Mu: mx(dirs.x.map((o) => ({ v: o.env.ELU[0] })), 'v') },
       long: { inf: Math.max(mx(dirs.y, 'Ainf'), AminInf), sup: Math.max(mx(dirs.y, 'Asup'), AminSup), Mu: mx(dirs.y.map((o) => ({ v: o.env.ELU[0] })), 'v') },
+      ok: out.every((o) => o.okV) };
+  }
+  /* ── semelle sur sol : méthode du programme de référence (reconstituée sur les cas ProC0Sup et ProP1Sup) ──
+   * Bandes de 1 m, réaction du sol plane σ = a + b·x + c·y (semelle rigide), poids pondérés de la semelle et des terres.
+   *  - suivant X, débord avant : section à 0,15·a à l'intérieur du nu du fût (règle CEB-FIP des semelles), bande la plus
+   *    chargée (bord Y+ ou Y−) ; terres sur le débord comptées pour une pile, négligées devant une culée (talus) ;
+   *  - suivant X, talon arrière d'une culée : section à l'axe des fûts, réaction moyenne sur la longueur, poids de la
+   *    semelle et du remblai (moment négatif : aciers supérieurs) ;
+   *  - suivant Y : bande longitudinale chargée par la réaction du bord avant diminuée des poids ; fûts étroits
+   *    (b ≤ 2·e semelle) : poutre continue sur appuis ponctuels à l'axe des fûts ; voiles : console au droit de la
+   *    section à 0,15·b à l'intérieur du nu extérieur, et moment entre voiles par la statique.
+   * M > 0 : fibre inférieure tendue. */
+  function semelleReference(d, G, acts, combs, mat) {
+    const g = d.geo, B = g.B, L = g.L, ep = g.ep, c = num(d.mat.cSem, 0.05), dd = ep - c, zeau = num(g.zeau, -1e9);
+    const pile = d.type === 'pile';
+    const wb = wCol(g.zBase, G.zTS, zeau, d.mat.gammaB, d.mat.gammaB - 10);
+    const wtF = wCol(G.zTS, pile ? g.zdef : num(g.zAvant, g.zdef), zeau, d.sol.gamma, d.sol.gammaSat - 10);
+    const wtB = wCol(G.zTS, g.zdef, zeau, d.sol.gamma, d.sol.gammaSat - 10);
+    const n = 200, integ = (f, a, b) => { let s = 0; const h = (b - a) / n; for (let i = 0; i < n; i++) s += f(a + (i + 0.5) * h) * h; return s; };
+    const xs = G.xF + G.dimX / 2 - 0.15 * G.dimX, xEnd = B / 2;
+    const etroit = G.dimY <= 2 * ep;
+    // poutre continue à charge unitaire (fûts étroits) : moments extrêmes par unité de charge
+    let unit = null;
+    if (etroit && G.nF > 1) {
+      const xsN = [...new Set([-L / 2, ...G.yF.map((y) => +y.toFixed(6)), L / 2])].sort((a, b) => a - b);
+      const m = { nodes: xsN.map((x) => ({ x, y: 0 })), elems: xsN.slice(1).map((_, i) => ({ i, j: i + 1, E: 3e7, A: 1, I: 1 })), supports: G.yF.map((y, k) => ({ n: xsN.findIndex((v) => Math.abs(v - y) < 1e-6), ux: k === 0, uy: true })) };
+      const r = PQ.solve(m, { elem: m.elems.map((e, i) => ({ e: i, type: 'u', q: 1 })) });
+      let mx = -Infinity, mn = Infinity; m.elems.forEach((e, i) => r.diagram(i, 60).forEach((pp) => { mx = Math.max(mx, pp.M); mn = Math.min(mn, pp.M); }));
+      unit = { mx, mn };
+    } else if (etroit) unit = { mx: sq(L / 2 - G.yF[0] - 0) / 2, mn: 0 };   // fût unique : deux consoles
+    const cuts = [
+      { dir: 'x', v: xs, cote: 'débord avant (0,15 a dans le fût)' },
+      { dir: 'x', v: pile ? -xs + 2 * G.xF : G.xF, cote: pile ? 'débord arrière (0,15 a dans le fût)' : 'talon arrière (axe des fûts)' },
+      { dir: 'y', v: etroit ? G.yF[G.yF.length - 1] : G.yF[G.yF.length - 1] + G.dimY / 2 - 0.15 * G.dimY, cote: etroit ? 'poutre continue sur les fûts' : 'débord latéral (0,15 b dans le voile)' },
+    ];
+    if (!etroit && G.nF > 1) cuts.push({ dir: 'y', v: 0, entre: true, cote: 'entre voiles (milieu)' });
+    const env = cuts.map(() => ({ ELU: [0, 0], ELS: [0, 0], V: 0, crit: {} }));
+    combs.forEach((cb) => {
+      const isU = /^ELU/.test(cb.type), isS = cb.type === 'ELS Rare';
+      if (!isU && !isS) return;
+      const gb = (cb.f.pp0 || [1, 1])[1], gt = (cb.f.terres || [0, 0])[1];
+      const T = cb.T.tot, r = FD.repartition({ B, L }, -T[2], T[3], T[4]);
+      const sig = (x, y) => Math.max(0, r.a + r.b * x + r.c * y);
+      const put = (m, M, V) => { const e = env[m], t = isU ? 'ELU' : 'ELS'; if (M > e[t][0]) { e[t][0] = M; e.crit[t + '+'] = cb.n; } if (M < e[t][1]) { e[t][1] = M; e.crit[t + '-'] = cb.n; } if (isU && Math.abs(V) > e.V) e.V = Math.abs(V); };
+      // débord avant (bande la plus chargée)
+      {
+        const w = gb * wb + (pile ? gt * wtF : 0), face = G.xF + G.dimX / 2;
+        let best = null;
+        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x - xs), xs, xEnd), V = integ((x) => sig(x, y) - w, face, xEnd); if (!best || M > best[0]) best = [M, V]; }
+        put(0, best[0], best[1]);
+      }
+      // talon arrière (culée) ou débord arrière (pile)
+      if (pile) {
+        const w = gb * wb + gt * wtF, x2 = 2 * G.xF - xs, face = G.xF - G.dimX / 2;
+        let best = null;
+        for (const y of [L / 2, -L / 2]) { const M = integ((x) => (sig(x, y) - w) * (x2 - x), -B / 2, x2), V = integ((x) => sig(x, y) - w, -B / 2, face); if (!best || Math.abs(M) > Math.abs(best[0])) best = [M, V]; }
+        put(1, best[0], best[1]);
+      } else {
+        const w = gb * wb + gt * wtB;
+        put(1, integ((x) => (sig(x, 0) - w) * (G.xF - x), -B / 2, G.xF), integ((x) => sig(x, 0) - w, -B / 2, G.xF - G.dimX / 2));
+      }
+      // suivant Y : réaction du bord avant (moyenne sur la longueur) diminuée des poids
+      const q = r.a + r.b * B / 2 - (gb * wb + gt * wtF);
+      if (etroit) { put(2, q * unit.mx, 0); put(2, q * unit.mn, 0); }
+      else {
+        const yo = cuts[2].v, face = G.yF[G.yF.length - 1] + G.dimY / 2, qin = q + gt * wtF;   // pas de terres sur le fût
+        const p = (y) => (y > face ? q : qin);
+        put(2, integ((y) => p(y) * (y - yo), yo, L / 2), integ((y) => p(y), face, L / 2));
+        if (G.nF > 1) {
+          // moment au milieu : charges de la demi-bande et réaction du (des) fût(s) de la demi-semelle
+          const fl = (y) => (G.yF.some((yf) => Math.abs(y - yf) <= G.dimY / 2) ? qin : q);
+          const Rtot = integ(fl, 0, L / 2), fr = G.yF.filter((y) => y > 0);
+          put(3, integ((y) => fl(y) * y, 0, L / 2) - fr.reduce((s, yf) => s + Rtot / fr.length * yf, 0), 0);
+        }
+      }
+    });
+    const ssLim = d.regl === 'EC' ? 0.8 * d.mat.fe : (num(d.mat.ssSem) > 0 ? +d.mat.ssSem : mat.ssLim), sbc = 0.6 * d.mat.fck;
+    const Amin = AminFlex(mat, 1, dd), AminInf = Math.max(Amin, 0.001 * ep * 1e4), AminSup = 0.0005 * ep * 1e4;
+    const out = cuts.map((ct, m) => {
+      const e = env[m];
+      const Ainf = Math.max(dimFlexion(mat, 1, ep, c, e.ELU[0], 1) || 0, dimFlexion(mat, 1, ep, c, e.ELS[0], 'ELS', ssLim, sbc) || 0);
+      const Asup = Math.max(dimFlexion(mat, 1, ep, c, e.ELU[1], 1) || 0, dimFlexion(mat, 1, ep, c, e.ELS[1], 'ELS', ssLim, sbc) || 0);
+      const tau = e.V / dd / 1000, tlim = d.regl === 'EC' ? vRdcDalle(d.mat.fck, dd, Ainf) : 0.07 * d.mat.fck / 1.5;
+      return Object.assign({}, ct, { env: e, Ainf, Asup, tau, tlim, okV: ct.entre || tau <= tlim + 1e-9 });
+    });
+    const dirs = { x: out.filter((o) => o.dir === 'x'), y: out.filter((o) => o.dir === 'y') };
+    const mx = (arr, k) => Math.max(0, ...arr.map((o) => o[k]));
+    const Mmax = (arr, t, i) => Math.max(0, ...arr.map((o) => (i ? -o.env[t][1] : o.env[t][0])));
+    return { methode: 'référence', cuts: out, dd, Amin, AminInf, AminSup, ssLim, etroit,
+      trans: { inf: Math.max(mx(dirs.x, 'Ainf'), AminInf), sup: Math.max(mx(dirs.x, 'Asup'), AminSup), Mu: Mmax(dirs.x, 'ELU', 0), Mus: -Mmax(dirs.x, 'ELU', 1), Ms: Mmax(dirs.x, 'ELS', 0), Mss: -Mmax(dirs.x, 'ELS', 1), Ainf: mx(dirs.x, 'Ainf'), Asup: mx(dirs.x, 'Asup') },
+      long: { inf: Math.max(mx(dirs.y, 'Ainf'), AminInf), sup: Math.max(mx(dirs.y, 'Asup'), AminSup), Mu: Mmax(dirs.y, 'ELU', 0), Mus: -Mmax(dirs.y, 'ELU', 1), Ms: Mmax(dirs.y, 'ELS', 0), Mss: -Mmax(dirs.y, 'ELS', 1), Ainf: mx(dirs.y, 'Ainf'), Asup: mx(dirs.y, 'Asup') },
       ok: out.every((o) => o.okV) };
   }
   // EC2 6.2.2 (1) : VRd,c (dalle sans armatures d'effort tranchant), MPa, AN : vmin = 0,053/γc k^1,5 fck^0,5 (dalles)
@@ -1134,7 +1226,7 @@
   }
 
   const api = { exemple, geometrie, ka, kAE, mononobe, actionsPropres, actionsTablier, combinaisons, coefs, transport, torseurFond, fondSaisie, frettage,
-    sismeParams, surchargeRemblai, zonesPoussee, calc, parseDon, depuisRephor, depuisTablier, pieuxPlan, dimFlexion };
+    sismeParams, surchargeRemblai, zonesPoussee, calc, parseDon, semelleReference, materiaux, depuisRephor, depuisTablier, pieuxPlan, dimFlexion };
   if (isNode) module.exports = api;
   if (root) { root.BA = root.BA || {}; root.BA.appui = api; }
 })(typeof window !== 'undefined' ? window : globalThis);

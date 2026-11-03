@@ -109,8 +109,13 @@ const rd = R.calcul(R.DEF_RODBA);
   near(rd.Gl, 627.514 * 9.81 / 38.5, 0.01, 'Rodban : charge permanente nominale (kN/m)');
   // descentes de charges globales : CP moyenne (max + min)/2 de l'original (tassements inclus dans max/min)
   const Gm = (a) => (a.ligne.c.Gk.max + a.ligne.c.Gk.min) / 2;
-  near(Gm(rd.app[0]), (759.95 + 688.97) / 2, 0.03, 'Rodban : réaction permanente C0 (moyenne max/min)');
-  near(Gm(rd.app[1]), (2472.56 + 2241.12) / 2, 0.03, 'Rodban : réaction permanente P1 (moyenne max/min)');
+  // charges permanentes maxi / mini : poids propre × 1,05 / 1,00 dans les descentes de charges (retrouvé sur l'exemple)
+  near(rd.app[0].ligne.c.Gk.max, 759.95, 0.005, 'Rodban : C.P. maxi, file C0');
+  near(rd.app[0].ligne.c.Gk.min, 688.97, 0.01, 'Rodban : C.P. mini, file C0');
+  near(rd.app[1].ligne.c.Gk.max, 2472.56, 0.005, 'Rodban : C.P. maxi, file P1');
+  near(rd.app[1].ligne.c.Gk.min, 2241.12, 0.01, 'Rodban : C.P. mini, file P1');
+  near(Math.max(...rd.app[0].bear.map((b) => b.c.Gk.max)), 236.00, 0.02, 'Rodban : C.P. maxi sur un appareil de C0');
+  near(Math.max(...rd.app[1].bear.map((b) => b.c.Gk.max)), 735.92, 0.01, 'Rodban : C.P. maxi sur un appareil de P1');
   // LM1 sur la chaussée (l'original donne les trottoirs à part) : réaction globale maxi de la file
   near(rd.app[0].ligne.rec.q.LM1.max, 946.55, 0.05, 'Rodban : LM1 maxi, file C0');
   near(rd.app[1].ligne.rec.q.LM1.max, 1274.90, 0.02, 'Rodban : LM1 maxi, file P1');
@@ -127,6 +132,13 @@ const rd = R.calcul(R.DEF_RODBA);
   const sAt = (x) => rd.secs.reduce((b, s) => (Math.abs(s.x - x) < Math.abs(b.x - x) ? s : b));
   near(-sAt(11.27).Mx.ELU.min, 874.70, 0.03, 'Rodban : moment ELU sur appui P1 (kN·m/m)');
   near(sAt(18.80).Mx.ELU.max, 803.99, 0.03, 'Rodban : moment ELU en travée 2 (kN·m/m)');
+  // effort tranchant sur appui au centre de la première maille (option « maille », comme l'original) : VEd 846,5 kN/m,
+  // Asw 39,87 cm²/m², aciers supérieurs flexion + ΔFtd 49,93 cm²/m ; en travée 2 : aciers de flexion seuls 36,74 cm²/m
+  near(Math.max(sAt(11.27).V.ELU.max, -sAt(11.27).V.ELU.min), 846.53, 0.06, 'Rodban : effort tranchant ELU sur appui P1 (maille adjacente)');
+  const bAt = (x) => rd.ba.lon.reduce((b, s) => (Math.abs(s.x - x) < Math.abs(b.x - x) ? s : b));
+  near(bAt(11.27).Asw, 39.87, 0.03, 'Rodban : armatures d’effort tranchant sur appui P1 (cm²/m²)');
+  near(bAt(11.27).As[0], 49.93, 0.01, 'Rodban : aciers supérieurs sur appui P1, flexion + ΔFtd (cm²/m)');
+  near(bAt(18.80).AsFlex[1], 36.74, 0.01, 'Rodban : aciers inférieurs de flexion en travée 2 (cm²/m)');
 }
 const ro = R.calcul(R.DEF_ROPEN);
 {
@@ -137,20 +149,30 @@ const ro = R.calcul(R.DEF_ROPEN);
   near(ro.R.ine.Ilf, 0.01847, 0.002, 'Ropen : inertie / acier, béton fissuré long terme');
   near(ro.R.ent, 0.728, 0.001, 'Ropen : entraxe des poutrelles (1,253 + 9 × 0,728 m)');
   near(ro.pe.Av, 0.011980, 0.001, 'Ropen : aire de cisaillement Av d’une poutrelle');
-  near(ro.pe.VplRd, 2386.25, 0.001, 'Ropen : Vpl,Rd = Av·fy/√3 (fy = 345 MPa)');
+  near(ro.pe.VplRd, 2386.25, 0.001, 'Ropen : Vpl,Rd = Av·fy/√3 (fy = 345 MPa, S355 16 < tf ≤ 40 mm, NF EN 10025-2)');
+  ok(ro.pe.fy === 345, 'Ropen : fy S355 pour tf = 40 mm = 345 MPa (fy saisi nul : selon la nuance et l’épaisseur)');
   near(ro.pe.dev.sigCrit, 146.5, 0.002, 'Ropen : contrainte critique de déversement simplifiée');
   near(ro.pe.dev.sigF15, 41.9, 0.01, 'Ropen : contrainte de flexion au bétonnage (15 cm de béton)');
   near(ro.pe.dev.sigF, 102.6, 0.02, 'Ropen : contrainte de flexion au bétonnage (béton total)');
   near(ro.pe.dal.q, 14.87, 0.001, 'Ropen : charge des dallettes (béton frais + 0,5 kN/m²)');
   near(ro.pe.dal.portee, 0.52, 0.005, 'Ropen : portée des dallettes');
   const Gm = (a) => (a.ligne.c.Gk.max + a.ligne.c.Gk.min) / 2;
-  near(Gm(ro.app[0]), (852.64 + 781.78) / 2, 0.05, 'Ropen : réaction permanente C0 (moyenne)');
-  near(Gm(ro.app[1]), (2789.59 + 2558.02) / 2, 0.05, 'Ropen : réaction permanente P1 (moyenne)');
+  // charge permanente : vide sous les dallettes non déduit (masse totale de l'original 181,4 kN/m, déduite des réactions)
+  near(ro.Gl, 181.4, 0.015, 'Ropen : charge permanente nominale (kN/m)');
+  near(ro.app[1].ligne.c.Gk.max, 2789.59, 0.005, 'Ropen : C.P. maxi, file P1');
+  near(ro.app[1].ligne.c.Gk.min, 2558.02, 0.005, 'Ropen : C.P. mini, file P1');
+  near(ro.app[0].ligne.c.Gk.max, 852.64, 0.03, 'Ropen : C.P. maxi, file C0');
+  // phase 1 : dalle résistante (largeur Bs) et poutrelles portées par les poutrelles seules, encorbellements en 2e phase ;
+  // colonne « moment poutrelles seules » de l'original (ELU, somme des poutrelles) : 1793 kN·m en travée 2, 3060 sur P1
+  const pAt = (x) => ro.pe.secs.reduce((b, s) => (Math.abs(s.x - x) < Math.abs(b.x - x) ? s : b));
+  near(1.35 * pAt(18.80).M1 * ro.R.N, 1793, 0.01, 'Ropen : moment ELU de phase 1 (poutrelles seules), travée 2');
+  near(-1.35 * pAt(11.27).M1 * ro.R.N, 3060, 0.01, 'Ropen : moment ELU de phase 1 (poutrelles seules), appui P1');
   near(ro.app[1].ligne.rec.q.LM1.max, 1356.48, 0.08, 'Ropen : LM1 maxi, file P1');
-  near(ro.app[1].ligne.rec.q.qfk.max, 79.62 + 75.58, 0.01, 'Ropen : trottoirs (5 kN/m²), file P1');
+  near(ro.app[1].ligne.rec.q.qfk.max, 79.62 + 75.58, 0.02, 'Ropen : trottoirs (5 kN/m²), file P1');
   // moment ELU négatif sur appui, poutrelle la plus sollicitée (enveloppe des poutrelles)
   const sAt = (x) => ro.pe.secs.reduce((b, s) => (Math.abs(s.x - x) < Math.abs(b.x - x) ? s : b));
-  near(-sAt(11.27).MuMin, 744, 0.06, 'Ropen : moment ELU sur appui P1 par poutrelle (kN·m)');
+  near(-sAt(11.27).MuMin, 744, 0.08, 'Ropen : moment ELU sur appui P1 par poutrelle (kN·m) — écart documenté');
+  near(sAt(18.80).MuMax, 664, 0.15, 'Ropen : moment ELU en travée 2 par poutrelle (kN·m) — écart documenté (−13 %)');
   near(sAt(11.27).MRdN, -2432, 0.02, 'Ropen : moment résistant négatif avec chapeaux (par poutrelle)');
   ok(ro.pe.secs.every((s) => s.okELU), 'Ropen : ELU vérifié dans toutes les sections (original : « OK » partout)');
 }

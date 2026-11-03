@@ -109,6 +109,34 @@ console.log('— ProC0Sup (culée enterrée, BAEL / Fasc. 61 / Fasc. 62, ouvrage
   ok(r.futs.pctMax > 0.05, `pourcentage d’aciers ${(100 * r.futs.pctMax).toFixed(1)} % > 5 % (l’origine émet la même alerte)`);
 }
 
+/* semelle : méthode de référence reconstituée (CEB-FIP 0,15 a ; talon à l'axe ; poutre continue suivant Y) */
+console.log('— ProC0Sup, semelle (torseurs des combinaisons 5, 6, 41, 42 de la note de référence)');
+{
+  const d = A.exemple('culee'), G = A.geometrie(d);
+  const mk = (n, type, ld, cd, g) => ({ n, type, f: { pp0: [g, g], terres: [g * 1.05, g] }, T: { ld, cd, tot: ld.map((v, i) => v + cd[i]) } });
+  const LDu = [0, 1.64, -5449.30, -22.26, 568.73, 0], LDs = [0, 1.22, -4036.52, -16.55, 421.51, 0];
+  const r = A.semelleReference(d, G, [], [mk(41, 'ELU Fond', LDu, [0, 0.28, -115.24, -736.09, 958.76, 0], 1.35), mk(42, 'ELU Fond', LDu, [0, 0.28, -442.34, 124.79, 1024.18, 0], 1.35),
+    mk(5, 'ELS Rare', LDs, [0, 0.21, -82.48, -550.35, 716.11, 0], 1), mk(6, 'ELS Rare', LDs, [0, 0.21, -327.04, 93.30, 765.03, 0], 1)], A.materiaux(d));
+  const [av, ta, lo] = r.cuts;
+  cmp('M ELU aciers inf. transversaux (comb. 41)', av.env.ELU[0], 182.0, 1e-2); cmp('M ELU aciers sup. transversaux (comb. 41)', ta.env.ELU[1], -66.3, 1e-2);
+  cmp('M ELU aciers inf. longitudinaux (comb. 42)', lo.env.ELU[0], 271.4, 5e-3); cmp('M ELU aciers sup. longitudinaux (comb. 42)', lo.env.ELU[1], -136.1, 5e-3);
+  cmp('M ELS inf. transversaux (comb. 5)', av.env.ELS[0], 135.2, 1e-2); cmp('M ELS sup. transversaux (comb. 5)', ta.env.ELS[1], -49.7, 5e-3);
+  cmp('M ELS inf. longitudinaux (comb. 6)', lo.env.ELS[0], 201.8, 5e-3); cmp('M ELS sup. longitudinaux (comb. 6)', lo.env.ELS[1], -101.2, 5e-3);
+  ok(av.env.crit['ELU+'] === 41 && lo.env.crit['ELU+'] === 42 && av.env.crit['ELS+'] === 5 && lo.env.crit['ELS+'] === 6, 'combinaisons dimensionnantes identiques à la note (41, 42, 5, 6)');
+  cmp('aciers inf. longitudinaux (ELS, σs 250 MPa)', lo.Ainf, 13.6, 1e-2); cmp('aciers sup. longitudinaux', lo.Asup, 6.7, 1e-2);
+  cmp('aciers inf. transversaux', av.Ainf, 9.0, 1e-2); cmp('aciers sup. transversaux', ta.Asup, 3.2, 2e-2);
+  const e = A.calc(d).sem;   // calcul complet : torseurs propres au module (poids des terres −0,9 %)
+  cmp('calcul complet : M ELU longitudinal maxi', e.long.Mu, 271.4, 2.5e-2); cmp('calcul complet : M ELS longitudinal maxi', e.long.Ms, 201.8, 2.5e-2);
+  cmp('calcul complet : aciers inf. longitudinaux', e.long.Ainf, 13.6, 2.5e-2);
+}
+console.log('— ProP1Sup, semelle (calcul complet)');
+{
+  const e = A.calc(A.exemple('pile')).sem;
+  cmp('M ELU aciers inf. transversaux (comb. 39)', e.trans.Mu, 190.4, 2.5e-2); cmp('M ELS aciers inf. transversaux (comb. 3)', e.trans.Ms, 141.6, 2.5e-2);
+  cmp('M ELU aciers inf. longitudinaux (comb. 39, voile : section à 0,15 b)', e.long.Mu, 535.4, 3e-2); cmp('M ELS aciers inf. longitudinaux (comb. 3)', e.long.Ms, 398.5, 3e-2);
+  cmp('aciers inf. longitudinaux', e.long.Ainf, 27.7, 3e-2); cmp('aciers inf. transversaux', e.trans.Ainf, 9.4, 2e-2);
+}
+
 /* ══════════ ProP1Sup : pile de pont-route à deux voiles 2,50 × 0,70, semelle 2,10 × 8,60 ══════════ */
 console.log('— ProP1Sup (pile à deux voiles)');
 {
