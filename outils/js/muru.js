@@ -242,6 +242,8 @@
       ['ELS décompression (rare)', pick(['ELSr'], (r) => r.decomp), 'Décompression (%)', (r) => r.decomp, () => lim.decRare],
       ['ELU de mobilisation du sol', pick(['ELU', 'ELUs'], (r) => r.q34 / r.qlim), "q'ref (MPa)", (r) => r.q34, (r) => r.qlim],
       ['ELU de renversement', pick(['ELU', 'ELUs'], (r) => r.decomp), 'Décompression (%)', (r) => r.decomp, () => lim.decELU],
+      // glissement (Fasc. 62 titre V) : résultante horizontale (différence des poussées des deux voiles, séisme) ≤ N tgφ′/1,2
+      ['ELU de glissement', pick(['ELU', 'ELUs'], (r) => Math.abs(r.H) / Math.max(1e-9, r.N)), "H ≤ N tgφ′/1,2 (kN)", (r) => Math.abs(r.H), (r) => r.N * (+d.fond.mu || 0.6) / 1.2],
     ].map(([nom, r, par, v, a]) => ({ nom, comb: r.no, par, val: v(r), adm: a(r), ok: v(r) <= a(r) + 1e-9 }));
     // ── béton armé ──
     const o = { regl: d.regl, fck: d.beton.fck, fyk: d.beton.fyk, ssLim: d.beton.ssLim, n: d.beton.n || 15, fiss: d.beton.fiss, livret: d.regl !== 'EC' && d.beton.livret };
@@ -310,7 +312,7 @@
       q: { type: f('typchexp', 1) === 0 ? 'route' : 'fer', voies: f('typchexp', 1) === 2 ? 2 : 1, y: f('yexp') / sa, larg: f('lonexp') / sa, exp: f('chgexp') * sa, chantier: f('qchantier'), radier: f('qexpav'), cote: 2 },
       beton: { fck: f('fc28', 25), fyk: f('fe', 500), n: f('nbael', 15), g: f('poivolbet', 25), fiss: f('typfiss', 1), livret: f('patrim', 0) === 1, ssLim: NaN,
         enrob: { sup: f('enrcofterre', 0.025) + 0.03, inf: f('enrcoffouil', 0.03) + 0.025, ext: f('enrcofterre', 0.025) + 0.03, int: f('enrcofavant', 0.045) + 0.03 }, AminVoile: 3, AminRadier: 3 },
-      fond: { qu: f('qu', 1), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
+      fond: { qu: f('qu', 1), mu: f('frotsolsem', 0.6), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: 0, decRare: 25, decELU: 90 }, seisme: { kh: 0, kv: 0 }, options: { deltaVoile: 0 },
     };
   }

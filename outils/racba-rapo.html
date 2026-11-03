@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RACBA-RAPO — Cadres et portiques ponts-rails · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Cadres fermés (1 à 15 m) et portiques ouverts (5 à 25 m) en béton armé sous voies ferrées : LM71, SW/0, SW/2, Φ réduit sous remblai, Guyon-Massonnet, poussées des terres, lignes d'influence, combinaisons EN 1990 A2, ferraillage EC2, fissuration, flèche et fondations.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/racba-rapo.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.sub{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:14px 0 6px}
+.seg{display:flex;gap:4px;margin-bottom:12px}
+.seg button{flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer}
+.seg button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.schema,.frame{width:100%;height:auto;display:block}
+.schema text,.frame text{font-family:'Outfit',sans-serif;font-size:10px;fill:var(--ink3)}
+.selrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-bottom:10px}
+.selrow select{height:30px;border:1px solid var(--border);border-radius:7px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:12.5px;padding:0 8px}
+.note{font-size:11.5px;color:var(--ink3);line-height:1.55}
+.busy{opacity:.55;transition:opacity .2s}
+details.ref ul{columns:1}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › RACBA-RAPO</div>
+      <div class="eyebrow">Socle de calcul · module RACBA-RAPO</div>
+      <h1>Cadres et <em>portiques</em> ponts-rails</h1>
+      <div class="badges"><span class="badge">EN 1990 annexe A2 + AN</span><span class="badge">EN 1991-2 §6.3 à §6.5</span><span class="badge">EN 1992-1-1 / 1992-2</span><span class="badge">Fasc. 62 titre V</span><span class="badge">Livret 2.01</span></div>
+    </div>
+    <p class="lead">Cadre fermé (ouverture 1 à 15 m) ou portique ouvert (portée 5 à 25 m) en béton armé sous une ou deux voies, avec ou sans remblai sur la traverse : modèle plan sur sol élastique, lignes d’influence des charges ferroviaires, enveloppes et combinaisons, ferraillage, fissuration, flèche et contraintes sous les fondations.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card">
+    <div class="seg" id="seg"><button data-t="cadre">Cadre fermé (RACBA)</button><button data-t="portique">Portique ouvert (RAPO)</button></div>
+    <div class="actions">
+      <button class="btn primary" id="b-calc">Calculer</button>
+      <button class="btn gold" id="b-note">Note de calcul</button>
+      <button class="btn sm" id="b-save">Enregistrer</button>
+      <button class="btn sm" id="b-open">Ouvrir</button>
+      <button class="btn sm" id="b-don">Importer un fichier .don</button>
+      <button class="btn sm" id="b-def">Valeurs par défaut</button>
+    </div>
+    <div id="msg" style="margin-top:10px"></div>
+  </div>
+  <div class="card"><div class="card-title"><span>Géométrie</span><small>m, grades</small></div><svg class="schema" id="schema" viewBox="0 0 420 260"></svg><div class="fields c3" id="f-geo" style="margin-top:10px"></div></div>
+  <div class="card"><div class="card-title"><span>Voies, superstructures et charges</span></div><div class="fields c3" id="f-voie"></div></div>
+  <div class="card"><div class="card-title"><span>Terres, eau et sol</span></div><div class="fields c3" id="f-sol"></div></div>
+  <div class="card"><div class="card-title"><span>Matériaux, fissuration et critères</span></div><div class="fields c3" id="f-mat"></div></div>
+  <div class="card"><div class="card-title"><span>Coefficients et actions complémentaires</span><small>EN 1990 A2 + AN</small></div><div class="fields c3" id="f-coef"></div></div>
+  <div class="card">
+    <details class="ref"><summary>Périmètre et hypothèses</summary>
+      <ul>
+        <li><b>Modèle</b> : barres au feuillet moyen (BA.portique), traverse de portée LarCal = (ouverture + épaisseur du piédroit)/sin(biais), largeur LonDal·sin(biais) ; piédroits de largeur variable de la longueur biaise des piédroits à celle de la traverse ; goussets par épaisseur effective (pente limitée à 1/3) ; radier ou semelles sur appuis élastiques (k × aire d’influence), ressorts doublés pour les actions de courte durée ; béton Ecm (courte durée) et Ecm/(1+φ) (longue durée). Portique : semelles sur sol élastique, ou ressorts (Kv, Kh, Kθ issus de FONDATIO pour des fondations semi-profondes ou profondes), ou encastrement.</li>
+        <li><b>Mode « tronçon »</b> : sollicitations totales de l’ouvrage, charges ferroviaires × n voies × Φ × α × K de Guyon-Massonnet (GMSLT, dalle isotrope α = 1, portée équivalente 0,8 × portée droite, largeur de chargement 2,25 m + diffusion 4:1 dans ballast et remblai + 1:1 dans le béton, 17 fibres). <b>Mode « tranche de 1 m »</b> (cadre) : biais pris à 100 gr, charge d’une voie répartie sur 2,25 m + 1/4 dans le ballast, 1/2 (ou 30°) dans le remblai, 1/4 (ou 45°) dans le béton jusqu’au feuillet moyen (EN 1991-2 §6.3.6.2, §6.3.6.3), recouvrement des bandes des deux voies.</li>
+        <li><b>Charges</b> : LM71 à essieux répartis sur 6,40 m (156,25 kN/m) + 80 kN/m fractionnable, SW/0, SW/2 par lignes d’influence ; Φ2 ou Φ3 (LΦ = max[1,3·(L + 2H)/3 ; L ; H]) réduit sous remblai (§6.4.5.3) ; groupe gr11/gr21 : vertical + freinage/démarrage (33 kN/m × α ou 35 kN/m pour SW/2, × longueur de l’ouvrage × Kd du Livret 2.01) + surcharge des remblais (150 kN/m par voie diffusée sur 3 m à 0,70 m sous le rail puis à 2:1, poussée uniforme × k et réaction triangulaire du remblai opposé) ; avec deux voies, SW/2 sur une voie + LM71 sur l’autre (gr26). Quand le freinage agit, la charge verticale favorable est conservée à 0,5.</li>
+        <li><b>Permanentes</b> : poids propre (le radier, coulé sur le sol, n’est pas porté par le cadre), étanchéité, remblai sur traverse × Kter (1,05/0,95) × coefficient de Marston, ballast et équipements (1,3/0,7), poussées Ka et K0 = Ka(1 + 2/3 sin φ) avec φ ± Δφ (dissymétrie gauche/droite), terres sur talons et patins, eau (pression latérale et sous-pression), retrait. Actions de même origine pondérées ensemble (ballast + poussées du ballast, talon + poussée).</li>
+        <li><b>Combinaisons</b> : construites section par section pour chaque grandeur (M, N, V) avec choix des valeurs sup/inf selon le signe de l’effet et des familles Ka / K0 ; ELU 6.10 (γG = 1,35/1,00, γQ trafic 1,45, SW/2 1,20 modifiable, surcharge des remblais 1,45, température 1,50, ψ0 = 0,8 / 0,6), ELS caractéristiques, fréquentes (ψ1 = 0,8 / 0,7 selon le nombre de voies), quasi permanentes (ψ2 = 0 trafic, 0,5 température). Température : ΔTN et ΔTM combinés (EN 1991-1-5 §6.1.5, ωN = 0,35, ωM = 0,75).</li>
+        <li><b>Justifications</b> : BA.sectionBA (EN 1992) — dimensionnement ELU en flexion composée (flexion simple aux sections d’angle, option), contraintes ELS (0,6 fck ; 0,45 fck QP ; 0,8 fyk), ouverture des fissures §7.3.4 ou contrainte limite de l’acier, ferraillage minimal de maîtrise de la fissuration §7.3.2 (σs du tableau 7.2N), non-fragilité §9.2.1.1, effort tranchant §6.2 (dalle). Fatigue et séisme non traités.</li>
+        <li><b>Flèche</b> : LM71 × Φ × α sur une voie (K de la voie la plus excentrée), rigidité interpolée entre états non fissuré et fissuré (§7.4.3), comparée à L/600 et à L/δ de la figure A2.3 de l’EN 1990 (saisi, × 0,7 pour une travée isolée, ÷ bv).</li>
+        <li><b>Fondations</b> : contraintes locales des appuis élastiques ; vérification globale du Fascicule 62 titre V (q’ref = (3σmax + σmin)/4, q’adm = q’0 + (q’u − q’0)·iδ/γ avec iδ de l’annexe F1, décompression 0 / 25 / 90 %, glissement tan φ/1,2). Pour un calcul complet avec sondage pressiométrique, utiliser FONDATIO.</li>
+      </ul>
+    </details>
+  </div>
+</div>
+
+<div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/gmslt.js"></script>
+<script src="js/bael-ec2.js"></script>
+<script src="js/sondpres.js"></script>
+<script src="js/fondatio.js"></script>
+<script src="js/racba-rapo.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const RR = BA.racbaRapo, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
+  const KEY = 'racba-rapo';
+
+  /* ── schémas de saisie ── */
+  const F = {
+    geo: (t) => [
+      { id: 'projet', label: 'Projet', type: 'txt', wide: true, def: '' },
+      t === 'cadre' ? { id: 'mode', label: 'Calcul', type: 'sel', options: [['troncon', 'Ouvrage complet (Guyon-Massonnet)'], ['tranche', 'Tranche de 1 m la plus sollicitée']], wide: true } : null,
+      { id: 'ouv', label: t === 'cadre' ? 'Ouverture droite' : 'Portée droite (ouverture)', unit: 'm' },
+      { id: 'hauint', label: 'Hauteur intérieure', unit: 'm', help: t === 'cadre' ? 'intrados traverse – dessus radier' : 'intrados traverse – dessus semelle' },
+      { id: 'biais', label: 'Biais', unit: 'gr' },
+      { id: 'eptra', label: 'Épaisseur traverse', unit: 'm' },
+      { id: 'eppied', label: 'Épaisseur piédroits', unit: 'm' },
+      t === 'cadre' ? { id: 'eprad', label: 'Épaisseur radier', unit: 'm' } : { id: 'hausem', label: 'Épaisseur semelles', unit: 'm' },
+      { id: 'haugousup', label: 'Gousset haut : épaisseur', unit: 'm' },
+      { id: 'longousup', label: 'Gousset haut : longueur', unit: 'm' },
+      t === 'cadre' ? { id: 'haugouinf', label: 'Gousset bas : hauteur', unit: 'm' } : { id: 'lartal', label: 'Largeur du talon', unit: 'm' },
+      t === 'cadre' ? { id: 'longouinf', label: 'Gousset bas : longueur', unit: 'm' } : { id: 'larpat', label: 'Largeur du patin', unit: 'm' },
+      { id: 'lontottab', label: 'Longueur biaise traverse', unit: 'm' },
+      { id: 'lonpied', label: 'Longueur biaise piédroits', unit: 'm' },
+      t === 'cadre' ? { id: 'lonrad', label: 'Longueur biaise radier', unit: 'm' } : { id: 'fond', label: 'Fondations', type: 'sel', options: [['superficielle', 'Semelles sur sol élastique'], ['ressorts', 'Ressorts (semi-prof. / profondes)'], ['encastre', 'Encastrement']] },
+      { id: 'hauterint', label: t === 'cadre' ? 'Terre sur le radier' : 'Terre sur les patins', unit: 'm' },
+    ].filter(Boolean),
+    voie: (t) => [
+      { id: 'nbvoi', label: 'Nombre de voies', type: 'sel', options: [[1, '1 voie'], [2, '2 voies']] },
+      { id: 'axevoi1', label: 'Excentricité voie 1', unit: 'm', help: '/ axe du tronçon' },
+      { id: 'axevoi2', label: 'Excentricité voie 2', unit: 'm' },
+      { id: 'eprem', label: 'Remblai sur traverse', unit: 'm', help: '0 : cadre sous ballast' },
+      { id: 'epbal', label: 'Épaisseur de ballast', unit: 'm' },
+      { id: 'hautraverse', label: 'Hauteur des traverses', unit: 'm' },
+      { id: 'epetan', label: 'Étanchéité', unit: 'm' },
+      { id: 'poicor', label: 'Corniches + garde-corps', unit: 'kN/m', help: 'total des deux rives (valeurs types : fichier EquipementRail)' },
+      { id: 'vmax', label: 'Vitesse de la ligne', unit: 'km/h' },
+      { id: 'entretien', label: 'Entretien de la voie', type: 'sel', options: [['soigne', 'soigné (Φ2)'], ['courant', 'courant (Φ3)']] },
+      { id: 'hPhi', label: 'Couverture h pour Φred', type: 'sel', options: [['EN', 'EN : extrados → dessus traverses'], ['origine', 'programme d’origine (sous traverses)']] },
+      { id: 'alpha', label: 'α (LM71, SW/0)' },
+      { id: 'LM71', label: 'LM71', type: 'chk' }, { id: 'SW0', label: 'SW/0', type: 'chk' }, { id: 'SW2', label: 'SW/2', type: 'chk' },
+      { id: 'freinLM', label: 'Démarrage LM71', unit: 'kN/m' },
+      { id: 'freinSW2', label: 'Freinage SW/2', unit: 'kN/m' },
+      { id: 'kdLivret', label: 'Kd du Livret 2.01 (couverture)', type: 'chk' },
+      { id: 'diffRemblai', label: 'Diffusion dans le remblai', type: 'sel', options: [[2, '2:1 (1/2)'], ['tan30', '30°']] },
+      { id: 'diffBeton', label: 'Diffusion dans le béton', type: 'sel', options: [[4, '4:1 (1/4)'], ['45', '45°']] },
+      t === 'cadre' ? { id: 'charexpint', label: 'Charge dans le cadre', unit: 'kN/m²' } : null,
+      { id: 'engin', label: 'Engin de chantier (phase provisoire)', type: 'chk', wide: true },
+      { id: 'Pav', label: 'Essieu avant', unit: 'kN' }, { id: 'Par', label: 'Essieu arrière', unit: 'kN' }, { id: 'empat', label: 'Empattement', unit: 'm' },
+      { id: 'voieAv', label: 'Voie des essieux', unit: 'm' }, { id: 'aImp', label: 'Impact long.', unit: 'm' }, { id: 'epRembPro', label: 'Remblai provisoire', unit: 'm' },
+    ].filter(Boolean),
+    sol: (t) => [
+      { id: 'phi', label: 'φ du remblai', unit: '°' }, { id: 'dphi', label: '± Δφ', unit: '°', help: 'dissymétrie de poussée' },
+      { id: 'k0mode', label: 'K0', type: 'sel', options: [['livret', 'Ka(1 + 2/3 sin φ)'], ['jaky', '1 − sin φ (Jaky)']] },
+      { id: 'gTer', label: 'γ terres', unit: 'kN/m³' }, { id: 'gTerSat', label: 'γ terres saturées', unit: 'kN/m³' }, { id: 'gBal', label: 'γ ballast', unit: 'kN/m³' },
+      { id: 'Kmarston', label: 'Coef. de Marston', help: 'surpression du remblai sur la traverse' },
+      { id: 'hw', label: 'Hauteur d’eau', unit: 'm', help: 'au-dessus de la base' },
+      { id: 'solMode', label: 'Module de réaction', type: 'sel', options: [['k', 'saisi'], ['pressio', 'pressiométrique (Ménard)']] },
+      { id: 'ksol', label: 'k longue durée', unit: 'MPa/m' }, { id: 'EM', label: 'EM', unit: 'MPa' }, { id: 'alphaM', label: 'α rhéologique' },
+      { id: 'rapSol', label: 'Rapport k CD / LD' },
+      t === 'portique' ? { id: 'Kv', label: 'Kv (ressorts)', unit: 'kN/m' } : null, t === 'portique' ? { id: 'Kh', label: 'Kh', unit: 'kN/m' } : null, t === 'portique' ? { id: 'Kr', label: 'Kθ', unit: 'kN·m/rad' } : null,
+      { id: 'qu', label: 'q’u (rupture)', unit: 'MPa', help: '0 : non vérifié' }, { id: 'De', label: 'De', unit: 'm' }, { id: 'phiF', label: 'φ sol de fondation', unit: '°' },
+      { id: 'frottant', label: 'Sol frottant (iδ)', type: 'chk' },
+    ].filter(Boolean),
+    mat: () => [
+      { id: 'fck', label: 'fck', unit: 'MPa' }, { id: 'fyk', label: 'fyk', unit: 'MPa' }, { id: 'classe', label: 'Ductilité', type: 'sel', options: [['A', 'A'], ['B', 'B'], ['C', 'C']] },
+      { id: 'phiFluage', label: 'φ fluage' }, { id: 'gBet', label: 'γ béton', unit: 'kN/m³' }, { id: 'gEtan', label: 'γ étanchéité', unit: 'kN/m³' },
+      { id: 'cCou', label: 'Enrobage courant', unit: 'm' }, { id: 'cOuv', label: 'Enrobage faces vues', unit: 'm' }, { id: 'cRad', label: 'Enrobage dessus radier', unit: 'm' },
+      { id: 'dAxe', label: 'Enrobage → axe des aciers', unit: 'm' },
+      { id: 'critere', label: 'Critère de fissuration', type: 'sel', options: [['wk', 'ouverture wk (§7.3.4)'], ['contrainte', 'contrainte limite de l’acier']] },
+      { id: 'expo', label: 'Classe d’exposition', type: 'sel', options: Object.keys(RR.EXPO).map((k) => [k, k]) },
+      { id: 'wmax', label: 'wmax', unit: 'mm' }, { id: 'wCombi', label: 'Combinaison wk', type: 'sel', options: [['QP', 'quasi permanente'], ['FREQ', 'fréquente']] },
+      { id: 'sigLim', label: 'σs limite (ELS car.)', unit: 'MPa' }, { id: 'phiBar', label: 'φ barres', unit: 'mm' }, { id: 'espBar', label: 'Espacement', unit: 'mm' },
+      { id: 'fsAngles', label: 'Flexion simple aux sections d’angle', type: 'chk', wide: true },
+    ],
+    coef: () => [
+      { id: 'gGsup', label: 'γG,sup' }, { id: 'gGinf', label: 'γG,inf' }, { id: 'gLM', label: 'γQ LM71/SW0' }, { id: 'gSW2', label: 'γQ SW/2' }, { id: 'gFill', label: 'γ surch. remblai' }, { id: 'gT', label: 'γ température' },
+      { id: 'KterMax', label: 'Kter max' }, { id: 'KterMin', label: 'Kter min' }, { id: 'KbalMax', label: 'K ballast max' }, { id: 'KbalMin', label: 'K ballast min' },
+      { id: 'epsRet', label: 'Retrait traverse', help: 'ε (ex. 2e-4)' },
+      { id: 'dilLD', label: 'Dilatation LD', help: 'ε' }, { id: 'dilCD', label: 'Dilatation CD', help: 'ε' }, { id: 'conLD', label: 'Contraction LD', help: 'ε < 0' }, { id: 'conCD', label: 'Contraction CD', help: 'ε < 0' },
+      { id: 'gradHeat', label: 'ΔTM,heat', unit: '°C' }, { id: 'gradCool', label: 'ΔTM,cool', unit: '°C' },
+      { id: 'Ldelta', label: 'L/δ (fig. A2.3)' }, { id: 'kLdelta', label: 'Facteur travée' }, { id: 'bv', label: 'bv confort', unit: 'm/s²' },
+    ],
+  };
+  const ALL = (t) => [].concat(F.geo(t), F.voie(t), F.sol(t), F.mat(t), F.coef(t));
+
+  let st = BA.store.load(KEY);
+  if (!st || !st.type) st = RR.defauts('cadre');
+  let res = null, vue = { et: 'ELU', q: 'M', sec: 0 };
+
+  function render() {
+    document.querySelectorAll('#seg button').forEach((b) => b.classList.toggle('on', b.dataset.t === st.type));
+    BA.form($('f-geo'), F.geo(st.type), 'i-', st); BA.form($('f-voie'), F.voie(st.type), 'i-', st);
+    BA.form($('f-sol'), F.sol(st.type), 'i-', st); BA.form($('f-mat'), F.mat(st.type), 'i-', st); BA.form($('f-coef'), F.coef(st.type), 'i-', st);
+    drawSchema();
+  }
+  function collect() { Object.assign(st, BA.read(ALL(st.type), 'i-')); }
+  const save = () => { collect(); BA.store.save(KEY, st); };
+
+  /* ── schéma coté de la coupe transversale ── */
+  function drawSchema() {
+    const d = st, cadre = d.type === 'cadre';
+    const W = 420, H = 260, eb = cadre ? +d.eprad : +d.hausem;
+    const ext = cadre ? 0 : (+d.lartal || 0), inn = cadre ? 0 : (+d.larpat || 0);
+    const totW = (+d.ouv) + 2 * (+d.eppied) + 2 * ext, totH = (+d.hauint) + (+d.eptra) + eb + (+d.eprem || 0) + (+d.epbal || 0);
+    const s = Math.min((W - 70) / Math.max(totW, 1), (H - 50) / Math.max(totH, 1));
+    const x0 = W / 2, yb = H - 22, X = (x) => x0 + x * s, Y = (y) => yb - y * s;
+    const o = +d.ouv, e = +d.eppied, hi = +d.hauint, et = +d.eptra, hg = +d.haugousup || 0, lg = +d.longousup || 0;
+    let g = '';
+    const poly = (pts, cl) => `<polygon points="${pts.map(([x, y]) => X(x).toFixed(1) + ',' + Y(y).toFixed(1)).join(' ')}" fill="${cl || '#e8e3d6'}" stroke="#8a7a50" stroke-width="1"/>`;
+    const yT = eb + hi;
+    // terres et ballast
+    const ft = yT + et + (+d.eprem || 0);
+    g += `<rect x="${X(-totW / 2 - 0.3)}" y="${Y(ft)}" width="${(totW + 0.6) * s}" height="${(ft) * s}" fill="#f3efe4"/>`;
+    if (+d.eprem > 0) g += `<rect x="${X(-o / 2 - e)}" y="${Y(ft)}" width="${(o + 2 * e) * s}" height="${(+d.eprem) * s}" fill="#e9dfc4"/>`;
+    g += `<rect x="${X(-o / 2 - e - 0.8)}" y="${Y(ft + (+d.epbal || 0))}" width="${(o + 2 * e + 1.6) * s}" height="${(+d.epbal || 0) * s}" fill="#d9d4cb"/>`;
+    // intérieur vide
+    g += `<rect x="${X(-o / 2)}" y="${Y(yT)}" width="${o * s}" height="${hi * s}" fill="#fff"/>`;
+    // structure
+    if (cadre) g += poly([[-o / 2 - e, 0], [o / 2 + e, 0], [o / 2 + e, eb], [-o / 2 - e, eb]]);
+    else for (const sg of [-1, 1]) g += poly([[sg * (o / 2 + e + ext), 0], [sg * (o / 2 - inn), 0], [sg * (o / 2 - inn), eb], [sg * (o / 2 + e + ext), eb]]);
+    for (const sg of [-1, 1]) g += poly([[sg * (o / 2), eb], [sg * (o / 2 + e), eb], [sg * (o / 2 + e), yT + et], [sg * (o / 2), yT + et]]);
+    g += poly([[-o / 2 - e, yT], [o / 2 + e, yT], [o / 2 + e, yT + et], [-o / 2 - e, yT + et]]);
+    for (const sg of [-1, 1]) {
+      if (hg > 0 && lg > 0) g += poly([[sg * o / 2, yT], [sg * (o / 2 - lg), yT], [sg * o / 2, yT - hg]]);
+      if (cadre && +d.haugouinf > 0 && +d.longouinf > 0) g += poly([[sg * o / 2, eb], [sg * (o / 2 - (+d.longouinf)), eb], [sg * o / 2, eb + (+d.haugouinf)]]);
+    }
+    // eau
+    if (+d.hw > 0) g += `<line x1="${X(-totW / 2 - 0.3)}" x2="${X(totW / 2 + 0.3)}" y1="${Y(+d.hw)}" y2="${Y(+d.hw)}" stroke="#2d6be4" stroke-dasharray="4 3"/><text x="${X(totW / 2) - 2}" y="${Y(+d.hw) - 3}" text-anchor="end" style="fill:#2d6be4">eau</text>`;
+    // voies
+    const vo = (+d.nbvoi >= 2 ? [d.axevoi1, d.axevoi2] : [d.axevoi1]);
+    const ytr = ft + (+d.epbal || 0);
+    // axe du feuillet moyen (modèle)
+    g += `<polyline points="${[[-(o + e) / 2, eb / 2], [-(o + e) / 2, yT + et / 2], [(o + e) / 2, yT + et / 2], [(o + e) / 2, eb / 2]].map(([x, y]) => X(x) + ',' + Y(y)).join(' ')}" fill="none" stroke="#a8842a" stroke-dasharray="5 3" stroke-width="1"/>`;
+    // cotes
+    const cote = (x1, x2, y, t) => `<line x1="${X(x1)}" x2="${X(x2)}" y1="${y}" y2="${y}" stroke="#6f7484" stroke-width=".7" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="${(X(x1) + X(x2)) / 2}" y="${y - 3}" text-anchor="middle">${t}</text>`;
+    const coteV = (y1, y2, x, t) => `<line y1="${Y(y1)}" y2="${Y(y2)}" x1="${x}" x2="${x}" stroke="#6f7484" stroke-width=".7" marker-start="url(#ar)" marker-end="url(#ar)"/><text x="${x + 4}" y="${(Y(y1) + Y(y2)) / 2 + 3}">${t}</text>`;
+    g += cote(-o / 2, o / 2, Y(eb + hi * 0.35), `${fmt(o, 2)} m`);
+    g += coteV(eb, yT, X(-o / 2) + 8, `${fmt(hi, 2)}`);
+    g += cote(-o / 2 - e, -o / 2, yb + 14, fmt(e, 2));
+    if (+d.eprem > 0) g += `<text x="${X(o / 2 + e) + 4}" y="${Y(yT + et + (+d.eprem) / 2) + 3}">remblai ${fmt(+d.eprem, 2)} m</text>`;
+    g += `<text x="${X(o / 2 + e + 0.8) + 4}" y="${Y(ytr) + 10}">ballast ${fmt(+d.epbal, 2)} m</text>`;
+    g += `<text x="${X(-o / 2 - e - ext)}" y="12">${cadre ? 'Cadre fermé' : 'Portique ouvert'} — biais ${fmt(+d.biais, 1)} gr, ${+d.nbvoi >= 2 ? 2 : 1} voie(s)</text>`;
+    vo.forEach((v, i) => { g += `<text x="${W - 8}" y="${24 + 12 * i}" text-anchor="end">voie ${i + 1} : e = ${fmt(+v, 2)} m</text>`; });
+    $('schema').innerHTML = `<defs><marker id="ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6 z" fill="#6f7484"/></marker></defs>${g}`;
+  }
+
+  /* ── diagramme d'une grandeur enveloppe dessiné sur le cadre ── */
+  function frameSVG(r, q, et) {
+    const W = 760, H = 420, G = r.G, pad = 70;
+    const xs = r.M.nodes.map((n) => n.x), ys = r.M.nodes.map((n) => n.y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const s = Math.min((W - 2 * pad) / (x1 - x0 || 1), (H - 2 * pad) / (y1 - y0 || 1));
+    const X = (x) => W / 2 + (x - (x0 + x1) / 2) * s, Y = (y) => H / 2 - (y - (y0 + y1) / 2) * s;
+    let vmax = 1e-9;
+    r.S.stations.forEach((st, k) => { const e = r.env[k][et]; vmax = Math.max(vmax, Math.abs(e[q + 'max'][q]), Math.abs(e[q + 'min'][q])); });
+    const sc = 0.13 * Math.min(W, H) / vmax;
+    let g = '';
+    r.M.elems.forEach((e) => { const a = r.M.nodes[e.i], b = r.M.nodes[e.j]; g += `<line x1="${X(a.x)}" y1="${Y(a.y)}" x2="${X(b.x)}" y2="${Y(b.y)}" stroke="#14171f" stroke-width="2.2"/>`; });
+    for (const m of r.diag) {
+      // normale intérieure (M > 0 tend la face intérieure : dessiné côté intérieur)
+      for (const [key, col] of [['max', '#c0392b'], ['min', '#2d6be4']]) {
+        const pts = m.pts.map((p) => {
+          const v = r.env[p.k][et][q + key][q];
+          let nx = 0, ny = 0;
+          if (m.kind === 'trav') ny = -1; else if (m.kind === 'radier') ny = 1; else if (m.kind === 'sem') ny = 1; else nx = p.X < 0 ? 1 : -1;
+          return [X(p.X) + nx * v * sc, Y(p.Y) - ny * v * sc, v, p];
+        });
+        const base = m.pts.map((p) => [X(p.X), Y(p.Y)]);
+        g += `<polygon points="${base.concat(pts.slice().reverse().map((p) => [p[0], p[1]])).map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="${col}" opacity=".12"/>`;
+        g += `<polyline points="${pts.map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="1.2"/>`;
+        // valeur extrême de la barre
+        let ex = pts.reduce((a, p) => (Math.abs(p[2]) > Math.abs(a[2]) ? p : a), pts[0]);
+        if (ex && Math.abs(ex[2]) > 0.02 * vmax) g += `<text x="${ex[0]}" y="${ex[1]}" text-anchor="middle" dy="${key === 'max' ? -3 : 10}" style="fill:${col}">${fmt(ex[2], 0)}</text>`;
+      }
+    }
+    const u = q === 'M' ? 'kN·m' : 'kN';
+    return `<svg class="frame" viewBox="0 0 ${W} ${H}">${g}<text x="10" y="16">${q} ${et === 'ELU' ? 'ELU fondamental' : et === 'CAR' ? 'ELS caractéristique' : et === 'FREQ' ? 'ELS fréquent' : 'ELS quasi permanent'} (${u}${r.G.tranche ? '/m' : ', ouvrage complet'}) — rouge : maximum, bleu : minimum${q === 'M' ? ' ; M > 0 tend la face intérieure' : q === 'N' ? ' ; N > 0 traction' : ''}</text></svg>`;
+  }
+
+  /* ── résultats ── */
+  function afficher(r) {
+    const d = r.d, G = r.G, c = r.cof, J = r.justif, u = G.tranche ? 'kN·m/m' : 'kN·m';
+    const okAll = J.every((j) => j.ok) && r.fleche.ok && r.sol.fond.every((f) => f.ok || !(d.qu > 0));
+    const jm = J.find((j) => j.sec.cle === 'trav-mi');
+    const asMax = Math.max(...J.map((j) => Math.max(...(j.As || [0]))));
+    let h = '';
+    if (r.alertes.length) h += `<div class="msg info">${r.alertes.map(esc).join('<br>')}</div>`;
+    h += BA.card('Synthèse', BA.kpis([
+      { l: 'Φ (réduit)', v: fmt(c.phi, 3), n: `Φ0 = ${fmt(c.phi0, 3)}, LΦ = ${fmt(c.LPhi, 2)} m`, hi: true },
+      { l: G.tranche ? 'Bande de répartition' : 'K Guyon-Massonnet', v: G.tranche ? fmt(c.larRep, 2) : fmt(c.K, 3), u: G.tranche ? 'm' : '', n: G.tranche ? c.info : `θ = ${fmt(c.theta, 3)}, ${c.voies.length} voie(s)` },
+      { l: 'Coef. trafic total', v: fmt(c.cLM, 3), n: G.tranche ? 'α·Φ·n/LarRep (par m)' : 'α · Φ · n voies · K' },
+      { l: 'M traverse mi-portée ELU', v: fmt(r.env[jm.sec.st].ELU.Mmax.M, 0), u },
+      { l: 'As max', v: fmt(asMax, 1), u: 'cm²/m' },
+      { l: 'Flèche LM71', v: fmt(r.fleche.delta * 1000, 2), u: 'mm', n: `adm. ${fmt(r.fleche.admConfort * 1000, 2)} mm`, cls: r.fleche.ok ? 'ok' : 'ko' },
+      { l: 'σ sol max ELS / ELU', v: fmt(r.sol.sigmaMax.CAR / 1000, 3) + ' / ' + fmt(r.sol.sigmaMax.ELU / 1000, 3), u: 'MPa' },
+      { l: 'Verdict', v: okAll ? 'Vérifié' : 'À revoir', cls: okAll ? 'ok' : 'ko' },
+    ]));
+    const sel = (id, opts, v) => `<select id="${id}">${opts.map(([k, t]) => `<option value="${k}"${k === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+    h += BA.card('Sollicitations enveloppes sur la structure', `<div class="selrow">État ${sel('v-et', [['ELU', 'ELU fondamental'], ['CAR', 'ELS caractéristique'], ['FREQ', 'ELS fréquent'], ['QP', 'ELS quasi permanent']], vue.et)} Grandeur ${sel('v-q', [['M', 'Moment M'], ['N', 'Effort normal N'], ['V', 'Effort tranchant V']], vue.q)}</div>${frameSVG(r, vue.q, vue.et)}`);
+    // lignes d'influence
+    const opts = J.map((j, i) => [String(i), j.sec.lib]);
+    const js = J[vue.sec] || J[0];
+    const t = 3 * js.sec.st;
+    const li = { x: r.LI.xs, y: r.LI.Y.map((v) => v[t]) };
+    h += BA.card('Ligne d’influence du moment (charge unité sur la traverse)', `<div class="selrow">Section ${sel('v-sec', opts, String(vue.sec))}</div>` + BA.chart([{ x: li.x, y: li.y, label: 'M (kN·m par kN)' }], { unit: 'kN·m/kN', h: 200 }) + `<div class="note">Abscisse le long de la traverse (m, origine au milieu). Charges ferroviaires placées par recherche de la position la plus défavorable (LM71 réparti sur 6,40 m + 80 kN/m fractionnable, SW/0, SW/2).</div>`);
+    // tableau des sections
+    const rows = J.map((j) => {
+      const e = r.env[j.sec.st];
+      return [j.sec.lib, fmt(j.h, 3), fmt(e.ELU.Mmax.M, 0), fmt(e.ELU.Mmin.M, 0), fmt(e.CAR.Mmax.M, 0), fmt(e.CAR.Mmin.M, 0), fmt(Math.max(Math.abs(e.ELU.Vmax.V), Math.abs(e.ELU.Vmin.V)), 0),
+        j.As ? fmt(j.As[0], 2) : '—', j.As ? fmt(j.As[1], 2) : '—', fmt(j.Asw || 0, 2), fmt(j.scMax, 2), fmt(j.ssMax, 0), d.critere === 'wk' ? fmt(j.wkMax, 3) : '—', j.erreur ? `<span class="ko">${esc(j.erreur)}</span>` : BA.verdict(j.ok)];
+    });
+    h += BA.card('Sections de calcul — sollicitations et aciers', BA.table(['Section', 'h (m)', 'M ELU max', 'M ELU min', 'M car. max', 'M car. min', '|V| ELU', 'As int. (cm²/m)', 'As ext. (cm²/m)', 'Asw (cm²/m²)', 'σc (MPa)', 'σs (MPa)', 'wk (mm)', ''], rows, { leftText: true })
+      + `<div class="note">Moments en ${u} (M > 0 tend la face intérieure). Aciers par mètre de largeur : maximum de l’ELU (flexion composée${d.fsAngles ? ', flexion simple aux sections d’angle' : ''}), de l’ELS (${d.critere === 'wk' ? 'wk ≤ ' + fmt(d.wmax, 2) + ' mm' : 'σs ≤ ' + fmt(d.sigLim, 0) + ' MPa'}), du minimum de fissuration §7.3.2 et de la non-fragilité. Ancrages et décalage des courbes non traités.</div>`, 'symétrie : section du côté gauche');
+    // flèche
+    const f = r.fleche;
+    h += BA.card('Flèche et confort des voyageurs (EN 1990 A2.4.4)', BA.table(['Grandeur', 'Valeur'], [
+      ['Flèche sous LM71 × Φ × α, une voie, section brute', fmt(f.dGross * 1000, 3) + ' mm'],
+      ['Rapport de rigidité (ζ = ' + fmt(f.zeta, 3) + ', Mcr = ' + fmt(f.Mcr, 1) + ' kN·m/m, M car. = ' + fmt(f.Mser, 1) + ')', fmt(f.ratioI, 3)],
+      ['Flèche retenue', fmt(f.delta * 1000, 2) + ' mm'],
+      ['Admissible confort : L / (L/δ × ' + fmt(d.kLdelta, 2) + ' / bv), L = ' + fmt(f.L, 3) + ' m', fmt(f.admConfort * 1000, 2) + ' mm'],
+      ['Admissible L/600 (A2.4.4.2.3)', fmt(f.adm600 * 1000, 2) + ' mm'],
+      ['Verdict', BA.verdict(f.ok)]], { leftText: true }));
+    // sol
+    const fr = r.sol.fond.map((fd) => BA.table(['État', 'Cible', 'N (kN)', 'H (kN)', 'M (kN·m)', 'σmax (kPa)', 'Décomp. %', 'q’ref (MPa)', 'q’adm (MPa)', 'H / Hres', ''],
+      fd.lignes.map((l) => [l.et, l.cible, fmt(l.N, 0), fmt(l.H, 0), fmt(l.M, 0), fmt(l.smax, 0), fmt(l.dec, 1) + ' / ' + l.decAdm, fmt(l.qref, 3), d.qu > 0 ? fmt(l.qadm, 3) : '—', l.et === 'ELU' ? fmt(Math.abs(l.H) / l.Hres, 2) : '—', BA.verdict(l.okP && l.okD && l.okG)]),
+      { caption: `${fd.nom} : B = ${fmt(fd.B, 2)} m (plan du modèle), L = ${fmt(fd.L, 2)} m` })).join('');
+    h += BA.card('Fondations (Fascicule 62 titre V)', `<div class="note">Module de réaction longue durée ${fmt(r.kSol, 1)} MPa/m. Contraintes maximales des appuis élastiques : ELS car. ${fmt(r.sol.sigmaMax.CAR, 0)} kPa, ELS QP ${fmt(r.sol.sigmaMax.QP, 0)} kPa, ELU ${fmt(r.sol.sigmaMax.ELU, 0)} kPa.</div>` + fr);
+    // coefficients
+    h += BA.card('Coefficients et cas de charges', BA.table(['Grandeur', 'Valeur'], [
+      ['LarCal, HauCal (m)', fmt(G.LarCal, 3) + ' ; ' + fmt(G.HauCal, 3)], ['Largeur de traverse / piédroits (m)', fmt(G.Btrav, 3) + ' ; ' + fmt(G.Bpied, 3)],
+      ['h couverture pour Φred, H1 sous traverses (m)', fmt(c.hPhi, 3) + ' ; ' + fmt(c.H1, 3)], ['Kd freinage (Livret 2.01)', fmt(c.Kd, 3)],
+      ['Freinage / démarrage LM71, SW/2 (kN)', fmt(c.FLM, 1) + ' ; ' + fmt(c.FSW2, 1)], ['Surcharge du remblai (kN par m de hauteur, k = 1)', fmt(c.Wfill, 1)],
+      ['Ka, K0 (φ nominal)', fmt(c.ka, 4) + ' ; ' + fmt(c.k0, 4)], ['Ka max/min, K0 max/min', `${fmt(c.kaMax, 4)}/${fmt(c.kaMin, 4)} ; ${fmt(c.k0Max, 4)}/${fmt(c.k0Min, 4)}`],
+      ...Object.values(r.cases).map((cs) => [cs.nom + ' — ' + esc(cs.desc), cs.dur === 'LD' ? 'longue durée' : 'courte durée']),
+    ], { leftText: true }));
+    $('out').innerHTML = h;
+    $('v-et').onchange = (e) => { vue.et = e.target.value; afficher(res); };
+    $('v-q').onchange = (e) => { vue.q = e.target.value; afficher(res); };
+    $('v-sec').onchange = (e) => { vue.sec = +e.target.value; afficher(res); };
+  }
+
+  function calculer() {
+    save();
+    $('out').classList.add('busy');
+    setTimeout(() => {
+      try { res = RR.calcul(st); afficher(res); $('msg').innerHTML = ''; }
+      catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; console.error(e); }
+      $('out').classList.remove('busy');
+    }, 20);
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!res) return;
+    const r = res, d = r.d, c = r.cof, G = r.G;
+    const T = (h, rows) => BA.table(h, rows, { leftText: true });
+    const secs = [];
+    secs.push({ titre: '1. Objet et ouvrage', html: `<p>${d.type === 'cadre' ? 'Cadre fermé' : 'Portique ouvert'} en béton armé sous ${G.cadre ? '' : ''}${c.voies.length} voie(s) ferrée(s), calcul ${G.tranche ? 'd’une tranche de 1 m' : 'de l’ouvrage complet (tronçon)'}.</p>` +
+      T(['Donnée', 'Valeur'], ALL(d.type).filter((f) => f.type !== 'txt').map((f) => [f.label + (f.unit ? ' (' + f.unit + ')' : ''), f.type === 'chk' ? (d[f.id] ? 'oui' : 'non') : f.type === 'sel' ? esc(String((f.options.find((o) => String(o[0]) === String(d[f.id])) || [0, d[f.id]])[1])) : fmt(d[f.id], 4)])) });
+    secs.push({ titre: '2. Règlements et hypothèses', html: `<p>EN 1990 annexe A2 et AN française ; EN 1991-2 (LM71, SW/0, SW/2, Φ, freinage, surcharge des remblais, groupes de charges) ; EN 1991-1-5 ; EN 1992-1-1 et 1992-2 ; Fascicule 62 titre V ; Livret 2.01 pour Kter, K0, Kd.</p>` + document.querySelector('details.ref').innerHTML.replace(/<summary>.*?<\/summary>/, '') });
+    secs.push({ titre: '3. Coefficients de calcul', html: T(['Grandeur', 'Valeur'], [
+      ['LΦ = max[1,3(L+2H)/3 ; L ; H]', fmt(c.LPhi, 3) + ' m'], ['Φ (' + (d.entretien === 'courant' ? 'Φ3' : 'Φ2') + ')', fmt(c.phi0, 4)], ['h couverture, Φred = max(1 ; Φ − (h − 1)/10)', fmt(c.hPhi, 3) + ' m → ' + fmt(c.phi, 4)],
+      [G.tranche ? 'Largeur de répartition' : 'K Guyon-Massonnet (2 voies moyennées)', G.tranche ? fmt(c.larRep, 3) + ' m' : fmt(c.K, 4)], ['K une voie (flèche)', G.tranche ? '—' : fmt(c.K1, 4)],
+      ['Coefficient total LM71/SW0 (toutes voies)', fmt(c.cLM, 4)], ['Coefficient SW/2 (une voie)', fmt(c.cSW2, 4)],
+      ['Kd, freinage LM71 / SW2', fmt(c.Kd, 3) + ' ; ' + fmt(c.FLM, 1) + ' kN / ' + fmt(c.FSW2, 1) + ' kN'], ['Ka, K0', fmt(c.ka, 4) + ' ; ' + fmt(c.k0, 4)], ['Module de réaction', fmt(r.kSol, 2) + ' MPa/m']]) });
+    secs.push({ titre: '4. Modèle et cas de charges élémentaires', html: `<p>${r.M.nodes.length} nœuds, ${r.M.elems.length} barres, ${r.ressorts.length} appuis élastiques. LarCal = ${fmt(G.LarCal, 3)} m, HauCal = ${fmt(G.HauCal, 3)} m.</p>` +
+      T(['Cas', 'Description', 'Durée', 'M mi-traverse'], Object.values(r.cases).map((cs) => { const j = r.justif.find((x) => x.sec.cle === 'trav-mi'); return [cs.nom, esc(cs.desc), cs.dur, fmt(r.E[cs.nom][3 * j.sec.st], 2)]; })) });
+    secs.push({ titre: '5. Sollicitations enveloppes', html: frameSVG(r, 'M', 'ELU') + frameSVG(r, 'M', 'CAR') + T(['Section', 'ELU M max (N)', 'ELU M min (N)', 'car. M max', 'car. M min', 'QP M max', 'QP M min', '|V| ELU'], r.justif.map((j) => { const e = r.env[j.sec.st];
+      return [j.sec.lib, fmt(e.ELU.Mmax.M, 0) + ' (' + fmt(e.ELU.Mmax.N, 0) + ')', fmt(e.ELU.Mmin.M, 0) + ' (' + fmt(e.ELU.Mmin.N, 0) + ')', fmt(e.CAR.Mmax.M, 0), fmt(e.CAR.Mmin.M, 0), fmt(e.QP.Mmax.M, 0), fmt(e.QP.Mmin.M, 0), fmt(Math.max(Math.abs(e.ELU.Vmax.V), Math.abs(e.ELU.Vmin.V)), 0)]; })) });
+    secs.push({ titre: '6. Justification des sections (EN 1992)', html: r.justif.map((j) => `<p><b>${esc(j.sec.lib)}</b> — h = ${fmt(j.h, 3)} m, d int./ext. = ${fmt(j.dIn, 3)} / ${fmt(j.dOut, 3)} m${j.fs ? ', flexion simple' : ''}.</p>` +
+      T(['Combinaison', 'N (kN/m)', 'M (kN·m/m)', 'Résultat'], (j.elu || []).map((e, k) => ['ELU ' + e.src, fmt(e.N, 1), fmt(e.M, 1), j.eluR ? 'taux ' + fmt(j.eluR[k].ratio, 3) : '—']).concat((j.elsR || []).map((e, k) => [esc(e.libType) + ' ' + j.els[k].src.split(' ')[1], fmt(j.els[k].N, 1), fmt(j.els[k].M, 1), `σc ${fmt(e.sc, 2)} ; σs ${fmt(-e.ssMin, 0)}${e.wk ? ' ; wk ' + fmt(e.wk.wk, 3) : ''} ${BA.verdict(e.ok)}`])))
+      + `<p>As retenus : intérieur ${fmt(j.As && j.As[0], 2)} cm²/m, extérieur ${fmt(j.As && j.As[1], 2)} cm²/m (minimum §7.3.2 : ${fmt(j.AminF, 2)} cm²/m avec σs = ${fmt(j.sigS, 0)} MPa) ; Asw = ${fmt(j.Asw, 2)} cm²/m² ; ${BA.verdict(j.ok)}</p>`).join('') });
+    const f = r.fleche;
+    secs.push({ titre: '7. Flèche', html: `<p>δ = ${fmt(f.dGross * 1000, 3)} mm × ${fmt(f.ratioI, 3)} = ${fmt(f.delta * 1000, 2)} mm ; admissible ${fmt(f.admConfort * 1000, 2)} mm (confort) et ${fmt(f.adm600 * 1000, 2)} mm (L/600) : ${BA.verdict(f.ok)}</p>` });
+    secs.push({ titre: '8. Fondations', html: r.sol.fond.map((fd) => `<p><b>${esc(fd.nom)}</b></p>` + T(['État', 'Cible', 'N', 'H', 'M', 'σmax', 'Décomp.', 'q’ref', 'q’adm', 'Verdict'], fd.lignes.map((l) => [l.et, l.cible, fmt(l.N, 0), fmt(l.H, 0), fmt(l.M, 0), fmt(l.smax, 0), fmt(l.dec, 1), fmt(l.qref, 3), d.qu > 0 ? fmt(l.qadm, 3) : '—', BA.verdict(l.okP && l.okD && l.okG)]))).join('') });
+    if (r.alertes.length) secs.push({ titre: 'Alertes', html: r.alertes.map(esc).join('<br>') });
+    BA.note({ titre: (d.type === 'cadre' ? 'Cadre fermé' : 'Portique ouvert') + ' sous voies ferrées', code: 'RACBA-RAPO', regl: 'EN 1990 A2 · EN 1991-2 · EN 1992 · Fascicule 62 titre V', projet: d.projet, sections: secs });
+  }
+
+  /* ── événements ── */
+  document.querySelectorAll('#seg button').forEach((b) => (b.onclick = () => { collect(); if (st.type !== b.dataset.t) { const p = st.projet; st = RR.defauts(b.dataset.t); st.projet = p; render(); calculer(); } }));
+  document.querySelector('.col-in').addEventListener('input', () => { collect(); drawSchema(); BA.store.save(KEY, st); });
+  document.querySelector('.col-in').addEventListener('change', () => { collect(); drawSchema(); BA.store.save(KEY, st); });
+  $('b-calc').onclick = calculer;
+  $('b-note').onclick = note;
+  $('b-def').onclick = () => { st = RR.defauts(st.type); render(); calculer(); };
+  $('b-save').onclick = () => { collect(); BA.store.download((st.projet || 'racba-rapo').replace(/[^\w-]+/g, '_') + '.json', st); };
+  $('b-open').onclick = () => BA.store.pick('.json', (txt) => { try { const o = JSON.parse(txt); st = Object.assign(RR.defauts(o.type || 'cadre'), o); render(); calculer(); } catch (e) { $('msg').innerHTML = `<div class="msg err">Fichier illisible : ${esc(e.message)}</div>`; } });
+  $('b-don').onclick = () => BA.store.pick('.don', (txt, nom) => { try { const x = RR.lireDon(txt); st = x.d; if (!st.projet) st.projet = nom; render(); calculer(); $('msg').innerHTML = `<div class="msg info">Fichier ${esc(nom)} importé (${st.type === 'cadre' ? 'cadre' : 'portique'}). Vérifier les données non reprises : séisme, fatigue, charges quelconques en phase provisoire, sondage pressiométrique.</div>`; } catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; } });
+  render();
+  calculer();
+})();
+</script>
+</body>
+</html>

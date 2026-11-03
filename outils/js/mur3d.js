@@ -721,7 +721,8 @@
     const o = { regl: d.regl, fck: d.beton.fck, fyk: d.beton.fyk, ssLim: d.beton.ssLim, n: d.beton.n || 15, fiss: d.beton.fiss, livret: d.regl !== 'EC' && d.beton.livret, AminSeul: !!d.beton.AminSeul };
     const enr = d.beton.enrob;   // {avant, arriere, fouille, terre} (m)
     const alertes = [];
-    const elsC = res.filter((r) => r.type === 'ELSr' || r.type === 'ELSf'), eluC = res.filter((r) => r.type === 'ELU' || r.type === 'ELUs');
+    const garde = (r) => !profond || !!r.pieux;   // fondation profonde : combinaisons transmises à FONDATIO seulement
+    const elsC = res.filter((r) => (r.type === 'ELSr' || r.type === 'ELSf') && garde(r)), eluC = res.filter((r) => (r.type === 'ELU' || r.type === 'ELUs') && garde(r));
     const typeELU = (r) => (r.type === 'ELUs' ? 5 : (r.Qw || r.Qp || r.Cp || r.Cw || r.QP) ? 3 : 1);
     // courbes de poussée sur le parement arrière (δ voile), par tranche
     for (const g of tr) {
@@ -859,7 +860,16 @@
       }
       return [Fx, Fy, Fz, Mx, My, Mz];
     };
-    const combs = res.map((r) => { const ld = torseur(perm(r)), tot = torseur(r); return { type: typeComb[r.type], ld, cd: tot.map((v, i) => v - ld[i]), no: r.no }; });
+    // sélection des combinaisons enveloppes (extrêmes de N, H, Mx, My par état limite) : FONDATIO résout un groupe non
+    // linéaire par combinaison ; les autres combinaisons sont couvertes par ces extrêmes (semelle rigide, efforts linéaires)
+    const sel = new Set();
+    for (const t of ['ELSf', 'ELSr', 'ELU', 'ELUs']) {
+      const L = res.filter((r) => r.type === t); if (!L.length) continue;
+      for (const f of [(r) => r.N, (r) => -r.N, (r) => Math.abs(r.Hy), (r) => r.Mx, (r) => -r.Mx, (r) => Math.abs(r.My), (r) => r.N + Math.abs(r.Mx) / 1.5])
+        sel.add(L.reduce((a, r) => (f(r) > f(a) ? r : a)));
+    }
+    const resSel = res.filter((r) => sel.has(r));
+    const combs = resSel.map((r) => { const ld = torseur(perm(r)), tot = torseur(r); return { type: typeComb[r.type], ld, cd: tot.map((v, i) => v - ld[i]), no: r.no }; });
     const data = {
       type: 'pieux', sps: F.sps, zsem: zf, zdef: Number.isFinite(+F.zdef) ? +F.zdef : (+d.haute.zav + +d.basse.zav) / 2, ztn: +F.ztn || (+d.haute.zav + +d.basse.zav) / 2,
       gamma: d.sol.g, gammaSat: d.sol.gsat, gammaB: d.beton.g, rapSol: +F.rapSol || 2, fcj: +F.fcj || 25, fe: d.beton.fyk, px: 0, py: 0,
@@ -871,7 +881,7 @@
     // réactions par pieu, rapportées à chaque combinaison MUR3D (pour les consoles patin / talon)
     const nAv = (F.xAv || []).length, bAv = nAv ? d.L / nAv : d.L, nAr = (F.xAr || []).length, bAr = nAr ? d.L / nAr : d.L;
     R.combs.forEach((rc, k) => {
-      const r = res[k];
+      const r = resSel[k];
       r.pieux = rc.piles.map((p, i) => ({ N: p.N, y: piles[i].y + yg, D: +F.D, bx: piles[i].file === 'avant' ? bAv : bAr }));
     });
     const pire = (t, f) => R.combs.filter((c) => c.type.startsWith(t)).reduce((a, c) => (!a || f(c) > f(a) ? c : a), null);
