@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APPMOBIL — Appareils d’appui en élastomère fretté — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Dimensionnement et vérification des appareils d’appui en élastomère fretté (rectangulaires et circulaires) : NF EN 1337-3, guide Sétra 2000, Livret 2.01. Distorsions, frettes, rotation, flambement, glissement, soulèvement, raideurs.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/appmobil.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.bar{display:inline-block;width:70px;height:6px;border-radius:3px;background:#eee;vertical-align:middle;margin-left:6px;overflow:hidden}
+.bar i{display:block;height:100%}
+.schema svg{width:100%;height:auto;display:block}
+.schema text{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink3)}
+.hide{display:none!important}
+.grid-in input{min-width:58px}
+.combis-wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
+      <div class="eyebrow">APPMOBIL</div>
+      <h1>Appareils d’appui en <em>élastomère fretté</em></h1>
+      <div class="badges"><span class="badge">NF EN 1337-3 (2005)</span><span class="badge">Guide Sétra 2007</span><span class="badge">Guide Sétra sept. 2000</span><span class="badge">Livret 2.01 · BT4</span></div>
+    </div>
+    <p class="lead">Dimensionnement dans le catalogue des dimensions courantes ou vérification d’un appareil donné, rectangulaire ou circulaire : pression, distorsions, frettes, stabilité en rotation et au flambement, glissement, soulèvement, raideurs horizontale et verticale.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card"><div class="card-title"><span>Calcul</span></div><div class="fields" id="f-gen"></div></div>
+  <div class="card" id="c-plaque"><div class="card-title"><span>Appareil</span><small id="plaque-sub"></small></div><div class="fields" id="f-plaque"></div></div>
+  <div class="card"><div class="card-title"><span>Matériaux et coefficients</span></div><div class="fields" id="f-mat"></div></div>
+  <div class="card" id="c-ec"><div class="card-title"><span>Combinaisons</span><small>une ligne par combinaison</small></div>
+    <div class="combis-wrap" id="rows-ec"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.45">N, H en kN ; α en rad ; v en m. « ld » = longue durée (module G), « cd » = courte durée (module Gd). Hx, vx et αa suivant le côté a. αa est donnée sans la rotation de pose α0 (ajoutée par le programme, ×1,35 à l’ELU). Avec l’option « déplacements lents », Hx,ld et Hy,ld sont des déplacements en m.</div>
+  </div>
+  <div class="card hide" id="c-liv"><div class="card-title"><span>Livret 2.01 — sollicitations</span></div>
+    <div class="fields" id="f-liv"></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--ink3)">Combinaisons ELU (N en kN, H2 efforts rapides en kN, αT en rad, u1 déplacements lents en m)</div>
+    <div class="combis-wrap" id="rows-liv"></div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="b-calc">Calculer</button>
+    <button class="btn gold" id="b-note">Note de calcul</button>
+    <button class="btn" id="b-save">Enregistrer</button>
+    <button class="btn" id="b-open">Ouvrir</button>
+    <button class="btn" id="b-don">Importer un fichier .don</button>
+    <button class="btn sm" id="b-def">Exemple par défaut</button>
+  </div>
+</div>
+<div class="col-out" id="out"></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/appmobil.js"></script>
+<script>
+BA.chrome({ base: '../' });
+(function () {
+  'use strict';
+  const AM = BA.appmobil, fmt = BA.fmt, esc = BA.esc;
+  const KEY = 'appmobil';
+  const GEN = [
+    { id: 'regl', label: 'Référentiel', type: 'sel', def: 'en1337', wide: true, options: [['en1337', 'NF EN 1337-3 + guide Sétra 2007'], ['setra2000', 'Guide Sétra septembre 2000'], ['livret', 'Livret 2.01 (BT4 Sétra)']] },
+    { id: 'mode', label: 'Mode', type: 'sel', def: 'dim', options: [['dim', 'Dimensionnement'], ['verif', 'Vérification']] },
+    { id: 'forme', label: 'Forme', type: 'sel', def: 'rect', options: [['rect', 'Rectangulaire'], ['circ', 'Circulaire']] },
+    { id: 'ouvrage', label: 'Ouvrage', type: 'sel', def: 'route', options: [['route', 'Pont-route'], ['rail', 'Pont-rail']] },
+    { id: 'projet', label: 'Projet / appui', type: 'txt', def: '' },
+  ];
+  const PLAQUE = [
+    { id: 'a', label: 'a (côté suivant X)', unit: 'mm', def: 500 },
+    { id: 'b', label: 'b (côté suivant Y)', unit: 'mm', def: 600 },
+    { id: 'D', label: 'Diamètre D', unit: 'mm', def: 500 },
+    { id: 'n', label: 'Feuillets intermédiaires n', unit: '', def: 6, step: 1 },
+    { id: 'ti', label: 'Épaisseur des feuillets ti', unit: 'mm', def: 12 },
+    { id: 'ts', label: 'Épaisseur des frettes ts', unit: 'mm', def: 4 },
+    { id: 'te', label: 'Enrobage sup./inf. te', unit: 'mm', def: 2.5, help: 'n + 1 frettes, 2 enrobages' },
+    { id: 'c', label: 'Enrobage latéral c', unit: 'mm', def: 5 },
+  ];
+  const MAT = [
+    { id: 'G', label: 'Module G (effets lents)', unit: 'MPa', def: 0.9 },
+    { id: 'Gd', label: 'Module Gd (effets rapides)', unit: 'MPa', def: 1.8 },
+    { id: 'fy', label: 'fy des frettes (EN, Sétra)', unit: 'MPa', def: 235 },
+    { id: 'acier', label: 'Acier des frettes (Livret)', type: 'sel', def: 'fe360', options: [['fe360', 'Fe 360 E'], ['inox', 'Inoxydable']] },
+    { id: 'sigLim', label: 'Pression admissible ELS', unit: 'MPa', def: 15 },
+    { id: 'alpha0', label: 'Rotation de pose α0', unit: 'rad', def: 0.003, help: '0,003 BA coulé en place ou métal ; 0,010 BA préfabriqué' },
+    { id: 'kAlpha0', label: 'Pondération de α0 à l’ELU', unit: '', def: 1.35 },
+    { id: 'Kf', label: 'Kf (frottement)', unit: '', def: 0.6, help: '0,6 sur béton ; 0,2 sur autre surface' },
+    { id: 'Eb', label: 'Module de compressibilité Eb', unit: 'MPa', def: 2000 },
+    { id: 'gm', label: 'γm', unit: '', def: 1 },
+    { id: 'hmode', label: 'Effets lents saisis en', type: 'sel', def: 'F', options: [['F', 'efforts (kN)'], ['v', 'déplacements (m)']] },
+    { id: 'soulev', label: 'Vérifier le soulèvement (Sétra 2000 §3.4.2)', type: 'chk', def: true, wide: true },
+  ];
+  const LIV = [
+    { id: 'Nmax', label: 'N max ELS', unit: 'kN', def: 4506.2 },
+    { id: 'Nmin', label: 'N min ELS', unit: 'kN', def: 839.88 },
+    { id: 'amin', label: 'αT concomitante à N min', unit: 'rad', def: 0.000651 },
+    { id: 'Nmin1', label: 'N min ELS (2e cas)', unit: 'kN', def: 0 },
+    { id: 'amin1', label: 'αT du 2e cas', unit: 'rad', def: 0 },
+    { id: 'Neles', label: 'N min ELES', unit: 'kN', def: 637.83 },
+    { id: 'Heles', label: 'H concomitant ELES', unit: 'kN', def: 47.22 },
+  ];
+  const TYPES = [['ELUmax', 'ELU max'], ['ELUmin', 'ELU min'], ['ELSmax', 'ELS max'], ['ELSmin', 'ELS min']];
+  const COLS = [
+    { id: 'type', label: 'Type', type: 'sel', options: TYPES, def: 'ELUmax', w: '84px' },
+    { id: 'Nld', label: 'N ld', def: 0 }, { id: 'Ncd', label: 'N cd', def: 0 },
+    { id: 'Hxld', label: 'Hx ld', def: 0 }, { id: 'Hyld', label: 'Hy ld', def: 0 },
+    { id: 'Hxcd', label: 'Hx cd', def: 0 }, { id: 'Hycd', label: 'Hy cd', def: 0 },
+    { id: 'aa', label: 'αa', def: 0 }, { id: 'ab', label: 'αb', def: 0 },
+    { id: 'vx', label: 'vx', def: 0 }, { id: 'vy', label: 'vy', def: 0 },
+  ];
+  const COLS_L = [{ id: 'N', label: 'N', def: 0 }, { id: 'H2x', label: 'H2x', def: 0 }, { id: 'H2y', label: 'H2y', def: 0 }, { id: 'aT', label: 'αT', def: 0 }, { id: 'u1x', label: 'u1x', def: 0 }, { id: 'u1y', label: 'u1y', def: 0 }];
+
+  // exemple par défaut : pile d'un PS à poutres, pont-route, EN 1337-3, combinaisons BC
+  const DEFAULT = () => ({
+    gen: { regl: 'en1337', mode: 'dim', forme: 'rect', ouvrage: 'route', projet: 'Pile P1 — exemple' },
+    plaque: { a: 500, b: 600, D: 500, n: 6, ti: 12, ts: 4, te: 2.5, c: 5 },
+    mat: { G: 0.9, Gd: 1.8, fy: 235, acier: 'fe360', sigLim: 15, alpha0: 0.003, kAlpha0: 1.35, Kf: 0.6, Eb: 2000, gm: 1, hmode: 'F', soulev: true },
+    combis: [
+      { type: 'ELSmax', Nld: 2931.2, Ncd: 1038.9, Hxld: 0, Hyld: 0, Hxcd: 18.8, Hycd: 35.3, aa: 0.0011, ab: 0, vx: 0.0028, vy: 0.0053 },
+      { type: 'ELSmin', Nld: 1027.1, Ncd: 0, Hxld: 0, Hyld: 0, Hxcd: 18.8, Hycd: 35.3, aa: 0.0011, ab: 0, vx: 0.0028, vy: 0.0053 },
+      { type: 'ELUmax', Nld: 3957.2, Ncd: 1402.5, Hxld: 0, Hyld: 0, Hxcd: 25.4, Hycd: 47.7, aa: 0.0015, ab: 0, vx: 0.0038, vy: 0.0072 },
+      { type: 'ELUmin', Nld: 1386.6, Ncd: 0, Hxld: 0, Hyld: 0, Hxcd: 25.4, Hycd: 47.7, aa: 0.0015, ab: 0, vx: 0.0038, vy: 0.0072 },
+    ],
+    liv: { Nmax: 4506.2, Nmin: 839.88, amin: 0.000651, Nmin1: 0, amin1: 0, Neles: 637.83, Heles: 47.22 },
+    elu: [
+      { N: 5774.8, H2x: 26, H2y: 3.4, aT: 0.0002, u1x: 0.0105, u1y: 0.0017 },
+      { N: 6084.1, H2x: 21.9, H2y: 2.7, aT: 0.0003, u1x: 0.0105, u1y: 0.0017 },
+      { N: 3610.5, H2x: 13.8, H2y: 2.2, aT: 0.0002, u1x: 0.0137, u1y: 0.0022 },
+    ],
+  });
+
+  const $ = (id) => document.getElementById(id);
+  let rowsEC, rowsL, last = null, lastInp = null;
+
+  function build(d) {
+    BA.form($('f-gen'), GEN, 'g-', d.gen);
+    BA.form($('f-plaque'), PLAQUE, 'p-', d.plaque);
+    BA.form($('f-mat'), MAT, 'm-', d.mat);
+    BA.form($('f-liv'), LIV, 'l-', d.liv);
+    if (!rowsEC) { rowsEC = BA.rows($('rows-ec'), COLS, d.combis.map((x) => Object.assign({}, x)), { addLabel: 'Ajouter une combinaison', onChange: save }); rowsL = BA.rows($('rows-liv'), COLS_L, d.elu.map((x) => Object.assign({}, x)), { addLabel: 'Ajouter une combinaison ELU', onChange: save }); }
+    else { rowsEC.set(d.combis.map((x) => Object.assign({}, x))); rowsL.set(d.elu.map((x) => Object.assign({}, x))); }
+    toggle();
+  }
+  function state() {
+    return { gen: BA.read(GEN, 'g-'), plaque: BA.read(PLAQUE, 'p-'), mat: BA.read(MAT, 'm-'), liv: BA.read(LIV, 'l-'), combis: rowsEC.data.map((x) => Object.assign({}, x)), elu: rowsL.data.map((x) => Object.assign({}, x)) };
+  }
+  function save() { try { BA.store.save(KEY, state()); } catch (e) { /* */ } }
+  function toggle() {
+    const g = BA.read(GEN, 'g-'), liv = g.regl === 'livret';
+    $('c-ec').classList.toggle('hide', liv); $('c-liv').classList.toggle('hide', !liv);
+    if (liv && g.forme === 'circ') { $('g-forme').value = 'rect'; }
+    const circ = !liv && $('g-forme').value === 'circ';
+    const show = (id, on) => { const e = $('p-' + id); if (e) e.closest('.field').classList.toggle('hide', !on); };
+    show('a', !circ); show('b', !circ); show('D', circ); show('te', !liv);
+    $('plaque-sub').textContent = g.mode === 'dim' ? 'ignoré en dimensionnement (catalogue)' : 'appareil vérifié';
+    const showM = (id, on) => { const e = $('m-' + id); if (e) e.closest('.field').classList.toggle('hide', !on); };
+    showM('fy', !liv); showM('acier', liv); showM('kAlpha0', !liv); showM('Kf', !liv); showM('Eb', !liv); showM('gm', !liv); showM('hmode', !liv); showM('soulev', !liv);
+  }
+
+  function inputs(s) {
+    const g = s.gen, m = s.mat, p = s.plaque;
+    const plaque = g.forme === 'circ' && g.regl !== 'livret'
+      ? { forme: 'circ', D: p.D / 1000, n: Math.round(p.n), ti: p.ti / 1000, ts: p.ts / 1000, te: p.te / 1000, c: p.c / 1000 }
+      : { forme: 'rect', a: p.a / 1000, b: p.b / 1000, n: Math.round(p.n), ti: p.ti / 1000, ts: p.ts / 1000, te: g.regl === 'livret' ? 0 : p.te / 1000, c: p.c / 1000 };
+    const opts = { G: m.G, Gd: m.Gd, fy: m.fy, acier: m.acier, sigLim: m.sigLim, alpha0: m.alpha0, kAlpha0: m.kAlpha0, Kf: m.Kf, Eb: m.Eb, gm: m.gm, hmode: m.hmode, soulev: !!m.soulev };
+    const num = (o) => { const r = {}; for (const k in o) r[k] = k === 'type' ? o[k] : (Number.isFinite(+o[k]) ? +o[k] : 0); return r; };
+    return {
+      regl: g.regl, mode: g.mode, forme: g.regl === 'livret' ? 'rect' : g.forme, ouvrage: g.ouvrage, plaque, opts,
+      combis: s.combis.map(num),
+      livret: { Nmax: s.liv.Nmax || 0, mins: [{ N: s.liv.Nmin || 0, alpha: s.liv.amin || 0 }, { N: s.liv.Nmin1 || 0, alpha: s.liv.amin1 || 0 }], Neles: s.liv.Neles || 0, Heles: s.liv.Heles || 0, elu: s.elu.map(num) },
+    };
+  }
+
+  /* ── schéma coté : vue en plan + coupe ── */
+  function schema(p, g) {
+    const W = 720, H = 300;
+    const circ = p.forme === 'circ';
+    const A = circ ? p.D : p.a, B = circ ? p.D : p.b;
+    const sc = Math.min(250 / Math.max(A, B), 220 / Math.max(A, B));
+    const ox = 40, oy = 40, wa = A * sc, wb = B * sc;
+    let s = '';
+    // vue en plan
+    s += `<text x="${ox}" y="22" style="font-weight:500;fill:var(--ink2)">Vue en plan</text>`;
+    if (circ) {
+      const cx = ox + wa / 2, cy = oy + wb / 2;
+      s += `<circle cx="${cx}" cy="${cy}" r="${wa / 2}" fill="#2a2d36" fill-opacity=".85"/><circle cx="${cx}" cy="${cy}" r="${(p.D - 2 * p.c) * sc / 2}" fill="none" stroke="#c9a84c" stroke-dasharray="4 3"/>`;
+      s += `<line x1="${ox}" x2="${ox + wa}" y1="${oy + wb + 16}" y2="${oy + wb + 16}" stroke="#6f7484"/><text x="${cx}" y="${oy + wb + 30}" text-anchor="middle">⌀ ${fmt(p.D * 1000, 0)} mm</text>`;
+    } else {
+      s += `<rect x="${ox}" y="${oy}" width="${wa}" height="${wb}" fill="#2a2d36" fill-opacity=".85" rx="2"/><rect x="${ox + p.c * sc}" y="${oy + p.c * sc}" width="${(p.a - 2 * p.c) * sc}" height="${(p.b - 2 * p.c) * sc}" fill="none" stroke="#c9a84c" stroke-dasharray="4 3"/>`;
+      s += `<line x1="${ox}" x2="${ox + wa}" y1="${oy + wb + 16}" y2="${oy + wb + 16}" stroke="#6f7484"/><text x="${ox + wa / 2}" y="${oy + wb + 30}" text-anchor="middle">a = ${fmt(p.a * 1000, 0)} mm</text>`;
+      s += `<line x1="${ox + wa + 16}" x2="${ox + wa + 16}" y1="${oy}" y2="${oy + wb}" stroke="#6f7484"/><text x="${ox + wa + 22}" y="${oy + wb / 2}" transform="rotate(90 ${ox + wa + 22} ${oy + wb / 2})" text-anchor="middle">b = ${fmt(p.b * 1000, 0)} mm</text>`;
+      s += `<text x="${ox + wa / 2}" y="${oy + wb / 2 + 4}" text-anchor="middle" style="fill:#fff">X →</text>`;
+    }
+    // coupe
+    const cx0 = 380, cw = 300, hz = g.H, cs = Math.min(cw / A, 200 / hz);
+    const x0 = cx0 + (cw - A * cs) / 2, w = A * cs, y0 = 60;
+    s += `<text x="${cx0}" y="22" style="font-weight:500;fill:var(--ink2)">Coupe ${circ ? 'diamétrale' : 'suivant a'}</text>`;
+    let y = y0; const ex = p.c * cs;
+    s += `<rect x="${x0}" y="${y0}" width="${w}" height="${hz * cs}" fill="#2a2d36" fill-opacity=".85" rx="2"/>`;
+    y += (p.te || 0) * cs;
+    for (let i = 0; i <= p.n; i++) {
+      s += `<rect x="${x0 + ex}" y="${y}" width="${w - 2 * ex}" height="${Math.max(1.2, p.ts * cs)}" fill="#c9a84c"/>`;
+      y += p.ts * cs;
+      if (i < p.n) y += p.ti * cs;
+    }
+    const xr = x0 + w + 14;
+    s += `<line x1="${xr}" x2="${xr}" y1="${y0}" y2="${y0 + hz * cs}" stroke="#6f7484"/><text x="${xr + 6}" y="${y0 + hz * cs / 2 + 4}">${fmt(hz * 1000, 0)} mm</text>`;
+    s += `<text x="${cx0}" y="${y0 + hz * cs + 24}">${p.n} feuillets de ${fmt(p.ti * 1000, 0)} mm · ${p.n + 1} frettes de ${fmt(p.ts * 1000, 0)} mm${p.te ? ` · enrobages ${fmt(p.te * 1000, 1)} mm` : ''}</text>`;
+    s += `<text x="${cx0}" y="${y0 + hz * cs + 40}">Te = ${fmt(g.Te * 1000, 1)} mm d’élastomère · S = ${fmt(g.S, 2)}</text>`;
+    return `<div class="schema"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Schéma de l’appareil d’appui">${s}</svg></div>`;
+  }
+
+  const TYPL = { ELUmax: 'ELU max', ELUmin: 'ELU min', ELSmax: 'ELS max', ELSmin: 'ELS min' };
+  function bar(t) { const v = Math.min(1, Number.isFinite(t) ? t : 1); const c = t > 1 ? 'var(--red)' : t > 0.9 ? 'var(--orange)' : 'var(--teal)'; return `<span class="bar"><i style="width:${(v * 100).toFixed(0)}%;background:${c}"></i></span>`; }
+  const dec = (u) => u === 'rad' ? 6 : u === 'mm' ? 2 : u === 'kN' ? 1 : 3;
+  function tableCrit(r) {
+    return BA.table(['Vérification', 'Référence', 'Comb.', 'Valeur', 'Limite', 'Taux', ''], r.crit.map((c) => [
+      `<b style="font-weight:400">${c.nom}</b><div style="font-size:10.5px;color:var(--ink3);white-space:normal">${esc(c.txt || '')}</div>`,
+      `<span style="font-size:10.5px;color:var(--ink3)">${c.ref}</span>`,
+      c.comb ? String(c.comb) : '—',
+      `${fmt(c.val, dec(c.unit))} ${c.unit || ''}`, `${fmt(c.lim, dec(c.unit))} ${c.unit || ''}`,
+      `${fmt(c.taux * 100, 0)} %${bar(c.taux)}`,
+      c.ok ? BA.verdict(true, 'OK') : c.sel === false ? `<span class="tag warn">À traiter</span>` : BA.verdict(false, 'NON'),
+    ]), { leftText: true });
+  }
+  function combTable(r) {
+    if (r.regl === 'livret') {
+      return BA.table(['Comb.', 'N (kN)', 'σm (MPa)', 'τH1', 'τH2', 'τH', 'τN', 'τα', 'τ (MPa)'], r.rows.map((x) => [String(x.i), fmt(x.N, 1), fmt(x.sm / 1000, 2), fmt(x.tH1 / 1000, 3), fmt(x.tH2 / 1000, 3), fmt(x.tH / 1000, 3), fmt(x.tN / 1000, 3), fmt(x.ta / 1000, 3), fmt(x.t / 1000, 3)]));
+    }
+    return BA.table(['Comb.', 'Type', 'Fz (kN)', 'Fxy (kN)', 'Ar (m²)', 'αa (rad)', 'εc', 'εq', 'εα', 'εt'], r.ks.map((k, i) => {
+      const d = r.dist[i] || {};
+      return [String(i + 1), TYPL[k.c.type], fmt(k.Fz, 1), fmt(k.Fxy, 1), fmt(k.Ar, 4), fmt(k.aa, 5), fmt(d.ec, 3), fmt(d.eq, 3), fmt(d.ea, 3), fmt(d.et, 3)];
+    }));
+  }
+  const nomPlaque = (p) => p.forme === 'circ' ? `⌀ ${fmt(p.D * 1000, 0)}` : `${fmt(p.a * 1000, 0)} × ${fmt(p.b * 1000, 0)}`;
+  const compo = (p) => `${p.n} × ${fmt(p.ti * 1000, 0)} + ${p.n + 1} × ${fmt(p.ts * 1000, 0)}${p.te ? ` + 2 × ${fmt(p.te * 1000, 1)}` : ''}`;
+  const REGL = { en1337: 'NF EN 1337-3 (2005) et guide Sétra 2007', setra2000: 'Guide technique Sétra septembre 2000', livret: 'Livret 2.01 (BT4 Sétra)' };
+
+  function render(r, inp) {
+    const out = $('out');
+    if (r.echec) {
+      out.innerHTML = BA.card('Dimensionnement', `<div class="msg err">Aucun appareil du catalogue ne satisfait toutes les vérifications. Derniers appareils essayés :</div>` +
+        BA.table(['Appareil', 'Critères non satisfaits'], r.rejets.map((x) => [nomPlaque(x.plaque) + ' — ' + compo(x.plaque), x.motifs.join(' ; ')]), { leftText: true })) + perimetre();
+      return;
+    }
+    const p = r.plaque, g = r.g;
+    const k = [
+      { l: inp.mode === 'dim' ? 'Appareil retenu' : 'Appareil vérifié', v: nomPlaque(p), u: 'mm', n: compo(p) + ' mm', hi: true },
+      { l: 'Verdict', v: r.ok ? 'Vérifié' : r.okSel ? 'Avec réserve' : 'Non vérifié', cls: r.ok ? 'ok' : r.okSel ? 'warn' : 'ko', n: `taux maximal ${fmt(r.tauxMax * 100, 0)} %` },
+      { l: 'Raideur horizontale G·A/T', v: fmt(r.rd.Kh, 0), u: 'kN/m', n: `${fmt(r.rd.Khd, 0)} kN/m sous effets rapides` },
+      { l: 'Raideur verticale (ELS max)', v: fmt((r.tass ? r.tass.Kv : r.rd.Kv) / 1000, 0), u: 'kN/mm', n: r.tass ? `tassement ${fmt(r.tass.vz * 1000, 2)} mm sous ${fmt(r.tass.N, 0)} kN` : '' },
+    ];
+    let html = BA.card('Résultat', BA.kpis(k) +
+      (r.tsAugmente ? `<div class="msg info" style="margin-top:10px">Frettes portées de ${fmt(r.tsAugmente.de * 1000, 0)} à ${fmt(r.tsAugmente.a * 1000, 0)} mm pour satisfaire le critère d’épaisseur.</div>` : '') +
+      (!r.ok && r.okSel ? `<div class="msg info" style="margin-top:10px">La contrainte minimale sous charges permanentes est insuffisante : prévoir un dispositif anti-cheminement (taquets, butées) ou un appareil spécial.</div>` : '') +
+      (inp.mode === 'dim' ? `<div style="font-size:11.5px;color:var(--ink3);margin-top:8px">${r.essais} appareil(s) examiné(s) dans le catalogue ${inp.regl === 'livret' ? 'NF T 47-815' : 'EN 1337-3 tableau 3'}${inp.forme === 'circ' ? ' (circulaires, liste indicative)' : ''}, du plus petit au plus grand.</div>` : ''),
+      REGL[inp.regl]);
+    html += BA.card('Schéma de l’appareil', schema(p, g) + `<div style="font-size:11.5px;color:var(--ink3);margin-top:4px">Bossage proposé : ${fmt(r.bossage.a * 1000, 0)} × ${fmt(r.bossage.b * 1000, 0)} mm (débord ≥ a/6 par côté et ≥ 5 cm).</div>`);
+    html += BA.card('Vérifications', tableCrit(r), 'combinaison la plus défavorable pour chaque critère');
+    html += BA.card('Détail par combinaison', combTable(r));
+    if (inp.mode === 'dim' && r.rejets && r.rejets.length) html += BA.card('Appareils écartés (derniers essais)', BA.table(['Appareil', 'Critères non satisfaits'], r.rejets.map((x) => [nomPlaque(x.plaque) + ' — ' + compo(x.plaque), x.motifs.join(' ; ')]), { leftText: true }));
+    html += perimetre();
+    out.innerHTML = html;
+  }
+  function perimetre() {
+    return BA.card('Périmètre et hypothèses', `<details class="ref" open><summary>Ce que calcule le module</summary><ul>
+      <li><b>NF EN 1337-3</b> (§5.3.3) : surface réduite Ar = A′(1 − vx/a′ − vy/b′) ; εc = 1,5 Fz/(G Ar S) ; εq = Fxy/(G A) ≤ 1 ; εα = (a′²αa + b′²αb) ti/(2 Σti³) ; εt = KL(εc + εq + εα) ≤ 7/γm à l’ELU ; ts ≥ Kp Fz 2ti Kh γm/(Ar fy) et ≥ 2 mm ; stabilité en rotation Σvz ≥ (a′αa + b′αb)/Kr ; flambement Fz/Ar &lt; 2a′G S1/(3Te) ; non-glissement Fxy ≤ (0,1 + 1,5Kf/σm) Fz et σm,ld ≥ 3 MPa ; pression moyenne ELS ≤ 15 MPa (guide Sétra 2007).</li>
+      <li>Les actions de courte durée sont associées au module Gd = 2G (1,8 MPa), celles de longue durée à G = 0,9 MPa. La rotation de pose α0 est ajoutée à αa, multipliée par 1,35 à l’ELU.</li>
+      <li>Facteur de forme des enrobages : épaisseur 1,4·te si te dépasse l’enrobage normalisé de 2,5 mm (feuillet externe), sinon te.</li>
+      <li><b>Guide Sétra 2000</b> : mêmes formules, distorsion (≤ 5, εq ≤ 0,7) et frettes à l’ELS, rotation et flambement à l’ELU et à l’ELS, glissement à l’ELU (μ = 0,9 forfaitaire) et à l’ELS (μ = 0,1 + Kf/σm).</li>
+      <li><b>Non-soulèvement</b> (Sétra 2000 §3.4.2, appliqué aussi avec l’EN 1337-3) : 2 εα ≤ εc sur une surface comprimée de 90 % (ELS max) et 80 % (ELS min) de a′.</li>
+      <li><b>Livret 2.01</b> (méthode du BT4 Sétra) : a/10 ≤ T ≤ a/5 ; σm ≤ σadm (11, 12 ou 15 MPa selon la taille en pont-rail, 15 MPa en pont-route) ; rotation limite (αT + α0)/n ≤ 3/β (t/a)² σmin/G ; τH1 = G u1/T ≤ 0,7G ; τH = τH1 + 0,5 τH2 ≤ G ; τN + τH + τα ≤ 5G ; ts ≥ a′/β · σm/σe (σe = 215 ou 235 MPa selon l’épaisseur, Fe 360) ; non-cheminement σmin ≥ 2 MPa et H ≤ (0,10 + 0,60/σmin) Nmin à l’ELES. Raideur verticale a³bG/(t³K1 n).</li>
+      <li><b>Dimensionnement</b> : parcours des dimensions courantes (EN 1337-3 tableau 3, ou NF T 47-815 pour le Livret 2.01) par surface croissante puis nombre de feuillets croissant ; l’épaisseur des frettes est augmentée au millimètre si nécessaire. La contrainte minimale sous charges permanentes n’est pas un critère de choix (elle s’aggrave quand l’appareil grandit) : elle est signalée.</li>
+      <li><b>Appareils circulaires</b> : S = D′/(4ti), Ar par segment de cercle, εα = 3D′² α ti/(8 Σti³) ; flambement avec a′ = D′ ; pas de vérification de soulèvement ; liste de diamètres indicative.</li>
+      <li><b>Raideurs</b> (pour REPHOR) : K = G·A/Te (A surface en plan, Te épaisseur totale d’élastomère) et Kv = 1/Σvz.</li>
+      <li><b>Hors périmètre</b> : séisme (EN 1998-2, G sismique, distorsion ≤ 2), appareils glissants (type C, D, E), appareils à pot, frettes perforées (Kh ≠ 1), tassements différés par fluage.</li>
+    </ul></details>`);
+  }
+
+  function run() {
+    toggle();
+    const s = state(); save();
+    const inp = inputs(s);
+    try {
+      const r = AM.calc(inp);
+      last = r; lastInp = inp; render(r, inp);
+    } catch (e) {
+      $('out').innerHTML = `<div class="msg err">Erreur de calcul : ${esc(e.message)}</div>` + perimetre();
+      last = null;
+    }
+  }
+
+  function note() {
+    if (!last || last.echec) { alert('Lancez d’abord un calcul abouti.'); return; }
+    const r = last, inp = lastInp, p = r.plaque, s = state();
+    const donnees = BA.table(['Donnée', 'Valeur'], [
+      ['Référentiel', REGL[inp.regl]], ['Mode', inp.mode === 'dim' ? 'Dimensionnement dans le catalogue' : 'Vérification'], ['Ouvrage', inp.ouvrage === 'rail' ? 'Pont-rail' : 'Pont-route'],
+      ['Module G / Gd', `${fmt(inp.opts.G, 2)} / ${fmt(inp.opts.Gd, 2)} MPa`], ['Rotation de pose α0', `${fmt(inp.opts.alpha0, 4)} rad`],
+      ['Pression admissible ELS', `${fmt(r.o.sigLim, 1)} MPa`], ['Frettes', inp.regl === 'livret' ? (inp.opts.acier === 'inox' ? 'acier inoxydable' : 'Fe 360 E') : `fy = ${fmt(inp.opts.fy, 0)} MPa`],
+    ], { leftText: true });
+    const sollic = inp.regl === 'livret'
+      ? BA.table(['N max ELS', 'N min ELS', 'αT', 'N min ELES', 'H ELES'], [[fmt(inp.livret.Nmax, 1), fmt(inp.livret.mins[0].N, 1), fmt(inp.livret.mins[0].alpha, 6), fmt(inp.livret.Neles, 1), fmt(inp.livret.Heles, 1)]])
+        + BA.table(['Comb.', 'N', 'H2x', 'H2y', 'αT', 'u1x', 'u1y'], inp.livret.elu.map((c, i) => [String(i + 1), fmt(c.N, 1), fmt(c.H2x, 1), fmt(c.H2y, 1), fmt(c.aT, 5), fmt(c.u1x, 4), fmt(c.u1y, 4)]))
+      : BA.table(['Comb.', 'Type', 'N ld', 'N cd', 'Hx ld', 'Hy ld', 'Hx cd', 'Hy cd', 'αa', 'αb', 'vx', 'vy'], inp.combis.map((c, i) => [String(i + 1), TYPL[c.type], fmt(c.Nld, 1), fmt(c.Ncd, 1), fmt(c.Hxld, 3), fmt(c.Hyld, 3), fmt(c.Hxcd, 1), fmt(c.Hycd, 1), fmt(c.aa, 5), fmt(c.ab, 5), fmt(c.vx, 4), fmt(c.vy, 4)]));
+    const g = r.g;
+    const geo = BA.table(['Grandeur', 'Valeur'], [
+      ['Dimensions en plan', nomPlaque(p) + ' mm'], ['Composition', compo(p) + ' mm'], ['Surface A / A′', `${fmt(g.A, 4)} / ${fmt(g.Ap, 4)} m²`],
+      ['Facteur de forme S', fmt(g.S, 3)], ['Épaisseur d’élastomère Te', `${fmt(g.Te * 1000, 1)} mm`], ['Hauteur totale', `${fmt(g.H * 1000, 1)} mm`],
+      ['Raideur horizontale', `${fmt(r.rd.Kh, 0)} kN/m (rapide ${fmt(r.rd.Khd, 0)} kN/m)`], ['Raideur verticale', `${fmt(r.rd.Kv / 1000, 1)} kN/mm (module G)${r.tass ? ` ; ${fmt(r.tass.Kv / 1000, 1)} kN/mm sous ELS max, tassement ${fmt(r.tass.vz * 1000, 2)} mm` : ''}`],
+      ['Bossage proposé', `${fmt(r.bossage.a * 1000, 0)} × ${fmt(r.bossage.b * 1000, 0)} mm`],
+    ], { leftText: true });
+    BA.note({ titre: 'Appareils d’appui en élastomère fretté', code: 'APPMOBIL', regl: REGL[inp.regl], projet: s.gen.projet,
+      sections: [
+        { titre: 'Données', html: donnees },
+        { titre: 'Sollicitations', html: sollic },
+        { titre: 'Appareil', html: schema(p, g) + geo },
+        { titre: 'Détail par combinaison', html: combTable(r) },
+        { titre: 'Vérifications', html: tableCrit(r) + `<p style="margin-top:6px"><b>Conclusion :</b> ${r.ok ? 'toutes les vérifications sont satisfaites.' : r.okSel ? 'vérifié, sous réserve d’un dispositif anti-cheminement.' : '<span class="ko">certaines vérifications ne sont pas satisfaites.</span>'}</p>` },
+      ] });
+  }
+
+  function fromDon(txt) {
+    const d = AM.parseDon(txt), s = state();
+    s.gen.regl = d.regl; s.gen.mode = d.mode; s.gen.forme = 'rect'; s.gen.ouvrage = d.ouvrage; s.gen.projet = d.projet || s.gen.projet;
+    const p = d.plaque;
+    Object.assign(s.plaque, { a: p.a * 1000, b: p.b * 1000, n: p.n, ti: p.ti * 1000, ts: p.ts * 1000, te: p.te * 1000, c: p.c * 1000 });
+    Object.assign(s.mat, { G: d.opts.G, Gd: d.opts.Gd, fy: d.opts.fy, sigLim: d.opts.sigLim, alpha0: d.opts.alpha0, kAlpha0: d.opts.kAlpha0, Kf: d.opts.Kf, Eb: d.opts.Eb, gm: d.opts.gm, soulev: d.opts.soulev, acier: d.opts.acier, hmode: 'F' });
+    if (d.combis.length) s.combis = d.combis;
+    const L = d.livret;
+    s.liv = { Nmax: L.Nmax, Nmin: L.mins[0].N, amin: L.mins[0].alpha, Nmin1: L.mins[1].N, amin1: L.mins[1].alpha, Neles: L.Neles, Heles: L.Heles };
+    if (L.elu.length) s.elu = L.elu;
+    build(s); run();
+  }
+
+  $('b-calc').onclick = run;
+  $('b-note').onclick = note;
+  $('b-save').onclick = () => BA.store.download('appmobil.json', state());
+  $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
+  $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
+  $('b-def').onclick = () => { build(DEFAULT()); run(); };
+  document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.closest('#f-gen')) toggle(); save(); });
+  document.querySelector('.col-in').addEventListener('input', () => save());
+
+  let init = null;
+  try { init = BA.store.load(KEY); } catch (e) { init = null; }
+  const d0 = DEFAULT();
+  if (init && init.gen && init.combis) { for (const k of Object.keys(d0)) if (init[k] === undefined) init[k] = d0[k]; } else init = d0;
+  build(init); run();
+})();
+</script>
+</body>
+</html>

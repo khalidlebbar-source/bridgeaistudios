@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPREUVES — Épreuves de chargement des ponts — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Carnet d'épreuves de chargement des ponts-routes et ponts-rails : position optimale des camions ou locomotives par lignes d'influence, taux d'efficacité par rapport à A(l), Bc, Bt, Mc120 ou UIC 71 × Φ, flèches et rotations attendues, schémas cotés, fiche de relevés.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/epreuves.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+  .sub{font-size:10.5px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 6px}
+  .sub:first-child{margin-top:0}
+  .seg{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+  .hide{display:none!important}
+  .casehead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .casehead b{font-weight:500}
+  ul.av{padding-left:18px;font-size:12.5px;line-height:1.55}
+  .grid-in input[type=number]{min-width:46px}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> · Compléments</div>
+      <div class="eyebrow">EPREUVES · carnet d’épreuves réglementaires</div>
+      <h1>Épreuves de <em>chargement</em></h1>
+      <div class="badges"><span class="badge">Fascicule 61 titre II</span><span class="badge">Livret 2.01 · EN 1991-2</span><span class="badge">BAEL 91 mod. 99 · EN 1992-1-1</span><span class="badge">Courbon</span></div>
+    </div>
+    <p class="lead">Pour chaque section à éprouver (mi-travées, appuis) : position longitudinale optimale des camions ou des locomotives par ligne d’influence, nombre de véhicules, taux d’efficacité par rapport aux charges réglementaires, flèches, rotations et réactions attendues, schémas cotés en plan et en élévation, programme des mesures et fiche de relevés.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+
+  <div class="card">
+    <div class="card-title"><span>Ouvrage</span><small>modèle plan</small></div>
+    <div class="fields" id="f-ouv"></div>
+    <div class="sub">Travées <small style="text-transform:none;letter-spacing:0">(portées biaises le long de l’axe ; inertie de l’ouvrage entier aux appuis gauche / milieu / droit)</small></div>
+    <div id="r-trav"></div>
+    <div id="b-appuis">
+      <div class="sub">Appuis (C0, P1 … Cn) — piles et piédroits</div>
+      <div id="r-app"></div>
+    </div>
+    <div id="b-cadre"><div class="sub">Cadre fermé : radier</div><div class="fields" id="f-cadre"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Charges réglementaires de comparaison</span><small>non pondérées</small></div>
+    <div class="fields" id="f-route"></div>
+    <div class="fields" id="f-rail"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Véhicule d’épreuve</span><small id="veh-w"></small></div>
+    <div class="fields" id="f-veh"></div>
+    <div class="sub">Essieux (d depuis le 1er essieu, charge pesée)</div>
+    <div id="r-ess"></div>
+    <div class="sub">Disposition des véhicules</div>
+    <div class="fields c3" id="f-conv"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Sections à éprouver</span><small>nF, nL vides = choix automatique</small></div>
+    <div id="r-sec"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Type T = travée (ξ = x/L), A = appui (k = numéro d’appui, 0 à n). nF : nombre de files côte à côte, nL : véhicules par file. Kép, Krég : coefficients de répartition transversale saisis (mode « saisi »).</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>Répartition, intensité, mesures</span></div>
+    <div class="fields" id="f-tr"></div>
+  </div>
+
+  <div class="card">
+    <div class="actions">
+      <button class="btn primary" id="b-calc">Calculer</button>
+      <button class="btn gold" id="b-note">Carnet d’épreuves</button>
+      <button class="btn" id="b-save">Enregistrer</button>
+      <button class="btn" id="b-open">Ouvrir</button>
+      <button class="btn" id="b-def">Exemple</button>
+    </div>
+  </div>
+</div>
+
+<div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/epreuves.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const EP = BA.epreuves, fmt = BA.fmt, esc = BA.esc, KEY = 'epreuves';
+
+  const F_OUV = [
+    { id: 'projet', label: 'Ouvrage', type: 'txt', def: 'Pont-dalle 4 travées', wide: true },
+    { id: 'usage', label: 'Ouvrage porté', type: 'sel', def: 'route', options: [['route', 'Pont-route (Fasc. 61 II)'], ['rail', 'Pont-rail (Livret 2.01 / EN 1991-2)']] },
+    { id: 'type', label: 'Structure', type: 'sel', def: 'poutre', options: [['poutre', 'Poutre sur appuis simples'], ['portique', 'Portique (piles encastrées)'], ['cadre', 'Cadre fermé (radier)']] },
+    { id: 'biais', label: 'Biais', unit: 'gr', def: 100, help: '30 à 170 gr ; 100 = ouvrage droit' },
+    { id: 'A', label: 'Section du tablier', unit: 'm²', def: 5.717 },
+    { id: 'bmode', label: 'Module instantané', type: 'sel', def: 'bael', options: [['bael', 'BAEL : 11 000 fcj^1/3'], ['ec2', 'EC2 : 22 000 (fcm/10)^0,3'], ['saisi', 'Saisi']] },
+    { id: 'fc', label: 'fc28 / fck', unit: 'MPa', def: 30 },
+    { id: 'E', label: 'E saisi', unit: 'MPa', def: 34180 },
+    { id: 'g', label: 'Pesanteur', unit: 'kN/t', def: 9.81 },
+  ];
+  const F_CADRE = [
+    { id: 'H', label: 'Hauteur piédroits (axes)', unit: 'm', def: 4 },
+    { id: 'Ir', label: 'Inertie du radier', unit: 'm⁴', def: 0.2 },
+    { id: 'ks', label: 'Module de réaction du sol', unit: 'kN/m³', def: 30000 },
+    { id: 'B', label: 'Largeur du radier', unit: 'm', def: 10 },
+  ];
+  const F_ROUTE = [
+    { id: 'classe', label: 'Classe du pont', type: 'sel', def: 1, options: [[1, '1re classe'], [2, '2e classe'], [3, '3e classe']] },
+    { id: 'Lc', label: 'Largeur chargeable', unit: 'm', def: 7.5 },
+    { id: 'Lr', label: 'Largeur du tablier (plan)', unit: 'm', def: 10.2 },
+    { id: 'position', label: 'Position transversale', type: 'sel', def: 'excentre', options: [['excentre', 'Excentrée (côté gauche)'], ['centre', 'Centrée']] },
+    { id: 'marge', label: 'Garde roue – bord chaussée', unit: 'm', def: 0.5, help: 'Bord de la largeur chargeable → flanc du véhicule' },
+    { id: 'entraxe', label: 'Entraxe des files', unit: 'm', def: 3.0 },
+    { id: 'mAL', label: 'A(l)', type: 'chk', def: true }, { id: 'mBc', label: 'Bc', type: 'chk', def: true },
+    { id: 'mBt', label: 'Bt', type: 'chk', def: true }, { id: 'mMc80', label: 'Mc80', type: 'chk', def: false },
+    { id: 'mMc120', label: 'Mc120', type: 'chk', def: false },
+  ];
+  const F_RAIL = [
+    { id: 'alpha', label: 'Coefficient α (UIC 71, SW/0)', def: 1 },
+    { id: 'phi', label: 'Coefficient dynamique', type: 'sel', def: 'phi2', options: [['phi2', 'Φ2 (voie soignée)'], ['phi3', 'Φ3 (entretien normal)'], ['aucun', 'Aucun']] },
+    { id: 'Lphi', label: 'LΦ (0 = tableau 6.2)', unit: 'm', def: 0 },
+    { id: 'nVoies', label: 'Voies chargées (réglementaire)', def: 1 },
+    { id: 'ecc', label: 'Excentrements des voies', unit: 'm', type: 'txt', def: '0', help: 'Axe de chaque voie / axe de l’ouvrage, séparés par ; (une file d’épreuve par voie)' },
+    { id: 'largeur', label: 'Largeur du tablier (plan)', unit: 'm', def: 8 },
+    { id: 'SW0', label: 'SW/0 sur ouvrages continus', type: 'chk', def: true },
+  ];
+  const libOpts = Object.entries(EP.VEHICULES).map(([k, v]) => [k, v.nom]).concat([['perso', 'Véhicule saisi']]);
+  const F_VEH = [
+    { id: 'lib', label: 'Bibliothèque', type: 'sel', def: 'c84_299', options: libOpts, wide: true },
+    { id: 'nom', label: 'Désignation', type: 'txt', def: 'Camion 8×4 – 29,9 t (pesée)', wide: true },
+    { id: 'av', label: 'Porte-à-faux avant', unit: 'm', def: 1.007 },
+    { id: 'ar', label: 'Porte-à-faux arrière', unit: 'm', def: 1.25 },
+    { id: 'voie', label: 'Voie (entraxe roues)', unit: 'm', def: 2.0 },
+    { id: 'larg', label: 'Largeur hors tout', unit: 'm', def: 2.5 },
+  ];
+  const F_CONV = [
+    { id: 'nLmax', label: 'Véhicules / file maxi', def: 2 },
+    { id: 'gmin', label: 'Écart mini', unit: 'm', def: 0, help: 'entre pare-chocs' },
+    { id: 'gmax', label: 'Écart maxi', unit: 'm', def: 20 },
+  ];
+  const F_TR = [
+    { id: 'tmode', label: 'Répartition transversale', type: 'sel', def: 'global', options: [['global', 'Ouvrage entier (pas de répartition)'], ['courbon', 'Courbon (poutres entretoisées)'], ['saisi', 'Coefficients saisis par section']], wide: true },
+    { id: 'tn', label: 'Nombre de poutres', def: 4 }, { id: 'tb', label: 'Entraxe des poutres', unit: 'm', def: 2.5 },
+    { id: 'cmin', label: 'Intensité mini', def: 0.667, help: 'effet épreuve / effet réglementaire' },
+    { id: 'cmax', label: 'Intensité maxi', def: 1.0 },
+    { id: 'tolInf', label: 'Tolérance flèche en moins', unit: '%', def: 30 },
+    { id: 'tolSup', label: 'Tolérance flèche en plus', unit: '%', def: 15 },
+    { id: 'rem', label: 'Flèche rémanente admise', unit: '%', def: 10 },
+    { id: 'prec', label: 'Précision du nivellement', unit: 'mm', def: 0.5 },
+    { id: 'quarts', label: 'Points de mesure aux quarts de portée', type: 'chk', def: false, wide: true },
+  ];
+  const C_TRAV = [{ id: 'L', label: 'L (m)', def: 15 }, { id: 'Ig', label: 'I gauche (m⁴)', def: 0.1586 }, { id: 'Im', label: 'I milieu', def: 0.1586 }, { id: 'Id', label: 'I droite', def: 0.1586 }];
+  const C_APP = [{ id: 'H', label: 'H (m)', def: 6 }, { id: 'I', label: 'I (m⁴)', def: 0.3 }, { id: 'Ap', label: 'A (m²)', def: 2 }, { id: 'pied', label: 'Pied', type: 'sel', def: 'encastre', options: [['encastre', 'encastré'], ['articule', 'articulé']] }];
+  const C_ESS = [{ id: 'd', label: 'd (m)', def: 0 }, { id: 't', label: 'charge (t)', def: 10 }];
+  const C_SEC = [{ id: 'type', label: 'Type', type: 'sel', def: 'travee', options: [['travee', 'T'], ['appui', 'A']], w: '52px' }, { id: 'k', label: 'k', def: 1 }, { id: 'xi', label: 'ξ', def: 0.5 }, { id: 'nF', label: 'nF', def: '' }, { id: 'nL', label: 'nL', def: '' }, { id: 'Kep', label: 'Kép', def: '' }, { id: 'Kreg', label: 'Krég', def: '' }];
+
+  const DEF = {
+    ouv: {}, cadre: {}, route: {}, rail: {}, veh: {}, conv: {}, tr: {},
+    trav: [11.5, 15, 15, 11.5].map((L) => ({ L, Ig: 0.1586, Im: 0.1586, Id: 0.1586 })),
+    app: Array.from({ length: 5 }, () => ({ H: 0, I: 0.3, Ap: 2, pied: 'encastre' })),
+    ess: [{ d: 0, t: 5.75 }, { d: 1.795, t: 5.75 }, { d: 4.775, t: 9.2 }, { d: 6.175, t: 9.2 }],
+    sec: [{ type: 'travee', k: 1, xi: 0.4 }, { type: 'travee', k: 2, xi: 0.5 }, { type: 'appui', k: 1, xi: 0.5 }, { type: 'appui', k: 2, xi: 0.5 }],
+  };
+  const clone = (x) => JSON.parse(JSON.stringify(x));
+  const saved = BA.store.load(KEY);
+  const S = saved && saved.trav ? saved : clone(DEF);
+
+  BA.form(document.getElementById('f-ouv'), F_OUV, 'o-', S.ouv);
+  BA.form(document.getElementById('f-cadre'), F_CADRE, 'c-', S.cadre);
+  BA.form(document.getElementById('f-route'), F_ROUTE, 'r-', S.route);
+  BA.form(document.getElementById('f-rail'), F_RAIL, 'f-', S.rail);
+  BA.form(document.getElementById('f-veh'), F_VEH, 'v-', S.veh);
+  BA.form(document.getElementById('f-conv'), F_CONV, 'n-', S.conv);
+  BA.form(document.getElementById('f-tr'), F_TR, 't-', S.tr);
+  const R = {
+    trav: BA.rows(document.getElementById('r-trav'), C_TRAV, S.trav, { addLabel: 'Ajouter une travée', onChange: sync }),
+    app: BA.rows(document.getElementById('r-app'), C_APP, S.app, { addLabel: 'Ajouter un appui' }),
+    ess: BA.rows(document.getElementById('r-ess'), C_ESS, S.ess, { addLabel: 'Ajouter un essieu', onChange: () => { document.getElementById('v-lib').value = 'perso'; showW(); } }),
+    sec: BA.rows(document.getElementById('r-sec'), C_SEC, S.sec, { addLabel: 'Ajouter une section' }),
+  };
+  const $ = (id) => document.getElementById(id);
+
+  function showW() { const W = R.ess.data.reduce((s, a) => s + (+a.t || 0), 0); $('veh-w').textContent = 'poids total ' + fmt(W, 2) + ' t'; }
+  function sync() {
+    const u = $('o-usage').value, t = $('o-type').value;
+    $('f-route').classList.toggle('hide', u !== 'route'); $('f-rail').classList.toggle('hide', u !== 'rail');
+    $('b-appuis').classList.toggle('hide', t === 'poutre'); $('b-cadre').classList.toggle('hide', t !== 'cadre');
+    const m = $('o-bmode').value; $('o-E').closest('.field').classList.toggle('hide', m !== 'saisi'); $('o-fc').closest('.field').classList.toggle('hide', m === 'saisi');
+    const tm = $('t-tmode').value; ['t-tn', 't-tb'].forEach((i) => $(i).closest('.field').classList.toggle('hide', tm !== 'courbon'));
+    const n = R.trav.data.length + 1;
+    if (R.app.data.length !== n) { const d = R.app.data.slice(0, n); while (d.length < n) d.push({ H: t === 'cadre' ? 4 : 6, I: 0.3, Ap: 2, pied: 'encastre' }); R.app.set(d); }
+  }
+  ['o-usage', 'o-type', 'o-bmode', 't-tmode'].forEach((i) => $(i).addEventListener('change', sync));
+  $('v-lib').addEventListener('change', libChange);
+
+  function etat() {
+    return { ouv: BA.read(F_OUV, 'o-'), cadre: BA.read(F_CADRE, 'c-'), route: BA.read(F_ROUTE, 'r-'), rail: BA.read(F_RAIL, 'f-'), veh: BA.read(F_VEH, 'v-'),
+      conv: BA.read(F_CONV, 'n-'), tr: BA.read(F_TR, 't-'), trav: R.trav.data, app: R.app.data, ess: R.ess.data, sec: R.sec.data };
+  }
+  const nb = (v) => (v === '' || v === null || v === undefined || Number.isNaN(+v) ? undefined : +v);
+  function entree(s) {
+    const o = s.ouv;
+    return {
+      projet: o.projet, usage: o.usage, type: o.type, biais: o.biais, A: o.A, g: o.g,
+      beton: { mode: o.bmode, fc: o.fc, E: o.E },
+      travees: s.trav.map((t) => ({ L: +t.L, Ig: +t.Ig, Im: nb(t.Im), Id: nb(t.Id) })),
+      appuis: s.app.map((a) => ({ H: o.type === 'cadre' ? s.cadre.H : +a.H, I: +a.I, Ap: +a.Ap, pied: a.pied })),
+      cadre: s.cadre,
+      route: { classe: +s.route.classe, Lc: s.route.Lc, Lr: s.route.Lr, position: s.route.position, marge: s.route.marge, entraxe: s.route.entraxe,
+        modeles: { AL: s.route.mAL, Bc: s.route.mBc, Bt: s.route.mBt, Mc80: s.route.mMc80, Mc120: s.route.mMc120 } },
+      rail: { alpha: s.rail.alpha, phi: s.rail.phi, Lphi: s.rail.Lphi, nVoies: s.rail.nVoies, SW0: s.rail.SW0, largeur: s.rail.largeur,
+        ecc: String(s.rail.ecc || '0').split(/[;\s]+/).map((x) => BA.num(x, NaN)).filter(Number.isFinite) },
+      vehicule: { nom: s.veh.nom, essieux: s.ess.map((a) => ({ d: +a.d, t: +a.t })), av: s.veh.av, ar: s.veh.ar, voie: s.veh.voie, larg: s.veh.larg },
+      convoi: { nLmax: s.conv.nLmax, gmin: s.conv.gmin, gmax: s.conv.gmax },
+      transv: { mode: s.tr.tmode, n: s.tr.tn, b: s.tr.tb },
+      cible: { min: s.tr.cmin, max: s.tr.cmax },
+      mesures: { tolInf: s.tr.tolInf / 100, tolSup: s.tr.tolSup / 100, rem: s.tr.rem / 100, prec: s.tr.prec, quarts: s.tr.quarts },
+      sections: s.sec.map((x) => ({ type: x.type, k: +x.k, xi: +x.xi, nF: nb(x.nF), nL: nb(x.nL), Kep: nb(x.Kep), Kreg: nb(x.Kreg) })),
+    };
+  }
+
+  /* ── affichage ── */
+  let RES = null, CUR = 0;
+  const nomAppui = (k, n) => (k === 0 ? 'culée C0' : k === n ? 'culée C' + n : 'pile P' + k);
+  const nomSec = (s, n) => (s.type === 'appui' ? 'Appui ' + s.k + ' (' + nomAppui(s.k, n) + ')' : 'Travée ' + s.k + ' à ' + fmt(s.xi, 2) + ' L');
+  const mm = (v) => fmt(v * 1000, 2);
+  const tag = (v) => v === 'ok' ? '<span class="tag ok">dans la cible</span>' : v === 'insuffisant' ? '<span class="tag warn">insuffisant</span>' : '<span class="tag ko">excessif</span>';
+  const pct = (x) => fmt(x * 100, 0) + ' %';
+
+  function positionTxt(r, c) {
+    const X0 = r.m.X0, fa = c.onDeck.length ? c.onDeck.reduce((p, q) => (q.x < p.x ? q : p)) : null;
+    if (!fa) return '—';
+    let t = 0; while (t < r.m.nT - 1 && fa.x > X0[t + 1] + 1e-9) t++;
+    return 'essieu le plus à gauche à ' + fmt(fa.x - X0[t], 2) + ' m de ' + nomAppui(t, r.m.nT) + (c.nL > 1 ? ', écart entre véhicules ' + fmt(c.g, 2) + ' m' : '') + ', sens ' + (c.sens > 0 ? 'de gauche à droite (avant à droite)' : 'de droite à gauche (avant à gauche)');
+  }
+  function tabCas(r) {
+    const n = r.m.nT;
+    return BA.table(['Cas', 'Section', 'Véhicules', 'Charge', 'M épreuve', 'M réglementaire', 'Modèle', 'η', 'Verdict'],
+      r.cas.map((c) => [c.n, nomSec(c.s, n), c.nF + ' × ' + c.nL + (c.auto ? ' (auto)' : ''), fmt(c.total / r.o.g, 1) + ' t', fmt(c.Mep, 1), fmt(c.reg.val, 1), c.reg.gouv || '—', pct(c.etaP), tag(c.verdict)]), { leftText: true, caption: 'Moments en kN·m pour l’ouvrage entier (×K en mode avec répartition) — réglementaire non pondéré, sans majoration dynamique ' + (r.o.usage === 'rail' ? '(Φ inclus pour UIC 71)' : 'δ') });
+  }
+  function tabFl(r, c) {
+    const rows = c.fl.map((p) => [p.nom, fmt(p.x, 2), mm(p.vK), mm(p.vMin) + ' à ' + mm(p.vMax), mm(p.vK * r.mes.rem), p.faible ? '<span class="warn">≤ 5 × précision</span>' : '']);
+    const head = ['Point', 'x (m)', 'Flèche attendue (mm)', 'Fourchette admise', 'Rémanence max', ''];
+    let h = BA.table(head, rows, { caption: 'Flèche relative aux appuis, positive vers le bas' + (r.transv.mode !== 'global' ? ' — poutre la plus chargée (K = ' + fmt(c.Kep, 3) + ')' : '') });
+    if (c.Kc) h += BA.table(['Point'].concat(c.Kc.K.map((_, i) => 'p' + (i + 1) + ' (K = ' + fmt(c.Kc.K[i], 3) + ')')), c.fl.map((p) => [p.nom].concat(p.parPoutre.map(mm))), { caption: 'Flèches par poutre (Courbon), mm' });
+    h += BA.table(['Appui', 'Rotation (mrad)', 'Réaction (kN)'], c.rot.map((q) => { const re = c.reac.find((x) => x.appui === q.appui); return [nomAppui(q.appui, r.m.nT), fmt(q.th * 1000, 3), re ? fmt(re.R, 1) + (re.base ? ' (pied)' : '') : '—']; }), { caption: 'Rotations du tablier sur appuis (sens trigonométrique) et réactions verticales sous le cas' });
+    return h;
+  }
+  function renderCase(r, i) {
+    const c = r.cas[i], n = r.m.nT;
+    const det = Object.entries(c.reg.det).map(([k, v]) => k + ' ' + fmt(v, 1)).join(' · ');
+    let h = `<div class="casehead"><div><b>Cas ${c.n}</b> — ${nomSec(c.s, n)} · ${c.sign > 0 ? 'moment positif' : 'moment négatif'}</div>${tag(c.verdict)}</div>`;
+    h += BA.kpis([
+      { l: 'Véhicules', v: c.nF * c.nL, n: c.nF + ' file(s) × ' + c.nL + ' — ' + fmt(c.total / r.o.g, 1) + ' t' },
+      { l: 'M épreuve', v: fmt(c.Mep, 0), u: 'kN·m' },
+      { l: 'M réglementaire', v: fmt(c.reg.val, 0), u: 'kN·m', n: c.reg.gouv },
+      { l: 'Intensité η', v: pct(c.etaP), hi: true, cls: c.verdict === 'ok' ? 'ok' : c.verdict === 'excessif' ? 'ko' : 'warn', n: 'cible ' + pct(r.cible.min) + ' – ' + pct(r.cible.max) },
+    ]);
+    h += `<p style="font-size:12px;color:var(--ink3);margin:8px 0">Position : ${positionTxt(r, c)}. Effets réglementaires : ${det}.</p>`;
+    h += EP.svgElevation(r, c) + EP.svgPlan(r, c);
+    h += tabFl(r, c);
+    h += BA.chart([{ x: c.diag.x, y: c.diag.M, label: 'M sous le cas' }], { invert: true, unit: 'kN·m', title: 'Moment fléchissant', h: 170 });
+    h += BA.chart([{ x: c.diag.x, y: c.diag.v.map((v) => -v * 1000), label: 'déformée', color: '#2d6be4' }], { unit: 'mm', title: 'Déformée (ouvrage entier)', h: 150 });
+    h += BA.chart([{ x: c.li.xs, y: c.li.ys, label: 'ligne d’influence de M', color: '#7b5ea7' }], { invert: true, unit: 'kN·m / kN', title: 'Ligne d’influence', h: 150 });
+    return h;
+  }
+  function recapFl(r) {
+    const rows = [];
+    r.cas.forEach((c) => c.fl.forEach((p) => rows.push(['Cas ' + c.n, p.nom, mm(p.vK), mm(p.vMin), mm(p.vMax), mm(Math.abs(p.vK) * r.mes.rem)])));
+    return BA.table(['Cas', 'Point', 'Attendue (mm)', 'Mini', 'Maxi', 'Rémanence max'], rows);
+  }
+  function ficheVierge(r) {
+    const rows = [];
+    r.cas.forEach((c) => c.fl.forEach((p) => rows.push(['Cas ' + c.n, p.nom, mm(p.vK), '', '', '', '', '', ''])));
+    return `<div class="tbl-wrap"><table class="res fiche"><thead><tr><th>Cas</th><th>Point</th><th>Théorique (mm)</th><th>Lecture à vide L0</th><th>Lecture en charge L1 (heure)</th><th>Lecture après déchargement L2</th><th>Flèche L1−L0</th><th>Rémanence L2−L0</th><th>Observations</th></tr></thead><tbody>${rows.map((x) => `<tr>${x.map((v) => `<td style="height:24px">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  function programme(r) {
+    const rail = r.o.usage === 'rail';
+    return `<ol style="padding-left:18px;font-size:12.5px;line-height:1.6">
+      <li>Préalables : âge du béton (≥ 28 j, usuellement 90 j pour les ouvrages en béton armé selon le marché), inspection visuelle, repérage et nivellement initial des points de mesure M (et des appuis), relevé de la température.</li>
+      <li>Contrôle des véhicules : pesée par essieu (bons de pesée joints au PV), mesure des empattements et de la voie ; écart au programme ≤ 5 % sinon recalculer.</li>
+      <li>Chargement préalable des appuis encadrant chaque travée (${rail ? 'locomotive centrée sur l’appui, un bogie près de l’extrémité du tablier sur culée' : 'véhicules arrêtés au droit des appuis'}) pour consommer les tassements, puis lectures de référence L0.</li>
+      <li>Pour chaque cas : mise en place des véhicules aux cotes du schéma (marquage préalable au sol), stabilisation ≥ 5 min (jusqu’à stabilisation des lectures), lectures L1, déchargement, attente ≥ 5 min, lectures L2.</li>
+      <li>Acceptation : flèche mesurée dans la fourchette admise (−${fmt(r.mes.tolInf * 100, 0)} % / +${fmt(r.mes.tolSup * 100, 0)} %), rémanence ≤ ${fmt(r.mes.rem * 100, 0)} % de la flèche mesurée, absence de fissuration ou de désordre nouveau ; sinon expertise.</li>
+      <li>Épreuve par poids roulant : ${rail ? 'circulation de la locomotive à pas d’homme, puis à vitesse croissante jusqu’à la vitesse autorisée ; freinage derrière une culée' : 'un véhicule par voie, de front et dans le même sens, à la plus grande vitesse autorisée'} ; observations qualitatives.</li>
+      <li>Procès-verbal : dates et heures, opérations, véhicules (poids total et par essieu, dimensions), positions exactes, mesures et localisation des repères, comparaison calcul / mesure, constatations.</li></ol>`;
+  }
+  function render(r) {
+    const n = r.m.nT, out = $('out');
+    const Ltot = r.m.Ltot, nveh = Math.max(...r.cas.map((c) => c.nF * c.nL));
+    let h = BA.card('Synthèse', BA.kpis([
+      { l: 'Ouvrage', v: n, u: 'travée(s)', n: 'longueur ' + fmt(Ltot, 2) + ' m · biais ' + fmt(r.biais, 1) + ' gr' },
+      { l: 'Véhicule', v: fmt(r.veh.W / r.o.g, 2), u: 't', n: r.veh.nom },
+      { l: 'Véhicules à prévoir', v: nveh, hi: true, n: 'maximum sur les cas' },
+      { l: 'E instantané', v: fmt(r.Ei, 0), u: 'MPa' },
+    ]) + (r.av.length ? `<div class="msg info" style="margin-top:10px"><ul class="av">${r.av.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : '') + tabCas(r));
+    h += `<div class="card"><div class="card-title"><span>Cas de charge</span><small>schémas cotés, flèches, rotations, réactions</small></div><div class="tabs" id="tabs">${r.cas.map((c, i) => `<button data-i="${i}" class="${i === CUR ? 'on' : ''}">Cas ${c.n}</button>`).join('')}</div><div id="case">${renderCase(r, CUR)}</div></div>`;
+    h += BA.card('Flèches attendues et tolérances', recapFl(r));
+    h += BA.card('Programme des mesures', programme(r));
+    h += BA.card('Fiche de relevés', ficheVierge(r), 'à imprimer avec le carnet');
+    h += BA.card('Périmètre et hypothèses', perimetre(r));
+    out.innerHTML = h;
+    $('tabs').addEventListener('click', (e) => { const i = e.target.dataset.i; if (i === undefined) return; CUR = +i; $('tabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.i === CUR)); $('case').innerHTML = renderCase(r, CUR); });
+  }
+  function perimetre(r) {
+    return `<details class="ref" open><summary>Ce que calcule le module</summary><ul>
+      <li>Modèle plan (barres d’Euler-Bernoulli) de l’ouvrage entier : poutre continue sur appuis simples, portique à piles ou piédroits encastrés (ou articulés en pied), cadre fermé avec radier sur sol élastique (Winkler). Inertie variable par travée suivant une loi parabolique de la hauteur équivalente h = I<sup>1/3</sup> entre les valeurs saisies aux appuis et au milieu.</li>
+      <li>Ligne d’influence du moment de chaque section par Müller-Breslau (courbure imposée sur L/1000 de part et d’autre de la section, calibrée par un calcul direct) ; position optimale des véhicules par balayage au pas de 5 cm dans les deux sens, écart entre véhicules d’une même file optimisé entre les bornes saisies.</li>
+      <li>Effets réglementaires non pondérés et sans majoration dynamique pour les ponts-routes : A(l) (a1, a2, nombre de voies chargées optimisé), Bc (bc, 1 ou 2 camions par file), Bt (bt), Mc80, Mc120 (Fascicule 61 titre II). Ponts-rails : UIC 71 × α × Φ, SW/0 × α × Φ sur ouvrages continus, LΦ du tableau 6.2 de l’EN 1991-2 (Livret 2.01).</li>
+      <li>Nombre de véhicules : si nF ou nL n’est pas imposé, le plus petit nombre de véhicules donnant une intensité η comprise dans la cible (par défaut 2/3 à 1, valeurs à fixer par le marché) ; à défaut, le plus fort η sous la borne supérieure.</li>
+      <li>Flèches et rotations : calcul élastique linéaire, béton non fissuré, module instantané (BAEL A.2.1.21 ou EN 1992-1-1 tab. 3.1 ou saisi), flèches relatives à la ligne des appuis. Les inerties saisies doivent être celles de la section brute (ou homogénéisée) de l’ouvrage entier ; en béton armé fortement sollicité, comparer aussi à un calcul en section fissurée.</li>
+      <li>Répartition transversale : ouvrage entier (pas de répartition, cas des dalles larges vérifiées globalement), Courbon (entretoisement rigide : K<sub>i</sub> = 1 + n·ē·y<sub>i</sub>/Σy²) ou coefficients saisis (Kép pour l’épreuve, Krég pour le réglementaire, issus par exemple de GMSLT). η = (M<sub>ép</sub>·Kép)/(M<sub>rég</sub>·Krég).</li>
+      <li>Biais (30 à 170 gr) : prise en compte simplifiée — calcul en poutre suivant l’axe avec les portées biaises, lignes d’appui biaises sur la vue en plan. Hors de 70–130 gr, le modèle surestime moments et flèches de travée : un calcul en plaque est recommandé.</li>
+      <li>Tolérances sur les flèches, rémanence admise, durées de stabilisation : paramètres de programme à fixer par le marché ou le guide d’épreuves applicable ; les valeurs par défaut sont des usages courants, pas des valeurs réglementaires.</li></ul></details>`;
+  }
+
+  function calc() {
+    const s = etat(); BA.store.save(KEY, s);
+    try { RES = EP.calcul(entree(s)); if (CUR >= RES.cas.length) CUR = 0; render(RES); }
+    catch (e) { $('out').innerHTML = `<div class="card"><div class="msg err">${esc(e.message)}</div></div>`; RES = null; }
+  }
+
+  function note() {
+    if (!RES) calc(); if (!RES) return;
+    const r = RES, o = r.o, n = r.m.nT, rail = o.usage === 'rail';
+    const sections = [];
+    sections.push({ titre: '1. Objet et références', html: `<p>Le présent carnet définit le programme des épreuves de chargement statique de l’ouvrage « ${esc(o.projet || '')} » : positions des véhicules d’épreuve, intensité des épreuves et valeurs attendues des flèches, rotations et réactions.</p>
+      <p>Références : ${rail ? 'Livret 2.01 et EN 1991-2 (UIC 71, SW/0, Φ)' : 'Fascicule 61 titre II (systèmes A et B, charges militaires)'} ; ${o.beton.mode === 'ec2' ? 'EN 1992-1-1 tableau 3.1' : 'BAEL 91 mod. 99 art. A.2.1.21'} pour le module instantané ; note de calcul et plans de coffrage de l’ouvrage ; fiche technique et bons de pesée des véhicules d’épreuve.</p>` });
+    sections.push({ titre: '2. Ouvrage', html: BA.table(['Travée', 'Portée (m)', 'I gauche (m⁴)', 'I milieu', 'I droite'], o.travees.map((t, i) => [i + 1, fmt(t.L, 2), fmt(t.Ig, 4), fmt(t.Im, 4), fmt(t.Id, 4)])) +
+      `<p>Structure : ${{ poutre: 'poutre continue sur appuis simples', portique: 'portique', cadre: 'cadre fermé' }[o.type]} ; biais ${fmt(r.biais, 1)} gr ; section ${fmt(o.A, 3)} m² ; E instantané ${fmt(r.Ei, 0)} MPa. ${rail ? 'Ouvrage ferroviaire' : 'Pont de ' + o.route.classe + (o.route.classe === 1 ? 're' : 'e') + ' classe, largeur chargeable ' + fmt(o.route.Lc, 2) + ' m (' + r.ctx.Nv + ' voies de ' + fmt(r.ctx.v, 2) + ' m)'}.</p>` });
+    sections.push({ titre: '3. Véhicules d’épreuve', html: `<p>${esc(r.veh.nom)} : poids total ${fmt(r.veh.W / o.g, 2)} t, empattement total ${fmt(r.veh.len, 3)} m, porte-à-faux ${fmt(r.veh.av, 2)} / ${fmt(r.veh.ar, 2)} m, voie ${fmt(r.veh.voie, 2)} m, largeur ${fmt(r.veh.larg, 2)} m. Nombre maximal de véhicules simultanés : ${Math.max(...r.cas.map((c) => c.nF * c.nL))}.</p>` +
+      BA.table(['Essieu', 'd (m)', 'Charge (t)', 'Charge (kN)'], r.veh.ax.map((a, i) => [i + 1, fmt(a.d, 3), fmt(a.P / o.g, 2), fmt(a.P, 1)])) + '<p>Les charges par essieu seront vérifiées par pesée ; un écart de plus de 5 % impose de recalculer les valeurs attendues.</p>' });
+    sections.push({ titre: '4. Intensité des épreuves', html: tabCas(r) + `<p>Cible : ${pct(r.cible.min)} ≤ η ≤ ${pct(r.cible.max)} de l’effet ${rail ? 'de UIC 71 (ou SW/0) × α × Φ' : 'des charges réglementaires non pondérées, sans majoration dynamique'}.</p>` + (r.av.length ? '<ul>' + r.av.map((a) => `<li>${esc(a)}</li>`).join('') + '</ul>' : '') });
+    r.cas.forEach((c) => sections.push({ titre: `5.${c.n} Cas ${c.n} — ${nomSec(c.s, n)}`, html: `<p>${c.nF} file(s) de ${c.nL} véhicule(s) ; ${positionTxt(r, c)}. M épreuve ${fmt(c.Mep, 1)} kN·m ; M réglementaire ${fmt(c.reg.val, 1)} kN·m (${c.reg.gouv}) ; η = ${pct(c.etaP)}.</p>` + EP.svgElevation(r, c) + EP.svgPlan(r, c) + tabFl(r, c) }));
+    sections.push({ titre: '6. Récapitulatif des flèches attendues', html: recapFl(r) });
+    sections.push({ titre: '7. Déroulement et programme des mesures', html: programme(r) });
+    sections.push({ titre: '8. Fiche de relevés', html: `<p>Date : ……………… Température : ……… °C &nbsp; Opérateur : ……………… Appareil : ………………</p>` + ficheVierge(r).replace('class="tbl-wrap"', 'class="tbl-wrap" style="font-size:9px"') });
+    sections.push({ titre: '9. Hypothèses de calcul', html: perimetre(r).replace(' open', ' open style="font-size:10px"') });
+    BA.note({ titre: 'Carnet d’épreuves — ' + (o.projet || ''), code: 'EPREUVES', regl: rail ? 'Livret 2.01 · EN 1991-2' : 'Fascicule 61 titre II', projet: o.projet, sections });
+  }
+
+  $('b-calc').addEventListener('click', calc);
+  $('b-note').addEventListener('click', note);
+  $('b-save').addEventListener('click', () => BA.store.download('epreuves.json', etat()));
+  $('b-open').addEventListener('click', () => BA.store.pick('.json', (txt) => { try { const d = JSON.parse(txt); load(d); } catch (e) { alert('Fichier non valide : ' + e.message); } }));
+  $('b-def').addEventListener('click', () => load(clone(DEF)));
+  function load(d) {
+    const D = clone(DEF);
+    BA.form($('f-ouv'), F_OUV, 'o-', d.ouv || D.ouv); BA.form($('f-cadre'), F_CADRE, 'c-', d.cadre || D.cadre); BA.form($('f-route'), F_ROUTE, 'r-', d.route || D.route);
+    BA.form($('f-rail'), F_RAIL, 'f-', d.rail || D.rail); BA.form($('f-veh'), F_VEH, 'v-', d.veh || D.veh); BA.form($('f-conv'), F_CONV, 'n-', d.conv || D.conv); BA.form($('f-tr'), F_TR, 't-', d.tr || D.tr);
+    R.trav.set(d.trav || D.trav); R.app.set(d.app || D.app); R.ess.set(d.ess || D.ess); R.sec.set(d.sec || D.sec);
+    ['o-usage', 'o-type', 'o-bmode', 't-tmode'].forEach((i) => $(i).addEventListener('change', sync));
+    $('v-lib').addEventListener('change', libChange);
+    sync(); showW(); CUR = 0; calc();
+  }
+  function libChange() {
+    const v = EP.VEHICULES[$('v-lib').value]; if (!v) return;
+    BA.write(F_VEH, { nom: v.nom, av: v.av, ar: v.ar, voie: v.voie, larg: v.larg }, 'v-');
+    R.ess.set(v.essieux.map((a) => ({ d: a.d, t: a.t }))); showW();
+    if (v.type !== $('o-usage').value) { $('o-usage').value = v.type; sync(); }
+  }
+  sync(); showW(); calc();
+})();
+</script>
+</body>
+</html>

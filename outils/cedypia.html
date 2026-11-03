@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEDYPIA — Dynamique des ponts-rails — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="CEDYPIA : calcul dynamique des ponts-rails sous trains réels et trains universels HSLM-A (EN 1991-2 §6.4.6, annexe E) par superposition modale et intégration analytique : flèches et accélérations en fonction de la vitesse, coefficient dynamique, poutres continues jusqu'à 9 travées.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/cedypia.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.prog{height:6px;border-radius:3px;background:var(--bg2);overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .15s}
+.trains{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 8px;font-size:12px}
+.trains label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.ptsel{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-bottom:8px}
+.ptsel select,.ptsel input{height:30px;border:1px solid var(--border);border-radius:6px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:12px;padding:0 6px}
+.ptsel input{width:80px}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › CEDYPIA</div>
+      <div class="eyebrow">Compléments · calcul dynamique</div>
+      <h1>Dynamique des <em>ponts-rails</em></h1>
+      <div class="badges"><span class="badge">EN 1991-2 §6.4.4 à §6.4.6</span><span class="badge">EN 1991-2 annexe E (HSLM)</span><span class="badge">EN 1990 A2.4.4.2</span></div>
+    </div>
+    <p class="lead">Flèches et accélérations du tablier au passage de trains réels ou des trains universels HSLM-A, en fonction de la vitesse : superposition modale, réponse de chaque mode intégrée exactement, poutre continue de 1 à 9 travées. Comparaison au coefficient dynamique et à la limite d’accélération.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card"><div class="card-title"><span>Ligne et tablier</span></div><div class="fields" id="f-gen"></div></div>
+  <div class="card"><div class="card-title"><span>Travées</span><small>appuis simples</small></div><div id="f-spans"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">EI en kN·m² (E en kPa × I en m⁴, module dynamique du béton non fissuré) ; m = masse linéique totale (tablier + superstructures + ballast), en t/m.</div></div>
+  <div class="card"><div class="card-title"><span>Convois</span></div>
+    <div class="fields c1" id="f-conv"></div>
+    <div id="hslm-box" style="margin-top:10px"><div class="trains" id="trains"></div>
+      <div class="actions" style="margin-top:8px"><button class="btn sm" id="tAll">Tous</button><button class="btn sm" id="tNone">Aucun</button></div></div>
+    <div id="user-box" class="fields c1" style="margin-top:10px"></div>
+  </div>
+  <div class="card"><div class="card-title"><span>Points de calcul</span></div>
+    <div class="fields c1" id="f-pts"></div><div id="pts-box" style="margin-top:8px"></div></div>
+  <div class="actions">
+    <button class="btn primary" id="go">Calculer</button>
+    <button class="btn gold" id="note">Note de calcul</button>
+    <button class="btn" id="save">Enregistrer</button>
+    <button class="btn" id="open">Ouvrir</button>
+    <button class="btn" id="reset">Exemple</button>
+  </div>
+  <div id="prog-box" style="display:none"><div style="font-size:11.5px;color:var(--ink3)" id="prog-txt">Calcul…</div><div class="prog"><i id="prog"></i></div></div>
+  <div class="card"><div class="card-title"><span>Périmètre et hypothèses</span></div>
+    <details class="ref" open><summary>Méthode</summary><ul>
+      <li>Poutre d’Euler-Bernoulli continue sur appuis simples (1 à 9 travées), EI et m constants par travée ; forces ponctuelles mobiles à vitesse constante, sans interaction véhicule-pont autre que l’amortissement additionnel Δζ (§6.4.6.3.1(3), éq. 6.13), sans répartition par le rail et le ballast.</li>
+      <li>Modes : 1 travée → sinus analytiques ; plusieurs travées → éléments finis d’Hermite, masse cohérente, Cholesky puis Jacobi. Modes retenus jusqu’à max(30 Hz ; 1,5·n0 ; n3) (EN 1990 A2.4.4.2.1(4)P).</li>
+      <li>Réponse modale intégrée exactement pour une force variant linéairement sur chaque pas (récurrence de Nigam-Jennings) ; pas de temps ≤ T<sub>min</sub>/20 et ≤ L<sub>min</sub>/(40 v) ; passage complet du convoi puis 1,5 période libre.</li>
+      <li>Amortissement : borne inférieure du tableau 6.6 (portée de la travée isostatique, ou plus grande portée d’une poutre continue), ou valeur imposée.</li>
+      <li>(1 + φ’<sub>dyn</sub>) = max y<sub>dyn</sub> / max y<sub>stat</sub> au point, pour le train qui donne la flèche dynamique maximale (§6.4.6.5(3)) ; la flèche statique est calculée exactement par ligne d’influence. Les vitesses étudiées vont de V<sub>min</sub> à 1,2 × V (§6.4.6.2), au plus 200 vitesses.</li>
+    </ul></details>
+    <details class="ref"><summary>Limites connues</summary><ul>
+      <li>Géométrie des HSLM-A : motrice à essieux 0 / 3 / 14 / 17 m, 3,525 m jusqu’à la voiture d’extrémité (bogie de 3 m), puis N + 1 bogies articulés d’empattement d espacés de D (2N + 14 essieux, convoi symétrique). Contrôler cette reconstitution sur la figure E.1 de la norme avant usage contractuel.</li>
+      <li>HSLM-B (travées isostatiques de moins de 7 m) non proposé : saisir un convoi utilisateur d’après la figure E.2 et le tableau E.3.</li>
+      <li>Tableaux F.1 et F.2 de l’annexe F ((v/n0)<sub>lim</sub>) non programmés : l’organigramme renvoie à la norme dans ce cas.</li>
+      <li>Pas de torsion, de biais, ni de vérification de confort (§A2.4.4.3) ; pas d’appuis élastiques.</li>
+      <li>Le format d’origine (.don) de ce module n’est pas connu : sauvegarde au format JSON.</li>
+    </ul></details>
+  </div>
+</div>
+
+<div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/cedypia.js"></script>
+<script>
+BA.chrome({ base: '../' });
+(function () {
+  'use strict';
+  const D = BA.cedypia, fmt = BA.fmt, KEY = 'cedypia';
+  const GEN = [
+    { id: 'projet', label: 'Ouvrage', type: 'txt', def: 'PRA — travée isostatique 18 m', wide: true },
+    { id: 'vmax', label: 'Vitesse maximale de la ligne V', unit: 'km/h', def: 300 },
+    { id: 'vmin', label: 'Vitesse minimale étudiée', unit: 'km/h', def: 120 },
+    { id: 'vstep', label: 'Pas de vitesse', unit: 'km/h', def: 5 },
+    { id: 'vmaxEtude', label: 'Vitesse maximale étudiée', unit: 'km/h', def: 0, help: '0 = 1,2 × V (§6.4.6.2)' },
+    { id: 'type', label: 'Type de tablier (tableau 6.6)', type: 'sel', def: 'bp', wide: true, options: [['bp', 'Béton précontraint'], ['ba', 'Béton armé ou poutrelles enrobées'], ['acier', 'Acier'], ['mixte', 'Mixte acier-béton']] },
+    { id: 'zeta', label: 'Amortissement imposé ζ', unit: '%', def: 0, help: '0 = tableau 6.6' },
+    { id: 'nT', label: 'Fréquence de torsion nT', unit: 'Hz', def: 0, help: '0 = inconnue (organigramme 6.9)' },
+    { id: 'dzeta', label: 'Amortissement additionnel Δζ (L < 30 m, éq. 6.13)', type: 'chk', def: true, wide: true },
+    { id: 'ballast', label: 'Voie ballastée (limite 3,5 m/s², sinon 5 m/s²)', type: 'chk', def: true, wide: true },
+  ];
+  const CONV = [{ id: 'mode', label: 'Convois étudiés', type: 'sel', def: 'hslm', options: [['hslm', 'Trains universels HSLM-A (annexe E)'], ['user', 'Convoi utilisateur (liste d’essieux)']] }];
+  const USER = [{ id: 'convoi', label: 'Essieux : abscisse depuis la tête (m), charge (kN) — une ligne par essieu, 99 au plus', type: 'area', def: '' }];
+  const PTS = [{ id: 'auto', label: 'Quarts et mi-travées de chaque travée', type: 'chk', def: true }];
+  const SPC = [{ id: 'L', label: 'Portée (m)', def: 18 }, { id: 'EI', label: 'EI (kN·m²)', def: 4.32e7 }, { id: 'm', label: 'm (t/m)', def: 18 }];
+  const PTC = [{ id: 'x', label: 'Abscisse (m)', def: 9 }, { id: 'nom', label: 'Nom', type: 'txt', def: 'point' }];
+  const TR = Object.keys(D.HSLM_A);
+  const EX_USER = (() => { // exemple : rame à motrices et voitures classiques (illustratif)
+    const a = []; const veh = (x0, b, e) => [x0, x0 + b, x0 + e, x0 + e + b];
+    let x = 0; veh(0, 3, 14).forEach((d) => a.push([d, 170])); x = 17 + 3.5;
+    for (let k = 0; k < 8; k++) { veh(x, 2.5, 19).forEach((d) => a.push([d, 150])); x += 21.5 + 5; }
+    veh(x, 3, 14).forEach((d) => a.push([d, 170]));
+    return a.map(([d, P]) => `${d.toFixed(2)} ${P}`).join('\n');
+  })();
+  const DEF = () => ({ gen: {}, conv: { mode: 'hslm' }, user: { convoi: EX_USER }, ptsf: { auto: true }, trains: TR.slice(), spans: [{ L: 18, EI: 4.32e7, m: 18 }], pts: [{ x: 9, nom: 'mi-travée' }], vH: 0, ptH: 1 });
+  let S = Object.assign(DEF(), BA.store.load(KEY) || {});
+  const $ = (id) => document.getElementById(id);
+  let spans, pts, last = null, lastInp = null, curPt = 1, worker = null, jobId = 0;
+
+  function drawInputs() {
+    BA.form($('f-gen'), GEN, 'g-', S.gen);
+    BA.form($('f-conv'), CONV, 'c-', S.conv);
+    BA.form($('user-box'), USER, 'u-', S.user);
+    BA.form($('f-pts'), PTS, 'p-', S.ptsf);
+    $('trains').innerHTML = TR.map((t) => `<label><input type="checkbox" data-t="${t}"${S.trains.includes(t) ? ' checked' : ''}>${t}</label>`).join('');
+    spans = BA.rows($('f-spans'), SPC, S.spans, { addLabel: 'Ajouter une travée', onChange: persist });
+    pts = BA.rows($('pts-box'), PTC, S.pts, { addLabel: 'Ajouter un point', onChange: persist });
+    vis();
+  }
+  function vis() {
+    const u = $('c-mode').value === 'user';
+    $('hslm-box').style.display = u ? 'none' : ''; $('user-box').style.display = u ? '' : 'none';
+    $('pts-box').style.display = $('p-auto').checked ? 'none' : '';
+  }
+  function collect() {
+    S.gen = BA.read(GEN, 'g-'); S.conv = BA.read(CONV, 'c-'); S.user = BA.read(USER, 'u-'); S.ptsf = BA.read(PTS, 'p-');
+    S.trains = [...document.querySelectorAll('#trains input')].filter((i) => i.checked).map((i) => i.dataset.t);
+    S.spans = spans.data; S.pts = pts.data;
+  }
+  function persist() { collect(); BA.store.save(KEY, S); }
+  function input() {
+    collect();
+    const g = S.gen;
+    if (S.spans.length < 1 || S.spans.length > 9) throw new Error('De 1 à 9 travées.');
+    const inp = {
+      spans: S.spans.map((s) => ({ L: +s.L, EI: +s.EI, m: +s.m })), type: g.type, zeta: g.zeta > 0 ? g.zeta : null, dzeta: g.dzeta, ballast: g.ballast,
+      vmax: g.vmax, vmin: g.vmin, vstep: g.vstep, vmaxEtude: g.vmaxEtude > 0 ? g.vmaxEtude : 0, nT: g.nT > 0 ? g.nT : 0,
+      trains: S.conv.mode === 'user' ? 'user' : S.trains, convoi: S.conv.mode === 'user' ? D.lireConvoi(S.user.convoi) : null,
+      pts: S.ptsf.auto ? null : S.pts.map((p) => ({ x: +p.x, nom: String(p.nom || ('x = ' + p.x)) })),
+    };
+    if (!(inp.vmax > 0)) throw new Error('Vitesse maximale de la ligne à renseigner.');
+    if (inp.trains !== 'user' && !inp.trains.length) throw new Error('Choisir au moins un train HSLM-A.');
+    const ve = inp.vmaxEtude || 1.2 * inp.vmax;
+    if ((ve - inp.vmin) / inp.vstep + 1 > 200) throw new Error(`Plus de 200 vitesses : augmenter le pas (au moins ${fmt((ve - inp.vmin) / 199, 1)} km/h).`);
+    return inp;
+  }
+
+  function progress(p) { $('prog-box').style.display = ''; $('prog').style.width = (100 * p).toFixed(0) + '%'; $('prog-txt').textContent = `Calcul… ${(100 * p).toFixed(0)} %`; }
+  function done() { $('prog-box').style.display = 'none'; $('go').disabled = false; }
+  function fail(e) { done(); $('out').innerHTML = `<div class="msg err">${BA.esc(e.message || e)}</div>`; }
+  function run() {
+    let inp; try { inp = input(); } catch (e) { fail(e); return; }
+    persist(); $('go').disabled = true; progress(0);
+    const id = ++jobId;
+    const local = () => setTimeout(() => { try { const r = D.calcul(inp); if (id === jobId) { done(); show(r, inp); } } catch (e) { fail(e); } }, 20);
+    if (typeof Worker === 'undefined') return local();
+    try {
+      if (!worker) worker = new Worker('js/cedypia-worker.js');
+      worker.onmessage = (ev) => {
+        const m = ev.data; if (m.id !== jobId) return;
+        if (m.progress !== undefined) progress(m.progress);
+        else if (m.error) fail(new Error(m.error));
+        else if (m.res) { done(); show(m.res, inp); }
+      };
+      worker.onerror = (ev) => { ev.preventDefault && ev.preventDefault(); worker = null; local(); };
+      worker.postMessage({ id, inp });
+    } catch (e) { worker = null; local(); }
+  }
+
+  const mm = (y) => fmt(1000 * y, 2);
+  const pal = ['#a8842a', '#0f8f7b', '#2d6be4', '#c0392b', '#7b5ea7', '#5d6d7e', '#d35400', '#16a085', '#8e44ad', '#2c3e50'];
+  function chartsVitesse(r, j) {
+    const ser = (key, f) => r.trains.map((t, i) => ({ x: r.vit, y: r.env[i][j][key].map(f), label: t.nom, color: pal[i % pal.length], fill: false }));
+    const fl = ser('y', (y) => 1000 * y);
+    const ys = Math.max(...r.stat.map((s) => s[j].max)) * 1000;
+    fl.push({ x: [r.vit[0], r.vit[r.vit.length - 1]], y: [ys, ys], label: 'statique (max)', color: '#14171f', fill: false });
+    const ac = ser('a', (a) => a);
+    ac.push({ x: [r.vit[0], r.vit[r.vit.length - 1]], y: [r.aAdm, r.aAdm], label: 'limite', color: '#c0392b', fill: false });
+    return BA.chart(fl, { title: `Flèche maximale / vitesse — ${r.pts[j].nom}`, unit: 'mm ; km/h', h: 240 }) +
+      '<div style="height:10px"></div>' + BA.chart(ac, { title: `Accélération maximale / vitesse — ${r.pts[j].nom}`, unit: 'm/s² ; km/h', h: 240 });
+  }
+  function chartsTemps(h, j, r) {
+    return BA.chart([{ x: h.t, y: h.y[j].map((y) => 1000 * y), label: 'flèche', fill: false }], { title: `Flèche / temps — ${r.pts[j].nom} — ${h.train} à ${fmt(h.v, 0)} km/h`, unit: 'mm ; s', h: 200, invert: true }) +
+      '<div style="height:10px"></div>' + BA.chart([{ x: h.t, y: h.a[j], label: 'accélération', color: '#0f8f7b', fill: false }, { x: [h.t[0], h.t[h.t.length - 1]], y: [r.aAdm, r.aAdm], color: '#c0392b', fill: false }, { x: [h.t[0], h.t[h.t.length - 1]], y: [-r.aAdm, -r.aAdm], color: '#c0392b', fill: false }], { title: 'Accélération / temps', unit: 'm/s² ; s', h: 200 });
+  }
+  function synthTable(r) {
+    return BA.table(['Point', 'x (m)', 'y stat (mm)', 'y dyn (mm)', 'v (km/h)', 'Train', '1 + φ’dyn', 'a max (m/s²)', 'v (km/h)', 'Train', 'a ≤ a lim'],
+      r.synth.map((s) => [s.nom, fmt(s.x, 2), mm(s.ystat), mm(s.ydyn), fmt(s.vy, 0), s.trainY, fmt(1 + s.phiDyn, 3), fmt(s.amax, 2), fmt(s.va, 0), s.trainA, BA.verdict(s.amax <= r.aAdm, 'oui', 'non')]), { leftText: true });
+  }
+  function freqTable(r) {
+    return BA.table(['Mode', 'f (Hz)', 'T (s)', 'v critique n·D (km/h) pour D = 18 / 27 m'], r.freq.map((f, i) => [String(i + 1), fmt(f, 3), fmt(1 / f, 4), `${fmt(f * 18 * 3.6, 0)} / ${fmt(f * 27 * 3.6, 0)}`]));
+  }
+  function orgaHtml(r) { return `<ul style="font-size:12px;padding-left:18px;color:var(--ink2)">${r.orga.etapes.map((e) => `<li>${BA.esc(e)}</li>`).join('')}</ul><div class="msg ${r.orga.requise === false ? 'info' : ''}" style="margin-top:8px">${BA.esc(r.orga.verdict)}</div>`; }
+  function phiHtml(r) {
+    const s = r.synth[r.iY];
+    return `<div class="formula">LΦ = ${fmt(r.LPhi, 2)} m  →  Φ2 = ${fmt(r.phi2, 3)}  ;  Φ3 = ${fmt(r.phi3, 3)}  (EN 1991-2 éq. 6.4, 6.5)
+Calcul dynamique : max (1 + φ'dyn) = ${fmt(1 + s.phiDyn, 3)} au point ${s.nom} (${s.trainY}, ${fmt(s.vy, 0)} km/h)
+φ'' (annexe C, à V) = ${fmt(r.phiSecond, 3)}  →  (1 + φ'dyn + φ''/2) = ${fmt(1 + s.phiDyn + r.phiSecond / 2, 3)}
+§6.4.6.5(3) : retenir le plus défavorable de Φ × (LM71 « + » SW/0) et de (1 + φ'dyn + φ''/2) × (HSLM ou train réel).</div>`;
+  }
+
+  function show(r, inp) {
+    last = r; lastInp = inp;
+    if (curPt >= r.pts.length) curPt = 0;
+    if (S.ptH !== undefined && S.ptH < r.pts.length) curPt = S.ptH;
+    const sA = r.synth[r.iA], sY = r.synth[r.iY];
+    const k = BA.kpis([
+      { l: 'Fréquence n0', v: fmt(r.n0, 2), u: 'Hz', n: `${r.nModes} modes jusqu’à ${fmt(r.fmax, 1)} Hz${r.analytique ? ' (analytiques)' : ''}` },
+      { l: 'Amortissement ζ', v: fmt(r.zeta, 2), u: '%', n: `tableau 6.6 : ${fmt(r.zTab, 2)} %${r.dZ ? ` + Δζ ${fmt(r.dZ, 2)} %` : ''}` },
+      { l: 'Accélération max', v: fmt(sA.amax, 2), u: 'm/s²', cls: r.okA ? 'ok' : 'ko', hi: true, n: `${sA.nom} · ${sA.trainA} · ${fmt(sA.va, 0)} km/h · limite ${fmt(r.aAdm, 1)}` },
+      { l: '(1 + φ’dyn) max', v: fmt(1 + sY.phiDyn, 3), n: `${sY.nom} · ${sY.trainY} · Φ2 = ${fmt(r.phi2, 3)}` },
+    ]);
+    const tabs = `<div class="tabs" id="ptTabs">${r.pts.map((p, j) => `<button data-j="${j}" class="${j === curPt ? 'on' : ''}">${BA.esc(p.nom)}</button>`).join('')}</div>`;
+    const hsel = `<div class="ptsel">Historique : <select id="hTrain">${r.trains.map((t) => `<option${t.nom === r.histo.train ? ' selected' : ''}>${t.nom}</option>`).join('')}</select> à <input id="hV" type="number" step="any" value="${fmt(r.histo.v, 0).replace(/\s/g, '').replace(',', '.')}"> km/h <button class="btn sm" id="hGo">Tracer</button><span>(défaut : vitesse et train de l’accélération maximale)</span></div>`;
+    $('out').innerHTML =
+      BA.card('Synthèse', k + `<div style="margin-top:10px">${BA.verdict(r.okA, `Accélération ≤ ${fmt(r.aAdm, 1)} m/s² (EN 1990 A2.4.4.2.1)`, `Accélération > ${fmt(r.aAdm, 1)} m/s² (EN 1990 A2.4.4.2.1)`)}</div>`, `${r.trains.length} convoi(s) · ${r.vit.length} vitesses de ${fmt(r.vit[0], 0)} à ${fmt(r.vit[r.vit.length - 1], 0)} km/h`) +
+      BA.card('Courbes en fonction de la vitesse', tabs + `<div id="cv">${chartsVitesse(r, curPt)}</div>`) +
+      BA.card('Courbes en fonction du temps', hsel + `<div id="ct">${chartsTemps(r.histo, curPt, r)}</div>`) +
+      BA.card('Résultats par point', synthTable(r), 'enveloppe sur les convois et les vitesses') +
+      BA.card('Coefficient dynamique', phiHtml(r)) +
+      BA.card('Nécessité d’une analyse dynamique', orgaHtml(r), 'EN 1991-2 figure 6.9') +
+      BA.card('Modes propres', freqTable(r), `L totale ${fmt(r.Ltot, 2)} m · Δt min ${fmt(r.dtMin * 1000, 2)} ms · ${r.nStMax} pas par passage au plus`);
+    $('ptTabs').onclick = (e) => { const j = e.target.dataset.j; if (j === undefined) return; curPt = +j; S.ptH = curPt; persist();
+      [...$('ptTabs').children].forEach((b, i) => b.classList.toggle('on', i === curPt)); $('cv').innerHTML = chartsVitesse(r, curPt); $('ct').innerHTML = chartsTemps(r.histo, curPt, r); };
+    $('hGo').onclick = () => { try { const v = BA.num($('hV').value, 0); if (!(v > 0)) return; r.histo = D.historique(lastInp, v, $('hTrain').value); $('ct').innerHTML = chartsTemps(r.histo, curPt, r); } catch (e) { $('ct').innerHTML = `<div class="msg err">${BA.esc(e.message)}</div>`; } };
+  }
+
+  function note() {
+    const r = last; if (!r) return;
+    const g = S.gen, inp = lastInp;
+    const don = BA.table(['Travée', 'L (m)', 'EI (kN·m²)', 'm (t/m)'], inp.spans.map((s, i) => [String(i + 1), fmt(s.L, 2), fmt(s.EI, 0), fmt(s.m, 2)]));
+    const conv = BA.table(['Convoi', 'Essieux', 'Longueur (m)'], r.trains.map((t) => [t.nom, String(t.nAx), fmt(t.long, 2)]));
+    const charts = r.pts.map((p, j) => j === r.iA || j === r.iY ? `<h3 style="font-size:11px;margin:8px 0 4px">${BA.esc(p.nom)}</h3>${chartsVitesse(r, j)}` : '').join('');
+    BA.note({
+      titre: 'Dynamique des ponts-rails — CEDYPIA', code: 'CEDYPIA', projet: g.projet, regl: 'EN 1991-2 §6.4.4 à §6.4.6 et annexe E · EN 1990 annexe A2',
+      sections: [
+        { titre: 'Hypothèses', html: `<p>Poutre continue d’Euler-Bernoulli sur appuis simples, forces ponctuelles mobiles à vitesse constante. Superposition modale : modes ${r.analytique ? 'analytiques (sinus)' : 'par éléments finis d’Hermite à masse cohérente'}, ${r.nModes} modes jusqu’à ${fmt(r.fmax, 1)} Hz ; réponse de chaque mode intégrée exactement par pas (force linéaire par morceaux). Amortissement ζ = ${fmt(r.zeta, 2)} % (tableau 6.6 : ${fmt(r.zTab, 2)} % pour L = ${fmt(r.Lz, 2)} m${r.dZ ? `, Δζ = ${fmt(r.dZ, 3)} % éq. 6.13` : ''}). Vitesses de ${fmt(r.vit[0], 0)} à ${fmt(r.vit[r.vit.length - 1], 0)} km/h (V = ${fmt(g.vmax, 0)} km/h). Voie ${g.ballast ? 'ballastée' : 'sans ballast'} : a lim = ${fmt(r.aAdm, 1)} m/s².</p>` },
+        { titre: 'Données', html: don + conv },
+        { titre: 'Modes propres', html: freqTable(r) },
+        { titre: 'Nécessité d’une analyse dynamique (figure 6.9)', html: orgaHtml(r) },
+        { titre: 'Résultats par point', html: synthTable(r) },
+        { titre: 'Coefficient dynamique', html: phiHtml(r) },
+        { titre: 'Courbes', html: charts },
+        { titre: 'Conclusion', html: `<p>${BA.verdict(r.okA)} Accélération maximale ${fmt(r.synth[r.iA].amax, 2)} m/s² (${r.synth[r.iA].nom}, ${r.synth[r.iA].trainA}, ${fmt(r.synth[r.iA].va, 0)} km/h) pour une limite de ${fmt(r.aAdm, 1)} m/s². Coefficient (1 + φ’dyn) maximal ${fmt(1 + r.synth[r.iY].phiDyn, 3)} à comparer à Φ2 = ${fmt(r.phi2, 3)}.</p>` },
+      ],
+    });
+  }
+
+  drawInputs();
+  document.querySelector('.col-in').addEventListener('input', persist);
+  document.querySelector('.col-in').addEventListener('change', () => { vis(); persist(); });
+  $('go').onclick = run; $('note').onclick = note;
+  $('tAll').onclick = () => { document.querySelectorAll('#trains input').forEach((i) => (i.checked = true)); persist(); };
+  $('tNone').onclick = () => { document.querySelectorAll('#trains input').forEach((i) => (i.checked = false)); persist(); };
+  $('save').onclick = () => { persist(); BA.store.download('cedypia.json', S); };
+  $('open').onclick = () => BA.store.pick('.json', (t) => { try { S = Object.assign(DEF(), JSON.parse(t)); drawInputs(); run(); } catch (e) { fail(new Error('Fichier illisible : ' + e.message)); } });
+  $('reset').onclick = () => { S = DEF(); drawInputs(); run(); };
+  run();
+})();
+</script>
+</body>
+</html>
