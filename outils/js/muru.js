@@ -221,7 +221,7 @@
     const q0 = d.fond.q0 !== undefined && d.fond.q0 !== '' ? +d.fond.q0 : d.sol.g * Math.max(0, zdef - zf) / 1000;
     const De = +d.fond.De || Math.max(0, zdef - zf);
     let qu = +d.fond.qu, geo = null;
-    if (d.fond.sps && d.fond.sps.couches && d.fond.sps.couches.length) { geo = M3.portanceSPS(d.fond.sps, zf, Bm, L, De); qu = geo.qu + q0; }
+    if (d.fond.sps && d.fond.sps.couches && d.fond.sps.couches.length) { geo = M3.portanceSPS(d.fond.sps, zf, Bm, L, De, zdef, zdef); qu = geo.qu + q0; }
     const gq = Object.assign({ els: 3, elu: 2, acc: 1.5 }, d.fond.gq || {});
     const fondation = R.map(({ c, bandes }) => {
       let smax = 0, smin = Infinity, n = 0, na = 0, H = 0, N = 0;

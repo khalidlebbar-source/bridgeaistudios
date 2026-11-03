@@ -60,7 +60,7 @@
     epsRet: 0, dilLD: 0, dilCD: 0, conLD: 0, conCD: 0, gradHeat: 0, gradCool: 0,
     gGsup: 1.35, gGinf: 1.0, gLM: 1.45, gSW2: 1.20, gFill: 1.45, gQ: 1.5, gT: 1.5, gSH: 1.0, gW: 1.35,
     engin: false, Pav: 200, Par: 200, voieAv: 2.5, voieAr: 2.5, empat: 3, aImp: 0.6, bImp: 0.6, epRembPro: 0.3,
-    hPhi: 'EN', Ldelta: 1500, kLdelta: 0.7, bv: 1, Ld600: true,
+    fsAngles: true, hPhi: 'EN', Ldelta: 1500, kLdelta: 0.7, bv: 1, Ld600: true,
   };
   /* cadre : jeu inspiré de l'exemple d'origine « Racba » (cadre de 5 m sous 2 voies, 1 m de remblai) */
   const CADRE = Object.assign({}, COMMUN, {
@@ -707,10 +707,17 @@
     const eD = envConv(S.iDefl);
     const dGross = Math.max(...convs.filter((c) => c !== 'ENG').map((c) => eD[c].max.v)) * cof.c1voie;
     const jMid = justif.find((j) => j.sec.cle === 'trav-mi');
-    const ratioI = jMid && jMid.Ifiss > 0 ? jMid.Ibrut / jMid.Ifiss : 1;
+    // rigidité : interpolation entre états non fissuré et fissuré à mi-traverse (EN 1992-1-1 §7.4.3 (7.18), β = 1,
+    // courte durée), ζ = 1 − (Mcr/M)² sous la combinaison caractéristique, appliquée à toute la traverse (approximation)
+    let ratioI = 1, zeta = 0, Mcr = NaN, Mser = NaN;
+    if (jMid && jMid.Ifiss > 0) {
+      Mser = Math.max(0, env[jMid.sec.st].CAR.Mmax.M / jMid.w); Mcr = fctm(d.fck) * 1000 * jMid.h * jMid.h / 6;
+      zeta = Mser > Mcr ? 1 - Math.pow(Mcr / Mser, 2) : 0;
+      ratioI = zeta * jMid.Ibrut / jMid.Ifiss + (1 - zeta);
+    }
     const Lf = G.LarCal;
     const LdAdm = d.Ldelta * d.kLdelta / Math.max(0.1, d.bv);
-    const fleche = { delta: dGross * ratioI, dGross, ratioI, L: Lf, admConfort: Lf / LdAdm, adm600: Lf / 600, LdAdm };
+    const fleche = { delta: dGross * ratioI, dGross, ratioI, zeta, Mcr, Mser, Ifiss: jMid && jMid.Ifiss, Ibrut: jMid && jMid.Ibrut, L: Lf, admConfort: Lf / LdAdm, adm600: Lf / 600, LdAdm };
     fleche.ok = fleche.delta <= fleche.admConfort + 1e-12 && (!d.Ld600 || fleche.delta <= fleche.adm600);
 
     /* ── sol et fondations ── */
@@ -721,7 +728,7 @@
       const ks = S.stations.map((s, k) => (s.membre === m.nom ? k : -1)).filter((k) => k >= 0);
       return { nom: m.nom, kind: m.kind, horiz: m.horiz, pts: ks.map((k) => ({ c: S.stations[k].c, X: S.stations[k].X, Y: S.stations[k].Y, k })) };
     });
-    return { d, G, M, cof, cases, E, S, LI: { xs: LI.xs, h: LI.h }, env, sections, justif, fleche, sol, diag, alertes, kSol: kMPa,
+    return { d, G, M, cof, cases, E, S, LI, env, sections, justif, fleche, sol, diag, alertes, kSol: kMPa,
       ENV: (t, sg, et) => envelop(t, sg, et), ressorts: R.ressorts };
   }
 
@@ -769,12 +776,16 @@
     const dIn = cIn + d.dAxe, dOut = h - (cOut + d.dAxe);
     const pm = (o) => ({ M: o.M / w, N: -o.N / w, V: Math.abs(o.V) / w });     // par mètre ; N > 0 compression pour sectionBA
     const VmaxELU = Math.max(Math.abs(ev.ELU.Vmax.V), Math.abs(ev.ELU.Vmin.V)) / w;
-    const elu = ['Mmax', 'Mmin', 'Nmax', 'Nmin'].map((k) => Object.assign(pm(ev.ELU[k]), { V: VmaxELU, type: 1, src: k }));
+    // sections d'angle (nus et goussets des nœuds traverse – piédroit et radier – piédroit) : flexion simple, l'effort normal
+    // transitant par le nœud n'étant pas mobilisable au nu (option, comme le programme d'origine, manuel IV.6.1)
+    const fs = d.fsAngles !== false && /^(trav-nu|trav-gou|pied-gouh|pied-haut|rad-nu|rad-gou)$/.test(sec.cle);
+    const pm2 = (o) => { const x = pm(o); if (fs) x.N = 0; return x; };
+    const elu = ['Mmax', 'Mmin', 'Nmax', 'Nmin'].map((k) => Object.assign(pm2(ev.ELU[k]), { V: VmaxELU, type: 1, src: k }));
     const els = [];
     for (const [et, ty] of [['CAR', 0], ['QP', 1], ['FREQ', 2]]) for (const k of ['Mmax', 'Mmin']) {
-      const o = pm(ev[et][k]); const q = pm(ev.QP[k]); els.push({ N: o.N, M: o.M, Mqp: q.M, type: ty, src: et + ' ' + k });
+      const o = pm2(ev[et][k]); const q = pm(ev.QP[k]); els.push({ N: o.N, M: o.M, Mqp: q.M, type: ty, src: et + ' ' + k });
     }
-    const out = { sec, h, b, w, dIn, dOut, elu, els, VmaxELU };
+    const out = { sec, h, b, w, dIn, dOut, elu, els, VmaxELU, fs };
     if (!SBA) { out.erreur = 'Moteur BA.sectionBA indisponible.'; return out; }
     const ex = EXPO[d.expo] || [0.3, 'QP'];
     const wmax = d.critere === 'wk' ? (d.wmax || ex[0]) : null;
@@ -815,7 +826,9 @@
     out.scMax = Math.max(0, ...v.els.map((e) => e.sc)); out.ssMax = Math.max(0, ...v.els.map((e) => -e.ssMin));
     out.wkMax = Math.max(0, ...v.els.map((e) => (e.wk ? e.wk.wk : 0)));
     out.Ibrut = b * h * h * h / 12; out.Ifiss = Math.max(pr.fp ? pr.fp.I : 0, 0) || out.Ibrut;
-    out.ok = v.verdict && (!d.critere || true);
+    // tolérance de 0,5 % sur le taux ELU (précision de la recherche par dichotomie du dimensionnement)
+    out.okELU = v.elu.every((e) => e.ok || e.ratio <= 1.005); out.okELS = v.els.every((e) => e.ok); out.okV = v.cis.every((c) => c.ok);
+    out.ok = out.okELU && out.okELS && out.okV;
     out.alertes = v.alertes.concat(r.alertes);
     return out;
   }

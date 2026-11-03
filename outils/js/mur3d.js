@@ -24,7 +24,10 @@
  */
 (function (root) {
   'use strict';
-  const S = (typeof module !== 'undefined' && module.exports) ? require('./bael-ec2.js') : (root.BA && root.BA.sectionBA);
+  const NODE = typeof module !== 'undefined' && module.exports;
+  const S = NODE ? require('./bael-ec2.js') : (root.BA && root.BA.sectionBA);
+  const FD = NODE ? require('./fondatio.js') : (root.BA && root.BA.fondatio);
+  const SP = NODE ? require('./sondpres.js') : (root.BA && root.BA.sondpres);
   const D2R = Math.PI / 180, GW = 10;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -313,7 +316,9 @@
     // ── poussée sur l'écran fictif (stabilité, talon) ──
     const ecr = { T: [g.yt, zt], B: [g.yt, g.zf], sol, n: opt.n || 20 };
     const livret = d.options.modele === 'livret';
-    const Kecr = (beta) => { const b = clamp(beta, -d.sol.phi + 0.01, d.sol.phi - 0.01), lam = lamLivret(d, g, zt);
+    const Kecr = (beta) => {
+      if (d.options.deltaFictif === 'culmann') { const b = clamp(beta, 0, d.sol.phi - 0.01), c = coulomb(d.sol.phi, b, b); return [c.Kh, c.Kv]; }  // Rankine, β ≥ 0
+      const b = clamp(beta, -d.sol.phi + 0.01, d.sol.phi - 0.01), lam = lamLivret(d, g, zt);
       const a = coulomb(d.sol.phi, b, +d.options.delta0 || 2 * d.sol.phi / 3), c = coulomb(d.sol.phi, b, b);
       return [lam * a.Kh + (1 - lam) * c.Kh, lam * a.Kv + (1 - lam) * c.Kv]; };
     const cuL = livret
@@ -595,6 +600,12 @@
       });
       return Object.assign({}, c, { N, Hy, Mx, My, Mz, parTr });
     });
+    // ── fondation profonde (pieux, barrettes) ou semi-profonde (puits) : groupe sous semelle rigide par BA.fondatio ──
+    if (d.fond.type === 'pieux' || d.fond.type === 'barrettes' || d.fond.type === 'puits') {
+      const prof = fondationProfonde(d, tr, res, xg, yg, zf);
+      const ba = baMur(d, tr, res, cells.map((c) => ({ x: c.x - xg, y: c.y - yg, A: c.A, k: c.k })), xg, yg, true);
+      return { d, tr, combs, res, prof, verifs: prof.verifs, deplac: [], ba, plan: { L, Aplan, xg, yg, zf, Bm: Aplan / L }, fond: { type: d.fond.type }, ok: prof.ok && ba.ok, alertes: alertes.concat(ba.alertes, prof.alertes) };
+    }
     // ── contraintes sous semelle ──
     const cs = cells.map((c) => ({ x: c.x - xg, y: c.y - yg, A: c.A, k: c.k }));
     const gq = Object.assign({ els: 3, elu: 2, acc: 1.5 }, d.fond.gq || {});
@@ -605,7 +616,7 @@
     const De = +d.fond.De || Math.max(0, zdef - zf);
     let qu = +d.fond.qu;
     let geo = null;
-    if (d.fond.sps && d.fond.sps.couches && d.fond.sps.couches.length) { geo = portanceSPS(d.fond.sps, zf, Bm, L, De); qu = geo.qu + q0; }
+    if (d.fond.sps && d.fond.sps.couches && d.fond.sps.couches.length) { geo = portanceSPS(d.fond.sps, zf, Bm, L, De, zdef, +d.fond.ztn || zdef); qu = geo.qu + q0; }
     for (const r of res) {
       const st = sigmaSemelle(cs, r.N, r.Mx, r.My);
       r.sig = st; r.decomp = st.decomp;
@@ -660,7 +671,7 @@
       let umax = 0;
       tr.forEach((g, k) => {
         const vo = voileTranche(d, g, res.find((x) => x.no === r.no).parTr[k], r, 0, true);
-        umax = Math.max(umax, Math.abs(r.rot) * (g.zc - g.zf) + vo.fleche);
+        umax = Math.max(umax, Math.abs(r.rot) * (g.zc - g.zsem) + vo.fleche);   // rotation de la semelle × hauteur au-dessus de la semelle
       });
       return { no: r.no, rot: Math.abs(r.rot) * 1000, u: umax * 1000, lim: (+lim.deplac || 0.01) * Hmax * 1000 };
     });
@@ -699,14 +710,14 @@
   function voileTranche(d, g, pt, c, h, flecheSeule) {
     // flèche en tête du voile (console encastrée dans la semelle) par intégration de M/EI
     const n = 12, H = g.Hv; let th = 0, u = 0, Mprev = null, zprev = null;
-    const Ei = 11000 * Math.pow(d.beton.fck, 1 / 3) * 1000 / (d.beton.rapmod || 3);   // kPa (BAEL A.2.1.21 module différé)
+    const Ei = 11000 * Math.pow(d.beton.fck, 1 / 3) * 1000;   // kPa — module instantané (BAEL A.2.1.21), comme le programme d'origine
     const pts = [];
     for (let i = 0; i <= n; i++) { const z = i * H / n; const e = voileEfforts(d, g, c, z); pts.push({ z, k: e.M / (Ei * Math.pow(e.h, 3) / 12) }); }
     for (let i = 1; i <= n; i++) { const a = pts[i - 1], b = pts[i], dz = b.z - a.z; u += th * dz + dz * dz * (2 * a.k + b.k) / 6; th += dz * (a.k + b.k) / 2; }
     return { fleche: Math.abs(u) + Math.abs(th) * (g.zc - g.zsem - H) };
   }
 
-  function baMur(d, tr, res, cs, xg, yg) {
+  function baMur(d, tr, res, cs, xg, yg, profond) {
     const o = { regl: d.regl, fck: d.beton.fck, fyk: d.beton.fyk, ssLim: d.beton.ssLim, n: d.beton.n || 15, fiss: d.beton.fiss, livret: d.regl !== 'EC' && d.beton.livret, AminSeul: !!d.beton.AminSeul };
     const enr = d.beton.enrob;   // {avant, arriere, fouille, terre} (m)
     const alertes = [];
@@ -746,7 +757,14 @@
       return { h, ep, Ar: fe.As[0], Aav: fe.As[1], sc: fe.sc, ss: fe.ss, tau: t.tau, tauLim: t.lim, At: t.At, Mmax: Math.max(...elu.map((x) => x.M)), ok: fe.sc <= fe.sbc + 1e-6 && t.ok };
     }));
     // ── patin et talon : consoles depuis les parements, réaction du sol de la tranche (plan σ au droit de x) ──
-    const sigY = (r, g, y) => Math.max(0, r.sig.v[0] + r.sig.v[1] * (g.x - xg) + r.sig.v[2] * (y - yg));
+    // réaction d'appui : sol (plan des contraintes) ou, en fondation profonde, réactions des pieux réparties sur la largeur
+    // d'influence de chaque file (b = espacement moyen le long du mur) et sur un carré de côté égal au diamètre
+    const sigY = (r, g, y) => {
+      if (!profond) return Math.max(0, r.sig.v[0] + r.sig.v[1] * (g.x - xg) + r.sig.v[2] * (y - yg));
+      let s = 0;
+      for (const q of r.pieux || []) { const D = q.D; if (Math.abs(y - q.y) <= D / 2) s += q.N / (D * q.bx); }
+      return s;
+    };
     const consoleDirect = (g, r, side) => {
       // side 'patin' : section y = yf(zsem) = 0, partie y < 0 ; 'talon' : y = yb(zsem), partie y > yb
       const yS = side === 'patin' ? 0 : g.yb(g.zsem), y0 = side === 'patin' ? -g.p : yS, y1 = side === 'patin' ? 0 : g.yt;
@@ -812,33 +830,80 @@
     return { voile, fr, patin: semelles.patin, talon: semelles.talon, ok, alertes, _console: console };
   }
 
-  /* ═══════════════════════ PORTANCE D'APRÈS UN SONDAGE PRESSIOMÉTRIQUE (version minimale) ═══════════════════════
-   * Fonction rebranchable : BA.mur3d.portanceSPS = BA.fondatio… si le module FONDATIO est validé.
-   * sps : {z (cote tête), couches:[{z (profondeur du toit), pl (pl* MPa), classe:'SB'…}]} ; ple* = moyenne géométrique
-   * de pl* entre D et D + 1,5 B (Fasc. 62 annexe C1) ; q'u − q'0 = kp ple*. */
-  function portanceSPS(sps, zf, B, L, De) {
-    const C = sps.couches.slice().sort((a, b) => a.z - b.z);
-    const pl = (z) => { const p = sps.z - z; let c = C[0]; for (const x of C) if (p >= x.z - 1e-9) c = x; return c; };
-    const m = 30; let s = 0;
-    for (let i = 0; i < m; i++) s += Math.log(Math.max(1e-3, pl(zf - (i + 0.5) * 1.5 * B / m).pl));
-    const ple = Math.exp(s / m), c0 = pl(zf - 0.01);
-    const cl = String(c0.classe || 'SB').toUpperCase();
-    const groupe = { A: 'argile', L: 'argile', S: 'sable', G: 'sable', C: 'craie', M: 'marne', R: 'roche' }[cl[0]] || 'sable';
-    const kp = kpSup(groupe, cl[1] || 'B', De / B, B / L);
-    return { ple, kp, qu: kp * ple, groupe, categorie: cl[1] || 'B' };   // qu net (MPa) : q'u − q'0 ; q'0 ajouté par l'appelant
-  }
-  /* lecture minimale d'un .SPS (section $$TVCC) — rebranchable sur BA.sondpres.parse */
-  function lireSPS(txt) {
-    if (root.BA && root.BA.sondpres && root.BA.sondpres.parse) { try { const s = root.BA.sondpres.parse(txt); const o = s.sps || s; if (o.couches && o.couches.length) return { z: o.z, couches: o.couches.map((c) => ({ z: c.z, pl: c.pl, classe: c.classe, nom: c.nom })) }; } catch (e) { /* lecteur interne */ } }
-    const Ls = String(txt).replace(/\r/g, '').split('\n');
-    const z = parseFloat((Ls[6] || '').trim().split(/\s+/)[2]) || 0, couches = [];
-    const i0 = Ls.findIndex((l) => /\$\$TVCC/.test(l));
-    if (i0 >= 0) for (let i = i0 + 1; i < Ls.length; i++) {
-      const m = Ls[i].match(/^\s*(-?[\d.,]+)\s+"([^"]*)"\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)\s+(\S+)/);
-      if (!m) { if (/\*\*\*/.test(Ls[i])) break; continue; }
-      couches.push({ z: +m[1].replace(',', '.'), nom: m[2], pl: +m[3].replace(',', '.'), classe: m[7].replace(/"/g, '') });
+  /* ═══════════════════════ FONDATIONS PROFONDES ET SEMI-PROFONDES (BA.fondatio) ═══════════════════════
+   * Les torseurs de chaque combinaison au centre de gravité de la sous-face de la semelle sont transmis à FONDATIO
+   * (Fasc. 62 titre V : portance Qu, Qc, groupe de pieux sous semelle infiniment rigide, réaction latérale de Ménard,
+   * efforts et aciers des pieux). Part de longue durée : actions permanentes ; courte durée : le reste.
+   * Repère FONDATIO : X le long du mur (= x), Y transversal (= y), Fz < 0 descendant ; Mx = Σ (y Fz − z Fy). */
+  function fondationProfonde(d, tr, res, xg, yg, zf) {
+    if (!FD) throw new Error('Module FONDATIO non chargé.');
+    const F = d.fond, alertes = [];
+    if (!F.sps || !F.sps.couches || !F.sps.couches.length) throw new Error('Fondation profonde : charger un sondage pressiométrique .SPS.');
+    // implantation : file avant à disAv du bord avant, file arrière à disAr du bord arrière (abscisses x le long du mur)
+    const geoAt = (x) => tranche(d, clamp(x / d.L, 0, 1));
+    const piles = [];
+    for (const x of F.xAv || []) { const g = geoAt(x); piles.push({ x: x - xg, y: -g.p + (+F.disAv || 0) - yg, file: 'avant' }); }
+    for (const x of F.xAr || []) { const g = geoAt(x); piles.push({ x: x - xg, y: g.yt - (+F.disAr || 0) - yg, file: 'arrière' }); }
+    if (!piles.length) throw new Error('Aucun pieu défini (abscisses des files avant et arrière).');
+    const barr = F.type === 'barrettes', puits = F.type === 'puits';
+    const typeComb = { ELSf: 'ELS freq', ELSr: 'ELS rare', ELU: 'ELU fond', ELUs: 'ELU sis' };
+    const perm = (c) => ({ G: c.G, Tt: c.Tt, Tp: c.Tp, Tpou: c.Tpou, W: c.W });
+    const torseur = (c) => {
+      let Fx = 0, Fy = 0, Fz = 0, Mx = 0, My = 0, Mz = 0;
+      for (const g of tr) {
+        const dx = d.L / tr.length;
+        for (const f of forcesComb(g.ch, c)) {
+          const X = g.x - xg, Y = f.y - yg, Z = f.z - zf;
+          Fy += f.Fy * dx; Fz += f.Fz * dx; Mx += (Y * f.Fz - Z * f.Fy) * dx; My += (-X * f.Fz) * dx; Mz += (X * f.Fy) * dx;
+        }
+      }
+      return [Fx, Fy, Fz, Mx, My, Mz];
+    };
+    const combs = res.map((r) => { const ld = torseur(perm(r)), tot = torseur(r); return { type: typeComb[r.type], ld, cd: tot.map((v, i) => v - ld[i]), no: r.no }; });
+    const data = {
+      type: 'pieux', sps: F.sps, zsem: zf, zdef: Number.isFinite(+F.zdef) ? +F.zdef : (+d.haute.zav + +d.basse.zav) / 2, ztn: +F.ztn || (+d.haute.zav + +d.basse.zav) / 2,
+      gamma: d.sol.g, gammaSat: d.sol.gsat, gammaB: d.beton.g, rapSol: +F.rapSol || 2, fcj: +F.fcj || 25, fe: d.beton.fyk, px: 0, py: 0,
+      pieux: { type: barr ? 7 : puits ? 8 : (+F.typePieu || 2), B: +F.D, Lb: barr || puits ? +F.Lb || +F.D : 0, L: +F.H, nseg: 10, kbase: +F.kbase || 1e8, ce: +F.ce || 1, enrob: +F.enrob || 0.08,
+        frotNeg: F.frotNeg || {}, piles: piles.map((q) => ({ x: q.x, y: q.y })) },
+      combs: combs.map((c) => ({ type: c.type, ld: c.ld, cd: c.cd })),
+    };
+    const R = FD.calc(data);
+    // réactions par pieu, rapportées à chaque combinaison MUR3D (pour les consoles patin / talon)
+    const nAv = (F.xAv || []).length, bAv = nAv ? d.L / nAv : d.L, nAr = (F.xAr || []).length, bAr = nAr ? d.L / nAr : d.L;
+    R.combs.forEach((rc, k) => {
+      const r = res[k];
+      r.pieux = rc.piles.map((p, i) => ({ N: p.N, y: piles[i].y + yg, D: +F.D, bx: piles[i].file === 'avant' ? bAv : bAr }));
+    });
+    const pire = (t, f) => R.combs.filter((c) => c.type.startsWith(t)).reduce((a, c) => (!a || f(c) > f(a) ? c : a), null);
+    const verifs = [];
+    for (const [nom, t] of [['ELU fondamental', 'ELU fond'], ['ELS rare', 'ELS rare'], ['ELS fréquent', 'ELS freq']]) {
+      const cmax = pire(t, (c) => c.Nmax - c.qmax), cmin = pire(t, (c) => c.qmin - c.Nmin);
+      if (cmax) verifs.push({ nom: `${nom} : effort maxi en tête`, comb: combs[R.combs.indexOf(cmax)].no, par: 'N (kN)', val: cmax.Nmax, adm: cmax.qmax, ok: cmax.Nmax <= cmax.qmax + 1e-6 });
+      if (cmin) verifs.push({ nom: `${nom} : effort mini en tête`, comb: combs[R.combs.indexOf(cmin)].no, par: 'N (kN), ≥', val: cmin.Nmin, adm: cmin.qmin, ok: cmin.Nmin >= cmin.qmin - 1e-6 });
     }
-    return { z, couches };
+    if (!R.acier.ok) alertes.push('Pieux : ferraillage insuffisant ou non vérifié (voir FONDATIO).');
+    return { R, piles: piles.map((q) => ({ x: q.x + xg, y: q.y + yg, file: q.file })), combs, verifs, ok: R.synth.ok, alertes };
+  }
+
+  /* ═══════════════════════ PORTANCE D'APRÈS UN SONDAGE PRESSIOMÉTRIQUE (BA.sondpres + BA.fondatio) ═══════════════════════
+   * sps : sondage lu par BA.sondpres.parse ; colonne de sol depuis le terrain définitif (remblai conventionnel entre TD et TN,
+   * Fasc. 62 titre V), ple* = moyenne géométrique de pl* entre D et D + 1,5 B (annexe C1), De = (intégrale de pl*) / ple*, kp(De/B, B/L)
+   * (interpolation superficielle / profonde de FONDATIO). Renvoie q'u − q'0 (MPa). */
+  function portanceSPS(sps, zf, B, L, De0, zdef, ztn) {
+    if (!FD) throw new Error('Module FONDATIO non chargé.');
+    const col = FD.colonne(sps, Number.isFinite(zdef) ? zdef : zf + De0, Number.isFinite(ztn) ? ztn : (Number.isFinite(zdef) ? zdef : zf + De0));
+    const ple = FD.geoMean(col, zf, zf - 1.5 * B);
+    const zd = Number.isFinite(zdef) ? zdef : zf + De0;
+    const De = zd > zf ? FD.integ(col, zd, zf, (g) => g.pl) / ple : 0;
+    const seg = col.find((c) => zf - 1e-6 <= c.zh + 1e-9 && zf - 1e-6 > c.zb) || col[col.length - 1];
+    const kd = FD.kpDe(seg, De / B, Math.min(B, L) / Math.max(B, L));
+    return { ple, kp: kd.kp, domaine: kd.domaine, De, qu: kd.kp * ple, groupe: seg.groupe, categorie: seg.categorie, couche: seg.nom };
+  }
+  function lireSPS(txt) {
+    if (!SP) throw new Error('Module SONDPRES non chargé.');
+    const r = SP.parse(txt), s = r.sps || r;
+    if (!s.couches || !s.couches.length) throw new Error('aucune couche de calcul ($$TVCC)');
+    return s;
   }
 
   /* ═══════════════════════ LECTURE D'UN FICHIER .don D'ORIGINE (MUR3D) ═══════════════════════ */
@@ -876,11 +941,16 @@
         // avant à enrobage « arrière » + 0,03 (hauteurs utiles relevées dans la note : 0,075 / 0,683 pour e = 0,738)
         enrob: { fouille: f('enrcoffouil', 0.03) + 0.025, terre: f('enrcofterre', 0.025) + 0.03, avant: f('enrcofterre', 0.025) + 0.03, arriere: f('enrcofavant', 0.045) + 0.03 },
         AminVoile: 4, AminSemelle: f('patrim', 0) === 1 ? 8.35 : 3, AminSeul: f('patrim', 0) === 1 },
-      fond: { type: typ === 0 ? 'superficielle' : typ <= 2 ? 'semi-profonde' : 'profonde', qu: f('qu', 1), mu: f('frotsolsem', 0.6), c: f('cohesolfond', 0), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
+      fond: { type: typ === 0 ? 'superficielle' : typ <= 2 ? 'puits' : typ === 3 ? 'pieux' : 'barrettes',
+        D: f('diafond', 0.8), Lb: f('lonfond', 0), H: f('haufond', 10), typePieu: f('typepieu', 2), disAv: f('disfondsemav', 0.6), disAr: f('disfondsemar', 0.6),
+        xAv: String(k.absfondav || '').trim().split(/\s+/).map(Number).filter(Number.isFinite).slice(0, Math.round(f('nbfondav', 0))),
+        xAr: String(k.absfondar || '').trim().split(/\s+/).map(Number).filter(Number.isFinite).slice(0, Math.round(f('nbfondar', 0))),
+        kbase: f('ressortfzpointe', 0) || 1e8, ce: f('ce', 1), fcj: f('fcjprof', 25), enrob: f('distacierpieu', 0) || 0.08, ztn: f('ztn', 0), spsNom: k.nomficsps || '',
+        qu: f('qu', 1), mu: f('frotsolsem', 0.6), c: f('cohesolfond', 0), frottant: f('typsolfrot', 0) === 1 || f('typesolfrot', 0) === 1, kv: f('kvdif', 10) * 1000, gq: { els: 3, elu: 2, acc: 1.5 } },
       limites: { decFreq: f('declim1', 0), decRare: f('declim2', 25), decELU: f('renlim', 90), deplac: f('deplaclim', 0.01) },
       seisme: { kh: 0, kv: 0, aN: f('zonseism', 0) > 0 ? f('anseism', 0) : 0 },
-      options: { modele: 'livret', deltaFictif: 'origine', delta0: f('angdelta0', 2 * f('angfrot', 35) / 3), deltaVoile: 0 },
-      avertissements: typ > 0 ? ['Fondation profonde ou semi-profonde dans le fichier : seule la fondation superficielle est traitée par ce module.'] : [],
+      options: { modele: 'livret', deltaFictif: f('reglement', 0) === 1 ? 'culmann' : 'origine', delta0: f('angdelta0', 2 * f('angfrot', 35) / 3), deltaVoile: 0 },
+      avertissements: [typ > 0 ? 'Fondation profonde : charger le sondage ' + (k.nomficsps || '.SPS') + ' pour le calcul du groupe de pieux (FONDATIO).' : '', f('anghsem', 100) !== 100 || f('angbsem', 100) !== 100 ? 'Semelle biaise (angle ≠ 100 gr) : modélisée à bords droits.' : ''].filter(Boolean),
     };
   }
 
