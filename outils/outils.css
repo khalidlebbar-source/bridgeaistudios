@@ -1,0 +1,152 @@
+/* Outils de calculs des ponts — feuille commune à toutes les pages du dossier /outils */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f6f4ee;--bg2:#efebe1;--card:#fff;
+  --ink:#14171f;--ink2:#3c3f4d;--ink3:#6f7484;
+  --gold:#a8842a;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;
+  --teal:#0f8f7b;--red:#c0392b;--orange:#c27a12;--blue:#2d6be4;
+  --border:rgba(20,23,31,.10);--shadow:0 1px 2px rgba(20,23,31,.05);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-weight:300;min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:1px solid var(--gold);outline-offset:2px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#c9a84c;border-radius:2px}
+
+/* ─── NAV (sombre comme le reste du site) ─── */
+nav.ba-nav{position:sticky;top:0;z-index:100;padding:0 3vw;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(12,14,20,.96);backdrop-filter:blur(16px);flex:none}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px;max-width:1360px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:20px;color:#fff;letter-spacing:.02em;white-space:nowrap}
+.nav-logo span{color:#c9a84c}
+.nav-links{display:flex;gap:28px;list-style:none}
+.nav-links a{font-size:13px;color:#8892a4;letter-spacing:.04em;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-links a.active{color:#c9a84c}
+.nav-back{font-size:13px;color:#8892a4;white-space:nowrap}
+.nav-back:hover{color:#c9a84c}
+
+/* ─── EN-TÊTE ─── */
+.head{padding:26px 3vw 22px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fbfaf6,#f3f0e7)}
+.head-inner{max-width:1360px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(30px,3.6vw,46px);line-height:1.05}
+h1 em{font-style:italic;color:var(--gold)}
+.lead{max-width:620px;font-size:13.5px;color:var(--ink3)}
+.crumb{font-size:12px;color:var(--ink3);margin-bottom:8px}
+.crumb a:hover{color:var(--gold)}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.badge{font-size:10.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--gold-border);color:var(--gold);background:var(--gold-bg)}
+
+/* ─── MISE EN PAGE MODULE ─── */
+.wrap{flex:1;width:100%;max-width:calc(1360px + 6vw);margin:0 auto;padding:22px 3vw 40px}
+.layout{display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start}
+.col-in{display:flex;flex-direction:column;gap:14px}
+.col-out{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 18px 16px;box-shadow:var(--shadow)}
+.card-title{font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card-title small{font-size:10px;letter-spacing:.02em;text-transform:none;color:var(--ink3);font-weight:300}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.fields.c3{grid-template-columns:1fr 1fr 1fr}
+.fields.c1{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field label{font-size:11px;color:var(--ink3);letter-spacing:.01em;display:flex;justify-content:space-between;gap:6px}
+.field label .u{color:#9aa0ac}
+.field input,.field select,.field textarea{height:34px;padding:0 9px;border-radius:7px;border:1px solid var(--border);background:#fbfaf7;color:var(--ink);font-family:'Outfit',sans-serif;font-size:13px;outline:none;width:100%;transition:border-color .2s,background .2s}
+.field textarea{height:auto;min-height:90px;padding:8px 9px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:1.45}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold2);background:#fff}
+.field.chk{flex-direction:row;align-items:center;gap:8px}
+.field.chk input{width:16px;height:16px}
+.field .help{font-size:10.5px;color:#9aa0ac;line-height:1.35}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink2);font-size:12.5px;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.03em;transition:all .2s}
+.btn:hover{border-color:var(--ink3);color:var(--ink)}
+.btn.primary{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.primary:hover{opacity:.9}
+.btn.gold{border-color:var(--gold-border);color:var(--gold)}
+.btn.gold:hover{background:var(--gold-bg)}
+.btn.sm{padding:5px 10px;font-size:11.5px}
+
+/* tableaux de saisie (lignes répétables) */
+.grid-in{width:100%;border-collapse:collapse;font-size:12px}
+.grid-in th{font-weight:400;color:var(--ink3);font-size:10.5px;text-align:left;padding:3px 4px}
+.grid-in td{padding:2px 3px}
+.grid-in input,.grid-in select{width:100%;height:28px;padding:0 6px;border:1px solid var(--border);border-radius:5px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:12px}
+.grid-in .del{border:none;background:none;color:#b9bdc6;cursor:pointer;font-size:15px}
+.grid-in .del:hover{color:var(--red)}
+
+/* résultats */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:#fbfaf7;border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.kpi.hi{background:var(--gold-bg);border-color:var(--gold-border)}
+.kpi .l{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.kpi .v{font-family:'Cormorant Garamond',serif;font-size:25px;line-height:1.15}
+.kpi .v small{font-family:'Outfit',sans-serif;font-size:11px;color:var(--ink3);margin-left:3px}
+.kpi .n{font-size:10.5px;color:var(--ink3)}
+.ok{color:var(--teal)}.ko{color:var(--red)}.warn{color:var(--orange)}
+.tag{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:10px;border:1px solid currentColor}
+.tbl-wrap{overflow-x:auto}
+table.res{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+table.res th{font-weight:500;font-size:10.5px;letter-spacing:.04em;color:var(--ink3);text-align:right;padding:6px 8px;border-bottom:1px solid var(--gold-border);white-space:nowrap;background:#fdfbf6}
+table.res th:first-child,table.res td:first-child{text-align:left}
+table.res td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+table.res tr:hover td{background:#fbf8ef}
+table.res td.l{text-align:left}
+.empty{padding:28px;text-align:center;color:var(--ink3);font-size:13px}
+.msg{font-size:12.5px;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:#fbfaf7}
+.msg.err{border-color:rgba(192,57,43,.35);background:#fdf3f2;color:#8f2a20}
+.msg.info{border-color:var(--gold-border);background:var(--gold-bg);color:#6b5419}
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:'Outfit',sans-serif;font-size:10px;fill:var(--ink3)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:transparent;font-family:'Outfit',sans-serif;font-size:12px;color:var(--ink3);cursor:pointer}
+.tabs button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.formula{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink2);background:#fbfaf7;border:1px solid var(--border);border-radius:8px;padding:8px 10px;white-space:pre-wrap;line-height:1.5}
+details.ref{font-size:12px;color:var(--ink3)}
+details.ref summary{cursor:pointer;color:var(--gold)}
+details.ref p,details.ref li{margin-top:6px;line-height:1.55}
+details.ref ul{padding-left:18px}
+
+/* ─── HUB ─── */
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.phase{margin:26px 0 12px;display:flex;align-items:baseline;gap:12px}
+.phase:first-child{margin-top:0}
+.phase h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:24px}
+.phase span{font-size:12px;color:var(--ink3)}
+.tile{display:flex;flex-direction:column;gap:6px;padding:16px 18px 14px;border-radius:14px;border:1px solid var(--border);background:#fff;box-shadow:var(--shadow);transition:border-color .25s,box-shadow .25s,transform .25s}
+a.tile:hover{border-color:rgba(168,132,42,.45);box-shadow:0 14px 34px -14px rgba(20,23,31,.25);transform:translateY(-3px)}
+.tile.dev{background:#fbfaf7}
+.tile-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.status::before{content:"";width:6px;height:6px;border-radius:50%;background:#c3c7cf}
+.status.on{color:var(--teal)}.status.on::before{background:var(--teal)}
+.status.beta{color:var(--orange)}.status.beta::before{background:var(--orange)}
+.tile .ico{color:#b7a06a;display:inline-flex}.tile.dev .ico{color:#c3c7cf}
+.tile .code{font-family:'Cormorant Garamond',serif;font-size:30px;line-height:1;color:var(--gold)}
+.tile.dev .code{color:#8a8f9c}
+.tile .name{font-size:13px;font-weight:400;line-height:1.35}
+.tile .desc{font-size:12px;color:var(--ink3);line-height:1.55;flex:1}
+.tile .reg{font-size:10.5px;color:#9aa0ac}
+.tile .go{font-size:12.5px;color:var(--gold)}
+.tile .soon{font-size:12px;color:#9aa0ac}
+.flow{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;font-size:12.5px;color:var(--ink2);line-height:1.7}
+
+/* ─── PIED ─── */
+footer.ba-foot{flex:none;background:#1a1e2e;padding:14px 3vw;margin-top:auto}
+.footer-bottom{max-width:1360px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 24px}
+.footer-bottom p{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.04em}
+.footer-bottom a{color:#8892a4}.footer-bottom a:hover{color:#c9a84c}
+
+@media(max-width:1000px){.layout{grid-template-columns:1fr}}
+@media(max-width:900px){.nav-links{display:none}.head{padding:22px 16px 18px}.wrap{padding:16px}}
+@media(max-width:480px){.fields,.fields.c3{grid-template-columns:1fr}}
+
+/* ─── IMPRESSION : note de calcul ─── */
+@media print{
+  nav.ba-nav,footer.ba-foot,.col-in,.actions,.no-print,.tabs{display:none!important}
+  body{background:#fff}
+  .head{background:#fff;padding:0 0 10px}
+  .layout{display:block}
+  .card{box-shadow:none;break-inside:avoid;border-color:#ddd}
+  .wrap{padding:0}
+}

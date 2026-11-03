@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MODÈLE RAIL — Modélisation des ponts-rails · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/modele-rail.html">
+<meta name="description" content="Modélisation plane des ponts-rails (poutre continue à inertie variable, portique, cadre multiple, radier sur sol élastique) : poids propre, dénivellations, retrait, température, gradient, UIC 71, SW/0, SW/2, convois, séisme EN 1998-2 (analyse modale), combinaisons EN 1990 A2, descente de charges.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .schema{width:100%;height:auto;display:block;background:#fbfaf7;border:1px solid var(--border);border-radius:10px}
+  .schema text{font-family:'Outfit',sans-serif;font-size:9px;fill:var(--ink3)}
+  .schema .t-gold{fill:var(--gold)}
+  .sub{font-size:10.5px;color:var(--ink3);margin:12px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .scroll{overflow-x:auto}
+  .grid-in input,.grid-in select{min-width:54px}
+  .hid{display:none!important}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
+      <div class="eyebrow">MODÈLE RAIL · modélisation plane</div>
+      <h1>Modélisation des <em>ponts-rails</em></h1>
+      <p class="lead">Poutre continue à inertie variable, portique ou cadre multiple généré automatiquement : poids propre, superstructures, dénivellations, retrait, température, gradient, UIC 71, SW/0, SW/2 et convois mobiles, séisme EN 1998-2 par analyse modale, combinaisons EN 1990 A2 et descente de charges sur chaque appui.</p>
+      <div class="badges"><span class="badge">EN 1990 annexe A2</span><span class="badge">EN 1991-2 §6.3 – 6.5</span><span class="badge">EN 1991-1-5</span><span class="badge">EN 1998-1 / -2 + AN</span><span class="badge">BAEL 91 mod. 99 (modules)</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Calculer</button>
+      <button class="btn gold" id="bNote">Note de calcul</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bDon">Importer un fichier .don</button>
+      <button class="btn sm" id="bDef">Exemple par défaut</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card"><div class="card-title"><span>Ouvrage et travées</span></div><div class="fields" id="fGen"></div></div>
+    <div class="card"><div class="card-title"><span>Tablier</span><small>dalle équivalente ou section saisie</small></div><div class="fields" id="fTab"></div>
+      <div class="sub">Goussets par travée (hauteur supplémentaire sur appui, m)</div><div class="scroll" id="rGou"></div></div>
+    <div class="card"><div class="card-title"><span>Appuis</span><small>de l’origine à l’extrémité</small></div>
+      <div class="scroll" id="rAp"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.5">Type : <b>simple</b> (appui du tablier, « fixe » bloque l’horizontal), <b>élastomère</b> (K = n·G·A/T), <b>piédroit</b> encastré dans le tablier, <b>pile</b> sous appareils (élastomère si A et T saisis, sinon fixe). h, A, I : hauteur, section et inertie en tête ; Ab, Ib en pied (variation linéaire). Pied : encastré ou articulé, ou radier commun. KyT : raideur transversale (kN/m), 0 = 3EI/H³.</div>
+    </div>
+    <div class="card"><div class="card-title"><span>Matériaux et liaisons</span></div><div class="fields" id="fMat"></div></div>
+    <div class="card"><div class="card-title"><span>Actions permanentes et déformations</span></div><div class="fields" id="fAct"></div></div>
+    <div class="card"><div class="card-title"><span>Charges ferroviaires</span><small>EN 1991-2</small></div><div class="fields" id="fRail"></div></div>
+    <div class="card"><div class="card-title"><span>Charges quelconques</span><small>abscisses depuis le 1er appui (m), kN ou kN/m</small></div>
+      <div class="scroll" id="rQQ"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Catégorie : G permanente, Q variable (ψ0 = 0,8 ; ψ1 = 0,5), Ad accidentelle, U cas unitaire (résultats seuls, hors combinaisons). x2 vide = charge ponctuelle q1 (kN) ; sinon répartie q1 → q2 (kN/m). H : horizontale.</div></div>
+    <div class="card"><div class="card-title"><span>Séisme</span><small>EN 1998-1 / -2, AN française</small></div><div class="fields" id="fSis"></div></div>
+    <div class="card"><div class="card-title"><span>Combinaisons</span><small>EN 1990 A2 tableaux A2.3 et A2.4(B)</small></div><div class="fields c3" id="fComb"></div></div>
+    <details class="ref card">
+      <summary>Périmètre et hypothèses</summary>
+      <ul>
+        <li>Modèle plan à barres d’Euler-Bernoulli (méthode des déplacements). Tablier subdivisé en n éléments par travée (ou au pas choisi), consoles d’about, hauteur variable linéaire ou parabolique sur la longueur des goussets. Piédroits : un élément dans la demi-épaisseur du tablier puis n éléments sur la hauteur, section interpolée entre tête et pied ; poids propre des piédroits en charges nodales. Cette génération reproduit les modèles d’origine (mêmes nœuds et barres).</li>
+        <li>Trois modèles longitudinaux : longue durée (module différé Ed = Ei/(1+φ)) pour G, retrait, part lente de la température, dénivellations ; courte durée (Ei) pour le trafic, le freinage, la part rapide de la température et le gradient ; séisme (Ei). Modèle transversal : tablier vu en plan sur ressorts transversaux (1 par appui).</li>
+        <li>Rail : lignes d’influence par charge unité mobile au pas saisi, UIC 71 (α, Φ2 ou Φ3 avec LΦ du tableau 6.2), SW/0, SW/2, convois d’essieux saisis ; enveloppes max/min de N, V, M, réactions et flèches avec efforts concomitants. Démarrage 33 kN/m ≤ 1000 kN ou freinage 20 kN/m (×α), SW/2 35 kN/m, appliqués en ± répartis sur le tablier avec le coefficient de transmission saisi. kRep : coefficient de répartition transversale (part de voie reprise par le modèle).</li>
+        <li>Température : ΔTN (parts lente et rapide) et gradient ΔTM combinés par ΔTN + 0,75 ΔTM et 0,35 ΔTN + ΔTM (EN 1991-1-5 §6.1.5). Dénivellations : chaque appui tassé seul (effets de même signe cumulés) ou les deux culées ensemble, γ = 1,2 à l’ELU.</li>
+        <li>Superstructures et ballast : valeurs nominales majorées/minorées (×1,4/0,8 et ×1,3/0,7, EN 1991-1-1 §5.2.3).</li>
+        <li>Séisme : spectre élastique EN 1998-1 (3.2)–(3.5) avec S, TB, TC, TD de l’AN (zones 1–4 et 5), agr de l’arrêté du 22/10/2010, γI des ponts (arrêté du 26/10/2011), spectre de calcul pour q > 1. Masses : tablier + superstructures + ballast + masse saisie (ψ2,1 trafic à ajouter en t/m), appuis en masses nodales (moitié supérieure en transversal). Analyse modale (matrice de souplesse condensée sur les ddl massiques, Jacobi), combinaison CQC jusqu’à 90 % de masse, ou mode fondamental (Rayleigh). Combinaison des directions Ex + 0,3 Ez. Pas d’effets du second ordre ni de vérification de capacité (EN 1998-2 §5.3).</li>
+        <li>Combinaisons : ELU fondamental (6.10), ELS caractéristique, fréquent, quasi-permanent, accidentel et sismique, sous forme d’enveloppes des actions (chaque action prise avec son signe défavorable section par section, ce qui est sécuritaire pour les efforts concomitants).</li>
+        <li>Non traités : ouvrages biais (modèle plan droit), interaction voie-ouvrage (voir HORIZONTAL), poussée des terres (à saisir en charges quelconques), matrice de liaison 2D des fondations (ressorts seuls), dimensionnement béton armé (voir SECTIONS).</li>
+      </ul>
+    </details>
+  </div>
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/modelpra.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const E = BA.modelpra, fmt = BA.fmt, esc = BA.esc, KEY = 'modelpra';
+  const f0 = (x) => fmt(x, 0), f1 = (x) => fmt(x, 1), f2 = (x) => fmt(x, 2), f3 = (x) => fmt(x, 3);
+
+  const F_GEN = [
+    { id: 'projet', label: 'Ouvrage / projet', type: 'txt', def: 'Portique ouvert 2 travées sur piédroits', wide: true },
+    { id: 'travees', label: 'Portées', unit: 'm', type: 'txt', def: '8 8', wide: true, help: 'séparées par des espaces' },
+    { id: 'consoleDeb', label: 'Console côté origine', unit: 'm', def: 1 },
+    { id: 'consoleFin', label: 'Console côté extrémité', unit: 'm', def: 1 },
+    { id: 'nbElTrav', label: 'Éléments par travée', def: 10, step: 1 },
+    { id: 'pasTablier', label: 'ou pas de découpage', unit: 'm', def: 0, help: '0 = nombre d’éléments' },
+    { id: 'nbElPied', label: 'Éléments par piédroit', def: 6, step: 1 },
+    { id: 'trans', label: 'Modèle transversal', type: 'chk', def: true },
+  ];
+  const F_TAB = [
+    { id: 'mode', label: 'Saisie', type: 'sel', def: 'dalle', options: [['dalle', 'dalle équivalente b × h'], ['section', 'section A, I saisies']], wide: true },
+    { id: 'b', label: 'Largeur b', unit: 'm', def: 1 },
+    { id: 'h', label: 'Hauteur h', unit: 'm', def: 0.8 },
+    { id: 'A', label: 'Section A', unit: 'm²', def: 0.8 },
+    { id: 'I', label: 'Inertie I', unit: 'm⁴', def: 0.0427 },
+    { id: 'It', label: 'Inertie transversale', unit: 'm⁴', def: 0, help: '0 = h·b³/12' },
+    { id: 'Sreel', label: 'Section réelle (poids)', unit: 'm²', def: 0, help: '0 = section du modèle' },
+    { id: 'loi', label: 'Variation sur appui', type: 'sel', def: 'lin', options: [['lin', 'linéaire'], ['para', 'parabolique']] },
+  ];
+  const GOU_COLS = [{ id: 'hg', label: 'h gauche', def: 0 }, { id: 'lg', label: 'long. g.', def: 0 }, { id: 'hd', label: 'h droite', def: 0 }, { id: 'ld', label: 'long. d.', def: 0 }];
+  const AP_COLS = [
+    { id: 'nom', label: 'Nom', type: 'txt', def: 'P', w: '62px' },
+    { id: 'type', label: 'Type', type: 'sel', def: 'piedroit', options: [['simple', 'simple'], ['elastomere', 'élastomère'], ['piedroit', 'piédroit'], ['pile', 'pile']] },
+    { id: 'fixe', label: 'Fixe', type: 'sel', def: 0, options: [[0, 'non'], [1, 'oui']] },
+    { id: 'h', label: 'h', def: 6 }, { id: 'A', label: 'A', def: 0.8 }, { id: 'I', label: 'I', def: 0.0427 },
+    { id: 'Ab', label: 'Ab', def: 0 }, { id: 'Ib', label: 'Ib', def: 0 },
+    { id: 'base', label: 'Pied', type: 'sel', def: 'encastre', options: [['encastre', 'encastré'], ['articule', 'articulé']] },
+    { id: 'Ael', label: 'A élast.', def: 0 }, { id: 'Tel', label: 'T élast.', def: 0 }, { id: 'nAp', label: 'nb', def: 1 },
+    { id: 'kyT', label: 'KyT', def: 0 },
+  ];
+  const F_MAT = [
+    { id: 'mmode', label: 'Module du béton', type: 'sel', def: 'BAEL', options: [['BAEL', 'BAEL : 11 000·fcj^1/3'], ['EC2', 'EN 1992-1-1 : Ecm'], ['saisie', 'Ei et Ed saisis']], wide: true },
+    { id: 'fck', label: 'fcj / fck', unit: 'MPa', def: 35 },
+    { id: 'phi', label: 'Fluage φ', def: 2 },
+    { id: 'Ei', label: 'Ei saisi', unit: 'kPa', def: 0 },
+    { id: 'Ed', label: 'Ed saisi', unit: 'kPa', def: 0 },
+    { id: 'gamma', label: 'Poids volumique', unit: 'kN/m³', def: 25 },
+    { id: 'GLD', label: 'G élastomère lent', unit: 'MPa', def: 0.9 },
+    { id: 'GCD', label: 'G élastomère rapide', unit: 'MPa', def: 1.8 },
+    { id: 'GSIS', label: 'G élastomère séisme', unit: 'MPa', def: 1.2 },
+    { id: 'radier', label: 'Pieds reliés par un radier', type: 'chk', def: false, wide: true },
+    { id: 'rE', label: 'Épaisseur radier', unit: 'm', def: 0.8 },
+    { id: 'rB', label: 'Largeur radier', unit: 'm', def: 1 },
+    { id: 'rKv', label: 'Module de réaction kv', unit: 'kPa/m', def: 30000 },
+  ];
+  const F_ACT = [
+    { id: 'superstructures', label: 'Superstructures', unit: 'kN/m', def: 6 },
+    { id: 'ballast', label: 'Ballast', unit: 'kN/m', def: 20 },
+    { id: 'retrait', label: 'Retrait ε', def: -0.0002 },
+    { id: 'denivAppui', label: 'Dénivellation d’un appui', unit: 'm', def: 0.005 },
+    { id: 'denivCulees', label: 'Dénivellation des 2 culées', unit: 'm', def: 0 },
+    { id: 'conLD', label: 'Contraction lente ε', def: -0.00025 },
+    { id: 'conCD', label: 'Contraction rapide ε', def: -0.0001 },
+    { id: 'dilLD', label: 'Dilatation lente ε', def: 0.00025 },
+    { id: 'dilCD', label: 'Dilatation rapide ε', def: 0.0001 },
+    { id: 'gChaud', label: 'Gradient fibre sup. chaude', unit: '°C', def: 15 },
+    { id: 'gFroid', label: 'Gradient fibre sup. froide', unit: '°C', def: 8 },
+    { id: 'qvent', label: 'Vent transversal', unit: 'kN/m', def: 0 },
+  ];
+  const F_RAIL = [
+    { id: 'uic', label: 'UIC 71 (LM71)', type: 'chk', def: true },
+    { id: 'sw0', label: 'SW/0', type: 'chk', def: true },
+    { id: 'sw2', label: 'SW/2', type: 'chk', def: false },
+    { id: 'freinage', label: 'Démarrage / freinage', type: 'chk', def: true },
+    { id: 'alpha', label: 'α (LM71, SW/0)', def: 1 },
+    { id: 'entretien', label: 'Entretien de la voie', type: 'sel', def: 'soigne', options: [['soigne', 'soigné (Φ2)'], ['normal', 'normal (Φ3)']] },
+    { id: 'Lphi', label: 'LΦ imposée', unit: 'm', def: 0, help: '0 = tableau 6.2' },
+    { id: 'kRep', label: 'Coefficient de répartition', def: 1, help: 'voies × répartition transversale' },
+    { id: 'kFrein', label: 'Transmission du freinage', def: 1 },
+    { id: 'nbVoies', label: 'Voies (ψ1)', def: 1, step: 1 },
+    { id: 'pas', label: 'Pas des charges mobiles', unit: 'm', def: 0.1 },
+    { id: 'xDeb', label: 'Début zone chargée', unit: 'm', type: 'txt', def: '' },
+    { id: 'xFin', label: 'Fin zone chargée', unit: 'm', type: 'txt', def: '' },
+    { id: 'convois', label: 'Convois d’essieux (un par ligne : nom ; d P ; d P …)', type: 'area', def: '', help: 'd = distance à l’essieu de tête (m), P en kN. Ex. « Locomotive ; 0 225 ; 2 225 ; 9 225 ; 11 225 »' },
+  ];
+  const QQ_COLS = [
+    { id: 'nom', label: 'Nom', type: 'txt', def: 'Charge', w: '80px' },
+    { id: 'cat', label: 'Cat.', type: 'sel', def: 'G', options: [['G', 'G'], ['Q', 'Q'], ['Ad', 'Ad'], ['U', 'U']] },
+    { id: 'x1', label: 'x1', def: 0 }, { id: 'x2', label: 'x2', type: 'txt', def: '' },
+    { id: 'q1', label: 'q1 / P', def: 0 }, { id: 'q2', label: 'q2', type: 'txt', def: '' }, { id: 'H', label: 'H', def: 0 },
+  ];
+  const F_SIS = [
+    { id: 'actif', label: 'Calcul sismique', type: 'chk', def: true },
+    { id: 'vertical', label: 'Séisme vertical', type: 'chk', def: true },
+    { id: 'zone', label: 'Zone', type: 'sel', def: 3, options: [[1, '1 très faible'], [2, '2 faible'], [3, '3 modérée'], [4, '4 moyenne'], [5, '5 forte']] },
+    { id: 'sol', label: 'Classe de sol', type: 'sel', def: 'B', options: [['A', 'A'], ['B', 'B'], ['C', 'C'], ['D', 'D'], ['E', 'E']] },
+    { id: 'classe', label: 'Catégorie d’importance', type: 'sel', def: 'II', options: [['I', 'I (γI = 0,8)'], ['II', 'II (γI = 1,0)'], ['III', 'III (γI = 1,2)'], ['IV', 'IV (γI = 1,4)']] },
+    { id: 'agr', label: 'agr imposée', unit: 'm/s²', def: 0, help: '0 = valeur de la zone' },
+    { id: 'q', label: 'q longitudinal', def: 1 },
+    { id: 'qT', label: 'q transversal', def: 1 },
+    { id: 'xi', label: 'Amortissement ξ', unit: '%', def: 5 },
+    { id: 'methode', label: 'Méthode', type: 'sel', def: 'modal', options: [['modal', 'analyse modale (CQC)'], ['fondamental', 'mode fondamental']] },
+    { id: 'masseSup', label: 'Masse additionnelle', unit: 't/m', def: 0 },
+    { id: 'psi2rail', label: 'ψ2,1 trafic', def: 0.3 },
+  ];
+  const F_COMB = [
+    { id: 'gGsup', label: 'γG sup', def: 1.35 }, { id: 'gGinf', label: 'γG inf', def: 1.0 }, { id: 'gQ', label: 'γQ LM71/SW0', def: 1.45 },
+    { id: 'gQsw2', label: 'γQ SW/2', def: 1.35 }, { id: 'gQautre', label: 'γQ autres', def: 1.5 }, { id: 'gT', label: 'γ température', def: 1.5 },
+    { id: 'gSet', label: 'γ dénivellation', def: 1.2 }, { id: 'psi0T', label: 'ψ0 T', def: 0.6 }, { id: 'psi1T', label: 'ψ1 T', def: 0.6 },
+    { id: 'psi2T', label: 'ψ2 T', def: 0.5 }, { id: 'psi0Q', label: 'ψ0 trafic', def: 0.8 }, { id: 'psi0A', label: 'ψ0 autres', def: 0.8 },
+  ];
+  const DEF_AP = [
+    { nom: 'Culée C0', type: 'piedroit', fixe: 0, h: 6, A: 0.8, I: 0.0427, Ab: 0, Ib: 0, base: 'encastre', Ael: 0, Tel: 0, nAp: 1, kyT: 0 },
+    { nom: 'Pile P1', type: 'piedroit', fixe: 0, h: 6, A: 0.6, I: 0.018, Ab: 0, Ib: 0, base: 'encastre', Ael: 0, Tel: 0, nAp: 1, kyT: 0 },
+    { nom: 'Culée C2', type: 'piedroit', fixe: 0, h: 6, A: 0.8, I: 0.0427, Ab: 0, Ib: 0, base: 'encastre', Ael: 0, Tel: 0, nAp: 1, kyT: 0 },
+  ];
+  const DEF_GOU = [{ hg: 0, lg: 0, hd: 0, ld: 0 }, { hg: 0, lg: 0, hd: 0, ld: 0 }];
+  const DEF_QQ = [];
+  const FORMS = [['fGen', F_GEN, 'g_'], ['fTab', F_TAB, 't_'], ['fMat', F_MAT, 'm_'], ['fAct', F_ACT, 'a_'], ['fRail', F_RAIL, 'r_'], ['fSis', F_SIS, 's_'], ['fComb', F_COMB, 'c_']];
+
+  const saved = BA.store.load(KEY) || {};
+  FORMS.forEach(([el, F, pre]) => BA.form(document.getElementById(el), F, pre, (saved.v || {})[pre] || {}));
+  const rowsAp = BA.rows(document.getElementById('rAp'), AP_COLS, JSON.parse(JSON.stringify(saved.ap || DEF_AP)), { addLabel: 'Ajouter un appui', onChange: persist });
+  const rowsGou = BA.rows(document.getElementById('rGou'), GOU_COLS, JSON.parse(JSON.stringify(saved.gou || DEF_GOU)), { addLabel: 'Ajouter une travée', onChange: persist });
+  const rowsQQ = BA.rows(document.getElementById('rQQ'), QQ_COLS, JSON.parse(JSON.stringify(saved.qq || DEF_QQ)), { addLabel: 'Ajouter une charge', onChange: persist });
+
+  function readAll() { const v = {}; FORMS.forEach(([, F, pre]) => (v[pre] = BA.read(F, pre))); return v; }
+  function persist() { BA.store.save(KEY, state()); }
+  function state() { return { module: 'modelpra', version: 1, v: readAll(), ap: rowsAp.data, gou: rowsGou.data, qq: rowsQQ.data }; }
+  function load(s) {
+    FORMS.forEach(([el, F, pre]) => BA.form(document.getElementById(el), F, pre, (s.v || {})[pre] || {}));
+    rowsAp.set(JSON.parse(JSON.stringify(s.ap || DEF_AP))); rowsGou.set(JSON.parse(JSON.stringify(s.gou || DEF_GOU))); rowsQQ.set(JSON.parse(JSON.stringify(s.qq || DEF_QQ)));
+    bind(); persist(); calc();
+  }
+  const nb = (x, d = 0) => (Number.isFinite(+x) && x !== '' ? +x : d);
+
+  /* ── saisies → paramètres du moteur ── */
+  function params() {
+    const v = readAll(), g = v.g_, t = v.t_, m = v.m_, a = v.a_, r = v.r_, s = v.s_;
+    const p = E.defauts();
+    p.titre = g.projet;
+    p.travees = String(g.travees).trim().split(/[\s;]+/).map(Number).filter((x) => x > 0);
+    Object.assign(p, { consoleDeb: nb(g.consoleDeb), consoleFin: nb(g.consoleFin), nbElTrav: nb(g.nbElTrav, 10), pasTablier: nb(g.pasTablier), nbElPied: nb(g.nbElPied, 6) });
+    p.trans.actif = !!g.trans;
+    p.materiau = { mode: m.mmode, fck: nb(m.fck, 35), phi: nb(m.phi, 2), Ei: nb(m.Ei), Ed: nb(m.Ed), gamma: nb(m.gamma, 25) };
+    p.tablier = { mode: t.mode, b: nb(t.b, 1), h: nb(t.h, 1), A: nb(t.A), I: nb(t.I), It: nb(t.It), Sreel: nb(t.Sreel), loi: t.loi, goussets: rowsGou.data.map((o) => ({ hg: nb(o.hg), lg: nb(o.lg), hd: nb(o.hd), ld: nb(o.ld) })) };
+    p.appuis = rowsAp.data.map((o) => ({ nom: o.nom, type: o.type, fixe: +o.fixe === 1, h: nb(o.h), A: nb(o.A), I: nb(o.I), Ab: nb(o.Ab), Ib: nb(o.Ib), base: o.base,
+      Ael: nb(o.Ael), Tel: nb(o.Tel), nAp: nb(o.nAp, 1) || 1, kyT: nb(o.kyT), GLD: nb(m.GLD, 0.9), GCD: nb(m.GCD, 1.8), GSIS: nb(m.GSIS, 1.2), kx: o.type === 'pile' && !(nb(o.Ael) > 0) ? 1e10 : 0 }));
+    p.radier = { actif: !!m.radier, e: nb(m.rE, 0.8), b: nb(m.rB, 1), kv: nb(m.rKv, 30000) };
+    p.actions = { superstructures: nb(a.superstructures), ballast: nb(a.ballast), retrait: nb(a.retrait), denivAppui: nb(a.denivAppui), denivCulees: nb(a.denivCulees),
+      tLD: { con: nb(a.conLD), dil: nb(a.dilLD) }, tCD: { con: nb(a.conCD), dil: nb(a.dilCD) }, gradient: { chaud: nb(a.gChaud), froid: nb(a.gFroid) }, qvent: nb(a.qvent) };
+    const convois = String(r.convois || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+      const parts = l.split(';').map((x) => x.trim()); const nom = parts.shift();
+      return { nom, essieux: parts.map((x) => x.split(/\s+/).map(Number)).filter((x) => x.length >= 2 && Number.isFinite(x[0]) && Number.isFinite(x[1])).map(([d, P]) => ({ d, P })) };
+    }).filter((c) => c.essieux.length);
+    p.rail = { uic: !!r.uic, sw0: !!r.sw0, sw2: !!r.sw2, freinage: !!r.freinage, alpha: nb(r.alpha, 1), entretien: r.entretien, Lphi: nb(r.Lphi), kRep: nb(r.kRep, 1), kFrein: nb(r.kFrein, 1),
+      nbVoies: nb(r.nbVoies, 1), pas: Math.max(0.02, nb(r.pas, 0.1)), xDeb: r.xDeb === '' ? null : +r.xDeb, xFin: r.xFin === '' ? null : +r.xFin, convois };
+    p.quelconques = rowsQQ.data.map((o) => ({ nom: o.nom, cat: o.cat, x1: nb(o.x1), x2: o.x2 === '' || o.x2 === undefined ? '' : +o.x2, q1: nb(o.q1), q2: o.q2 === '' || o.q2 === undefined ? '' : +o.q2, H: nb(o.H) }));
+    p.seisme = Object.assign(p.seisme, { actif: !!s.actif, vertical: !!s.vertical, zone: +s.zone, sol: s.sol, classe: s.classe, agr: nb(s.agr), q: nb(s.q, 1), qT: nb(s.qT, 1), xi: nb(s.xi, 5), methode: s.methode, masseSup: nb(s.masseSup), psi2rail: nb(s.psi2rail, 0.3) });
+    p.combi = Object.assign(p.combi, Object.fromEntries(Object.entries(v.c_).map(([k, x]) => [k, nb(x, p.combi[k])])));
+    return p;
+  }
+
+  /* ── schéma SVG du modèle ── */
+  function schema(M, m, opt = {}) {
+    const xs = m.nodes.map((n) => n.x), ys = m.nodes.map((n) => n.y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const W = 760, pad = 34, sc = Math.min((W - 2 * pad) / Math.max(1e-6, x1 - x0), opt.plan ? 1e9 : 240 / Math.max(1, y1 - y0));
+    const H = opt.plan ? 110 : Math.max(120, (y1 - y0) * sc + 2 * pad + 10);
+    const X = (x) => pad + (x - x0) * sc, Y = (y) => opt.plan ? H / 2 : pad + (y1 - y) * sc;
+    let g = '';
+    m.elems.forEach((e) => {
+      const a = m.nodes[e.i], b = m.nodes[e.j];
+      const c = e.kind === 'deck' ? '#14171f' : e.kind === 'link' ? '#c27a12' : e.kind === 'radier' ? '#0f8f7b' : '#3c3f4d';
+      const w = e.kind === 'deck' ? 3 : e.kind === 'link' ? 1.2 : 2;
+      g += `<line x1="${X(a.x).toFixed(1)}" y1="${Y(a.y).toFixed(1)}" x2="${X(b.x).toFixed(1)}" y2="${Y(b.y).toFixed(1)}" stroke="${c}" stroke-width="${w}"${e.kind === 'link' ? ' stroke-dasharray="3 2"' : ''}/>`;
+    });
+    const step = m.nodes.length > 70 ? 3 : m.nodes.length > 40 ? 2 : 1;
+    m.nodes.forEach((n, k) => {
+      g += `<circle cx="${X(n.x).toFixed(1)}" cy="${Y(n.y).toFixed(1)}" r="1.6" fill="#a8842a"/>`;
+      if (k % step === 0 || m.supports.some((s) => s.n === k)) g += `<text x="${(X(n.x) + 3).toFixed(1)}" y="${(Y(n.y) - 4).toFixed(1)}">${k + 1}</text>`;
+    });
+    m.supports.forEach((s) => {
+      const n = m.nodes[s.n], cx = X(n.x), cy = Y(n.y);
+      const spring = [s.ux, s.uy, s.rz].some((v) => typeof v === 'number' && v > 0);
+      if (opt.plan) { g += `<path d="M${cx},${cy} l0,6 l-3,3 l6,3 l-6,3 l6,3 l-3,3 l0,6" fill="none" stroke="#2d6be4" stroke-width="1.2"/>`; return; }
+      if (s.rz === true) g += `<line x1="${cx - 9}" y1="${cy + 1}" x2="${cx + 9}" y2="${cy + 1}" stroke="#14171f" stroke-width="2"/>` + [-8, -3, 2, 7].map((d) => `<line x1="${cx + d}" y1="${cy + 2}" x2="${cx + d - 4}" y2="${cy + 7}" stroke="#14171f"/>`).join('');
+      else if (spring) g += `<path d="M${cx},${cy} l0,4 l-4,2 l8,3 l-8,3 l8,3 l-4,2 l0,4" fill="none" stroke="#2d6be4" stroke-width="1.2"/>`;
+      else g += `<path d="M${cx},${cy} l-6,9 h12 z" fill="none" stroke="#14171f"/>` + (s.ux === true ? `<line x1="${cx - 8}" y1="${cy + 10}" x2="${cx + 8}" y2="${cy + 10}" stroke="#14171f"/>` : `<circle cx="${cx - 3}" cy="${cy + 11.5}" r="1.8" fill="none" stroke="#14171f"/><circle cx="${cx + 3}" cy="${cy + 11.5}" r="1.8" fill="none" stroke="#14171f"/>`);
+    });
+    return `<svg class="schema" viewBox="0 0 ${W} ${H.toFixed(0)}" role="img" aria-label="Schéma du modèle">${g}</svg>`;
+  }
+
+  /* ── calcul et sorties ── */
+  let last = null, tab = 'n1';
+  function calc() {
+    const out = document.getElementById('out');
+    let p, M, R;
+    try { p = params(); M = E.genere(p); R = E.calcule(M); }
+    catch (e) { out.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; last = null; return; }
+    last = { p, M, R };
+    out.innerHTML = render(last, false);
+    out.querySelectorAll('.tabs button').forEach((b) => (b.onclick = () => { tab = b.dataset.t; out.innerHTML = render(last, false); calcTabs(); }));
+  }
+  function calcTabs() { document.querySelectorAll('#out .tabs button').forEach((b) => (b.onclick = () => { tab = b.dataset.t; document.getElementById('out').innerHTML = render(last, false); calcTabs(); })); }
+
+  function render(L, note) {
+    const { p, M, R } = L, LD = M.long.LD;
+    const ap = (v, m) => E.appuisVals(M, v, m);
+    const sec = (v, m) => E.sectionsTablier(M, v, m);
+    const sELU = sec(R.comb.ELU.max), sELUm = sec(R.comb.ELU.min);
+    const Mmax = Math.max(...sELU.map((o) => o.M)), Mmin = Math.min(...sELUm.map((o) => o.M));
+    const Rmax = Math.max(...ap(R.comb.ELU.max).map((o) => o.Ry));
+    const sis = R.sis;
+    let h = BA.kpis([
+      { l: 'Modèle longitudinal', v: LD.nodes.length + ' nœuds', n: LD.elems.length + ' barres, ' + LD.supports.length + ' appuis' },
+      { l: 'M ELU max tablier', v: f0(Mmax), u: 'kN·m', hi: true, n: 'M min ' + f0(Mmin) + ' kN·m' },
+      { l: 'Réaction ELU max', v: f0(Rmax), u: 'kN' },
+      R.rail ? { l: 'Φ (LΦ = ' + f2(R.rail.Lphi) + ' m)', v: f3(R.rail.phi), n: 'α Φ kRep = ' + f3(R.rail.fUic) } : { l: 'Rail', v: '—' },
+      sis ? { l: 'T1 longitudinal', v: f3(sis.long.modes[0].T), u: 's', n: 'Sa = ' + f2(sis.long.modes[0].Sa) + ' m/s²' } : { l: 'Séisme', v: 'non' },
+      sis && sis.trans ? { l: 'T1 transversal', v: f3(sis.trans.modes[0].T), u: 's' } : null,
+    ].filter(Boolean));
+    const tabs = note ? '' : `<div class="tabs">${[['n1', '1 · Modèle et cas élémentaires'], ['n2', '2 · Sollicitations du tablier'], ['n3', '3 · Appuis et descente de charges']].map(([k, t]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
+    const parts = { n1: note1(L), n2: note2(L), n3: note3(L) };
+    if (note) return { kpis: h, parts };
+    return BA.card('Synthèse', h + tabs) + parts[tab];
+  }
+
+  function note1(L) {
+    const { p, M, R } = L, LD = M.long.LD;
+    const ap = (v, m) => E.appuisVals(M, v, m);
+    let h = BA.card('Modèle longitudinal', schema(M, LD) + `<div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:4px">Tablier en noir, appuis en gris, liaisons d’appareils en pointillés orangés, radier en vert ; encastrement hachuré, ressorts en bleu. Numérotation des nœuds à partir de 1.</div>`
+      + BA.table(['Grandeur', 'Valeur'], [
+        ['Module instantané Ei', f0(M.mod.Ei) + ' kPa'], ['Module différé Ed', f0(M.mod.Ed) + ' kPa'],
+        ['Section courante du tablier', `A = ${f3(M.sec0.A)} m², I = ${fmt(M.sec0.I, 5)} m⁴, h = ${f3(M.sec0.h)} m`],
+        ['Poids linéique du tablier', f2(M.poidsDeck[Math.floor(M.poidsDeck.length / 2)]) + ' kN/m'],
+        ['Longueur entre appuis extrêmes', f2(M.Ltot) + ' m'],
+      ], { leftText: true }));
+    if (R.trans) h += BA.card('Modèle transversal (vue en plan)', schema(M, M.trans.CD, { plan: true }) + BA.table(['Appui', 'Raideur KyT (kN/m)'], M.trans.CD.appuis.map((a) => [esc(a.nom), Number.isFinite(a.ky) ? f0(a.ky) : 'bloqué']), { leftText: true }));
+    const cases = [['Poids propre de la structure', R.cas.G1, 0], ['Superstructures (nominal)', R.cas.Gs, 0], ['Ballast (nominal)', R.cas.Gb, 0], ['1 kN/m vertical (longue durée)', R.unit.v1LD.v, 0],
+      ['1 kN/m horizontal (courte durée)', R.unit.h1CD.v, 1], ['Retrait', R.cas.R, 0], ['Contraction (lente + rapide)', R.cas.Tcon, 0], ['Dilatation (lente + rapide)', R.cas.Tdil, 0],
+      ['Gradient fibre sup. chaude', R.cas.Gchaud, 1], ['Gradient fibre sup. froide', R.cas.Gfroid, 1]];
+    R.tas.forEach((t, k) => cases.push(['Dénivellation ' + f3(p.actions.denivAppui) + ' m — ' + M.long.LD.appuis[k].nom, t, 0]));
+    (p.quelconques || []).forEach((q, k) => cases.push(['Charge quelconque — ' + (q.nom || k + 1) + ' (' + q.cat + ')', R.unit.qq[k].v, q.cat === 'G' ? 0 : 1]));
+    const rows = [];
+    cases.forEach(([nom, v, cd]) => { const m = cd ? M.long.CD : M.long.LD; ap(v, m).forEach((a, k) => rows.push([k === 0 ? esc(nom) : '', esc(a.nom), f2(a.Rx), f2(a.Ry), f2(a.Mz)])); });
+    h += BA.card('Résultats des cas élémentaires', BA.table(['Cas', 'Appui', 'Rx (kN)', 'Ry (kN)', 'Mz (kN·m)'], rows, { leftText: true, caption: 'Réactions (repère global, Ry > 0 vers le haut). Les sollicitations du tablier de chaque cas sont reprises dans les enveloppes de la note 2.' }));
+    if (R.rail) {
+      const r = R.rail;
+      h += BA.card('Charges ferroviaires', BA.table(['Grandeur', 'Valeur'], [
+        ['Modèles', r.modeles.join(', ')], ['Longueur déterminante LΦ', f2(r.Lphi) + ' m'], ['Coefficient dynamique Φ', f3(r.phi)],
+        ['Coefficient appliqué à LM71 / SW/0', f3(r.fUic) + ' (α Φ kRep)'], ['Coefficient appliqué à SW/2', f3(r.fSw2)],
+        ['Démarrage/freinage réparti LM71', f2(r.frein.uic) + ' kN/m sur ' + f2(r.Lch) + ' m'], ['Freinage SW/2', f2(r.frein.sw2) + ' kN/m'],
+        ['Positions de la charge unité', r.LI.xs.length + ' (pas ' + f3(r.LI.xs[1] - r.LI.xs[0]) + ' m)'],
+      ], { leftText: true }));
+    }
+    if (R.sis) h += BA.card('Calcul sismique', noteSis(L));
+    return h;
+  }
+  function noteSis(L) {
+    const { M, R } = L, s = R.sis, sp = s.sp;
+    let h = BA.table(['Paramètre', 'Valeur'], [
+      ['Zone / agr', sp.zone + ' / ' + f2(sp.agr) + ' m/s²'], ['γI', f2(sp.gI)], ['ag = γI agr', f3(sp.ag) + ' m/s²'],
+      ['Sol : S, TB, TC, TD', `${f2(sp.S)} ; ${f2(sp.TB)} ; ${f2(sp.TC)} ; ${f2(sp.TD)} s`], ['η (ξ)', f3(sp.eta)], ['avg (vertical)', f3(sp.avg) + ' m/s²'],
+      ['Masse longitudinale', f1(s.massL) + ' t'], s.trans ? ['Masse transversale', f1(s.massT) + ' t'] : null, ['Méthode', s.long.methode],
+    ].filter(Boolean), { leftText: true });
+    const T = [], Tmx = Math.max(3, sp.TD * 1.2), Se = [], Sd = [];
+    for (let t = 0; t <= Tmx + 1e-9; t += Tmx / 150) { T.push(t); Se.push(sp.Se(t)); Sd.push(sp.Sd(t, L.p.seisme.q)); }
+    h += BA.chart([{ x: T, y: Se, label: 'Se élastique' }, { x: T, y: Sd, label: 'Sd (q long.)', fill: false }], { title: 'Spectres horizontaux', unit: 'm/s²', h: 170 });
+    const md = (o, nom) => o ? o.modes.slice(0, 8).map((m, k) => [k === 0 ? nom : '', k + 1, f3(m.T), f2(m.f), fmt(m.ratio * 100, 1) + ' %', fmt(m.cum * 100, 1) + ' %', f2(m.Sa)]) : [];
+    h += BA.table(['Direction', 'Mode', 'T (s)', 'f (Hz)', 'Masse eff.', 'Cumul', 'Sa (m/s²)'], md(s.long, 'Longitudinale').concat(md(s.vert, 'Verticale'), md(s.trans, 'Transversale')), { leftText: true, caption: 'Modes de plus forte participation ; combinaison CQC des modes jusqu’à 90 % de la masse.' });
+    const ra = E.appuisVals(M, s.Elong, M.long.SIS);
+    h += BA.table(['Appui', '|Rx| (kN)', '|Ry| (kN)', '|Mz| (kN·m)'], ra.map((a) => [esc(a.nom), f1(Math.abs(a.Rx)), f1(Math.abs(a.Ry)), f1(Math.abs(a.Mz))]), { leftText: true, caption: 'Effets sismiques longitudinaux AEd (Ex + 0,3 Ez), valeurs absolues.' });
+    if (s.trans) h += BA.table(['Appui', '|Hy| transversal (kN)'], E.appuisVals(M, s.trans.E, M.trans.SIS).map((a) => [esc(a.nom), f1(Math.abs(a.Ry))]), { leftText: true, caption: 'Effort transversal sismique en tête d’appui (modèle transversal).' });
+    return h;
+  }
+  function note2(L) {
+    const { M, R } = L;
+    const S = (v) => E.sectionsTablier(M, v);
+    const e = R.comb, s = { EM: S(e.ELU.max), Em: S(e.ELU.min), CM: S(e.CAR.max), Cm: S(e.CAR.min), FM: S(e.FRE.max), Fm: S(e.FRE.min), Q: S(e.QP.max), G: S(R.env.Gnom.max) };
+    const rail = R.rail ? R.rail.env.V1 : null;
+    const xs = s.EM.map((o) => o.x);
+    let h = BA.card('Courbes enveloppes', BA.chart([{ x: xs, y: s.EM.map((o) => o.M), label: 'ELU max' }, { x: xs, y: s.Em.map((o) => o.M), label: 'ELU min' }, { x: xs, y: s.CM.map((o) => o.M), label: 'ELS car. max', fill: false }, { x: xs, y: s.Cm.map((o) => o.M), label: 'ELS car. min', fill: false }], { title: 'Moments fléchissants', unit: 'kN·m', invert: true })
+      + BA.chart([{ x: xs, y: s.EM.map((o) => o.V), label: 'ELU max' }, { x: xs, y: s.Em.map((o) => o.V), label: 'ELU min' }], { title: 'Efforts tranchants', unit: 'kN', h: 180 }));
+    const nT = M.params.travees.length, groups = [['deb', 'Console côté origine']].concat(M.params.travees.map((Lt, t) => [t, 'Travée ' + (t + 1) + ' (' + f2(Lt) + ' m)']), [['fin', 'Console côté extrémité']]);
+    void nT;
+    let tbl = '';
+    groups.forEach(([t, nom]) => {
+      const idx = s.EM.map((o, k) => (o.travee === t ? k : -1)).filter((k) => k >= 0);
+      if (!idx.length) return;
+      const rows = idx.map((k) => {
+        const o = s.EM[k], kk = 6 * o.e + (o.end === 'i' ? 0 : 3);
+        const rv = rail ? [f0(rail.max[kk + 2]), rail.cMax[kk + 2] ? f0(rail.cMax[kk + 2][1]) : '—', f0(rail.min[kk + 2]), rail.cMin[kk + 2] ? f0(rail.cMin[kk + 2][1]) : '—'] : ['—', '—', '—', '—'];
+        return [f3(o.x), f0(s.G[k].M), f0(s.EM[k].M), f0(s.Em[k].M), f0(s.EM[k].V), f0(s.Em[k].V), f0(s.CM[k].M), f0(s.Cm[k].M), f0(s.FM[k].M), f0(s.Fm[k].M), f0(s.Q[k].M)].concat(rv);
+      });
+      tbl += `<div class="sub">${nom}</div>` + BA.table(['x (m)', 'M G', 'M ELU max', 'M ELU min', 'V ELU max', 'V ELU min', 'M car. max', 'M car. min', 'M fréq. max', 'M fréq. min', 'M q.-perm.', 'M rail max', 'V conc.', 'M rail min', 'V conc.'], rows);
+    });
+    h += BA.card('Sollicitations dans le tablier', tbl + `<div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:4px">kN·m et kN ; M > 0 tend la fibre inférieure. Sections aux nœuds du modèle (pas = longueur des éléments, réglable par « éléments par travée » ou « pas de découpage »). Rail : enveloppe LM71 / SW/0 / convois avec Φ et α, effort tranchant concomitant du même schéma de chargement.</div>`);
+    return h;
+  }
+  function note3(L) {
+    const { M, R } = L, LD = M.long.LD;
+    const A = (v, m) => E.appuisVals(M, v, m);
+    const lines = [['G nominal', R.env.Gnom.max, R.env.Gnom.min], ['Dénivellations', R.env.set.max, R.env.set.min], ['Température', R.env.T.max, R.env.T.min],
+      R.rail ? ['Rail gr11 (vertical + freinage)', R.env.Q1.max, R.env.Q1.min] : null, R.rail && L.p.rail.sw2 ? ['Rail SW/2', R.env.Q2.max, R.env.Q2.min] : null,
+      ['ELU fondamental', R.comb.ELU.max, R.comb.ELU.min], ['ELS caractéristique', R.comb.CAR.max, R.comb.CAR.min], ['ELS fréquent', R.comb.FRE.max, R.comb.FRE.min], ['ELS quasi-permanent', R.comb.QP.max, R.comb.QP.min],
+      R.comb.ACC ? ['ELU accidentel', R.comb.ACC.max, R.comb.ACC.min] : null, R.comb.SIS ? ['ELU sismique', R.comb.SIS.max, R.comb.SIS.min] : null].filter(Boolean);
+    let h = '';
+    LD.appuis.forEach((a, k) => {
+      const rows = lines.map(([nom, mx, mn]) => { const x = A(mx)[k], y = A(mn)[k]; return [nom, f1(y.Rx), f1(x.Rx), f1(y.Ry), f1(x.Ry), f1(y.Mz), f1(x.Mz)]; });
+      let piedroit = '';
+      if (a.elems.length && a.base !== null) {
+        const eT = a.elems.find((e) => LD.elems[e].kind === 'pier'), eB = a.elems[a.elems.length - 1];
+        const pr = (e, end, nom) => lines.slice(-6).map(([c, mx, mn]) => { const o = 6 * e + (end === 'i' ? 0 : 3); return [nom, c, f1(mn[o]), f1(mx[o]), f1(mn[o + 1]), f1(mx[o + 1]), f1(mn[o + 2]), f1(mx[o + 2])]; });
+        if (eT !== undefined) piedroit = BA.table(['Section', 'Combinaison', 'N min', 'N max', 'V min', 'V max', 'M min', 'M max'], pr(eT, 'i', 'Tête').concat(pr(eB, 'j', 'Pied')), { leftText: true, caption: 'Sollicitations du fût (repère local, N > 0 traction).' });
+      }
+      h += BA.card(esc(a.nom) + ' — descente de charges', BA.table(['Action / combinaison', 'Rx min', 'Rx max', 'Ry min', 'Ry max', 'Mz min', 'Mz max'], rows, { leftText: true, caption: (a.radier ? 'Efforts transmis au radier en pied du piédroit' : 'Réactions d’appui') + ' (kN, kN·m, repère global, Ry > 0 vers le haut). x = ' + f2(a.x) + ' m.' }) + piedroit);
+    });
+    if (R.trans) {
+      const T = R.trans, Lt = T.layout;
+      const rows = T.modele.appuis.map((a, k) => [esc(a.nom), f2(-T.unit[Lt.offA + 3 * k + 1]), f1(-T.vent[Lt.offA + 3 * k + 1]), T.sis ? f1(Math.abs(E.appuisVals(M, T.sis.E, M.trans.SIS)[k].Ry)) : '—']);
+      h += BA.card('Efforts transversaux en tête d’appui', BA.table(['Appui', 'Pour 1 kN/m (kN)', 'Vent (kN)', 'Séisme |Hy| (kN)'], rows, { leftText: true }));
+    }
+    return h;
+  }
+
+  function note() {
+    if (!last) return;
+    const r = render(last, true);
+    BA.note({ titre: 'Modélisation plane d’un pont-rail', code: 'MODÈLE RAIL', regl: 'EN 1990 A2 · EN 1991-2 · EN 1991-1-5 · EN 1998-1/-2 + AN', projet: last.p.titre,
+      sections: [{ titre: 'Synthèse', html: r.kpis }, { titre: 'Note 1 — Modèle, chargements et calcul sismique', html: r.parts.n1 },
+        { titre: 'Note 2 — Sollicitations dans le tablier', html: r.parts.n2 }, { titre: 'Note 3 — Sollicitations et réactions au droit des appuis', html: r.parts.n3 }] });
+  }
+
+  /* ── import .don ── */
+  function fromDon(txt) {
+    const p = E.lireDon(txt);
+    const v = readAll();
+    Object.assign(v.g_, { projet: p.titre, travees: p.travees.join(' '), consoleDeb: p.consoleDeb, consoleFin: p.consoleFin, nbElTrav: p.nbElTrav, pasTablier: 0, nbElPied: p.nbElPied });
+    Object.assign(v.t_, { mode: p.tablier.mode, b: p.tablier.b, h: p.tablier.h, A: p.tablier.A || 0, I: p.tablier.I || 0, It: p.tablier.It || 0, Sreel: p.tablier.Sreel || 0 });
+    Object.assign(v.m_, { mmode: p.materiau.mode, fck: p.materiau.fck, phi: p.materiau.phi, Ei: p.materiau.Ei || 0, Ed: p.materiau.Ed || 0, gamma: p.materiau.gamma, radier: p.radier.actif, rKv: p.radier.kv });
+    const a = p.actions;
+    Object.assign(v.a_, { superstructures: a.superstructures, ballast: a.ballast, retrait: a.retrait, denivAppui: a.denivAppui, denivCulees: a.denivCulees, conLD: a.tLD.con, conCD: a.tCD.con, dilLD: a.tLD.dil, dilCD: a.tCD.dil, gChaud: 0, gFroid: 0, qvent: a.qvent });
+    Object.assign(v.r_, { uic: p.rail.uic, sw0: p.rail.sw0, sw2: p.rail.sw2, alpha: p.rail.alpha, pas: p.rail.pas, nbVoies: p.rail.nbVoies });
+    Object.assign(v.s_, { actif: p.seisme.actif, zone: p.seisme.zone, sol: p.seisme.sol, classe: p.seisme.classe, agr: p.seisme.agr, q: p.seisme.q, qT: p.seisme.qT, xi: p.seisme.xi });
+    const ap = p.appuis.map((o) => ({ nom: o.nom, type: o.type === 'ressorts' ? 'simple' : o.type, fixe: o.type === 'ressorts' || o.fixe ? 1 : 0, h: o.h || 0, A: o.A || 0, I: o.I || 0, Ab: o.Ab || 0, Ib: o.Ib || 0, base: o.base === 'ressorts' ? 'encastre' : (o.base || 'encastre'), Ael: o.Ael || 0, Tel: o.Tel || 0, nAp: 1, kyT: o.kyT || 0 }));
+    load({ v, ap, gou: p.tablier.goussets, qq: p.quelconques });
+    const n = document.createElement('div'); n.className = 'msg info'; n.style.marginBottom = '10px';
+    n.textContent = 'Fichier .don importé : géométrie, matériaux, appuis, déformations, choix des charges et charges unitaires (catégorie U). Les combinaisons « combact » d’origine et les ressorts saisis (matrice de liaison) ne sont pas repris ; les appuis à ressorts sont remplacés par des appuis simples fixes. Gradient thermique mis à 0 (absent du format d’origine).';
+    document.getElementById('out').prepend(n);
+  }
+
+  function bind() { document.querySelectorAll('.col-in input, .col-in select, .col-in textarea').forEach((e) => { e.onchange = () => persist(); }); }
+  bind();
+  document.getElementById('bCalc').onclick = () => { persist(); calc(); };
+  document.getElementById('bNote').onclick = note;
+  document.getElementById('bSave').onclick = () => BA.store.download('modelpra.json', state());
+  document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (t) => { try { load(JSON.parse(t)); } catch (e) { alert('Fichier illisible : ' + e.message); } });
+  document.getElementById('bDon').onclick = () => BA.store.pick('.don', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
+  document.getElementById('bDef').onclick = () => load({ v: {}, ap: DEF_AP, gou: DEF_GOU, qq: DEF_QQ });
+  calc();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

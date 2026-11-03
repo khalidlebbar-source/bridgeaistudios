@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRESSIO — Sondages pressiométriques · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/sondages-pressio.html">
+<meta name="description" content="Éditeur de sondages pressiométriques au format SPS : identification, coupe, essais pl, pf, EM, couches de calcul (classe de sol du Fascicule 62 titre V, α de Ménard), profils graphiques, fiche imprimable, export .sps et JSON.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<style>
+  .prof-svg{width:100%;height:auto;display:block}
+  .prof-svg text{font-family:'Outfit',sans-serif;font-size:10px;fill:var(--ink3)}
+  .grid-in td input[type=text]{min-width:120px}
+  .sub{font-size:10.5px;color:var(--ink3);margin:10px 0 4px;letter-spacing:.06em;text-transform:uppercase}
+  .msgs{display:flex;flex-direction:column;gap:6px}
+  .scroll-in{max-height:340px;overflow:auto}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Fondations et appuis</div>
+      <div class="eyebrow">PRESSIO · sondages pressiométriques</div>
+      <h1>Sondages <em>pressiométriques</em></h1>
+      <p class="lead">Saisie, lecture et écriture des fichiers SPS : coupe, essais Ménard (pl, pf, EM), couches de calcul avec leur classe de sol et leur coefficient rhéologique α. Profils, contrôles, fiche imprimable. Le fichier produit alimente FONDATIONS, PILES-CULÉES, CADRES et SOUTÈNEMENT.</p>
+      <div class="badges"><span class="badge">Fasc. 62 titre V annexes C1 et F2</span><span class="badge">NF P 94-110 (essai Ménard)</span><span class="badge">Format SPS</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="bCalc">Contrôler et tracer</button>
+      <button class="btn gold" id="bNote">Fiche du sondage</button>
+      <button class="btn" id="bSps">Ouvrir un .sps</button>
+      <button class="btn" id="bSpsOut">Exporter .sps</button>
+      <button class="btn" id="bSave">Enregistrer</button>
+      <button class="btn" id="bOpen">Ouvrir</button>
+      <button class="btn" id="bNew">Nouveau</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+  <div class="col-in">
+    <div class="card"><div class="card-title"><span>Identification</span></div><div class="fields" id="fId"></div></div>
+    <div class="card"><div class="card-title"><span>Implantation et nappe</span><small>m</small></div><div class="fields c3" id="fGeo"></div></div>
+    <div class="card"><div class="card-title"><span>Coupe lithologique</span><small>profondeur du toit de chaque formation</small></div><div id="rLit"></div><div class="fields" id="fFin" style="margin-top:8px"></div></div>
+    <div class="card"><div class="card-title"><span>Essais pressiométriques</span><small>profondeur (m), MPa</small></div><div class="scroll-in" id="rEss"></div>
+      <div class="field wide" style="margin-top:8px"><label><span>Coller des essais (z pl pf EM par ligne)</span></label><textarea id="pasteEss" spellcheck="false" placeholder="1.00 0.45 0.28 4.2"></textarea></div>
+      <button class="btn sm" id="bPaste" style="margin-top:6px">Remplacer les essais par le texte collé</button></div>
+    <div class="card"><div class="card-title"><span>Couches de calcul</span><small>valeurs caractéristiques retenues</small></div>
+      <div class="scroll-in" id="rCou"></div>
+      <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Classe : nature (A argile, L limon, S sable, G grave, C craie, M marne, R roche altérée) + catégorie A, B ou C du Fascicule 62. pl est la pression limite nette pl* utilisée par les calculs de fondations. γ, φ, c sont facultatifs (FONDATIONS, SOUTÈNEMENT).</div>
+      <button class="btn sm" id="bAuto" style="margin-top:6px">Proposer pl, pf, EM, α et catégorie d’après les essais</button>
+    </div>
+    <div class="card"><div class="card-title"><span>Remarques</span></div><div class="fields c1" id="fRem"></div></div>
+  </div>
+  <div class="col-out" id="out"><div class="card"><div class="empty">Calcul en cours…</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/sondpres.js"></script>
+<script>
+(function () {
+  'use strict';
+  BA.chrome({ base: '../' });
+  const S = BA.sondpres, fmt = BA.fmt, esc = BA.esc, KEY = 'sondpres';
+
+  const F_ID = [
+    { id: 'entreprise', label: 'Entreprise / laboratoire', type: 'txt', def: '' },
+    { id: 'adresse', label: 'Adresse', type: 'txt', def: '' },
+    { id: 'projet', label: 'Projet / affaire', type: 'txt', def: '' },
+    { id: 'ouvrage', label: 'Ouvrage', type: 'txt', def: '' },
+    { id: 'sondage', label: 'Sondage', type: 'txt', def: '' },
+    { id: 'date', label: 'Date', type: 'txt', def: '' },
+  ];
+  const F_GEO = [
+    { id: 'x', label: 'X', unit: 'm', def: 0 }, { id: 'y', label: 'Y', unit: 'm', def: 0 },
+    { id: 'z', label: 'Cote de tête Z', unit: 'm', def: 100 },
+    { id: 'nappe', label: 'Nappe (profondeur)', unit: 'm', def: 0, help: '0 : pas de nappe relevée' },
+  ];
+  const F_FIN = [{ id: 'fin', label: 'Fin du sondage (profondeur)', unit: 'm', def: 15 }, { id: 'finCouches', label: 'Base des couches de calcul', unit: 'm', def: 15 }];
+  const F_REM = [{ id: 'remarques', label: 'Texte libre (conservé dans le fichier)', type: 'area', def: '' }];
+  const LIT = [{ id: 'z', label: 'Toit (m)', def: 0, w: '22%' }, { id: 'desc', label: 'Description', type: 'txt', def: '' }];
+  const ESS = [{ id: 'z', label: 'z (m)', def: 1 }, { id: 'pl', label: 'pl', def: 0.5 }, { id: 'pf', label: 'pf', def: 0.3 }, { id: 'em', label: 'EM', def: 5 }];
+  const COU = [
+    { id: 'z', label: 'Toit (m)', def: 0 }, { id: 'nom', label: 'Nom', type: 'txt', def: '' },
+    { id: 'classe', label: 'Classe', type: 'txt', def: 'AB' }, { id: 'pl', label: 'pl*', def: 1 }, { id: 'pf', label: 'pf*', def: 0.6 },
+    { id: 'em', label: 'EM', def: 10 }, { id: 'alpha', label: 'α', def: 0.5 }, { id: 'gamma', label: 'γ', def: '' }, { id: 'phi', label: 'φ°', def: '' }, { id: 'c', label: 'c kPa', def: '' },
+  ];
+  const ALL = [].concat(F_ID, F_GEO, F_FIN, F_REM);
+
+  const saved = BA.store.load(KEY);
+  let s0 = saved && saved.s ? saved.s : S.exemple();
+  const V = toV(s0);
+  BA.form(document.getElementById('fId'), F_ID, 'i_', V);
+  BA.form(document.getElementById('fGeo'), F_GEO, 'i_', V);
+  BA.form(document.getElementById('fFin'), F_FIN, 'i_', V);
+  BA.form(document.getElementById('fRem'), F_REM, 'i_', V);
+  const lit = BA.rows(document.getElementById('rLit'), LIT, s0.lithologie.map((x) => Object.assign({}, x)), { addLabel: 'Ajouter une formation', onChange: () => persist() });
+  const ess = BA.rows(document.getElementById('rEss'), ESS, s0.essais.map((x) => ({ z: x.z, pl: x.pl, pf: x.pf, em: x.em, ind: x.ind })), { addLabel: 'Ajouter un essai', onChange: () => persist() });
+  const cou = BA.rows(document.getElementById('rCou'), COU, s0.couches.map(clean), { addLabel: 'Ajouter une couche', onChange: () => persist() });
+
+  function clean(c) { const o = Object.assign({}, c); ['gamma', 'phi', 'c'].forEach((k) => { if (!Number.isFinite(+o[k]) || o[k] === null || o[k] === '') o[k] = ''; }); return o; }
+  function toV(s) { return Object.assign({}, s, { remarques: (s.remarques || []).join('\n') }); }
+  const nz = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(+v) ? NaN : +v);
+  function readS() {
+    const v = BA.read(ALL, 'i_');
+    const s = S.vide();
+    F_ID.forEach((f) => (s[f.id] = v[f.id] || ''));
+    ['x', 'y', 'z', 'nappe', 'fin', 'finCouches'].forEach((k) => (s[k] = Number.isFinite(v[k]) ? v[k] : 0));
+    s.l9 = (s0.l9 || [0, 0]).slice();
+    s.remarques = (v.remarques || '').split('\n');
+    while (s.remarques.length && !s.remarques[s.remarques.length - 1].trim()) s.remarques.pop();
+    s.lithologie = lit.data.filter((r) => Number.isFinite(+r.z)).map((r) => ({ z: +r.z, desc: String(r.desc || '') }));
+    s.essais = ess.data.filter((r) => Number.isFinite(+r.z)).map((r) => ({ z: +r.z, ind: +r.ind || 0, pl: +r.pl || 0, pf: +r.pf || 0, em: +r.em || 0 }));
+    s.couches = cou.data.filter((r) => Number.isFinite(+r.z)).map((r) => ({ z: +r.z, nom: String(r.nom || ''), pl: +r.pl || 0, pf: +r.pf || 0, em: +r.em || 0, alpha: +r.alpha || 0, classe: String(r.classe || '').toUpperCase(), gamma: nz(r.gamma), phi: nz(r.phi), c: nz(r.c) }));
+    return s;
+  }
+  function load(s) {
+    s0 = s; BA.write(ALL, toV(s), 'i_');
+    lit.set(s.lithologie.map((x) => Object.assign({}, x)));
+    ess.set(s.essais.map((x) => ({ z: x.z, pl: x.pl, pf: x.pf, em: x.em, ind: x.ind })));
+    cou.set(s.couches.map(clean));
+    run();
+  }
+  function persist() { try { BA.store.save(KEY, { s: readS() }); } catch (e) { /* */ } }
+  ALL.forEach((f) => { const e = document.getElementById('i_' + f.id); e && e.addEventListener('change', () => { persist(); run(); }); });
+
+  /* ── profils SVG : grandeur en abscisse, profondeur vers le bas ── */
+  function profil(s, opt) {
+    const W = 250, H = 460, L = 40, R = 10, T = 26, B = 14;
+    const zmax = Math.max(s.fin || 0, s.finCouches || 0, ...s.essais.map((e) => e.z), ...s.couches.map((c) => c.z), 1);
+    const vals = opt.keys.flatMap((k) => s.essais.map((e) => e[k]).concat(s.couches.map((c) => c[k]))).filter((v) => v > 0);
+    const log = !!opt.log;
+    let v0 = 0, v1 = Math.max(...vals, 0.1) * 1.08;
+    if (log) { v0 = Math.pow(10, Math.floor(Math.log10(Math.min(...vals, 1)))); v1 = Math.pow(10, Math.ceil(Math.log10(Math.max(...vals, 1)))); }
+    const X = (v) => L + (log ? (Math.log10(Math.max(v, v0)) - Math.log10(v0)) / (Math.log10(v1) - Math.log10(v0)) : (v - v0) / (v1 - v0)) * (W - L - R);
+    const Y = (z) => T + z / zmax * (H - T - B);
+    let g = `<text x="${L}" y="12" style="font-weight:500;fill:var(--ink2)">${opt.title}</text>`;
+    const zt = zmax > 30 ? 5 : zmax > 12 ? 2 : 1;
+    for (let z = 0; z <= zmax + 1e-9; z += zt) g += `<line x1="${L}" x2="${W - R}" y1="${Y(z)}" y2="${Y(z)}" stroke="rgba(20,23,31,.06)"/><text x="${L - 5}" y="${Y(z) + 3}" text-anchor="end">${fmt(z, 0)}</text>`;
+    const ticks = log ? (() => { const o = []; for (let v = v0; v <= v1 * 1.0001; v *= 10) o.push(v); return o; })() : (() => { const st = Math.pow(10, Math.floor(Math.log10(v1 / 4))); const m = [1, 2, 5, 10].find((k) => v1 / (k * st) <= 5) * st; const o = []; for (let v = 0; v <= v1 + 1e-9; v += m) o.push(+v.toFixed(8)); return o; })();
+    for (const t of ticks) g += `<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${H - B}" stroke="rgba(20,23,31,.06)"/><text x="${X(t)}" y="${T - 4}" text-anchor="middle">${fmt(t, t < 1 ? (t < 0.1 ? 2 : 1) : 0)}</text>`;
+    if (s.nappe > 0) g += `<line x1="${L}" x2="${W - R}" y1="${Y(s.nappe)}" y2="${Y(s.nappe)}" stroke="#2d6be4" stroke-dasharray="4 3"/><text x="${W - R}" y="${Y(s.nappe) - 3}" text-anchor="end" style="fill:#2d6be4">nappe</text>`;
+    const pal = ['#a8842a', '#0f8f7b', '#2d6be4'];
+    opt.keys.forEach((k, i) => {
+      const C = S.couches(s); let pts = '';
+      for (const c of C) { if (c[k] > 0) pts += `${X(c[k])},${Y(c.haut)} ${X(c[k])},${Y(c.bas)} `; }
+      if (pts) g += `<polyline points="${pts}" fill="none" stroke="${pal[i]}" stroke-width="1.2" stroke-dasharray="5 3" opacity=".9"/>`;
+      const E = s.essais.filter((e) => e[k] > 0);
+      if (E.length) g += `<polyline points="${E.map((e) => `${X(e[k]).toFixed(1)},${Y(e.z).toFixed(1)}`).join(' ')}" fill="none" stroke="${pal[i]}" stroke-width="1.6"/>` + E.map((e) => `<circle cx="${X(e[k]).toFixed(1)}" cy="${Y(e.z).toFixed(1)}" r="2.3" fill="${pal[i]}"/>`).join('');
+    });
+    g += `<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="none" stroke="rgba(20,23,31,.18)"/>`;
+    return `<svg class="prof-svg" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  }
+  function coupe(s) {
+    const W = 230, H = 460, T = 26, B = 14, x0 = 46, w = 40;
+    const zmax = Math.max(s.fin || 0, s.finCouches || 0, ...s.essais.map((e) => e.z), ...s.couches.map((c) => c.z), 1);
+    const Y = (z) => T + z / zmax * (H - T - B);
+    const hatch = { A: '#d9c7a0', L: '#e8dcb8', S: '#f1e3a6', G: '#e6cf8a', C: '#eeeeea', M: '#c9d3c1', R: '#b9bdc6', T: '#9b8a6d' };
+    let g = `<text x="0" y="12" style="font-weight:500;fill:var(--ink2)">Coupe · cote ${fmt(s.z, 2)}</text>`;
+    const C = S.couches(s);
+    for (const c of C) {
+      const col = hatch[(c.classe || 'X')[0]] || '#ddd';
+      g += `<rect x="${x0}" y="${Y(c.haut)}" width="${w}" height="${Math.max(0.5, Y(c.bas) - Y(c.haut))}" fill="${col}" stroke="rgba(20,23,31,.35)"/>`;
+      g += `<text x="${x0 + w / 2}" y="${(Y(c.haut) + Y(c.bas)) / 2 + 3}" text-anchor="middle" style="fill:var(--ink2);font-weight:500">${esc(c.classe || '')}</text>`;
+      g += `<text x="${x0 - 4}" y="${Y(c.haut) + 3}" text-anchor="end">${fmt(c.haut, 2)}</text><text x="${x0 - 4}" y="${Y(c.haut) + 14}" text-anchor="end" style="font-size:9px">${fmt(s.z - c.haut, 2)}</text>`;
+    }
+    for (const l of s.lithologie) g += `<line x1="${x0 + w}" x2="${x0 + w + 8}" y1="${Y(l.z)}" y2="${Y(l.z)}" stroke="rgba(20,23,31,.4)"/><text x="${x0 + w + 11}" y="${Y(l.z) + 9}">${esc(String(l.desc).slice(0, 26))}</text>`;
+    if (s.fin) g += `<text x="${x0 - 4}" y="${Y(s.fin) + 3}" text-anchor="end">${fmt(s.fin, 2)}</text>`;
+    if (s.nappe > 0) g += `<path d="M${x0 + w + 2} ${Y(s.nappe)} l5 -7 l-10 0 z" fill="#2d6be4"/>`;
+    return `<svg class="prof-svg" viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  }
+
+  let last = null;
+  function run() {
+    const out = document.getElementById('out');
+    try {
+      const s = readS(); persist();
+      const ctl = S.controle(s), C = S.couches(s);
+      const rows = C.map((c) => {
+        const st = S.stats(s, c.haut, c.bas), d = S.decodeClasse(c.classe);
+        return [esc(c.nom), fmt(c.haut, 2), fmt(c.bas, 2), fmt(s.z - c.haut, 2), esc(c.classe), d.valide ? esc(d.libelle) : '<span class="ko">?</span>', fmt(c.pl, 2), fmt(c.pf, 2), fmt(c.em, 1), fmt(c.em / c.pl, 1), fmt(c.alpha, 2),
+          st ? st.n : 0, st ? fmt(st.pl, 2) : '—', st ? fmt(st.em, 1) : '—'];
+      });
+      const essRows = s.essais.map((e) => [fmt(e.z, 2), fmt(s.z - e.z, 2), fmt(e.pl, 2), fmt(e.pf, 2), fmt(e.em, 1), e.pl > 0 ? fmt(e.em / e.pl, 1) : '—', esc((S.couche(s, e.z, C) || {}).classe || '')]);
+      const msgs = ctl.err.map((m) => `<div class="msg err">${esc(m)}</div>`).concat(ctl.av.map((m) => `<div class="msg info">${esc(m)}</div>`));
+      last = { s, ctl, C, rows, essRows };
+      out.innerHTML = BA.card('Synthèse', BA.kpis([
+        { l: 'Cote de tête', v: fmt(s.z, 2), u: 'm' }, { l: 'Profondeur', v: fmt(s.fin, 2), u: 'm' },
+        { l: 'Essais', v: s.essais.length }, { l: 'Couches de calcul', v: C.length },
+        { l: 'Nappe', v: s.nappe > 0 ? fmt(s.z - s.nappe, 2) : '—', u: s.nappe > 0 ? 'm NGF' : '', n: s.nappe > 0 ? 'à ' + fmt(s.nappe, 2) + ' m' : 'non relevée' },
+        { l: 'Contrôles', v: ctl.ok ? 'conforme' : ctl.err.length + ' erreur(s)', cls: ctl.ok ? 'ok' : 'ko', hi: true, n: ctl.av.length + ' avertissement(s)' },
+      ]) + (msgs.length ? `<div class="msgs" style="margin-top:10px">${msgs.join('')}</div>` : ''))
+        + BA.card('Profils pressiométriques', `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">${coupe(s)}${profil(s, { keys: ['pl', 'pf'], title: 'pl, pf (MPa)' })}${profil(s, { keys: ['em'], title: 'EM (MPa) — échelle log', log: true })}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:6px">Traits pleins et points : essais ; tirets : valeurs retenues par couche (pl* et EM de calcul). Or : pl / EM ; vert : pf.</div>`, 'profondeur sous la tête (m)')
+        + BA.card('Couches de calcul', BA.table(['Couche', 'Toit', 'Base', 'Cote toit', 'Classe', 'Nature et catégorie', 'pl*', 'pf*', 'EM', 'EM/pl', 'α', 'Essais', 'pl géom.', 'EM harm.'], rows, { leftText: true })
+          + '<div style="font-size:11px;color:var(--ink3);margin-top:6px">Colonnes « pl géom. » et « EM harm. » : moyennes géométrique de pl et harmonique de EM des essais de la couche, pour contrôle des valeurs retenues.</div>', 'profondeurs en m, pressions et modules en MPa')
+        + BA.card('Essais', BA.table(['Profondeur', 'Cote', 'pl', 'pf', 'EM', 'EM/pl', 'Couche'], essRows), 'MPa')
+        + BA.card('Périmètre et hypothèses', `<details class="ref" open><summary>Ce que fait le module</summary><ul>
+          <li>Lecture et écriture du format texte SPS (6 lignes d’identification, X Y Z, nappe, coupe jusqu’à « *** », essais jusqu’à « £££ », remarques, section « $$TVCC » des caractéristiques de calcul). Le fichier exporté est relu à l’identique par le programme de référence ; γ, φ et c, quand ils sont saisis, sont ajoutés dans une section « $$GPC » placée en fin de fichier.</li>
+          <li>Contrôles : profondeurs croissantes, essais au-dessus de la fin du sondage, pf ≤ pl, classe reconnue, cohérence de la catégorie avec pl (tableau des classes de sols du Fascicule 62 titre V, annexe C1), 0 &lt; α ≤ 1.</li>
+          <li>Proposition automatique (bouton sous les couches) : pl* et pf* = moyenne géométrique des essais de la couche, EM = moyenne harmonique, α d’après EM/pl et la nature (Fasc. 62 annexe F2), catégorie d’après pl. À valider par le géotechnicien : les valeurs caractéristiques restent un choix d’ingénieur.</li>
+          <li>Les pressions de la section de calcul sont des pressions limites <b>nettes</b> (pl* = pl − p0) : FONDATIONS les utilise telles quelles.</li></ul></details>`);
+    } catch (e) { out.innerHTML = `<div class="msg err">${esc(e.message)}</div>`; console.error(e); }
+  }
+
+  function note() {
+    if (!last) run();
+    const { s, ctl, rows, essRows } = last;
+    const ident = BA.table(['Rubrique', 'Valeur'], [['Entreprise', esc(s.entreprise)], ['Projet', esc(s.projet)], ['Ouvrage', esc(s.ouvrage)], ['Sondage', esc(s.sondage)], ['Date', esc(s.date)],
+      ['Coordonnées X / Y', fmt(s.x, 3) + ' / ' + fmt(s.y, 3)], ['Cote de tête', fmt(s.z, 3) + ' m'], ['Nappe', s.nappe > 0 ? fmt(s.nappe, 2) + ' m (cote ' + fmt(s.z - s.nappe, 2) + ')' : 'non relevée'], ['Fin du sondage', fmt(s.fin, 2) + ' m']], { leftText: true });
+    BA.note({
+      titre: 'Fiche de sondage pressiométrique ' + (s.sondage || ''), code: 'PRESSIO', regl: 'Fascicule 62 titre V · essai pressiométrique Ménard', projet: [s.projet, s.ouvrage].filter(Boolean).join(' — '),
+      sections: [
+        { titre: 'Identification', html: ident },
+        { titre: 'Coupe et profils', html: `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">${coupe(s)}${profil(s, { keys: ['pl', 'pf'], title: 'pl, pf (MPa)' })}${profil(s, { keys: ['em'], title: 'EM (MPa) — log', log: true })}</div>` },
+        { titre: 'Coupe lithologique', html: BA.table(['Toit (m)', 'Cote', 'Description'], s.lithologie.map((l) => [fmt(l.z, 2), fmt(s.z - l.z, 2), esc(l.desc)])) },
+        { titre: 'Essais', html: BA.table(['Profondeur', 'Cote', 'pl', 'pf', 'EM', 'EM/pl', 'Couche'], essRows) },
+        { titre: 'Caractéristiques de calcul', html: BA.table(['Couche', 'Toit', 'Base', 'Cote toit', 'Classe', 'Nature et catégorie', 'pl*', 'pf*', 'EM', 'EM/pl', 'α', 'Essais', 'pl géom.', 'EM harm.'], rows) },
+        { titre: 'Contrôles', html: (ctl.err.concat(ctl.av).map((m) => '<div>• ' + esc(m) + '</div>').join('') || '<div class="ok">Aucune anomalie détectée.</div>') + (s.remarques.length ? '<p style="margin-top:8px;white-space:pre-wrap">' + esc(s.remarques.join('\n')) + '</p>' : '') },
+      ],
+    });
+  }
+
+  function auto() {
+    const s = readS();
+    const C = S.couches(s);
+    cou.data.forEach((r) => {
+      const c = C.find((k) => Math.abs(k.haut - r.z) < 1e-9); if (!c) return;
+      const st = S.stats(s, c.haut, c.bas); if (!st) return;
+      r.pl = +st.pl.toFixed(2); if (Number.isFinite(st.pf)) r.pf = +st.pf.toFixed(2); r.em = +st.em.toFixed(1);
+      const nat = (String(r.classe || '')[0] || '').toUpperCase();
+      if (S.NATURES[nat]) { r.alpha = +S.alphaSuggere(nat, st.ratio).toFixed(2); const sg = S.categorieSuggeree(nat, st.pl); if (sg) r.classe = nat + sg.categorie; }
+    });
+    cou.redraw(); persist(); run();
+  }
+
+  function dl(name, text, type) {
+    const a = document.createElement('a');
+    // le format d'origine est en Windows-1252 : on écrit chaque caractère sur un octet (latin-1, « £ » compris)
+    const bytes = new Uint8Array([...text].map((ch) => { const c = ch.charCodeAt(0); return c < 256 ? c : 63; }));
+    a.href = URL.createObjectURL(new Blob([type === 'sps' ? bytes : text], { type: type === 'sps' ? 'text/plain' : 'application/json' }));
+    a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  document.getElementById('bCalc').onclick = run;
+  document.getElementById('bNote').onclick = note;
+  document.getElementById('bAuto').onclick = auto;
+  document.getElementById('bPaste').onclick = () => {
+    const t = document.getElementById('pasteEss').value.trim(); if (!t) return;
+    const rows = t.split(/\n/).map((l) => l.trim().replace(/;/g, ' ').split(/\s+/).map((v) => parseFloat(v.replace(',', '.')))).filter((v) => v.length >= 4 && v.every(Number.isFinite));
+    ess.set(rows.map((v) => v.length >= 5 ? { z: v[0], ind: v[1], pl: v[2], pf: v[3], em: v[4] } : { z: v[0], ind: 0, pl: v[1], pf: v[2], em: v[3] }));
+    persist(); run();
+  };
+  document.getElementById('bSps').onclick = () => BA.store.pick('.sps,.SPS', (txt, name) => {
+    try { const s = S.parse(txt); load(s); if (s._avert && s._avert.length) alert('Fichier lu avec avertissements :\n' + s._avert.join('\n')); } catch (e) { alert('Lecture impossible : ' + e.message); }
+  });
+  document.getElementById('bSpsOut').onclick = () => { const s = readS(); dl((s.sondage || 'sondage').replace(/[^\w.-]+/g, '_') + '.sps', S.write(s), 'sps'); };
+  document.getElementById('bSave').onclick = () => BA.store.download('sondpres.json', { module: 'sondpres', version: 1, s: readS() });
+  document.getElementById('bOpen').onclick = () => BA.store.pick('.json,application/json', (txt) => { try { const o = JSON.parse(txt); load(Object.assign(S.vide(), o.s || o)); } catch (e) { alert('Fichier JSON illisible.'); } });
+  document.getElementById('bNew').onclick = () => { if (confirm('Effacer la saisie et repartir de l’exemple ?')) load(S.exemple()); };
+  run();
+})();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

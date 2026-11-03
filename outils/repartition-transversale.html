@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RÉPARTITION — Répartition et flexion transversales (Guyon-Massonnet) — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Coefficients de répartition transversale K et moments de flexion transversale des tabliers de ponts (dalles, poutres multiples) par la méthode de Guyon-Massonnet-Barès, calcul analytique exact, placement automatique des charges Fascicule 61, LM1, UIC 71, SW/0, SW/2.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/repartition-transversale.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.hide{display:none!important}
+.grid-in input{min-width:54px}
+.coupe svg{width:100%;height:auto;display:block}
+.coupe text{font-family:'Outfit',sans-serif;font-size:10.5px;fill:var(--ink3)}
+.kt td.hi{background:var(--gold-bg);font-weight:500}
+.sub{font-size:11.5px;color:var(--ink3);margin:6px 0 2px;line-height:1.5}
+.tabs.fib button{padding:3px 8px;font-size:11px}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Socle de calcul</div>
+      <div class="eyebrow">RÉPARTITION</div>
+      <h1>Répartition et flexion <em>transversales</em></h1>
+      <div class="badges"><span class="badge">Guyon-Massonnet-Barès</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 1991-2 LM1</span><span class="badge">EN 1991-2 §6.3 · UIC 71, SW/0, SW/2</span></div>
+    </div>
+    <p class="lead">Coefficients de répartition transversale K(y, e) et moments de flexion transversale des tabliers de ponts-dalles et de ponts à poutres multiples. Solution analytique exacte de la plaque orthotrope (pas de lecture d’abaques), série de Fourier sur la portée, placement automatique des charges réglementaires pour chaque fibre.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card"><div class="card-title"><span>Ouvrage</span><select id="exemple" style="font-size:11px;border:1px solid var(--border);border-radius:6px;padding:2px 4px"><option value="">Exemples…</option><option value="route">Pont-route dalle</option><option value="rail">Pont-rail 2 voies</option><option value="poutres">Pont-route à poutres</option></select></div><div class="fields" id="f-gen"></div></div>
+  <div class="card"><div class="card-title"><span>Paramètres de Guyon-Massonnet</span><small id="rig-sub"></small></div><div class="fields" id="f-rig"></div><div class="sub" id="rig-calc"></div></div>
+  <div class="card"><div class="card-title"><span>Superstructures</span><small>y depuis l’axe de la dalle</small></div>
+    <div id="rows-sup" style="overflow-x:auto"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.45">y1, y2 en m (axe de la dalle en 0, y &lt; 0 à gauche, au-delà de ±b : encorbellements). Unité « kN/m » : poids linéique réparti sur la largeur y2 − y1. γmax, γmin : pondérations des charges amovibles, choisies fibre par fibre selon le signe de l’effet.</div>
+  </div>
+  <div class="card" id="c-route"><div class="card-title"><span>Charges routières</span></div><div class="fields" id="f-route"></div></div>
+  <div class="card" id="c-rail"><div class="card-title"><span>Charges ferroviaires</span></div><div class="fields" id="f-rail"></div></div>
+  <div class="card"><div class="card-title"><span>Calcul</span></div><div class="fields" id="f-num"></div></div>
+  <div class="actions">
+    <button class="btn primary" id="b-calc">Calculer</button>
+    <button class="btn gold" id="b-note">Note de calcul</button>
+    <button class="btn" id="b-save">Enregistrer</button>
+    <button class="btn" id="b-open">Ouvrir</button>
+    <button class="btn" id="b-don">Importer un fichier .don</button>
+  </div>
+</div>
+<div class="col-out" id="out"><div class="empty">Calcul en cours…</div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/gmslt.js"></script>
+<script>
+BA.chrome({ base: '../' });
+(function () {
+  'use strict';
+  const GM = BA.gmslt, fmt = BA.fmt, esc = BA.esc, $ = (id) => document.getElementById(id);
+  const KEY = 'gmslt';
+
+  const GEN = [
+    { id: 'projet', label: 'Projet / ouvrage', type: 'txt', def: '', wide: true },
+    { id: 'type', label: 'Type d’ouvrage', type: 'sel', def: 'route', options: [['route', 'Pont-route'], ['rail', 'Pont-rail']] },
+    { id: 'L', label: 'Portée (équivalente) L', unit: 'm', def: 15 },
+    { id: 'larg', label: 'Largeur active 2b', unit: 'm', def: 12, help: 'largeur de la dalle ou n × entraxe des poutres' },
+    { id: 'hd', label: 'Épaisseur de la dalle', unit: 'm', def: 0.65, help: 'pour la diffusion des charges ferroviaires' },
+  ];
+  const RIG = [
+    { id: 'mode', label: 'Paramètres', type: 'sel', def: 'direct', wide: true, options: [['direct', 'θ et α saisis'], ['dalle', 'Dalle pleine isotrope (α = 1, θ = b/L)'], ['poutres', 'Tablier à poutres (rigidités calculées)']] },
+    { id: 'theta', label: 'Entretoisement θ', def: 0.4 },
+    { id: 'alpha', label: 'Torsion α', def: 1 },
+    { id: 'nu', label: 'Coefficient de Poisson ν', def: 0.2, help: 'flexion transversale (μ) ; K est calculé avec ν = 0 comme les tables usuelles' },
+    { id: 'interp', label: 'Interpolation en α', type: 'sel', def: 'massonnet', options: [['massonnet', 'Massonnet : K0 + (K1 − K0)√α'], ['sattler', 'Sattler : exposant 1 − e^((0,065−θ)/0,663)'], ['exacte', 'Résolution directe (sans interpolation)']] },
+    { id: 'E', label: 'Module E', unit: 'MPa', def: 35000 },
+    { id: 'b1', label: 'Entraxe des poutres b1', unit: 'm', def: 2.4 },
+    { id: 'Ip', label: 'Inertie d’une poutre Ip', unit: 'm⁴', def: 0.35, help: 'poutre avec sa part de hourdis' },
+    { id: 'Kp', label: 'Inertie de torsion Kp', unit: 'm⁴', def: 0.03, help: 'Σ k·a·t³ des rectangles (âme, talon, demi-hourdis)' },
+    { id: 'hh', label: 'Épaisseur du hourdis', unit: 'm', def: 0.2 },
+    { id: 'LE', label: 'Espacement des entretoises', unit: 'm', def: 0, help: '0 : hourdis seul dans le sens transversal' },
+    { id: 'IE', label: 'Inertie d’une entretoise', unit: 'm⁴', def: 0 },
+    { id: 'KE', label: 'Torsion d’une entretoise', unit: 'm⁴', def: 0 },
+  ];
+  const ROUTE = [
+    { id: 'Lr', label: 'Largeur roulable Lr', unit: 'm', def: 10.6 },
+    { id: 'yc', label: 'Axe de la chaussée yc', unit: 'm', def: 0 },
+    { id: 'dispG', label: 'Dispositif de retenue à gauche', type: 'chk', def: true },
+    { id: 'dispD', label: 'Dispositif de retenue à droite', type: 'chk', def: true },
+    { id: 'trG', label: 'Trottoir gauche (y1 ; y2)', type: 'txt', def: '-6.8 ; -5.8', help: 'vide si absent' },
+    { id: 'trD', label: 'Trottoir droit (y1 ; y2)', type: 'txt', def: '5.8 ; 6.8' },
+    { id: 'AL', label: 'A(l)', type: 'chk', def: true },
+    { id: 'Bc', label: 'Bc', type: 'chk', def: true },
+    { id: 'Bt', label: 'Bt', type: 'chk', def: true },
+    { id: 'Mc80', label: 'Mc80 / Me80', type: 'chk', def: true },
+    { id: 'Mc120', label: 'Mc120 / Me120', type: 'chk', def: true },
+    { id: 'trottoir', label: 'Trottoirs 1,5 kN/m²', type: 'chk', def: true },
+    { id: 'unitaireAL', label: 'A(l) unitaire (1 kN/m², a1 = 1)', type: 'chk', def: true, help: 'pour reporter ensuite a1·a2·A(l) de la flexion longitudinale' },
+    { id: 'sansBc', label: 'Sans bc, bt (coefficients reportés dans les combinaisons)', type: 'chk', def: true },
+    { id: 'deltaB', label: 'δ système B', def: 1, help: 'Fasc. 61 art. 5.5 ; 1 = non majoré' },
+    { id: 'deltaM', label: 'δ systèmes militaires', def: 1 },
+    { id: 'dif', label: 'Diffusion transversale des impacts', unit: 'm', def: 0, help: 'ajoutée à la largeur des roues (revêtement + demi-dalle)' },
+    { id: 'LM1', label: 'EN 1991-2 LM1 (TS + UDL)', type: 'chk', def: false },
+    { id: 'wLM1', label: 'Largeur de chaussée w (LM1)', unit: 'm', def: 10.6 },
+    { id: 'clLM1', label: 'Classe de trafic (AN)', type: 'sel', def: 2, options: [[1, 'Classe 1'], [2, 'Classe 2']] },
+  ];
+  const RAIL = [
+    { id: 'voies', label: 'Excentricités des voies', unit: 'm', type: 'txt', def: '-2.25 ; 2.25', wide: true, help: 'une valeur par voie, séparées par « ; »' },
+    { id: 'hb', label: 'Ballast sous traverse', unit: 'm', def: 0.45 },
+    { id: 'ltrav', label: 'Longueur des traverses', unit: 'm', def: 2.25, help: 'diffusion 4:1 sous la traverse (EN 1991-2 §6.3.6.3)' },
+    { id: 'pente', label: 'Diffusion dans le béton', type: 'sel', def: 4, options: [[4, '4:1 jusqu’au plan moyen'], [1, '45° jusqu’au plan moyen']] },
+    { id: 'uic', label: 'LM71 + SW/0', type: 'chk', def: true },
+    { id: 'sw2', label: 'SW/2', type: 'chk', def: true },
+    { id: 'alphaC', label: 'Coefficient α (classification)', def: 1, help: 'appliqué à LM71 et SW/0' },
+    { id: 'phi', label: 'Coefficient dynamique Φ', def: 1 },
+  ];
+  const NUM = [
+    { id: 'N', label: 'Harmoniques', type: 'sel', def: 5, options: [[1, '1 terme'], [3, '3 termes (n = 1 à 3)'], [5, '5 termes'], [9, '9 termes']] },
+    { id: 'xs', label: 'Section étudiée x', unit: 'm', def: '', help: 'vide : mi-portée' },
+    { id: 'pas', label: 'Discrétisation en e', type: 'sel', def: 'table', options: [['table', 'b/8 (comme les abaques)'], ['fin', 'b/64 (fine, calcul plus long)']] },
+    { id: 'hors', label: 'Charges sur encorbellement', type: 'sel', def: 'prolonge', options: [['prolonge', 'Formule prolongée (usuel)'], ['statique', 'Ramenées au bord (statique)']] },
+    { id: 'fibres', label: 'Fibres étudiées y', unit: 'm', type: 'txt', def: '', wide: true, help: 'vide : 17 fibres de −b à +b ; sinon positions des poutres séparées par « ; »' },
+  ];
+  const SUPC = [
+    { id: 'nom', label: 'Désignation', type: 'txt', def: '', w: '130px' },
+    { id: 'y1', label: 'y1 (m)', def: 0 }, { id: 'y2', label: 'y2 (m)', def: 1 },
+    { id: 'q', label: 'Charge', def: 0 },
+    { id: 'u', label: 'Unité', type: 'sel', def: 'm2', options: [['m2', 'kN/m²'], ['m', 'kN/m']] },
+    { id: 'gmax', label: 'γmax', def: 1.05 }, { id: 'gmin', label: 'γmin', def: 0.95 },
+  ];
+
+  const EX = {
+    route: {
+      gen: { projet: 'Pont-route dalle — exemple', type: 'route', L: 15, larg: 12, hd: 0.65 },
+      rig: { mode: 'direct', theta: 0.4, alpha: 1, nu: 0.2, interp: 'massonnet' },
+      sup: [['Encorbellement gauche', -7, -6, 20, 'm', 1, 1], ['Encorbellement droit', 6, 7, 20, 'm', 1, 1], ['Corniche – GC gauche', -7, -6.8, 10, 'm', 1.05, 0.95], ['Trottoir gauche', -6.8, -5.8, 20, 'm2', 1.05, 0.95], ['Dispositif de sécurité gauche', -5.8, -5.3, 30, 'm', 1.05, 0.95], ['Chaussée', -5.3, 5.3, 30, 'm2', 1.4, 0.8], ['Dispositif de sécurité droit', 5.3, 5.8, 30, 'm', 1.05, 0.95], ['Trottoir droit', 5.8, 6.8, 20, 'm2', 1.05, 0.95], ['Corniche – GC droit', 6.8, 7, 10, 'm', 1.05, 0.95]],
+      route: { Lr: 10.6, yc: 0, dispG: true, dispD: true, trG: '-6.8 ; -5.8', trD: '5.8 ; 6.8', AL: true, Bc: true, Bt: true, Mc80: true, Mc120: true, trottoir: true, unitaireAL: true, sansBc: true, deltaB: 1, deltaM: 1, dif: 0, LM1: false, wLM1: 10.6, clLM1: 2 },
+      num: { N: 5, xs: '', pas: 'table', hors: 'prolonge', fibres: '' },
+    },
+    rail: {
+      gen: { projet: 'Pont-rail dalle 2 voies — exemple', type: 'rail', L: 12, larg: 11, hd: 0.85 },
+      rig: { mode: 'direct', theta: 0.458333, alpha: 1, nu: 0.2, interp: 'massonnet' },
+      sup: [['Ballast', -5.2, 5.2, 13, 'm2', 1.3, 1.0]],
+      rail: { voies: '-2.25 ; 2.25', hb: 0.45, ltrav: 2.25, pente: 4, uic: true, sw2: true, alphaC: 1, phi: 1 },
+      num: { N: 5, xs: '', pas: 'table', hors: 'prolonge', fibres: '' },
+    },
+    poutres: {
+      gen: { projet: 'Pont-route à 5 poutres — exemple', type: 'route', L: 30, larg: 12, hd: 0.2 },
+      rig: { mode: 'poutres', theta: 0.4, alpha: 0.1, nu: 0, interp: 'massonnet', E: 35000, b1: 2.4, Ip: 0.35, Kp: 0.03, hh: 0.2, LE: 0, IE: 0, KE: 0 },
+      sup: [['Chaussée', -4, 4, 2.4, 'm2', 1.4, 0.8], ['Trottoir gauche', -6, -4.5, 3, 'm2', 1.05, 0.95], ['Trottoir droit', 4.5, 6, 3, 'm2', 1.05, 0.95], ['Dispositif gauche', -4.5, -4, 0.65, 'm', 1.05, 0.95], ['Dispositif droit', 4, 4.5, 0.65, 'm', 1.05, 0.95]],
+      route: { Lr: 9, yc: 0, dispG: true, dispD: true, trG: '-6 ; -4.5', trD: '4.5 ; 6', AL: true, Bc: true, Bt: true, Mc80: false, Mc120: true, trottoir: true, unitaireAL: true, sansBc: true, deltaB: 1, deltaM: 1, dif: 0.3, LM1: true, wLM1: 9, clLM1: 2 },
+      num: { N: 5, xs: '', pas: 'table', hors: 'prolonge', fibres: '-4.8 ; -2.4 ; 0 ; 2.4 ; 4.8' },
+    },
+  };
+
+  let sup = [], supRows, last = null;
+  const toRow = (a) => ({ nom: a[0], y1: a[1], y2: a[2], q: a[3], u: a[4], gmax: a[5], gmin: a[6] });
+
+  function build(s) {
+    BA.form($('f-gen'), GEN, 'g-', s.gen || {});
+    BA.form($('f-rig'), RIG, 'r-', s.rig || {});
+    BA.form($('f-route'), ROUTE, 'o-', s.route || {});
+    BA.form($('f-rail'), RAIL, 'a-', s.rail || {});
+    BA.form($('f-num'), NUM, 'n-', s.num || {});
+    sup = (s.sup || []).map((r) => Array.isArray(r) ? toRow(r) : Object.assign({}, r));
+    if (!supRows) supRows = BA.rows($('rows-sup'), SUPC, sup, { addLabel: 'Ajouter une couche', onChange: () => save() });
+    else supRows.set(sup);
+    toggle();
+  }
+  const state = () => ({ gen: BA.read(GEN, 'g-'), rig: BA.read(RIG, 'r-'), route: BA.read(ROUTE, 'o-'), rail: BA.read(RAIL, 'a-'), num: BA.read(NUM, 'n-'), sup: supRows ? supRows.data.map((r) => Object.assign({}, r)) : [] });
+  function save() { BA.store.save(KEY, state()); }
+  function toggle() {
+    const t = $('g-type').value, m = $('r-mode').value;
+    $('c-route').classList.toggle('hide', t !== 'route'); $('c-rail').classList.toggle('hide', t !== 'rail');
+    const show = (id, on) => { const e = $('r-' + id); if (e) e.closest('.field').classList.toggle('hide', !on); };
+    show('theta', m === 'direct'); show('alpha', m === 'direct');
+    ['E', 'b1', 'Ip', 'Kp', 'hh', 'LE', 'IE', 'KE'].forEach((k) => show(k, m === 'poutres'));
+    $('rig-sub').textContent = m === 'direct' ? 'valeurs saisies' : 'valeurs calculées';
+  }
+  const nums = (s) => String(s || '').split(/[;\s]+/).map((x) => parseFloat(x.replace(',', '.'))).filter(Number.isFinite);
+
+  /* données du moteur */
+  function inputs(s) {
+    const g = s.gen, r = s.rig, b = g.larg / 2;
+    let theta = r.theta, alpha = r.alpha, rigInfo = '';
+    if (r.mode === 'dalle') { theta = b / g.L; alpha = 1; rigInfo = `Dalle pleine : ρP = ρE = γP = γE = E·h³/12 ⇒ α = 1 ; θ = b/L = ${fmt(b, 3)}/${fmt(g.L, 2)} = ${fmt(theta, 4)}`; }
+    if (r.mode === 'poutres') {
+      const E = r.E * 1000, rg = GM.rigPoutres({ E, nu: r.nu, b1: r.b1, Ip: r.Ip, Kp: r.Kp, hd: r.hh, entretoises: r.LE > 0 ? { LE: r.LE, IE: r.IE, KE: r.KE } : null });
+      theta = GM.theta(b, g.L, rg.rhoP, rg.rhoE); alpha = Math.min(1, GM.alphaT(rg.gP, rg.gE, rg.rhoP, rg.rhoE));
+      rigInfo = `ρP = E·Ip/b1 = ${fmt(rg.rhoP, 0)} · ρE = ${fmt(rg.rhoE, 1)} · γP = G·Kp/b1 = ${fmt(rg.gP, 0)} · γE = ${fmt(rg.gE, 1)} kN·m (G = E/2(1+ν))<br>θ = (b/L)(ρP/ρE)^¼ = ${fmt(theta, 4)} · α = (γP + γE)/(2√(ρPρE)) = ${fmt(alpha, 4)}`;
+    }
+    if (r.mode === 'direct') rigInfo = `θ = ${fmt(theta, 4)} · α = ${fmt(alpha, 3)} saisis`;
+    const couches = s.sup.filter((c) => Number.isFinite(c.y1) && Number.isFinite(c.y2) && c.y2 > c.y1 && c.q).map((c) => ({ nom: c.nom, y1: c.y1, y2: c.y2, q: c.q, lin: c.u === 'm', gmax: Number.isFinite(c.gmax) ? c.gmax : 1, gmin: Number.isFinite(c.gmin) ? c.gmin : 1 }));
+    const fib = nums(s.num.fibres);
+    const allY = couches.flatMap((c) => [c.y1, c.y2]);
+    const d = { type: g.type, L: g.L, larg: g.larg, alpha, theta, nu: r.nu, N: +s.num.N, pas: s.num.pas, interp: r.interp, hors: s.num.hors,
+      fibres: fib.length ? fib : null, xs: Number.isFinite(parseFloat(s.num.xs)) ? parseFloat(s.num.xs) : undefined, couches,
+      emin: Math.min(-2 * b, ...allY, -b - 4), emax: Math.max(2 * b, ...allY, b + 4) };
+    if (g.type === 'route') {
+      const o = s.route, tr = [nums(o.trG), nums(o.trD)].filter((t) => t.length === 2 && t[1] > t[0]);
+      d.route = { Lr: o.Lr, yc: o.yc, dispG: !!o.dispG, dispD: !!o.dispD, trottoirs: tr, unitaireAL: !!o.unitaireAL, sansBc: !!o.sansBc, deltaB: o.deltaB || 1, deltaM: o.deltaM || 1, dif: o.dif || 0,
+        systemes: { AL: o.AL, Bc: o.Bc, Bt: o.Bt, Mc80: o.Mc80, Mc120: o.Mc120, trottoir: o.trottoir } };
+      if (o.LM1) d.ec = { w: o.wLM1, yc: o.yc, classe: +o.clLM1, dif: o.dif || 0 };
+    } else {
+      const a = s.rail;
+      d.rail = { voies: nums(a.voies), hb: a.hb, hd: g.hd, ltrav: a.ltrav, penteBeton: +a.pente, alphaC: a.alphaC || 1, phi: a.phi || 1, convois: { 'LM71+SW/0': a.uic, 'SW/2': a.sw2 } };
+    }
+    return { d, rigInfo };
+  }
+
+  /* coupe transversale */
+  function coupe(d, r) {
+    const b = d.larg / 2, ys = d.couches.flatMap((c) => [c.y1, c.y2]).concat([-b, b]);
+    if (d.route) ys.push(d.route.yc - d.route.Lr / 2, d.route.yc + d.route.Lr / 2);
+    const y0 = Math.min(...ys) - 0.3, y1 = Math.max(...ys) + 0.3, W = 720, H = 150, X = (y) => 20 + (y - y0) / (y1 - y0) * (W - 40);
+    let s = `<rect x="${X(-b)}" y="70" width="${X(b) - X(-b)}" height="22" fill="#2a2d36" fill-opacity=".85"/>`;
+    for (const c of d.couches) { if (c.y1 < -b) s += `<rect x="${X(c.y1)}" y="70" width="${X(Math.min(c.y2, -b)) - X(c.y1)}" height="12" fill="#2a2d36" fill-opacity=".45"/>`; if (c.y2 > b) s += `<rect x="${X(Math.max(c.y1, b))}" y="70" width="${X(c.y2) - X(Math.max(c.y1, b))}" height="12" fill="#2a2d36" fill-opacity=".45"/>`; }
+    d.couches.forEach((c, i) => { const h = 8 + 4 * (i % 2); s += `<rect x="${X(c.y1)}" y="${70 - h}" width="${Math.max(1, X(c.y2) - X(c.y1))}" height="${h}" fill="#c9a84c" fill-opacity="${0.25 + 0.15 * (i % 3)}"/>`; });
+    if (d.route && r.geom) { const g = r.geom; s += `<line x1="${X(g.y1)}" x2="${X(g.y2)}" y1="40" y2="40" stroke="#a8842a"/><text x="${X((g.y1 + g.y2) / 2)}" y="34" text-anchor="middle">largeur chargeable ${fmt(g.Lch, 2)} m · ${g.Nv} voie(s) de ${fmt(g.v, 2)} m · classe ${g.classe}</text>`;
+      for (let k = 0; k <= g.Nv; k++) s += `<line x1="${X(g.y1 + k * g.v)}" x2="${X(g.y1 + k * g.v)}" y1="36" y2="44" stroke="#a8842a"/>`; }
+    if (d.rail) d.rail.voies.forEach((e, i) => { const lt = r.lt || 2.7; s += `<rect x="${X(e - 1.3)}" y="48" width="${X(e + 1.3) - X(e - 1.3)}" height="5" fill="#6f7484"/><line x1="${X(e)}" x2="${X(e)}" y1="30" y2="100" stroke="#a8842a" stroke-dasharray="3 3"/><text x="${X(e)}" y="26" text-anchor="middle">voie ${i + 1} (${fmt(e, 2)})</text><line x1="${X(e - lt / 2)}" x2="${X(e + lt / 2)}" y1="96" y2="96" stroke="#0f8f7b"/><text x="${X(e)}" y="108" text-anchor="middle" style="fill:#0f8f7b">${fmt(lt, 3)} m</text>`; });
+    const fib = r.modele.fibres; fib.forEach((y) => { s += `<line x1="${X(y)}" x2="${X(y)}" y1="92" y2="98" stroke="#14171f"/>`; });
+    s += `<text x="${X(-b)}" y="130" text-anchor="middle">−b = ${fmt(-b, 2)}</text><text x="${X(0)}" y="130" text-anchor="middle">0</text><text x="${X(b)}" y="130" text-anchor="middle">b = ${fmt(b, 2)}</text>`;
+    return `<div class="coupe"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Coupe transversale">${s}</svg></div>`;
+  }
+
+  const cfgTxt = (c) => {
+    if (!c) return '';
+    if (c.voies && Array.isArray(c.voies) && c.voies.length && typeof c.voies[0] === 'object') return `TS x=${fmt(c.xTS, 2)} ; ` + c.voies.map((v) => `V${v.voie}@${fmt(v.y, 2)}`).join(' ');
+    if (c.voies) return 'voies ' + c.voies.map((y) => fmt(y, 2)).join(' / ');
+    if (c.pos) return (c.convoi ? c.convoi + ' ' : '') + 'y = ' + c.pos.map((y) => fmt(y, 2)).join(' / ') + (c.x0 !== undefined ? ` · x0 = ${fmt(c.x0, 2)}` : '');
+    if (c.trottoirs) return ['', 'gauche', 'droit', 'les deux'][c.trottoirs];
+    if (c.convoi) return c.convoi + (c.x !== undefined ? ` · x = ${fmt(c.x, 2)}` : '');
+    if (c.voie1 !== undefined) return 'voie 1 centrée en ' + fmt(c.voie1, 2);
+    return '';
+  };
+
+  let fibSel = 0;
+  function render(r, d, rigInfo) {
+    const m = r.modele, b = r.b, cas = Object.entries(r.cas), fy = m.fibres;
+    const exp = cas.filter(([k]) => k !== 'sup');
+    const iK = r.env.reduce((a, x, i) => (x.Kmax > r.env[a].Kmax ? i : a), 0), iM = r.env.reduce((a, x, i) => (x.Mmax > r.env[a].Mmax ? i : a), 0), im = r.env.reduce((a, x, i) => (x.Mmin < r.env[a].Mmin ? i : a), 0);
+    let html = BA.card('Résultats', BA.kpis([
+      { l: 'θ · α', v: `${fmt(d.theta, 3)} · ${fmt(d.alpha, 3)}`, n: `b = ${fmt(b, 3)} m, L = ${fmt(d.L, 2)} m`, hi: true },
+      { l: 'K max (exploitation)', v: fmt(r.env[iK].Kmax, 4), n: `fibre y = ${fmt(fy[iK], 3)} m · ${esc(r.env[iK].cfgK && r.env[iK].cfgK.convoi || '')}` },
+      { l: 'My max', v: fmt(r.env[iM].Mmax, 2), u: 'kN·m/m', n: `fibre y = ${fmt(fy[iM], 3)} m · ${esc(r.env[iM].cfgMax && r.env[iM].cfgMax.convoi || '')}` },
+      { l: 'My min', v: fmt(r.env[im].Mmin, 2), u: 'kN·m/m', n: `fibre y = ${fmt(fy[im], 3)} m · ${esc(r.env[im].cfgMin && r.env[im].cfgMin.convoi || '')}` },
+    ]) + `<div class="sub">${rigInfo}</div>` + coupe(d, r), d.type === 'route' ? 'pont-route' : 'pont-rail');
+    // enveloppes
+    const pal = ['#a8842a', '#0f8f7b', '#2d6be4', '#c0392b', '#7b5ea7'];
+    const seriesM = []; exp.forEach(([k, c], j) => { seriesM.push({ x: fy, y: c.res.map((x) => x.Mmax), label: c.titre, color: pal[j % 5], fill: false }); seriesM.push({ x: fy, y: c.res.map((x) => x.Mmin), color: pal[j % 5], fill: false }); });
+    if (r.cas.sup) { seriesM.push({ x: fy, y: r.cas.sup.res.map((x) => x.Mmax), label: 'Superstructures', color: '#6f7484', fill: false }); seriesM.push({ x: fy, y: r.cas.sup.res.map((x) => x.Mmin), color: '#6f7484', fill: false }); }
+    html += BA.card('Moments de flexion transversale', BA.chart(seriesM, { title: 'My max / min selon la fibre y (m)', unit: 'kN·m/m', h: 240 }) +
+      BA.table(['y (m)'].concat(cas.flatMap(([k, c]) => [`${esc(c.titre)} max`, 'min'])), fy.map((y, i) => [fmt(y, 3)].concat(cas.flatMap(([k, c]) => [fmt(c.res[i].Mmax, 2), fmt(c.res[i].Mmin, 2)])))),
+      `section x = ${fmt(m.xs, 2)} m, ${m.N} harmonique(s)`);
+    html += BA.card('Coefficients de répartition transversale K', BA.chart(exp.map(([k, c], j) => ({ x: fy, y: c.res.map((x) => x.Kmax), label: c.titre, color: pal[j % 5], fill: false })).concat(r.cas.sup ? [{ x: fy, y: r.cas.sup.res.map((x) => x.Kmax), label: 'Superstructures', color: '#6f7484', fill: false }] : []), { title: 'K max selon la fibre y (m)', h: 200 }) +
+      BA.table(['y (m)'].concat(cas.map(([k, c]) => esc(c.titre))).concat(['Enveloppe']), fy.map((y, i) => [fmt(y, 3)].concat(cas.map(([k, c]) => fmt(c.res[i].Kmax, 4))).concat([fmt(r.env[i].Kmax, 4)]))) +
+      `<div class="sub">K = rapport de la flèche (ou du moment longitudinal) de la fibre y à celle que produirait la même charge répartie uniformément sur 2b. Pour un convoi, K est la moyenne pondérée des K de ses charges, dans la position transversale qui maximise la part reprise par la fibre (coefficients a1, bc… compris dans le choix de la position mais non dans K).</div>`);
+    // configurations
+    html += BA.card('Positions défavorables', cas.filter(([k]) => k !== 'sup').map(([k, c]) => `<details class="ref"><summary>${esc(c.titre)} — ${esc(c.info || '')}</summary>` +
+      BA.table(['y (m)', 'K max', 'position', 'My max', 'position', 'My min', 'position'], c.res.map((x) => [fmt(x.y, 3), fmt(x.Kmax, 4), esc(cfgTxt(x.cfgK)), fmt(x.Mmax, 2), esc(cfgTxt(x.cfgMax)), fmt(x.Mmin, 2), esc(cfgTxt(x.cfgMin))]), { leftText: true }) + '</details>').join(''));
+    // courbes K(e)
+    const tK = m.tableK(), tM = m.tableMu(1);
+    fibSel = Math.min(fibSel, fy.length - 1);
+    const tabs = `<div class="tabs fib" id="fibtabs">${fy.map((y, i) => `<button data-i="${i}" class="${i === fibSel ? 'on' : ''}">${fmt(y, 2)}</button>`).join('')}</div>`;
+    const curves = (i) => BA.chart([{ x: tK.e, y: tK.K.map((v) => v[i]), label: `K(e), fibre y = ${fmt(fy[i], 3)} m` }], { title: 'Ligne d’influence transversale K(e)', h: 200 }) +
+      BA.chart([{ x: tM.e, y: tM.mu.map((v) => v[i] * 1e4), label: `10⁴·μ₁(e), fibre y = ${fmt(fy[i], 3)} m`, color: '#0f8f7b' }], { title: 'Ligne d’influence de la flexion transversale (1ʳᵉ harmonique)', h: 180 });
+    const five = [0, Math.round((fy.length - 1) / 4), Math.round((fy.length - 1) / 2), Math.round(3 * (fy.length - 1) / 4), fy.length - 1].filter((v, i, a) => a.indexOf(v) === i);
+    html += BA.card('Courbes K(e)', BA.chart(five.map((i) => ({ x: tK.e, y: tK.K.map((v) => v[i]), label: `y = ${fmt(fy[i], 2)}`, fill: false })), { title: 'K(e) pour quelques fibres — e excentricité de la charge (m)', h: 220 }) + tabs + `<div id="fibcurves">${curves(fibSel)}</div>`, 'cliquer une fibre');
+    // tableau K(y, e)
+    const step = Math.max(1, Math.round(tK.e.length / 17)), cols = tK.e.map((e, j) => j).filter((j) => j % step === 0 || j === tK.e.length - 1);
+    html += BA.card('Tableau des coefficients K(y, e)', BA.table(['y \\ e'].concat(cols.map((j) => fmt(tK.e[j], 2))), fy.map((y, i) => [fmt(y, 2)].concat(cols.map((j) => fmt(tK.K[j][i], 3))))) + `<div class="sub">θ = ${fmt(d.theta, 4)}, α = ${fmt(d.alpha, 3)}, interpolation ${esc(d.interp)} ; e de −2b à +2b (au-delà de ±b : charges sur encorbellement).</div>`);
+    html += perimetre();
+    $('out').innerHTML = html;
+    $('fibtabs').onclick = (e) => { const i = e.target.dataset.i; if (i === undefined) return; fibSel = +i; [...$('fibtabs').children].forEach((x) => x.classList.toggle('on', +x.dataset.i === fibSel)); $('fibcurves').innerHTML = curves(fibSel); };
+  }
+
+  function perimetre() {
+    return BA.card('Périmètre et hypothèses', `<details class="ref"><summary>Méthode et limites</summary><ul>
+      <li><b>Modèle</b> : plaque orthotrope équivalente de largeur 2b, appuis simples sur la portée L, bords latéraux libres (Guyon 1946, Massonnet 1950, Barès-Massonnet 1966). Pour une charge p(x) = pₙ sin(nπx/L) en ligne à l’excentricité e, l’amplitude W(y) vérifie W'''' − 2α(nπθ)²W'' + (nπθ)⁴W = δ, résolue <b>exactement</b> (solution fondamentale + 4 conditions de bord libre), sans abaques.</li>
+      <li><b>K</b> = W/W̄ (W̄ : même charge répartie sur 2b), calculé avec ν = 0 comme les tables usuelles ; contrôle : moyenne de K sur la largeur = 1. <b>μ</b> = −(W'' − νk²W), My = b·μ·pₙ, avec ν dans les conditions de bord libre.</li>
+      <li><b>Interpolation en α</b> : Massonnet K = K0 + (K1 − K0)√α (défaut, guide SETRA), Sattler (exposant fonction de θ), ou résolution directe de l’équation pour α quelconque. μ est interpolé en √α (μ0 avec ν = 0).</li>
+      <li><b>Rigidités</b> : dalle pleine ρP = ρE = γP = γE ⇒ α = 1, θ = b/L ; tablier à poutres ρP = E·Ip/b1, γP = G·Kp/b1, hourdis ρE = E·h³/12, γE = G·h³/6, ou entretoises ρE = E·IE/LE, γE = G·KE/LE (α plafonné à 1).</li>
+      <li><b>Discrétisation</b> : coefficients calculés aux excentricités multiples de b/8 (ou b/64) et interpolés linéairement, puis intégrés exactement sur la largeur des charges ; flexion transversale par superposition de N harmoniques de la charge longitudinale à la section étudiée (mi-portée par défaut).</li>
+      <li><b>Fascicule 61 titre II</b> : largeur chargeable = roulable − 0,50 m par dispositif de retenue, nombre de voies et classe (art. 2) ; A(l) par voies entières sur toute la portée avec a1(n) (A(l) unitaire possible) ; Bc 1 ou 2 camions par file, au plus une file par voie, entraxe des files ≥ 2,50 m, roues à ≥ 0,25 m du bord, bc(n) (ou non appliqué) ; Bt 1 ou 2 tandems ; Mc80/Me80, Mc120/Me120, un véhicule ; trottoirs 1,5 kN/m² sur l’un et/ou l’autre. Le placement transversal de n véhicules est <b>optimal</b> pour chaque fibre (programmation dynamique sur une grille de 5 cm) ; la position longitudinale est balayée.</li>
+      <li><b>EN 1991-2 LM1</b> : voies conventionnelles de 3 m placées et numérotées au plus défavorable pour chaque fibre (optimisation exacte sur une grille de 10 cm), TS centré dans sa voie à la section étudiée, UDL sur les seules parties défavorables (voies et aire résiduelle), αQ et αq de l’AN française.</li>
+      <li><b>Ponts-rails</b> : charge de chaque voie répartie transversalement sur lt = l<sub>traverse</sub> + 2·hb/4 + diffusion dans la demi-épaisseur (EN 1991-2 §6.3.6.3) ; LM71 réparti longitudinalement sur 6,40 m (§6.3.6.2) + 80 kN/m, SW/0, SW/2 ; recherche de la position longitudinale défavorable ; voies chargées séparément puis ensemble (somme des effets défavorables, majorant).</li>
+      <li><b>Hors périmètre</b> : convois exceptionnels C, D, E de l’ancien programme, LM2 et véhicules spéciaux, charges sur trottoirs locales (roue de 60 kN), effets de la flexion locale du hourdis entre poutres (à ajouter aux moments de Guyon-Massonnet), dalles biaises.</li>
+    </ul></details>`);
+  }
+
+  function run() {
+    toggle();
+    const s = state(); save();
+    let inp;
+    try { inp = inputs(s); } catch (e) { $('out').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+    $('rig-calc').innerHTML = inp.rigInfo;
+    const d = inp.d;
+    if (!(d.L > 0 && d.larg > 0 && d.theta > 0 && d.alpha >= 0)) { $('out').innerHTML = '<div class="msg err">Données incomplètes : portée, largeur, θ et α doivent être positifs.</div>'; return; }
+    $('out').insertAdjacentHTML('afterbegin', '<div class="msg info" id="busy">Calcul en cours…</div>');
+    setTimeout(() => {
+      try { const r = GM.calcul(d); last = { r, d, s, rigInfo: inp.rigInfo }; render(r, d, inp.rigInfo); }
+      catch (e) { $('out').innerHTML = `<div class="msg err">Erreur de calcul : ${esc(e.message)}</div>`; }
+    }, 20);
+  }
+
+  function note() {
+    if (!last) return;
+    const { r, d, s, rigInfo } = last, m = r.modele, fy = m.fibres, cas = Object.entries(r.cas);
+    const sec = [];
+    sec.push({ titre: 'Données', html: BA.table(['Grandeur', 'Valeur'], [['Type', d.type === 'route' ? 'Pont-route' : 'Pont-rail'], ['Portée L', fmt(d.L, 3) + ' m'], ['Largeur active 2b', fmt(d.larg, 3) + ' m'], ['θ', fmt(d.theta, 4)], ['α', fmt(d.alpha, 4)], ['ν', fmt(d.nu, 2)], ['Interpolation', d.interp], ['Harmoniques', String(m.N)], ['Section x', fmt(m.xs, 3) + ' m']], { leftText: true }) + `<p>${rigInfo}</p>` +
+      (d.couches.length ? BA.table(['Superstructure', 'y1', 'y2', 'charge', 'γmax', 'γmin'], d.couches.map((c) => [esc(c.nom || ''), fmt(c.y1, 3), fmt(c.y2, 3), fmt(c.q, 2) + (c.lin ? ' kN/m' : ' kN/m²'), fmt(c.gmax, 2), fmt(c.gmin, 2)])) : '') + coupe(d, r) });
+    const tK = m.tableK();
+    sec.push({ titre: 'Coefficients K(y, e)', html: BA.table(['y \\ e'].concat(tK.e.filter((e, j) => j % 2 === 0).map((e) => fmt(e, 2))), fy.map((y, i) => [fmt(y, 2)].concat(tK.e.map((e, j) => j).filter((j) => j % 2 === 0).map((j) => fmt(tK.K[j][i], 3))))) });
+    for (const [k, c] of cas) sec.push({ titre: c.titre, html: `<p>${esc(c.info || '')}</p>` + BA.table(['y (m)', 'K max', 'My min (kN·m/m)', 'My max (kN·m/m)', 'position (max)'], c.res.map((x) => [fmt(x.y, 3), fmt(x.Kmax, 4), fmt(x.Mmin, 2), fmt(x.Mmax, 2), esc(cfgTxt(x.cfgMax))])) });
+    sec.push({ titre: 'Enveloppe des charges d’exploitation', html: BA.table(['y (m)', 'K max', 'My min', 'My max'], r.env.map((x) => [fmt(x.y, 3), fmt(x.Kmax, 4), fmt(x.Mmin, 2), fmt(x.Mmax, 2)])) });
+    sec.push({ titre: 'Méthode', html: '<p>Méthode de Guyon-Massonnet-Barès, solution analytique exacte de la plaque orthotrope à bords libres, série de Fourier longitudinale. Placement transversal défavorable des charges réglementaires fibre par fibre (Fascicule 61 titre II, EN 1991-2).</p>' });
+    BA.note({ titre: 'Répartition et flexion transversales — Guyon-Massonnet', code: 'RÉPARTITION', regl: 'Guyon-Massonnet-Barès · Fasc. 61 titre II · EN 1991-2', projet: s.gen.projet, sections: sec });
+  }
+
+  /* import du format d'origine */
+  function fromDon(txt) {
+    const v = GM.lireDon(txt), b = v.larg / 2;
+    const typ = v.type, x0 = -b - v.enc[0];
+    const noms = typ === 'route' ? ['Corniche – GC gauche', 'Trottoir gauche', 'Dispositif de sécurité gauche', 'Chaussée', 'Dispositif de sécurité droit', 'Trottoir droit', 'Corniche – GC droit'] : ['Corniche – GC gauche', 'Piste gauche', '', 'Ballast', '', 'Piste droite', 'Corniche – GC droit'];
+    const lin = [true, false, true, false, true, false, true];
+    const g = typ === 'route' ? [[1.05, 0.95], [1.05, 0.95], [1.05, 0.95], [1.4, 0.8], [1.05, 0.95], [1.05, 0.95], [1.05, 0.95]] : [[1.05, 0.95], [1.3, 1], [1.05, 0.95], [1.3, 1], [1.05, 0.95], [1.3, 1], [1.05, 0.95]];
+    const supL = []; let x = x0; const pos = [];
+    v.sup.forEach(([w, q], i) => { pos.push([x, x + w]); if (w > 0 && q > 0.01) supL.push([noms[i], +x.toFixed(4), +(x + w).toFixed(4), q, lin[i] ? 'm' : 'm2', g[i][0], g[i][1]]); x += w; });
+    if (v.enc[0] > 0 && v.enc[1] > 0.01) supL.unshift(['Encorbellement gauche', -b - v.enc[0], -b, v.enc[1], 'm', 1, 1]);
+    if (v.enc[2] > 0 && v.enc[3] > 0.01) supL.unshift(['Encorbellement droit', b, b + v.enc[2], v.enc[3], 'm', 1, 1]);
+    const s = JSON.parse(JSON.stringify(EX[typ === 'route' ? 'route' : 'rail']));
+    s.gen = { projet: v.brut.projet || '', type: typ, L: v.L, larg: v.larg, hd: v.hd };
+    s.rig = { mode: 'direct', theta: v.theta, alpha: v.alpha, nu: v.nu, interp: 'massonnet' };
+    s.sup = supL;
+    if (typ === 'route') {
+      const ch = v.charges, bit = (k) => !!(ch & (1 << k));
+      s.route = Object.assign(s.route, { Lr: v.sup[3][0], yc: +((pos[3][0] + pos[3][1]) / 2).toFixed(4), dispG: v.sup[2][0] > 0, dispD: v.sup[4][0] > 0,
+        trG: v.sup[1][0] > 0 ? `${pos[1][0].toFixed(3)} ; ${pos[1][1].toFixed(3)}` : '', trD: v.sup[5][0] > 0 ? `${pos[5][0].toFixed(3)} ; ${pos[5][1].toFixed(3)}` : '',
+        AL: bit(0), Bc: bit(1), Bt: bit(2), Mc80: bit(3), Mc120: bit(4), trottoir: bit(8) });
+    } else {
+      s.rail = Object.assign(s.rail, { voies: v.voies.join(' ; '), hb: v.hb, uic: !!(v.charges & 1), sw2: !!(v.charges & 2) });
+    }
+    build(s); run();
+  }
+
+  $('b-calc').onclick = run;
+  $('b-note').onclick = note;
+  $('b-save').onclick = () => BA.store.download('gmslt.json', state());
+  $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
+  $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
+  $('exemple').onchange = (e) => { const k = e.target.value; if (EX[k]) { build(JSON.parse(JSON.stringify(EX[k]))); run(); } e.target.value = ''; };
+  document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.id === 'g-type' || e.target.id === 'r-mode') toggle(); save(); });
+
+  let init = BA.store.load(KEY);
+  if (!init || !init.gen) init = JSON.parse(JSON.stringify(EX.route));
+  build(init); run();
+})();
+</script>
+</body>
+</html>

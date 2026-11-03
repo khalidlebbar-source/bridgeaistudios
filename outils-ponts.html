@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outils de calculs des ponts — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Outils de calculs des ponts : sections en béton armé, poutres continues, Guyon-Massonnet, cadres et portiques ponts-rails, fondations, appareils d'appui, piles et culées, murs — Eurocodes, Livret 2.01, Fascicules 61 et 62.">
+<meta name="keywords" content="calcul pont, pont-rail, pont-route, cadre béton armé, portique, UIC 71, Eurocode 2, BAEL, Guyon Massonnet, fondation pressiométrique, appareil d'appui, pile, culée, mur de soutènement">
+<meta property="og:title" content="Outils de calculs des ponts — BridgeAI Studios">
+<meta property="og:description" content="La chaîne de calcul des ouvrages d'art courants : du tablier aux fondations, avec note de calcul.">
+<meta property="og:image" content="https://www.bridgeaistudios.com/og-image.png">
+<meta property="og:url" content="https://www.bridgeaistudios.com/outils-ponts.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils-ponts.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils/outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="eyebrow">Chaîne de calcul des ouvrages d’art</div>
+      <h1>Outils de calculs <em>des ponts</em></h1>
+    </div>
+    <p class="lead">Du tablier aux fondations : chaque outil calcule une partie d’ouvrage, produit sa note de calcul et transmet ses résultats au suivant. Eurocodes avec annexes nationales françaises, Livret 2.01, Fascicules 61 et 62, BAEL 91 révisé 99.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="hub"></div>
+
+  <div class="phase"><h2>Comment les outils s’enchaînent</h2></div>
+  <div class="flow">
+    <b>Ouvrage à tablier</b> — TABLIER RAIL ou TABLIER ROUTE (avec TRAVÉES, RÉPARTITION et SECTIONS) → HORIZONTAL (freinage, retrait, dilatation, avec ÉLASTOMÈRES) → PILES-CULÉES (avec MODÈLE RAIL, FONDATIONS et SECTIONS).<br>
+    <b>Cadre ou portique en béton armé</b> — CADRES (avec RÉPARTITION, SECTIONS et FONDATIONS) → SOUTÈNEMENT pour les murs en aile.<br>
+    <b>Sol</b> — PRESSIO décrit les sondages pressiométriques utilisés par FONDATIONS, PILES-CULÉES, CADRES, SOUTÈNEMENT et MUR EN U.<br>
+    <b>Ouvrage complet</b> — OUVRAGES TYPES enchaîne tous les modules et produit notes, plans et avant-métrés.
+  </div>
+  <p style="font-size:11.5px;color:var(--ink3);margin-top:14px;line-height:1.6">Programmes développés par BridgeAI Studios à partir des textes réglementaires publics, indépendants de tout éditeur et de tout maître d’ouvrage. Chaque module est validé sur des cas de référence avant d’être marqué « Disponible ». Les résultats doivent être vérifiés par un ingénieur qualifié avant tout usage contractuel.</p>
+</div>
+
+<script src="outils/js/commun.js"></script>
+<script src="outils/js/catalogue.js"></script>
+<script>
+BA.chrome({ base: '', hub: true });
+(function () {
+  const lbl = { on: 'Disponible', beta: 'Bêta · validation en cours', dev: 'En développement' };
+  let html = '', open = false;
+  for (const m of BA.catalogue) {
+    if (m.phase) {
+      if (open) html += '</div>';
+      html += `<div class="phase"><h2>${m.phase}. ${m.titre}</h2>${m.sous ? `<span>${m.sous}</span>` : ''}</div><div class="hub-grid">`;
+      open = true; continue;
+    }
+    const live = m.statut !== 'dev';
+    const tag = live ? 'a' : 'div';
+    html += `<${tag} class="tile${live ? '' : ' dev'}"${live ? ` href="outils/${m.slug}.html"` : ' aria-disabled="true"'}>
+      <div class="tile-top"><span class="status ${m.statut === 'dev' ? '' : m.statut}">${lbl[m.statut]}</span><span class="ico">${BA.icone(m.slug, 46)}</span></div>
+      <div class="code">${m.code}</div>
+      <div class="name">${m.nom}</div>
+      <p class="desc">${m.desc}</p>
+      <div class="reg">${m.reg}</div>
+      ${live ? '<span class="go">Ouvrir →</span>' : '<span class="soon">Bientôt</span>'}
+    </${tag}>`;
+  }
+  if (open) html += '</div>';
+  document.getElementById('hub').innerHTML = html;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRAVÉES — Poutres continues · BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Poutres continues de 1 à 20 travées à inertie constante ou variable : charges fixes, dénivellations, lignes d'influence, enveloppes UIC 71, SW/0, SW/2, LM1, A(l), Bc, Bt, Br, Mc80, Mc120, combinaisons et études de circulation (EN 15528, EN 1991-2 annexe C).">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/poutres-continues.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.pane{display:none}.pane.on{display:block}
+.pane > * + *{margin-top:12px}
+.sub{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:14px 0 6px}
+.mods{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12.5px}
+.mods label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.schema{width:100%;height:auto;display:block}
+.schema text{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink3)}
+.selrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-bottom:10px}
+.selrow select{height:30px;border:1px solid var(--border);border-radius:7px;background:#fbfaf7;font-family:'Outfit',sans-serif;font-size:12.5px;padding:0 8px}
+.grid-in td input[type=text]{min-width:54px}
+.note{font-size:11.5px;color:var(--ink3);line-height:1.55}
+</style>
+</head>
+<body>
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › TRAVÉES</div>
+      <div class="eyebrow">Socle de calcul · module TRAVÉES</div>
+      <h1>Poutres <em>continues</em></h1>
+      <div class="badges"><span class="badge">EN 1991-2 §6.3, §6.4.5, annexe C</span><span class="badge">Livret 2.01</span><span class="badge">Fasc. 61 titre II</span><span class="badge">EN 15528</span></div>
+    </div>
+    <p class="lead">De 1 à 20 travées, inertie constante ou variable, appuis simples, encastrés ou élastiques, consoles. Charges fixes et dénivellations, enveloppes des charges ferroviaires et routières réglementaires par lignes d’influence exactes, combinaisons, et études de circulation d’un convoi par rapport à une catégorie de ligne.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card">
+    <div class="card-title"><span>Poutre</span><small id="nbtrav"></small></div>
+    <div class="fields c3" id="f-poutre"></div>
+    <div class="sub">Travées</div>
+    <div id="r-trav"></div>
+    <div class="help note" style="margin-top:4px">Inertie I en m⁴. Loi linéaire : Ig → Id ; parabolique : Ig sur appui gauche, Im à mi-travée, Id sur appui droit.</div>
+    <div id="ix-info"></div>
+    <div class="sub">Appuis</div>
+    <div id="r-app"></div>
+    <div class="help note" style="margin-top:4px">kv en kN/m et kr en kN·m/rad (appuis élastiques ; kr = 0 : rotation libre).</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="tabs">
+      <button data-t="fixes" class="on">Charges fixes</button><button data-t="mob">Charges mobiles</button><button data-t="comb">Combinaisons</button><button data-t="circ">Études de circulation</button>
+    </div>
+
+    <div class="pane on" id="p-fixes">
+      <div class="note">Une ligne par charge ; le code du cas regroupe les charges d’un même cas élémentaire. Types : <b>P</b> force (kN, abscisse a), <b>C</b> couple (kN·m, horaire positif, abscisse a), <b>q</b> répartie uniforme de a à b (kN/m), <b>t</b> trapézoïdale q1 → q2 de a à b, <b>d</b> dénivellation de l’appui n° a (mm, vers le bas). Abscisses en m depuis l’appui 1 (consoles en abscisses négatives / au-delà de la dernière travée). Charges positives vers le bas.</div>
+      <div id="r-fixes"></div>
+    </div>
+
+    <div class="pane" id="p-mob">
+      <div class="sub" style="margin-top:0">Modèles calculés</div>
+      <div class="mods" id="mods"></div>
+      <div class="sub">Ferroviaire</div>
+      <div class="fields c3" id="f-fer"></div>
+      <div class="sub">Routier</div>
+      <div class="fields c3" id="f-route"></div>
+      <div class="sub">Convoi utilisateur <small style="text-transform:none;letter-spacing:0">(essieux « d P » par ligne, d depuis la tête en m, P en kN)</small></div>
+      <div class="fields c3" id="f-cu"></div>
+    </div>
+
+    <div class="pane" id="p-comb">
+      <div class="note">Codes disponibles : cas fixes (colonne « Cas »), modèles mobiles (UIC71, SW0, SW2, LM1, AL, BC, BT, BR, MC80, MC120, CU) et combinaisons définies plus haut. <b>Combinaison</b> : « 1,35 G + 1,35 Gs + 1,45 UIC71 » (une enveloppe y entre par son extrême défavorable). <b>Enveloppe</b> : « UIC71, SW0 » (max et min). 100 lignes au plus.</div>
+      <div id="r-comb"></div>
+    </div>
+
+    <div class="pane" id="p-circ">
+      <div class="fields c3" id="f-circ"></div>
+      <div class="sub">Véhicule étudié <small style="text-transform:none;letter-spacing:0">(masses en t, d = distance à l’essieu précédent ou au tampon pour le 1er)</small></div>
+      <div id="r-veh"></div>
+      <div class="fields c3" id="f-veh" style="margin-top:8px"></div>
+      <div id="circ-var"><div class="sub">Variation de portée</div><div class="fields c1" id="f-var"></div></div>
+      <div id="circ-liste"><div class="sub">Liste d’ouvrages <small style="text-transform:none;letter-spacing:0">(portées séparées par des espaces ; φ, n0 facultatifs)</small></div><div id="r-ouv" style="overflow-x:auto"></div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="b-calc">Calculer</button>
+    <button class="btn gold" id="b-note">Note de calcul</button>
+    <button class="btn" id="b-save">Enregistrer</button>
+    <button class="btn" id="b-open">Ouvrir</button>
+    <button class="btn" id="b-don">Importer un fichier .don</button>
+    <button class="btn" id="b-cnv">Importer un convoi .cnv</button>
+    <button class="btn" id="b-def">Exemple par défaut</button>
+  </div>
+
+  <details class="ref card">
+    <summary>Périmètre et hypothèses</summary>
+    <ul>
+      <li>Poutre d’Euler-Bernoulli (pas de déformation d’effort tranchant), éléments finis d’Hermite : 80 éléments par travée au moins ; l’inertie variable est prise constante par élément (valeur au milieu de l’élément). Un tableau d’inertie par éléments importé d’un fichier .don est prioritaire sur les lois par travée.</li>
+      <li>Lignes d’influence obtenues par réciprocité (une résolution par grandeur sur la matrice factorisée une fois), exactes aux nœuds, linéaires entre nœuds. Les convois sont placés exactement (un essieu ou une extrémité de charge au droit d’un nœud), dans les deux sens.</li>
+      <li>UIC 71 (EN 1991-2 §6.3.2) : 4 × 250 kN espacés de 1,60 m et 80 kN/m fractionnable, interrompue sur 0,80 m de part et d’autre des essieux ; coefficient α·Φ. SW/0, SW/2 (§6.3.3) : deux blocs de 15 m (25 m) à 133 (150) kN/m espacés de 5,30 (7,00) m ; α s’applique à SW/0 seulement.</li>
+      <li>Φ2 / Φ3 (§6.4.5.2) avec LΦ du tableau 6.2 cas 5.1 : LΦ = k·Lm (k = 1,2 ; 1,3 ; 1,4 ; 1,5 pour 2, 3, 4, ≥ 5 travées), au moins la plus grande portée. LΦ ou Φ peuvent être saisis.</li>
+      <li>Fascicule 61 titre II : A(l) avec a1, a2 (art. 4.2), lobes de même signe combinés pour l’effet maximal ; Bc 1 ou 2 camions par file, même sens, distance ≥ 4,50 m entre essieux de camions voisins, coefficient bc ; Bt avec bt ; Br ; Mc80 et Mc120 (un char ou une file de chars espacés de 30,50 m / 36,60 m). δ (art. 5.5) calculé par travée avec G = g·L et S = poids maximal du système B placé sur la travée. LM1 : TS + UDL par voie avec les α de l’AN française, voies de 3 m (sans répartition transversale).</li>
+      <li>Pas de répartition transversale : la charge d’une file ou d’une voie est multipliée par le nombre de files (avec les coefficients réglementaires) puis par le facteur de répartition saisi.</li>
+      <li>Concomitants : V concomitant de M max/min, M concomitant de V max/min, rotation sur appui concomitante de la réaction max/min (même position du convoi).</li>
+      <li>Études de circulation : wagon de référence de la catégorie EN 15528 à 4 essieux (1,50 m tampon-essieu, empattement de bogie 1,80 m, longueur 4P/p), convois illimités, g = 9,81 m/s². Majoration dynamique EN 1991-2 annexe C (φ’ + r·φ’’, r = 1 entretien courant, 0,5 soigné) avec LΦ et n0 (n0 par défaut : limite supérieure 94,76·L<sup>−0,748</sup> jusqu’à 20 m, limite inférieure 23,58·L<sup>−0,592</sup> au-delà, comme les cas de référence). Vitesse admissible par dichotomie au 1/256 de la vitesse étudiée. Rapports calculés sur M⁺, M⁻ et |V| maximaux de l’ouvrage.</li>
+      <li>Non traités : convois exceptionnels C, D, E et LM2, LM3, LM4 (prévus ailleurs), effets dynamiques au-delà de l’annexe C (calcul dynamique : module DYNAMIQUE).</li>
+    </ul>
+  </details>
+</div>
+
+<div class="col-out">
+  <div class="card"><div class="card-title"><span>Schéma de la poutre</span><small id="sch-sub"></small></div><div id="schema"></div></div>
+  <div id="msg"></div>
+  <div id="out"></div>
+</div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/portique.js"></script>
+<script src="js/charges.js"></script>
+<script src="js/poutre.js"></script>
+<script>
+BA.chrome({ base: '../' });
+(function () {
+  'use strict';
+  const PT = BA.poutre, fmt = BA.fmt, num = BA.num, esc = BA.esc;
+  const $ = (id) => document.getElementById(id);
+
+  /* ── schémas de saisie ── */
+  const F_POUTRE = [
+    { id: 'projet', label: 'Projet', type: 'txt', def: '', wide: true },
+    { id: 'E', label: 'Module E', unit: 'MPa', def: 35000 },
+    { id: 'ns', label: 'Sections / travée', def: 10, help: '2 à 50' },
+    { id: 'cg', label: 'Console gauche', unit: 'm', def: 0 },
+    { id: 'cd', label: 'Console droite', unit: 'm', def: 0 },
+  ];
+  const C_TRAV = [
+    { id: 'L', label: 'Portée (m)', def: 20 },
+    { id: 'loi', label: 'Inertie', type: 'sel', def: 'cst', options: [['cst', 'constante'], ['lin', 'linéaire'], ['para', 'parabolique']] },
+    { id: 'Ig', label: 'Ig', def: 0.5 }, { id: 'Im', label: 'Im', def: 0.5 }, { id: 'Id', label: 'Id', def: 0.5 },
+  ];
+  const C_APP = [
+    { id: 'type', label: 'Type', type: 'sel', def: 'simple', options: [['simple', 'simple'], ['encastre', 'encastré'], ['elastique', 'élastique']] },
+    { id: 'kv', label: 'kv', def: 0 }, { id: 'kr', label: 'kr', def: 0 },
+  ];
+  const C_FIX = [
+    { id: 'cas', label: 'Cas', type: 'txt', def: 'G', w: '58px' },
+    { id: 'type', label: 'Type', type: 'sel', def: 'q', options: [['P', 'P'], ['C', 'C'], ['q', 'q'], ['t', 't'], ['d', 'd']], w: '52px' },
+    { id: 'a', label: 'a', def: 0 }, { id: 'b', label: 'b', def: '' }, { id: 'v1', label: 'P, C, q, q1, δ', def: 10 }, { id: 'v2', label: 'q2', def: '' },
+  ];
+  const MODS = PT.MODELES;
+  const F_FER = [
+    { id: 'alpha', label: 'α (classification)', def: 1 },
+    { id: 'phiType', label: 'Coefficient Φ', type: 'sel', def: '3', options: [['2', 'Φ2 (soigné)'], ['3', 'Φ3 (courant)'], ['none', 'aucun']] },
+    { id: 'LPhi', label: 'LΦ saisi', unit: 'm', def: 0, help: '0 : tableau 6.2' },
+    { id: 'phiSaisi', label: 'Φ saisi', def: 0, help: '0 : calculé' },
+    { id: 'nVoiesFer', label: 'Voies × répartition', def: 1, help: 'facteur sur une voie' },
+  ];
+  const F_ROUTE = [
+    { id: 'classe', label: 'Classe du pont', type: 'sel', def: 1, options: [[1, '1re'], [2, '2e'], [3, '3e']] },
+    { id: 'Lch', label: 'Largeur chargeable', unit: 'm', def: 7 },
+    { id: 'nv', label: 'Voies / files chargées', def: 2 },
+    { id: 'nt', label: 'Tandems Bt', def: 2 },
+    { id: 'nCamBc', label: 'Camions Bc par file', type: 'sel', def: 2, options: [[1, '1'], [2, '2']] },
+    { id: 'g', label: 'Charge perm. (δ)', unit: 'kN/m', def: 200, help: 'G = g·L par travée' },
+    { id: 'nmc', label: 'Chars Mc en largeur', def: 1 },
+    { id: 'mcFile', label: 'File de chars Mc', type: 'chk', def: false },
+    { id: 'classeLM1', label: 'Classe de trafic LM1', type: 'sel', def: 1, options: [[1, '1'], [2, '2']] },
+    { id: 'nvLM1', label: 'Voies LM1', def: 2 },
+    { id: 'wrLM1', label: 'Aire résiduelle LM1', unit: 'm', def: 1 },
+    { id: 'fRoute', label: 'Facteur de répartition', def: 1, help: 'appliqué à tout le routier' },
+  ];
+  const F_CU = [
+    { id: 'cuAx', label: 'Essieux', type: 'area', def: '0 200\n1.5 200\n9.5 200\n11 200' },
+    { id: 'cuQ', label: 'Répartie illimitée', unit: 'kN/m', def: 0 },
+    { id: 'cuE', label: 'Interruption', unit: 'm', def: 0, help: 'de part et d’autre des essieux' },
+    { id: 'cuF', label: 'Coefficient', def: 1 },
+  ];
+  const C_COMB = [
+    { id: 'code', label: 'Code', type: 'txt', def: 'C1', w: '80px' },
+    { id: 'type', label: 'Type', type: 'sel', def: 'comb', options: [['comb', 'combinaison'], ['env', 'enveloppe']], w: '110px' },
+    { id: 'expr', label: 'Expression', type: 'txt', def: '' },
+  ];
+  const F_CIRC = [
+    { id: 'mode', label: 'Étude', type: 'sel', def: 'var', options: [['iso', 'ouvrage isolé (poutre ci-dessus)'], ['var', 'variation de portée'], ['liste', 'liste d’ouvrages']], wide: true },
+    { id: 'cat', label: 'Catégorie de référence', type: 'sel', def: 'A', options: Object.keys(PT.CATEGORIES).map((k) => [k, k + ' (' + PT.CATEGORIES[k][0] + ' t ; ' + PT.CATEGORIES[k][1] + ' t/m)']) },
+    { id: 'vEtud', label: 'Vitesse étudiée', unit: 'km/h', def: 160 },
+    { id: 'vRef', label: 'Vitesse de référence', unit: 'km/h', def: 100 },
+    { id: 'soigne', label: 'Voie soigneusement entretenue', type: 'chk', def: false },
+  ];
+  const C_VEH = [{ id: 'Pv', label: 'à vide (t)', def: 12 }, { id: 'Pp', label: 'à plein (t)', def: 18 }, { id: 'd', label: 'd (m)', def: 1.8 }];
+  const F_VEH = [
+    { id: 'vnom', label: 'Nom', type: 'txt', def: 'Wagon utilisateur' },
+    { id: 'tampon', label: 'Dernier essieu → tampon', unit: 'm', def: 1.5 },
+    { id: 'illimite', label: 'Convoi illimité', type: 'chk', def: true },
+  ];
+  const F_VAR = [{ id: 'spec', label: 'Portées (début:fin:pas ; …)', unit: 'm', type: 'txt', def: '1:10:0.2; 10:20:1; 20:60:2; 60:100:5' }];
+  const C_OUV = [
+    { id: 'nom', label: 'Nom', type: 'txt', def: 'OA', w: '70px' }, { id: 'spans', label: 'Portées', type: 'txt', def: '10', w: '90px' },
+    { id: 'I', label: 'I (m⁴)', def: 1 }, { id: 'cg', label: 'Cons. g', def: 0 }, { id: 'cd', label: 'Cons. d', def: 0 },
+    { id: 'QM', label: 'Q_M', def: 1 }, { id: 'QV', label: 'Q_V', def: 1 }, { id: 'phiE', label: 'φ étud.', def: '' }, { id: 'phiR', label: 'φ réf.', def: '' }, { id: 'n0', label: 'n0 (Hz)', def: '' },
+  ];
+
+  /* ── jeu de données par défaut ── */
+  const DEFAUT = () => ({
+    poutre: { projet: 'Pont-rail 3 travées 15 + 20 + 15 m', E: 35000, ns: 10, cg: 0, cd: 0 },
+    trav: [{ L: 15, loi: 'cst', Ig: 0.9, Im: 0.9, Id: 0.9 }, { L: 20, loi: 'para', Ig: 1.4, Im: 0.9, Id: 1.4 }, { L: 15, loi: 'cst', Ig: 0.9, Im: 0.9, Id: 0.9 }],
+    app: [{ type: 'simple', kv: 0, kr: 0 }, { type: 'simple', kv: 0, kr: 0 }, { type: 'simple', kv: 0, kr: 0 }, { type: 'simple', kv: 0, kr: 0 }],
+    Ix: null,
+    fixes: [{ cas: 'G', type: 'q', a: 0, b: 50, v1: 160, v2: '' }, { cas: 'Gs', type: 'q', a: 0, b: 50, v1: 45, v2: '' }, { cas: 'T', type: 'd', a: 2, b: '', v1: 10, v2: '' }],
+    mods: { UIC71: true, SW0: true, SW2: true },
+    fer: { alpha: 1, phiType: '3', LPhi: 0, phiSaisi: 0, nVoiesFer: 1 },
+    route: {}, cu: {},
+    comb: [{ code: 'LM71', type: 'env', expr: 'UIC71, SW0' }, { code: 'ELU', type: 'comb', expr: '1,35 G + 1,35 Gs + 1,45 LM71' }, { code: 'ELS', type: 'comb', expr: 'G + Gs + LM71 + 0,5 T' }],
+    circ: { mode: 'var', cat: 'A', vEtud: 160, vRef: 100, soigne: false },
+    veh: [{ Pv: 12, Pp: 18, d: 1.5 }, { Pv: 12, Pp: 18, d: 1.8 }, { Pv: 12, Pp: 18, d: 6.2 }, { Pv: 12, Pp: 18, d: 1.8 }],
+    vehp: { vnom: 'Wagon utilisateur A', tampon: 1.5, illimite: true },
+    vari: { spec: '1:10:0.2; 10:20:1; 20:60:2; 60:100:5' },
+    ouv: [{ nom: 'Ouvrage 1', spans: '10 15 10', I: 1, cg: 2, cd: 2, QM: 1, QV: 1, phiE: '', phiR: '', n0: '' }, { nom: 'Ouvrage 2', spans: '10', I: 1, cg: 0, cd: 0, QM: 1, QV: 1, phiE: '', phiR: '', n0: '' }],
+    tab: 'fixes',
+  });
+
+  /* ── état et saisie ── */
+  let st = BA.store.load('poutre') || DEFAUT();
+  const D0 = DEFAUT(); for (const k in D0) if (st[k] === undefined) st[k] = D0[k];
+  const save = () => { collect(); BA.store.save('poutre', st); };
+  let tSave = null; const later = () => { clearTimeout(tSave); tSave = setTimeout(() => { save(); drawSchema(); }, 300); };
+  const R = {};
+  function syncApp() { const n = R.trav.data.length + 1; while (R.app.data.length < n) R.app.data.push({ type: 'simple', kv: 0, kr: 0 }); if (R.app.data.length > n) R.app.data.length = n; R.app.redraw(); }
+  function render() {
+    BA.form($('f-poutre'), F_POUTRE, 'p-', st.poutre);
+    R.trav = BA.rows($('r-trav'), C_TRAV, st.trav, { addLabel: 'Ajouter une travée', onChange: () => { if (R.trav.data.length > 20) { R.trav.data.length = 20; R.trav.redraw(); } syncApp(); later(); } });
+    R.app = BA.rows($('r-app'), C_APP, st.app, { addLabel: 'Ajouter', onChange: later });
+    R.fix = BA.rows($('r-fixes'), C_FIX, st.fixes, { addLabel: 'Ajouter une charge', onChange: later });
+    $('mods').innerHTML = Object.keys(MODS).map((k) => `<label><input type="checkbox" data-m="${k}"${st.mods[k] ? ' checked' : ''}>${MODS[k]} <small style="color:#9aa0ac">${k}</small></label>`).join('');
+    BA.form($('f-fer'), F_FER, 'fe-', st.fer); BA.form($('f-route'), F_ROUTE, 'ro-', st.route); BA.form($('f-cu'), F_CU, 'cu-', st.cu);
+    R.comb = BA.rows($('r-comb'), C_COMB, st.comb, { addLabel: 'Ajouter une combinaison', onChange: () => { if (R.comb.data.length > 100) { R.comb.data.length = 100; R.comb.redraw(); } later(); } });
+    BA.form($('f-circ'), F_CIRC, 'ci-', st.circ);
+    R.veh = BA.rows($('r-veh'), C_VEH, st.veh, { addLabel: 'Ajouter un essieu', onChange: later });
+    BA.form($('f-veh'), F_VEH, 've-', st.vehp); BA.form($('f-var'), F_VAR, 'va-', st.vari);
+    R.ouv = BA.rows($('r-ouv'), C_OUV, st.ouv, { addLabel: 'Ajouter un ouvrage', onChange: later });
+    syncApp(); setTab(st.tab || 'fixes'); circMode(); ixInfo();
+  }
+  function collect() {
+    st.poutre = BA.read(F_POUTRE, 'p-'); st.fer = BA.read(F_FER, 'fe-'); st.route = BA.read(F_ROUTE, 'ro-'); st.cu = BA.read(F_CU, 'cu-');
+    st.circ = BA.read(F_CIRC, 'ci-'); st.vehp = BA.read(F_VEH, 've-'); st.vari = BA.read(F_VAR, 'va-');
+    st.mods = {}; document.querySelectorAll('#mods input').forEach((i) => { if (i.checked) st.mods[i.dataset.m] = true; });
+    st.trav = R.trav.data; st.app = R.app.data; st.fixes = R.fix.data; st.comb = R.comb.data; st.veh = R.veh.data; st.ouv = R.ouv.data;
+  }
+  function ixInfo() {
+    $('ix-info').innerHTML = st.Ix && st.Ix.length ? `<div class="msg info" style="margin-top:6px">Tableau d’inertie par éléments importé (${st.Ix.length} éléments) : il remplace les inerties ci-dessus. <button class="btn sm" id="b-ix">Supprimer</button></div>` : '';
+    const b = $('b-ix'); if (b) b.onclick = () => { st.Ix = null; ixInfo(); save(); };
+  }
+  function setTab(t) {
+    st.tab = t;
+    document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    ['fixes', 'mob', 'comb', 'circ'].forEach((k) => $('p-' + k).classList.toggle('on', k === t));
+  }
+  function circMode() { const m = $('ci-mode').value; $('circ-var').style.display = m === 'var' ? '' : 'none'; $('circ-liste').style.display = m === 'liste' ? '' : 'none'; }
+
+  /* ── modèle pour le moteur ── */
+  const model = () => ({
+    E: num(st.poutre.E), ns: num(st.poutre.ns, 10),
+    travees: st.trav.map((t) => ({ L: num(t.L), loi: t.loi, Ig: num(t.Ig), Im: num(t.Im, num(t.Ig)), Id: num(t.Id, num(t.Ig)) })),
+    consoles: { g: num(st.poutre.cg), d: num(st.poutre.cd) },
+    appuis: st.app.map((a) => ({ type: a.type, kv: num(a.kv), kr: num(a.kr) })),
+    Ix: st.Ix || undefined,
+  });
+  const casFixes = () => {
+    const g = {};
+    for (const r of st.fixes) {
+      const c = String(r.cas || '').trim(); if (!c) continue;
+      const L = r.type === 'P' ? { type: 'P', x: num(r.a), P: num(r.v1) } : r.type === 'C' ? { type: 'C', x: num(r.a), C: num(r.v1) }
+        : r.type === 'q' ? { type: 'q', a: num(r.a, NaN), b: num(r.b, NaN), q: num(r.v1) } : r.type === 't' ? { type: 't', a: num(r.a, NaN), b: num(r.b, NaN), q1: num(r.v1), q2: num(r.v2) }
+          : { type: 'd', appui: num(r.a), v: num(r.v1) / 1000 };
+      (g[c] || (g[c] = [])).push(L);
+    }
+    return g;
+  };
+  const cfgMob = () => {
+    const ax = String(st.cu.cuAx || '').split(/\n+/).map((l) => l.replace(/,/g, '.').trim().split(/[\s;]+/).map(Number)).filter((r) => r.length >= 2 && r.every(Number.isFinite)).map(([d, P]) => ({ d, P }));
+    return Object.assign({}, st.fer, st.route, { cu: { ax, q: num(st.cu.cuQ), e: num(st.cu.cuE), f: num(st.cu.cuF, 1) } });
+  };
+
+  /* ── schéma ── */
+  function drawSchema() {
+    let m; try { collect(); m = model(); } catch (e) { return; }
+    const tr = m.travees.filter((t) => t.L > 0), cg = m.consoles.g > 0 ? m.consoles.g : 0, cd = m.consoles.d > 0 ? m.consoles.d : 0;
+    const Lt = tr.reduce((a, t) => a + t.L, 0); if (!(Lt > 0)) { $('schema').innerHTML = ''; return; }
+    const W = 760, H = 120, x0 = 30, x1 = W - 30, sc = (x1 - x0) / (Lt + cg + cd), X = (x) => x0 + (x + cg) * sc, y = 52;
+    let g = '';
+    // inertie relative : épaisseur du trait
+    const Imax = Math.max(...tr.flatMap((t) => [t.Ig, t.Im, t.Id].filter((v) => v > 0)));
+    let xa = 0;
+    tr.forEach((t, i) => {
+      const pts = []; for (let k = 0; k <= 20; k++) { const xi = k / 20, I = t.loi === 'lin' ? t.Ig + (t.Id - t.Ig) * xi : t.loi === 'para' ? (xi <= 0.5 ? t.Im + (t.Ig - t.Im) * Math.pow(1 - 2 * xi, 2) : t.Im + (t.Id - t.Im) * Math.pow(2 * xi - 1, 2)) : t.Ig; pts.push([X(xa + t.L * xi), 3 + 9 * Math.cbrt(Math.max(I, 0) / Imax)]); }
+      g += `<polygon points="${pts.map(([a, h]) => a.toFixed(1) + ',' + (y - h).toFixed(1)).join(' ')} ${pts.reverse().map(([a]) => a.toFixed(1) + ',' + y).join(' ')}" fill="rgba(168,132,42,.18)" stroke="#a8842a" stroke-width="1"/>`;
+      g += `<text x="${X(xa + t.L / 2)}" y="${y + 40}" text-anchor="middle">${fmt(t.L, 2)} m</text>`;
+      xa += t.L;
+    });
+    if (cg) g += `<rect x="${X(-cg)}" y="${y - 6}" width="${cg * sc}" height="6" fill="rgba(168,132,42,.18)" stroke="#a8842a"/>`;
+    if (cd) g += `<rect x="${X(Lt)}" y="${y - 6}" width="${cd * sc}" height="6" fill="rgba(168,132,42,.18)" stroke="#a8842a"/>`;
+    let xs = 0;
+    for (let k = 0; k <= tr.length; k++) {
+      const a = m.appuis[k] || { type: 'simple' }, px = X(xs);
+      if (a.type === 'encastre') g += `<line x1="${px - 9}" x2="${px + 9}" y1="${y + 2}" y2="${y + 2}" stroke="#14171f" stroke-width="2"/>` + [0, 1, 2, 3].map((i) => `<line x1="${px - 9 + i * 6}" y1="${y + 2}" x2="${px - 13 + i * 6}" y2="${y + 9}" stroke="#14171f"/>`).join('');
+      else if (a.type === 'elastique') g += `<polyline points="${px},${y} ${px - 5},${y + 4} ${px + 5},${y + 8} ${px - 5},${y + 12} ${px + 5},${y + 16} ${px},${y + 20}" fill="none" stroke="#14171f"/><line x1="${px - 8}" x2="${px + 8}" y1="${y + 20}" y2="${y + 20}" stroke="#14171f"/>`;
+      else g += `<polygon points="${px},${y} ${px - 7},${y + 12} ${px + 7},${y + 12}" fill="#fff" stroke="#14171f"/>`;
+      g += `<text x="${px}" y="${y + 26 + (a.type === 'elastique' ? 6 : 0)}" text-anchor="middle" style="font-size:10px">${k + 1}</text>`;
+      if (k < tr.length) xs += tr[k].L;
+    }
+    $('schema').innerHTML = `<svg class="schema" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+    $('nbtrav').textContent = tr.length + ' travée' + (tr.length > 1 ? 's' : '') + ' · ' + fmt(Lt, 2) + ' m';
+    $('sch-sub').textContent = 'épaisseur proportionnelle à I^1/3' + (st.Ix && st.Ix.length ? ' · tableau d’inertie importé' : '');
+  }
+
+  /* ── affichage des résultats ── */
+  const lab = (s) => fmt(s.x, 2) + (s.side === 'g' ? ' g' : s.side === 'd' ? ' d' : '');
+  const travLab = (s) => s.kind === 'cg' ? 'cons. g' : s.kind === 'cd' ? 'cons. d' : String(s.travee + 1);
+  function tablesCas(cas, titre) {
+    const hasW = cas.sec.some((s) => s.w);
+    const rows = cas.sec.map((s) => [travLab(s), lab(s), fmt(s.M && s.M.max), fmt(s.M && s.M.cMax), fmt(s.M && s.M.min), fmt(s.M && s.M.cMin), fmt(s.V && s.V.max), fmt(s.V && s.V.cMax), fmt(s.V && s.V.min), fmt(s.V && s.V.cMin)].concat(hasW ? [fmt(s.w && s.w.max * 1000, 2), fmt(s.w && s.w.min * 1000, 2)] : []));
+    const heads = ['Trav.', 'x (m)', 'M max', 'V conc.', 'M min', 'V conc.', 'V max', 'M conc.', 'V min', 'M conc.'].concat(hasW ? ['w max (mm)', 'w min (mm)'] : []);
+    const app = BA.table(['Appui', 'x (m)', 'R max (kN)', 'θ conc. (mrad)', 'R min (kN)', 'θ conc. (mrad)'], cas.app.map((a) => [String(a.k + 1), fmt(a.x, 2), fmt(a.R.max), fmt(a.R.cMax * 1000, 3), fmt(a.R.min), fmt(a.R.cMin * 1000, 3)]));
+    return BA.card(titre + ' — sections', BA.table(heads, rows, { caption: 'M en kN·m (positif : fibre inférieure tendue), V en kN, flèche positive vers le bas.' })) + BA.card(titre + ' — réactions d’appui', app);
+  }
+  function chartsCas(cas, titre) {
+    const xs = cas.sec.map((s) => s.x);
+    const ser = (q, k) => cas.sec.map((s) => s[q] ? s[q][k] : NaN);
+    let h = BA.chart([{ x: xs, y: ser('M', 'max'), label: 'M max' }, { x: xs, y: ser('M', 'min'), label: 'M min' }], { title: 'Enveloppe des moments', unit: 'kN·m', invert: true });
+    h += BA.chart([{ x: xs, y: ser('V', 'max'), label: 'V max' }, { x: xs, y: ser('V', 'min'), label: 'V min' }], { title: 'Enveloppe des efforts tranchants', unit: 'kN', h: 190 });
+    if (cas.sec.some((s) => s.w)) h += BA.chart([{ x: xs, y: cas.sec.map((s) => s.w ? s.w.max * 1000 : NaN), label: 'w max' }, { x: xs, y: cas.sec.map((s) => s.w ? s.w.min * 1000 : NaN), label: 'w min' }], { title: 'Enveloppe des flèches', unit: 'mm', invert: true, h: 170 });
+    return BA.card(titre + ' — courbes enveloppes', h);
+  }
+  const kpisCas = (cas) => {
+    const pick = (q, k, f) => cas.sec.reduce((b, s) => (s[q] && (b === null || f(s[q][k], b.v)) ? { v: s[q][k], s } : b), null);
+    const Mp = pick('M', 'max', (a, b) => a > b), Mn = pick('M', 'min', (a, b) => a < b), Vp = pick('V', 'max', (a, b) => a > b), Vn = pick('V', 'min', (a, b) => a < b);
+    const Rm = cas.app.reduce((b, a) => Math.max(b, a.R.max), -Infinity), wm = pick('w', 'max', (a, b) => a > b);
+    return BA.kpis([
+      { l: 'M max', v: fmt(Mp && Mp.v, 1), u: 'kN·m', n: Mp ? 'x = ' + fmt(Mp.s.x, 2) + ' m' : '', hi: true },
+      { l: 'M min', v: fmt(Mn && Mn.v, 1), u: 'kN·m', n: Mn ? 'x = ' + fmt(Mn.s.x, 2) + ' m' : '' },
+      { l: 'V extrême', v: fmt(Math.max(Vp ? Vp.v : 0, Vn ? -Vn.v : 0), 1), u: 'kN' },
+      { l: 'R max', v: fmt(Rm, 1), u: 'kN' },
+    ].concat(wm ? [{ l: 'Flèche max', v: fmt(wm.v * 1000, 2), u: 'mm', n: 'x = ' + fmt(wm.s.x, 2) + ' m' }] : []));
+  };
+
+  let last = null;   // derniers résultats
+  function calculer() {
+    collect(); save();
+    $('msg').innerHTML = ''; const warn = [];
+    const t0 = performance.now();
+    try {
+      const S = PT.build(model());
+      const out = { S, fixes: {}, cas: {}, ordre: [] };
+      // cas fixes
+      const g = casFixes();
+      for (const c in g) { const r = PT.fixe(S, g[c]); warn.push(...r.warn); out.fixes[c] = r; out.cas[c] = PT.casFixe(r); out.ordre.push(c); }
+      // charges mobiles
+      const mods = Object.keys(MODS).filter((k) => st.mods[k]);
+      if (mods.length) { const m = PT.mobile(S, cfgMob(), mods); out.co = m.co; for (const k of mods) { out.cas[k] = m.res[k]; out.ordre.push(k); } out.mods = mods; }
+      // combinaisons
+      for (const c of st.comb) {
+        const code = String(c.code || '').trim(); if (!code) continue;
+        try {
+          if (c.type === 'env') { const L = PT.parseListe(c.expr); if (!L.length) throw new Error('liste vide'); const miss = L.filter((k) => !out.cas[k]); if (miss.length) throw new Error('code inconnu : ' + miss.join(', ')); out.cas[code] = PT.envelopper(L.map((k) => out.cas[k])); }
+          else { const T = PT.parseTermes(c.expr); if (!T.length) throw new Error('expression vide'); const miss = T.filter((t) => !out.cas[t.code]); if (miss.length) throw new Error('code inconnu : ' + miss.map((t) => t.code).join(', ')); out.cas[code] = PT.combiner(T.map((t) => ({ cas: out.cas[t.code], c: t.c }))); }
+          out.cas[code].combi = c; out.ordre.push(code);
+        } catch (e) { warn.push('Combinaison « ' + code + ' » : ' + e.message); }
+      }
+      out.dt = performance.now() - t0;
+      if (st.tab === 'circ') out.circ = circulation(S);
+      last = out;
+      afficher();
+    } catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; $('out').innerHTML = ''; last = null; }
+    if (warn.length) $('msg').innerHTML += `<div class="msg info">${warn.map(esc).join('<br>')}</div>`;
+  }
+
+  /* ── études de circulation ── */
+  function vehicule() { return { nom: st.vehp.vnom, ax: st.veh.map((a) => ({ Pv: num(a.Pv), Pp: num(a.Pp), d: num(a.d) })).filter((a) => a.Pv >= 0 && a.Pp > 0), tampon: num(st.vehp.tampon) }; }
+  function circulation(S) {
+    const t0 = performance.now(), veh = vehicule();
+    if (!veh.ax.length) throw new Error('Véhicule étudié sans essieu.');
+    const cfg = { seq: [{ veh, n: 1 }], illimite: !!st.vehp.illimite, vEtud: num(st.circ.vEtud), vRef: num(st.circ.vRef), cat: st.circ.cat, soigne: !!st.circ.soigne };
+    const E = num(st.poutre.E), mode = st.circ.mode;
+    let ouv;
+    if (mode === 'iso') ouv = [{ nom: st.poutre.projet || 'Poutre', model: model() }];
+    else if (mode === 'var') {
+      const Ls = PT.portees(st.vari.spec); if (!Ls.length) throw new Error('Aucune portée dans la variation de portée.');
+      if (Ls.length > 200) throw new Error('200 portées au plus.');
+      ouv = Ls.map((L) => ({ nom: fmt(L, 2), L, model: { E, ns: 10, nel: 40, travees: [{ L, Ig: 1 }], appuis: [{}, {}] } }));
+    } else {
+      ouv = st.ouv.map((o) => { const sp = String(o.spans || '').replace(/,/g, '.').trim().split(/[\s;]+/).map(Number).filter((v) => v > 0); return { nom: o.nom, spans: sp, model: { E, ns: 10, travees: sp.map((L) => ({ L, Ig: num(o.I, 1) })), consoles: { g: num(o.cg), d: num(o.cd) }, appuis: sp.concat([0]).map(() => ({})) }, QM: num(o.QM, 1), QV: num(o.QV, 1), phiE: num(o.phiE, 0), phiR: num(o.phiR, 0), n0: o.n0 === '' || o.n0 === undefined || !Number.isFinite(+o.n0) ? undefined : num(o.n0) }; }).filter((o) => o.spans.length);
+      if (!ouv.length) throw new Error('Aucun ouvrage dans la liste.');
+    }
+    const r = PT.circulation(ouv, cfg);
+    r.mode = mode; r.cfg = cfg; r.veh = veh; r.dt = performance.now() - t0;
+    return r;
+  }
+  function tableCirc(c) {
+    const t = (v) => fmt(v, 3), first = c.mode === 'var' ? 'L (m)' : 'Ouvrage';
+    const rows = c.rows.map((r) => [esc(r.nom), fmt(r.vide.M), fmt(r.plein.M), fmt(r.ref.M), fmt(r.plein.Mn), fmt(r.ref.Mn), fmt(r.vide.V), fmt(r.plein.V), fmt(r.ref.V),
+      t(Math.max(r.rv.M, r.rv.Mn, r.rv.V)), t(Math.max(r.rp.M, r.rp.Mn, r.rp.V)), fmt(r.Lphi, 2), fmt(r.n0, 3), t(1 + r.phE), t(1 + r.phR), t(Math.max(r.dp.M, r.dp.Mn, r.dp.V)),
+      r.va ? (r.va.aucune ? 'Aucune' : r.va.limite ? fmt(r.va.v, 3) : '—') : '—']);
+    return BA.table([first, 'M⁺ vide', 'M⁺ plein', 'M⁺ réf.', 'M⁻ plein', 'M⁻ réf.', 'V vide', 'V plein', 'V réf.', 'rapp. vide', 'rapp. plein', 'LΦ (m)', 'n0 (Hz)', '1+φ', '1+φréf', 'rapp. dyn. plein', 'V adm. (km/h)'], rows,
+      { caption: 'M en kN·m, V en kN (valeurs statiques, sans majoration). Rapports : maximum de M⁺, M⁻ et |V| du convoi étudié sur la référence, divisés par Q_M, Q_V. Dynamique : rapport × (1+φ)/(1+φréf).' });
+  }
+  function autorisations(c) {
+    const ref = c.cfg.cat, lab = (i) => c.mode === 'var' ? 'la portée de ' + c.rows[i].nom + ' m' : 'l’ouvrage « ' + esc(c.rows[i].nom) + ' »';
+    const bloc = (a, titre) => a.depasse
+      ? `<p><b>${titre}</b> — les effets du convoi à plein dépassent ceux de la catégorie ${ref} de <b>${fmt((a.r - 1) * 100, 3)} %</b> sur ${lab(a.i)}. Poids total du véhicule à ramener de ${fmt(c.Pp, 3)} t à <b>${fmt(a.Padm, 3)} t</b>, soit une charge utile limitée à <b>${fmt(a.CU, 3)} t</b> (tare ${fmt(c.Pv, 3)} t).</p>`
+      : `<p><b>${titre}</b> — le convoi à plein reste dans les limites de la catégorie ${ref} (rapport maximal ${fmt(a.r, 3)}).</p>`;
+    return bloc(c.statique, 'Analyse statique') + bloc(c.dynamique, 'Analyse dynamique (vitesses ' + fmt(c.cfg.vEtud, 0) + ' / ' + fmt(c.cfg.vRef, 0) + ' km/h)');
+  }
+  function afficherCirc(c) {
+    const ref = PT.wagonRef(c.cfg.cat), Pv = c.Pv, Pp = c.Pp;
+    let h = BA.card('Étude de circulation', BA.kpis([
+      { l: 'Véhicule', v: fmt(Pp, 1), u: 't à plein', n: fmt(Pv, 1) + ' t à vide · ' + fmt(PT.longueurVeh(c.veh), 2) + ' m' },
+      { l: 'Référence ' + c.cfg.cat, v: fmt(PT.poidsVeh(ref, true), 1), u: 't', n: fmt(PT.longueurVeh(ref), 2) + ' m · ' + PT.CATEGORIES[c.cfg.cat][1] + ' t/m' },
+      { l: 'Rapport statique max', v: fmt(c.statique.r, 3), cls: c.statique.depasse ? 'ko' : 'ok', hi: true },
+      { l: 'Rapport dynamique max', v: fmt(c.dynamique.r, 3), cls: c.dynamique.depasse ? 'ko' : 'ok' },
+    ]) + `<div class="note" style="margin-top:10px">${autorisations(c)}</div><div class="note">Calcul : ${fmt(c.dt, 0)} ms.</div>`);
+    if (c.mode === 'var' && c.rows.length > 1) {
+      const xs = c.rows.map((r) => +r.nom.replace(',', '.'));
+      h += BA.card('Rapports en fonction de la portée', BA.chart([
+        { x: xs, y: c.rows.map((r) => Math.max(r.rp.M, r.rp.Mn)), label: 'M plein / réf.', fill: false },
+        { x: xs, y: c.rows.map((r) => r.rp.V), label: 'V plein / réf.', fill: false },
+        { x: xs, y: c.rows.map((r) => Math.max(r.dp.M, r.dp.Mn, r.dp.V)), label: 'dynamique plein', fill: false },
+        { x: xs, y: xs.map(() => 1), label: 'limite', color: '#c0392b', fill: false },
+      ], { title: 'Rapports convoi étudié / catégorie ' + c.cfg.cat, h: 230 }));
+    }
+    h += BA.card('Effets du convoi et de la référence', tableCirc(c));
+    return h;
+  }
+
+  function afficher() {
+    const o = last; if (!o) return;
+    const t = st.tab;
+    let h = '';
+    if (t === 'circ') {
+      if (!o.circ) { try { o.circ = circulation(o.S); } catch (e) { $('out').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; } }
+      $('out').innerHTML = afficherCirc(o.circ); return;
+    }
+    let list = t === 'fixes' ? Object.keys(o.fixes) : t === 'mob' ? (o.mods || []) : o.ordre.filter((k) => o.cas[k] && o.cas[k].combi);
+    if (t === 'comb') list = o.ordre;
+    if (!list.length) { $('out').innerHTML = `<div class="card empty">${t === 'fixes' ? 'Aucun cas de charges fixes.' : t === 'mob' ? 'Aucun modèle de charges mobiles coché.' : 'Aucun cas ni combinaison.'}</div>`; return; }
+    const key = 'sel-' + t; let sel = o[key] && list.includes(o[key]) ? o[key] : (t === 'comb' ? (list.filter((k) => o.cas[k].combi).pop() || list[0]) : list[0]);
+    o[key] = sel;
+    const opts = list.map((k) => `<option value="${esc(k)}"${k === sel ? ' selected' : ''}>${esc(k)}${MODS[k] ? ' — ' + MODS[k] : (o.cas[k] && o.cas[k].combi ? ' — ' + esc(o.cas[k].combi.expr) : '')}</option>`).join('');
+    h += `<div class="selrow">Résultat affiché <select id="sel">${opts}</select><span>Calcul : ${fmt(o.dt, 0)} ms · ${o.S.sections.length} sections · ${o.S.el.length} éléments</span></div>`;
+    if (t === 'fixes') {
+      const r = o.fixes[sel];
+      h += BA.card('Cas ' + esc(sel), kpisCas(o.cas[sel]));
+      const xs = r.diag.map((d) => d.x);
+      h += BA.card('Diagrammes — cas ' + esc(sel), BA.chart([{ x: xs, y: r.diag.map((d) => d.M), label: 'M' }], { title: 'Moment fléchissant', unit: 'kN·m', invert: true })
+        + BA.chart([{ x: xs, y: r.diag.map((d) => d.V), label: 'V', color: '#0f8f7b' }], { title: 'Effort tranchant', unit: 'kN', h: 180 })
+        + BA.chart([{ x: xs, y: r.diag.map((d) => d.w * 1000), label: 'w', color: '#2d6be4' }], { title: 'Flèche', unit: 'mm', invert: true, h: 160 }));
+      h += BA.card('Sections — cas ' + esc(sel), BA.table(['Trav.', 'x (m)', 'V (kN)', 'M (kN·m)', 'w (mm)'], r.sec.map((s) => [travLab(s), lab(s), fmt(s.V), fmt(s.M), fmt(s.w * 1000, 3)])));
+      h += BA.card('Appuis — cas ' + esc(sel), BA.table(['Appui', 'x (m)', 'R (kN)', 'M encastr. (kN·m)', 'θ (mrad)', 'w (mm)'], r.appuis.map((a) => [String(a.k + 1) + (a.type !== 'simple' ? ' (' + (a.type === 'encastre' ? 'encastré' : 'élastique') + ')' : ''), fmt(a.x, 2), fmt(a.R), a.type === 'simple' ? '—' : fmt(a.Mr), fmt(a.th * 1000, 4), fmt(a.w * 1000, 3)])
+          .concat([['Σ', '', fmt(r.appuis.reduce((s, a) => s + a.R, 0)), '', '', '']])));
+    } else {
+      const cas = o.cas[sel];
+      h += BA.card(esc(sel) + (MODS[sel] ? ' — ' + MODS[sel] : ''), kpisCas(cas) + (MODS[sel] ? coefInfo(sel) : ''));
+      h += chartsCas(cas, esc(sel)) + tablesCas(cas, esc(sel));
+    }
+    $('out').innerHTML = h;
+    $('sel').onchange = (e) => { o[key] = e.target.value; afficher(); };
+  }
+  function coefInfo(k) {
+    const co = last.co; if (!co) return '';
+    const c = last.cas[k].coef, uniq = [...new Set(c.map((v) => v.toFixed(4)))];
+    let t = 'Coefficient appliqué : ' + (uniq.length === 1 ? fmt(c[0], 4) : c.map((v, i) => 'travée ' + (i + 1) + ' : ' + fmt(v, 4)).join(' ; '));
+    if (['UIC71', 'SW0', 'SW2'].includes(k)) t += ` (LΦ = ${fmt(co.Lphi, 2)} m, Φ = ${fmt(co.phi, 4)}${k !== 'SW2' ? ', α = ' + fmt(co.alpha, 2) : ''})`;
+    if (k === 'AL') t += ` (a1 = ${fmt(co.a1, 3)}, a2 = ${fmt(co.a2, 3)}, ${co.nv} voie(s) de ${fmt(co.vlarg, 2)} m)`;
+    if (k === 'BC') t += ` (bc = ${fmt(co.bc, 2)} × ${co.nf} file(s) × δ)`;
+    if (k === 'BT') t += ` (bt = ${fmt(co.bt, 2)} × ${co.nt} tandem(s) × δ)`;
+    if (['BR', 'MC80', 'MC120'].includes(k)) t += ' (δ du Fasc. 61 par travée)';
+    return `<div class="note" style="margin-top:8px">${t}</div>`;
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!last) calculer(); if (!last) return;
+    collect();
+    const m = model(), secs = [];
+    secs.push({ titre: 'Hypothèses', html: document.querySelector('details.ref ul').outerHTML });
+    secs.push({ titre: 'Données', html: BA.table(['Travée', 'L (m)', 'Inertie', 'Ig (m⁴)', 'Im (m⁴)', 'Id (m⁴)'], m.travees.map((t, i) => [String(i + 1), fmt(t.L, 3), { cst: 'constante', lin: 'linéaire', para: 'parabolique' }[t.loi] || 'constante', fmt(t.Ig, 4), fmt(t.Im, 4), fmt(t.Id, 4)]))
+      + BA.table(['Appui', 'Type', 'kv (kN/m)', 'kr (kN·m/rad)'], m.appuis.map((a, i) => [String(i + 1), a.type, a.type === 'elastique' ? fmt(a.kv, 0) : '—', a.type === 'elastique' ? fmt(a.kr, 0) : '—']))
+      + `<p>E = ${fmt(m.E, 0)} MPa · consoles ${fmt(m.consoles.g, 2)} / ${fmt(m.consoles.d, 2)} m · ${m.ns} sections par travée${st.Ix && st.Ix.length ? ' · tableau d’inertie importé (' + st.Ix.length + ' éléments)' : ''}.</p>` + $('schema').innerHTML });
+    const sch = { fixes: 'Charges fixes', mob: 'Charges mobiles', comb: 'Combinaisons', circ: 'Étude de circulation' }[st.tab];
+    secs.push({ titre: sch, html: $('out').innerHTML.replace(/<div class="selrow">[\s\S]*?<\/div>/, '') });
+    BA.note({ titre: 'Poutre continue — ' + sch, code: 'TRAVÉES', regl: 'EN 1991-2 · Livret 2.01 · Fascicule 61 titre II · EN 15528', projet: st.poutre.projet, sections: secs });
+  }
+
+  /* ── imports ── */
+  function importDon(txt, nom) {
+    const d = PT.lireDon(txt), m = d.model, info = [];
+    st.poutre = Object.assign({}, st.poutre, { projet: d.projet || nom, E: m.E, ns: m.ns, cg: m.consoles.g, cd: m.consoles.d });
+    st.trav = m.travees.map((t) => ({ L: t.L, loi: 'cst', Ig: t.Ig, Im: t.Ig, Id: t.Ig }));
+    st.app = m.appuis.map((a) => ({ type: a.type, kv: 0, kr: 0 }));
+    st.Ix = m.Ix && m.Ix.length ? m.Ix : null;
+    st.circ = Object.assign({}, st.circ, { cat: d.convref, vEtud: d.vitconv || st.circ.vEtud, vRef: d.vitconvref || st.circ.vRef, soigne: d.soigne, mode: ['iso', 'liste', 'var'][d.typetude] || 'iso' });
+    if (d.typetude === 2 && d.ouvrages.length) st.vari = { spec: d.ouvrages.map((o) => o.spans[0]).join(' ') };
+    if (d.typetude === 1 && d.ouvrages.length) st.ouv = d.ouvrages.map((o, i) => ({ nom: o.nom || 'Ouvrage ' + (i + 1), spans: o.spans.join(' '), I: o.I, cg: o.consoles.g, cd: o.consoles.d, QM: o.QM, QV: o.QV, phiE: o.phiE || '', phiR: o.phiR || '', n0: o.n0 || '' }));
+    if (d.typetude > 0) { st.tab = 'circ'; info.push('Étude de circulation importée (' + (d.typetude === 1 ? d.ouvrages.length + ' ouvrages' : d.ouvrages.length + ' portées') + ', référence ' + d.convref + ').'); }
+    if (d.ficconv) info.push('Convoi étudié : « ' + d.ficconv + ' » — importez le fichier .cnv du véhicule correspondant.');
+    if (d.charges.length) info.push('Charges listées dans le fichier (non importées, à redéfinir) : ' + d.charges.map((c) => c.nom).join(', ') + '.');
+    if (st.Ix) info.push('Inertie variable : tableau de ' + st.Ix.length + ' éléments importé.');
+    render(); save(); drawSchema(); calculer();
+    $('msg').innerHTML = `<div class="msg info">Fichier « ${esc(nom)} » importé. ${info.map(esc).join(' ')}</div>` + $('msg').innerHTML;
+  }
+  function importCnv(txt, nom) {
+    const c = PT.lireCnv(txt);
+    if (c.type === 'vehicule') {
+      if (!c.ax.length) throw new Error('Aucun essieu dans ce véhicule.');
+      st.veh = c.ax.map((a) => ({ Pv: a.Pv, Pp: a.Pp, d: a.d })); st.vehp = Object.assign({}, st.vehp, { vnom: c.nom || nom, tampon: c.tampon });
+      render(); save();
+      $('msg').innerHTML = `<div class="msg info">Véhicule « ${esc(c.nom)} » importé (${c.ax.length} essieux) dans l’étude de circulation.</div>`;
+    } else {
+      st.vehp = Object.assign({}, st.vehp, { illimite: !!c.illimite }); render(); save();
+      $('msg').innerHTML = `<div class="msg info">Fichier de convoi « ${esc(c.nom)} » : il fait appel aux véhicules ${c.vehicules.map((v) => '« ' + esc(v.fichier) + ' » × ' + v.n).join(', ')}. Importez le .cnv du véhicule ; convoi ${c.illimite ? 'illimité' : 'limité'}.</div>`;
+    }
+  }
+
+  /* ── événements ── */
+  document.addEventListener('input', (e) => { if (e.target.closest('.col-in')) later(); });
+  document.addEventListener('change', (e) => { if (e.target.id === 'ci-mode') circMode(); if (e.target.closest('.col-in')) later(); });
+  $('tabs').onclick = (e) => { const t = e.target.dataset.t; if (!t) return; setTab(t); save(); if (last) afficher(); else calculer(); };
+  $('b-calc').onclick = calculer;
+  $('b-note').onclick = note;
+  $('b-save').onclick = () => { collect(); BA.store.download((st.poutre.projet || 'poutre').replace(/[^\w-]+/g, '_') + '.json', st); };
+  $('b-open').onclick = () => BA.store.pick('.json', (txt) => { try { const o = JSON.parse(txt); const d = DEFAUT(); for (const k in d) if (o[k] === undefined) o[k] = d[k]; st = o; render(); save(); drawSchema(); calculer(); } catch (e) { $('msg').innerHTML = `<div class="msg err">Fichier illisible : ${esc(e.message)}</div>`; } });
+  $('b-don').onclick = () => BA.store.pick('.don', (txt, nom) => { try { importDon(txt, nom); } catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; } });
+  $('b-cnv').onclick = () => BA.store.pick('.cnv,.don', (txt, nom) => { try { importCnv(txt, nom); } catch (e) { $('msg').innerHTML = `<div class="msg err">${esc(e.message)}</div>`; } });
+  $('b-def').onclick = () => { st = DEFAUT(); render(); save(); drawSchema(); calculer(); };
+
+  render(); drawSchema(); calculer();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SECTIONS — Sections en béton armé — BridgeAI Studios</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0c0e14">
+<meta name="description" content="Justification des sections en béton armé : rectangulaires, en T, circulaires (pieux) et quelconques. Flexion simple, composée et déviée à l'ELU et à l'ELS, diagramme d'interaction, dimensionnement des aciers, ouverture des fissures, effort tranchant et torsion — EN 1992-1-1 / EN 1992-2 et BAEL 91 révisé 99.">
+<link rel="canonical" href="https://www.bridgeaistudios.com/outils/sections-ba.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="outils.css">
+<script defer src="/_vercel/insights/script.js"></script>
+<style>
+.hide{display:none!important}
+.schema svg{width:100%;height:auto;display:block;max-height:340px}
+.schema text{font-family:'Outfit',sans-serif;font-size:11px;fill:var(--ink3)}
+.combis-wrap{overflow-x:auto}
+.grid-in input{min-width:56px}
+.sub{font-size:11px;color:var(--ink3);margin:10px 0 4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.two{grid-template-columns:1fr}}
+.alert{font-size:12px;color:#8f2a20;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div class="head-inner">
+    <div>
+      <div class="crumb"><a href="../outils-ponts.html">Outils de calculs des ponts</a> › Socle de calcul</div>
+      <div class="eyebrow">SECTIONS</div>
+      <h1>Sections en <em>béton armé</em></h1>
+      <div class="badges"><span class="badge">EN 1992-1-1 · EN 1992-2 · AN française</span><span class="badge">BAEL 91 révisé 99</span><span class="badge">Livret 2.01 (σs ELU)</span><span class="badge">Fasc. 62 titre V (pieux)</span></div>
+    </div>
+    <p class="lead">Vérification ou dimensionnement des aciers d’une section rectangulaire, en T ou en I, circulaire ou quelconque : ELU en flexion composée ou déviée, diagramme d’interaction, contraintes ELS en section fissurée, ouverture des fissures, fatigue des aciers, effort tranchant et torsion.</p>
+  </div>
+</header>
+
+<div class="wrap"><div class="layout">
+<div class="col-in">
+  <div class="card"><div class="card-title"><span>Type de section</span></div>
+    <div class="tabs" id="tabs">
+      <button data-t="rect">Rectangulaire</button><button data-t="te">En T / en I</button><button data-t="cercle">Circulaire</button><button data-t="poly">Quelconque</button><button data-t="cis">Tranchant · torsion</button>
+    </div>
+    <div class="fields" id="f-gen"></div>
+  </div>
+  <div class="card"><div class="card-title"><span>Matériaux</span><small id="mat-sub"></small></div><div class="fields" id="f-mat"></div></div>
+
+  <div class="card sec" data-for="rect"><div class="card-title"><span>Section rectangulaire</span><small>d mesurés depuis la fibre supérieure</small></div><div class="fields" id="f-rect"></div></div>
+  <div class="card sec" data-for="te"><div class="card-title"><span>Section en T ou en I</span><small>jusqu’à 5 nappes</small></div><div class="fields" id="f-te"></div>
+    <div class="sub">Nappes d’aciers (d depuis la fibre supérieure, m ; As en cm²)</div><div id="rows-te"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:4px">En dimensionnement, la première nappe est la nappe supérieure et la seconde la nappe inférieure.</div></div>
+  <div class="card sec" data-for="cercle"><div class="card-title"><span>Section circulaire</span><small>aciers uniformément répartis</small></div><div class="fields" id="f-cercle"></div></div>
+  <div class="card sec" data-for="poly"><div class="card-title"><span>Section quelconque</span><small>flexion déviée</small></div><div class="fields" id="f-poly"></div></div>
+  <div class="card sec" data-for="cis"><div class="card-title"><span>Effort tranchant et torsion</span><small>section rectangulaire ou âme</small></div><div class="fields" id="f-cis"></div>
+    <div class="sub">Combinaisons ELU (kN, kN·m ; N &gt; 0 compression)</div><div class="combis-wrap" id="rows-cis"></div></div>
+
+  <div class="card sec" data-for="rect te cercle poly"><div class="card-title"><span>Options de calcul</span></div><div class="fields" id="f-opt"></div></div>
+
+  <div class="card sec" data-for="rect te cercle poly"><div class="card-title"><span>Combinaisons ELU</span><small>une ligne par combinaison</small></div>
+    <div class="combis-wrap" id="rows-elu"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.45">N &gt; 0 compression ; M &gt; 0 comprime la fibre inférieure ; My (section circulaire ou quelconque) &gt; 0 comprime les x positifs. Mcp : part quasi-permanente du moment (fluage, second ordre). Type : 1 fondamental (BAEL &gt; 24 h), 2 BAEL 1 h–24 h, 3 BAEL &lt; 1 h, 4 accidentel, 5 sismique.</div></div>
+  <div class="card sec" data-for="rect te cercle poly"><div class="card-title"><span>Combinaisons ELS</span></div>
+    <div class="combis-wrap" id="rows-els"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px;line-height:1.45">Mqp : moment quasi-permanent servant au coefficient d’équivalence EC2 n = Es/Ec,eff. Type : 0 caractéristique, 1 quasi-permanent, 2 fréquent.</div></div>
+  <div class="card sec" data-for="rect te cercle poly"><div class="card-title"><span>Fatigue des aciers</span><small>facultatif</small></div>
+    <div class="combis-wrap" id="rows-fat"></div>
+    <div class="help" style="font-size:10.5px;color:#9aa0ac;margin-top:6px">Deux états (1 et 2) ; la variation de contrainte des aciers est calculée en section fissurée avec n = Es/Ecm.</div></div>
+
+  <div class="actions">
+    <button class="btn primary" id="b-calc">Calculer</button>
+    <button class="btn gold" id="b-note">Note de calcul</button>
+    <button class="btn" id="b-save">Enregistrer</button>
+    <button class="btn" id="b-open">Ouvrir</button>
+    <button class="btn" id="b-don">Importer un fichier .don</button>
+    <button class="btn" id="b-reset">Exemple</button>
+  </div>
+  <div class="card"><details class="ref"><summary>Périmètre et hypothèses</summary>
+    <ul>
+      <li><b>Méthode.</b> Intégrateur général en fibres : bandes horizontales pour les sections rectangulaires, en T et circulaires (aires exactes), cellules d’une grille découpée sur le polygone pour la section quelconque ; barres ponctuelles. L’équilibre ELS est résolu par Newton (déformation plane, béton tendu négligé) ; l’ELU par recherche du plan ultime (pivots A, B, C) à effort normal donné.</li>
+      <li><b>EC2.</b> Loi parabole-rectangle (εc2, εcu2, n selon fck, tableau 3.1) ou rectangle simplifié (λ, η) ; αcc = 1 ; acier à palier incliné (k selon la classe, εud = 0,9 εuk) ou horizontal ; γc/γs = 1,5/1,15 (fondamental), 1,2/1,0 (accidentel). ELS : σc ≤ 0,6 fck (caractéristique), 0,45 fck (quasi-permanent), σs ≤ 0,8 fyk (caractéristique) ; n = Es/Ec,eff avec Ec,eff = Ecm/(1 + φ·Mqp/M) (§7.4.3) ou n saisi.</li>
+      <li><b>Fissuration EC2 §7.3.4.</b> k1 = 0,8 ; k2 = 0,5 (flexion) ; k3 = 3,4 (25/c)^(2/3) (AN) ; k4 = 0,425 ; hc,ef = min[2,5(h − d) ; (h − x)/3 ; h/2] ; sr,max = 1,3 (h − x) si l’espacement dépasse 5(c + φ/2). Section circulaire : couronne tendue d’épaisseur 2,5 a (hypothèse, écart de 3 à 5 % avec l’ancien programme).</li>
+      <li><b>BAEL 91.</b> Parabole-rectangle 0,85 fcj/(θ γb), θ = 1 / 0,9 / 0,85 selon la durée ; acier élasto-plastique, εs ≤ 10 ‰ ; option Livret 2.01 : fsu = 0,8 fe/γs en ELU fondamental ; σbc ≤ 0,6 fcj ; σs limitée en fissuration préjudiciable et très préjudiciable (A.4.5.33, A.4.5.34).</li>
+      <li><b>Excentricités additionnelles.</b> EC2 : imperfection ei = θi l0/2, minimum e0 = max(h/30 ; 20 mm), second ordre par courbure nominale (§5.8.8, c = 8) si λ &gt; λlim. BAEL : ea = max(2 cm ; L/250), e2 forfaitaire A.4.3.5. Non appliquées aux pieux.</li>
+      <li><b>Pieux (Fasc. 62 titre V / NF EN 1992-1-1 §2.4.2.5 et 9.8.5).</b> Résistance conventionnelle fc* = min(fck ; fc,lim)/(k1 k2) ; contrainte moyenne ELS ≤ 0,3 fc* ; section minimale d’acier selon le tableau 9.6N.</li>
+      <li><b>Effort tranchant.</b> EC2 §6.2.2 (VRd,c, vmin de l’AN), §6.2.3 (VRd,s, VRd,max, cot θ libre entre 1 et 2,5 ou imposé, ΔFtd = 0,5 VEd cot θ), torsion §6.3.2 (section creuse équivalente, interaction V–T). Section circulaire : bw = D/1,4, d = r + rs/π. BAEL A.5.1 (τu, At/st, coefficient k, reprise de bétonnage) et A.5.4 (torsion).</li>
+      <li><b>Dimensionnement.</b> Deux nappes de positions fixées (ou ferraillage symétrique) : aciers tendus seuls, puis aciers comprimés au pivot B si l’allongement des aciers tendus reste inférieur à εyd, deux nappes tendues en traction ; puis augmentation pour l’ELS, l’ouverture des fissures et les minimums (non-fragilité EC2 §9.2.1.1 / BAEL A.4.2, poteaux et pieux §9.5.2 et 9.8.5). Section circulaire : section totale. Pas de dimensionnement pour la section quelconque.</li>
+      <li><b>Limites.</b> Pas de console courte, ni de pile hydraulique, ni de section multiple (précontrainte, poutrelles) ; fatigue limitée à la variation de contrainte des aciers comparée à ΔσRsk/γs,fat ; pas de vérification des dispositions sismiques. Les résultats doivent être contrôlés par un ingénieur qualifié.</li>
+    </ul></details></div>
+</div>
+
+<div class="col-out" id="out"><div class="card"><div class="empty">Saisissez les données puis « Calculer ».</div></div></div>
+</div></div>
+
+<script src="js/commun.js"></script>
+<script src="js/bael-ec2.js"></script>
+<script>
+BA.chrome({ base: '../' });
+(function () {
+  'use strict';
+  const S = BA.sectionBA, $ = (id) => document.getElementById(id), fmt = BA.fmt, KEY = 'bael-ec2';
+  const f1 = (x) => fmt(x, 1), f2 = (x) => fmt(x, 2), f3 = (x) => fmt(x, 3), f0 = (x) => fmt(x, 0);
+
+  /* ── schémas de saisie ── */
+  const GEN = [
+    { id: 'projet', label: 'Projet / repère', type: 'txt', def: 'Exemple — traverse de cadre', wide: true },
+    { id: 'regl', label: 'Règlement', type: 'sel', def: 'EC2', options: [['EC2', 'EN 1992-1-1 / EN 1992-2 (AN)'], ['BAEL', 'BAEL 91 révisé 99']] },
+    { id: 'mode', label: 'Calcul', type: 'sel', def: 'verif', options: [['verif', 'Vérification'], ['dim', 'Dimensionnement']] },
+  ];
+  const MAT = [
+    { id: 'fck', label: 'fck (fc28)', unit: 'MPa', def: 30 },
+    { id: 'fyk', label: 'fyk (fe)', unit: 'MPa', def: 500 },
+    { id: 'classe', label: 'Classe de ductilité', type: 'sel', def: 'B', options: [['A', 'A'], ['B', 'B'], ['C', 'C']] },
+    { id: 'palier', label: 'Loi de l’acier', type: 'sel', def: 'incline', options: [['incline', 'palier incliné'], ['horizontal', 'palier horizontal']] },
+    { id: 'diagramme', label: 'Diagramme béton', type: 'sel', def: 'pr', options: [['pr', 'parabole-rectangle'], ['rect', 'rectangle simplifié']] },
+    { id: 'phi', label: 'Coefficient de fluage φ', def: 2, help: 'EC2 : n = Es (1 + φ·Mqp/M) / Ecm' },
+    { id: 'nCalc', label: 'n calculé par combinaison (EC2)', type: 'chk', def: true },
+    { id: 'n', label: 'Coefficient n (saisi)', def: 15 },
+    { id: 'fissuration', label: 'Fissuration (BAEL)', type: 'sel', def: 1, options: [[0, 'peu préjudiciable'], [1, 'préjudiciable'], [2, 'très préjudiciable']] },
+    { id: 'livret', label: 'Livret 2.01 : fsu = 0,8 fe/γs (BAEL)', type: 'chk', def: false },
+    { id: 'pieu', label: 'Pieu ou barrette (Fasc. 62 V)', type: 'chk', def: false },
+    { id: 'k1', label: 'k1 (mode d’exécution)', def: 1.2, help: '1,2 foré simple · 1,3 boue · 1,0 tube bétonné à sec…' },
+    { id: 'k2', label: 'k2 (D < 0,6 m : 1,05)', def: 1.0 },
+    { id: 'fclim', label: 'fc,lim', unit: 'MPa', def: 25 },
+  ];
+  const RECT = [
+    { id: 'b', label: 'Largeur b', unit: 'm', def: 1.0 }, { id: 'h', label: 'Hauteur h', unit: 'm', def: 0.80 },
+    { id: 'dsup', label: 'd aciers supérieurs', unit: 'm', def: 0.06 }, { id: 'Asup', label: 'As supérieurs', unit: 'cm²', def: 12.57 },
+    { id: 'dinf', label: 'd aciers inférieurs', unit: 'm', def: 0.74 }, { id: 'Ainf', label: 'As inférieurs', unit: 'cm²', def: 32.17 },
+    { id: 'sym', label: 'Dimensionnement symétrique (As sup = As inf)', type: 'chk', def: false, wide: true },
+  ];
+  const TE = [
+    { id: 'b', label: 'Largeur de table b', unit: 'm', def: 1.0 }, { id: 'hf', label: 'Épaisseur de table hf', unit: 'm', def: 0.25 },
+    { id: 'bw', label: 'Largeur d’âme bw', unit: 'm', def: 0.40 }, { id: 'h', label: 'Hauteur totale h', unit: 'm', def: 1.00 },
+    { id: 'bi', label: 'Largeur du talon (I)', unit: 'm', def: 0 }, { id: 'hi', label: 'Hauteur du talon (I)', unit: 'm', def: 0 },
+  ];
+  const CER = [
+    { id: 'D', label: 'Diamètre D', unit: 'm', def: 1.0 }, { id: 'a', label: 'Axe des aciers / parement', unit: 'm', def: 0.07 },
+    { id: 'As', label: 'Section totale As', unit: 'cm²', def: 49.1 }, { id: 'nb', label: 'Nombre de barres', def: 16 },
+  ];
+  const POLY = [
+    { id: 'pts', label: 'Contour : x y (m), un point par ligne', type: 'area', def: '-0.5 -0.6\n0.5 -0.6\n0.5 0.6\n-0.5 0.6' },
+    { id: 'nap', label: 'Nappes : n  As d’une barre (cm²)  x1 y1  x2 y2', type: 'area', def: '5 4.91 -0.43 -0.53 0.43 -0.53\n5 4.91 -0.43 0.53 0.43 0.53\n2 4.91 -0.43 -0.25 -0.43 0.25\n2 4.91 0.43 -0.25 0.43 0.25' },
+    { id: 'refAuto', label: 'Efforts au centre de gravité du béton', type: 'chk', def: true },
+    { id: 'rx', label: 'Point de réduction x', unit: 'm', def: 0 }, { id: 'ry', label: 'Point de réduction y', unit: 'm', def: 0 },
+    { id: 'grille', label: 'Découpage (cellules par côté)', def: 60 },
+  ];
+  const OPT = [
+    { id: 'L', label: 'Longueur de la pièce L', unit: 'm', def: 0 }, { id: 'lf', label: 'Longueur de flambement l0', unit: 'm', def: 0 },
+    { id: 'excAdd', label: 'Excentricités additionnelles (N > 0)', type: 'chk', def: true },
+    { id: 'ea', label: 'Imperfection (EC2)', type: 'sel', def: 'ec2', options: [['ec2', 'ei = θi l0/2, e0 ≥ max(h/30 ; 2 cm)'], ['forfait', 'ea = max(2 cm ; L/250)']] },
+    { id: 'cot', label: 'cot θ bielles (EC2)', type: 'txt', def: 'libre', help: '« libre » (1 à 2,5) ou valeur imposée' },
+    { id: 'element', label: 'Élément (vmin)', type: 'sel', def: 'poutre', options: [['poutre', 'poutre'], ['dalle', 'dalle']] },
+    { id: 'reprise', label: 'Reprise de bétonnage (BAEL)', type: 'sel', def: 0, options: [[0, 'non'], [1, 'traitée'], [2, 'non traitée']] },
+    { id: 'wkCalcul', label: 'Calcul direct de wk (EC2 §7.3.4)', type: 'chk', def: true, wide: true },
+    { id: 'wkType', label: 'Combinaisons pour wk', type: 'sel', def: 2, options: [[2, 'fréquentes'], [1, 'quasi-permanentes'], [0, 'caractéristiques']] },
+    { id: 'wmax', label: 'wmax', unit: 'mm', def: 0.3 },
+    { id: 'cS', label: 'Enrobage face sup. c', unit: 'mm', def: 45 }, { id: 'phiS', label: 'φ équivalent sup.', unit: 'mm', def: 20 },
+    { id: 'sS', label: 'Espacement sup.', unit: 'mm', def: 150 }, { id: 'cI', label: 'Enrobage face inf. c', unit: 'mm', def: 45 },
+    { id: 'phiI', label: 'φ équivalent inf.', unit: 'mm', def: 32 }, { id: 'sI', label: 'Espacement inf.', unit: 'mm', def: 250 },
+    { id: 'kt', label: 'kt', def: 0.4, help: '0,4 longue durée, 0,6 courte durée' },
+    { id: 'dsFat', label: 'Δσ admissible fatigue', unit: 'MPa', def: 141.3, help: 'ΔσRsk/γs,fat = 162,5/1,15 (barres droites)' },
+  ];
+  const CIS = [
+    { id: 'bw', label: 'Largeur d’âme bw (b0)', unit: 'm', def: 0.40 }, { id: 'h', label: 'Hauteur h', unit: 'm', def: 1.00 },
+    { id: 'd', label: 'Hauteur utile d', unit: 'm', def: 0.93 }, { id: 'z', label: 'Bras de levier z (0 : 0,9 d)', unit: 'm', def: 0 },
+    { id: 'b', label: 'Largeur pour la torsion', unit: 'm', def: 0.40 }, { id: 'c', label: 'Enrobage à l’axe des aciers', unit: 'm', def: 0.05 },
+    { id: 'Asl', label: 'Aciers longitudinaux tendus Asl', unit: 'cm²', def: 30 },
+    { id: 'cot', label: 'cot θ (EC2)', type: 'txt', def: 'libre' },
+    { id: 'element', label: 'Élément', type: 'sel', def: 'poutre', options: [['poutre', 'poutre'], ['dalle', 'dalle']] },
+    { id: 'reprise', label: 'Reprise (BAEL)', type: 'sel', def: 0, options: [[0, 'non'], [1, 'traitée'], [2, 'non traitée']] },
+  ];
+  const COL_ELU = [{ id: 'N', label: 'N (kN)', def: 0 }, { id: 'M', label: 'M (kN·m)', def: 0 }, { id: 'My', label: 'My', def: 0 }, { id: 'Mcp', label: 'Mcp', def: 0 }, { id: 'V', label: 'V (kN)', def: 0 }, { id: 'T', label: 'T (kN·m)', def: 0 },
+    { id: 'type', label: 'Type', type: 'sel', def: 1, options: [[1, '1'], [2, '2'], [3, '3'], [4, '4 acc.'], [5, '5 sism.']], w: '74px' }];
+  const COL_ELS = [{ id: 'N', label: 'N (kN)', def: 0 }, { id: 'M', label: 'M (kN·m)', def: 0 }, { id: 'My', label: 'My', def: 0 }, { id: 'Mqp', label: 'Mqp', def: 0 },
+    { id: 'type', label: 'Type', type: 'sel', def: 0, options: [[0, 'caract.'], [1, 'quasi-perm.'], [2, 'fréquente']], w: '96px' }];
+  const COL_FAT = [{ id: 'N1', label: 'N1', def: 0 }, { id: 'M1', label: 'M1', def: 0 }, { id: 'N2', label: 'N2', def: 0 }, { id: 'M2', label: 'M2', def: 0 }];
+  const COL_TE = [{ id: 'd', label: 'd (m)', def: 0.9 }, { id: 'As', label: 'As (cm²)', def: 10 }];
+  const COL_CIS = [{ id: 'N', label: 'N (kN)', def: 0 }, { id: 'V', label: 'V (kN)', def: 0 }, { id: 'T', label: 'T (kN·m)', def: 0 }, { id: 'type', label: 'Type', type: 'sel', def: 1, options: [[1, 'fond.'], [4, 'acc.'], [5, 'sism.']] }];
+
+  const DEFAUT = () => ({
+    tab: 'rect', gen: {}, mat: {}, rect: {}, te: {}, cercle: {}, poly: {}, opt: {}, cis: {},
+    teRows: [{ d: 0.07, As: 10 }, { d: 0.93, As: 25 }],
+    elu: [{ N: 0, M: -720, My: 0, Mcp: -430, V: 380, T: 0, type: 1 }, { N: 650, M: 260, My: 0, Mcp: 170, V: 150, T: 0, type: 1 }],
+    els: [{ N: 0, M: -520, My: 0, Mqp: -330, type: 0 }, { N: 0, M: -410, My: 0, Mqp: -330, type: 2 }, { N: 0, M: -330, My: 0, Mqp: -330, type: 1 }],
+    fat: [],
+    cisRows: [{ N: 0, V: 650, T: 60, type: 1 }],
+  });
+  let st, rowsTE, rowsELU, rowsELS, rowsFAT, rowsCIS, last = null;
+
+  function build(s) {
+    st = Object.assign(DEFAUT(), s || {});
+    BA.form($('f-gen'), GEN, 'g-', st.gen); BA.form($('f-mat'), MAT, 'm-', st.mat);
+    BA.form($('f-rect'), RECT, 'r-', st.rect); BA.form($('f-te'), TE, 't-', st.te); BA.form($('f-cercle'), CER, 'c-', st.cercle);
+    BA.form($('f-poly'), POLY, 'p-', st.poly); BA.form($('f-opt'), OPT, 'o-', st.opt); BA.form($('f-cis'), CIS, 'v-', st.cis);
+    const ch = () => save();
+    rowsTE = BA.rows($('rows-te'), COL_TE, st.teRows, { addLabel: 'Ajouter une nappe', onChange: ch });
+    rowsELU = BA.rows($('rows-elu'), COL_ELU, st.elu, { addLabel: 'Ajouter une combinaison ELU', onChange: ch });
+    rowsELS = BA.rows($('rows-els'), COL_ELS, st.els, { addLabel: 'Ajouter une combinaison ELS', onChange: ch });
+    rowsFAT = BA.rows($('rows-fat'), COL_FAT, st.fat, { addLabel: 'Ajouter un cycle', onChange: ch });
+    rowsCIS = BA.rows($('rows-cis'), COL_CIS, st.cisRows, { addLabel: 'Ajouter une combinaison', onChange: ch });
+    setTab(st.tab, true);
+  }
+  function lire() {
+    st.gen = BA.read(GEN, 'g-'); st.mat = BA.read(MAT, 'm-'); st.rect = BA.read(RECT, 'r-'); st.te = BA.read(TE, 't-');
+    st.cercle = BA.read(CER, 'c-'); st.poly = BA.read(POLY, 'p-'); st.opt = BA.read(OPT, 'o-'); st.cis = BA.read(CIS, 'v-');
+    return st;
+  }
+  function save() { try { BA.store.save(KEY, lire()); } catch (e) { /* stockage indisponible */ } }
+  function setTab(t, silent) {
+    st.tab = t;
+    document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    document.querySelectorAll('.sec').forEach((c) => c.classList.toggle('hide', !c.dataset.for.split(' ').includes(t)));
+    const mode = $('g-mode'); if (mode) mode.closest('.field').classList.toggle('hide', t === 'poly' || t === 'cis');
+    majVisibilite();
+    if (!silent) { save(); run(); }
+  }
+  function majVisibilite() {
+    const regl = $('g-regl').value, ec2 = regl === 'EC2';
+    const show = (id, on) => { const e = $(id); if (e) e.closest('.field').classList.toggle('hide', !on); };
+    ['m-classe', 'm-palier', 'm-phi', 'm-nCalc'].forEach((i) => show(i, ec2));
+    ['m-fissuration', 'm-livret'].forEach((i) => show(i, !ec2));
+    show('m-n', !ec2 || !$('m-nCalc').checked);
+    const pieu = $('m-pieu').checked && st.tab !== 'cis';
+    ['m-k1', 'm-k2', 'm-fclim'].forEach((i) => show(i, pieu));
+    ['o-cot', 'o-element', 'o-wkCalcul', 'o-wkType', 'o-wmax', 'o-cS', 'o-phiS', 'o-sS', 'o-cI', 'o-phiI', 'o-sI', 'o-kt'].forEach((i) => show(i, ec2));
+    show('o-reprise', !ec2); show('o-ea', ec2); show('v-cot', ec2); show('v-element', ec2); show('v-reprise', !ec2);
+    const r = $('p-refAuto'); if (r) { show('p-rx', !r.checked); show('p-ry', !r.checked); }
+    $('mat-sub').textContent = ec2 ? 'EN 1992-1-1 tableau 3.1' : 'BAEL A.2';
+    show('r-sym', $('g-mode').value === 'dim');
+  }
+
+  /* ── conversion saisie → données moteur ── */
+  const parseLignes = (t, n) => String(t || '').split(/\n/).map((l) => l.trim().split(/[\s;,]+/).map((x) => parseFloat(x))).filter((v) => v.length >= n && v.slice(0, n).every(Number.isFinite));
+  function donnees() {
+    const s = lire(), g = s.gen, m = s.mat, o = s.opt, t = s.tab;
+    const d = { forme: t, mode: t === 'poly' ? 'verif' : g.mode, regl: g.regl, projet: g.projet,
+      materiau: { fck: m.fck, fyk: m.fyk, classe: m.classe, palier: m.palier, diagramme: m.diagramme, phi: m.phi, fissuration: +m.fissuration, livret: m.livret },
+      elu: s.elu.map((r) => Object.assign({}, r, { My: t === 'cercle' || t === 'poly' ? r.My : 0 })),
+      els: s.els.map((r) => Object.assign({}, r, { My: t === 'cercle' || t === 'poly' ? r.My : 0, Mqp: Number.isFinite(r.Mqp) ? r.Mqp : r.M })),
+      fat: s.fat,
+      options: { L: o.L, lf: o.lf, excAdd: o.excAdd, ea: o.ea, cot: /^\s*libre\s*$/i.test(o.cot) || o.cot === '' ? 'libre' : BA.num(o.cot, 'libre'), element: o.element, reprise: +o.reprise,
+        n: m.n, nCalcule: m.nCalc, wkCalcul: o.wkCalcul, wkType: +o.wkType, wmax: o.wmax, kt: o.kt, dsFat: o.dsFat, sym: s.rect.sym,
+        fissu: { sup: { c: o.cS, phi: o.phiS, s: o.sS }, inf: { c: o.cI, phi: o.phiI, s: o.sI } },
+        pieu: m.pieu ? { actif: true, k1: m.k1, k2: m.k2, fclim: m.fclim } : null },
+    };
+    if (t === 'rect') d.section = { b: s.rect.b, h: s.rect.h, nappes: [{ d: s.rect.dsup, As: s.rect.Asup || 0, nom: 'Supérieure' }, { d: s.rect.dinf, As: s.rect.Ainf || 0, nom: 'Inférieure' }] };
+    if (t === 'te') d.section = Object.assign({}, s.te, { nappes: s.teRows.slice(0, 5).map((r, i) => ({ d: r.d, As: r.As || 0, nom: 'Nappe ' + (i + 1) })) });
+    if (t === 'cercle') d.section = { D: s.cercle.D, a: s.cercle.a, As: s.cercle.As || 0, nb: s.cercle.nb };
+    if (t === 'poly') d.section = { points: parseLignes(s.poly.pts, 2).map((v) => v.slice(0, 2)), nappes: parseLignes(s.poly.nap, 6).map((v) => ({ n: v[0], As: v[1], x1: v[2], y1: v[3], x2: v[4], y2: v[5] })), grille: s.poly.grille, ref: s.poly.refAuto ? null : { x: s.poly.rx, y: s.poly.ry } };
+    return d;
+  }
+
+  /* ── schéma de la section ── */
+  function schema(R, ax) {
+    const g = R.geo, W = 380, H = 300, pad = 26;
+    let pts, bb;
+    if (g.kind === 'poly') pts = g.points.map((p) => [p[0] - g.ref.x, p[1] - g.ref.y]);
+    else if (g.kind === 'cercle') { pts = []; for (let i = 0; i < 72; i++) { const a = 2 * Math.PI * i / 72; pts.push([g.D / 2 * Math.cos(a), g.D / 2 * Math.sin(a)]); } }
+    else { // zones → contour symétrique
+      const L = [], Rr = [];
+      g.zones.forEach((z) => { L.push([-z.w1 / 2, g.yG - z.y1], [-z.w2 / 2, g.yG - z.y2]); Rr.push([z.w1 / 2, g.yG - z.y1], [z.w2 / 2, g.yG - z.y2]); });
+      pts = L.concat(Rr.reverse());
+    }
+    const xs = pts.map((p) => p[0]).concat(g.bars.map((b) => b.x)), ys = pts.map((p) => p[1]).concat(g.bars.map((b) => b.y));
+    bb = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const sc = Math.min((W - 2 * pad) / Math.max(bb[1] - bb[0], 1e-6), (H - 2 * pad) / Math.max(bb[3] - bb[2], 1e-6));
+    const cx = (bb[0] + bb[1]) / 2, cy = (bb[2] + bb[3]) / 2;
+    const X = (x) => W / 2 + (x - cx) * sc, Y = (y) => H / 2 - (y - cy) * sc;
+    let s = `<polygon points="${pts.map((p) => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ')}" fill="#efebe1" stroke="#6f7484" stroke-width="1.2"/>`;
+    if (ax && ax.plan) { // zone comprimée et axe neutre (ELS)
+      const p = ax.plan, f = (x, y) => p.e0 - p.ky * y + p.kx * x;
+      const big = 4 * Math.max(bb[1] - bb[0], bb[3] - bb[2]);
+      // ligne ε = 0 : e0 − ky y + kx x = 0
+      let a, b;
+      if (Math.abs(p.ky) > Math.abs(p.kx)) { const yA = (p.e0 + p.kx * (cx - big)) / p.ky, yB = (p.e0 + p.kx * (cx + big)) / p.ky; a = [cx - big, yA]; b = [cx + big, yB]; }
+      else if (Math.abs(p.kx) > 1e-14) { const xA = (p.ky * (cy - big) - p.e0) / p.kx, xB = (p.ky * (cy + big) - p.e0) / p.kx; a = [xA, cy - big]; b = [xB, cy + big]; }
+      if (a) {
+        // polygone comprimé = contour ∩ {ε > 0} (découpage de Sutherland-Hodgman)
+        const out = []; for (let i = 0; i < pts.length; i++) { const P = pts[i], Q = pts[(i + 1) % pts.length], eP = f(P[0], P[1]), eQ = f(Q[0], Q[1]); if (eP > 0) out.push(P); if ((eP > 0) !== (eQ > 0)) { const t = eP / (eP - eQ); out.push([P[0] + t * (Q[0] - P[0]), P[1] + t * (Q[1] - P[1])]); } }
+        if (out.length > 2) s += `<polygon points="${out.map((q) => X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1)).join(' ')}" fill="#a8842a" fill-opacity=".22"/>`;
+        s += `<defs><clipPath id="clipS"><polygon points="${pts.map((q) => X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1)).join(' ')}"/></clipPath></defs>`;
+        s += `<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" stroke="#a8842a" stroke-width="1.3" stroke-dasharray="6 4" clip-path="url(#clipS)"/>`;
+      }
+    }
+    const Amax = Math.max(...g.bars.map((b) => b.A), 1e-9);
+    g.bars.forEach((b) => { if (b.A <= 0) return; const r = g.kind === 'poly' || g.kind === 'cercle' ? clamp(2 + 5 * Math.sqrt(b.A / Amax), 2.5, 7) : 5; s += `<circle cx="${X(b.x)}" cy="${Y(b.y)}" r="${r}" fill="#14171f"/>`; });
+    if (g.plan && g.kind !== 'cercle') g.bars.forEach((b) => { s += `<text x="${X(bb[1]) + 6}" y="${Y(b.y) + 4}">${f2(b.A * 1e4)} cm² · d ${f3(b.d)}</text>`; });
+    if (g.kind === 'cercle') s += `<text x="${W / 2}" y="${H - 6}" text-anchor="middle">D = ${f2(g.D)} m · ${g.nb} barres · As = ${f2(g.AsTot)} cm²</text>`;
+    if (g.kind === 'poly') s += `<circle cx="${X(0)}" cy="${Y(0)}" r="3" fill="none" stroke="#c0392b"/><text x="${X(0) + 5}" y="${Y(0) - 5}" style="fill:#c0392b">O</text>`;
+    return `<svg viewBox="0 0 ${W + (g.plan && g.kind !== 'cercle' ? 150 : 0)} ${H}">${s}</svg>`;
+  }
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  /* ── calcul et affichage ── */
+  function run() {
+    save();
+    const out = $('out');
+    try {
+      if (st.tab === 'cis') { last = { cis: runCis() }; return; }
+      const d = donnees(); const R = S.calcul(d); last = { d, R }; afficher(d, R);
+    } catch (e) { last = null; out.innerHTML = `<div class="card"><div class="msg err">${BA.esc(e.message || String(e))}</div></div>`; console.error(e); }
+  }
+  function verd(ok) { return BA.verdict(ok, 'OK', 'Non vérifié'); }
+
+  function afficher(d, R) {
+    const ec2 = R.mat.regl === 'EC2', html = [], m = R.mat;
+    const rMax = R.elu.length ? Math.max(...R.elu.map((r) => r.ratio)) : 0;
+    const scMax = R.els.length ? Math.max(...R.els.map((e) => e.sc / e.scLim)) : 0;
+    const AsTot = R.geo.bars.reduce((s, b) => s + b.A, 0) * 1e4;
+    html.push(BA.kpis([
+      { l: 'Verdict', v: R.verdict ? 'Vérifié' : 'Non vérifié', cls: R.verdict ? 'ok' : 'ko', hi: true, n: `${R.elu.length} ELU · ${R.els.length} ELS${R.cis.length ? ' · ' + R.cis.length + ' V/T' : ''}` },
+      { l: 'Taux ELU maxi', v: R.elu.length ? f2(rMax) : '—', cls: rMax <= 1 ? 'ok' : 'ko', n: 'MEd / MRd' },
+      { l: 'σc / σc,lim maxi', v: R.els.length ? f2(scMax) : '—', cls: scMax <= 1 ? 'ok' : 'ko', n: 'ELS' },
+      { l: d.mode === 'dim' ? 'Aciers calculés' : 'Aciers de la section', v: f2(AsTot), u: 'cm²', n: f2(AsTot / (R.geo.Ac * 1e4) * 100) + ' % de Ac' },
+    ]));
+    if (R.alertes.length) html.push(`<div class="msg err">${R.alertes.map(BA.esc).join('<br>')}</div>`);
+    html.push(`<div class="two"><div class="schema">${schema(R, R.els[0])}<div style="font-size:10.5px;color:var(--ink3);margin-top:4px">${R.els[0] ? 'Zone comprimée et axe neutre sous la combinaison ELS 1.' : ''}</div></div><div>${matTable(R)}</div></div>`);
+    const out = [BA.card('Synthèse', html.join(''), (ec2 ? 'EN 1992-1-1 / EN 1992-2' : 'BAEL 91 révisé 99') + (m.livret ? ' · Livret 2.01' : ''))];
+    if (R.dim) out.push(BA.card('Dimensionnement des aciers', dimTable(R), d.forme === 'cercle' ? 'section totale répartie' : 'nappes supérieure et inférieure'));
+    if (R.elu.length) out.push(BA.card('Vérifications ELU', eluTable(R) + inter(R), R.geo.plan ? 'flexion composée' : 'flexion déviée'));
+    if (R.els.length) out.push(BA.card('Vérifications ELS', elsTable(R)));
+    if (R.els.some((e) => e.wk)) out.push(BA.card('Ouverture des fissures', wkTable(R), 'EN 1992-1-1 §7.3.4'));
+    if (R.cis.length) out.push(BA.card('Effort tranchant et torsion', cisTable(R.cis), ec2 ? 'EN 1992-1-1 §6.2, 6.3' : 'BAEL A.5.1, A.5.4'));
+    if (R.fat.length) out.push(BA.card('Fatigue des aciers', fatTable(R)));
+    if (R.pr) out.push(BA.card('Caractéristiques homogénéisées', propsTable(R), 'n = ' + f2(R.pr.n || nProps(R))));
+    $('out').innerHTML = out.join('');
+    const sel = $('i-type'); if (sel) sel.onchange = () => { $('i-svg').innerHTML = interSvg(R, +sel.value); };
+  }
+  const nProps = (R) => (R.mat.regl === 'BAEL' ? (+st.mat.n || 15) : R.mat.Es / R.mat.Ecm);
+  function matTable(R) {
+    const m = R.mat, L = S.lois(m, 1), ec2 = m.regl === 'EC2';
+    const rows = [
+      [ec2 ? 'fck' : 'fc28', f2(m.fck) + ' MPa'], m.pieu ? ['fc* conventionnelle (pieu)', f2(m.fc) + ' MPa'] : null,
+      [ec2 ? 'fcd (fondamental)' : 'fbu (> 24 h)', f2(L.fc) + ' MPa'], ['fyd (fondamental)', f2(L.fy) + ' MPa'],
+      ec2 ? ['Ecm', f0(m.Ecm) + ' MPa'] : ['ft28', f2(m.ftj) + ' MPa'], ec2 ? ['fctm', f2(m.fctm) + ' MPa'] : null,
+      ec2 ? ['εc2 / εcu2', f2(L.ec2 * 1000) + ' / ' + f2(L.ecu * 1000) + ' ‰'] : null, ec2 ? ['εud', f1(L.eud * 1000) + ' ‰'] : null,
+      ['σc limite ELS', f2(m.sbc) + (ec2 ? ' MPa (QP : ' + f2(m.sbcQP) + ')' : ' MPa')], ['σs limite ELS', Number.isFinite(m.ssLim) ? f1(m.ssLim) + ' MPa' : 'sans limite'],
+      Number.isFinite(m.smoyLim) ? ['σ moyenne limite (pieu)', f2(m.smoyLim) + ' MPa'] : null,
+      ['Aire de béton', f3(R.geo.Ac) + ' m²'],
+    ].filter(Boolean);
+    return BA.table(['Matériaux', ''], rows);
+  }
+  function dimTable(R) {
+    const q = R.dim.req, noms = R.geo.kind === 'cercle' ? ['Totale'] : ['Supérieure', 'Inférieure'];
+    const rows = noms.map((n, i) => [n, f2(q.elu[i]), f2(q.els[i]), f2(q.wk[i]), f2(q.min[i]), `<b>${f2(R.dim.As[i])}</b>`]);
+    let h = BA.table(['Nappe', 'ELU (cm²)', 'ELS (cm²)', 'wk (cm²)', 'Minimum (cm²)', 'Retenu (cm²)'], rows);
+    h += BA.table(['ELU', 'N (kN)', 'MEd (kN·m)', ...noms.map((n) => n + ' (cm²)'), 'Cas'], q.lignes.map((l, k) => [k + 1, f1(l.r.N || 0), f1(l.MEd ?? l.r.M), ...l.As.map(f2), l.cas || '']), { leftText: true });
+    const cis = R.cis.filter((c) => c.regl === 'EC2');
+    if (cis.length) { const v = Math.max(...cis.map((c) => c.AsFtd)); h += `<div style="font-size:11.5px;color:var(--ink3);margin-top:6px">Décalage de la courbe des moments ΔFtd = 0,5 VEd cot θ : à ajouter aux aciers tendus là où le moment est maximal : ${f2(v)} cm² au plus (EN 1992-1-1 §9.2.1.3).</div>`; }
+    return h;
+  }
+  function eluTable(R) {
+    const pl = R.geo.plan;
+    const rows = R.elu.map((r) => [r.no, r.libType, f1(r.N), f1(r.M1), pl ? f1(r.MEd) : f1(r.My), f1(r.MRd), f2(r.ratio), r.pivot || '—', verd(r.ok)]);
+    let h = BA.table(['Comb.', 'Type', 'N (kN)', pl ? 'M 1er ordre' : 'Mx', pl ? 'MEd (kN·m)' : 'My', 'MRd (kN·m)', 'Taux', 'Pivot', ''], rows);
+    const so = R.elu.filter((r) => r.so && r.so.e > 0);
+    if (so.length) h += BA.table(['Comb.', 'Excentricité additionnelle', 'ea (m)', 'e2 (m)', 'λ', 'λlim'], so.map((r) => [r.no, r.so.detail, f3(r.so.ea), f3(r.so.e2), r.so.lam ? f1(r.so.lam) : '—', r.so.lamLim ? f1(r.so.lamLim) : '—']), { leftText: true });
+    R.elu.filter((r) => r.msg).forEach((r) => (h += `<div class="alert">Combinaison ${r.no} : ${BA.esc(r.msg)}.</div>`));
+    return h;
+  }
+  function interSvg(R, type) {
+    if (R.geo.plan) {
+      const it = S.interaction(R.geo, R.mat, type, 90);
+      const pts = R.elu.filter((r) => r.type === type || R.elu.every((x) => x.type !== type)).map((r) => ({ N: r.N, M: r.MEd ?? r.M, ok: r.ok, lab: String(r.no) }));
+      return S.svgInteraction(it, pts);
+    }
+    const r0 = R.elu.find((r) => r.contour) || R.elu[0];
+    if (!r0 || !r0.contour) return '';
+    const cont = r0.contour, W = 420, H = 360, xs = cont.map((p) => p.Mx).concat([r0.M]), ys = cont.map((p) => p.My).concat([r0.My]);
+    const mx = Math.max(...xs.map(Math.abs), ...ys.map(Math.abs)) * 1.1 || 1, X = (v) => W / 2 + v / mx * (W / 2 - 30), Y = (v) => H / 2 - v / mx * (H / 2 - 24);
+    let g = `<line x1="20" x2="${W - 10}" y1="${H / 2}" y2="${H / 2}" stroke="#14171f" stroke-width=".7"/><line y1="10" y2="${H - 10}" x1="${W / 2}" x2="${W / 2}" stroke="#14171f" stroke-width=".7"/>`;
+    g += `<polygon points="${cont.map((p) => X(p.Mx).toFixed(1) + ',' + Y(p.My).toFixed(1)).join(' ')}" fill="#a8842a" fill-opacity=".1" stroke="#a8842a" stroke-width="1.5"/>`;
+    R.elu.forEach((r) => { if (Math.abs(r.N - r0.N) < 1e-6) g += `<circle cx="${X(r.M)}" cy="${Y(r.My)}" r="4" fill="${r.ok ? '#0f8f7b' : '#c0392b'}"/><text x="${X(r.M) + 6}" y="${Y(r.My) - 5}">${r.no}</text>`; });
+    g += `<text x="${W - 10}" y="${H / 2 - 6}" text-anchor="end">Mx</text><text x="${W / 2 + 6}" y="18">My</text><text x="12" y="${H - 8}">N = ${f0(r0.N)} kN · |M|max = ${f0(mx / 1.1)} kN·m</text>`;
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+  }
+  function inter(R) {
+    if (!R.elu.length) return '';
+    const types = [...new Set(R.elu.map((r) => r.type))];
+    const lib = R.mat.regl === 'BAEL' ? S.TYPES_ELU_BAEL : S.TYPES_ELU;
+    const sel = R.geo.plan ? `<select id="i-type" style="height:28px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:12px;margin-left:8px">${[1, 2, 3, 4, 5].map((t) => `<option value="${t}"${t === types[0] ? ' selected' : ''}>${lib[t]}</option>`).join('')}</select>` : '';
+    return `<div style="margin-top:14px;font-size:11px;color:var(--ink3)"><b style="font-weight:500;color:var(--ink2)">${R.geo.plan ? 'Diagramme d’interaction N–M' : 'Contour de résistance Mx–My à N constant'}</b>${sel}</div><div id="i-svg">${interSvg(R, types[0])}</div>`;
+  }
+  function elsTable(R) {
+    const pl = R.geo.plan && R.geo.kind !== 'cercle';
+    const heads = ['Comb.', 'Type', 'N (kN)', 'M (kN·m)', 'n', 'σc (MPa)', 'σc,lim'];
+    if (pl) R.geo.bars.forEach((b) => heads.push('σs ' + b.nom.replace('Nappe ', 'n')));
+    else heads.push('σs mini (MPa)', 'σs maxi');
+    heads.push('σs,lim', 'x (m)');
+    if (Number.isFinite(R.mat.smoyLim)) heads.push('σ moy.');
+    heads.push('');
+    const rows = R.els.map((e) => {
+      const r = [e.no, e.libType, f1(e.N), R.geo.plan ? f1(e.M) : f1(e.M) + ' / ' + f1(e.My), f2(e.n), `<span class="${e.okC ? '' : 'ko'}">${f2(e.sc)}</span>`, f2(e.scLim)];
+      if (pl) e.ss.forEach((s, i) => r.push(R.geo.bars[i].A > 0 ? `<span class="${-s > e.ssLim + 1e-6 ? 'ko' : ''}">${f2(s)}</span>` : '—'));
+      else r.push(`<span class="${e.okS ? '' : 'ko'}">${f2(e.ssMin)}</span>`, f2(e.ssMax));
+      r.push(Number.isFinite(e.ssLim) ? '−' + f1(e.ssLim) : '—', Number.isFinite(e.x) ? f3(e.x) : 'entièrement comprimée');
+      if (Number.isFinite(R.mat.smoyLim)) r.push(`<span class="${e.okM ? '' : 'ko'}">${f2(e.smoy)}</span>`);
+      r.push(verd(e.ok));
+      return r;
+    });
+    return BA.table(heads, rows) + '<div style="font-size:11px;color:var(--ink3);margin-top:4px">Contraintes en MPa, compression positive. Section fissurée, béton tendu négligé.</div>';
+  }
+  function wkTable(R) {
+    const rows = R.els.filter((e) => e.wk).map((e) => { const w = e.wk; return w.sansTraction ? [e.no, 'pas d’aciers tendus', '', '', '', '', '', '', '', '', verd(true)] :
+      [e.no, f2(w.ss), f2(w.k2), f2(w.k3), f3(w.hceff), f3(w.Aceff), fmt(w.rho, 5), fmt(w.dEps * 1000, 3), f1(w.sr), f3(w.wk) + ' / ' + f3(w.wmax), verd(w.ok)]; });
+    return BA.table(['Comb.', 'σs (MPa)', 'k2', 'k3', 'hc,ef (m)', 'Ac,ef (m²)', 'ρp,eff', 'εsm−εcm (‰)', 'sr,max (mm)', 'wk / wmax (mm)', ''], rows);
+  }
+  function cisTable(C) {
+    if (C[0].regl === 'EC2') return BA.table(['Comb.', 'VEd', 'TEd', 'N', 'd (m)', 'VRd,c', 'VRd,max', 'cot θ', 'Asw/s (cm²/m)', 'Asw/s torsion', 'ΣAsl torsion (cm²)', 'ΔFtd (kN)', 'Taux bielle', ''],
+      C.map((c) => [c.no, f1(c.V), f1(c.T), f1(c.N), f3(c.d), f1(c.VRdc), f1(c.VRdmax), f2(c.cot), f2(c.Asw), f2(c.AswT), f2(c.AslT), f1(c.dFtd), f2(c.interaction), verd(c.ok)])) +
+      '<div style="font-size:11px;color:var(--ink3);margin-top:4px">Asw/s : section de toutes les branches par mètre ; torsion : section d’un brin par mètre (paroi). Aciers transversaux minimaux ρw,min = 0,08 √fck/fyk (poutres).</div>';
+    return BA.table(['Comb.', 'Vu', 'Tu', 'N', 'τu V (MPa)', 'τu T', 'τu total', 'τlim', 'k', 'At/(b0 st) (cm²/m²)', 'At/st (cm²/m)', 'Al torsion (cm²)', ''],
+      C.map((c) => [c.no, f1(c.V), f1(c.T), f1(c.N), f3(c.tauV), f3(c.tauT), f3(c.tau), f3(c.tlim), f2(c.k), f2(c.AtSurB0), f2(c.At), c.tor ? f2(c.tor.Al) : '—', verd(c.ok)]));
+  }
+  function fatTable(R) {
+    return BA.table(['Cycle', 'n', 'Δσs maxi (MPa)', 'Δσ admissible', ''], R.fat.map((x) => [x.no, f2(x.n), f1(x.dmax), f1(x.lim), verd(x.ok)]));
+  }
+  function propsTable(R) {
+    const p = R.pr, n = nProps(R), pp = S.props(R.geo, n);
+    return BA.table(['Grandeur', 'Valeur'], [
+      ['Aire de béton Ac', f3(R.geo.Ac) + ' m²'], ['Inertie du béton seul Ic', fmt(R.geo.Ic, 5) + ' m⁴'],
+      ['Coefficient d’équivalence n', f2(n)], ['Aire homogénéisée non fissurée', f3(pp.A) + ' m²'],
+      ['Inertie homogénéisée non fissurée', fmt(pp.I, 5) + ' m⁴'],
+      pp.fp ? ['Inertie fissurée, M > 0 (axe neutre à ' + f3(pp.fp.x) + ' m de la fibre inf.)', fmt(pp.fp.I, 5) + ' m⁴'] : null,
+      pp.fn ? ['Inertie fissurée, M < 0 (axe neutre à ' + f3(pp.fn.x) + ' m de la fibre sup.)', fmt(pp.fn.I, 5) + ' m⁴'] : null,
+    ].filter(Boolean), { leftText: true });
+  }
+
+  /* ── onglet tranchant/torsion autonome ── */
+  function runCis() {
+    const s = lire(), m = S.materiau({ regl: s.gen.regl, fck: s.mat.fck, fyk: s.mat.fyk, fissuration: +s.mat.fissuration });
+    const c = s.cis, ec2 = m.regl === 'EC2';
+    const C = s.cisRows.filter((r) => +r.V || +r.T).map((r, k) => {
+      const L = S.lois(m, +r.type || 1);
+      const x = ec2 ? S.tranchantEC2({ bw: c.bw, h: c.h, d: c.d, z: c.z || 0.9 * c.d, b: c.b, c: c.c, Asl: c.Asl, N: r.N, V: r.V, T: r.T, fck: m.fc, fyk: m.fyk, gc: L.gc, gs: L.gs, cot: /libre/i.test(c.cot) ? 'libre' : BA.num(c.cot), element: c.element })
+        : S.tranchantBAEL({ b0: c.bw, h: c.h, d: c.d, fc28: m.fc, fe: m.fyk, gs: L.gs, fissuration: m.fissuration, N: r.N, V: r.V, T: r.T, reprise: +c.reprise });
+      return Object.assign(x, { no: k + 1, d: c.d });
+    });
+    const ok = C.every((x) => x.ok);
+    $('out').innerHTML = BA.card('Effort tranchant et torsion', BA.kpis([{ l: 'Verdict', v: ok ? 'Vérifié' : 'Non vérifié', cls: ok ? 'ok' : 'ko', hi: true },
+      { l: ec2 ? 'Asw/s maxi' : 'At/st maxi', v: f2(Math.max(0, ...C.map((x) => (ec2 ? x.Asw + 2 * x.AswT : x.At)))), u: 'cm²/m', n: ec2 ? 'tranchant + 2 brins de torsion' : '' }]) + (C.length ? cisTable(C) : '<div class="empty">Aucune combinaison.</div>'), ec2 ? 'EN 1992-1-1 §6.2, 6.3' : 'BAEL A.5.1, A.5.4');
+    return C;
+  }
+
+  /* ── note de calcul ── */
+  function note() {
+    if (!last) run(); if (!last) return;
+    const s = lire(), secs = [];
+    if (last.cis) { secs.push({ titre: 'Effort tranchant et torsion', html: $('out').innerHTML }); }
+    else {
+      const R = last.R, d = last.d;
+      const geoTxt = d.forme === 'rect' ? `Section rectangulaire b = ${f3(d.section.b)} m, h = ${f3(d.section.h)} m` : d.forme === 'te' ? `Section en T : table ${f3(d.section.b)} × ${f3(d.section.hf)} m, âme ${f3(d.section.bw)} m, h = ${f3(d.section.h)} m` : d.forme === 'cercle' ? `Section circulaire D = ${f3(d.section.D)} m, aciers à ${f3(d.section.a)} m du parement` : `Section quelconque (${R.geo.points.length} sommets, ${R.geo.bars.length} barres)`;
+      secs.push({ titre: 'Données', html: `<p>${geoTxt}. Calcul en ${d.mode === 'dim' ? 'dimensionnement' : 'vérification'}.</p>` + matTable(R) + `<div class="schema" style="max-width:420px">${schema(R, R.els[0])}</div>` });
+      if (R.dim) secs.push({ titre: 'Dimensionnement des aciers', html: dimTable(R) });
+      if (R.elu.length) secs.push({ titre: 'Vérifications ELU', html: eluTable(R) + `<div>${interSvg(R, R.elu[0].type)}</div>` });
+      if (R.els.length) secs.push({ titre: 'Vérifications ELS', html: elsTable(R) });
+      if (R.els.some((e) => e.wk)) secs.push({ titre: 'Ouverture des fissures', html: wkTable(R) });
+      if (R.cis.length) secs.push({ titre: 'Effort tranchant et torsion', html: cisTable(R.cis) });
+      if (R.fat.length) secs.push({ titre: 'Fatigue', html: fatTable(R) });
+      if (R.pr) secs.push({ titre: 'Caractéristiques homogénéisées', html: propsTable(R) });
+      secs.push({ titre: 'Conclusion', html: `<p class="${R.verdict ? 'ok' : 'ko'}"><b>${R.verdict ? 'Section vérifiée sous l’ensemble des combinaisons.' : 'Au moins une vérification n’est pas satisfaite.'}</b></p>` + (R.alertes.length ? `<p class="ko">${R.alertes.map(BA.esc).join('<br>')}</p>` : '') });
+    }
+    BA.note({ titre: 'Justification d’une section en béton armé', code: 'SECTIONS', regl: s.gen.regl === 'EC2' ? 'EN 1992-1-1, EN 1992-2 et annexes nationales françaises' : 'BAEL 91 révisé 99' + (s.mat.livret ? ' — Livret 2.01' : ''), projet: s.gen.projet, sections: secs });
+  }
+
+  /* ── import .don ── */
+  function fromDon(txt) {
+    const D = S.donVersDonnees(txt);
+    const s = DEFAUT();
+    s.tab = D.forme; s.gen = { projet: D.projet || 'Import .don', regl: D.regl, mode: D.mode };
+    s.mat = { fck: D.materiau.fck, fyk: D.materiau.fyk, classe: D.materiau.classe, palier: 'incline', diagramme: 'pr', phi: D.materiau.phi, nCalc: !!D.options.nCalcule, n: D.options.n, fissuration: D.materiau.fissuration, livret: D.materiau.livret, pieu: !!D.options.pieu, k1: 1.2, k2: 1, fclim: 25 };
+    const fs = D.options.fissu;
+    s.opt = { L: D.options.L, lf: D.options.lf, excAdd: true, ea: 'forfait', cot: typeof D.options.cot === 'number' ? String(+D.options.cot.toFixed(3)) : 'libre', element: 'poutre', reprise: D.options.reprise, wkCalcul: D.options.wkCalcul, wkType: 2, wmax: D.options.wmax || 0.3,
+      cS: fs.sup.c, phiS: fs.sup.phi, sS: fs.sup.s, cI: fs.inf.c, phiI: fs.inf.phi, sI: fs.inf.s, kt: 0.4, dsFat: 141.3 };
+    if (D.forme === 'rect') s.rect = { b: D.section.b, h: D.section.h, dsup: D.section.nappes[0].d, Asup: D.section.nappes[0].As, dinf: D.section.nappes[1].d, Ainf: D.section.nappes[1].As, sym: D.options.sym };
+    if (D.forme === 'te') { s.te = { b: D.section.b, hf: D.section.hf, bw: D.section.bw, h: D.section.h, bi: D.section.bi, hi: D.section.hi }; s.teRows = D.section.nappes.map((n) => ({ d: n.d, As: n.As })); }
+    if (D.forme === 'cercle') s.cercle = { D: D.section.D, a: D.section.a, As: D.section.As, nb: D.section.nb };
+    if (D.forme === 'poly') s.poly = { pts: D.section.points.map((p) => p.join(' ')).join('\n'), nap: D.section.nappes.map((n) => [n.n, +n.As.toFixed(4), n.x1, n.y1, n.x2, n.y2].join(' ')).join('\n'), refAuto: !D.section.ref, rx: D.section.ref ? D.section.ref.x : 0, ry: D.section.ref ? D.section.ref.y : 0, grille: Math.min(120, D.section.grille || 60) };
+    s.elu = D.elu.length ? D.elu.map((r) => ({ N: r.N, M: r.M, My: r.My || 0, Mcp: r.Mcp ?? 0, V: r.V || 0, T: r.T || 0, type: r.type || 1 })) : [];
+    s.els = D.els.map((r) => ({ N: r.N, M: r.M, My: r.My || 0, Mqp: r.Mqp ?? r.M, type: r.type || 0 }));
+    s.fat = [];
+    build(s); run();
+  }
+
+  /* ── événements ── */
+  $('tabs').addEventListener('click', (e) => { if (e.target.dataset.t) setTab(e.target.dataset.t); });
+  document.querySelector('.col-in').addEventListener('change', (e) => { if (e.target.closest('.grid-in')) return; majVisibilite(); save(); });
+  $('b-calc').onclick = run;
+  $('b-note').onclick = note;
+  $('b-save').onclick = () => BA.store.download('bael-ec2.json', lire());
+  $('b-open').onclick = () => BA.store.pick('.json', (t) => { try { build(JSON.parse(t)); run(); } catch (e) { alert('Fichier illisible.'); } });
+  $('b-don').onclick = () => BA.store.pick('.don,.DON', (t) => { try { fromDon(t); } catch (e) { alert('Fichier .don illisible : ' + e.message); } });
+  $('b-reset').onclick = () => { build(null); run(); };
+  let init = null; try { init = BA.store.load(KEY); } catch (e) { init = null; }
+  build(init); run();
+})();
+</script>
+</body>
+</html>
