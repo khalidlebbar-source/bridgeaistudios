@@ -133,13 +133,14 @@
   }
   const Z = n => Array(n).fill(0);
   const LIVE = ['A', 'BC', 'BT', 'MC', 'ME', 'EX', 'TR'];
+  const REm = e => (e && e.RE ? e.RE.eff : 0); // colonne REMB (surcharge sur remblai)
   function ligneM(lab, mm, x, M, sens, ret, tem, lv) {
     const els = sens > 0 ? M.elsMax : M.elsMin, elu = sens > 0 ? M.eluMax : M.eluMin;
     const e = lv ? lv[sens > 0 ? 'max' : 'min'] : null;
     const q = LIVE.map(k => e ? e[k].eff : 0);
-    const c = { Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: ret, TP: tem };
+    const c = { Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: ret, TP: tem };
     const t = LV.combine(c, sens);
-    const live = q.map(z => F(z, 7, 2)).join('') + F(0, 7, 2);
+    const live = q.map(z => F(z, 7, 2)).join('') + F(REm(e), 7, 2);
     return lab + mm + (x == null ? sp(6) : F(x, 6, 2)) + F(els, 8, 2) + F(elu, 7, 2) + ' ' + live + F(ret, 7, 2) + F(tem, 7, 2) + F(t.els, 11, 2) + F(t.elu, 9, 2);
   }
   function sectionsDet(r) {
@@ -182,8 +183,8 @@
       const vr = Math.abs(s.vret), vt = Math.abs(s.vtem); const lv = (tr ? r.liveT : r.liveP)[i].V;
       for (const sg of [1, -1]) {
         const e = lv[sg > 0 ? 'max' : 'min'], q = LIVE.map(k => e[k].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
-        const t = LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: tr ? 0 : vr, TP: tr ? 0 : vt }, sg);
-        const live = q.slice(0, 6).map(z => F(z, 8, 2)).join('') + F(q[6], 8, 2) + F(0, 8, 2);
+        const t = LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: tr ? 0 : vr, TP: tr ? 0 : vt }, sg);
+        const live = q.slice(0, 6).map(z => F(z, 8, 2)).join('') + F(q[6], 8, 2) + F(REm(e), 8, 2);
         L.push((sg > 0 ? 'MAX' + F(s.x, 12, 2) : '   MIN' + sp(15)) + F(G, 12, 2) + ' ' + live + F(tr ? 0 : vr, 8, 2) + F(tr ? 0 : vt, 8, 2) + F(t.elu, 10, 2));
       }
       L.push(' ');
@@ -259,7 +260,7 @@
     for (const [tit, secs, e] of [['E T R I E R S   D E   L A   T R A V E R S E   S U P E R I E U R E', r.secT, r.g.e3, 'T'], ['E T R I E R S   D U   P I E D R O I T', r.secP, r.g.e2, 'P']]) {
       const tr = secs === r.secT, lv = tr ? r.liveT : r.liveP; const d = e - 0.025 - 0.6 * r.v.PHI1 - 1.1 * r.v.PHI2; // hauteur utile (règle des efforts résistants : 43.57/80.01 = 0.5446)
       const rows = secs.map((s, i) => { const vals = [1, -1].map(sg => { const ee = lv[i].V[sg > 0 ? 'max' : 'min'], q = LIVE.map(k => ee[k].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
-        return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: tr ? 0 : Math.abs(s.vret), TP: tr ? 0 : Math.abs(s.vtem) }, sg).elu; });
+        return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(ee), RT: tr ? 0 : Math.abs(s.vret), TP: tr ? 0 : Math.abs(s.vtem) }, sg).elu; });
         const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); return [s.x, V, V / d]; });
       const mx = Math.max(...rows.map(r => r[2]));
       out.push(sp(30) + tit, ' ', mx < lim ? sp(70) + "PAS D'ETRIERS  (CONTRAINTE DE CISAILLEMENT <" + F(lim, 6, 2) + ' T/M2)' : '', ' ', ' ',
@@ -272,7 +273,7 @@
     for (const [lab, k, sgn, a, phi] of [['* COTE EXTERIEUR', 'E', -1, r.aExt, r.fer.ad.semE.sol.phi], ['* COTE INTERIEUR', 'I', 1, r.aInt, r.fer.ad.semI.sol.phi]]) {
       const d = r.g.e1 - 0.025 - 0.6 * phi - 1.1 * r.v.PHI2;
       const rows = r.semelleEff[k].map(s => { const vals = [1, -1].map(sg => { const e = s.liveV[sg > 0 ? 'max' : 'min'], q = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'].map(x => e[x].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
-        return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[1], TP: s.tem[1] }, sg).elu; });
+        return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[1], TP: s.tem[1] }, sg).elu; });
         const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); return [sgn * (r.g.e2 / 2 + (1 - s.t) * a), V, V / d]; });
       const mx = Math.max(...rows.map(x => x[2])), lim = r.mat.tauSans;
       out.push(lab, mx < lim ? sp(60) + "PAS D'ETRIERS    (CONTRAINTE DE CISAILLEMENT <" + F(lim, 6, 2) + ' T/M2)' : '', sp(19) + 'ABSCISSE          EFFORT TRANCHANT        CISAILLEMENT', sp(21) + '(M)                   (T)                  (T/M2)');
@@ -292,8 +293,8 @@
         '                           PERMAN    A     BC     BT     ME     CM     EX     TR   REMBLAI RETRAIT TEMPERA', ' ');
       for (const sg of [1, -1]) {
         const e = P.live[sg > 0 ? 'max' : 'min'], q = ord.map(x => e[x].eff), G = sg > 0 ? P.max : P.min;
-        const t = LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: P.ret, TP: P.tem }, sg);
-        L.push(sp(21) + (sg > 0 ? 'MAX' : 'MIN') + F(G, 9, 2) + q.slice(0, 6).map(x => F(x, 7, 2)).join('') + F(q[6], 7, 2) + F(0, 7, 2) + F(P.ret, 8, 2) + F(P.tem, 7, 2) + F(t.els, 13, 2));
+        const t = LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: P.ret, TP: P.tem }, sg);
+        L.push(sp(21) + (sg > 0 ? 'MAX' : 'MIN') + F(G, 9, 2) + q.slice(0, 6).map(x => F(x, 7, 2)).join('') + F(q[6], 7, 2) + F(REm(e), 7, 2) + F(P.ret, 8, 2) + F(P.tem, 7, 2) + F(t.els, 13, 2));
       }
       L.push(' ');
     }
@@ -312,8 +313,8 @@
         for (const sg of [1, -1]) {
           const e = s.liveM[sg > 0 ? 'max' : 'min'], q = SORD.map(x => e[x].eff);
           const els = sg > 0 ? s.M.elsMax : s.M.elsMin, elu = sg > 0 ? s.M.eluMax : s.M.eluMin;
-          const t = LV.combine({ Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: s.ret[0], TP: s.tem[0] }, sg);
-          L.push(SLAB[i][sg > 0 ? 0 : 1] + (sg > 0 ? 'MAX' : 'MIN') + F(els, 9, 2) + F(elu, 8, 2) + q.map(x => F(x, 8, 2)).join('') + F(0, 9, 2) + F(s.ret[0], 8, 2) + F(s.tem[0], 8, 2) + F(t.els, 9, 2) + F(t.elu, 9, 2));
+          const t = LV.combine({ Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[0], TP: s.tem[0] }, sg);
+          L.push(SLAB[i][sg > 0 ? 0 : 1] + (sg > 0 ? 'MAX' : 'MIN') + F(els, 9, 2) + F(elu, 8, 2) + q.map(x => F(x, 8, 2)).join('') + F(REm(e), 9, 2) + F(s.ret[0], 8, 2) + F(s.tem[0], 8, 2) + F(t.els, 9, 2) + F(t.elu, 9, 2));
         }
         L.push(' ');
       });
@@ -330,8 +331,8 @@
         for (const sg of [1, -1]) {
           const e = s.liveV[sg > 0 ? 'max' : 'min'], q = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'].map(x => e[x].eff); // ici Me puis Mc
           const elu = sg > 0 ? s.V.eluMax : s.V.eluMin;
-          const t = LV.combine({ Gels: elu, Gelu: elu, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[1], TP: s.tem[1] }, sg); // q[3]=Me, q[4]=Mc
-          L.push(' ' + SLAB[i][sg > 0 ? 0 : 1] + '   ' + (sg > 0 ? 'MAX' : 'MIN') + F(elu, 11, 2) + q.map(x => F(x, 8, 2)).join('') + F(0, 8, 2) + F(s.ret[1], 8, 2) + F(s.tem[1], 8, 2) + F(t.elu, 11, 2));
+          const t = LV.combine({ Gels: elu, Gelu: elu, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[1], TP: s.tem[1] }, sg); // q[3]=Me, q[4]=Mc
+          L.push(' ' + SLAB[i][sg > 0 ? 0 : 1] + '   ' + (sg > 0 ? 'MAX' : 'MIN') + F(elu, 11, 2) + q.map(x => F(x, 8, 2)).join('') + F(REm(e), 8, 2) + F(s.ret[1], 8, 2) + F(s.tem[1], 8, 2) + F(t.elu, 11, 2));
         }
         L.push(' ');
       });

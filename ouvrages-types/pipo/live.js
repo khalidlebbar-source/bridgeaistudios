@@ -41,11 +41,14 @@
       out.ME = best(slide(v.LARGENC, (y, s) => (K(y, s + m0) + K(y, s + m0 + v.LARGES)) / 2 / (2 * b)));
     }
     out.TR = (v.ETROTG + v.ETROTD) > 0 ? best(y => (integ(y, -b, -b + v.ETROTG) + integ(y, b - v.ETROTD, b)) / (2 * b)) : 0;
-    const wEx = Math.min(3.3 + 2 * v.HCHAU, v.ESURCH);
+    const wEx0 = globalThis.PIPO_EXW ? globalThis.PIPO_EXW(v, g) : 3.3 + 2 * v.HCHAU, wEx = Math.min(wEx0, v.ESURCH);
     // convoi exceptionnel : chaussée de plus de 7 m → axe du convoi à 3.50 m du bord de chaussée (1638, 1676, 1825, 1890, 1893 :
     // K à 1e-4) ; chaussée ≤ 7 m : position libre (1846 exact, 1847 +3 % non résolu). Maximum sur les 9 fibres.
-    const exAt = (y, s) => integ(y, s, s + wEx) / (3.3 + 2 * v.HCHAU) / (2 * b);
-    out.EX = !v.EXCEP ? 0 : v.ESURCH > 7 + 1e-9 ? Math.max(...pts.map(y => Math.max(exAt(y, c0 + 3.5 - wEx / 2), exAt(y, c1 - 3.5 - wEx / 2))))
+    const exAt = (y, s) => integ(y, s, s + wEx) / wEx0 / (2 * b);
+    // tour 8 : chaussée > 7 m → bande de 3.30 m SANS diffusion transversale (1890 0.1267/0.1268, 1893 0.0967/0.0966 ; HCHAU fort),
+    // centrée à 3.50 m du bord ; la diffusion 2·HCHAU n'est gardée que pour la position libre (1846 exact).
+    const exFix = (y, s) => integ(y, s, s + 3.3) / 3.3 / (2 * b);
+    out.EX = !v.EXCEP ? 0 : v.ESURCH > 7 + 1e-9 ? Math.max(...pts.map(y => Math.max(exFix(y, c0 + 3.5 - 1.65), exFix(y, c1 - 3.5 - 1.65))))
       : Math.max(...pts.map(slide(wEx, exAt)));
     // charges non demandées (indicateurs A1 nuls) : coefficients imprimés à 0
     if (!v.AL) out.A = out.A.map(() => 0); if (!v.BC) out.BC = out.BC.map(() => 0); if (!v.BT) out.BT = out.BT.map(() => 0);
@@ -132,7 +135,9 @@
       for (const x of grid) { const s = (MV ? areaPas(x, globalThis.PIPO_MCLAM ? globalThis.PIPO_MCLAM(v, g) : lq) : areaSimp(x, lc)) * sg; if (s > bMc.s) bMc = { s, x }; }
       const lex0 = (v.EXCEP === 1 ? 11 : 15) + 2 * v.HCHAU, lex = lex0 + g.e3 / 2, lexq = lex0 + g.e3, Pex = v.EXCEP === 1 ? 280 : 200;
       let bEx = { s: 0, x: 0 };
-      if (v.EXCEP) for (const x of grid) { const s = (MV ? areaPas(x, lexq) : areaSimp(x, lex)) * sg; if (s > bEx.s) bEx = { s, x }; }
+      // positions parcourues de droite à gauche (égalité d'aire : SETRA imprime la position la plus à droite, « 0.00 » sur 1890)
+      const gridEx = globalThis.PIPO_EXREV === 0 ? grid : grid.slice().reverse();
+      if (v.EXCEP) for (const x of gridEx) { const s = (MV ? areaPas(x, lexq) : areaSimp(x, lex)) * sg; if (s > bEx.s + 1e-9) bEx = { s, x }; }
       res[key] = {
         A: { l: bestA.l, aire: sg * bestA.val, eff: sg * bestA.val * Kc.combA * v.COEFA },
         BC: { pos: bBc.pos, sens: bBc.sens, s: sg * bBc.s, eff: sg * bBc.s * Kc.combBC * dyn.dBc * v.COEFB },

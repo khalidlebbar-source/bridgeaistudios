@@ -33,7 +33,7 @@
   function totaux(Mo, sg, ret, tem, lv) {
     const e = lv[sg > 0 ? 'max' : 'min'];
     return LV.combine({ Gels: sg > 0 ? Mo.elsMax : Mo.elsMin, Gelu: sg > 0 ? Mo.eluMax : Mo.eluMin, A: e.A.eff, BC: e.BC.eff, BT: e.BT.eff,
-      MC: e.MC.eff, ME: e.ME.eff, EX: e.EX.eff, TR: e.TR.eff, RT: ret, TP: tem }, sg);
+      MC: e.MC.eff, ME: e.ME.eff, EX: e.EX.eff, TR: e.TR.eff, RE: e.RE ? e.RE.eff : 0, RT: ret, TP: tem }, sg);
   }
 
   function ferraillage(r) {

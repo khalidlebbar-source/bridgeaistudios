@@ -149,6 +149,19 @@
       return M.solve(cs);
     };
     const hs1 = hs(v.RANK1), hs2 = hs(v.RANK2);
+    // ---- Surcharge sur remblai (SUREMB, densité PSREMB, sans dalle de transition) : même schéma que HSREMB —
+    // poussée uniforme K·PSREMB sur les piédroits + charge PSREMB sur le patin (moment au centre de semelle ÷ sin²φ) ;
+    // colonne REMB = enveloppe des deux cas K = RANK1 / RANK2 (tour 8, 1890 : traverse −0.13/−0.43, pressions 0.50/0.33).
+    const rmK = K => {
+      if (!v.SUREMB || !v.PSREMB || globalThis.PIPO_REMB === 0) return null;
+      const q = v.PSREMB, cs = lateral(z => K * q);
+      const Mv = mom(q * (xe1 - xe), (xe + xe1) / 2) / (sn * sn);
+      cs.nodal = { [M.C0]: [0, 0, Mv], [M.C1]: [0, 0, -Mv] };
+      return M.solve(cs);
+    };
+    const rm = [rmK(v.RANK1), rmK(v.RANK2)];
+    const addRE = (lv, get) => { if (!rm[0] || !lv) return; const a = rm.map(get); lv.max.RE = { eff: Math.max(...a) }; lv.min.RE = { eff: Math.min(...a) }; };
+    if (globalThis.PIPO_DIAG) globalThis.PIPO_DIAG({ M, lateral, mom, v, g, sn, xe, xe1, aExt, aInt, B, iTop, iMid, zs });
     function permAt(get) {
       const a = get(cp), b = get(dt), t1 = get(tK1), t2 = get(tK2), h1 = hs1 ? get(hs1) : 0, h2 = hs2 ? get(hs2) : 0;
       // MAX : K mini si l'effet des terres est négatif
@@ -229,6 +242,9 @@
     const liveT = xsSec.map(x => { const k = ix(Math.round(x * 1e6) / 1e6); return { M: env(r => r.Mt[k]), V: envJ(r => r.Vt[k], x) }; });
     const liveP = zsSec.map(z => { const k = iz(z); return { M: env(r => r.Mp[k]), V: env(r => r.Vp[k]) }; });
     const liveDet = { sup: env(r => r.Mt[0]), inf: env(r => r.Mp[0]), mid: env(r => r.Mt[iMid]) };
+    xsSec.forEach((x, i) => { const k = ix(Math.round(x * 1e6) / 1e6); addRE(liveT[i].M, r => r.Mt[k]); addRE(liveT[i].V, r => r.Vt[k]); });
+    zsSec.forEach((z, i) => { const k = iz(z); addRE(liveP[i].M, r => r.Mp[k]); addRE(liveP[i].V, r => r.Vp[k]); });
+    addRE(liveDet.sup, r => r.Mt[0]); addRE(liveDet.inf, r => r.Mp[0]); addRE(liveDet.mid, r => r.Mt[iMid]);
     // ---- Pressions sous semelle (bords extérieur / intérieur), largeur biaise
     const Wp = 2.525 * g.e2 * v.HAUTL; // poids du piédroit : même ρ = 2.525 que la traverse (semelle : 2.5)
     // Réaction par m de culée (biais) : efforts du cadre × sinφ (N) et × sin²φ (moments au centre de semelle) ;
@@ -244,6 +260,8 @@
       ext: { max: Math.max(p1[0], p2[0]), min: Math.min(p1[0], p2[0]), live: envS(semLIpe), ret: pRT(ret)[0], tem: pRT(tem)[0] },
       int: { max: Math.max(p1[1], p2[1]), min: Math.min(p1[1], p2[1]), live: envS(semLIpi), ret: pRT(ret)[1], tem: pRT(tem)[1] },
     };
+    const rmP = rm[0] ? rm.map(c => { const N = c.N * sn + v.PSREMB * aExt, Ms = c.Mc * sn * sn; return [N / B - 6 * Ms / B / B, N / B + 6 * Ms / B / B]; }) : null;
+    if (rmP) ['ext', 'int'].forEach((k, j) => { const a = rmP.map(p => p[j]); const lv = pressions[k].live; lv.max.RE = { eff: Math.max(...a) }; lv.min.RE = { eff: Math.min(...a) }; });
     // ---- Moments et efforts tranchants dans la semelle (sections encastrement, 3/4, 1/2, 1/4 du débord)
     // Débord ext. (patin) de longueur aExt depuis le bord extérieur, int. (talon) aInt depuis le bord intérieur.
     // Charge nette = poids (semelle 2.5·e1 + terres γ·HAUTL (+ γ·HSREMB) sur le patin, γ·HREMB sur le talon)
@@ -270,7 +288,11 @@
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);
         const rt = c => { const q = pRT(c); return semEff(q[0], q[1], side, t, 0); };
-        return { t, M: per(0), V: per(1), liveM: envSD(liM), liveV: envSD(liV), ret: rt(ret), tem: rt(tem) };
+        const o = { t, M: per(0), V: per(1), liveM: envSD(liM), liveV: envSD(liV), ret: rt(ret), tem: rt(tem) };
+        if (rmP) [0, 1].forEach(j => { const a = rmP.map(p => semEff(p[0], p[1], side, t, side === 'E' ? v.PSREMB : 0)[j]); const lv = j ? o.liveV : o.liveM;
+          // moments : ligne MAX bornée à 0 (talon 1890/1893 : 0.00 imprimé), ligne MIN non bornée (patin : 0.72 / 1.36)
+          lv.max.RE = { eff: j ? Math.max(...a) : Math.max(0, ...a) }; lv.min.RE = { eff: Math.min(...a) }; });
+        return o;
       });
     }
     const out = { v, g, mat, pas, pressions, semelleEff, Lf, Kc, Ldt, liveT, liveP, liveDet, xsLI, xsSec, zsSec, li: liRows, liSem, perm, dyn, aExt, aInt, secT, secP, det, depl };
@@ -284,7 +306,7 @@
   // Pressions totales ELS (bords extérieur / intérieur) pour le dimensionnement de la semelle.
   function pressionsTotales(r) {
     return ['ext', 'int'].map(k => { const p = r.pressions[k], e = p.live.max;
-      return LV.combine({ Gels: p.max, Gelu: p.max, A: e.A.eff, BC: e.BC.eff, BT: e.BT.eff, ME: e.ME.eff, MC: e.MC.eff, EX: e.EX.eff, TR: e.TR.eff, RT: p.ret, TP: p.tem }, 1).els; });
+      return LV.combine({ Gels: p.max, Gelu: p.max, A: e.A.eff, BC: e.BC.eff, BT: e.BT.eff, ME: e.ME.eff, MC: e.MC.eff, EX: e.EX.eff, TR: e.TR.eff, RE: e.RE ? e.RE.eff : 0, RT: p.ret, TP: p.tem }, 1).els; });
   }
   // Dimensionnement de la semelle (FIXSEM = 0), reconstitué sur la séquence imprimée de 1799 :
   // critère : pression totale ELS ≤ PREMAX sur les deux bords. Si les deux bords dépassent : W += 0.20.
