@@ -579,7 +579,7 @@
   // --------------------------------------------------------------- section 41 : résultats pour le programme PP
   // QCP1 = ossature x aire LI réaction + réaction hyperstatique M.T max ; QCP2 = CP moy x aire + hyperstatique E.S min
   // (exacts 2549) ; PA = A + trottoirs ; PBC = 1.1 B + trottoirs (min exact, max ±1 %) ; PCM = C + trottoirs.
-  // NON RÉSOLUS (imprimés provisoirement) : dimensions/espacement des appareils, coefficients d'inégalité (1.000), EPSCP,
+  // NON RÉSOLUS (imprimés provisoirement) : dimensions/espacement des appareils, coefficients d'inégalité des convois D/E (1.000), EPSCP,
   // EPSSUR, rotations maximales.
   function secPP(D, m, R) {
     var rp = function (x, w) { x = String(x); while (x.length < w) x = ' ' + x; return x; };
@@ -1125,7 +1125,7 @@
     var h4 = L(); for (t = 0; t <= n; t++) h4.at(40 + 11 * t, 'APPUI ' + (t + 1)); D.push(h4.s + ' '); D.push('  ');
     ph.forEach(function (q) { var v = V(q[1]), l = L('      EN PHASE ' + q[0]); for (var i = 0; i <= n; i++) l.at(38 + 11 * i, fx((i < n ? v[i] : 0) - (i > 0 ? v[i - 1] : 0), 1)); D.push(l.s + ' '); D.push('  '); });
   }
-  // Section 34 : DIMENSIONNEMENT DES APPAREILS D'APPUI (gabarit 2549). Coefficients d'inégalité provisoires (NOTES.md).
+  // Section 34 : DIMENSIONNEMENT DES APPAREILS D'APPUI (gabarit 2549). Coefficients d'inégalité : compute.js coefInegalite (convois D/E provisoires, NOTES.md).
   function secAppareils(D, m, R) {
     var AP = R.appareils; if (!AP) return;
     var v = m.values, row = function (lab, f, end, sp) { var l = L(lab); AP.forEach(function (a, i) { l.at(end + 11 * i, f(a)); }); D.push(l.s + (sp === false ? '' : ' ')); };

@@ -110,11 +110,83 @@
     return { lon, tra, etr, tot, ptot, beton, sousDalle, autres, ratio: ptot / beton };
   }
 
+  // ------------------------------------------------------------------ coefficients d'inégalité des appareils d'appui
+  // (F61 titre II 1971 ; reconstitution 2026-11-04, cf. NOTES.md § Coefficients d'inégalité — RÈGLE). K = R / Rmoy,
+  // Rmoy = réaction totale / Na. CP, A : « bandes porteuses » (centrale s, de rive demi-largeur − (Na−2)s/2) ; Bc, Bt, Mc120 :
+  // ligne d'influence de la réaction d'un appui intermédiaire d'une poutre continue à une infinité de travées égales s,
+  // convoi placé au plus défavorable. s = espacement imprimé × sin(biais géométrique). Mc120 approché pour Na ≥ 4.
+  const kIn = 2 - Math.sqrt(3);                      // rapport des moments d'appui successifs (poutre infinie)
+  // réaction de l'appui 0 pour une charge unité à l'abscisse réduite xi = y / s
+  function etaIn(xi) {
+    xi = Math.abs(xi);
+    const j = Math.floor(xi), u = xi - j;
+    if (u === 0 && j === 0) return 1;
+    const A = u * (1 - u) * (2 - u), B = u * (1 - u) * (1 + u);
+    // (4−k) Mj + Mj+1 = −A ; Mj + (4−k) Mj+1 = −B
+    const a = 4 - kIn, det = a * a - 1;
+    const Mj = (-A * a + B) / det, Mj1 = (-B * a + A) / det;
+    if (j === 0) return (1 - u) - (2 + kIn) * Mj + Mj1;          // M−1 = −k·M0
+    const M0 = Mj * Math.pow(-kIn, j), M1 = Mj * Math.pow(-kIn, j - 1), Mm1 = Mj * Math.pow(-kIn, j + 1);
+    return Mm1 - 2 * M0 + M1;
+  }
+  const etaMean = (xi, w) => {                       // moyenne de eta sur une largeur réduite w (Simpson)
+    if (!(w > 0)) return etaIn(xi);
+    const n = 40, h = w / n; let t = 0;
+    for (let i = 0; i <= n; i++) t += (i === 0 || i === n ? 1 : i % 2 ? 4 : 2) * etaIn(xi - w / 2 + i * h);
+    return t * h / 3 / w;
+  };
+  // maximum de Σ p·η sur la position transversale du convoi (parts : [abscisse, poids, largeur])
+  function maxR(parts, s) {
+    const ys = parts.map(p => p[0]), lo = -Math.max(...ys) - s, hi = -Math.min(...ys) + s;
+    const f = o => parts.reduce((t, [y, p, w]) => t + p * etaMean((y + o) / s, (w || 0) / s), 0);
+    let bo = lo, bv = -Infinity; const N = 800;
+    for (let i = 0; i <= N; i++) { const o = lo + (hi - lo) * i / N, v = f(o); if (v > bv) { bv = v; bo = o; } }
+    let a = bo - (hi - lo) / N, b = bo + (hi - lo) / N;           // affinage (section dorée)
+    for (let it = 0; it < 60; it++) { const c = b - (b - a) * 0.618, d = a + (b - a) * 0.618; if (f(c) > f(d)) b = d; else a = c; }
+    return Math.max(bv, f((a + b) / 2));
+  }
+  const A1T = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] };
+  const BCT = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 1] };
+  const tab = (t, n) => t[Math.min(n, t.length) - 1];
+  const r3In = x => Math.round(x * 1000 + 1e-9) / 1000;
+
+  /** p = { Na, esp, biais (grades, biais géométrique), Be (largeur équivalente droite), Lch (largeur chargeable),
+   *        nvc (nombre de voies), classe (1|2|3), H (HDALLE1), hchau } */
+  function coefInegalite(p) {
+    const Na = p.Na, s = p.esp * Math.sin(p.biais * Math.PI / 200), cl = p.classe, nv = p.nvc, L = p.Lch;
+    // CP : bandes porteuses sur la dalle rectangulaire équivalente ; 2 appareils ⇒ 1
+    const CP = Na <= 2 ? 1 : Math.max(s, p.Be / 2 - (Na - 2) * s / 2) / (p.Be / Na);
+    // A : bande s (centrale) ou bande de rive sur la largeur chargeable ; R avec a1(1 voie), Rmoy avec a1(nvc)
+    const A = Na * Math.max(s, L / 2 - (Na - 2) * s / 2) * tab(A1T[cl], 1) / (tab(A1T[cl], nv) * L);
+    // Bc : files de 2,50 m, roues à 2,00 m (charges ponctuelles), Rmoy avec le nombre maximal de files
+    const nf = Math.max(1, Math.min(nv, Math.floor(L / 2.5 + 1e-9)));
+    let Rbc = 0;
+    for (let n = 1; n <= nf; n++) {
+      const parts = []; for (let f = 0; f < n; f++) parts.push([f * 2.5, 1, 0], [f * 2.5 + 2, 1, 0]);
+      Rbc = Math.max(Rbc, tab(BCT[cl], n) * maxR(parts, s));
+    }
+    const BCk = Na * Rbc / (tab(BCT[cl], nf) * 2 * nf);
+    // Bt : tandems de 3,00 m, roues à 2,00 m ; Rmoy avec le nombre maximal de tandems (bt se simplifie)
+    const nt = Math.max(1, Math.min(2, nv, Math.floor(L / 3 + 1e-9)));
+    let Rbt = 0;
+    for (let n = 1; n <= nt; n++) {
+      const parts = []; for (let f = 0; f < n; f++) parts.push([f * 3, 1, 0], [f * 3 + 2, 1, 0]);
+      Rbt = Math.max(Rbt, maxR(parts, s));
+    }
+    const BTk = Na * Rbt / (2 * nt);
+    // Mc120 — EMPIRIQUE, NON RÉSOLU pour Na ≥ 4 (sous-estime de 0,018 à 0,036) : 2 chenilles d'entraxe 3,30 m,
+    // chacune discrétisée en 21 charges égales réparties (bornes incluses) sur 1 + H + hchau.
+    const w = 1 + p.H + (p.hchau || 0), mc = [];
+    for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w / 2 + w * i / 20, 0.5 / 21, 0]);
+    const MC = Na * maxR(mc, s);
+    return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
+  }
+
   // ------------------------------------------------------------------ appareils d'appui (DIMENSIONNEMENT …)
   // A vide : max = Gmax × coef CP / NAP, min = Gmin / NAP. En charge (exact sur 3826 avec les coefficients imprimés) :
   // max = (Gmax·cCP + max_cas(R⁺·c_cas·δ) + 2·T⁺)/NAP, min = (Gmin + min_cas(R⁻·c_cas·δ) + 2·T⁻)/NAP, δ convois = 1,1
-  // sur appui d'extrémité, Bc/Bt × 1,2 δ, Mc × δ (δ sur appui : cf. non résolus ; 3603 confirme Bc×1,2×δ). Compressions atteintes = réaction en charge / aire. Coefficients d'inégalité : CP = 1 avec
-  // 2 appareils ; les autres NE SONT PAS RECONSTITUÉS (1,000 imprimé). Dimensions : largeur 0,25, longueur au pas de
+  // sur appui d'extrémité, Bc/Bt × 1,2 δ, Mc × δ (δ sur appui : cf. non résolus ; 3603 confirme Bc×1,2×δ). Compressions atteintes = réaction en charge / aire. Coefficients d'inégalité : coefInegalite()
+  // (CP, A, Bc, Bt exacts ; Mc120 approché ; convois D/E et Mc80 : 1,000, non résolus). Dimensions : largeur 0,25, longueur au pas de
   // 0,05 (min 0,25) pour respecter COMPRENS (hypothèse ; le choix largeur/longueur SETRA n'est pas identifié).
   function appareils(m, r) {
     if (!r.reactions || !r.appuis) return null;
@@ -123,6 +195,15 @@
     return r.appuis.map((ap, k) => {
       const R = r.reactions[k], nap = Math.max(1, ap.nap), l = R.live;
       const coef = {}; for (const c of cas) coef[c] = 1;
+      // coefficients d'inégalité (règle 2026-11-04) : CP pour tous règlements ; A, Bc, Bt, Mc120 au F61 1971 ;
+      // Mc80, convois D/E : 1,000 conservé (règle non retrouvée).
+      if (nap >= 2) {
+        const A6 = m.lignes.A6 || {}, A7 = m.lignes.A7 || {};
+        const K = coefInegalite({ Na: nap, esp: ap.esp, biais: r.biais || 100, Be: r.section.Eeq, Lch: A6.ESURCH,
+          nvc: r.nvoies, classe: r.classe, H: A7.HDALLE1 || r.section.H, hchau: A6.HCHAU || 0 });
+        coef.CP = K.CP;
+        if (!r.f61_1960) { coef.A = K.A; coef.BC = K.BC; coef.BT = K.BT; if ('MC.120' in coef) coef['MC.120'] = K.MC120; }
+      }
       const end = k === 0 || k === n;
       const dy = (r.cmdAppui && r.cmdAppui[k]) || { bc: 1, mc: 1 };
       const cands = [[l.A.pos.v * 1.2, l.A.neg.v * 1.2, coef.A], [l.Bc.max * 1.2 * dy.bc, l.Bc.min * 1.2 * dy.bc, coef.BC],
