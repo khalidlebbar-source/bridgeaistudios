@@ -144,8 +144,16 @@
   function compute(model) {
     var v = model.values, n = v.NT;
     var L = [], ND = [];
-    for (var i = 1; i <= n; i++) { L.push(v['D' + i]); ND.push(v['ND' + i]); }
-    var R = { n: n, L: L, ND: ND };
+    var cv = model.cotes && model.cotes.values, warnND = [];
+    for (var i = 1; i <= n; i++) {
+      L.push(v['D' + i]);
+      // ND absent, nul ou invalide sur une travée active : divisions par défaut (nombre d'intervalles des cotes du câble
+      // imposé si fournies, sinon 10) — évite les divisions par zéro de la grille de précontrainte
+      var nd = Math.round(Number(v['ND' + i]));
+      if (!(nd >= 1)) { var c0 = cv && cv[i - 1]; nd = (c0 && c0.length > 1) ? c0.length - 1 : 10; warnND.push(i); }
+      ND.push(nd);
+    }
+    var R = { n: n, L: L, ND: ND, warnings: warnND.length ? ['ND nul ou invalide sur la (les) travee(s) ' + warnND.join(', ') + ' : valeur par defaut retenue'] : [] };
 
     // Géométrie
     var sec = sectionBrute(v);
@@ -1051,54 +1059,70 @@
     var P2 = basePts(BA), base2 = traceFromPoints(R, P2), key2 = [{ id: 'c', t: 0, k: 0, E: BA.G[0].inf, abut: true }];
     for (t = 0; t < n; t++) { key2.push({ id: 'b' + t, t: t, k: P2.kl[t], E: P2.zl[t] }); if (t < n - 1) key2.push({ id: 'a' + (t + 1), t: t, k: 10, E: P2.zs[t + 1], app: true }); }
     var BR = solveN(BA.N, base2, 'REAJUSTEES', key2);
-    var Nr = BR.N;
-    // ---------------------------------------------------------------- paraboles limites
-    var P3 = basePts(BR), gsup = function (t, k) { return BR.G[t * 11 + k].sup; }, ginf = function (t, k) { return BR.G[t * 11 + k].inf; };
-    // T1 : point bas sur le bord supérieur ; côté appui : la plus grande longueur de raccord (<= 0.36 d) restant sous le bord sup.
-    var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
-      var best = 0.05 * d;
-      for (var f = 0.36; f >= 0.05; f -= 0.0025) {
-        var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
-        for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
-        if (ok) { best = f * d; break; }
+    // tentative de tracé concordant pour un bloc réajusté donné et un décalage dz des points de passage sur appuis
+    var attempt = function (BR, Nr, dz) {
+      // ---------------------------------------------------------------- paraboles limites
+      var P3 = basePts(BR); P3.zs = P3.zs.map(function (z, jj) { return (jj === 0 || jj === n) ? z : z + dz; }); var gsup = function (t, k) { return BR.G[t * 11 + k].sup; }, ginf = function (t, k) { return BR.G[t * 11 + k].inf; };
+      // T1 : point bas sur le bord supérieur ; côté appui : la plus grande longueur de raccord (<= 0.36 d) restant sous le bord sup.
+      var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
+        var best = 0.05 * d;
+        for (var f = 0.36; f >= 0.05; f -= 0.0025) {
+          var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
+          for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
+          if (ok) { best = f * d; break; }
+        }
+        return { t2: best };
+      } });
+      // T2 : rayon minimal sur appuis, point bas sur le bord inférieur relevé si nécessaire pour rester au-dessus du bord inf.
+      var P4 = { xl: P3.xl.slice(), zl: P3.xl.map(function (x, tt) { return ginf(tt, P3.kl[tt]); }), zs: P3.zs.slice() };
+      var rminSide = function () { return { R: v.RMIN || 8 }; };
+      for (t = 0; t < n; t++) {
+        for (var it2 = 0; it2 < 200; it2++) {
+          var tr2 = traceFromPoints(R, P4, { side: rminSide }), ok2 = true;
+          for (var kk2 = 1; kk2 < 10; kk2++) if (tr2.z(t, kk2 * L[t] / 10) < ginf(t, kk2) - 1e-9) ok2 = false;
+          if (ok2) break; P4.zl[t] += 0.002;
+        }
       }
-      return { t2: best };
-    } });
-    // T2 : rayon minimal sur appuis, point bas sur le bord inférieur relevé si nécessaire pour rester au-dessus du bord inf.
-    var P4 = { xl: P3.xl.slice(), zl: P3.xl.map(function (x, tt) { return ginf(tt, P3.kl[tt]); }), zs: P3.zs.slice() };
-    var rminSide = function () { return { R: v.RMIN || 8 }; };
-    for (t = 0; t < n; t++) {
-      for (var it2 = 0; it2 < 200; it2++) {
-        var tr2 = traceFromPoints(R, P4, { side: rminSide }), ok2 = true;
-        for (var kk2 = 1; kk2 < 10; kk2++) if (tr2.z(t, kk2 * L[t] / 10) < ginf(t, kk2) - 1e-9) ok2 = false;
-        if (ok2) break; P4.zl[t] += 0.002;
+      var T2 = traceFromPoints(R, P4, { side: rminSide });
+      // ---------------------------------------------------------------- hyperstatiques des tracés limites (Simpson, F moyen de service)
+      var W = simpsonW(10, 1);
+      var d2 = function (t, k, j) { var cc = R.liAppuis[j - 1][t], xr = k / 10; return (6 * cc.A * xr + 2 * cc.B) / (L[t] * L[t]); };
+      var Fm = function (t, k) { return Nr * A * BR.G[t * 11 + k].es; };
+      var hypSpan = function (tr, t) {
+        var out = []; for (var jj = 1; jj < n; jj++) { var s = 0; for (var kk = 0; kk <= 10; kk++) s += W[kk] * L[t] / 10 * Fm(t, kk) * tr.z(t, kk * L[t] / 10) * d2(t, kk, jj); out.push(-s); }
+        return out;
+      };
+      var H1 = [], H2 = [];
+      for (t = 0; t < n; t++) { H1.push(hypSpan(T1, t)); H2.push(hypSpan(T2, t)); }
+      var Mat = [], Rv = [];
+      for (j = 1; j < n; j++) {
+        var row = [], tot = 0; for (t = 0; t < n; t++) { row.push(H2[t][j - 1] - H1[t][j - 1]); tot += H1[t][j - 1]; }
+        Mat.push(row); Rv.push(-tot);
       }
-    }
-    var T2 = traceFromPoints(R, P4, { side: rminSide });
-    // ---------------------------------------------------------------- hyperstatiques des tracés limites (Simpson, F moyen de service)
-    var W = simpsonW(10, 1);
-    var d2 = function (t, k, j) { var cc = R.liAppuis[j - 1][t], xr = k / 10; return (6 * cc.A * xr + 2 * cc.B) / (L[t] * L[t]); };
-    var Fm = function (t, k) { return Nr * A * BR.G[t * 11 + k].es; };
-    var hypSpan = function (tr, t) {
-      var out = []; for (var jj = 1; jj < n; jj++) { var s = 0; for (var kk = 0; kk <= 10; kk++) s += W[kk] * L[t] / 10 * Fm(t, kk) * tr.z(t, kk * L[t] / 10) * d2(t, kk, jj); out.push(-s); }
-      return out;
+      // tracé concordant : Mat.lambda = R, 0 <= lambda <= 1 (simplexe ; objectif : max somme des lambda)
+      var lam = null;
+      (function () {
+        var Aq = [], bq = [];
+        Mat.forEach(function (rw, q) { Aq.push(rw.slice()); bq.push(Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); Aq.push(rw.map(function (x) { return -x; })); bq.push(-Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); });
+        for (var k3 = 0; k3 < n; k3++) { var e1 = new Array(n).fill(0); e1[k3] = 1; Aq.push(e1); bq.push(1); }
+        if (v.SYM === 1) for (var k5 = 0; k5 < Math.floor(n / 2); k5++) { var e2 = new Array(n).fill(0); e2[k5] = 1; e2[n - 1 - k5] = -1; Aq.push(e2); bq.push(1e-9); Aq.push(e2.map(function (x) { return -x; })); bq.push(1e-9); }
+        lam = lpMax(new Array(n).fill(1), Aq, bq);
+      })();
+
+      return { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz };
     };
-    var H1 = [], H2 = [];
-    for (t = 0; t < n; t++) { H1.push(hypSpan(T1, t)); H2.push(hypSpan(T2, t)); }
-    var Mat = [], Rv = [];
-    for (j = 1; j < n; j++) {
-      var row = [], tot = 0; for (t = 0; t < n; t++) { row.push(H2[t][j - 1] - H1[t][j - 1]); tot += H1[t][j - 1]; }
-      Mat.push(row); Rv.push(-tot);
+    // itérations : décalage vers le haut des points sur appuis (pas 0.01 m jusqu'au bord sup du fuseau), puis +1 câble (max +4)
+    var st = null, BAk = BA, BRk = BR, Nr = BR.N, MAXPLUS = 0, DZMAX = 0;
+    for (var plus = 0; plus <= MAXPLUS && !(st && st.lam); plus++) {
+      if (plus > 0) { Nr = BR.N + plus; BAk = block(Nr, base1, 'APPROCHEES', key1); BAk.nb = nombres(BAk);
+        var P2k = basePts(BAk); BRk = block(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2); BRk.nb = nombres(BRk); }
+      var room = Infinity; for (var jj = 1; jj < n; jj++) { var gg = BRk.G[(jj - 1) * 11 + 10]; room = Math.min(room, gg.sup - gg.inf); }
+      for (var dz = 0; dz <= Math.min(DZMAX, Math.max(0, room)) + 1e-9; dz += 0.01) { st = attempt(BRk, Nr, dz); if (st.lam) break; }
+      if (!st.lam && plus === MAXPLUS) st = attempt(BR, BR.N, 0);
     }
-    // tracé concordant : Mat.lambda = R, 0 <= lambda <= 1 (simplexe ; objectif : max somme des lambda)
-    var lam = null;
-    (function () {
-      var Aq = [], bq = [];
-      Mat.forEach(function (rw, q) { Aq.push(rw.slice()); bq.push(Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); Aq.push(rw.map(function (x) { return -x; })); bq.push(-Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); });
-      for (var k3 = 0; k3 < n; k3++) { var e1 = new Array(n).fill(0); e1[k3] = 1; Aq.push(e1); bq.push(1); }
-      if (v.SYM === 1) for (var k5 = 0; k5 < Math.floor(n / 2); k5++) { var e2 = new Array(n).fill(0); e2[k5] = 1; e2[n - 1 - k5] = -1; Aq.push(e2); bq.push(1e-9); Aq.push(e2.map(function (x) { return -x; })); bq.push(1e-9); }
-      lam = lpMax(new Array(n).fill(1), Aq, bq);
-    })();
+    if (!st.lam) { Nr = BR.N; BAk = BA; BRk = BR; }
+    BA = BAk; BR = BRk;
+    var P3 = st.P3, P4 = st.P4, T1 = st.T1, T2 = st.T2, H1 = st.H1, H2 = st.H2, Mat = st.Mat, Rv = st.Rv, lam = st.lam, Fm = st.Fm, d2 = st.d2;
     var concordant = !!lam;
     if (!lam) { // NON RÉSOLU : itérations de décalage / câbles supplémentaires ; à défaut, moindres carrés bornés
       lam = new Array(n).fill(0.5);
@@ -1301,7 +1325,7 @@
       var zz = [Vs, -VP], In = g.In;
       var sm = function (M) { return zz.map(function (z) { return M * z / In; }); };
       var sp = function (T, Mh) { var F = T * nA, mh = at(Mh, g); return zz.map(function (z) { return F / Sn + (F * g.e + mh) * z / In; }); };
-      var o = { MO: sm(g.MO), MOx: sm(g.MO * v.OSSAX), MOn: sm(g.MO * v.OSSAN), Pi: sp(g.p.proba, HI.moy), Px: sp(g.p.maxi, HI.max),
+      var o = { MO: sm(g.MO), MOx: sm(Math.max(g.MO * v.OSSAX, g.MO * v.OSSAN)), MOn: sm(Math.min(g.MO * v.OSSAX, g.MO * v.OSSAN)), Pi: sp(g.p.proba, HI.moy), Px: sp(g.p.maxi, HI.max),
         MG: sm(g.MG), Pms: sp(g.d.msMoy, H.msMoy), PmsX: sp(g.d.msMax, H.msMax), Pes: sp(g.d.esMoy, H.esMoy), PesN: sp(g.d.esMin, H.esMin) };
       if (s) {
         var tp = s.tp || [0, 0];
@@ -1312,7 +1336,7 @@
       g.sig = o;
     });
     // --- section 27 : sections supplémentaires (règle empirique, NON RÉSOLU en toute rigueur) : minimum local de la
-    // contrainte de la fibre inférieure (1)+(4) à moins de 0.1L d'un appui intermédiaire
+    // contrainte de la fibre inférieure (1)+(4) à moins de 0.09L d'un appui intermédiaire (seuil empirique)
     P.extraMT = [];
     var MuO2 = Mu(R.cp.oss[0]);
     for (t = 0; t < n; t++) {
@@ -1324,9 +1348,9 @@
         var mo = R.cp.oss[0] * x * (l - x) / 2 + MuO2[t] * (1 - x / l) + MuO2[t + 1] * x / l;
         var zz = [Vs, -VP], sm2 = function (M) { return zz.map(function (z) { return M * z / In; }); };
         var spp = function (FF, Mh2) { return zz.map(function (z) { return FF / Sn + (FF * e + Mh2) * z / In; }); };
-        return { MO: sm2(mo), MOx: sm2(mo * v.OSSAX), MOn: sm2(mo * v.OSSAN), Pi: spp(F, mh), Px: spp(Fx, mhx) };
+        return { MO: sm2(mo), MOx: sm2(Math.max(mo * v.OSSAX, mo * v.OSSAN)), MOn: sm2(Math.min(mo * v.OSSAX, mo * v.OSSAN)), Pi: spp(F, mh), Px: spp(Fx, mhx) };
       };
-      var zones = []; if (t > 0) zones.push([0, 0.1 * l]); if (t < n - 1) zones.push([0.9 * l, l]);
+      var zones = []; if (t > 0) zones.push([0, 0.09 * l]); if (t < n - 1) zones.push([0.91 * l, l]);
       zones.forEach(function (zn) {
         var M2 = 400, best = null, vals = [];
         for (var i = 0; i <= M2; i++) { var x = zn[0] + (zn[1] - zn[0]) * i / M2, o2 = sgx(x); vals.push([x, o2.MO[1] + o2.Pi[1]]); }
