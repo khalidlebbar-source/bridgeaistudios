@@ -150,17 +150,17 @@
     const Cs = R.cases;
     const detPerm = DET.map((nm, k) => {
       const get = c => c ? c.det[k] : 0;
-      const pp = get(Cs.pp), pu = [get(Cs.pushN), get(Cs.pushX)], qs = [get(Cs.qsupN), get(Cs.qsupX)], rd = [get(Cs.rdtN), get(Cs.rdtX)];
+      const pp = get(Cs.pp), pu = [get(Cs.pushN), get(Cs.pushX)], qs = [get(Cs.qsupN), get(Cs.qsupX)], rd = [get(Cs.rdtN), get(Cs.rdtX)], ph = [get(Cs.pushHN), get(Cs.pushHX)];
       const UX = a => a.reduce((s, v) => s + (v > 0 ? 1.35 * v : v), 0), UN = a => a.reduce((s, v) => s + (v < 0 ? 1.35 * v : v), 0);
       const ch = hasEC ? { q: [get(Cs.chqN), get(Cs.chqX)], r: [get(Cs.chRN), get(Cs.chRX)] } : null;
       const rows = [];
       for (const mx of [true, false]) {
         const f = mx ? Math.max : Math.min, pe = f(...pu);
-        const sv = [pp, pe, f(...qs), f(...rd)];
+        const sv = [pp, pe, f(...qs), f(...rd), f(...ph)];
         const svS = sv.reduce((a, v) => a + v, 0), svU = mx ? UX(sv) : UN(sv);
         let chv = [0, 0, 0, 0, 0];
         if (ch) { const cv = [pp, pe, f(...ch.q), f(...ch.r)]; chv = [f(...ch.q), f(...ch.r), 0, cv.reduce((a, v) => a + v, 0), mx ? UX(cv) : UN(cv)]; }
-        rows.push({ pp, pe, chv, sv: [f(...qs), f(...rd), 0, svS, svU] });
+        rows.push({ pp, pe, chv, sv: [f(...qs), f(...rd), f(...ph), svS, svU] });
       }
       return rows;
     });
@@ -181,8 +181,8 @@
     function extremeRows(c) {
       const p = c.perm, ch = p.ch;
       const live = ['AL', 'BC', 'BT', 'MC', 'ME', 'E'];
-      const rx = [ch ? ch.maxS : 0, ch ? ch.maxU : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxS, p.maxU, 0, 0, ...live.map(l => c.lmax[l]), c.design.maxS, c.design.maxU];
-      const rn = [ch ? ch.minS : 0, ch ? ch.minU : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minS, p.minU, 0, 0, ...live.map(l => c.lmin[l]), c.design.minS, c.design.minU];
+      const rx = [ch ? ch.maxS : 0, ch ? ch.maxU : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxS, p.maxU, c.lmax.REMB || 0, 0, ...live.map(l => c.lmax[l]), c.design.maxS, c.design.maxU];
+      const rn = [ch ? ch.minS : 0, ch ? ch.minU : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minS, p.minU, c.lmin.REMB || 0, 0, ...live.map(l => c.lmin[l]), c.design.minS, c.design.minU];
       return [rx, rn].map((r, i) => `${i ? 'MIN' : 'MAX'}   ${r.map(v => F(v, 0, 6)).join(' ')}`);
     }
     // ------------------------------------------------ positions + moments extrêmes par élément
@@ -222,6 +222,40 @@
       out.push('     ABSCISSE        <- - - - - - - POISSON=0.000- - - - - - ->', '                     HARMONIQUE 1   HARMONIQUE 3   HARMONIQUE 5', '                      ( *1000 )      ( *1000 )      ( *1000 )', '');
       for (const r of fb.rows) out.push(`${r.fib ? 'FIBRE ' : '      '}${F(r.y, 2, 7)}       ${F(r.v[0], 2, 11)}    ${F(r.v[1], 2, 11)}    ${F(r.v[2], 2, 11)}`);
     }
+    // ------------------------------------------------ moments transversaux (p.19–21)
+    if (R.tr) {
+      const T = R.tr, POI = '<- POISSON=0.000->';
+      const hdr = '                    HARMONIQUE   FACTEUR 1   FACTEUR 2   FACTEUR 3   MOMENT';
+      const rowsTxt = (rows, ind) => rows.map(x => `${String(x.m).padStart(ind)}${F(x.F1, 4, 17 - (24 - ind))}${F(x.F2, 4, 12)}${F(x.F3, 4, 11)}${F(x.M, 2, 10)}`);
+      const head = (nm) => { const u = '-'.repeat(Math.max(4, nm.length)); out.push(` ${nm}`, ` ${u.padEnd(54)}${POI}`, hdr); };
+      const combTxt = c => { out.push(`${' '.repeat(110)}POISSON=0.000`, `${' '.repeat(110)}E.L.S. E.L.U.`);
+        for (const k of ['MY', 'MX', 'MTOR', 'MAVF', 'MAPF']) out.push(`${' '.repeat(103)}${k.padEnd(6)}${F(c.S[k], 2, 8)}${F(c.U[k], 2, 8)}`); out.push(''); };
+      const simple = (nm, o, tot) => { head(nm); out.push(...rowsTxt(o.rows, 24), ' '.repeat(69) + '------', `     TOTAL${tot}`, ''); };
+      const live = (nm, o) => { head(nm); out.push(...rowsTxt(o.rows, 24), ' '.repeat(66) + '------', `     TOTAL AVEC COEFFICIENT DE MAJORATION DYNAMIQUE ${F(o.cmd, 3)}${F(o.tot, 2, 13)}`); combTxt(o.comb); };
+      newPage();
+      out.push('', '                             MOMENTS TRANSVERSAUX (KN*M) POUR LA FIBRE A   0.000 M A PARTIR DU CENTRE DE LA DALLE', '                             ==========================,',
+        `${' '.repeat(75)}BIAIS GEOMETRIQUE ${F(T.phi, 2, 6)}`);
+      const svc = (l1) => { out.push(l1 || 'EN SERVICE', '==========', '  CHARGES PERMANENTES', `  -------------------${' '.repeat(34)}${POI}`, '                  HARMONIQUE     FACTEUR 1   FACTEUR 2   FACTEUR 3   MOMENT',
+        ...rowsTxt(T.perm.rows, 22), ' '.repeat(69) + '------', `        TOTAL${F(T.perm.tot, 2, 62)}`, ''); };
+      if (T.chantier) {
+        const C = T.chantier;
+        out.push(`PHASE DE CHANTIER${' '.repeat(58)}BIAIS MECANIQUE   ${F(T.psi, 2, 6)}`, '=================');
+        out.push('  OSSATURE', `  --------${' '.repeat(45)}${POI}`, hdr, ...rowsTxt(C.oss.rows, 24), ' '.repeat(68) + '------', `     TOTAL${F(C.oss.tot, 2, 65)}`);
+        simple('TERRE', C.ter, F(C.ter.tot, 2, 65));
+        live(ecName, C.ec); svc(); newPage();
+      } else svc(`EN SERVICE${' '.repeat(65)}BIAIS MECANIQUE   ${F(T.psi, 2, 6)}`);
+      let cnt = T.chantier ? 0 : 1;
+      for (const o of T.service) {
+        if (cnt === 3) { newPage(); cnt = 0; }
+        if (o.key === 'AL') {
+          head('AL'); o.lanes.forEach((ln, j) => out.push(`          VOIE ${String(j + 1).padStart(3)}`, ...rowsTxt(ln.rows, 25)));
+          out.push(' '.repeat(69) + '------', `        TOTAL POUR LA COMBINAISON LA PLUS DEFAVORABLE${F(o.tot, 2, 22)}`); combTxt(o.comb);
+        } else live(o.name, o);
+        cnt++;
+      }
+      out.push('', '', ' MOMENTS TRANSVERSAUX DE CALCUL (KN*M)', ' ==============================', '                                             <- POISSON=0.000 ->', '                                               E.L.S.   E.L.U.',
+        `                                             ${F(T.design.S, 2, 8)} ${F(T.design.U, 2, 8)}`);
+    }
     // ------------------------------------------------ efforts tranchants
     for (const [el, nm, orig] of [['b', 'LA TRAVERSE INFERIEURE', "L'ANGLE"], ['t', 'LA TRAVERSE SUPERIEURE', "L'ANGLE"], ['w', 'LES PIEDROITS', 'LA BASE']]) {
       newPage();
@@ -230,8 +264,8 @@
       out.push(`             CHARGE PERM    REMB   ${pad(ecName, 7)}TEMP   CHARGE PERM   REMB   TROT     AL       BC     BT    MC120    ME120     E`, '               E.L.U.                               E.L.U.                                                                     E.L.U.', '');
       R.cmp['V' + el].forEach(c => {
         const p = c.perm, ch = p.ch, live = ['AL', 'BC', 'BT', 'MC', 'ME', 'E'];
-        const rx = [ch ? ch.maxU : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxU, 0, 0, ...live.map(l => c.lmax[l]), c.design.maxU];
-        const rn = [ch ? ch.minU : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minU, 0, 0, ...live.map(l => c.lmin[l]), c.design.minU];
+        const rx = [ch ? ch.maxU : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxU, c.lmax.REMB || 0, 0, ...live.map(l => c.lmax[l]), c.design.maxU];
+        const rn = [ch ? ch.minU : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minU, c.lmin.REMB || 0, 0, ...live.map(l => c.lmin[l]), c.design.minU];
         out.push(`${F(c.x, 2)}   MAX   ${rx.map(v => F(v, 1, 7)).join(' ')}`, `       MIN   ${rn.map(v => F(v, 1, 7)).join(' ')}`, '');
       });
     }
@@ -242,8 +276,8 @@
     out.push(`             CHARGE PERM    REMB   ${pad(ecName, 7)}TEMP   CHARGE PERM   REMB   TROT    AL      BC     BT     MC120   ME120   E`, '               E.L.S.                               E.L.S.                                                                 E.L.S.', '');
     ['0.', '1/4', '1/2'].forEach((lab, k) => {
       const c = R.cmp.p[k], p = c.perm, ch = p.ch, live = ['AL', 'BC', 'BT', 'MC', 'ME', 'E'];
-      const rx = [ch ? ch.maxS : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxS, 0, 0, ...live.map(l => c.lmax[l]), c.design.maxS];
-      const rn = [ch ? ch.minS : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minS, 0, 0, ...live.map(l => c.lmin[l]), c.design.minS];
+      const rx = [ch ? ch.maxS : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxS, c.lmax.REMB || 0, 0, ...live.map(l => c.lmax[l]), c.design.maxS];
+      const rn = [ch ? ch.minS : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minS, c.lmin.REMB || 0, 0, ...live.map(l => c.lmin[l]), c.design.minS];
       out.push(` ${pad(lab, 6)}MAX   ${rx.map(v => F(v, 1, 7)).join(' ')}`, `       MIN   ${rn.map(v => F(v, 1, 7)).join(' ')}`, '');
     });
     out.push('', '', '', 'RAPPEL : LES CHARGES ROULANTES NE SONT PAS PONDEREES PAR LEUR COEFFICIENT DE MAJORATION DYNAMIQUE');
@@ -273,6 +307,11 @@
       // ferraillage plancher (1 PHI2 / 0.333 m) : imprimé hors mode groupes. A10/A20 (moments transversaux) non calculés → bloc A = SUP(...) omis.
       if (!fr.groupMode) { const AP = F(3 * Math.PI * (d.phi[1] / 1000) ** 2 / 4, 6);
         out.push('', '', `   FERRAILLAGE PLANCHER TRAV SUP. FACE INT. ${AP}`, `                                  FACE EXT. ${AP}`, `                        TRAV INF. FACE INT. ${AP}`, `                                  FACE EXT. ${AP}`, `                        PIEDROITS 2 FACES ${AP}`); }
+      if (fr.A20 !== undefined) { const At = R.det.nom.Atr, sp = ' '.repeat(90);
+        out.push('', '', '', `   TRAVERSE SUPERIEURE     FACE INTERIEURE     ${F(At, 6)}   ${F(At, 6)}    PHI2 TOUS LES ${F(R.det.nom.TT.TSi, 3)} M`, '                                                   =A', '',
+          `${sp} A = SUP(${fr.groupMode ? '' : 'AP,'}A10,A20,ANF)`, '');
+        if (!fr.groupMode) out.push(`${sp}AP =${F(3 * Math.PI * (d.phi[1] / 1000) ** 2 / 4, 6)}    FERRAILLAGE PLANCHER`);
+        out.push(`${sp}A10=${F(fr.A10, 6)}    E.L.S. AVEC POISSON=0.000`, `${sp}A20=${F(fr.A20, 6)}    E.L.U. AVEC POISSON=0.000`, `${sp}ANF=${F(fr.ANF.t, 6)}    CONDITION DE NON FRAGILITE`); }
     }
     // ------------------------------------------------ épure d'arrêt des barres
     const DT = R.det, ep = DT.epure, sgeo = R.geom.s, f2 = v => F(v, 2);

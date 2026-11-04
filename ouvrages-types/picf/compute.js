@@ -265,6 +265,14 @@
     // poussée des terres : K gamma (H - y) sur la hauteur des piédroits (entre axes)
     const pushUnit = run(wallPressure(y => gs * Math.max(0, H - y)));
     cases.pushN = scaleRes(pushUnit, d.rkgn); cases.pushX = scaleRes(pushUnit, d.rkgx);
+    R.pushUnit = pushUnit;
+    const pushQUnit = run(wallPressure(() => G)); // pression latérale uniforme 1 t/m2
+    // poussée du remblai sur la traverse (colonne « POUSSEE H.SUP ») : K·γs·HSREM uniforme sur la hauteur des piédroits,
+    // seulement sans dalle de transition (2498 : 31.40 t/m2 = 2 × 15.70 exact ; 2550/2551 avec dalle : colonne nulle).
+    const hP = d.ldalt > 0 ? 0 : d.mvsol * d.hsrem;
+    cases.pushHN = scaleRes(pushQUnit, d.rkgn * hP); cases.pushHX = scaleRes(pushQUnit, d.rkgx * hP);
+    // charge sur les remblais PSREM (t/m2, γ 1.2/1.6) : pression latérale K·PSREM uniforme (K = RKGX)
+    cases.remb = scaleRes(pushQUnit, d.rkgx * (d.psrem || 0));
     const qUnit = run(udlTop(G)); // 1 t/m2
     cases.qsupN = scaleRes(qUnit, qsup.n); cases.qsupX = scaleRes(qUnit, qsup.x);
     const rUnit = run(headLoad(G / W)); // réaction de dalle 1 t répartie sur la largeur droite
@@ -409,6 +417,7 @@
     for (const key of ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
     R.sections = { t: secB, b: secB, w: secWfull, det: [0, 1, 2, 3, 4, 5] };
     R.cmp = combine(R, d, hasEC);
+    R.tr = transversal(R, d, { conv, dyn, coefs, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup });
     R.fer = ferraillage(R, d);
     R.det = detailing(R, d);
     // avant-métré (règles déduites des p.32) : goussets supposés 0.50×0.50 (sup.) et 0.60×0.60 (inf.)
@@ -477,6 +486,11 @@
       // effort tranchant « acier » : adhérence d'entraînement, périmètre 4A/φ × τs × d
       o.VRs = 4 * o.A / (d.phi[o.phi] / 1000) * R.mat.taus * o.d * 1000; }
     r.ANF = { t: 0.0008 * d.e3, b: 0.0008 * d.e1, w: 0.0008 * d.e2 / s };
+    // ferraillage transversal de la traverse supérieure (face intérieure) : moments transversaux de calcul (p.21),
+    // barres PHI2 en nappe extérieure : d = e3 − enrobage − φ2/2 (A20 exact sur 2531/2550/2551 à partir des moments imprimés)
+    if (R.tr) { const dT = d.e3 - c - d.phi[1] / 2000; r.dT = dT;
+      r.A20 = asELU(R.tr.design.U / 1000, dT, fbu, R.mat.fsu[1]);
+      r.A10 = R.mat.ssLim ? asELS(R.tr.design.S / 1000, dT, R.mat.ssLim[1]) : 0; }
     return r;
   }
 
@@ -615,17 +629,99 @@
     return { t: r.t.map(sc), b: r.b.map(sc), w: r.w.map(sc), det: r.det.map(x => x * f), p: r.p.map(x => x * f), u: r.u };
   }
 
+  // ---------------------------------------------------------------- moments transversaux (p.19–21)
+  // Notice SETRA PICF/PIPO (pièce 2.5 § 3) : plaque rectangulaire équivalente sur appuis simples (LARGEUR, LONGUEUR l),
+  // charge développée en série de Fourier (harmoniques 1, 3, 5), calcul au centre de la traverse supérieure.
+  //   facteur 1 = sin(m π c / l) (2c = étalement longitudinal, borné à l) ; facteur 2 = 1/m (sin(mπd/l)·sin(mπx/l), d = x = l/2)
+  //   facteur 3 = Σ P·μ̄ (charges ponctuelles) ou q·2c·∫μ dy (charges réparties) ; moment = F1·F2·F3·(4/π)·b/(2c), b = LARGEUR/2
+  //   (vérifié : rapport moment/(F1F2F3) = (4/π)·b/(2c) sur les 3 passages).
+  // Torseur (CHAMOA, CED 66) : aciers 1 à a1 = (100−ψ) gr et 2 à a2 = a1 + φ des directions principales (MX longitudinal, MY transversal) :
+  //   MTOR = MX sin a1 sin a2 + MY cos a1 cos a2 ; MAVF = (MY sin a2 cos a1 − MX cos a2 sin a1)/sin φ ;
+  //   MAPF = MAVF + |MTOR| / (2 sin²(φ/2)) — reproduit les 64 valeurs des listings à 0.02 % près.
+  function transversal(R, d, X) {
+    const { conv, dyn, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup } = X;
+    const l = R.mu.LO, bT = R.mu.bT, thT = R.mu.thT, W = d.large, b = W / 2, HM = [1, 3, 5];
+    const N = 400, hy = 2 * bT / N;
+    const tab = HM.map(m => { const a = []; for (let i = 0; i <= N; i++) a.push(guyonMu(m * thT, 0, (-bT + i * hy) / bT)); const cu = [0]; for (let i = 0; i < N; i++) cu.push(cu[i] + (a[i] + a[i + 1]) / 2 * hy); return { a, cu }; });
+    const lin = (arr, y) => { const t = (Math.max(-bT, Math.min(bT, y)) + bT) / hy, i = Math.min(N - 1, Math.floor(t)); return arr[i] + (arr[i + 1] - arr[i]) * (t - i); };
+    const integ = (k, y0, y1) => lin(tab[k].cu, y1) - lin(tab[k].cu, y0);
+    const mubar = (k, y, a) => a > 1e-6 ? integ(k, y - a / 2, y + a / 2) / a : lin(tab[k].a, y);
+    const t30 = Math.tan(Math.PI / 6), sL = 2 * d.hchau + 2 * d.hsrem * t30 + d.e3;
+    const fac = (c2, F3) => { const cc = Math.min(c2, l); return HM.map((m, k) => { const F1 = Math.sin(m * Math.PI * cc / 2 / l), F2 = 1 / m; return { m, F1, F2, F3: F3[k], M: F1 * F2 * F3[k] * 4 / Math.PI * bT / cc }; }); };
+    const sum = rows => rows.reduce((a, r) => a + r.M, 0);
+    const distrib = (q, y0, y1) => fac(l, HM.map((m, k) => q * G * l * integ(k, y0, y1)));
+    // charges ponctuelles : groupe longitudinal (2c), positions transversales relatives ws (poids P t par file), largeur a
+    const point = (P, c2, ws, a, lo, hi) => {
+      let best = null; // lo/hi : bornes des positions des files (ws relatives)
+      for (let st = lo - ws[0]; st + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) {
+        const F3 = HM.map((m, k) => P * G * Math.min(1, l / c2) * ws.reduce((s, w) => s + mubar(k, st + w, a), 0));
+        const rows = fac(c2, F3), tot = sum(rows); if (!best || tot > best.tot) best = { rows, tot };
+      }
+      return best || { rows: fac(c2, [0, 0, 0]), tot: 0 };
+    };
+    const mid = c => c[c.length - 1];
+    const Tm = mid(R.cmp.t);
+    const gS = { AL: 1.2, BC: 1.2, BT: 1.2, MC: 1, ME: 1, E: 1, EC: 1.2 }, gU = { AL: 1.6, BC: 1.6, BT: 1.6, MC: 1.35, ME: 1.35, E: 1.35, EC: 1.6 };
+    const r = Math.PI / 200, A1 = (100 - R.mu.psi) * r, A2 = A1 + d.biais * r;
+    const torseur = (MX, MY) => {
+      const MTOR = MX * Math.sin(A1) * Math.sin(A2) + MY * Math.cos(A1) * Math.cos(A2);
+      const MAVF = (MY * Math.sin(A2) * Math.cos(A1) - MX * Math.cos(A2) * Math.sin(A1)) / Math.sin(A2 - A1);
+      const h2 = (A2 - A1) / 2, MAPF = MAVF + Math.abs(MTOR) / (2 * (MTOR * MX >= 0 ? Math.sin(h2) ** 2 : Math.cos(h2) ** 2));
+      return { MX, MY, MTOR, MAVF, MAPF };
+    };
+    const comb = (mpS, mpU, mS, mU, mxS, mxU) => { const S = torseur(mxS, mpS + mS), U = torseur(mxU, mpU + mU); return { S, U }; };
+    const out = { psi: R.mu.psi, phi: d.biais, chantier: null, service: [] };
+    // --- phase de chantier : ossature, terre (remblai d'engin), engin
+    if (hasEC) {
+      const oss = distrib(d.mvbet * d.e3, -b, b);
+      const e0 = -b + d.ec.egau, e1 = e0 + d.ec.esurch;
+      const ter = distrib(ch.qx, e0, e1);
+      const sEC = 2 * d.ec.hsrem + d.e3;
+      const ec = point(25, 0.6 + sEC, [-1.2, 1.2], 0.6 + sEC, e0 + 1.8, e1 - 1.8); // axe à 3 m au moins du bord de ESURCH
+      const Mp = sum(oss) + sum(ter), Mec = ec.tot * 1.5;
+      out.chantier = { oss: { rows: oss, tot: sum(oss) }, ter: { rows: ter, tot: sum(ter) },
+        ec: { rows: ec.rows, cmd: 1.5, tot: Mec, comb: comb(Mp, 1.35 * Mp, 1.2 * Mec, 1.6 * Mec, Tm.perm.ch.maxS + 1.2 * Tm.ec.mx, Tm.perm.ch.maxU + 1.6 * Tm.ec.mx) } };
+    }
+    // --- service
+    const perm = distrib(d.mvbet * d.e3 + qsup.x, -b, b), Mp = sum(perm);
+    out.perm = { rows: perm, tot: Mp };
+    const live = (key, Ml) => comb(Mp, 1.35 * Mp, gS[key] * Ml, gU[key] * Ml, Tm.perm.maxS + gS[key] * Tm.lmax[key], Tm.perm.maxU + gU[key] * Tm.lmax[key]);
+    { // AL : voies de la chaussée, A(l) sur la longueur de la plaque
+      const qA = 0.23 + 36 / (l + 12);
+      const lanes = []; for (let j = 0; j < nvoi; j++) { const rows = distrib(qA, c0 + j * v, c0 + (j + 1) * v); lanes.push({ rows, tot: sum(rows) }); }
+      let best = 0; for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) { let s = 0; for (let j = st; j < st + k; j++) s += lanes[j].tot; best = Math.max(best, s * a1tab[Math.min(k, a1tab.length) - 1] * a2); }
+      out.service.push({ key: 'AL', name: 'AL', lanes, tot: best, comb: live('AL', best) });
+    }
+    const add = (key, name, res, k) => { const tot = res.tot * k; out.service.push({ key, name, rows: res.rows, cmd: dyn[key].d, tot, comb: live(key, tot) }); };
+    { // Bc : deux essieux arrière (2 × 6 t par file de roues), roues 0.25 m, 1 à 4 camions de front
+      let best = null;
+      for (let n = 1; n <= Math.min(nvoi, 4); n++) { const ws = []; for (let u = 0; u < n; u++) ws.push(u * 2.5, 2 + u * 2.5);
+        const res = point(12, 1.5 + 0.25 + sL, ws, 0.25 + sL, c0 + 0.75, c1 - 0.75), bc = [1.2, 1.1, 0.95, 0.8][n - 1];
+        if (!best || res.tot * bc > best.res.tot * best.bc) best = { res, bc }; }
+      add('BC', 'BC', best.res, best.bc * dyn.BC.d);
+    }
+    { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const ws = []; for (let u = 0; u < n; u++) ws.push(u * 3, 2 + u * 3);
+        const res = point(16, 1.35 + 0.25 + sL, ws, 0.6 + sL, c0 + 1.0, c1 - 1.0); if (!best || res.tot > best.tot) best = res; }
+      add('BT', 'BT', best, dyn.BT.d); }
+    add('MC', 'MC120', point(55, 6.1 + sL, [0, 3.3], 1.0 + sL, c0 + 1.0, c1 - 1.0), dyn.MC.d);
+    add('ME', 'ME120', point(33, 1.8 + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
+    add('E', 'E', point(100, 15 + sL, [-0.825, 0.825], sL, c0 + 2.675, c1 - 2.675), 1.0);
+    const all = out.service.concat(out.chantier ? [out.chantier.ec] : []);
+    out.design = { S: Math.max(...all.map(o => o.comb.S.MAPF)), U: Math.max(...all.map(o => o.comb.U.MAPF)) };
+    return out;
+  }
+
   // ---------------------------------------------------------------- combinaisons
   function combine(R, d, hasEC) {
     const C = R.cases, out = {};
     const LIVE = ['AL', 'BC', 'BT', 'MC', 'ME', 'E'];
     const gS = { AL: 1.2, BC: 1.2, BT: 1.2, MC: 1, ME: 1, E: 1, EC: 1.2 }, gU = { AL: 1.6, BC: 1.6, BT: 1.6, MC: 1.35, ME: 1.35, E: 1.35, EC: 1.6 };
     function perm(get) { // retourne {maxS, maxU, minS, minU, comps}
-      const pp = get(C.pp), pu = [get(C.pushN), get(C.pushX)], qs = [get(C.qsupN), get(C.qsupX)], rd = [get(C.rdtN), get(C.rdtX)];
+      const pp = get(C.pp), pu = [get(C.pushN), get(C.pushX)], qs = [get(C.qsupN), get(C.qsupX)], rd = [get(C.rdtN), get(C.rdtX)], ph = [get(C.pushHN), get(C.pushHX)];
       const pick = (arr, f) => f(arr[0], arr[1]);
-      const mx = { pp, pu: pick(pu, Math.max), qs: pick(qs, Math.max), rd: pick(rd, Math.max) };
-      const mn = { pp, pu: pick(pu, Math.min), qs: pick(qs, Math.min), rd: pick(rd, Math.min) };
-      const S = o => o.pp + o.pu + o.qs + o.rd;
+      const mx = { pp, pu: pick(pu, Math.max), qs: pick(qs, Math.max), rd: pick(rd, Math.max), ph: pick(ph, Math.max) };
+      const mn = { pp, pu: pick(pu, Math.min), qs: pick(qs, Math.min), rd: pick(rd, Math.min), ph: pick(ph, Math.min) };
+      const S = o => o.pp + o.pu + o.qs + o.rd + (o.ph || 0);
       const UX = o => Object.values(o).reduce((a, v) => a + (v > 0 ? 1.35 * v : v), 0);
       const UN = o => Object.values(o).reduce((a, v) => a + (v < 0 ? 1.35 * v : v), 0);
       const r = { mx, mn, maxS: S(mx), minS: S(mn), maxU: UX(mx), minU: UN(mn) };
@@ -644,7 +740,8 @@
         const lmax = {}, lmin = {}; for (const l of LIVE) { lmax[l] = Math.max(0, env[l + '+'].v); lmin[l] = Math.min(0, env[l + '-'].v); }
         let liveS = 0, liveU = 0, liveSn = 0, liveUn = 0;
         for (const l of LIVE) { liveS = Math.max(liveS, gS[l] * lmax[l]); liveU = Math.max(liveU, gU[l] * lmax[l]); liveSn = Math.min(liveSn, gS[l] * lmin[l]); liveUn = Math.min(liveUn, gU[l] * lmin[l]); }
-        let dS = p.maxS + liveS + 0.6 * tmax, dU = p.maxU + liveU, nS = p.minS + liveSn + 0.6 * tmin, nU = p.minU + liveUn;
+        const rb = get(C.remb); lmax.REMB = Math.max(0, rb); lmin.REMB = Math.min(0, rb);
+        let dS = p.maxS + liveS + 1.2 * lmax.REMB + 0.6 * tmax, dU = p.maxU + liveU + 1.6 * lmax.REMB, nS = p.minS + liveSn + 1.2 * lmin.REMB + 0.6 * tmin, nU = p.minU + liveUn + 1.6 * lmin.REMB;
         let ec = null;
         if (hasEC) {
           ec = { mx: Math.max(0, env['EC+'].v), mn: Math.min(0, env['EC-'].v) };
@@ -658,11 +755,16 @@
     for (const [el, ve] of [['t', 'Vt'], ['b', 'Vb'], ['w', 'Vw']]) {
       out['V' + el] = R.sections[el].map((x, k) => {
         // traverse inférieure, x = 0 : SETRA exclut la réaction de la dalle de transition (force concentrée au nœud)
-        const get = c => (el === 'b' && (c === C.rdtN || c === C.rdtX)) ? 0 : c[el][k].V; const p = perm(get); const env = R.env[ve][k];
+        const PU = R.pushUnit;
+        // traverse inférieure : de la dalle de transition, SETRA ne retient que l'effet des moments d'encastrement transmis
+        // par les piédroits (la force verticale en pied de piédroit ne crée pas d'effort tranchant dans le radier) :
+        // V = (M_angle(dalle)/M_angle(poussée))·V(poussée) — reproduit l'excédent 0.742/0.258/0.995·V(poussée Kmax) des 3 passages.
+        const get = c => (el === 'b' && (c === C.rdtN || c === C.rdtX || c === C.chRN || c === C.chRX)) ? c.b[0].M / PU.b[0].M * PU.b[k].V : c[el][k].V; const p = perm(get); const env = R.env[ve][k];
         const tP = get(C.tempP), tM = get(C.tempM); const tmax = Math.max(tP, tM, 0), tmin = Math.min(tP, tM, 0);
         const lmax = {}, lmin = {}; let lU = 0, lUn = 0;
         for (const l of LIVE) { lmax[l] = Math.max(0, env[l + '+'].v); lmin[l] = Math.min(0, env[l + '-'].v); lU = Math.max(lU, gU[l] * lmax[l]); lUn = Math.min(lUn, gU[l] * lmin[l]); }
-        let ec = null; let dU = p.maxU + lU + tmax, nU = p.minU + lUn + tmin;
+        const rb = get(C.remb); lmax.REMB = Math.max(0, rb); lmin.REMB = Math.min(0, rb);
+        let ec = null; let dU = p.maxU + lU + 1.6 * lmax.REMB, nU = p.minU + lUn + 1.6 * lmin.REMB; // la température n'entre pas dans les efforts tranchants ELU (2531 PD : 301.9 = 291.5 + 1.6·6.5)
         if (hasEC) { ec = { mx: Math.max(0, env['EC+'].v), mn: Math.min(0, env['EC-'].v) }; }
         return { x, perm: p, tmax, tmin, lmax, lmin, ec, design: { maxU: dU, minU: nU } };
       });
@@ -673,7 +775,8 @@
       const lmax = {}, lmin = {}; let lS = 0, lSn = 0;
       for (const l of LIVE) { lmax[l] = Math.max(0, env[l + '+'].v); lmin[l] = Math.min(0, env[l + '-'].v); lS = Math.max(lS, gS[l] * lmax[l]); lSn = Math.min(lSn, gS[l] * lmin[l]); }
       let ec = null; if (hasEC) ec = { mx: Math.max(0, env['EC+'].v), mn: Math.min(0, env['EC-'].v) };
-      const des = { maxS: p.maxS + lS + 0.6 * tmax, minS: p.minS + lSn + 0.6 * tmin };
+      const rb = get(C.remb); lmax.REMB = Math.max(0, rb); lmin.REMB = Math.min(0, rb);
+      const des = { maxS: p.maxS + lS + 1.2 * lmax.REMB + 0.6 * tmax, minS: p.minS + lSn + 1.2 * lmin.REMB + 0.6 * tmin };
       if (ec) { des.maxS = Math.max(des.maxS, p.ch.maxS + 1.2 * ec.mx + 0.6 * tmax); des.minS = Math.min(des.minS, p.ch.minS + 1.2 * ec.mn + 0.6 * tmin); }
       return { perm: p, tmax, tmin, lmax, lmin, ec, design: des };
     });
