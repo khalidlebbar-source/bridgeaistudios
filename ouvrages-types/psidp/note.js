@@ -495,6 +495,34 @@
     D.push('                              EN 1 LIT(S)');
   }
   function secCotesCable(D, m, R) { D.newPage(); cotesTable(D, m, R); }
+  // Tableaux finaux (câblage automatique) : cotes de l'axe du câble et de la sous-gaine / sous-dalle, pas L/ceil(L)
+  // ; sous-gaine = axe - DGAIN/2 - 0.1 DGAIN·signe(z'') (câble plaqué dans la gaine ; transition près des ancrages NON RÉSOLUE)
+  function secCotesFinales(D, m, R) {
+    var P = R.prec, v = m.values; if (!P || !P.cable || v.CABL === 4) return;
+    var VP = R.section.calc.VP, cab = P.cable, n = R.n, ns = n;
+    var one = function (title, f) {
+      D.newPage(); D.push(' ');
+      D.push(pad(32, title)); D.push(' ');
+      D.push('             ABSCISSE    COTE    ABSCISSE    COTE    ABSCISSE    COTE    ABSCISSE    COTE    ABSCISSE    COTE    ABSCISSE    COTE ');
+      for (var t = 0; t < ns; t++) {
+        D.push(' '); D.push('TRAVEE ' + (t + 1) + ' '); D.push(' ');
+        var l = R.L[t], N = Math.ceil(l - 1e-9), pts = [];
+        for (var k = 0; k <= N; k++) pts.push(k * l / N);
+        for (var i = 0; i < pts.length; i += 6) {
+          var ln = L(); pts.slice(i, i + 6).forEach(function (x, j) { ln.at(21 + 20 * j, fx(x, 3)); ln.at(29 + 20 * j, fx(f(t, x), 3)); });
+          D.push(ln.s + ' '); D.push(' ');
+        }
+      }
+      D.push("NOTA  :  L'ABSCISSE EST COMPTEE PAR RAPPORT A L'APPUI DE GAUCHE DE LA TRAVEE ");
+    };
+    var axe = function (t, x) { return VP + cab.z(t, x); };
+    one("TABLEAU DONNANT LES COTES DE L'AXE DU CABLE PAR RAPPORT A LA SOUS DALLE ", axe);
+    one('TABLEAU DONNANT LES COTES DE LA SOUS GAINE PAR RAPPORT A LA SOUS DALLE ', function (t, x) {
+      var h = 1e-3, l = R.L[t], xa = Math.max(0, Math.min(l - 2 * h, x - h)), c = cab.z(t, xa) - 2 * cab.z(t, xa + h) + cab.z(t, xa + 2 * h);
+      return axe(t, x) - v.DGAIN / 2 - 0.1 * v.DGAIN * (c > 0 ? 1 : (c < 0 ? -1 : 0));
+    });
+  }
+
 
   function secCaracBP(D, m, R) {
     var v = m.values, P = R.prec, sc = R.section.calc, lim = R.limites, genre = Math.floor((v.GEN || 201) / 100);
@@ -851,6 +879,146 @@
     eqBlock(D, R, au.after.spans);
   }
 
+
+  // ------------------------------------------------------------ flexion transversale (éléments de calcul, LI de μ)
+  function secFlexT(D, m, R) {
+    if (!R.flexT) return;
+    var ns = spansToPrint(R, m.values);
+    for (var t = 0; t < ns; t++) {
+      var F = R.flexT[t];
+      D.newPage();
+      D.push(pad(34, 'ELEMENTS DE CALCUL DU MOMENT DE FLEXION TRANSVERSALE EN TRAVEE  ' + (t + 1) + ' '));
+      D.push('  ');
+      var rp = function (x, w) { x = String(x); return x.length >= w ? x : pad(w - x.length, x); };
+      D.push('      BIAIS MECANIQUE (PSI) ' + rp(fx(F.psi, 3), 8) + '       LONGUEUR EQUIVALENTE BIAISE (DB):' + rp(fx(F.DB, 3), 6) + '        LARGEUR EQUIVALENTE DROITE : ' + rp(fx(F.Be, 3), 8) + ' ');
+      D.push(row([[30, '      COEFFICIENT DE POISSON :'], [39, fx(F.nu, 3)], [60, 'A1(2*B/SIN(PSI)):'], [67, fx(F.A1, 3)], [110, 'A2(2*B/DB*SIN(PSI)):'], [117, fx(F.A2, 3)]]));
+      D.push("      LES LIGNES D'INFLUENCE DU COEFFICIENT DE FLEXION TRANSVERSALE SONT CALCULEES A PARTIR DE LA TRAVEE DROITE EQUIVALENTE DE ");
+      D.push(' ' + rp(fx(F.LS, 3), 12) + 'M DE LONGUEUR ET ' + rp(fx(F.A1, 3), 7) + "M DE LARGEUR.    (PARAMETRE D'ENTRETOISEMENT " + fx(F.theta, 3) + ') ');
+      D.push(' ');
+      D.push(pad(32, "TERMES MULTIPLICATEURS RELATIFS A L'ETALEMENT LONGITUDINAL DES CHARGES "));
+      D.push('  ');
+      D.push('                       ETALEMENT      HARMONIQUE 1                          HARMONIQUE 3                          HARMONIQUE 5 ');
+      F.etal.forEach(function (e) { D.push(row([[6 + e.nom.length, pad(6, e.nom)], [30, fx(e.c, 3)], [49, fx(e.t[0], 3)], [87, fx(e.t[1], 3)], [125, fx(e.t[2], 3)]])); });
+      D.push('  '); D.push(' ');
+      F.fibres.forEach(function (fb) {
+        D.push("LIGNES D'INFLUENCE DU COEFFICIENT DE FLEXION TRANSVERSALE (PAS 0.500) DE LA FIBRE " + fb.n + (fb.n === 1 ? ' (AXE MECANIQUE)' : ' A ' + pad(7 - fx(fb.y, 3).length, fx(fb.y, 3)) + " DE L'AXE MECANIQUE"));
+        D.push('  '); D.push(' ');
+        D.push('                  HARMONIQUE 1   HARMONIQUE 3   HARMONIQUE 5 ');
+        D.push('                   ( *1000 )      ( *1000 )      ( *1000 ) ');
+        var rows = fb.grid.map(function (e, i) { return { e: e, v: fb.vals[i], f: false }; }), hit = false;
+        rows.forEach(function (r) { if (Math.abs(r.e - fb.y) < 5e-4) { r.f = true; hit = true; } });
+        if (!hit) { rows.push({ e: fb.y, v: fb.star, f: true }); rows.sort(function (a, b) { return a.e - b.e; }); }
+        rows.forEach(function (r) { D.push(row([[5, r.f ? 'FIBRE' : ''], [12, fx(r.e, 3)], [29, fx(1000 * r.v[0], 2)], [44, fx(1000 * r.v[1], 2)], [59, fx(1000 * r.v[2], 2)]]) + ' '); });
+        D.push('  '); D.push(' ');
+      });
+      if (F.my) secMyTable(D, F, t);
+    }
+  }
+  function secReductionFT(D, m, R) {
+    var FT = R.flexT; if (!FT || !FT[0].my) return;
+    D.newPage(); D.push('  ');
+    D.push(pad(34, 'ELEMENTS DE REDUCTION DES EFFORTS AU CENTRE MECANIQUE DES DIFFERENTES TRAVEES '));
+    for (var i = 0; i < 4; i++) { D.push('  '); D.push(' '); } D.push('  ');
+    D.push("     LE CENTRE MECANIQUE D'UNE TRAVEE EST SITUE TRANSVERSALEMENT SUR L'AXE MECANIQUE DE LA SECTION (FIBRE 1). ");
+    D.push('     LONGITUDINALEMENT IL EST PRIS AU MILIEU POUR LES TRAVEES INTERMEDIAIRES ');
+    D.push(pad(35, "A 0.4 DE LA PORTEE DE L'APPUI DE RIVE POUR LES TRAVEES EXTREMES "));
+    D.push('  '); D.push(' '); D.push('  ');
+    var hd = L(); FT.forEach(function (F, t) { hd.at(70 + 12 * t, 'TRAVEE ' + (t + 1)); }); D.push(hd.s + ' ');
+    D.push('  '); D.push(' ');
+    var line = function (lab, f) { var l = L(lab); FT.forEach(function (F, t) { var x = f(F); if (x !== null && x !== undefined) l.at(69 + 12 * t, fx(x, 3)); }); D.push(l.s + ' '); };
+    var mxT = function (F, k) { var r = null; F.my.forEach(function (q) { if (r === null || (k === 'max' ? q.pond.max > r : q.pond.min < r)) r = q.pond[k]; }); return r; };
+    line('     MOMENT TRANSVERSAL PRINCIPAL PONDERE (T*M/ML)', function (F) { return mxT(F, 'max'); });
+    line('', function (F) { return mxT(F, 'min'); });
+    D.push('  '); D.push(' ');
+    line('     MOMENT LONGITUDINAL PRINCIPAL PONDERE (T*M/ML)', function (F) { return F.prec && F.prec.ML ? F.prec.ML[0] : null; });
+    line('', function (F) { return F.prec && F.prec.ML ? F.prec.ML[1] : null; });
+    D.push('  '); D.push(' ');
+    line('     BIAIS MECANIQUE', function (F) { return F.psi; });
+    D.push('  '); D.push(' ');
+    line('     EFFORT NORMAL DE PRECONTRAINTE', function (F) { return F.prec ? F.prec.Fes / R.Be : null; });
+    line('', function (F) { return F.prec ? F.prec.Fms / R.Be : null; });
+  }
+  // Section 33 : efforts tranchants et réactions hyperstatiques dus au câble : V = (M_j+1 - M_j)/L avec les moments
+  // hyperstatiques M.T max initiaux, M.S max, E.S min (exact 2549) ; réaction = V droite - V gauche.
+  function secEffTrHyp(D, m, R) {
+    var P = R.prec; if (!P || !P.hypInit || !P.hypServ) return;
+    var n = R.n, ph = [['M.T', P.hypInit.max], ['M.S', P.hypServ.msMax], ['E.S', P.hypServ.esMin]];
+    var V = function (M) { return R.L.map(function (l, t) { return (M[t + 1] - M[t]) / l; }); };
+    D.newPage(); D.push('  ');
+    D.push(pad(32, 'EFFORTS TRANCHANTS HYPERSTATIQUES SUR APPUIS DUS AU TRACE DU CABLE '));
+    D.push('  '); D.push(' '); D.push('  '); D.push(' '); D.push('  '); D.push(' '); D.push(' ');
+    var h1 = L(), h2 = L(), h3 = L(), t;
+    for (t = 0; t < n; t++) { h1.at(40 + 11 * t + (t ? 1 : 0), t ? 'APPUI ' + (t + 1) + 'D' : 'APPUI 1'); h2.at(37 + 11 * t, 'ET'); h3.at(41 + 11 * t - (t === n - 1 ? 1 : 0), t === n - 1 ? 'APPUI ' + (n + 1) : 'APPUI ' + (t + 2) + 'G'); }
+    D.push(h1.s + ' '); D.push(h2.s + ' '); D.push(h3.s + ' '); D.push('  ');
+    ph.forEach(function (q) { var l = L('      EN PHASE ' + q[0]); V(q[1]).forEach(function (x, t2) { l.at(38 + 11 * t2, fx(x, 1)); }); D.push(l.s + ' '); D.push('  '); });
+    D.push(' '); D.push('  '); D.push(' '); D.push('  ');
+    D.push(pad(34, "REACTIONS D'APPUI HYPERSTATIQUES DUES AU TRACE DU CABLE "));
+    D.push('  '); D.push(' ');
+    var h4 = L(); for (t = 0; t <= n; t++) h4.at(40 + 11 * t, 'APPUI ' + (t + 1)); D.push(h4.s + ' '); D.push('  ');
+    ph.forEach(function (q) { var v = V(q[1]), l = L('      EN PHASE ' + q[0]); for (var i = 0; i <= n; i++) l.at(38 + 11 * i, fx((i < n ? v[i] : 0) - (i > 0 ? v[i - 1] : 0), 1)); D.push(l.s + ' '); D.push('  '); });
+  }
+  function secFerTransv(D, m, R) {
+    var FT = R.flexT; if (!FT || !FT[0].fer) return;
+    var vals = function (lab, f, d) { var l = L(lab); FT.forEach(function (F, t) { if (F.fer) l.at(50 + 16 * t, fx(f(F.fer), d)); }); D.push(l.s + ' '); };
+    var hdr = function (c0, step) { var l = L(); FT.forEach(function (F, t) { l.at(c0 + step * t, 'TRAVEE ' + (t + 1)); }); D.push(l.s + ' '); };
+    D.newPage(); D.push('  ');
+    D.push(pad(43, 'FERRAILLAGE DE FLEXION TRANSVERSALE EN TRAVEE '));
+    [['inf', 'FACE INFERIEURE '], ['sup', 'FACE SUPERIEURE ']].forEach(function (q) {
+      var k = q[0];
+      D.push('  '); D.push(q[1]); D.push('  ');
+      hdr(50, 16); D.push('  '); D.push(' ');
+      [['OX', ' ( PARALLELE A LA DIRECTION DU MOMENT PRINCIPAL MX ) ', '----------'], ['OY', ' ( PARALLELE A LA DIRECTION DU MOMENT PRINCIPAL MY ) ', '----------'],
+       ['OX0', " ( PARALLELE AUX CABLES SUR LAQUELLE S'EXERCE LA FLEXION SIMPLE ) ", '-----------']].forEach(function (fa) {
+        D.push('          FACETTE ' + fa[0] + fa[1]); D.push('          ' + fa[2] + ' ');
+        vals('              MOMENT', function (fe) { return fe[k][fa[0]].M; }, 2);
+        if (fa[0] !== 'OX0') vals('              EFFORT NORMAL', function (fe) { return fe[k][fa[0]].N; }, 2);
+        vals("              SECTION D'ACIER REQUISE", function (fe) { return fe[k][fa[0]].w; }, 6);
+        D.push('  '); D.push(' ');
+      });
+    });
+    D.newPage(); D.push('  ');
+    D.push(pad(26, "SECTIONS MINIMALES D'ARMATURES TRANSVERSALES DE BETON ARME DANS LES DIFFERENTES TRAVEES "));
+    D.push(pad(32, "(SECTIONS D'ACIER EM M**2 PAR METRE LINEAIRE LONGITUDINAL DE L'OUVRAGE) "));
+    D.push('  '); D.push(' '); D.push(' '); D.push('  '); D.push(' ');
+    var tab = function (key) {
+      D.push('  '); hdr(41, 16); D.push('  ');
+      [['sup', 'SUPERIEURE'], ['inf', 'INFERIEURE']].forEach(function (q) { var l = L('          FACE ' + q[1]); FT.forEach(function (F, t) { if (F.fer) l.at(41 + 16 * t, fx(key(F.fer)[q[0]], 6)); }); D.push(l.s + ' '); D.push('  '); });
+      D.push(' ');
+    };
+    D.push("PARALLELEMENT A LA DIRECTION DES LIGNES D'APPUI "); tab(function (fe) { return fe.par; });
+    D.push('PERPENDICULAIREMENT AUX BORDS LIBRES '); tab(function (fe) { return fe.perp; });
+    D.push('  ');
+    D.push('N O T A : ');
+    D.push("    * POUR L'OUVRAGE CALCULE IL EST CONSEILLE DE REALISER LE FERRAILLAGE TRANSVERSAL " + (m.values.BIAIS >= 70 ? "PARALLELEMENT A LA DIRECTION DES LIGNES D'APPUI " : 'PERPENDICULAIREMENT AUX BORDS LIBRES '));
+    D.push('  '); D.push(' ');
+    D.push("    * DANS LE CAS OU L'ON REALISE LE FERRAILLAGE TRANSVERSAL PARALLELEMENT AUX LIGNES D'APPUI ");
+    D.push('      LES SECTIONS D\'ARMATURES LONGITUDINALES MINIMALES CI-APRES DOIVENT ETRE VERIFIEES : ');
+    tab(function (fe) { return { sup: fe.longi, inf: fe.longi }; });
+  }
+  function secMyTable(D, F, t) {
+    D.newPage();
+    D.push('  ');
+    D.push('          MOMENTS PRINCIPAUX DE FLEXION TRANSVERSALE MY MAXIMUM ET MINIMUM DES DIFFERENTES SECTIONS SUR LES FIBRES ETUDIEES ');
+    D.push(pad(43, 'POUR LA TRAVEE ' + (t + 1) + ' PAR METRE DE LARGEUR '));
+    D.push('  '); D.push(' '); D.push('  '); D.push(' ');
+    var nb = function (o) { return fx(o.v, 3) + '(' + (o.n < 10 ? ' ' : '') + o.n + ')'; };
+    F.my.forEach(function (r) {
+      D.push('    FIBRE ' + r.n + ' ');
+      D.push('              SECTION          MY CP       MY PREC      MY   A        MY  B       MY TROT      MY   C      MY PONDERE ');
+      D.push('  '); D.push(' ');
+      [['max', 1], ['min', 0]].forEach(function (q) {
+        var k = q[0], l = L();
+        if (q[1]) l.at(20, '0.500');
+        l.at(36, fx(r.cp[k], 3)); l.at(49, fx(r.prec[k], 3)); l.at(65, nb(r.A[k])); l.at(78, nb(r.B[k]));
+        if (r.B[k].typ) l.at(81, r.B[k].typ);
+        l.at(91, fx(r.T[k], 3));
+        l.at(101, fx(r.C[k].v, 3)); if (r.C[k].nom) l.s += r.C[k].nom;
+        l.at(117, fx(r.pond[k], 3));
+        D.push(l.s + ' ');
+      });
+      D.push('  '); D.push(' ');
+    });
+  }
   function secPrecontrainte(D, m, R) {
     var P = R.prec; if (!P) return;
     if (m.values.CABL !== 4) secCablageAuto(D, m, R);
@@ -887,7 +1055,12 @@
     if (R.sol) secSollicitations(D, model, R);
     if (R._shearLines) { D.newPage(); R._shearLines.forEach(function (l) { D.push(l); }); }
     secPrecontrainte(D, model, R);
+    secFlexT(D, model, R);
+    secReductionFT(D, model, R);
+    secFerTransv(D, model, R);
+    secEffTrHyp(D, model, R);
     if (R.deform) secDeform(D, model, R);
+    secCotesFinales(D, model, R);
     D.newPage();
     D.push(pad(40, 'FIN DE LA NOTE DE CALCUL') + pad(62, 'V98244'));
     return D.lines.join('\n') + '\n';

@@ -287,6 +287,7 @@
     R.deform = { oss: deflections(R, R.cp.oss[0], R.EI * R.section.I), cpi: deflections(R, R.cp.tot[0], R.EI * R.section.I), cpt: deflections(R, R.cp.tot[0], R.EV28 * R.section.I) };
     R.sol = liveLoads(R, v);
     R.prec = precontrainte(R, v, model);
+    try { R.flexT = flexionTransversale(R, v); } catch (err) { R.warnings.push('flexion transversale : ' + err.message); }
     return R;
   }
 
@@ -769,6 +770,203 @@
     return { inst: dInst, proba: spi, maxi: 1.02 * v.SIGMAP0 - 0.8 * dInst, mini: 0.98 * v.SIGMAP0 - 1.2 * dInst,
       relax: rho, retrait: dr, rect: -rect, infini: spi - rho - dr - dFluage + rect };
   }
+
+
+  // ------------------------------------------------------------- flexion transversale (Guyon-Massonnet-Barès)
+  // Module commun PSIDA/PSIDP (guide PSIDP annexe 6, rétro-analyse moteur PSIDA) : plaque de largeur A1 = Be/sin ψ,
+  // longueur DB·sin ψ (travée droite équivalente), harmoniques 1, 3, 5, solution exacte avec le coefficient de Poisson.
+  function plateLine(b, L, e, nu, m) {
+    var B = m * PI / L;
+    var dG = function (t, k) {
+      var s = t < 0 ? -1 : 1, a = Math.abs(t), E = Math.exp(-B * a), c = 4 * B * B * B;
+      if (k === 0) return (1 + B * a) * E / c;
+      if (k === 1) return s * (-B * B * a * E) / c;
+      if (k === 2) return (-B * B * E + B * B * B * a * E) / c;
+      return s * (2 * B * B * B * E - B * B * B * B * a * E) / c;
+    };
+    var ch = function (y) { return Math.cosh(B * y); }, sh = function (y) { return Math.sinh(B * y); };
+    var H = [
+      function (y, k) { return [ch(y), B * sh(y), B * B * ch(y), B * B * B * sh(y)][k]; },
+      function (y, k) { return [sh(y), B * ch(y), B * B * sh(y), B * B * B * ch(y)][k]; },
+      function (y, k) { return [y * sh(y), sh(y) + B * y * ch(y), 2 * B * ch(y) + B * B * y * sh(y), 3 * B * B * sh(y) + B * B * B * y * ch(y)][k]; },
+      function (y, k) { return [y * ch(y), ch(y) + B * y * sh(y), 2 * B * sh(y) + B * B * y * ch(y), 3 * B * B * ch(y) + B * B * B * y * sh(y)][k]; }
+    ];
+    var rows = [], rhs = [];
+    [-b, b].forEach(function (yb) {
+      rows.push(H.map(function (h) { return h(yb, 2) - nu * B * B * h(yb, 0); })); rhs.push(-(dG(yb - e, 2) - nu * B * B * dG(yb - e, 0)));
+      rows.push(H.map(function (h) { return h(yb, 3) - (2 - nu) * B * B * h(yb, 1); })); rhs.push(-(dG(yb - e, 3) - (2 - nu) * B * B * dG(yb - e, 1)));
+    });
+    var c = solve(rows, rhs);
+    var w = function (y, k) { k = k || 0; var t = dG(y - e, k); for (var i = 0; i < 4; i++) t += c[i] * H[i](y, k); return t; };
+    w.B = B;
+    return w;
+  }
+  // LI du coefficient μ_m de la fibre y (coordonnées plaque) ; au-delà de e1 : prolongement linéaire de pente = corde [e1, e1 + 0.125]
+  function muLine(b, L, y, m, nu, e1, hh) {
+    var cache = {};
+    var exact = function (e) {
+      var k = e.toFixed(9);
+      if (!(k in cache)) { var w = plateLine(b, L, Math.max(-b + 1e-9, Math.min(b - 1e-9, e)), nu, m); cache[k] = -(w(y, 2) - nu * w.B * w.B * w(y, 0)) / b; }
+      return cache[k];
+    };
+    var h = hh || 0.125;
+    return function (e) {
+      var a = Math.abs(e), sg = e < 0 ? -1 : 1;
+      if (a <= e1) return exact(e);
+      var v1 = exact(sg * e1), v2 = exact(sg * (e1 + h));
+      return v1 + (a - e1) * (v2 - v1) / h;
+    };
+  }
+  function flexionTransversale(R, v) {
+    var H = v.HDAL1, hc = v.HCHAU || 0, e0 = 0.25 + 2 * hc + H, e1 = 2 * hc + H, W = R.largeurTot, nu = v.POIS || 0;
+    return R.L.map(function (l, t) {
+      var DB = R.Leq[t], psi = R.biaisMeca[t], sP = Math.sin(gr(psi)), A1 = R.Be / sP, A2 = A1 / DB;
+      var bS = A1 / 2, LS = DB * sP, eInt = FLEXT_EINT(v, sP);
+      var term = function (c) { return [1, 3, 5].map(function (m) { var x = m * PI * Math.min(c, DB) / (2 * DB); return Math.sin(x) / x; }); };
+      var Lmin = Math.min.apply(null, R.Leq), ch = [['CHARGE REPARTIE', DB]];
+      if (R.loads.B) { ch.push(['BC', 1.5 + e0]); ch.push(['BT', 1.35 + e0]); }
+      if (R.loads.CE) { ch.push(['CVOI.D', Math.min(Lmin, 11 + e1)]); ch.push(['CVOI.E', Math.min(Lmin, 15 + e1)]); }
+      if (R.loads.MC120) ch.push(['MC.120', 6.1 + e1]);
+      if (R.loads.MC80) ch.push(['MC.80', 4.9 + e1]);
+      var etal = ch.map(function (q) { return { nom: q[0], c: Math.min(q[1], DB), t: term(q[1]) }; });
+      var nf = v.NF >= 3 ? 3 : (v.NF >= 2 ? 2 : 1);
+      var fibres = [{ n: 1, f: 0 }, { n: 2, f: 0.5 }, { n: 4, f: 0.75 }].slice(0, nf).map(function (fb) {
+        var yP = -Math.min(fb.f * bS, eInt);
+        var mus = [1, 3, 5].map(function (m) { var mu = muLine(bS, LS, yP, m, nu, eInt, FLEXT_H(sP)); return function (e) { return mu(e / sP); }; });
+        var grid = [], kk; for (kk = 0; -W / 2 + kk * 0.5 <= W / 2 + 1e-9; kk++) grid.push(-W / 2 + kk * 0.5); if (grid[grid.length - 1] < W / 2 - 1e-9) grid.push(W / 2);
+        return { n: fb.n, y: yP * sP, yP: yP, mus: mus, grid: grid, vals: grid.map(function (e) { return mus.map(function (mu) { return mu(e); }); }), star: mus.map(function (mu) { return mu(yP * sP); }) };
+      });
+      var F = { psi: psi, DB: DB, Be: R.Be, nu: nu, A1: A1, A2: A2, LS: LS, bS: bS, theta: bS / LS, sinPsi: sP, eInt: eInt, etal: etal, fibres: fibres };
+      F.prec = flexTPrec(R, v, t);
+      F.my = momentsTransversaux(R, v, F, t);
+      F.fer = ferraillageTransversal(R, v, F);
+      return F;
+    });
+  }
+  // Effort de précontrainte au centre mécanique (0.4L travée de rive, 0.5L intermédiaire) : ES min (MY max) et MS max (MY min),
+  // et somme A2 + A3 des coefficients des deux paraboles principales de la travée (notice PSIDP, annexe 6 § b).
+  function flexTPrec(R, v, t) {
+    var P = R.prec; if (!P || !P.G || !P.cable) return null;
+    var n = R.n, xr = n === 1 ? 0.5 : (t === 0 ? 0.4 : (t === n - 1 ? 0.6 : 0.5)), Nd = P.ND[t];
+    var g = P.G.filter(function (q) { return q.t === t && Math.abs(q.k / Nd - xr) < 1e-9; })[0];
+    if (!g || !g.d) return null;
+    var segs = P.cable.spans[t] || [], As = 0;
+    segs.forEach(function (sg) { var a = sg.a !== undefined ? sg.a : sg.A; if (a > 0) As += a; });
+    // moment longitudinal principal pondéré au centre mécanique : (QL+QC + P) / Be, P = F.e + M_hyp (ES min pour le max,
+    // MS max pour le min) — constat 2549
+    var sol = (R.sol[t] || []).filter(function (q) { return Math.abs(q.x0 - xr) < 1e-9; })[0], ML = null;
+    if (sol && P.hypServ) {
+      var at = function (M) { return M[t] * (1 - g.x / R.L[t]) + M[t + 1] * g.x / R.L[t]; };
+      ML = [(sol.comb[0].qlqc + g.d.esMin * P.nA * g.e + at(P.hypServ.esMin)) / R.Be, (sol.comb[1].qlqc + g.d.msMax * P.nA * g.e + at(P.hypServ.msMax)) / R.Be];
+    }
+    return { xr: xr, Fes: g.d.esMin * P.nA, Fms: g.d.msMax * P.nA, As: As, ML: ML };
+  }
+  // Ferraillage de flexion transversale en travée (notice PSIDP p. 81 commentée) : facettes OX (My, N cos²ψ), OY (Mx, N sin²ψ),
+  // OX0 (Mx cos²ψ + My sin²ψ, N = 0) ; face inférieure : moments max et N = F ES min / Be, face supérieure : moments min et
+  // N = F MS max / Be. Section requise par ml = max(5e-4·H, yt·ft28/(2 fe)), yt = hauteur tendue de la section 1 m × HDAL1
+  // (terme N_Bt/fe · ft28/σ_Bt du BPEL) — exact sur 2549 (OX0 : yt = H/2 → 0.25 H ft28/fe sur tout le corpus).
+  function ferraillageTransversal(R, v, F) {
+    if (!F.my || !F.prec || !F.prec.ML) return null;
+    var H = v.HDAL1, ft = -R.limites.trEnrQC, fe = v.FE1 || 50000, s2 = Math.pow(Math.sin(gr(F.psi)), 2), c2 = 1 - s2;
+    var req = function (M, N) {
+      var sn = N / H, sm = 6 * Math.abs(M) / (H * H), st = sn - sm, yt = st >= 0 ? 0 : H * (-st) / (sn + sm - st);
+      return Math.max(5e-4 * H, yt * ft / (2 * fe));
+    };
+    var mt = function (k) { var r = null; F.my.forEach(function (q) { if (r === null || (k === 'max' ? q.pond.max > r : q.pond.min < r)) r = q.pond[k]; }); return r; };
+    var face = function (k, Mx, Nf) {
+      var My = mt(k), o = { OX: { M: My, N: Nf * c2 }, OY: { M: Mx, N: Nf * s2 }, OX0: { M: Mx * c2 + My * s2, N: 0 } };
+      for (var f in o) o[f].w = req(o[f].M, o[f].N);
+      return o;
+    };
+    var inf = face('max', F.prec.ML[0], F.prec.Fes / R.Be), sup = face('min', F.prec.ML[1], F.prec.Fms / R.Be), sphi = Math.sin(gr(v.BIAIS));
+    return { inf: inf, sup: sup, perp: { sup: sup.OX0.w, inf: inf.OX0.w }, par: { sup: sup.OX0.w / sphi, inf: inf.OX0.w / sphi }, longi: 5e-4 * H };
+  }
+  // Moments transversaux My au centre de la travée (guide PSIDP annexe 6 § 3.2.2 ; même module que PSIDA) :
+  //   charges réparties My = p·A1·Σ Bm·Dm ; roulantes My = δ·P·A2·Σ Bm·Σμm.
+  function momentsTransversaux(R, v, F, sp) {
+    var W = R.largeurTot, h = 0.125, A1 = F.A1, A2 = F.A2, cl = R.classe;
+    var sn = function (e) { return -W / 2 + Math.round((e + W / 2) / h - 1e-9) * h; };
+    var x0r = -W / 2 + (v.ETROG || 0) + (v.EGAU || 0), x0 = sn(x0r), x1 = sn(x0r + v.ESURCH), Lch = v.ESURCH;
+    var term = function (nom) { for (var i = 0; i < F.etal.length; i++) if (F.etal[i].nom === nom) return F.etal[i].t; return F.etal[0].t; };
+    var etc = function (nom) { for (var i = 0; i < F.etal.length; i++) if (F.etal[i].nom === nom) return F.etal[i].c; return F.DB; };
+    var trap = function (f, a, b) { var nn = Math.max(1, Math.round((b - a) / h)), t = 0; for (var i = 0; i <= nn; i++) t += (i === 0 || i === nn ? 0.5 : 1) * f(a + i * (b - a) / nn); return t * (b - a) / nn; };
+    var intPL = function (f, a, b) {
+      var o = -W / 2, g = function (e) { var k = Math.floor((e - o) / h + 1e-9), e0 = o + k * h, tt = (e - e0) / h; return tt < 1e-12 ? f(e0) : f(e0) * (1 - tt) + f(e0 + h) * tt; };
+      var pts = [a], k; for (k = Math.ceil((a - o) / h - 1e-9); o + k * h < b - 1e-9; k++) if (o + k * h > a + 1e-9) pts.push(o + k * h); pts.push(b);
+      var s = 0; for (var i = 0; i < pts.length - 1; i++) s += (g(pts[i]) + g(pts[i + 1])) / 2 * (pts[i + 1] - pts[i]); return s;
+    };
+    var dyn = R.dyn.travee[sp], nv = R.nv, V = Lch / nv;
+    var bcN = function (nn) { var tb = BC[cl] || [1]; return tb[Math.min(nn, tb.length) - 1]; };
+    var Ltr = R.L[sp], pr = F.prec;
+    return F.fibres.map(function (fb) {
+      var Z = function (B) { return function (e) { var s = 0; for (var j = 0; j < 3; j++) s += B[j] * fb.mus[j](e); return s; }; };
+      var Zr = Z(term('CHARGE REPARTIE')), res = { n: fb.n }, be = R.Be / 2;
+      res.cp = { max: R.cp.tot[1] / R.Be * A1 * intPL(Zr, -be, be), min: R.cp.tot[2] / W * A1 * trap(Zr, -W / 2, W / 2) };
+      // précontrainte : poussée F·(A2+A3)/EDAL1 uniforme sur l'intrados (ES min → max, MS max → min) — écart 1 à 6 % NON RÉSOLU
+      if (pr) { var Dp = intPL(Zr, -v.EDAL1 / 2, v.EDAL1 / 2), cst = -pr.As / v.EDAL1 * A1 * Dp; res.prec = { max: cst * pr.Fes, min: cst * pr.Fms }; }
+      else res.prec = { max: 0, min: 0 };
+      // charge A par voie
+      var aMax = { v: 0, n: 0 }, aMin = { v: 0, n: 0 };
+      if (R.loads.A) {
+        var q = (R.loads.Agen ? Agen(v, Ltr) * (v.LVOIE || V) / V : A_l(Ltr) * R.v0 / V), lanes = [], k, msk;
+        for (k = 0; k < nv; k++) lanes.push(q * A1 * trap(Zr, sn(x0r + k * V), sn(x0r + (k + 1) * V)));
+        for (msk = 1; msk < (1 << nv); msk++) { var tt = 0, nn = 0; for (k = 0; k < nv; k++) if (msk & (1 << k)) { tt += lanes[k]; nn++; }
+          var val = (R.loads.Agen ? (v['CDTA' + nn] || 1) : a1coef(cl, nn)) * tt; if (val > aMax.v + 1e-12) aMax = { v: val, n: nn }; if (val < aMin.v - 1e-12) aMin = { v: val, n: nn }; }
+      }
+      res.A = { max: aMax, min: aMin };
+      // trottoirs : 0.45 t/m2 (charge locale), trottoir par trottoir
+      var tr = [], pt = 0.45;
+      if (R.loads.trot) {
+        if (v.ETROG > 0) tr.push(pt * A1 * trap(Zr, -W / 2, sn(-W / 2 + v.ETROG)));
+        if (v.ETROD > 0) tr.push(pt * A1 * trap(Zr, sn(W / 2 - v.ETROD), W / 2));
+      }
+      res.T = { max: tr.filter(function (x) { return x > 0; }).reduce(function (a, b) { return a + b; }, 0), min: tr.filter(function (x) { return x < 0; }).reduce(function (a, b) { return a + b; }, 0) };
+      // systèmes B : groupes de véhicules accolés
+      var groups = function (Zb, nMax, wV, wheels, coef, Pw, d) {
+        var S = [], nn, kk, f, w;
+        for (nn = 1; nn <= nMax; nn++) { S[nn] = []; for (kk = 0; x0 + kk * h <= x1 - nn * wV + 1e-9; kk++) { var x = x0 + kk * h, t2 = 0; for (f = 0; f < nn; f++) for (w = 0; w < wheels.length; w++) t2 += Zb(x + f * wV + wheels[w]); S[nn].push({ x: x, s: t2 }); } }
+        var mx = { v: 0, n: 0 }, mn = { v: 0, n: 0 };
+        for (nn = 1; nn <= nMax; nn++) S[nn].forEach(function (g) { var val = coef(nn) * Pw * A2 * d * g.s; if (val > mx.v) mx = { v: val, n: nn }; });
+        for (var nL = 0; nL <= nMax; nL++) for (var nR = 0; nL + nR <= nMax; nR++) { if (!nL && !nR) continue;
+          var GL = nL ? S[nL] : [{ x: x0 - 1e9, s: 0 }];
+          GL.forEach(function (gl) { var xe = nL ? gl.x + nL * wV : x0; var GR = nR ? S[nR].filter(function (g) { return g.x >= xe - 1e-9; }) : [{ s: 0 }];
+            GR.forEach(function (gr2) { var val = coef(nL + nR) * Pw * A2 * d * (gl.s + gr2.s); if (val < mn.v) mn = { v: val, n: nL + nR }; }); }); }
+        return { max: mx, min: mn };
+      };
+      var none = { max: { v: 0, n: 0 }, min: { v: 0, n: 0 } }, bc = none, bt = none;
+      if (R.loads.B) {
+        bc = groups(Z(term('BC')), Math.min(nv, Math.max(1, Math.floor(Lch / 2.5))), 2.5, [0.25, 2.25], bcN, 12, dyn.bc);
+        bt = groups(Z(term('BT')), Math.max(1, Math.min(2, nv, Math.floor((Lch + 1e-9) / 3))), 3, [0.5, 2.5], function () { return cl === 2 ? 0.9 : 1; }, 16, dyn.bc);
+      }
+      res.B = { max: bc.max.v >= bt.max.v ? { v: bc.max.v, n: bc.max.n, typ: 'BC' } : { v: bt.max.v, n: bt.max.n, typ: 'BT' },
+        min: bc.min.v <= bt.min.v ? { v: bc.min.v, n: bc.min.n, typ: 'BC' } : { v: bt.min.v, n: bt.min.n, typ: 'BT' } };
+      if (!res.B.max.v) res.B.max.typ = ''; if (!res.B.min.v) res.B.min.typ = '';
+      // charges C
+      var cMx = { v: 0, nom: '' }, cMn = { v: 0, nom: '' };
+      var Cl = []; if (R.loads.CE) { Cl.push('CVOI.D'); Cl.push('CVOI.E'); } if (R.loads.MC120) Cl.push('MC.120'); if (R.loads.MC80) Cl.push('MC.80');
+      Cl.forEach(function (nom) {
+        var Zc = Z(term(nom)), mx = 0, mn = 0, kk;
+        if (/^MC/.test(nom)) {
+          var big = nom === 'MC.120', Pc = big ? 55 : 36, ent = big ? 3.25 : 2.75;
+          var mean = function (a) { var t2 = 0; for (var i = 0; i <= 8; i++) t2 += (i === 0 || i === 8 ? 0.5 : 1) * Zc(a + i / 8); return t2 / 8; };
+          for (kk = 0; x0 + kk * h <= x1 - (ent + 1) + 1e-9; kk++) { var x = x0 + kk * h, val = (big ? dyn.mc : dyn.mc) * Pc * A2 * (mean(x) + mean(x + ent)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+        } else {
+          var cv = nom === 'CVOI.D' ? { P: 140, len: 11 } : { P: 200, len: 15 }, w = 3.3, pc = cv.P / cv.len / w * Math.min(1, etc(nom) / F.DB), xc = (x0 + x1) / 2;
+          [-0.375, 0.375].forEach(function (off) { var x = xc + off - w / 2, val = pc * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); });
+        }
+        if (mx > cMx.v) cMx = { v: mx, nom: nom }; if (mn < cMn.v) cMn = { v: mn, nom: nom };
+      });
+      res.C = { max: cMx, min: cMn };
+      // MY pondéré (ELS) = CP + P + trottoirs + max(1.2A, 1.2B, C) — constat 2549
+      res.pond = { max: res.cp.max + res.prec.max + res.T.max + Math.max(1.2 * aMax.v, 1.2 * res.B.max.v, cMx.v),
+        min: res.cp.min + res.prec.min + res.T.min + Math.min(1.2 * aMin.v, 1.2 * res.B.min.v, cMn.v) };
+      return res;
+    });
+  }
+  // prolongement linéaire au-delà du bord de la nervure (EDAL1/2), corde sur un pas de LI de 0.125 m mesuré perpendiculairement
+  // à l'axe (soit 0.125/sin ψ sur la plaque) — exact sur 2549 (PSIDA : 0.125 sur la plaque, ouvrages peu biais)
+  function FLEXT_H(sP) { return 0.125 / sP; }
+  function FLEXT_EINT(v, sP) { return v.EDAL1 / 2 / sP; }
 
   // ------------------------------------------------------------- câblage imposé (CABL = 4)
   // Rétro-analyse 2549 : dans chaque travée, sommet de parabole au point de cote minimale ; sur appui
@@ -1301,6 +1499,8 @@
       }
       P.flBlock = { FM: FMf, FMJ: FMJ, rec: rec };
     }
+    // diagnostic (dev/ uniquement) : forcer ΔC / fluage approché pour isoler les pertes
+    if (model.__diag) { if (model.__diag.dC != null) dC = model.__diag.dC; if (model.__diag.dFl != null) dFl = model.__diag.dFl; }
     P.dC = dC; P.dFl = dFl;
     // --- section 24 : tensions initiales et première approximation à l'infini
     G.forEach(function (g) { var p = pt(g); g.dev = p.dev; g.T0 = p.T0; g.bl = p.blocage; g.p = los(g, dC, dFl); });
