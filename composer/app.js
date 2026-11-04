@@ -12,7 +12,7 @@
   const show = (v) => (v === 0 || v ? String(v).replace('.', ',') : '');
 
   let S = load() || C.normalize(C.defaults('route'));
-  let M = null, view = 'elev', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
+  let M = null, view = 'plan', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
   const openT = [];
   const expanded = new Set(['tablier', 'travees', 'appuis']);
   try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
@@ -76,6 +76,11 @@
     diagV: '<path d="M2 12h20"/><path d="M3 12V5l9 7v7l9-7V5" />',
     diagS: '<path d="M4 3v18M20 3v18"/><path d="M4 7l16 10M4 7h6M14 17h6"/>',
     diagR: '<path d="M3 20h18"/><path d="M6 20V9M12 20V5M18 20V11"/><path d="M4 11l2-2 2 2M10 7l2-2 2 2M16 13l2-2 2 2"/>',
+    planE: '<rect x="2" y="4" width="20" height="16" rx="1"/><path d="M4 9h11M4 9v4M9 9v4M15 9v4M4 16h11M17 6v12M17 13h5"/>',
+    trace: '<path d="M2 18q6-12 10-6t10-8"/><path d="M2 21h20" stroke-dasharray="2 2"/>',
+    geo: '<path d="M7 2v20M7 5h4M7 9h7M7 13h4M7 17h6"/><path d="M16 3l5 3-5 3z"/>',
+    justif: '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M8 12l3 3 5-6"/>',
+    sps: '<path d="M6 2v20M6 6h4M6 10h6M6 14h3M6 18h5"/><path d="M14 4l6 3-6 3z"/>',
     efforts: '<path d="M2 6h20"/><path d="M3 6q4 13 9 0q5 13 9 0"/>',
     dock: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 14h18M6 17h6"/>',
     tree: '<path d="M4 4h6v4H4zM10 6h4M14 4h6v4h-6zM7 8v8h7M14 14h6v4h-6z"/>',
@@ -112,13 +117,19 @@
     if (menu === 'fichier') {
       return grp('Projet', rb('new', 'Nouveau', 'new', { tip: 'Assistant de création d’un nouveau pont' }) + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }))
         + grp('Édition', rb('undo', 'Annuler', 'undo', { dis: !undoS.length, tip: 'Annuler — Ctrl+Z' }) + rb('redo', 'Rétablir', 'redo', { dis: !redoS.length, tip: 'Rétablir — Ctrl+Y' }))
-        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan de coffrage d’ensemble (AutoCAD)' }));
+        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan d’ensemble en vraie grandeur (AutoCAD) : coupe longitudinale, coupe transversale, vue en plan' })
+          + rb('sheetSvg', 'Plan A1<br>SVG', 'planE', { tip: 'Feuille A1 du plan d’ensemble (vectoriel, imprimable)' }));
     }
     const lab = { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', efforts: 'Efforts<br>longitudinaux', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' };
-    return grp('Diagrammes', rb('diag', 'Moments<br>M', 'diagM', { arg: 'M', on: view === 'diag' && diagK === 'M', tip: 'Enveloppe des moments fléchissants le long de l’ouvrage' })
+    return grp('Plan', rb('view', 'Plan<br>d’ensemble', 'planE', { arg: 'plan', on: view === 'plan', tip: 'Feuille A1 : coupe longitudinale, vue en plan, coupe transversale, tableaux, cartouche' }))
+      + grp('Données', rb('sel', 'Tracé<br>&amp; terrain', 'trace', { arg: 'trace', on: S.trace.actif, tip: 'Tracé en plan, profil en long, dévers, terrain naturel et obstacle franchi' })
+        + rb('geoPdf', 'Rapport<br>géotechnique', 'geo', { on: !!(S.geo && S.geo.sondages && S.geo.sondages.length), tip: 'Importer le rapport géotechnique (PDF) : sondages et essais pressiométriques lus par l’assistant IA' }))
+      + grp('Diagrammes', rb('diag', 'Moments<br>M', 'diagM', { arg: 'M', on: view === 'diag' && diagK === 'M', tip: 'Enveloppe des moments fléchissants le long de l’ouvrage' })
         + rb('diag', 'Tranchant<br>V', 'diagV', { arg: 'V', on: view === 'diag' && diagK === 'V' }) + rb('diag', 'Contraintes<br>ELS', 'diagS', { arg: 'S', on: view === 'diag' && diagK === 'S', tip: 'Contraintes normales en fibres extrêmes (section brute, sans précontrainte)' })
         + rb('diag', 'Réactions', 'diagR', { arg: 'R', on: view === 'diag' && diagK === 'R' }))
-      + grp('Tableaux', Object.keys(lab).map((k) => rb('tab', lab[k], k === 'efforts' ? 'diagM' : k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''));
+      + grp('Tableaux', Object.keys(lab).map((k) => rb('tab', lab[k], k === 'efforts' ? 'diagM' : k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''))
+      + grp('Justification', rb('justif', 'Chaîne de<br>justification', 'justif', { on: view === 't:justif', tip: 'Tablier, réactions, efforts horizontaux, appareils d’appui, piles et culées, fondations — modules de calcul du site' })
+        + rb('sps', 'Sondage<br>.sps', 'sps', { on: !!S.sps, tip: S.sps ? 'Sondage pressiométrique : ' + (S.spsNom || 'importé') + ' — cliquer pour en importer un autre' : 'Importer un sondage pressiométrique (.sps) pour les fondations' }));
   }
   function renderRibbon() { $('#ribbon').innerHTML = ribbonHTML(); }
 
@@ -138,6 +149,8 @@
     fond: ['#6b4fa0', '<path d="M6 2h4v6H6zM2 8h12v3H2zM4 11v4M8 11v4M12 11v4"/>'],
     equip: ['#5d6676', '<path d="M2 14V4M14 14V4M1 7h14M1 10h14"/>'],
     prix: ['#5d6676', '<circle cx="8" cy="8" r="6"/><path d="M10 5.5H7a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H6M8 4v8"/>'],
+    trace: ['#0b7285', '<path d="M1 12q4-7 7-4t7-5"/><path d="M1 14h14" stroke-dasharray="2 1.5"/>'],
+    geo: ['#7a5b00', '<path d="M5 2v12M5 4h3M5 7h5M5 10h3M5 13h4"/><path d="M11 3l3 2-3 2z"/>'],
     hyp: ['#c2410c', '<path d="M3 2h10v12H3z"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/>'],
     resultats: ['#c2410c', '<rect x="2" y="2" width="12" height="12"/><path d="M2 6h12M2 10h12M6 2v12"/>'],
     res: ['#c2410c', '<path d="M2 3h12M2 7h12M2 11h8"/>'],
@@ -154,6 +167,8 @@
       { id: 'projet', ic: 'projet', l: S.projet.nom || 'Ouvrage', v: S.projet.ouvrage },
       { id: 'hyp', ic: 'hyp', l: 'Hypothèses', v: (S.reglement === 'EC' ? 'EC' : (rail ? 'UIC 71' : 'F61')) + ' · ' + S.hyp.betonTab + ' · σ ' + fr(S.fond.sigma, 2) },
       { id: 'profil', ic: 'profil', l: 'Profil en travers', v: (rail ? 'rail' : 'route') + ' · W = ' + fr(M.W, 2) + ' m' },
+      { id: 'trace', ic: 'trace', l: 'Tracé & terrain', v: S.trace.actif ? 'PK ' + fr(S.trace.pk0, 2) + (M.trace && M.trace.checks.some((c) => !c.ok) ? ' · contrôle KO' : '') : 'non renseigné', warn: !!(M.trace && M.trace.checks.some((c) => !c.ok)) },
+      { id: 'geo', ic: 'geo', l: 'Géotechnique', v: S.geo && S.geo.sondages && S.geo.sondages.length ? S.geo.sondages.length + ' sondage' + (S.geo.sondages.length > 1 ? 's' : '') : (S.sps ? S.spsNom || '.sps' : 'aucun rapport') },
       { id: 'tablier', ic: 'tablier', l: 'Tablier', v: T.nom + ' · h ' + fr(M.h, 2) + ' m', warn: M.st.k !== 'ok', kids: [
         { id: 'section', ic: 'section', l: 'Coupe transversale', v: fr(M.sec.Abet + M.sec.Aprefa, 2) + ' m²' },
         { id: 'gperm', ic: 'gperm', l: 'Charges permanentes', v: 'g = ' + fx(M.g, 1) + ' kN/m' },
@@ -228,12 +243,59 @@
     let h = '', sub = '';
     if (id === 'projet') {
       sub = 'Projet';
-      h = G('Identification') + pTxt('Nom de l’ouvrage', 'projet.nom') + pTxt('Repère', 'projet.ouvrage') + pTxt('Référence', 'projet.ref') + pTxt('Maître d’ouvrage', 'projet.moa') + pTxt('Lieu', 'projet.lieu');
+      h = G('Identification') + pTxt('Nom de l’ouvrage', 'projet.nom') + pTxt('Repère', 'projet.ouvrage') + pTxt('Référence', 'projet.ref') + pTxt('Maître d’ouvrage', 'projet.moa') + pTxt('Lieu', 'projet.lieu')
+        + G('Cartouche du plan d’ensemble') + pTxt('Phase', 'projet.phase') + pTxt('Indice', 'projet.indice') + pTxt('Date', 'projet.date') + pTxt('Bureau d’études', 'projet.bet')
+        + pTxt('Dessiné par', 'projet.dessine') + pTxt('Vérifié par', 'projet.verifie') + pTxt('Validé par', 'projet.valide');
     } else if (id === 'hyp') {
       sub = 'Hypothèses';
       h = G('Hypothèses de calcul') + pRO('Règlement', esc(regLabel())) + pRO('Béton tablier / appuis', S.hyp.betonTab + ' / ' + S.hyp.betonApp) + pRO('σ sol admissible', fr(S.fond.sigma, 2) + ' MPa')
         + pNote('Toutes les hypothèses (règlement, matériaux, poids volumiques, déformations, sol, séisme, prix, hypothèses particulières) se saisissent dans l’onglet <b>Hypothèses</b> de la fenêtre principale.')
         + pBtns('<button class="mini" data-cmd="tab" data-arg="hyp">Ouvrir les hypothèses</button>');
+    } else if (id === 'trace') {
+      sub = 'Tracé & terrain';
+      const t = S.trace, ob = t.obstacle, TR = M.trace;
+      h = G('Tracé') + pChk('Caler l’ouvrage sur le tracé', 'trace.actif')
+        + pNote('Saisie simple : un élément en plan, une pente (et un raccordement), le dévers, quelques points de TN et l’obstacle franchi. Les hauteurs d’appuis, les cotes et le biais en découlent.');
+      if (t.actif) {
+        h += G('Tracé en plan (TP)') + pNum('PK de la culée C0', 'trace.pk0', 'm') + pNum('Rayon en plan (0 : droite ; + : à droite)', 'trace.R', 'm')
+          + pNum('Gisement de l’axe', 'trace.G0', 'gr') + pNum('X au PK de C0', 'trace.X0', 'm', { val: t.X0 || '', ph: 'facultatif' }) + pNum('Y au PK de C0', 'trace.Y0', 'm', { val: t.Y0 || '', ph: 'facultatif' })
+          + pTxt('Direction côté C0', 'trace.versG') + pTxt('Direction côté C' + n, 'trace.versD')
+          + G('Profil en long (PL)') + pNum('Ligne rouge au PK de C0', 'trace.z0', 'm') + pNum('Pente (− : descendante)', 'trace.p1', '%')
+          + pNum('Rayon du raccordement', 'trace.Rv', 'm', { val: t.Rv || '', ph: 'aucun' })
+          + (t.Rv > 0 ? pNum('PK du sommet', 'trace.pkS', 'm') + pNum('Pente après le sommet', 'trace.p2', '%') : '')
+          + G('Profil en travers (PT)') + pSel('Dévers', 'trace.typeDevers', [['toit', 'En toit'], ['unique', 'Dévers unique']]) + pNum('Valeur du dévers', 'trace.devers', '%')
+          + G('Terrain naturel') + pTxt('Points TN « PK;Z PK;Z … »', 'trace.tnTxt') + pRO('Points lus', String(t.tn.length)) + pNum('Couverture des fondations', 'trace.couv', 'm')
+          + G('Obstacle franchi') + pSel('Type', 'trace.obstacle.type', [['aucun', 'Aucun'], ['oued', 'Oued / cours d’eau'], ['voie', 'Voie ferrée'], ['route', 'Route']]);
+        if (ob.type !== 'aucun') h += pTxt('Désignation', 'trace.obstacle.nom') + pNum('Gisement de l’obstacle', 'trace.obstacle.gis', 'gr', { val: ob.gis || '', ph: 'biais saisi' });
+        if (ob.type === 'oued') h += pNum('Cote du fond du lit', 'trace.obstacle.zFond', 'm', { val: ob.zFond || '' }) + pNum('Plus hautes eaux (PHE)', 'trace.obstacle.phe', 'm', { val: ob.phe || '' })
+          + pNum('Profondeur d’affouillement', 'trace.obstacle.aff', 'm') + pNum('Revanche minimale', 'trace.obstacle.revanche', 'm');
+        if (ob.type === 'voie' || ob.type === 'route') h += pNum('PK de l’axe franchi', 'trace.obstacle.pk', 'm', { val: ob.pk || '' }) + pNum(ob.type === 'voie' ? 'Cote du rail' : 'Cote de la chaussée', 'trace.obstacle.zVoie', 'm', { val: ob.zVoie || '' })
+          + pNum('Gabarit à respecter', 'trace.obstacle.gabarit', 'm', { val: ob.gabarit || '' });
+        if (TR) {
+          h += G('Cotes calculées');
+          TR.sup.forEach((x) => { h += pRO(x.id + ' — PK ' + fr(x.pk, 2), 'LR ' + fr(x.LR, 2) + ' · appui ' + fr(x.zSeat, 2) + (x.TN != null ? ' · TN ' + fr(x.TN, 2) + ' · <b>H ' + fr(x.H, 2) + '</b>' + (x.limAff ? ' (affouillement)' : '') : ' · TN ?')); });
+          if (TR.biais != null) h += pRO('Biais déduit', '<b>' + fr(TR.biais, 1) + ' gr</b>');
+          TR.checks.forEach((c) => { h += pRO(esc(c.lab), `<span style="color:${c.ok ? 'var(--ok)' : 'var(--danger)'}">${fr(c.val, 2)} m ${c.ok ? '≥' : '<'} ${fr(c.lim, 2)} m</span>`); });
+        }
+      }
+    } else if (id === 'geo') {
+      sub = 'Géotechnique';
+      const GE = S.geo, SD = GE && GE.sondages || [];
+      h = G('Rapport géotechnique') + pRO('Source', esc(GE && GE.source || '—'))
+        + pBtns(`<button class="mini" data-cmd="geoPdf">${SD.length ? 'Importer un autre rapport' : 'Importer le rapport (PDF)'}</button> <button class="mini" data-cmd="sps">Sondage .sps</button>${SD.length ? ' <button class="mini" data-cmd="geoDel">Retirer</button>' : ''}`)
+        + (GEO.busy ? pNote('<b>Lecture du rapport en cours…</b> ' + esc(GEO.step || '')) : '') + (GEO.err ? pNote('<span style="color:var(--danger)">' + esc(GEO.err) + '</span>') : '');
+      if (!SD.length && !GEO.busy) h += pNote('L’assistant lit le rapport (y compris les tableaux scannés) et en extrait les sondages : position, cote de tête, coupe lithologique, nappe, essais pressiométriques (EM, pf, pl) et recommandations. Vous vérifiez avant usage.');
+      SD.forEach((d, i) => {
+        const E = d.essais || [], L = d.lithologie || [], used = S.spsNom === 'rapport : ' + d.sondage;
+        h += G(esc(d.sondage || 'Sondage ' + (i + 1)) + (d.appui ? ' — ' + esc(d.appui) : '') + (used ? ' ✓ fondations' : ''))
+          + pNum('PK', 'geo.sondages.' + i + '.pk', 'm', { val: d.pk == null ? '' : d.pk, ph: 'à préciser' }) + pNum('Cote de tête', 'geo.sondages.' + i + '.z', 'm', { val: d.z || '' })
+          + pNum('Nappe (profondeur)', 'geo.sondages.' + i + '.nappe', 'm', { val: d.nappe || '' }) + pRO('Profondeur', fr(+d.fin || 0, 2) + ' m')
+          + pRO('Coupe', L.map((c) => fr(c.z, 1) + ' : ' + esc(c.desc)).join('<br>') || '—')
+          + pRO('Essais pressiométriques', E.length ? E.length + ' essais · pl* ' + fr(Math.min(...E.map((e) => e.pl)), 2) + ' à ' + fr(Math.max(...E.map((e) => e.pl)), 2) + ' MPa' : 'aucun')
+          + (E.length ? pBtns(`<button class="mini" data-cmd="geoUse" data-arg="${i}">${used ? 'Sondage retenu' : 'Utiliser pour les fondations'}</button>`) : '');
+      });
+      if (GE && GE.reco) h += G('Recommandations du rapport') + pNote(esc(GE.reco).replace(/\n/g, '<br>'));
+      if (S.sps && /^rapport/.test(S.spsNom || '')) { const e = geoSigma(S.sps); if (e) h += G('Estimation (Fascicule 62)') + pRO('ple* sous semelle (≈ 1,5 B)', fr(e.ple, 2) + ' MPa') + pRO('σ ELS ≈ kp·ple*/3 (kp 0,8)', '<b>' + fr(e.sig, 2) + ' MPa</b>') + pBtns(`<button class="mini" data-cmd="geoSig" data-arg="${fr(e.sig, 3).replace(',', '.')}">Appliquer σ = ${fr(e.sig, 2)} MPa</button>`); }
     } else if (id === 'profil') {
       sub = 'Profil en travers';
       h = G('Usage') + pSel('Type d’ouvrage', 'usage', [['route', 'Pont-route'], ['rail', 'Pont-rail']]) + G('Profil en travers');
@@ -282,10 +344,10 @@
       const s = M.supports.find((x) => x.id === id);
       if (s.kind === 'culee') {
         sub = 'Culée ' + id + ' — ' + C.CULEES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm') + pNote('H : du dessus de la fondation au sommier d’appui.') + supRO(s);
+        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm')) + pNote('H : du dessus de la fondation au sommier d’appui.') + supRO(s);
       } else {
         sub = 'Pile ' + id + ' — ' + C.PILES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm') + supRO(s);
+        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm')) + supRO(s);
       }
     } else if (id === 'equip') {
       sub = 'Équipements';
@@ -384,8 +446,8 @@
 
   /* ───────── Fenêtre principale : onglets (vues graphiques et tableaux), rendu, sélection, navigation ───────── */
   const cv = $('#cv');
-  const VIEWS = [['elev', 'Élévation'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D'], ['diag', 'Diagrammes']];
-  const TABLES = { hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
+  const VIEWS = [['plan', 'Plan d’ensemble'], ['elev', 'Coupe longitudinale'], ['vplan', 'Vue en plan'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D'], ['diag', 'Diagrammes']];
+  const TABLES = { justif: 'Justification', hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
   const isTable = () => view.startsWith('t:');
@@ -419,19 +481,27 @@
       $('#axes2d').style.display = 'none';
       return;
     }
-    $('#axes2d').style.display = '';
-    scene = view === 'elev' ? C.elevScene(M) : C.secScene(M);
-    const opt = { width: cw, id: view === 'elev' ? 've' : 'vs', kp: 3.3, pad: 18, dims: showDims };
-    let svg = C.toSVG(scene, opt);
-    const hh = +(svg.match(/height="(\d+)"/) || [0, ch])[1];
-    if (hh > ch) { opt.width = Math.max(220, cw * ch / hh); svg = C.toSVG(scene, opt); }
+    $('#axes2d').style.display = view === 'plan' ? 'none' : '';
+    let svg;
+    if (view === 'plan') {
+      const nko = JZ.sum && JZ.key === Skey() ? JZ.sum.verdicts.filter((v) => v.statut !== 'ok').length : null;
+      scene = null;
+      svg = C.sheetSVG(M, { dims: showDims, justif: nko == null ? null : { ok: !nko, nko } });
+    } else {
+      scene = view === 'elev' ? C.elevScene(M) : view === 'vplan' ? C.planScene(M) : C.secScene(M);
+      const opt = { width: cw, id: view === 'elev' ? 've' : view === 'vplan' ? 'vp' : 'vs', kp: 3.3, pad: 18, dims: showDims };
+      svg = C.toSVG(scene, opt);
+      const hh = +(svg.match(/height="(\d+)"/) || [0, ch])[1];
+      if (hh > ch) { opt.width = Math.max(220, cw * ch / hh); svg = C.toSVG(scene, opt); }
+    }
     $('#svgHost').innerHTML = svg;
     const el = $('#svgHost svg');
     el.removeAttribute('width'); el.removeAttribute('height');
     vbBase = el.getAttribute('viewBox').split(/\s+/).map(Number);
     vb = vbBase.slice();
     applySel();
-    $('#vinfo').textContent = (view === 'elev' ? 'Élévation' : 'Coupe transversale') + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
+    $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble (A1) · cliquez un élément pour le modifier · molette : zoom · glisser : déplacer · double-clic : ajuster'
+      : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
   function draw3D() {
     const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
@@ -489,9 +559,26 @@
     const p = toSvgPt(ev);
     zoomAt(ev.deltaY > 0 ? 1.15 : 1 / 1.15, p.x, p.y);
   }, { passive: false });
-  let drag = null;
+  let drag = null, pinch = null;
+  const ptrs = new Map();
+  cv.addEventListener('pointerdown', (ev) => { ptrs.set(ev.pointerId, [ev.clientX, ev.clientY]); }, true);
+  cv.addEventListener('pointermove', (ev) => {
+    if (!ptrs.has(ev.pointerId)) return;
+    ptrs.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    if (ptrs.size !== 2 || view === 'diag' || view === '3d' || !vb) return;
+    const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    if (!pinch) { pinch = { d, vb: vb.slice() }; drag = null; return; }
+    const el = $('#svgHost svg'); if (!el || d < 10) return;
+    vb = pinch.vb.slice(); applyVB();
+    const p = toSvgPt({ clientX: cx, clientY: cy });
+    const nw = Math.min(vbBase[2] * 4, Math.max(vbBase[2] / 40, pinch.vb[2] * pinch.d / d)), k = nw / pinch.vb[2];
+    vb = [p.x - (p.x - pinch.vb[0]) * k, p.y - (p.y - pinch.vb[1]) * k, pinch.vb[2] * k, pinch.vb[3] * k];
+    applyVB();
+  }, true);
+  const unPtr = (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) pinch = null; };
+  cv.addEventListener('pointerup', unPtr, true); cv.addEventListener('pointercancel', unPtr, true);
   cv.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0 || view === 'diag') return;
+    if (ev.button !== 0 || view === 'diag' || ptrs.size > 1) return;
     const el = $('#svgHost svg'); if (!el) return;
     const m = el.getScreenCTM();
     drag = { x: ev.clientX, y: ev.clientY, vb: vb ? vb.slice() : null, k: 1 / m.a, moved: false, tag: ev.target.closest && ev.target.closest('[data-tag]'),
@@ -500,7 +587,7 @@
   });
   let raf = 0;
   cv.addEventListener('pointermove', (ev) => {
-    if (!drag) return;
+    if (!drag || pinch) return;
     const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < 4) return;
     drag.moved = true; cv.classList.add('drag');
@@ -534,8 +621,220 @@
     if (view === 't:' + k) view = openT.length ? 't:' + openT[Math.max(0, i - 1)] : lastGraphic;
     renderView(); renderRibbon();
   }
-  let lastGraphic = 'elev';
+  let lastGraphic = 'plan';
   function setView(v) { view = v; if (!v.startsWith('t:')) lastGraphic = v; renderView(); renderRibbon(); }
+
+  /* ───────── Justification : chaîne des modules du site (méthodologie KLE, parties B à F) ───────── */
+  const JZ = { key: null, sum: null, err: null, busy: false, map: null, id: 0, worker: null, cb: {} };
+  const base = location.pathname.replace(/[^/]*$/, '');
+  const Mlite = () => ({ kpi: { W: M.kpi.W, h: M.kpi.h }, supports: (M.supports || []).map((x) => ({ kind: x.kind, geo: { n: x.geo && x.geo.n } })) });
+  const Skey = () => JSON.stringify([S, Mlite()]);
+  function worker() {
+    if (JZ.worker) return JZ.worker;
+    JZ.cb = {};
+    JZ.worker = new Worker(base + 'composer/justif-worker.js?v=1');
+    JZ.worker.onmessage = (ev) => { const d = ev.data, f = JZ.cb[d.id]; delete JZ.cb[d.id]; if (f) f(d); };
+    JZ.worker.onerror = (e) => { Object.values(JZ.cb).forEach((f) => f({ error: 'Le calcul a échoué : ' + (e.message || 'erreur du module') })); JZ.cb = {}; };
+    return JZ.worker;
+  }
+  function ask(op) {
+    return new Promise((res) => { const id = ++JZ.id; JZ.cb[id] = res; worker().postMessage({ id, op, S: JSON.parse(JSON.stringify(S)), Ml: Mlite(), base: location.origin + base }); });
+  }
+  async function runJustif() {
+    if (JZ.busy) return;
+    if (!C.justifChainType(S)) { JZ.map = C.justifMap(S, Mlite(), null); JZ.sum = null; if (view === 't:justif') renderTable(); return; }
+    JZ.busy = true; JZ.err = null; if (view === 't:justif') renderTable();
+    const key = Skey(), d = await ask('run');
+    JZ.busy = false;
+    if (d.error) { JZ.err = d.error; } else { JZ.map = d.map; JZ.sum = d.sum || null; JZ.key = key; }
+    renderRibbon(); if (view === 't:justif') renderTable();
+  }
+  async function pickSps() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.sps,.SPS,.txt';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try {
+        if (!(window.BA && window.BA.sondages)) await new Promise((res, rej) => { const e = document.createElement('script'); e.src = base + 'outils/js/sondages.js?v=1'; e.onload = res; e.onerror = () => rej(new Error('lecteur de sondages indisponible')); document.head.appendChild(e); });
+        const txt = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsText(f, 'windows-1252'); });
+        const p = window.BA.sondages.parse(txt), sp = p.s || p;
+        if (!sp.couches || !sp.couches.length) throw new Error('aucune couche de calcul ($$TVCC)');
+        S.sps = sp; S.spsNom = f.name;
+        recompute(true); openTable('justif'); runJustif();
+      } catch (e) { alert('Sondage illisible : ' + e.message); }
+    };
+    inp.click();
+  }
+  /* ───────── Rapport géotechnique : lecture du PDF (texte + pages scannées) et extraction des sondages par l'assistant ───────── */
+  const GEO = { busy: false, step: '', err: '' };
+  const loadScript = (src, test) => (test() ? Promise.resolve() : new Promise((res, rej) => { const e = document.createElement('script'); e.src = src; e.onload = res; e.onerror = () => rej(new Error('module indisponible : ' + src)); document.head.appendChild(e); }));
+  const loadSondages = () => loadScript(base + 'outils/js/sondages.js?v=1', () => window.BA && window.BA.sondages);
+  const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  function geoStep(t) { GEO.step = t; if (selId === 'geo') renderProps(); }
+  async function pdfParts(file) {
+    await loadScript(PDFJS + 'pdf.min.js', () => window.pdfjsLib);
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
+    const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const parts = [], N = Math.min(doc.numPages, 80);
+    const KW = /pressiom|sondage|forage|coupe|profondeur|EM\b|E\s*M|pl\*?|p\s*l|pf\b|nappe|lithol|recommand|fondation|ancrage/i;
+    for (let i = 1; i <= N; i++) {
+      geoStep('page ' + i + ' / ' + N);
+      const pg = await doc.getPage(i);
+      const tc = await pg.getTextContent();
+      const txt = tc.items.map((it) => it.str + (it.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+/g, ' ').trim();
+      if (txt.length > 40) parts.push({ type: 'text', page: i, text: txt.slice(0, 14000) });
+      if (txt.length < 400 || (KW.test(txt) && /\d/.test(txt) && txt.length < 6000)) {
+        const v = pg.getViewport({ scale: 1 }), k = Math.min(2.2, 1500 / Math.max(v.width, v.height)), vp = pg.getViewport({ scale: k });
+        const cnv = document.createElement('canvas'); cnv.width = Math.round(vp.width); cnv.height = Math.round(vp.height);
+        await pg.render({ canvasContext: cnv.getContext('2d'), viewport: vp }).promise;
+        parts.push({ type: 'image', page: i, data: cnv.toDataURL('image/jpeg', 0.62).split(',')[1] });
+      }
+    }
+    return { parts, pages: doc.numPages };
+  }
+  async function imageParts(file) {
+    const url = URL.createObjectURL(file), img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+    const k = Math.min(1, 1600 / Math.max(img.width, img.height)), cnv = document.createElement('canvas');
+    cnv.width = Math.round(img.width * k); cnv.height = Math.round(img.height * k);
+    cnv.getContext('2d').drawImage(img, 0, 0, cnv.width, cnv.height); URL.revokeObjectURL(url);
+    return { parts: [{ type: 'image', page: 1, data: cnv.toDataURL('image/jpeg', 0.7).split(',')[1] }], pages: 1 };
+  }
+  const normName = (s) => String(s || '').toUpperCase().replace(/[\s_\-–.]+/g, '');
+  function mergeGeo(acc, r) {
+    (r.sondages || []).forEach((d) => {
+      if (!d || !d.sondage) return;
+      let o = acc.sondages.find((x) => normName(x.sondage) === normName(d.sondage));
+      if (!o) { o = { sondage: String(d.sondage), type: d.type || '', appui: d.appui || '', pk: null, z: 0, x: 0, y: 0, nappe: 0, fin: 0, lithologie: [], essais: [], plNet: !!d.plNet }; acc.sondages.push(o); }
+      ['type', 'appui'].forEach((k) => { if (!o[k] && d[k]) o[k] = String(d[k]); });
+      ['pk', 'z', 'x', 'y', 'nappe'].forEach((k) => { if ((o[k] == null || o[k] === 0) && Number.isFinite(+d[k]) && d[k] !== null && +d[k] !== 0) o[k] = +d[k]; });
+      if (+d.fin > o.fin) o.fin = +d.fin;
+      (d.lithologie || []).forEach((c) => { if (Number.isFinite(+c.z) && !o.lithologie.some((q) => Math.abs(q.z - c.z) < 0.05)) o.lithologie.push({ z: +c.z, desc: String(c.desc || '').slice(0, 80), nature: String(c.nature || '').slice(0, 1).toUpperCase() }); });
+      (d.essais || []).forEach((e) => { if (Number.isFinite(+e.z) && +e.pl > 0 && +e.em > 0 && !o.essais.some((q) => Math.abs(q.z - e.z) < 0.05)) o.essais.push({ z: +e.z, pl: +e.pl, pf: +e.pf || 0, em: +e.em }); });
+      if (d.plNet) o.plNet = true;
+    });
+    if (r.recommandations) acc.reco = (acc.reco ? acc.reco + '\n' : '') + String(r.recommandations).slice(0, 1500);
+    acc.sondages.forEach((o) => { o.lithologie.sort((a, b) => a.z - b.z); o.essais.sort((a, b) => a.z - b.z); o.fin = Math.max(o.fin, ...o.essais.map((e) => e.z), ...o.lithologie.map((c) => c.z + 0.5)); });
+    return acc;
+  }
+  async function pickGeoPdf() {
+    if (GEO.busy) return;
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.pdf,application/pdf,image/*';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      GEO.busy = true; GEO.err = ''; geoStep('ouverture du document');
+      try {
+        await loadSondages();
+        const { parts, pages } = /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name) ? await pdfParts(f) : await imageParts(f);
+        if (!parts.length) throw new Error('document vide ou illisible');
+        // lots de ≤ 3,5 Mo et ≤ 8 images par requête
+        const lots = []; let cur = [], sz = 0, ni = 0;
+        parts.forEach((p) => { const l = (p.data || p.text).length, im = p.type === 'image'; if (cur.length && (sz + l > 3.4e6 || (im && ni >= 8))) { lots.push(cur); cur = []; sz = 0; ni = 0; } cur.push(p); sz += l; if (im) ni++; });
+        if (cur.length) lots.push(cur);
+        const acc = { sondages: [], reco: '' };
+        for (let k = 0; k < lots.length; k++) {
+          geoStep('analyse par l’assistant ' + (k + 1) + ' / ' + lots.length + ' (' + pages + ' pages)');
+          const r = await fetch(base + 'api/composer-geo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nom: f.name, lot: k + 1, lots: lots.length, parts: lots[k], connus: acc.sondages.map((d) => d.sondage) }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.error || (r.status === 404 || r.status === 501 ? 'lecture par l’assistant indisponible ici (fonction serveur absente)' : 'erreur ' + r.status));
+          mergeGeo(acc, j);
+        }
+        if (!acc.sondages.length) throw new Error('aucun sondage reconnu dans ce document');
+        // PK à partir de l'appui désigné
+        acc.sondages.forEach((d) => {
+          if (d.pk == null && d.appui) { const s = M.supports.find((x) => normName(x.id) === normName(d.appui)); if (s) d.pk = (S.trace.actif ? S.trace.pk0 : 0) + s.x; }
+        });
+        S.geo = { source: f.name, date: new Date().toISOString().slice(0, 10), sondages: acc.sondages, reco: acc.reco };
+        const best = acc.sondages.find((d) => d.essais.length >= 3);
+        if (best) { S.sps = geoToSps(best); S.spsNom = 'rapport : ' + best.sondage; }
+        GEO.busy = false; GEO.step = '';
+        S = C.normalize(S); selId = 'geo'; recompute(true);
+      } catch (e) {
+        GEO.busy = false; GEO.step = ''; GEO.err = 'Lecture du rapport : ' + e.message; renderProps();
+      }
+    };
+    inp.click();
+  }
+  /* sondage extrait → format .sps (outils/js/sondages.js), couches de calcul par formation : pl, pf moyenne géométrique, EM harmonique */
+  function geoToSps(d) {
+    const B = window.BA && window.BA.sondages;
+    const fin = +d.fin || 0, L = (d.lithologie || []).slice().sort((a, b) => a.z - b.z);
+    if (!L.length || L[0].z > 0.01) L.unshift({ z: 0, desc: 'Terrain', nature: (L[0] && L[0].nature) || 'L' });
+    const E = (d.essais || []).map((e) => ({ z: +e.z, ind: 0, pl: +e.pl, pf: +e.pf || +e.pl * 0.6, em: +e.em }));
+    const st = (z1, z2) => { const X = E.filter((e) => e.z >= z1 - 1e-9 && e.z < z2 - 1e-9); if (!X.length) return null; const g = (k) => Math.exp(X.reduce((t, e) => t + Math.log(Math.max(e[k], 1e-6)), 0) / X.length); return { pl: g('pl'), pf: g('pf'), em: X.length / X.reduce((t, e) => t + 1 / e.em, 0) }; };
+    const couches = [];
+    L.forEach((c, k) => {
+      const z2 = k + 1 < L.length ? L[k + 1].z : Math.max(fin, c.z + 0.5);
+      const r = st(c.z, z2) || (couches.length ? null : st(c.z, Infinity));
+      if (!r) return;
+      const nat = 'ALSGCMRT'.includes(c.nature) && c.nature ? c.nature : 'L';
+      const cat = B ? (B.categorieSuggeree(nat, r.pl) || {}).categorie || 'B' : 'B';
+      const alpha = B && B.alphaSuggere ? B.alphaSuggere(nat, r.em / r.pl) : 0.5;
+      couches.push({ z: couches.length ? c.z : 0, nom: String(c.desc || 'Couche').slice(0, 40), pl: +r.pl.toFixed(2), pf: +r.pf.toFixed(2), em: +r.em.toFixed(1), alpha: +(+alpha).toFixed(2), classe: nat + cat, gamma: NaN, phi: NaN, c: NaN });
+    });
+    return { entreprise: '', adresse: '', projet: S.projet.nom || '', ouvrage: d.appui || '', sondage: d.sondage, date: '', x: +d.x || 0, y: +d.y || 0, z: +d.z || 0, nappe: +d.nappe || 0, l9: [0, 0],
+      lithologie: L.map((c) => ({ z: c.z, desc: c.desc })), fin, essais: E, remarques: ['Extrait automatiquement du rapport « ' + ((S.geo && S.geo.source) || '') + ' » — à vérifier.'], couches, finCouches: fin };
+  }
+  /* estimation de σ ELS d'une semelle : q'u = kp·ple* (kp = 0,8), σ = q'u / 3, ple* moyenne géométrique sur 1,5 B sous l'assise */
+  function geoSigma(sp) {
+    const E = (sp.essais || []).filter((e) => e.pl > 0); if (E.length < 2) return null;
+    const Bm = (M.supports.find((x) => x.fo.mode === 'superficielle') || { fo: { B: 3 } }).fo.B || 3, D = Math.max(0.5, S.trace.couv || 1);
+    const X = E.filter((e) => e.z >= D - 0.01 && e.z <= D + 1.5 * Bm + 0.01); const Y = X.length ? X : E.slice(0, 3);
+    const ple = Math.exp(Y.reduce((t, e) => t + Math.log(e.pl), 0) / Y.length);
+    return { ple, sig: Math.round(0.8 * ple / 3 * 100) / 100 };
+  }
+  async function openOT() {
+    const w = window.open('about:blank', '_blank');
+    const d = await ask('map');
+    if (d.error || !d.map || !d.map.ok) { if (w) w.close(); alert(d.error || (d.map && d.map.why) || 'Transposition impossible'); return; }
+    try { localStorage.setItem('ba-outils-ouvrages-types', JSON.stringify(d.map.s)); } catch (e) { /* stockage indisponible */ }
+    if (w) w.location = base + 'outils/ouvrages-types.html'; else location.href = base + 'outils/ouvrages-types.html';
+  }
+  function tJustif() {
+    const mp = JZ.map, sum = JZ.sum;
+    const stale = sum && JZ.key !== Skey();
+    const ST = (st) => st === 'ok' ? '<span class="jv ok">✓ vérifié</span>' : st === 'na' ? '<span class="jv na">—</span>' : '<span class="jv ko">✗ à reprendre</span>';
+    const stepSt = (re) => { if (!sum) return ''; const v = sum.verdicts.filter((x) => re.test(x.partie)); return v.length ? (v.every((x) => x.statut === 'ok') ? 'ok' : 'ko') : ''; };
+    const steps = [
+      ['B', 'Tablier', 'flexion, sections, flèches', /^Tablier/],
+      ['C', 'Réactions & efforts horizontaux', 'rigidités, retrait, ΔT, freinage', /Interaction|^Tablier/],
+      ['C', 'Appareils d’appui', 'élastomère fretté', /Appareils/],
+      ['D', 'Piles & culées', 'fûts, chevêtre, garde-grève, retours', /^(Pile|Culée)/],
+      ['E', 'Stabilité & fondations', 'portance, décompression, glissement', /^Fondation/],
+    ];
+    let h = `<div class="jh"><div><h4>Justification de l’ouvrage <small>chaîne des modules de calcul — méthodologie KLE</small></h4>`;
+    h += `<p class="jsub">${mp && mp.ok ? `Modèle de calcul : <b>${esc(mp.nom)}</b> · ${mp.s.regl === 'ec' ? 'Eurocodes (EN 1990, EN 1991-2, EN 1992)' : S.usage === 'rail' ? 'Livret 2.01 · BAEL 91' : 'Fascicule 61 titre II · BAEL 91 · Fasc. 62 titre V'}` : ''}</p></div>`;
+    h += `<div class="jbt"><button type="button" class="pri" data-cmd="justifRun"${JZ.busy ? ' disabled' : ''}>${JZ.busy ? 'Calcul en cours…' : sum ? 'Relancer' : 'Lancer la justification'}</button>`
+      + `<button type="button" data-cmd="sps">${S.sps ? 'Changer de sondage' : 'Importer un sondage .sps'}</button>`
+      + (S.sps ? `<button type="button" data-cmd="spsDel" title="Revenir au sondage d’exemple">Retirer le sondage</button>` : '')
+      + (mp && mp.ok ? `<button type="button" data-cmd="otOpen" title="Ouvrir l’ouvrage, pré-rempli, dans le module OUVRAGES TYPES (vues, plans, notes de chaque module)">Ouvrir dans OUVRAGES TYPES ↗</button>` : '') + '</div></div>';
+    if (mp && !mp.ok) return h + `<div class="jmsg">${esc(mp.why)}</div>`;
+    h += `<div class="jchain">${steps.map(([p, t, d, re], i) => `<div class="jst ${stepSt(re)}"><i>${p}</i><b>${t}</b><small>${d}</small></div>${i < steps.length - 1 ? '<span class="ja">→</span>' : ''}`).join('')}</div>`;
+    if (JZ.busy) h += '<div class="jmsg"><span class="spin"></span> Calcul de la chaîne : tablier, efforts horizontaux, appareils d’appui, piles et culées, fondations…</div>';
+    if (JZ.err) h += `<div class="jmsg ko">${esc(JZ.err)}</div>`;
+    if (stale) h += '<div class="jmsg warn">L’ouvrage a changé depuis le dernier calcul. <button type="button" data-cmd="justifRun">Relancer</button></div>';
+    if (mp && mp.notes.length) h += `<details class="jnotes" open><summary>Hypothèses de transposition (${mp.notes.length})</summary><ul>${mp.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>`;
+    if (!sum) return h + (JZ.busy || JZ.err ? '' : '<div class="jmsg">Lancez la justification pour enchaîner les calculs sur l’ouvrage composé.</div>');
+    h += `<h4>Verdicts <small>${sum.ok ? 'tout est vérifié' : sum.verdicts.filter((v) => v.statut !== 'ok').length + ' point(s) à reprendre'} · calcul ${fx(sum.ms / 1000, 1)} s${sum.sps ? ' · sondage ' + esc(S.sps ? S.spsNom || sum.sps : 'd’exemple') : ''}</small></h4>`;
+    h += '<table class="t jt"><thead><tr><th class="l">Partie</th><th class="l">Statut</th><th class="l">Résultat</th></tr></thead><tbody>'
+      + sum.verdicts.map((v) => `<tr class="${v.statut === 'ok' ? '' : 'kor'}"><td class="l">${esc(v.partie)}</td><td class="l">${ST(v.statut)}</td><td class="l">${esc(v.texte)}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.appareils.length) h += '<h4>Appareils d’appui <small>élastomère fretté, EN 1337-3 (module ÉLASTOMÈRES)</small></h4><table class="t"><thead><tr><th class="l">Ligne</th><th>Nombre</th><th class="l">Plaque a × b ; feuillets</th><th>Taux max</th><th class="l">Statut</th></tr></thead><tbody>'
+      + sum.appareils.map((a) => `<tr><td class="l">${esc(a.nom)}</td><td>${a.n || ''}</td><td class="l">${a.plaque ? `${fx(a.plaque.a * 1000, 0)} × ${fx(a.plaque.b * 1000, 0)} mm ; ${a.plaque.n} × ${fx(a.plaque.ti * 1000, 0)} mm` : esc(a.app)}</td><td>${a.taux != null ? fx(a.taux, 2) : '—'}</td><td class="l">${ST(a.ok ? 'ok' : 'ko')}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.fond.length) h += '<h4>Fondations <small>Fascicule 62 titre V, sondage pressiométrique (module FONDATIONS)</small></h4><table class="t"><thead><tr><th class="l">Appui</th><th class="l">Type</th><th>B × L (m)</th><th>q’ref / q’adm ELS (MPa)</th><th>q’ref / q’adm ELU (MPa)</th><th>Décompression ELS</th><th class="l">Statut</th></tr></thead><tbody>'
+      + sum.fond.map((f) => `<tr><td class="l">${esc(f.nom)}</td><td class="l">${f.type === 'pieux' ? 'pieux' : 'semelle'}</td><td>${fx(f.B, 2)} × ${fx(f.L, 2)}</td><td>${f.qref != null ? fx(f.qref, 3) + ' / ' + fx(f.qadm, 3) : '—'}</td><td>${f.qrefU != null ? fx(f.qrefU, 3) + ' / ' + fx(f.qadmU, 3) : '—'}</td><td>${f.decomp != null ? fx(f.decomp, 0) + ' %' : '—'}</td><td class="l">${f.err ? '<span class="jv ko">' + esc(f.err) + '</span>' : ST(f.ok ? 'ok' : 'ko')}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.joints.length) h += '<h4>Joints de chaussée <small>souffle (module HORIZONTAL)</small></h4><table class="t"><thead><tr><th class="l">Lieu</th><th>Ouverture max (mm)</th><th>Fermeture max (mm)</th></tr></thead><tbody>'
+      + sum.joints.map((j) => `<tr><td class="l">${esc(j.lieu)}</td><td>${fx(j.ouv * 1000, 0)}</td><td>${fx(-j.ferm * 1000, 0)}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.metres) {
+      const k = M.kpi, cb = sum.metres.beton, ca = sum.metres.aciers;
+      const ec = (a, b) => (b > 0 ? (a / b - 1) * 100 : 0);
+      h += '<h4>Quantités <small>avant-métré de la chaîne justifiée comparé à l’estimation du Composer</small></h4><table class="t"><thead><tr><th class="l">Poste</th><th>Composer (ratios)</th><th>Chaîne justifiée</th><th>Écart</th></tr></thead><tbody>'
+        + `<tr><td class="l">Béton (m³)</td><td>${f0(k.beton)}</td><td>${f0(cb)}</td><td>${(ec(cb, k.beton) >= 0 ? '+' : '') + fx(ec(cb, k.beton), 0)} %</td></tr>`
+        + `<tr><td class="l">Aciers passifs (t)</td><td>${fx(k.acier / 1000, 1)}</td><td>${fx(ca / 1000, 1)}</td><td>${(ec(ca, k.acier) >= 0 ? '+' : '') + fx(ec(ca, k.acier), 0)} %</td></tr>`
+        + (sum.metres.poutrelles ? `<tr><td class="l">Poutrelles (t)</td><td>${fx((k.metal || 0) / 1000, 1)}</td><td>${fx(sum.metres.poutrelles / 1000, 1)}</td><td></td></tr>` : '')
+        + '</tbody></table>';
+    }
+    if (sum.alertes.length) h += `<h4>Alertes des modules</h4><ul class="jal">${sum.alertes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>`;
+    return h;
+  }
 
   /* ───────── Fenêtre de tableaux ───────── */
   function tAppuis() {
@@ -642,7 +941,7 @@
 
   function renderTable() {
     const k = view.slice(2);
-    const f = { hyp: tHyp, predim: tPredim, ddc: tDdc, efforts: tEfforts, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
+    const f = { justif: tJustif, hyp: tHyp, predim: tPredim, ddc: tDdc, efforts: tEfforts, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
     const box = $('#res'), st = box.scrollTop;
     box.innerHTML = f();
     box.scrollTop = st;
@@ -663,6 +962,7 @@
   /* ───────── Calcul et rendu d'ensemble ───────── */
   function recompute(full) {
     try { M = C.compute(S); } catch (err) { console.error(err); return; }
+    if (M.trace) { S.piles.hauteurs = M.S.piles.hauteurs.slice(); S.culees.hauteurs = M.S.culees.hauteurs.slice(); S.biais = M.S.biais; }
     try { M.an = C.analyse(M); } catch (err) { console.error(err); M.an = null; }
     if (full !== 'nohist') pushHist();
     keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); });
@@ -676,7 +976,7 @@
     if (id === 'hyp') { if (!openT.includes('hyp')) openT.push('hyp'); view = 't:hyp'; }
     const p = parentOf(id, treeModel());
     if (p) expanded.add(p);
-    if (!o.keepView && id !== 'hyp' && view !== '3d' && view !== 'diag') {
+    if (!o.keepView && id !== 'hyp' && view !== '3d' && view !== 'diag' && view !== 'plan') {
       if (['section', 'profil', 'equip'].includes(id)) view = 'sec';
       else if (/^T\d+$/.test(id) || /^C\d+$/.test(id)) view = 'elev';
       else if (/^P\d+$/.test(id) && view === 'sec' && !$(`#svgHost [data-tag="${id}"]`)) view = 'elev';
@@ -715,13 +1015,14 @@
       case 'new':
         C.wizard(S, (ns) => {
           S = C.normalize(ns); selId = 'tablier'; expanded.clear(); ['tablier', 'travees', 'appuis'].forEach((k) => expanded.add(k));
-          openT.length = 0; view = 'elev'; lastGraphic = 'elev';
+          openT.length = 0; view = 'plan'; lastGraphic = 'plan';
           recompute(true); fitView();
         });
         return;
       case 'open': $('#fOpen').click(); return;
       case 'save': saveJSON(); return;
       case 'pdf': buildPrint(); window.print(); return;
+      case 'sheetSvg': download('plan-ensemble-' + slug() + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }).replace(/ width="\d+" height="\d+"/, ' width="841mm" height="594mm"'), 'image/svg+xml'); return;
       case 'dxf': download('composer-' + slug() + '.dxf', C.buildDXF(M, { date: today() }), 'application/dxf'); return;
       case 'home': location.href = 'index.html'; return;
       case 'usage': setUsage(arg); break;
@@ -747,6 +1048,16 @@
       case 'fondP': S.fond.piles = arg; break;
       case 'fondC': S.fond.culees = arg; break;
       case 'tab': openTable(arg); return;
+      case 'justif': openTable('justif'); if (!JZ.sum && !JZ.busy) runJustif(); return;
+      case 'justifRun': runJustif(); return;
+      case 'sps': pickSps(); return;
+      case 'sel': select(arg, { reveal: true }); return;
+      case 'geoPdf': if (selId !== 'geo') select('geo', { reveal: true, keepView: true }); pickGeoPdf(); return;
+      case 'geoDel': delete S.geo; if (/^rapport/.test(S.spsNom || '')) { delete S.sps; delete S.spsNom; } break;
+      case 'geoUse': { const d = S.geo && S.geo.sondages[+arg]; if (!d) return; loadSondages().catch(() => null).then(() => { S.sps = geoToSps(d); S.spsNom = 'rapport : ' + d.sondage; S = C.normalize(S); recompute(true); }); return; }
+      case 'geoSig': S.fond.sigma = +arg; break;
+      case 'spsDel': delete S.sps; delete S.spsNom; break;
+      case 'otOpen': openOT(); return;
       case 'diag': diagK = arg; setView('diag'); return;
       case 'closeT': closeTable(arg); return;
       case 'view': setView(arg); return;

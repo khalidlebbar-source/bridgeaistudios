@@ -154,6 +154,9 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .canvas path[data-tag]:hover{stroke:var(--acc) !important}
 .canvas path[data-tag].sel{stroke:#e8590c !important;stroke-width:2.2 !important}
 .canvas text[data-tag].sel{fill:#e8590c !important}
+.canvas svg.sheet{background:#8a919c}
+.canvas svg.sheet text[data-tag]{cursor:pointer}
+.canvas svg.sheet svg path[data-tag].sel{stroke-width:1.6 !important}
 .axes{position:absolute;left:10px;bottom:8px;pointer-events:none;width:46px;height:46px}
 .vinfo{position:absolute;right:10px;top:8px;pointer-events:none;font-size:11px;color:var(--mute);text-align:right;background:rgba(255,255,255,.85);padding:2px 4px;border-radius:2px}
 .hsplit{cursor:row-resize;background:var(--chrome);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -384,6 +387,25 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .chat .typing{display:inline-flex;gap:3px}.chat .typing i{width:6px;height:6px;border-radius:50%;background:#9db5e0;animation:tp 1s infinite}.chat .typing i:nth-child(2){animation-delay:.15s}.chat .typing i:nth-child(3){animation-delay:.3s}
 @keyframes tp{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media(max-width:999px){.left.ai{order:3;border-top:1px solid var(--line)}.right{order:4}.chat{max-height:300px}.right .tree,.right .props{flex:none;max-height:none;overflow:visible}}
+
+/* ── justification (chaîne) ── */
+.jh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.jh h4{margin:0}.jsub{color:var(--mute);font-size:11.5px;margin-top:2px}
+.jbt{display:flex;gap:6px;flex-wrap:wrap}.jbt button,.jmsg button{border:1px solid var(--line2);background:#fff;border-radius:4px;padding:4px 11px;cursor:pointer;font-size:11.5px}
+.jbt button:hover:not(:disabled){background:var(--hov)}.jbt button.pri{background:var(--acc);border-color:var(--acc2);color:#fff}.jbt button.pri:hover:not(:disabled){background:var(--acc2)}.jbt button:disabled{opacity:.6;cursor:wait}
+.jchain{display:flex;align-items:stretch;gap:4px;margin:10px 0;flex-wrap:wrap}
+.jst{flex:1 1 140px;border:1px solid var(--line);border-radius:5px;padding:6px 8px;background:#fff;display:flex;flex-direction:column;gap:1px;position:relative}
+.jst i{position:absolute;top:5px;right:7px;font-style:normal;font-size:10px;color:var(--mute);font-weight:600}
+.jst b{font-size:12px}.jst small{color:var(--mute);font-size:10.5px}
+.jst.ok{border-color:#9fd4ad;background:#f3faf5}.jst.ok b::before{content:"✓ ";color:var(--ok)}
+.jst.ko{border-color:#f0b8b8;background:#fff5f5}.jst.ko b::before{content:"✗ ";color:var(--danger)}
+.ja{align-self:center;color:var(--mute)}
+.jmsg{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:5px;background:#f7f9fc;font-size:12px}
+.jmsg.ko{border-color:#f0b8b8;background:#fff5f5;color:var(--danger)}.jmsg.warn{border-color:#f0d58c;background:#fffaeb}
+.jnotes{margin:6px 0 10px;font-size:11.5px;color:#3a4352}.jnotes summary{cursor:pointer;font-weight:600}.jnotes ul{margin:4px 0 0 18px}.jnotes li{margin:2px 0}
+.jv{font-weight:600;white-space:nowrap}.jv.ok{color:var(--ok)}.jv.ko{color:var(--danger)}.jv.na{color:var(--mute)}
+.t.jt td{white-space:normal}.t tr.kor td{background:#fff8f8}
+.jal{margin:4px 0 0 18px;font-size:11.5px;color:var(--warn)}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -442,14 +464,16 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=10"></script>
-<script src="composer/draw.js?v=10"></script>
-<script src="composer/dxf.js?v=10"></script>
-<script src="composer/view3d.js?v=10"></script>
-<script src="composer/analysis.js?v=10"></script>
-<script src="composer/diag.js?v=10"></script>
-<script src="composer/nlp.js?v=10"></script>
-<script src="composer/wizard.js?v=10"></script>
-<script src="composer/app.js?v=10"></script>
+<script src="composer/calc.js?v=12"></script>
+<script src="composer/draw.js?v=12"></script>
+<script src="composer/sheet.js?v=12"></script>
+<script src="composer/dxf.js?v=12"></script>
+<script src="composer/view3d.js?v=12"></script>
+<script src="composer/analysis.js?v=12"></script>
+<script src="composer/diag.js?v=12"></script>
+<script src="composer/nlp.js?v=12"></script>
+<script src="composer/justif.js?v=12"></script>
+<script src="composer/wizard.js?v=12"></script>
+<script src="composer/app.js?v=12"></script>
 </body>
 </html>

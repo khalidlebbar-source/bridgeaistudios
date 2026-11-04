@@ -56,14 +56,19 @@
       const w = g.sommier ? g.sommier.b : g.mur.e;
       return back - o * w / 2;
     };
-    const tn = M.supports.map((s) => [xFo(s), ySeat - s.H + 0.6]);
+    // tracé : altitude du dessus du tablier en x (repère local : dessus du tablier en y = 0, cisaillé à la fin)
+    const TR = M.trace, tr0 = S.trace;
+    const ZT = TR ? (x) => C.lrAt(tr0, tr0.pk0 + x) - TR.ep : () => 0;
+    const tnS = (s) => (TR && TR.sup[s.j].TN != null ? TR.sup[s.j].TN - ZT(s.x) : ySeat - s.H + 0.6);
+    let tn = M.supports.map((s) => [xFo(s), tnS(s)]);
     const xL = -dab - 14, xR = Ltot + dab + 14;
+    if (TR && TR.hasTN) { tn = []; for (let k = 0; k <= 80; k++) { const x = xL + (xR - xL) * k / 80; tn.push([x, C.tnAt(tr0, tr0.pk0 + x) - ZT(x)]); } }
     const yBot = Math.min.apply(null, M.supports.map((s) => ySeat - s.H - (s.fo.mode === 'pieux' ? s.fo.e + s.fo.Lp : s.fo.e))) - 1.5;
     poly(P, [[xL, tn[0][1]]].concat(tn, [[xR, tn[tn.length - 1][1]], [xR, yBot], [xL, yBot]]), 'sol');
     line(P, [xL, tn[0][1]], tn[0], 'tn'); for (let i = 0; i < tn.length - 1; i++) line(P, tn[i], tn[i + 1], 'tn');
     line(P, tn[tn.length - 1], [xR, tn[tn.length - 1][1]], 'tn');
     M.supports.filter((s) => s.kind === 'culee').forEach((s) => {
-      const o = s.j === 0 ? -1 : 1, g = s.geo, ytn = ySeat - s.H + 0.6;
+      const o = s.j === 0 ? -1 : 1, g = s.geo, ytn = tnS(s);
       const back = s.x + o * (dab + 0.05 + g.egg), far = o < 0 ? xL : xR, yTop = -0.10;
       const yb = g.sommier ? ySeat - g.sommier.h : ytn;
       const xin = back - o * (g.sommier ? g.sommier.b : g.mur.e);
@@ -180,7 +185,176 @@
     });
     const yT = 1.6 + mm(n > 1 ? 38 : 30);
     title(P, [Ltot / 2, yT], 'COUPE LONGITUDINALE', ech);
-    return { P, ech, titre: 'COUPE LONGITUDINALE — échelle 1/' + ech };
+    if (TR || (S.geo && S.geo.sondages && S.geo.sondages.length)) tracer(P, M, ZT, xL, xR, mm, ySeat);
+    return { P, ech, titre: 'COUPE LONGITUDINALE — échelle 1/' + ech, abs: !!TR };
+  }
+
+  /* passage en altitudes réelles (cisaillement y += Z(x)) puis habillage : cotes, PHE, gabarit, sondages, guitare */
+  function tracer(P, M, ZT, xL, xR, mm, ySeat) {
+    const TR = M.trace, S = M.S, t = S.trace, f2 = (v) => fr(v, 2);
+    if (TR) {
+      const sh = (q) => [q[0], q[1] + ZT(q[0])];
+      P.forEach((p) => {
+        if (p.k === 'poly') p.pts = p.pts.map(sh);
+        else if (p.k === 'dim' || p.k === 'brk') { p.a = sh(p.a); p.b = sh(p.b); }
+        else if (p.k === 'text' || p.k === 'title') p.p = sh(p.p);
+      });
+    }
+    let yMin = Infinity;
+    P.forEach((p) => { if (p.k === 'poly' && p.lay !== 'sol') p.pts.forEach((q) => { if (q[1] < yMin) yMin = q[1]; }); });
+    const ob = t.obstacle, i0 = P.length;
+    if (TR) {
+      // cotes d'appui et d'arase des fondations
+      TR.sup.forEach((s, k) => {
+        const sp = M.supports[k];
+        text(P, [sp.x + 0.5, s.zSeat - 0.05], 'Z = ' + f2(s.zSeat), { ht: 1.7, anchor: 'start', dy: -2.2, lay: 'note' });
+        const yf = s.zSeat - sp.H;
+        text(P, [sp.x + 0.5, yf], 'Z = ' + f2(yf), { ht: 1.7, anchor: 'start', dy: 0.8, lay: 'note' });
+      });
+      if (ob.type === 'oued') {
+        if (ob.phe) { line(P, [xL, ob.phe], [xR, ob.phe], 'eau'); text(P, [xL + 1, ob.phe], 'PHE = ' + f2(ob.phe), { ht: 1.9, anchor: 'start', dy: 3.2, lay: 'note' }); }
+        if (ob.zFond && ob.aff > 0) { const za = ob.zFond - ob.aff; line(P, [xL + 8, za], [xR - 8, za], 'aff'); text(P, [xR - 8, za], 'Limite des affouillements ' + f2(za), { ht: 1.8, anchor: 'end', dy: 0.8, lay: 'note' }); }
+      } else if ((ob.type === 'voie' || ob.type === 'route') && ob.pk && ob.zVoie) {
+        const x = ob.pk - t.pk0, rail = ob.type === 'voie';
+        rect(P, x - (rail ? 1.5 : 3.5), ob.zVoie, x + (rail ? 1.5 : 3.5), ob.zVoie - (rail ? 0.55 : 0.3), rail ? 'ballast' : 'rev');
+        line(P, [x, ob.zVoie - 1], [x, ob.zVoie + Math.max(ob.gabarit, 1) + 0.5], 'axe');
+        if (ob.gabarit > 0) dim(P, [x + 2, ob.zVoie], [x + 2, ob.zVoie + ob.gabarit], 'v', 2, 'gabarit ' + f2(ob.gabarit));
+        text(P, [x, ob.zVoie - (rail ? 0.55 : 0.3)], (ob.nom || (rail ? 'Voie ferrée' : 'Route')) + ' — Z = ' + f2(ob.zVoie), { ht: 1.8, dy: -3, lay: 'note' });
+      }
+    }
+    // sondages
+    const SD = (S.geo && S.geo.sondages || []).filter((d) => Number.isFinite(+d.pk) && d.pk !== null && d.pk !== '' && Number.isFinite(+d.z) && +d.z !== 0);
+    SD.forEach((d) => {
+      const x = (+d.pk) - (TR ? t.pk0 : 0), zt = +d.z, fin = +d.fin || Math.max(1, ...(d.lithologie || []).map((c) => +c.z || 0)), w = mm(2.2);
+      if (!TR) return;
+      rect(P, x - w / 2, zt, x + w / 2, zt - fin, 'sond');
+      const L = (d.lithologie || []).slice().sort((a, b) => a.z - b.z);
+      L.forEach((c, k) => {
+        const z1 = zt - c.z, z2 = zt - (k + 1 < L.length ? L[k + 1].z : fin);
+        if (k) line(P, [x - w / 2, z1], [x + w / 2 + mm(1.5), z1], 'note');
+        text(P, [x + w / 2 + mm(1.2), (z1 + z2) / 2], String(c.desc || '').slice(0, 34), { ht: 1.5, anchor: 'start', dy: -0.5, lay: 'note' });
+        text(P, [x - w / 2 - mm(0.8), z1], f2(zt - c.z), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+      });
+      text(P, [x - w / 2 - mm(0.8), zt - fin], f2(zt - fin), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+      if (+d.nappe > 0) { const zn = zt - d.nappe; poly(P, [[x - mm(1.6), zn + mm(1.4)], [x + mm(1.6), zn + mm(1.4)], [x, zn]], 'eauF'); }
+      text(P, [x, zt], d.sondage || 'S', { ht: 2.2, dy: 2, lay: 'titre', bold: true });
+      yMin = Math.min(yMin, zt - fin);
+    });
+    if (!TR) return;
+    // guitare (profil en long)
+    const rh = mm(7), xg = xL - mm(48), y0 = yMin - mm(9);
+    const rows = [['Abscisses (PK)', (s) => f2(s.pk)], ['Altitudes projet (LR)', (s) => f2(s.LR)], ['Altitudes TN', (s) => (s.TN == null ? '—' : f2(s.TN))], ['Arase des fondations', (s) => f2(s.zSeat - M.supports[s.j].H)]];
+    const nr = rows.length + 1;
+    for (let r = 0; r <= nr; r++) line(P, [xg, y0 - r * rh], [xR, y0 - r * rh], 'guit');
+    line(P, [xg, y0], [xg, y0 - nr * rh], 'guit'); line(P, [xL, y0], [xL, y0 - nr * rh], 'guit'); line(P, [xR, y0], [xR, y0 - nr * rh], 'guit');
+    rows.forEach(([lab, fn], r) => {
+      const yr = y0 - (r + 0.5) * rh;
+      text(P, [xg + mm(2), yr], lab, { ht: 2, anchor: 'start', dy: -0.7, lay: 'note' });
+      TR.sup.forEach((s, k) => text(P, [M.supports[k].x, yr], fn(s), { ht: 1.9, dy: -0.7, lay: 'note' }));
+    });
+    TR.sup.forEach((s, k) => line(P, [M.supports[k].x, y0], [M.supports[k].x, y0 - rows.length * rh], 'guitF'));
+    const yp = y0 - (rows.length + 0.5) * rh;
+    text(P, [xg + mm(2), yp], 'Pentes et rampes', { ht: 2, anchor: 'start', dy: -0.7, lay: 'note' });
+    const pct = (v) => (v > 0 ? '+' : '') + fr(v, 2) + ' %';
+    const Ltot = M.Ltot;
+    if (t.Rv > 0 && Math.abs(t.p2 - t.p1) > 1e-9) {
+      const T_ = t.Rv * Math.abs(t.p2 - t.p1) / 200, xs_ = t.pkS - t.pk0;
+      text(P, [Math.max(xL + 4, (xL + xs_ - T_) / 2), yp], 'p = ' + pct(t.p1), { ht: 1.9, dy: -0.7, lay: 'note' });
+      text(P, [xs_, yp], 'R = ' + fr(t.Rv, 0) + ' m', { ht: 1.9, dy: -0.7, lay: 'note' });
+      text(P, [Math.min(xR - 4, (xs_ + T_ + xR) / 2), yp], 'p = ' + pct(t.p2), { ht: 1.9, dy: -0.7, lay: 'note' });
+    } else text(P, [Ltot / 2, yp], 'p = ' + pct(t.p1) + '  ·  L = ' + fr(xR - xL, 2) + ' m', { ht: 1.9, dy: -0.7, lay: 'note' });
+    tagFrom(P, i0, 'trace');
+  }
+
+  /* ───────── Vue en plan ───────── */
+  function planScene(M) {
+    const P = [], S = M.S, t = S.trace, TR = M.trace, n = M.xs.length - 1, xs = M.xs, Ltot = M.Ltot, W = M.W, dab = M.dab;
+    const ech = pickScale(Ltot + 2 * dab + 30, 420, [100, 150, 200, 250, 500, 1000, 2000]);
+    const mm = (v) => v * ech / 1000;
+    const g2r = (g) => g * Math.PI / 200;
+    // repère local : axe au départ selon +x ; courbure éventuelle de rayon R (R > 0 : virage à droite)
+    const R = TR ? t.R : 0;
+    const ax = (s) => {                                   // point d'axe et tangente à l'abscisse curviligne s depuis C0
+      if (!R) return { p: [s, 0], u: [1, 0] };
+      const ph = s / R;
+      return { p: [R * Math.sin(ph), -R * (1 - Math.cos(ph))], u: [Math.cos(ph), -Math.sin(ph)] };
+    };
+    const at = (s, d) => { const a = ax(s); return [a.p[0] - a.u[1] * d, a.p[1] + a.u[0] * d]; };   // d > 0 : à gauche
+    const beta = g2r(S.biais);
+    const band = (s0, s1, d0, d1, lay) => {
+      const k = Math.max(2, Math.ceil(Math.abs(s1 - s0) / 2)), A = [], B = [];
+      for (let i = 0; i <= k; i++) { const s = s0 + (s1 - s0) * i / k; A.push(at(s, d0)); B.push(at(s, d1)); }
+      poly(P, A.concat(B.reverse()), lay);
+    };
+    // ligne d'appui (biaise) passant par l'axe en s, demi-longueur l
+    const supLine = (s, l) => { const a = ax(s), c = Math.cos(beta), sn = Math.sin(beta); const d = [a.u[0] * c - a.u[1] * sn, a.u[1] * c + a.u[0] * sn]; return [[a.p[0] - d[0] * l, a.p[1] - d[1] * l], [a.p[0] + d[0] * l, a.p[1] + d[1] * l], d, a]; };
+    // obstacle
+    const ob = t.obstacle;
+    if (ob.type === 'oued') {
+      let s0 = n > 1 ? xs[1] - 3 : 2, s1 = n > 1 ? xs[n - 1] + 3 : xs[n] - 2;
+      if (TR && TR.hasTN && ob.phe) {                  // lit mouillé : TN sous les PHE
+        const wet = []; for (let k = 0; k <= 200; k++) { const x = -dab + (Ltot + 2 * dab) * k / 200; if (C.tnAt(t, t.pk0 + x) < ob.phe) wet.push(x); }
+        if (wet.length) { s0 = wet[0]; s1 = wet[wet.length - 1]; }
+      }
+      const hl = W / 2 / Math.max(0.3, Math.sin(beta)) + 6;
+      const [a0, b0] = supLine(s0, hl), [a1, b1] = supLine(s1, hl);
+      poly(P, [a0, b0, b1, a1], 'eauP');
+      const [, , , am] = supLine((s0 + s1) / 2, 0);
+      text(P, [am.p[0], am.p[1] - W / 2 - mm(9)], ob.nom || 'Oued', { ht: 2.4, lay: 'note' });
+    } else if (ob.type === 'voie' || ob.type === 'route') {
+      const s = (ob.pk || t.pk0 + Ltot / 2) - t.pk0, hl = W / 2 / Math.max(0.3, Math.sin(beta)) + 14;
+      const [a, b, d] = supLine(s, hl), nrm = [-d[1], d[0]], e = ob.type === 'voie' ? 2.2 : 4;
+      poly(P, [[a[0] - nrm[0] * e, a[1] - nrm[1] * e], [b[0] - nrm[0] * e, b[1] - nrm[1] * e], [b[0] + nrm[0] * e, b[1] + nrm[1] * e], [a[0] + nrm[0] * e, a[1] + nrm[1] * e]], ob.type === 'voie' ? 'ballastP' : 'routeP');
+      line(P, a, b, 'axe');
+      text(P, [b[0], b[1]], ob.nom || (ob.type === 'voie' ? 'Voie ferrée' : 'Route'), { ht: 2.2, anchor: 'start', dy: 1, lay: 'note' });
+    }
+    // tablier
+    const i0 = P.length;
+    band(-dab, Ltot + dab, -W / 2, W / 2, 'vuL');
+    const tg = S.usage === 'rail' ? 0 : S.profil.trottoirG, td = S.usage === 'rail' ? 0 : S.profil.trottoirD;
+    if (tg > 0) { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab + (Ltot + 2 * dab) * i / k, W / 2 - tg)); poly(P, A, 'vuT', false); }
+    if (td > 0) { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab + (Ltot + 2 * dab) * i / k, -W / 2 + td)); poly(P, A, 'vuT', false); }
+    { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab - 10 + (Ltot + 2 * dab + 20) * i / k, 0)); poly(P, A, 'axe', false); }
+    tagFrom(P, i0, 'tablier');
+    // appuis
+    M.supports.forEach((sp) => {
+      const i1 = P.length, hl = W / 2 / Math.max(0.3, Math.sin(beta));
+      const [a, b, d, A] = supLine(sp.x, hl + 1.5);
+      line(P, a, b, 'axe');
+      text(P, [b[0] + d[0] * 1.2, b[1] + d[1] * 1.2], sp.id, { ht: 3, lay: 'titre', bold: true, dy: -1 });
+      const f = sp.fo, g = sp.geo;
+      // emprise de la fondation (parallélogramme biais)
+      const isC = sp.kind === 'culee', o = sp.j === 0 ? -1 : 1;
+      const xf = isC ? sp.x + o * (dab + 0.05 + g.egg + (g.sommier ? -g.sommier.b / 2 : -g.mur.e / 2)) : sp.x;
+      const B = f.mode === 'pieux' ? (f.Lx || f.B || 2) : f.B, L = f.mode === 'pieux' ? (f.Ly || f.L || W) : f.L;
+      const c = ax(xf).p, u = ax(xf).u, ds = supLine(xf, 1)[2];
+      const hb = B / 2 / Math.max(0.3, Math.sin(beta)), hL = L / 2;
+      if (B > 0 && L > 0) poly(P, [[c[0] - u[0] * hb - ds[0] * hL, c[1] - u[1] * hb - ds[1] * hL], [c[0] + u[0] * hb - ds[0] * hL, c[1] + u[1] * hb - ds[1] * hL], [c[0] + u[0] * hb + ds[0] * hL, c[1] + u[1] * hb + ds[1] * hL], [c[0] - u[0] * hb + ds[0] * hL, c[1] - u[1] * hb + ds[1] * hL]], 'vu');
+      if (f.mode === 'pieux') for (let r = 0; r < f.nr; r++) for (let m = 0; m < f.m; m++) {
+        const ex = (r - (f.nr - 1) / 2) * f.s, ey = (m - (f.m - 1) / 2) * (f.sy || f.s);
+        circ(P, c[0] + u[0] * ex / Math.max(0.3, Math.sin(beta)) + ds[0] * ey, c[1] + u[1] * ex / Math.max(0.3, Math.sin(beta)) + ds[1] * ey, f.D / 2, 'vu');
+      }
+      if (isC && g.retours) {                          // murs en retour
+        [-1, 1].forEach((sd) => { const p0 = at(sp.x + o * (dab + 0.05 + g.egg), sd * (W / 2 - g.retours.e / 2)); line(P, p0, [p0[0] + o * g.retours.L, p0[1]], 'beton'); });
+      }
+      if (TR && TR.coords) {
+        const s = TR.sup[sp.j];
+        text(P, [A.p[0] - d[0] * (hl + 2), A.p[1] - d[1] * (hl + 2)], 'X = ' + fr(s.X, 3), { ht: 1.7, anchor: 'start', dy: -1, lay: 'note' });
+        text(P, [A.p[0] - d[0] * (hl + 2), A.p[1] - d[1] * (hl + 2)], 'Y = ' + fr(s.Y, 3), { ht: 1.7, anchor: 'start', dy: -3.4, lay: 'note' });
+      }
+      tagFrom(P, i1, sp.id);
+    });
+    // cotes, biais, directions
+    let yTop = -Infinity; for (let k = 0; k <= 40; k++) yTop = Math.max(yTop, at(-dab + (Ltot + 2 * dab) * k / 40, W / 2)[1]);
+    const dp = (x) => [ax(x).p[0], yTop + 3];                 // cotes projetées sur une ligne de rappel commune
+    for (let i = 0; i < n; i++) dim(P, dp(xs[i]), dp(xs[i + 1]), 'h', 4, fr(xs[i + 1] - xs[i], 2));
+    if (n > 1) dim(P, dp(0), dp(Ltot), 'h', 11, fr(Ltot, 2));
+    if (S.biais < 99.9) { const [a] = supLine(0, W / 2 + 4); text(P, a, 'biais ' + fr(S.biais, 1) + ' gr', { ht: 2.2, anchor: 'end', dy: -3.5, lay: 'note' }); }
+    if (t.versG) text(P, at(-dab - 10, 0), '← ' + t.versG, { ht: 2.3, anchor: 'start', dy: 2.2, lay: 'note' });
+    if (t.versD) text(P, at(Ltot + dab + 10, 0), t.versD + ' →', { ht: 2.3, anchor: 'end', dy: 2.2, lay: 'note' });
+    if (TR && R) text(P, at(Ltot / 2, -W / 2 - 3), 'Axe en courbe R = ' + fr(Math.abs(R), 0) + ' m', { ht: 2, dy: -3, lay: 'note' });
+    title(P, [ax(Ltot / 2).p[0], yTop + 3 + mm(24)], 'VUE EN PLAN', ech);
+    return { P, ech, titre: 'VUE EN PLAN — échelle 1/' + ech };
   }
 
   /* ───────── Coupe transversale (tablier + pile) ───────── */
@@ -403,6 +577,15 @@
     trottoir: 'fill:#dde3ea;stroke:#3d4a5c;stroke-width:.8',
     ballast: 'fill:url(#ID-g);stroke:#6e6455;stroke-width:.7',
     lead: 'fill:none;stroke:#1e1e1e;stroke-width:.5',
+    eau: 'fill:none;stroke:#1c7ed6;stroke-width:1.1;stroke-dasharray:10 3',
+    eauF: 'fill:#1c7ed6;stroke:#1c7ed6;stroke-width:.4',
+    eauP: 'fill:#e7f1fb;stroke:#74a9dd;stroke-width:.8',
+    routeP: 'fill:#eceef1;stroke:#868e96;stroke-width:.8',
+    ballastP: 'fill:#ece6da;stroke:#8d8170;stroke-width:.8',
+    aff: 'fill:none;stroke:#a61e4d;stroke-width:.8;stroke-dasharray:6 2 1 2',
+    sond: 'fill:#fff4d6;stroke:#7a5b00;stroke-width:.7',
+    guit: 'fill:none;stroke:#1e1e1e;stroke-width:.6',
+    guitF: 'fill:none;stroke:#9a9a9a;stroke-width:.4',
     note: 'fill:none;stroke:#1e1e1e;stroke-width:.6',
   };
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -483,5 +666,5 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(e[0] - pad).toFixed(1)} ${(e[1] - pad).toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(0)}" height="${vh.toFixed(0)}" role="img">${defs}${r.out.join('')}</svg>`;
   }
 
-  return { elevScene, secScene, toSVG };
+  return { elevScene, secScene, planScene, toSVG };
 });
