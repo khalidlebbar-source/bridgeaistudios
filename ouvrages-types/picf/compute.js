@@ -333,11 +333,24 @@
       const Ki = y => { const t = (y / b + 1) / 0.25, j = Math.max(0, Math.min(7, Math.floor(t))); return R[j] + (R[j + 1] - R[j]) * (t - j); };
       const integ = (a, c) => { const N = 100; let sm = 0; for (let k = 0; k < N; k++) sm += Ki(a + (k + 0.5) * (c - a) / N); return sm / N * (c - a) / (2 * b); };
       const pts = (ws, lo, hi) => { let bb = 0; for (let st = lo; st + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) bb = Math.max(bb, ws.reduce((a, w) => a + Ki(st + w), 0) / ws.length); return bb / (2 * b); };
-      for (let k = 1; k <= best.BC.length; k++) { const w = []; for (let u = 0; u < k; u++) w.push(u * 2.5, 2 + u * 2.5); best.BC[k - 1] = Math.max(best.BC[k - 1], pts(w, c0 + 0.75, c1 - 0.75) * k); }
-      for (let k = 1; k <= best.BT.length; k++) { const w = []; for (let u = 0; u < k; u++) w.push(u * 3, 2 + u * 3); best.BT[k - 1] = Math.max(best.BT[k - 1], pts(w, c0 + 1.0, c1 - 1.0) * k); }
-      for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) best.MC = Math.max(best.MC, (integ(st, st + 1) + integ(st + 3.3, st + 4.3)) / 2);
-      for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) best.ME = Math.max(best.ME, integ(st, st + 4) / 4);
-      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, (Ki(c - 0.825) + Ki(c + 0.825)) / 2 / (2 * b));
+      // Diffusion transversale jusqu'au plan moyen de la traverse (45° chaussée, pente 3/4 dans le remblai H.SUP, + E3) ;
+      // les empreintes diffusées des roues d'un même véhicule se fondent en une bande unique quand elles se recouvrent
+      // (charge du véhicule uniformément répartie), la partie hors de la dalle est perdue ; véhicules distincts sommés.
+      // Retrouvé sur 2498 (H.SUP 15.70 m : Bc 0.038/0.075/0.113, Mc 0.035) et améliore Mc/Me de 2550/2551.
+      const sD = 2 * d.hchau + 1.5 * d.hsrem + d.e3;
+      const uni = (cs, a) => { const w = a + sD; if (w < 1e-9) return cs.reduce((q, c) => q + Ki(c), 0) / cs.length;
+        const iv = cs.map(c => [c - w / 2, c + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
+        for (const v of iv) { const L = cl[cl.length - 1]; if (L && v[0] <= L[1] + 1e-9) { L[1] = Math.max(L[1], v[1]); L[2]++; } else cl.push([v[0], v[1], 1]); }
+        let tot = 0; for (const [l0, l1, n] of cl) { const lo = Math.max(-b, l0), hi = Math.min(b, l1); if (hi <= lo) continue; const N = 60; let sm = 0;
+          for (let k = 0; k < N; k++) sm += Ki(lo + (k + 0.5) * (hi - lo) / N); tot += n * sm / N * (hi - lo) / (l1 - l0); }
+        return tot / cs.length; };
+      const veh = (k, sp, gap, a, mg) => { let bb = 0; for (let st = c0 + mg; st + (k - 1) * sp + gap <= c1 - mg + 1e-9; st += 0.05) {
+          let v = 0; for (let u = 0; u < k; u++) v += uni([st + u * sp, st + u * sp + gap], a); if (v > bb) bb = v; } return bb / (2 * b); };
+      for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, 0.75));
+      for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, 1.0));
+      for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
+      for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
+      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, uni([c - 0.825, c + 0.825], 0) / (2 * b));
     }
     const coefs = { AL: best.AL.map((c, i) => ({ n: i + 1, c, a1: a1tab[Math.min(i + 1, a1tab.length) - 1], a2 })),
       BC: best.BC.map((c, i) => ({ n: i + 1, c, bc: [1.2, 1.1, 0.95, 0.8][i] })), BT: best.BT.map((c, i) => ({ n: i + 1, c, bt: 1.0 })),
