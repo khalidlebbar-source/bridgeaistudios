@@ -1116,6 +1116,37 @@
   }
   window.addEventListener('beforeprint', buildPrint);
 
+  /* ───────── Barre de description : interpréteur de phrases ───────── */
+  let toastT = 0;
+  function toast(html, cls, ms) {
+    const t = $('#toast'); t.className = 'toast' + (cls ? ' ' + cls : ''); t.innerHTML = html; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 9000);
+  }
+  function showInterp(r) {
+    const li = r.ok.map((o) => `<li>${esc(o)}</li>`).join('');
+    return (r.ok.length ? `<b>Compris</b><ul>${li}</ul>` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
+      + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
+      + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '');
+  }
+  $('#cmdbar').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const inp = $('#cmd'), txt = inp.value.trim(); if (!txt) return;
+    const r = C.interpret(txt, S);
+    if (!r.ok.length) { toast(showInterp(r) + '<div class="ta"><button data-t="x">Fermer</button></div>', 'none'); return; }
+    histT = 0; S = r.S; recompute(true); histT = 0;
+    toast(showInterp(r) + '<div class="ta"><button data-t="undo">Annuler</button><button data-t="x">OK</button></div>');
+    inp.value = '';
+  });
+  $('#toast').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-t]'); if (!b) return;
+    if (b.dataset.t === 'undo') undo();
+    $('#toast').hidden = true;
+  });
+  $('#cmd').addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.target.value = ''; ev.target.blur(); $('#toast').hidden = true; } ev.stopPropagation(); });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && !document.querySelector('.wz')) { ev.preventDefault(); $('#cmd').focus(); }
+  });
+
   let firstVisit = false;
   try { firstVisit = !localStorage.getItem(KEY); } catch (e) { /* stockage indisponible */ }
   renderVtools();

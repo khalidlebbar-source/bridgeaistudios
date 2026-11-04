@@ -343,6 +343,25 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .wgen button{border:1px solid var(--acc2);border-radius:4px;padding:6px 12px;cursor:pointer}
 @media (max-width:900px){.wz-body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}.wz-steps{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:6px}.wz-steps button{flex:none;width:auto}.wz-steps small{display:none}.wz-prev{border-left:none;border-top:1px solid var(--line);max-height:200px;flex-direction:row}.wpv{flex:1}.wkp{flex:1}.wcards.c3{grid-template-columns:1fr 1fr}.wgen{grid-template-columns:1fr 1fr}.wgen>b{grid-column:span 2}}
 @media (max-width:560px){.wcards.c2,.wcards.c3,.wgrid{grid-template-columns:1fr}.wz-prev{display:none}.wz-back{padding:0}.wz{height:100%;border-radius:0}}
+
+/* ── barre de description (interpréteur) ── */
+.cmdbar{flex:1 1 420px;max-width:620px;margin:0 auto;display:flex;align-items:center;gap:6px;height:24px;border:1px solid var(--line2);border-radius:4px;background:#fff;padding:0 4px 0 7px}
+.cmdbar:focus-within{border-color:var(--acc);box-shadow:0 0 0 2px #dbe8fd}
+.cmdbar svg{width:15px;height:15px;flex:none;fill:none;stroke:var(--acc);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cmdbar input{flex:1;min-width:0;border:none;outline:none;background:none;font-size:12px}
+.cmdbar kbd{font:10.5px var(--ui);color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:0 5px;background:var(--chrome)}
+.cmdbar:focus-within kbd{display:none}
+.toast{position:fixed;z-index:700;top:38px;left:50%;transform:translateX(-50%);width:min(620px,calc(100vw - 24px));background:#fff;border:1px solid var(--line2);border-left:4px solid var(--ok);border-radius:5px;box-shadow:0 10px 30px -8px rgba(20,30,50,.35);padding:9px 12px 10px;font-size:12px}
+.toast.none{border-left-color:var(--warn)}
+.toast b{font-weight:600}.toast ul{margin:5px 0 0 16px}.toast li{margin:1px 0}
+.toast .miss{color:var(--warn);margin-top:5px}.toast .hint{color:var(--mute);margin-top:4px}
+.toast .ta{display:flex;gap:8px;justify-content:flex-end;margin-top:7px}
+.toast .ta button{border:1px solid var(--line2);background:#fff;border-radius:3px;padding:3px 10px;cursor:pointer}.toast .ta button:hover{background:var(--hov)}
+.wdesc{display:flex;gap:8px;align-items:stretch;margin:4px 0 6px}.wdesc textarea{flex:1;min-height:54px;resize:vertical;border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font:12px var(--ui)}
+.wdesc textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 2px #dbe8fd}.wdesc button{border:1px solid var(--acc2);border-radius:4px;padding:0 14px;cursor:pointer}
+.wres{background:#f3faf5;border:1px solid #bfe3c9;border-radius:5px;padding:7px 10px;margin:4px 0 8px;font-size:11.5px}.wres.none{background:#fffaeb;border-color:#f0d58c}
+.wres ul{margin:3px 0 0 16px}.wres .miss{color:var(--warn);margin-top:3px}
+@media(max-width:999px){.cmdbar{order:5;flex-basis:100%;max-width:none;margin:0}.titlebar{flex-wrap:wrap;height:auto;padding:4px 10px;row-gap:4px}.cmdbar kbd{display:none}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -353,6 +372,11 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   <span class="tb-sep"></span>
   <span class="tb-app">Bridge Composer</span>
   <span class="tb-doc" id="tbDoc"></span>
+  <form class="cmdbar" id="cmdbar" role="search" autocomplete="off">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 10h6M3 15h9M14 8l3 3-3 3"/></svg>
+    <input id="cmd" type="text" aria-label="Décrire ou modifier l’ouvrage" placeholder="Décrivez ou modifiez l’ouvrage… ex. « pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m »" spellcheck="false">
+    <kbd title="Raccourci : /">/</kbd>
+  </form>
   <span class="tb-right"><a href="index.html">← Accueil BridgeAI Studios</a></span>
 </header>
 
@@ -389,19 +413,21 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   </aside>
 </div>
 <div class="cmenu" id="cmenu" role="menu" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <footer class="status" id="status"></footer>
 
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=6"></script>
-<script src="composer/draw.js?v=6"></script>
-<script src="composer/dxf.js?v=6"></script>
-<script src="composer/view3d.js?v=6"></script>
-<script src="composer/analysis.js?v=6"></script>
-<script src="composer/diag.js?v=6"></script>
-<script src="composer/wizard.js?v=6"></script>
-<script src="composer/app.js?v=6"></script>
+<script src="composer/calc.js?v=7"></script>
+<script src="composer/draw.js?v=7"></script>
+<script src="composer/dxf.js?v=7"></script>
+<script src="composer/view3d.js?v=7"></script>
+<script src="composer/analysis.js?v=7"></script>
+<script src="composer/diag.js?v=7"></script>
+<script src="composer/nlp.js?v=7"></script>
+<script src="composer/wizard.js?v=7"></script>
+<script src="composer/app.js?v=7"></script>
 </body>
 </html>

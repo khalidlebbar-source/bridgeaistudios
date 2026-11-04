@@ -43,7 +43,7 @@
   }
 
   function wizard(S0, onDone) {
-    let step = 0, preset = 'vipp', S = presetState(PRESETS[0]), M = null, gen = { L: 140, n: 4, r: 0.75 };
+    let desc = '', lastR = null, step = 0, preset = 'vipp', S = presetState(PRESETS[0]), M = null, gen = { L: 140, n: 4, r: 0.75 };
     S.projet = Object.assign({}, S.projet, { nom: S0 && S0.projet ? S0.projet.nom : S.projet.nom });
     const back = document.createElement('div');
     back.className = 'wz-back';
@@ -83,7 +83,10 @@
     function formHTML() {
       const k = STEPS[step][0], rail = S.usage === 'rail', n = S.travees.length;
       if (k === 'projet') {
-        return h3('Modèle de départ', 'Choisissez l’ouvrage type le plus proche : toutes les valeurs restent modifiables aux étapes suivantes.')
+        return h3('Décrivez votre ouvrage', 'En une phrase, comme à un collègue — l’assistant remplit les étapes pour vous.')
+          + `<div class="wdesc"><textarea id="wzDesc" placeholder="ex. Pont dalle à 3 travées de 12-16-12 m, 2 voies et trottoirs de 1,25 m, piles colonnes de 6 m sur pieux Ø1,20, culées remblayées, sol 0,3 MPa">${esc(desc)}</textarea><button type="button" data-w="interp" class="pri">Interpréter</button></div>`
+          + (lastR ? `<div class="wres${lastR.ok.length ? '' : ' none'}">${lastR.ok.length ? '<b>Compris</b><ul>' + lastR.ok.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>' : '<b>Rien de reconnu.</b>'}${lastR.miss.length ? `<div class="miss">Non interprété : ${lastR.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : ''}${lastR.hint ? `<div class="miss">${esc(lastR.hint)}</div>` : ''}${lastR.ok.length ? '<div style="margin-top:6px"><button type="button" class="pri" data-w="torecap" style="border:1px solid var(--acc2);border-radius:4px;padding:4px 12px;cursor:pointer">Voir le récapitulatif ›</button></div>' : ''}</div>` : '')
+          + h3('… ou partez d’un modèle', 'Choisissez l’ouvrage type le plus proche : toutes les valeurs restent modifiables aux étapes suivantes.')
           + cards('preset', PRESETS.map((p) => ({ v: p.k, t: p.t, d: p.d })), preset, 'c3')
           + h3('Identification') + `<div class="wgrid">${txt('Nom de l’ouvrage', 'projet.nom', 'Pont-route sur oued')}${txt('Repère', 'projet.ouvrage', 'OA 1')}${txt('Localisation', 'projet.lieu', 'PK, commune…')}${txt('Maître d’ouvrage', 'projet.moa', '')}${txt('Référence dossier', 'projet.ref', '')}</div>`;
       }
@@ -238,6 +241,14 @@
       t[n > 2 ? 1 : 0] += Math.round((L - t.reduce((a, b) => a + b, 0)) * 100) / 100;
       setK('travees', t.join(' '), { dataset: { t: 'list' } });
     }
+    function interp() {
+      const ta = $('#wzDesc'); desc = ta ? ta.value : desc;
+      if (!desc.trim() || !C.interpret) return;
+      lastR = C.interpret(desc, S);
+      if (lastR.ok.length) { S = lastR.S; preset = null; gen = { L: S.travees.reduce((a, b) => a + b, 0), n: S.travees.length, r: S.travees.length > 2 ? Math.round(S.travees[0] / S.travees[1] * 100) / 100 : 1 }; }
+      render();
+      const t2 = $('#wzDesc'); if (t2) t2.focus();
+    }
     function close() { back.remove(); document.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); }
     function finish() { calc(); close(); onDone(S); }
     function go(i) { step = Math.max(0, Math.min(STEPS.length - 1, i)); render(); const f = $('.wz-form input, .wz-form select, .wz-form .wcard'); if (f) f.focus(); }
@@ -253,9 +264,12 @@
       else if (w === 'prev') go(step - 1);
       else if (w === 'next') step === STEPS.length - 1 ? finish() : go(step + 1);
       else if (w === 'gen') { generate(); render(); }
+      else if (w === 'interp') interp();
+      else if (w === 'torecap') go(STEPS.length - 1);
     });
     back.addEventListener('input', (ev) => {
-      const el = ev.target; if (!el.dataset.k) return;
+      const el = ev.target; if (el.id === 'wzDesc') { desc = el.value; return; }
+      if (!el.dataset.k) return;
       if (el.type === 'checkbox' || el.tagName === 'SELECT') return;
       if (setK(el.dataset.k, el.value, el)) { calc(); $('.wz-prev').innerHTML = prevHTML(); }
     });
@@ -278,6 +292,7 @@
     const prevFocus = document.activeElement;
     function onKey(ev) {
       if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); }
+      else if (ev.key === 'Enter' && ev.target.id === 'wzDesc' && !ev.shiftKey) { ev.preventDefault(); interp(); }
       else if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.type === 'text') {
         ev.preventDefault();
         if (ev.target.dataset.k && ev.target.dataset.k.startsWith('gen.')) { generate(); render(); } else ev.target.blur();
@@ -286,7 +301,7 @@
     }
     document.addEventListener('keydown', onKey, true);
     render();
-    const f = $('.wz-form .wcard.on'); if (f) f.focus();
+    const f = $('#wzDesc'); if (f) f.focus();
     return { close, go, get state() { return S; } };
   }
 

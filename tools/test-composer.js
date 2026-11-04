@@ -4,7 +4,7 @@
  *  3. Prédimensionnement PSI-DA continu 12-15-12 : h = 0,60 m (L/26).
  *  4. Fondations : contrainte ≤ σ adm, effort par pieu ≤ Q adm.
  */
-const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'), require('../composer/analysis.js'), require('../composer/diag.js'));
+const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'), require('../composer/analysis.js'), require('../composer/diag.js'), require('../composer/nlp.js'));
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) fails++; };
 const bad = (s) => /NaN|undefined|Infinity/.test(s);
@@ -63,6 +63,21 @@ ok(a.h === 0.6 && a.cont, `PSI-DA 12 + 15 + 12 continu : h = ${a.h} m`);
 a.supports.forEach((s) => ok(s.fo.q / 1000 <= a.S.fond.sigma + 1e-6, `${s.id} : q = ${(s.fo.q / 1000).toFixed(3)} MPa ≤ ${a.S.fond.sigma}`));
 const dp = C.defaults('rail'); dp.fond.piles = 'pieux'; dp.fond.culees = 'pieux';
 C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} : ${(s.fo.Npieu / 1000).toFixed(2)} MN/pieu ≤ ${(s.fo.Q / 1000).toFixed(2)}`));
+
+/* interpréteur de descriptions */
+{
+  const S0 = C.normalize(C.defaults('route'));
+  const t = (txt, f, msg) => { const r = C.interpret(txt, S0); ok(f(r.S, r) && !bad(JSON.stringify(r.S)), 'NLP « ' + txt + ' » → ' + msg); };
+  t('Pont dalle à trois travées', (S) => S.tablier.type === 'PSIDA' && S.travees.length === 3 && S.piles.hauteurs.length === 2, 'PSI-DA, 3 travées');
+  t('pont dalle à 3 travées de 12-16-12 m, 2 voies + trottoirs de 1,25, piles colonnes de 6 m, culées remblayées, sol 0,3 MPa, Fascicule 61',
+    (S) => S.travees.join() === '12,16,12' && S.profil.roulable === 7 && S.piles.type === 'colonnes' && S.piles.hauteurs.join() === '6,6' && S.culees.type === 'remblayee' && S.fond.sigma === 0.3 && S.reglement === 'F61', 'phrase complète');
+  t('VIPP 4 x 30 m sur piles colonnes de 8 m fondées sur pieux Ø1,20 de 18 m', (S) => S.travees.join() === '30,30,30,30' && S.fond.piles === 'pieux' && S.fond.diam === 1.2 && S.fond.long === 18 && S.fond.culees === 'superficielle', 'VIPP 4 × 30, pieux sous piles');
+  t('pont-rail PRP de 19,40 m, culées sur pieux Ø1,20, 2 voies', (S) => S.usage === 'rail' && S.tablier.type === 'PRP' && S.travees.join() === '19.4' && S.fond.culees === 'pieux' && S.profil.nbVoiesFer === 2, 'pont-rail PRP');
+  t('pont sur oued Bouregreg, dalle précontrainte continue, travées de rive de 18 m et centrales de 25 m, 4 travées', (S) => S.tablier.type === 'PSIDP' && S.travees.join() === '18,25,25,18' && /Bouregreg/.test(S.projet.nom), 'rives/centrales + nom');
+  t('VIPP 4 travées, piles de 6, 8 et 6 m', (S) => S.piles.hauteurs.join() === '6,8,6', 'hauteurs énumérées');
+  t('travée unique de 18 m', (S) => S.travees.length === 1 && C.typeStatus(S.tablier.type, S.travees, S.usage).k !== 'hors', 'type proposé dans son domaine');
+  const r = C.interpret('bonjour', S0); ok(!r.ok.length && r.hint && JSON.stringify(r.S.travees) === JSON.stringify(S0.travees), 'NLP phrase inconnue : rien de modifié, exemples proposés');
+}
 
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');
 process.exit(fails ? 1 : 0);
