@@ -79,9 +79,9 @@ a.tile:hover{border-color:var(--border2);box-shadow:0 14px 34px -14px rgba(20,23
 .tile.dev .name{color:#3d4250}
 .desc{font-size:12px;color:var(--silver);line-height:1.6}
 .schema{flex:1;min-height:36px;display:flex;align-items:flex-end;justify-content:center;padding-top:6px}
-.schema svg{width:100%;max-width:300px;height:auto;max-height:100%;color:#b7a06a}
+.schema svg{width:100%;max-width:300px;height:auto;max-height:100%;overflow:visible}
 .tile.main .schema svg{max-width:440px;color:var(--gold)}
-.tile.dev .schema svg{color:#c3c7cf}
+.tile.dev .schema svg{filter:grayscale(1);opacity:.55}
 .go{font-size:13px;color:var(--gold);letter-spacing:.04em;transition:letter-spacing .2s}
 a.tile:hover .go{letter-spacing:.1em}
 .soon{font-size:12px;color:#9aa0ac}
@@ -164,14 +164,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Viaduc à travées indépendantes à poutres précontraintes</div>
       <p class="desc">Vérification complète du tablier selon le programme VIPP-EL du SETRA : bordereau, résultats par section et note de calcul.</p>
       <div class="schema">
-        <svg viewBox="0 0 440 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 84H436" stroke-width="1" opacity=".6"/>
-          <path d="M8 30H142M150 30H290M298 30H432" stroke-width="2.4"/>
-          <path d="M14 34H136M156 34H284M304 34H426" stroke-width="5"/>
-          <path d="M8 38v46h18v-46M414 38v46h18v-46"/>
-          <path d="M138 40h16v44h-16zM286 40h16v44h-16z"/>
-          <path d="M18 34Q75 50 136 34M156 34Q220 50 284 34M304 34Q365 50 426 34" stroke-width="1" stroke-dasharray="4 3" opacity=".8"/>
-        </svg>
+        <svg viewBox="0 0 440 96" aria-label="Coupe transversale VIPP" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="28" width="396" height="7" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1"/><rect x="44" y="25.5" width="352" height="2.5" fill="#4a4d57"/><polygon points="22,22 40,22 42,25 42,30 25,30 22,26" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M26 22V9" stroke="#8a8478" stroke-width="1.6"/><circle cx="26" cy="8" r="1.6" fill="#8a8478"/><polygon points="418,22 400,22 398,25 398,30 415,30 418,26" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M414 22V9" stroke="#8a8478" stroke-width="1.6"/><circle cx="414" cy="8" r="1.6" fill="#8a8478"/><path d="M70 82H370" stroke="#5b5446" stroke-width="1" stroke-dasharray="4 3"/><polygon points="40,35 100,35 100,39 77,44 74,45 74,70 84,77 84,86 56,86 56,77 66,70 66,45 63,44 40,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="115,35 175,35 175,39 152,44 149,45 149,70 159,77 159,86 131,86 131,77 141,70 141,45 138,44 115,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="190,35 250,35 250,39 227,44 224,45 224,70 234,77 234,86 206,86 206,77 216,70 216,45 213,44 190,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="265,35 325,35 325,39 302,44 299,45 299,70 309,77 309,86 281,86 281,77 291,70 291,45 288,44 265,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="340,35 400,35 400,39 377,44 374,45 374,70 384,77 384,86 356,86 356,77 366,70 366,45 363,44 340,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir VIPP-EL →</span></div>
     </a>
@@ -182,12 +175,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Pont à poutres en béton armé</div>
       <p class="desc">Tabliers à poutres préfabriquées BA : sollicitations Guyon-Massonnet, ferraillage et épure, contre-flèche, hourdis, dallette, entretoises et note de calcul.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-          <path d="M10 32H146M154 32H290" stroke-width="2.4"/>
-          <path d="M16 36H140M160 36H284" stroke-width="7"/>
-          <path d="M10 40v44h16v-44M274 40v44h16v-44M142 42h16v42h-16z"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Coupe transversale PPBA" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="66" y="40" width="48" height="24" fill="#f4f0e5" stroke="#5b5446" stroke-width="1.1"/><rect x="126" y="40" width="48" height="24" fill="#f4f0e5" stroke="#5b5446" stroke-width="1.1"/><rect x="186" y="40" width="48" height="24" fill="#f4f0e5" stroke="#5b5446" stroke-width="1.1"/><rect x="18" y="30" width="264" height="7" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1"/><rect x="40" y="27.5" width="220" height="2.5" fill="#4a4d57"/><polygon points="18,24 36,24 38,27 38,32 21,32 18,28" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M22 24V11" stroke="#8a8478" stroke-width="1.6"/><circle cx="22" cy="10" r="1.6" fill="#8a8478"/><polygon points="282,24 264,24 262,27 262,32 279,32 282,28" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M278 24V11" stroke="#8a8478" stroke-width="1.6"/><circle cx="278" cy="10" r="1.6" fill="#8a8478"/><polygon points="53,37 67,37 67,74 71,78 71,84 49,84 49,78 53,74" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="113,37 127,37 127,74 131,78 131,84 109,84 109,78 113,74" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="173,37 187,37 187,74 191,78 191,84 169,84 169,78 173,74" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="233,37 247,37 247,74 251,78 251,84 229,84 229,78 233,74" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PPBA →</span></div>
     </a>
@@ -198,12 +186,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Passage supérieur ou inférieur en dalle armée</div>
       <p class="desc">Dalles en béton armé à travées continues, pleines ou à encorbellements latéraux. Bordereau et note au format PSIDA-EL du SETRA.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-          <path d="M10 32H290V42H10z"/>
-          <path d="M10 42v42h16v-42M274 42v42h16v-42"/>
-          <path d="M100 42v42M112 42v42M188 42v42M200 42v42"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Coupe transversale PSI-DA" role="img" xmlns="http://www.w3.org/2000/svg"><polygon points="22,36 278,36 278,42 266,56 34,56 22,42" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><rect x="44" y="33.5" width="212" height="2.5" fill="#4a4d57"/><polygon points="22,30 40,30 42,33 42,38 25,38 22,34" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M26 30V17" stroke="#8a8478" stroke-width="1.6"/><circle cx="26" cy="16" r="1.6" fill="#8a8478"/><polygon points="278,30 260,30 258,33 258,38 275,38 278,34" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M274 30V17" stroke="#8a8478" stroke-width="1.6"/><circle cx="274" cy="16" r="1.6" fill="#8a8478"/><path d="M30 76H270" stroke="#5b5446" stroke-width="1" opacity=".55"/><path d="M60 56V76M150 56V76M240 56V76" stroke="#5b5446" stroke-width="1" stroke-dasharray="3 3" opacity=".45"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PSIDA-EL →</span></div>
     </a>
@@ -214,13 +197,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Passage supérieur ou inférieur en dalle précontrainte</div>
       <p class="desc">Dalles continues précontraintes par post-tension : tracé des câbles, pertes, phases de construction.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-          <path d="M10 28H290V44H10z"/>
-          <path d="M10 36Q55 44 106 30Q150 44 194 30Q245 44 290 36" stroke-width="1" stroke-dasharray="4 3"/>
-          <path d="M10 44v40h16v-40M274 44v40h16v-40"/>
-          <path d="M100 44v40M112 44v40M188 44v40M200 44v40"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Coupe transversale PSI-DP" role="img" xmlns="http://www.w3.org/2000/svg"><polygon points="14,34 286,34 286,40 224,46 208,66 92,66 76,46 14,40" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><rect x="40" y="31.5" width="220" height="2.5" fill="#4a4d57"/><polygon points="14,28 32,28 34,31 34,36 17,36 14,32" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M18 28V15" stroke="#8a8478" stroke-width="1.6"/><circle cx="18" cy="14" r="1.6" fill="#8a8478"/><polygon points="286,28 268,28 266,31 266,36 283,36 286,32" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M282 28V15" stroke="#8a8478" stroke-width="1.6"/><circle cx="282" cy="14" r="1.6" fill="#8a8478"/><circle cx="104" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="117" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="130" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="143" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="156" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="169" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="182" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/><circle cx="195" cy="58" r="2.7" fill="#f4f0e5" stroke="#5b5446" stroke-width="1"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PSIDP-EL →</span></div>
     </a>
@@ -231,13 +208,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Passage inférieur en cadre fermé</div>
       <p class="desc">Cadres en béton armé enterrés : poussée des terres, charges routières sur remblai, réaction du sol sous radier. Bordereau et note au format PICF-EL du SETRA.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 22H90M210 22H296" stroke-width="1" opacity=".6"/>
-          <path d="M90 22H210" stroke-width="1" opacity=".6"/>
-          <path d="M96 30H204V84H96z"/>
-          <path d="M106 38H194V76H106z"/>
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Cadre fermé PI-CF" role="img" xmlns="http://www.w3.org/2000/svg"><path d="M2 88H298" stroke="#5b5446" stroke-width="1" opacity=".5"/><polygon points="8,88 66,34 66,88" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="4,88 66,88 66,92 4,92" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="66,28 196,28 252,8 122,8" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="196,28 252,8 252,68 196,88" fill="#cfc7b0" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="66,28 196,28 196,88 66,88" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="77,39 185,39 185,80 77,80" fill="#8f887a" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><rect x="133" y="39" width="52" height="22.6" fill="#f4f0e5"/><path d="M77 39L133 39M77 80L133 68.0" stroke="#5b5446" stroke-width=".8" opacity=".5"/><path d="M56 26H66L122 8H282" stroke="#8a8478" stroke-width="1" fill="none" stroke-dasharray="3 3"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PICF-EL →</span></div>
     </a>
@@ -248,13 +219,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Passage inférieur en portique ouvert</div>
       <p class="desc">Portiques en béton armé sur semelles : traverse, piédroits et fondations superficielles. Bordereau et note au format PIPO-EL du SETRA.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 22H296" stroke-width="1" opacity=".6"/>
-          <path d="M90 28H210V38H90z"/>
-          <path d="M90 38V76H100V38M200 38V76H210V38"/>
-          <path d="M80 76H112V84H80zM188 76H220V84H188z"/>
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Portique ouvert PI-PO" role="img" xmlns="http://www.w3.org/2000/svg"><path d="M2 88H298" stroke="#5b5446" stroke-width="1" opacity=".5"/><polygon points="8,88 66,34 66,88" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="4,88 66,88 66,92 4,92" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="66,28 196,28 252,8 122,8" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="196,28 252,8 252,68 196,88" fill="#cfc7b0" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="66,28 196,28 196,88 66,88" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="77,39 185,39 185,88 77,88" fill="#8f887a" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><rect x="133" y="39" width="52" height="27.0" fill="#f4f0e5"/><path d="M77 39L133 39M77 88L133 76.0" stroke="#5b5446" stroke-width=".8" opacity=".5"/><polygon points="56,88 90,88 90,94 56,94" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="172,88 206,88 206,94 172,94" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M56 26H66L122 8H282" stroke="#8a8478" stroke-width="1" fill="none" stroke-dasharray="3 3"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PIPO-EL →</span></div>
     </a>
@@ -265,11 +230,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Nouveau type de tablier</div>
       <p class="desc">Programme en préparation.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 84H296" stroke-width="1" opacity=".6"/>
-          <path d="M10 30H290V40H10z"/>
-          <path d="M10 40v44h16v-44M274 40v44h16v-44M142 40h16v44h-16z"/>
-        </svg>
+        <svg viewBox="0 0 300 96" aria-label="Tablier" role="img" xmlns="http://www.w3.org/2000/svg"><path d="M6 84H294" stroke="#5b5446" stroke-width="1" opacity=".5"/><rect x="14" y="30" width="272" height="8" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1"/><rect x="20" y="27.5" width="260" height="2.5" fill="#4a4d57"/><rect x="14" y="38" width="14" height="46" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1"/><rect x="272" y="38" width="14" height="46" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1"/><polygon points="104,38 116,38 114,78 122,84 98,84 106,78" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><polygon points="184,38 196,38 194,78 202,84 178,84 186,78" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/></svg>
       </div>
       <div class="tile-foot"><span class="soon">Bientôt</span></div>
     </div>
