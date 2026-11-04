@@ -106,7 +106,7 @@
       // A : meilleur sous-ensemble de zones
       const Z = liA.zones(sg); let bestA = { l: 0, area: 0, val: 0 };
       const n = Math.min(Z.length, 10);
-      for (let m = 1; m < (1 << n); m++) { let l = 0, a = 0; for (let j = 0; j < n; j++) if (m >> j & 1) { l += Z[j].l; a += Z[j].a; }
+      for (let m = globalThis.PIPO_ALLZ ? (1 << n) - 1 : 1; m < (1 << n); m++) { let l = 0, a = 0; for (let j = 0; j < n; j++) if (m >> j & 1) { l += Z[j].l; a += Z[j].a; }
         const val = Al(l) * a; if (val > bestA.val) bestA = { l, area: a, val }; }
       let lt = 0, at = 0; for (const z of li0.zones(sg)) { lt += z.l; at += z.a; }
       // Bc : 1 ou 2 camions par file, même sens
@@ -122,11 +122,17 @@
       }
       const axle = (P, D, dd) => { let b = { s: 0, x: 0 }; for (const x of grid) { const s = (P * avg(x, dd) + P * avg(x + D, dd)) * sg; if (s > b.s + 5e-6) b = { s, x }; } return b; };
       const bBt = axle(16, 1.35, dBt), bMe = axle(meP, meD, dMe);
+      // Notice §2.4 : longueur de répartition λ = chenille + 2d, d = HCHAU + E3/2 ; aire calculée au pas des LI,
+      // listings : aire sur floor(λ/pas)·pas seulement (pas d interpolation), densité P/λ (1638, 1796 exacts).
+      const MV = globalThis.PIPO_MCV != null ? globalThis.PIPO_MCV : 1;
+      const seg = (a, b) => { const n = 8; let s = 0; for (let i = 0; i <= n; i++) s += li.at(a + (b - a) * i / n) * (i === 0 || i === n ? 1 : i % 2 ? 4 : 2); return s * (b - a) / n / 3; };
+      const areaPas = (x, lam) => { const n = Math.floor(lam / pg + 1e-9), t = lam / pg - n; let s = 0; for (let i = 0; i < n; i++) s += seg(x + i * pg, x + (i + 1) * pg); if (MV === 2 && t > 1e-9) s += t * seg(x + n * pg, x + (n + 1) * pg); return s; };
+      const areaSimp = (x, lam) => { let s = 0; const nn = 20; for (let i = 0; i <= nn; i++) s += li.at(x + lam * i / nn) * (i === 0 || i === nn ? 1 : i % 2 ? 4 : 2); return s * lam / nn / 3; };
       let bMc = { s: 0, x: 0 };
-      for (const x of grid) { let s = 0; const nn = 20; for (let i = 0; i <= nn; i++) s += li.at(x + lc * i / nn) * (i === 0 || i === nn ? 1 : i % 2 ? 4 : 2); s *= lc / nn / 3 * sg; if (s > bMc.s) bMc = { s, x }; }
+      for (const x of grid) { const s = (MV ? areaPas(x, globalThis.PIPO_MCLAM ? globalThis.PIPO_MCLAM(v, g) : lq) : areaSimp(x, lc)) * sg; if (s > bMc.s) bMc = { s, x }; }
       const lex0 = (v.EXCEP === 1 ? 11 : 15) + 2 * v.HCHAU, lex = lex0 + g.e3 / 2, lexq = lex0 + g.e3, Pex = v.EXCEP === 1 ? 280 : 200;
       let bEx = { s: 0, x: 0 };
-      if (v.EXCEP) for (const x of grid) { let s = 0; const nn = 30; for (let i = 0; i <= nn; i++) s += li.at(x + lex * i / nn) * (i === 0 || i === nn ? 1 : i % 2 ? 4 : 2); s *= lex / nn / 3 * sg; if (s > bEx.s) bEx = { s, x }; }
+      if (v.EXCEP) for (const x of grid) { const s = (MV ? areaPas(x, lexq) : areaSimp(x, lex)) * sg; if (s > bEx.s) bEx = { s, x }; }
       res[key] = {
         A: { l: bestA.l, aire: sg * bestA.val, eff: sg * bestA.val * Kc.combA * v.COEFA },
         BC: { pos: bBc.pos, sens: bBc.sens, s: sg * bBc.s, eff: sg * bBc.s * Kc.combBC * dyn.dBc * v.COEFB },

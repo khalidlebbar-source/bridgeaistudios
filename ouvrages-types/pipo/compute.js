@@ -132,6 +132,14 @@
     const hP = v.HAUTL + g.e3 / 2;
     const terres = K => M.solve(lateral(z => K * v.SPEC * hP * Math.max(0, 1 - z / g.H), { nodal: { [M.C0]: [0, 0, Mvert], [M.C1]: [0, 0, -Mvert] } }));
     const tK1 = terres(v.RANK1), tK2 = terres(v.RANK2);
+    // Moments courants du piédroit : les moments d'extrémité (hyperstatiques) sont ceux du diagramme étiré ci-dessus, mais
+    // SETRA ajoute le moment isostatique du diagramme p0 = K·γ·H (triangle complet sur la hauteur de calcul) :
+    // écart = (H/hP − 1) × moment isostatique du triangle (1638 : bosse maxi à 0.42 H reproduite).
+    const SGI = globalThis.PIPO_ISO != null ? globalThis.PIPO_ISO : 1;
+    const isoFix = (res, K) => { if (!SGI) return; const p0 = K * v.SPEC * hP * (g.H / hP - 1), H = g.H;
+      res.Mp = res.Mp.map((m, k) => { const z = zs[k]; return m + SGI * (p0 * H / 3 * z - p0 * z * z / 2 + p0 * z ** 3 / (6 * H)); });
+      res.Vp = res.Vp.map((t, k) => { const z = zs[k]; return t + SGI * (p0 * H / 3 - p0 * z + p0 * z * z / (2 * H)); }); };
+    isoFix(tK1, v.RANK1); isoFix(tK2, v.RANK2);
     const hs = K => {
       if (!v.HSREMB) return null;
       const q = v.SPEC * v.HSREMB;
@@ -206,14 +214,16 @@
     const fA = (globalThis.PIPO_FDT != null ? globalThis.PIPO_FDT : (v.ESURCH + 2) / (Kc.nA * v.ESURCH / Math.max(1, v.PVOIE)));
     const rML = M.solve({ nodal: { [M.T[0]]: [0, 0, 1] } }), rMR = M.solve({ nodal: { [M.T[M.T.length - 1]]: [0, 0, -1] } });
     const aDT = globalThis.PIPO_ADT != null ? globalThis.PIPO_ADT * g.e2 : 0;
-    const env = getf => { const f = li.map(o => getf(o.r)); const ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)];
+    const env = getf => { const f = li.map(o => getf(o.r)); let ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)]; if (globalThis.PIPO_ENDS) ends = globalThis.PIPO_ENDS(ends);
       return LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt, 1, ends), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false, LV.makeLI(xsLI, f, g.L, Ldt, fA, ends)); };
     // effort tranchant de la traverse : la LI présente un saut unité à la section ; SETRA retient l'ordonnée du côté
     // de l'appui gauche (charge juste à gauche de la section) en plus de celle de droite (T_TRAVERSE : réf(x) = ancienne(x − pas)).
     const JV = globalThis.PIPO_JV != null ? globalThis.PIPO_JV : 1;
     const envJ = (getf, xk) => { const f = li.map(o => getf(o.r)); const j = xsLI.findIndex(x => Math.abs(x - xk) < 1e-6);
       if (j < 0 || !JV) return env(getf);
-      const xs2 = [...xsLI.slice(0, j + 1), xsLI[j], ...xsLI.slice(j + 1)], f2 = [...f.slice(0, j), f[j] + JV, f[j], ...f.slice(j + 1)];
+      let xs2 = [...xsLI.slice(0, j + 1), xsLI[j], ...xsLI.slice(j + 1)], f2 = [...f.slice(0, j), f[j] + JV, f[j], ...f.slice(j + 1)];
+      // tour 7 : pas de point dédoublé — ordonnée de gauche (f+1) au point de la section, variation linéaire jusqu au point suivant
+      if (globalThis.PIPO_JV2 !== 0) { xs2 = xsLI.slice(); f2 = f.slice(); f2[j] = f[j] + JV; }
       const ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)];
       return LV.enveloppes(LV.makeLI(xs2, f2, g.L, Ldt, 1, ends), v, g, dyn, Kc, LV.makeLI(xs2, f2, g.L, 0), false, LV.makeLI(xs2, f2, g.L, Ldt, fA, ends)); };
     const liveT = xsSec.map(x => { const k = ix(Math.round(x * 1e6) / 1e6); return { M: env(r => r.Mt[k]), V: envJ(r => r.Vt[k], x) }; });
