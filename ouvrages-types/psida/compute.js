@@ -185,6 +185,7 @@
 
   // ============================================================ 4. charges Fascicule 61 titre II
   const BC_AX = [[0, 6], [4.5, 12], [6, 12]];           // camion Bc (t) : avant, 2 arrière (abscisses)
+  const BE_P = 16;   // système Be (F61 1960) : un essieu de 16 t (étalement imprimé d'un seul essieu ; HYPOTHÈSE calée sur 3827)
   const BT_AX = [[0, 16], [1.35, 16]];                  // tandem Bt
   function bcCoef(cl, nf, f1960) {
     if (f1960) return 1;
@@ -208,7 +209,26 @@
   }
 
   // ============================================================ 5. calcul principal
+  // LIGNINF = 1 : optimisation de l'épaisseur (message « LE PROGRAMME A AUGMENTE L'EPAISSEUR ... APRES OPTIMISATION »).
+  // Règle reconstituée (3452, 3453, 3488) : épaisseur arrondie au cm supérieur, puis augmentée de 0,01 m (les flancs
+  // H DALLE 3 absorbent l'augmentation, encorbellements inchangés) tant que, en fissuration peu préjudiciable,
+  // μ = |Mu min| / (Eeq (0,9 H)² fbu) > 0,186 (fbu = 0,85 fcj / 1,5, pivot A/B). Fissuration préjudiciable :
+  // critère non identifié (3488 : seul l'arrondi au cm est observé).
   function compute(model) {
+    const A3 = model.lignes.A3, A7 = model.lignes.A7;
+    if (A3.LIGNINF !== 1 || model._noOpt) return compute1(model);
+    const H0 = A7.HDALLE1, clone = H => { const m2 = JSON.parse(JSON.stringify(model)); m2._noOpt = true; const b = m2.lignes.A7; b.HDALLE3 += H - b.HDALLE1; b.HDALLE1 = H; return m2; };
+    let H = Math.ceil(H0 * 100 - 1e-6) / 100, r = compute1(clone(H));
+    for (let k = 0; k < 60 && r.mat.fiss < 2; k++) {
+      let Mn = 0; for (const sp of r.moments) for (const sc of sp) Mn = Math.min(Mn, sc.elu.min);
+      const mu = -Mn / (r.section.Eeq * Math.pow(0.9 * H, 2) * 0.85 * r.mat.fcj / 1.5);
+      if (mu <= 0.186 * (1 + 2e-4)) break;
+      H = Math.round(H * 100 + 1) / 100; r = compute1(clone(H));
+    }
+    r.optim = { H0, H };
+    return r;
+  }
+  function compute1(model) {
     const Lg = model.lignes;
     const A3 = Lg.A3, A5 = Lg.A5, A6 = Lg.A6, A7 = Lg.A7, A8 = Lg.A8, A9 = Lg.A9, A10 = Lg.A10, A11 = Lg.A11, A12 = Lg.A12, A13 = Lg.A13;
     const r = { warnings: [], _A7: Lg.A7, _A11: Lg.A11 };
@@ -483,8 +503,9 @@
     return { pos: p, neg: q };
   }
 
+  const MC1960 = { P: 100, len: 4.5, gap: 0, n: 1 };   // char 1960 : un seul char de 100 t, chenilles de 4,5 m (étalement imprimé)
   const MC120 = { P: 110, len: 6.1, gap: 36.6 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
-  const CV_OFF = +((typeof process !== 'undefined' && process.env && process.env.CVOFF) || 0.375);
+  const CV_OFF = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
   const CVD = { P: 140, len: 11, gap: 18.75 }, CVE = { P: 200, len: 15, gap: 32.75 }; // 2 remorques (F61 II art. 10)
 
   function liveEffects(r, f, A6, dynOverride, extraSegs, kOne) {
@@ -510,8 +531,9 @@
     const [bcMax, dMax] = pickB(bcL, bcR, 1), [bcMin, dMin] = pickB(bcL, bcR, -1);
     const ntMax = Math.min(2, r.nvoies);
     const btF = kOne ? (sp => (r.classe === 2 && !r.f61_1960 ? 0.9 : 1) * dynOverride.bc) : dynOverride ? (sp => r.gm[sp].coef.Bt * dynOverride.bc) : spanFactor(r, 'Bt', 'bc');
-    let bt = vehicleScan(r, f, [[0, 16], [1.35, 16]], btF, step, 1, 0, [0]);
-    if (kOne) { const b2 = vehicleScan(r, f, [[0, 16], [1.35, 16]], btF, step, 1, 0, [1.35]);
+    const BTX = r.f61_1960 ? [[0, BE_P]] : [[0, 16], [1.35, 16]];
+    let bt = vehicleScan(r, f, BTX, btF, step, 1, 0, [0]);
+    if (kOne) { const b2 = vehicleScan(r, f, BTX, btF, step, 1, 0, [r.f61_1960 ? 0 : 1.35]);
       bt = { max: b2.max.v > bt.max.v ? b2.max : bt.max, min: b2.min.v < bt.min.v ? b2.min : bt.min }; }
     const Bc = { max: nf * bcMax.v, min: nf * bcMin.v }, Bt = { max: ntMax * bt.max.v, min: ntMax * bt.min.v };
     out.B = {
@@ -520,10 +542,10 @@
     };
     // charges particulières
     const ce = [];
-    const mcDef = r.ce.mil === 4 ? MC120 : r.ce.mil === 3 ? MC80 : null;
+    const mcDef = r.ce.mil === 4 ? (r.f61_1960 ? MC1960 : MC120) : r.ce.mil === 3 ? MC80 : null;
     if (mcDef) {
       const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
-      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, 2, mcDef.gap, [0]);
+      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0]);
       ce.push({ nom: r.ce.mil === 4 ? 'MC.120' : 'MC.80', ...mc });
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
@@ -611,13 +633,13 @@
       const Leq = r.Leq[sp], psi = mechSkew(r.biais, sec.Eeq, l);
       const A1 = sec.Eeq / Math.sin(psi * GR), A2 = A1 / Leq;
       const term = c => [1, 3, 5].map(m => { const x = m * Math.PI * Math.min(c, Leq) / (2 * Leq); return Math.sin(x) / x; });
-      const etal = [['CHARGE REPARTIE', Leq], ['BC', 1.5 + e0], [r.nomBt, 1.35 + e0]];
-      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? (c === 'CVOI.D' ? CVD : CVE).len + e1 : (c === 'MC.120' ? (r.f61_1960 ? 4.5 : 6.1) : 4.9) + e1]);
+      const etal = [['CHARGE REPARTIE', Leq], ['BC', 1.5 + e0], [r.nomBt, (r.f61_1960 ? 0 : 1.35) + e0]];
+      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? Math.min(Leqmin, (c === 'CVOI.D' ? CVD : CVE).len + e1) : (c === 'MC.120' ? (r.f61_1960 ? 4.5 : 6.1) : 4.9) + e1]);
       const bS = A1 / 2, LS = Leq * Math.sin(psi * GR);   // travée droite équivalente (biais)
       const sP = Math.sin(psi * GR), eInt = r._A7.EDALLE1 / 2 / sP;
       // abscisses imprimées perpendiculaires à l'axe (e) ; coordonnées de la plaque équivalente = e / sin ψ
       const mkFib = nu => [{ n: 1, f: 0 }, { n: 2, f: 0.5 }, { n: 4, f: 0.75 }].slice(0, A6.NF >= 3 ? 3 : A6.NF >= 2 ? 2 : 1).map(fb => {
-        const yP = -fb.f * bS;
+        const yP = -Math.min(fb.f * bS, eInt);   // fibre de rive limitée au bord de l'intrados (3637)
         const mus = [1, 3, 5].map(m => { const mu = muLine(bS, LS, yP, m, nu, eInt); return e => mu(e / sP); });
         const H3 = mus.map(mu => { const vals = []; for (let e = -W / 2; e <= W / 2 + 1e-9; e += 0.5) vals.push(mu(e)); return { vals, star: mu(yP * sP) }; });
         return { n: fb.n, y: yP * sP, yP, mus, H: H3 };
@@ -635,7 +657,8 @@
   //   Bc/Bt : max = un groupe de camions accolés, min = groupes gauche + droite (b_c du nombre total).
   function momentsTransversaux(r, F, fibres, A6, sp) {
     const W = r.largeurTotale, h = 0.125, A1 = F.A1, A2 = F.A2, cl = r.classe;
-    const x0 = -W / 2 + A6.ETROTG + A6.EGAU, x1 = x0 + A6.ESURCH, Lch = A6.ESURCH;
+    const sn = e => -W / 2 + Math.round((e + W / 2) / 0.125 - 1e-9) * 0.125;   // grille de la LI (pas 0,125 depuis le bord d'extrados)
+    const x0r = -W / 2 + A6.ETROTG + A6.EGAU, x0 = sn(x0r), x1 = sn(x0r + A6.ESURCH), Lch = A6.ESURCH;
     const term = nom => (F.etal.find(e => e.nom === nom) || F.etal[0]).t;
     const trap = (f, a, b) => { const n = Math.max(1, Math.round((b - a) / h)); let t = 0; for (let i = 0; i <= n; i++) t += (i === 0 || i === n ? 0.5 : 1) * f(a + i * (b - a) / n); return t * (b - a) / n; };
     // intégrale exacte de la ligne d'influence tabulée (pas h depuis le bord gauche de l'extrados, interpolation linéaire)
@@ -655,15 +678,15 @@
       res.cp = { max: cMax, min: cMin };
       // charge A
       const q = Al(r.L[sp]) * r.a2;
-      const lanes = []; for (let k = 0; k < nv; k++) lanes.push(q * A1 * trap(Zr, x0 + k * v, x0 + (k + 1) * v));
+      const lanes = []; for (let k = 0; k < nv; k++) lanes.push(q * A1 * trap(Zr, sn(x0r + k * v), sn(x0r + (k + 1) * v)));
       let aMax = { v: 0, n: 0 }, aMin = { v: 0, n: 0 };
       for (let msk = 1; msk < (1 << nv); msk++) { let t = 0, n = 0; for (let k = 0; k < nv; k++) if (msk & (1 << k)) { t += lanes[k]; n++; }
         const val = a1Coef(cl, n) * t; if (val > aMax.v + 1e-12) aMax = { v: val, n }; if (val < aMin.v - 1e-12) aMin = { v: val, n }; }
       res.A = { max: aMax, min: aMin };
       // trottoirs (3 × PSTROT)
       const tr = [];
-      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, -W / 2, -W / 2 + A6.ETROTG));
-      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, W / 2 - A6.ETROTD, W / 2));
+      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, -W / 2, sn(-W / 2 + A6.ETROTG)));
+      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, sn(W / 2 - A6.ETROTD), W / 2));
       res.T = { max: tr.filter(x => x > 0).reduce((a, b) => a + b, 0), min: tr.filter(x => x < 0).reduce((a, b) => a + b, 0) };
       // systèmes B : groupes de véhicules accolés
       const groups = (Zb, nMax, wV, wheels, coef, P, d) => {
@@ -682,7 +705,8 @@
       const bc = groups(Z(term('BC')), nfMax, 2.5, [0.25, 2.25], bcN, 12, dyn.bc || 1);
       const f60 = r.f61_1960, wT = f60 ? 2.5 : 3, sT = f60 ? 1.5 : 2;
       const ntMax = Math.max(1, Math.min(2, nv, Math.floor((Lch + (f60 ? 2.5 - sT - 1 : 0) + 1e-9) / wT)));
-      const bt = groups(Z(term(r.nomBt)), ntMax, wT, [0.5, 0.5 + sT], () => (cl === 2 && !f60 ? 0.9 : 1), 16, dyn.bt || 1);
+      const bt = groups(Z(term(r.nomBt)), ntMax, wT, [0.5, 0.5 + sT], () => (cl === 2 && !f60 ? 0.9 : 1), f60 ? BE_P / 2 : 16, dyn.bt || 1);   // Be (1960) : étalement d'un seul essieu imprimé → P = 8 t (HYPOTHÈSE)
+      res._bc = bc; res._bt = bt;
       res.B = { max: bc.max.v >= bt.max.v ? { ...bc.max, typ: 'BC' } : { ...bt.max, typ: r.nomBt },
         min: bc.min.v <= bt.min.v ? { ...bc.min, typ: 'BC' } : { ...bt.min, typ: r.nomBt } };
       if (!res.B.max.v) res.B.max.typ = ''; if (!res.B.min.v) res.B.min.typ = '';
@@ -696,7 +720,7 @@
         } else {
           // convoi D/E : remorque de 3,30 m, densité P/longueur, axe à ±0,40 m de l'axe de la chaussée (calage 3826/3827,
           // règle exacte non retrouvée)
-          const cv = nom === 'CVOI.D' ? CVD : CVE, w = 3.3, p = cv.P / cv.len / w, xc = (x0 + x1) / 2;
+          const cv = nom === 'CVOI.D' ? CVD : CVE, cE = (F.etal.find(e => e.nom === nom) || {}).c || F.Leq, w = 3.3, p = cv.P / cv.len / w * Math.min(1, cE / F.Leq), xc = (x0 + x1) / 2;   // charge contenue dans l'étalement 2c
           for (const off of [-CV_OFF, CV_OFF]) { const x = xc + off - w / 2, val = p * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); }
         }
         if (mx > cMx.v) cMx = { v: mx, nom }; if (mn < cMn.v) cMn = { v: mn, nom };
@@ -899,22 +923,29 @@
       const K = Kline(Weq, Leq, f.y);
       const N = Math.round(W / 0.125);
       const ligne = []; for (let i = 0; i <= N + 2; i++) ligne.push(K(yL + 0.125 * i));
-      const mean = (a, c, m = 200) => { let s = 0; for (let i = 0; i < m; i++) s += K(a + (c - a) * (i + 0.5) / m); return s / m; };
+      // ligne d'influence tabulée au pas de 0,125 m depuis le bord gauche de l'extrados : les bornes des zones chargées
+      // et les positions des véhicules sont prises sur cette grille (guide PSIDP annexe 6 § 2 ; 3639 : bord de chaussée
+      // à −3,00 m → nœud −2,975 m).
+      const h = 0.125, sn = e => yL + Math.round((e - yL) / h - 1e-9) * h;
+      const mean = (a, c) => { a = sn(a); c = sn(c); const m = Math.round((c - a) / h); if (m <= 0) return K(a); let t = 0; for (let i = 0; i <= m; i++) t += (i === 0 || i === m ? 0.5 : 1) * K(a + i * h); return t / m; };
+      const meanC = (a, c, m = 200) => { let t = 0; for (let i = 0; i < m; i++) t += K(a + (c - a) * (i + 0.5) / m); return t / m; };
+      const meanW = (a, w) => { let t = 0; const m = 8; for (let i = 0; i <= m; i++) t += (i === 0 || i === m ? 0.5 : 1) * K(a + i * w / m); return t / m; };
+      const g0 = sn(xCh0), g1 = sn(xCh1);
       const res = { y: f.y, lib: f.lib, ligne };
       // trottoirs (les deux chargés)
-      const tg = A6.ETROTG > 0 ? mean(yL, xTG) : null, td = A6.ETROTD > 0 ? mean(xCh1 + A6.EDROI, -yL) : null;
+      const tg = A6.ETROTG > 0 ? meanC(yL, xTG) : null, td = A6.ETROTD > 0 ? meanC(xCh1 + A6.EDROI, -yL) : null;
       res.trot = tg != null && td != null ? (tg + td) / 2 : (tg ?? td ?? 0);
       // charge A : meilleure combinaison de voies adjacentes (i voies de largeur v), coefficient a1
       const v = Lch / nv; let bestA = { v: 0 };
       for (let k = 1; k <= nv; k++) for (let p = 0; p + k <= nv; p++) {
-        const val = a1Coef(cl, k) * k / nv * mean(xCh0 + p * v, xCh0 + (p + k) * v) * (r.v0 / v > 1 ? 1 : 1);
+        const val = a1Coef(cl, k) * k / nv * mean(xCh0 + p * v, xCh0 + (p + k) * v);
         if (val > bestA.v) bestA = { v: val, k };
       }
-      res.A = bestA.v / (a1Coef(cl, nv) * 1) * a1Coef(cl, nv); res.A = bestA.v; res.nA = bestA.k;
-      // Bc : files de 2,5 m, roues à 2 m, distance au bord 0,25 m (ou 0,5 m du dispositif de retenue)
+      res.A = bestA.v; res.nA = bestA.k;
+      // Bc : files de 2,5 m, roues à 2 m, distance au bord 0,25 m ; positions sur la grille
       const nfMax = Math.min(nv, nfBc(Lch));
       let bestBc = { v: 0 };
-      for (let nf = 1; nf <= nfMax; nf++) for (let x = xCh0; x <= xCh1 - 2.5 * nf + 1e-9; x += 0.01) {
+      for (let nf = 1; nf <= nfMax; nf++) for (let x = g0; x <= g1 - 2.5 * nf + 1e-9; x += h) {
         let s = 0; for (let f2 = 0; f2 < nf; f2++) { const o = x + 0.25 + f2 * 2.5; s += K(o) + K(o + 2); }
         const val = bcCoef(cl, nf, r.f61_1960) * s / (2 * nfMax); if (val > bestBc.v) bestBc = { v: val, nf };
       }
@@ -924,18 +955,17 @@
       let bestBt = { v: 0 };
       const be = r.f61_1960, wT = be ? 2.5 : 3, sT = be ? 1.5 : 2, dT = 0.5;
       const ntMax = Math.max(1, Math.min(2, nv, Math.floor((Lch + (be ? 2.5 - sT - 2 * dT : 0) + 1e-9) / wT)));
-      for (let nt = 1; nt <= ntMax; nt++) for (let x = xCh0; x <= xCh1 - (2 * dT + sT + (nt - 1) * wT) + 1e-9; x += 0.01) {
+      for (let nt = 1; nt <= ntMax; nt++) for (let x = g0; x <= g1 - (2 * dT + sT + (nt - 1) * wT) + 1e-9; x += h) {
         let s = 0; for (let f2 = 0; f2 < nt; f2++) { const o = x + dT + f2 * wT; s += K(o) + K(o + sT); }
         const val = (cl === 2 && !be ? 0.9 : 1) * s / (2 * ntMax); if (val > bestBt.v) bestBt = { v: val, nt };
       }
       res.Bt = bestBt.v;
-      // Mc120 : 2 chenilles de 1 m, entraxe 3,30 m (bord extérieur à bord extérieur 4,30 m)
+      // Mc120 : 2 chenilles de 1 m, entraxe 3,25 m (3,30 m arrondi au pas de la grille)
       let bestMc = 0;
-      for (let x = xCh0; x <= xCh1 - 4.25 + 1e-9; x += 0.125) bestMc = Math.max(bestMc, (mean(x, x + 1, 40) + mean(x + 3.25, x + 4.25, 40)) / 2);
+      for (let x = g0; x <= g1 - 4.25 + 1e-9; x += h) bestMc = Math.max(bestMc, (meanW(x, 1) + meanW(x + 3.25, 1)) / 2);
       res.Mc = bestMc;
-      // convois D / E : remorque de 3,30 m de large ; centrée (hypothèse)
       // convois D / E : remorque de 3,30 m, axe décalé de 0,50 m vers la fibre (calage listings)
-      res.CV = f.y === 0 ? mean(-1.65, 1.65) : mean(Math.sign(f.y) * CV_OFF - 1.65, Math.sign(f.y) * CV_OFF + 1.65);
+      res.CV = f.y === 0 ? meanC(-1.65, 1.65) : meanC(Math.sign(f.y) * 0.5 - 1.65, Math.sign(f.y) * 0.5 + 1.65);
       return res;
     });
     // fibre la plus sollicitée par cas de charge

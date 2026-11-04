@@ -30,7 +30,7 @@
       if (p != null) head.push('PAGE ' + pad(p, 3) + (opts.sub2 ? padR('', 40) + opts.sub2 : ''));
       pages.push(head.concat(lines).join('\n'));
     }
-    const n = r.n, L = r.L, A6 = m.lignes.A6, A7 = m.lignes.A7;
+    const n = r.n, L = r.L, A6 = m.lignes.A6, A7 = r._A7 || m.lignes.A7;
     const T = k => 'TRAVEE ' + (k + 1);
     const nPrint = sym(r) ? Math.ceil(n / 2) : n; // pages par travée : symétrie -> moitié
 
@@ -284,7 +284,7 @@
         '         ' + D.eps.map(v => f(v, 8, 1)).join(''), '', '', '',
         '              ROTATIONS SUR APPUIS DU TABLIER SOUS L\'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)', '', '',
         '       APP G' + D.rotG.map(v => f(v, 8, 1)).join(''), '', '', '       APP D' + D.rotD.map(v => f(v, 8, 1)).join(''));
-      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad(Math.round(mt.Ei) + '.', 8) + ' T/M2', ...pd]);
+      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad(Math.round(mt.Ei + 1e-3) + '.', 8) + ' T/M2', ...pd]);
     }
     if (r.effortsTranchants) {
       const pv2 = [...STAR, '', '', '                                      CHARGE      CHARGE A      CHARGE B       CHARGE C      TROTTOIRS        ETATS-LIMITES',

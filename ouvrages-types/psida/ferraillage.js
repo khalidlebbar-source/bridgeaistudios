@@ -80,6 +80,7 @@
     r.fer.long.epure = epure(r, r.fer.long, H);
     r.fer.etriers = etriers(r, r.fer.long);
     r.fer.appareils = appareils(m, r);
+    r.fer.transv = transversal(r);
     r.fer.metre = metre(r);
   }
 
@@ -316,7 +317,7 @@
       "            * LES ABSCISSES SONT COMPTEES A PARTIR DE L'APPUI IMMEDIATEMENT A GAUCHE EXCEPTION FAITE DES ABSCISSES MARQUEES D'UN",
       "              ASTERISQUE QUI CORRESPONDENT A DES FERS ANCRES A L'EXTERIEUR DE LA TRAVEE"];
     // épure d'arrêt des barres : une page par bloc ; le premier bloc supérieur est sur la page de rappel
-    const E = L.epure; if (!E) { page('FERRAILLAGE LONGITUDINAL RETENU', pr, { sub: '                           *     *', sub2: '                            *' }); renderEtriers(m, r, T); return; }
+    const E = L.epure; if (!E) { page('FERRAILLAGE LONGITUDINAL RETENU', pr, { sub: '                           *     *', sub2: '                            *' }); renderTransv(m, r, T); renderEtriers(m, r, T); return; }
     const so = (v, st) => st ? '        *' + f(v, 7, 2) : f(v, 16, 2);
     let first = true;
     for (const [face, nom] of [['sup', 'SUPERIEUR'], ['inf', 'INFERIEUR']]) for (const bl of E[face]) {
@@ -337,6 +338,7 @@
       page('FERRAILLAGE LONGITUDINAL RETENU', pl, { sub: '                           *     *', sub2: '                            *' });
       first = false;
     }
+    renderTransv(m, r, T);
     renderEtriers(m, r, T);
   }
   function renderAppareils(m, r, T) {
@@ -364,6 +366,62 @@
       '              MINIMALES     ' + f(A13.COMPRENV || 250, 9, 2) + f(A13.COMPREBV || 2000, 8, 2) + AP.map((a, k) => f(a.cMin, k ? 11 : 7, 2)).join(''),
       '              MAXIMALES     ' + f(A13.COMPRENS || 1500, 9, 2) + f(A13.COMPREBS || 3500, 8, 2) + AP.map((a, k) => f(a.cMax, k ? 11 : 7, 2)).join(''));
     page("DIMENSIONNEMENT DES APPAREILS D'APPUI", pl, { sub: '                        *   *', sub2: "                         GEOMETRIE DES APPAREILS D'APPUI" });
+  }
+
+  // ------------------------------------------------------------------ ferraillage transversal inférieur (mi-travée)
+  // Moment longitudinal principal = M max travée / E DALLE ; moments transversaux = max des fibres (My ELS / ELU max) ;
+  // A1 = 1,2 AS(ν), A2 = 1,2 AU(ν) ; AS, AU avec ν = 0 ; d = H − 0,04 ; AP = 5·10⁻⁴ H ;
+  // ANF = ftj H² / (6 × 0,9 d fe) ; A = sup(inf(sup(A1, A2), ANF), AS, AU, AP). Torsion (biais) et section de couture des
+  // scellements droits NON reconstituées (0).
+  function transversal(r) {
+    if (!r.flexT || !r.flexT[0].my) return null;
+    const P = G.PSIDA, mat = r.mat, H = r.section.H, d = H - 0.04, fe = mat.fe[2] || mat.fe[0];
+    const mt = Object.assign({}, mat, { fe: [fe, fe, fe, fe] });
+    const ss = mat.fiss >= 2 && mat.sigS ? (mat.sigS[2] || mat.sigS[0]) : null;
+    const nu = mat.poisson || 0;
+    return r.flexT.map((F, sp) => {
+      const mom = r.moments[sp];
+      const ml = { els: Math.max(...mom.map(x => x.els.max)) / r.section.Eeq, elu: Math.max(...mom.map(x => x.elu.max)) / r.section.Eeq };
+      const my = { els: Math.max(...F.my.map(y => y.els.max)), elu: Math.max(...F.my.map(y => y.elu.max)) };
+      const my0 = F.my0 ? { els: Math.max(...F.my0.map(y => y.els.max)), elu: Math.max(...F.my0.map(y => y.elu.max)) } : my;
+      const asS = M => (ss && M > 0 ? P.asELS(M, 1, d, ss).As : 0), asU = M => P.asELU(M, 1, d, mt);
+      const A1 = 1.2 * asS(my.els), A2 = 1.2 * asU(my.elu), AS = asS(my0.els), AU = asU(my0.elu);
+      const AP = 5e-4 * H, ANF = mat.ftj * H * H / (6 * 0.9 * d * fe);
+      const A = Math.max(Math.min(Math.max(A1, A2), ANF), AS, AU, AP);
+      // couture des scellements droits (constat exact sur 9 passages) : 4 φ1 τs / fe − 5 φ4², τs = 0,6 × 1,5² ftj
+      const ph = mat.phi, couture = Math.max(0, 4 * ph[0] * 0.6 * 2.25 * mat.ftj / (mat.fe[0] || fe) - 5 * ph[3] * ph[3]);
+      return { nu, ml, my, my0, A1, A2, AS, AU, AP, ANF, A, couture, Amin: Math.max(A, couture), d };
+    });
+  }
+  function renderTransv(m, r, T) {
+    const { page, f, fx } = T, X = r.fer && r.fer.transv;
+    if (!X) return;
+    const nu = X[0].nu, two = nu !== 0, row = (lab, fn, w, dd) => { lab = lab.replace(/\s+$/, w === 9 ? ' ' : ''); const v0 = fx(fn(X[0]), dd); const end = w === 9 ? lab.length + 9 : (dd === 6 ? 55 : 52); return lab + ' '.repeat(Math.max(1, end - lab.length - v0.length)) + v0 + X.slice(1).map(x => f(fn(x), 14, dd)).join(''); };
+    const tr = ' '.repeat(44) + X.map((_, i) => 'TRAVEE ' + (i + 1)).join('      ');
+    const P = [
+      '                    ELEMENTS DE CALCUL DU FERRAILLAGE TRANSVERSAL INFERIEUR EN SECTION MEDIANE DE CHAQUE TRAVEE',
+      '                                                               *   *', '                                                                 *', tr,
+      ' MOMENT LONGITUDINAL PRINCIPAL PONDERE (TM/M)',
+      row('        ELS                            ', x => x.ml.els, 14, 2), row('        ELU                            ', x => x.ml.elu, 14, 2),
+      ' MOMENT TRANSVERSAL PRINCIPAL PONDERE (TM/M)'];
+    const lnu = (e, v) => `        ${e} AVEC POISSON = ${f(v, 4, 2)}           `;
+    const both = (fn) => { const o = []; for (const e of ['ELS', 'ELU']) { o.push(row(lnu(e, nu), x => fn(x, e, false), 14, 2)); if (two) o.push(row(lnu(e, 0), x => fn(x, e, true), 14, 2)); } return o; };
+    P.push(...both((x, e, z) => (z ? x.my0 : x.my)[e.toLowerCase()]));
+    P.push(row(' BIAIS GEOMETRIQUE (GRADES)             ', () => r.biais, 14, 2), row(' BIAIS MECANIQUE (GRADES)               ', (x) => r.flexT[X.indexOf(x)].psi, 14, 2),
+      ' MOMENT DE TORSION DANS LE BETON (TM/M)', ...both(() => 0), ' CONTRAINTE DE CISAILLEMENT SIMPLE (T/M2)', ' DU BETON PAR TORSION', ...both(() => 0),
+      "             EVALUATION DES SECTIONS D'ACIER  DU FERRAILLAGE TRANSVERSAL INFERIEUR EN SECTION MEDIANE DE CHAQUE TRAVEE",
+      "                                 (FERRAILLAGE TRANSVERSAL DISPOSE PARALLELEMENT AUX LIGNES D'APPUI)",
+      '                                                               *   *                              HAUTEUR UTILE = ' + f(X[0].d, 6, 2) + ' M',
+      '                                                                 *', tr,
+      ` CALCUL ELS AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my.els, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A1 =", x => x.A1, 9, 6),
+      ` CALCUL ELU AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my.elu, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A2 =", x => x.A2, 9, 6),
+      ` CALCUL ELS AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my0.els, 14, 2), row("        SECTION  D'ACIER :                AS =", x => x.AS, 9, 6),
+      ` CALCUL ELU AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my0.elu, 14, 2), row("        SECTION  D'ACIER :                AU =", x => x.AU, 9, 6),
+      row(' ARMATURE DE PEAU  :                      AP =', x => x.AP, 9, 6), row(' CONDITION DE NON-FRAGILITE :             ANF=', x => x.ANF, 9, 6),
+      ' SECTION DE CALCUL DU FERRAILLAGE', row(' TRANSVERSAL INFERIEUR (M2/ML) :          A  =', x => x.A, 9, 6),
+      ' < A=SUP(INF(SUP(A1,A2),ANF),AS,AU,AP) >', '   ***********************************', ' SECTION MINIMALE DU FERRAILLAGE', ' TRANSVERSAL (M2/ML)',
+      row(' (COUTURE DES SCELLEMENTS DROITS) :       ', x => x.couture, 14, 6), row(' SECTION MINIMALE A METTRE EN PLACE (M2/ML)', x => x.Amin, 14, 6), ' *******************************************');
+    page('', P);
   }
   function renderEtriers(m, r, T) {
     const { page, f, fx, pad } = T, E = r.fer && r.fer.etriers;
