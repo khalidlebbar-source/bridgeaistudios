@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PICF-EL — Cadre fermé</title>
+<meta name="description" content="PICF-EL : calcul des passages inférieurs en cadre fermé en béton armé selon le BAEL 91 et le fascicule 61 titre II — bordereau et note de calcul au format du programme SETRA.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://www.bridgeaistudios.com/picf.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{color-scheme:light;--bg:#f9f8f5;--bg2:#f0ede8;--ink:#18191f;--ink3:#7a7e8e;--gold:#a07828;--gold2:#c9a84c;--border:#e2ddd6}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;overflow:hidden}
+nav{flex:0 0 auto;background:rgba(249,248,245,.96);border-bottom:1px solid var(--border);padding:0 24px}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:50px;max-width:1600px;margin:0 auto;gap:16px}
+.nav-logo{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.nav-logo span{color:var(--gold)}
+.prog{display:flex;align-items:baseline;gap:10px;min-width:0}
+.prog b{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:400;white-space:nowrap}
+.prog small{font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.norm{font-size:10.5px;letter-spacing:.06em;padding:3px 10px;border-radius:99px;background:#fdf8ee;border:1px solid #e8d5a0;color:var(--gold);white-space:nowrap}
+.nav-back{font-size:12px;color:var(--ink3);text-decoration:none;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.nav-back:hover{color:var(--ink)}
+.nav-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+main{flex:1;min-height:0;padding:10px 24px 12px;max-width:1600px;width:100%;margin:0 auto;display:flex}
+#app{flex:1;min-height:0}
+@media (max-width:980px){body{overflow:auto;height:auto}main{padding:10px 12px}nav{padding:0 12px}.prog small{display:none}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo"><svg viewBox="0 0 120 120" width="26" height="26" aria-hidden="true" style="display:inline-block;vertical-align:-5px;margin-right:9px;overflow:visible"><path d="M44 100 L60 14 L76 100" fill="none" stroke="#c9a84c" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/><g stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="58" y1="28" x2="12" y2="76"/><line x1="57" y1="40" x2="28" y2="76"/><line x1="62" y1="28" x2="108" y2="76"/><line x1="63" y1="40" x2="92" y2="76"/></g><line x1="6" y1="78" x2="114" y2="78" stroke="currentColor" stroke-width="7" stroke-linecap="round"/></svg>Bridge<span>AI</span> Studios</a>
+    <div class="prog"><b>PICF-EL</b><small>Passage inférieur en cadre fermé en béton armé</small></div>
+    <span class="norm">BAEL 91 · Fascicule 61 titre II</span>
+    <span class="norm" style="background:#fdf2e6;border-color:#efd2a8;color:#a2581a" title="Moteur en cours de validation : la note générée reproduit environ 69 % des valeurs des listings PICF-EL officiels du SETRA (63 % sur un passage de contrôle). Ferraillage transversal et quelques coefficients encore en cours de recalage.">En validation · 69 % SETRA</span>
+    <a href="ponts-types.html" class="nav-back"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>Ponts types</span></a>
+  </div>
+</nav>
+<main><div id="app"></div></main>
+<script src="ouvrages-types/picf/parse.js"></script>
+<script src="ouvrages-types/picf/compute.js"></script>
+<script src="ouvrages-types/picf/note.js"></script>
+<script src="ouvrages-types/picf/index.js"></script>
+<script src="ouvrages-types/ot-ui.js"></script>
+<script src="ouvrages-types/picf-ui.js"></script>
+<script>OTUI.mount(document.getElementById('app'), PICF_UI);</script>
+</body>
+</html>
