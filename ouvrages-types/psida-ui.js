@@ -59,7 +59,7 @@
   const sp = i => ({ k: 'A5.D' + i, code: 'D' + i, label: 'travée ' + i, unit: 'm', dec: 3, help: `Portée biaise de la travée ${i}, mesurée suivant l'axe de l'ouvrage entre lignes d'appui. Les remplir toutes, même si l'ouvrage est symétrique ; 0 au-delà de NT.` });
   const tp = i => ({ k: 'A12.TP' + i, code: 'TP' + i, label: '', unit: 'm', dec: 3, help: `Tassement probable de l'appui ${i} (m). Pris en compte si TASMENT = 2 (ligne A3).` });
   const dtp = i => ({ k: 'A12.DTP' + i, code: 'DTP' + i, label: '', unit: 'm', dec: 3, help: `Tassement supplémentaire aléatoire de l'appui ${i} (m).` });
-  const typ = i => ({ k: 'A13.TYPAP' + i, code: 'TYPAP' + i, label: '', type: 'sel', opts: [[1, 'élast.'], [0, 'Freyss.'], [2, 'autre']], help: `Type d'appareil d'appui de la ligne d'appui ${i} : 0 articulation Freyssinet, 1 élastomère fretté, 2 autre type.` });
+  const typ = i => ({ k: 'A13.TYPAP' + i, code: 'TYPAP' + i, label: '', type: 'sel', opts: [[1, 'élast.'], [0, 'Freys.'], [2, 'autre']], help: `Type d'appareil d'appui de la ligne d'appui ${i} : 0 articulation Freyssinet, 1 élastomère fretté, 2 autre type.` });
   const nap = i => ({ k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
@@ -120,7 +120,7 @@
       { label: 'Fibres et symétrie', groups: [
         { title: 'Symétrie et fibres', flex: 2, cols: 2, fields: [
           { k: 'A6.SYMTAB', code: 'SYMTAB', label: 'symétrie', type: 'sel', opts: [[1, '1 — symétrique'], [0, '0 — asymétrique']], help: 'Symétrie transversale du profil en travers : 1 si ETROTG = ETROTD et EGAU = EDROI, 0 dans les autres cas.' },
-          { k: 'A6.NF', code: 'NF', label: 'fibres flex. transv.', type: 'sel', opts: [[1, '1 — axe'], [2, '2 — + ±EDALLE/4'], [3, '3 — + ±3 EDALLE/8']], help: 'Fibres étudiées en flexion transversale : 1 axe mécanique ; 2 axe et fibres à ±EDALLE/4 ; 3 en plus fibres à ±3 EDALLE/8. Normalement 3.' },
+          { k: 'A6.NF', code: 'NF', label: 'fibres flex. transv.', type: 'sel', opts: [[1, '1 — axe'], [2, '2 — ±E/4'], [3, '3 — ±3E/8']], help: 'Fibres étudiées en flexion transversale : 1 axe mécanique ; 2 axe et fibres à ±EDALLE/4 ; 3 en plus fibres à ±3 EDALLE/8. Normalement 3.' },
         ] },
         { title: 'Axe mécanique', alt: true, flex: 2, cols: 2, fields: [
           { k: 'A6.DISEXT', code: 'DISEXT', label: 'extrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'extrados de la dalle (0 si confondus).' },

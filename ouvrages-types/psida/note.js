@@ -239,13 +239,15 @@
     }
     if (r.flexT) for (let sp = 0; sp < nPrint; sp++) {
       const F = r.flexT[sp];
-      const pf = [`                    COEFFICIENT DE POISSON :${f(mt.poisson, 5, 3)}     A1(2*B/SIN(PSI)):${f(F.A1, 7, 3)}                     A2(2*B/DB*SIN(PSI)):${f(F.A2, 7, 3)}`,
+      const variantes = [[mt.poisson, F.fibres, F.my]]; if (F.fibres0) variantes.push([0, F.fibres0, F.my0]);
+      for (const [nu, fibres, my] of variantes) {
+      const pf = [`                    COEFFICIENT DE POISSON :${f(nu, 5, 3)}     A1(2*B/SIN(PSI)):${f(F.A1, 7, 3)}                     A2(2*B/DB*SIN(PSI)):${f(F.A2, 7, 3)}`,
         '      LES LIGNES D INFLUENCE DU COEFFICIENT DE FLEXION TRANSVERSALE SONT CALCULEES A PARTIR DE LA TRAVEE DROITE EQUIVALENTE DE',
         `      ${f(F.LS, 7, 3)}M DE LONGUEUR ET ${f(2 * F.bS, 7, 3)}M DE LARGEUR.(PARAMETRE D ENTRETOISEMENT ${f(F.theta, 7, 3)})`,
         '                                                                  * ', '                                TERMES MULTIPLICATEURS RELATIFS A L\'ETALEMENT LONGITUDINAL DES CHARGES', '',
         '                       ETALEMENT      HARMONIQUE 1                          HARMONIQUE 3                          HARMONIQUE 5'];
       for (const e of F.etal) pf.push('      ' + padR(e.nom, 15) + f(e.c, 8, 3) + f(e.t[0], 21, 3) + f(e.t[1], 38, 3) + f(e.t[2], 38, 3));
-      for (const fb of F.fibres) {
+      for (const fb of fibres) {
         pf.push('                                                                   * ', '                                LIGNES D\'INFLUENCE DU COEFFICIENT DE FLEXION TRANSVERSALE (PAS 0.500)',
           '                                                    DE LA FIBRE ' + fb.n + (fb.y === 0 ? '   (AXE MECANIQUE)' : '   A ' + f(fb.y, 7, 3) + 'DE L\'AXE MECANIQUE'), '');
         fb.H.forEach((h, k) => { pf.push('      HARMONIQUE ' + [1, 3, 5][k], '          ' + h.vals.slice(0, 14).map(v => f(v, 8, 4)).join(''), f(h.star, 9, 4) + '* ' + h.vals.slice(14).map(v => f(v, 8, 4)).join(''), ''); });
@@ -253,6 +255,23 @@
       pf.push('     NOTA : LE CHIFFRE MARQUE D\'UN ASTERISQUE CORRESPOND A L\'ORDONNEE AU DROIT DE LA FIBRE CONSIDEREE');
       page('ELEMENTS DE CALCUL DU MOMENT DE FLEXION TRANSVERSALE EN TRAVEE  ' + (sp + 1), pf,
         { sub2: `BIAIS MECANIQUE (PSI):${f(F.psi, 7, 3)}  LONGUEUR EQUIVALENTE BIAISE (DB):${f(F.Leq, 6, 3)}   LARGEUR EQUIVALENTE DROITE :${f(F.Weq, 6, 3)}` });
+      if (my) {
+        const pm = ['', '', '', '', '          MOMENTS PRINCIPAUX DE FLEXION TRANSVERSALE MY MAXIMUM ET MINIMUM DES DIFFERENTES SECTIONS SUR LES FIBRES ETUDIEES',
+          `                          POUR LA TRAVEE ${pad(sp + 1, 2)}  PAR METRE DE LARGEUR , COEFFICIENT DE POISSON = ${f(nu, 6, 2)}`, '', STAR[0], '', STAR[1], '', ''];
+        const nb = x => '(' + pad(x.n, 2) + ')';
+        for (const y of my) {
+          pm.push('', '    FIBRE ' + y.n,
+            '              SECTION          MY CP                    MY   A        MY  B       MY TROT      MY   C                MY PONDERE',
+            '                                                                                                                   E.L.S.    E.L.U.', '');
+          for (const [k, lab] of [['max', '               0.500'], ['min', '                    ']]) {
+            pm.push(lab + f(y.cp[k], 16, 3) + f(y.A[k].v, 25, 3) + nb(y.A[k]) + f(y.B[k].v, 9, 3) + nb(y.B[k]) + ' ' + padR(y.B[k].typ, 2) +
+              f(y.T[k], 9, 3) + f(y.C[k].v, 10, 3) + ' ' + padR(y.C[k].nom, 6) + f(y.els[k], 14, 3) + f(y.elu[k], 10, 3));
+          }
+          pm.push('');
+        }
+        page('', pm);
+      }
+      }
     }
     if (r.deformations) for (let sp = 0; sp < n; sp++) {
       const D = r.deformations[sp];

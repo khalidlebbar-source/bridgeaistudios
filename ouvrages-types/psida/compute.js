@@ -484,6 +484,7 @@
   }
 
   const MC120 = { P: 110, len: 6.1, gap: 36.6 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
+  const CV_OFF = +((typeof process !== 'undefined' && process.env && process.env.CVOFF) || 0.375);
   const CVD = { P: 140, len: 11, gap: 18.75 }, CVE = { P: 200, len: 15, gap: 32.75 }; // 2 remorques (F61 II art. 10)
 
   function liveEffects(r, f, A6, dynOverride, extraSegs, kOne) {
@@ -582,6 +583,7 @@
     shearsAndReactions(r, A6);
     deformations(r);
     flexionTransversale(r, A6);
+    if (r.flexT) r.flexT.forEach((F, sp) => { F.my = momentsTransversaux(r, F, F.fibres, A6, sp); if (F.fibres0) F.my0 = momentsTransversaux(r, F, F.fibres0, A6, sp); });
   }
 
   // ============================================================ 10. flexion transversale (Guyon-Massonnet, harmoniques 1-3-5)
@@ -610,7 +612,7 @@
       const A1 = sec.Eeq / Math.sin(psi * GR), A2 = A1 / Leq;
       const term = c => [1, 3, 5].map(m => { const x = m * Math.PI * Math.min(c, Leq) / (2 * Leq); return Math.sin(x) / x; });
       const etal = [['CHARGE REPARTIE', Leq], ['BC', 1.5 + e0], [r.nomBt, 1.35 + e0]];
-      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? Leqmin : (c === 'MC.120' ? 6.1 : 4.9) + e1]);
+      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? (c === 'CVOI.D' ? CVD : CVE).len + e1 : (c === 'MC.120' ? (r.f61_1960 ? 4.5 : 6.1) : 4.9) + e1]);
       const bS = A1 / 2, LS = Leq * Math.sin(psi * GR);   // travée droite équivalente (biais)
       const sP = Math.sin(psi * GR), eInt = r._A7.EDALLE1 / 2 / sP;
       // abscisses imprimées perpendiculaires à l'axe (e) ; coordonnées de la plaque équivalente = e / sin ψ
@@ -624,6 +626,89 @@
       const fibres0 = r.mat.poisson ? mkFib(0) : null;
       return { psi, Leq, Weq: sec.Eeq, A1, A2, LS, bS, theta: bS / LS, sinPsi: sP, eInt, etal: etal.map(([nom, c]) => ({ nom, c: Math.min(c, Leq), t: term(c) })), fibres, fibres0 };
     });
+  }
+  // Moments transversaux My en milieu de travée (guide PSIDP, annexe 6 § 3.2.2) :
+  //   charges réparties  My = p · A1 · Σ Bm·Dm, Dm = aire de μm sur la zone chargée (pas 0,125 m) ;
+  //   charges roulantes  My = δ · P · A2 · Σ Bm·Dm, Dm = Σ μm aux files de roues (B) / moyenne sur la chenille (Mc).
+  //   CP : max = Gmax / Eeq sur la dalle équivalente, min = Gmin / largeur d'extrados sur l'extrados.
+  //   A : par voie (a1, a2, A(L) de la travée) ; trottoirs : 3·PSTROT, trottoir par trottoir ;
+  //   Bc/Bt : max = un groupe de camions accolés, min = groupes gauche + droite (b_c du nombre total).
+  function momentsTransversaux(r, F, fibres, A6, sp) {
+    const W = r.largeurTotale, h = 0.125, A1 = F.A1, A2 = F.A2, cl = r.classe;
+    const x0 = -W / 2 + A6.ETROTG + A6.EGAU, x1 = x0 + A6.ESURCH, Lch = A6.ESURCH;
+    const term = nom => (F.etal.find(e => e.nom === nom) || F.etal[0]).t;
+    const trap = (f, a, b) => { const n = Math.max(1, Math.round((b - a) / h)); let t = 0; for (let i = 0; i <= n; i++) t += (i === 0 || i === n ? 0.5 : 1) * f(a + i * (b - a) / n); return t * (b - a) / n; };
+    // intégrale exacte de la ligne d'influence tabulée (pas h depuis le bord gauche de l'extrados, interpolation linéaire)
+    const intPL = (f, a, b) => { const o = -W / 2, g = e => { const k = Math.floor((e - o) / h + 1e-9), e0 = o + k * h, t = (e - e0) / h; return t < 1e-12 ? f(e0) : f(e0) * (1 - t) + f(e0 + h) * t; };
+      const pts = [a]; for (let k = Math.ceil((a - o) / h - 1e-9); o + k * h < b - 1e-9; k++) if (o + k * h > a + 1e-9) pts.push(o + k * h); pts.push(b);
+      let t = 0; for (let i = 0; i < pts.length - 1; i++) t += (g(pts[i]) + g(pts[i + 1])) / 2 * (pts[i + 1] - pts[i]); return t; };
+    const dyn = r.cmd[sp] || {};
+    const nv = r.nvoies, v = Lch / nv;
+    const bcN = n => bcCoef(cl, n, r.f61_1960);
+    const out = fibres.map(fb => {
+      const Z = B => e => fb.mus.reduce((t, mu, j) => t + B[j] * mu(e), 0);
+      const Zr = Z(term('CHARGE REPARTIE'));
+      const res = { n: fb.n };
+      // charges permanentes
+      const be = r.section.Eeq / 2;
+      const cMax = r.cp.gMax / r.section.Eeq * A1 * intPL(Zr, -be, be), cMin = r.cp.gMin / W * A1 * trap(Zr, -W / 2, W / 2);
+      res.cp = { max: cMax, min: cMin };
+      // charge A
+      const q = Al(r.L[sp]) * r.a2;
+      const lanes = []; for (let k = 0; k < nv; k++) lanes.push(q * A1 * trap(Zr, x0 + k * v, x0 + (k + 1) * v));
+      let aMax = { v: 0, n: 0 }, aMin = { v: 0, n: 0 };
+      for (let msk = 1; msk < (1 << nv); msk++) { let t = 0, n = 0; for (let k = 0; k < nv; k++) if (msk & (1 << k)) { t += lanes[k]; n++; }
+        const val = a1Coef(cl, n) * t; if (val > aMax.v + 1e-12) aMax = { v: val, n }; if (val < aMin.v - 1e-12) aMin = { v: val, n }; }
+      res.A = { max: aMax, min: aMin };
+      // trottoirs (3 × PSTROT)
+      const tr = [];
+      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, -W / 2, -W / 2 + A6.ETROTG));
+      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, W / 2 - A6.ETROTD, W / 2));
+      res.T = { max: tr.filter(x => x > 0).reduce((a, b) => a + b, 0), min: tr.filter(x => x < 0).reduce((a, b) => a + b, 0) };
+      // systèmes B : groupes de véhicules accolés
+      const groups = (Zb, nMax, wV, wheels, coef, P, d) => {
+        const S = [];   // S[n] = [{x, s}]
+        for (let n = 1; n <= nMax; n++) { S[n] = []; for (let k = 0; x0 + k * h <= x1 - n * wV + 1e-9; k++) { const x = x0 + k * h; let t = 0; for (let f = 0; f < n; f++) for (const w of wheels) t += Zb(x + f * wV + w); S[n].push({ x, s: t }); } }
+        let mx = { v: 0, n: 0 }, mn = { v: 0, n: 0 };
+        for (let n = 1; n <= nMax; n++) for (const g of S[n]) { const val = coef(n) * P * A2 * d * g.s; if (val > mx.v) mx = { v: val, n }; }
+        // minimum : groupe gauche + groupe droit (éventuellement vide)
+        for (let nL = 0; nL <= nMax; nL++) for (let nR = 0; nL + nR <= nMax; nR++) { if (!nL && !nR) continue;
+          const GL = nL ? S[nL] : [{ x: x0 - 1e9, s: 0 }];
+          for (const gl of GL) { const xe = nL ? gl.x + nL * wV : x0; const GR = nR ? S[nR].filter(g => g.x >= xe - 1e-9) : [{ s: 0 }];
+            for (const gr of GR) { const val = coef(nL + nR) * P * A2 * d * (gl.s + gr.s); if (val < mn.v) mn = { v: val, n: nL + nR }; } } }
+        return { max: mx, min: mn };
+      };
+      const nfMax = Math.min(nv, nfBc(Lch));
+      const bc = groups(Z(term('BC')), nfMax, 2.5, [0.25, 2.25], bcN, 12, dyn.bc || 1);
+      const f60 = r.f61_1960, wT = f60 ? 2.5 : 3, sT = f60 ? 1.5 : 2;
+      const ntMax = Math.max(1, Math.min(2, nv, Math.floor((Lch + (f60 ? 2.5 - sT - 1 : 0) + 1e-9) / wT)));
+      const bt = groups(Z(term(r.nomBt)), ntMax, wT, [0.5, 0.5 + sT], () => (cl === 2 && !f60 ? 0.9 : 1), 16, dyn.bt || 1);
+      res.B = { max: bc.max.v >= bt.max.v ? { ...bc.max, typ: 'BC' } : { ...bt.max, typ: r.nomBt },
+        min: bc.min.v <= bt.min.v ? { ...bc.min, typ: 'BC' } : { ...bt.min, typ: r.nomBt } };
+      if (!res.B.max.v) res.B.max.typ = ''; if (!res.B.min.v) res.B.min.typ = '';
+      // charges C
+      let cMx = { v: 0, nom: '' }, cMn = { v: 0, nom: '' };
+      for (const nom of r.chargesC) {
+        const Zc = Z(term(nom)); let mx = 0, mn = 0;
+        if (/^MC/.test(nom)) {
+          const mean = a => { let t = 0; for (let i = 0; i <= 8; i++) t += (i === 0 || i === 8 ? 0.5 : 1) * Zc(a + i / 8); return t / 8; };
+          for (let k = 0; x0 + k * h <= x1 - 4.25 + 1e-9; k++) { const x = x0 + k * h, val = (dyn.mc || 1) * (r.f61_1960 ? 50 : 55) * A2 * (mean(x) + mean(x + 3.25)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+        } else {
+          // convoi D/E : remorque de 3,30 m, densité P/longueur, axe à ±0,40 m de l'axe de la chaussée (calage 3826/3827,
+          // règle exacte non retrouvée)
+          const cv = nom === 'CVOI.D' ? CVD : CVE, w = 3.3, p = cv.P / cv.len / w, xc = (x0 + x1) / 2;
+          for (const off of [-CV_OFF, CV_OFF]) { const x = xc + off - w / 2, val = p * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+        }
+        if (mx > cMx.v) cMx = { v: mx, nom }; if (mn < cMn.v) cMn = { v: mn, nom };
+      }
+      res.C = { max: cMx, min: cMn };
+      const els = (g, t, a, b, c, sg) => g + t + (sg > 0 ? Math.max(1.2 * a, 1.2 * b, c) : Math.min(1.2 * a, 1.2 * b, c));
+      const elu = (gx, gn, t, a, b, c, sg) => 1.125 * ((sg > 0 ? Math.max(1.2 * gx, 0.9 * gn) : Math.min(1.2 * gx, 0.9 * gn)) + 1.42 * t + (sg > 0 ? Math.max(1.42 * a, 1.42 * b, 1.2 * c) : Math.min(1.42 * a, 1.42 * b, 1.2 * c)));
+      res.els = { max: els(cMax, res.T.max, aMax.v, res.B.max.v, cMx.v, 1), min: els(cMin, res.T.min, aMin.v, res.B.min.v, cMn.v, -1) };
+      res.elu = { max: elu(cMax, cMin, res.T.max, aMax.v, res.B.max.v, cMx.v, 1), min: elu(cMax, cMin, res.T.min, aMin.v, res.B.min.v, cMn.v, -1) };
+      return res;
+    });
+    return out;
   }
   // biais mécanique (mise à jour SETRA du dossier PSI-DA, pièce 2.1 § 2.2.1) :
   // ψ = φ si λ ≥ 2 ; ψ = φ + (100 − φ)(1 − 0,5 λ)² sinon, λ = largeur biaise (Eeq/sin φ) / portée biaise
@@ -846,11 +931,11 @@
       res.Bt = bestBt.v;
       // Mc120 : 2 chenilles de 1 m, entraxe 3,30 m (bord extérieur à bord extérieur 4,30 m)
       let bestMc = 0;
-      for (let x = xCh0; x <= xCh1 - 4.3 + 1e-9; x += 0.01) bestMc = Math.max(bestMc, (mean(x, x + 1, 40) + mean(x + 3.3, x + 4.3, 40)) / 2);
+      for (let x = xCh0; x <= xCh1 - 4.25 + 1e-9; x += 0.125) bestMc = Math.max(bestMc, (mean(x, x + 1, 40) + mean(x + 3.25, x + 4.25, 40)) / 2);
       res.Mc = bestMc;
       // convois D / E : remorque de 3,30 m de large ; centrée (hypothèse)
       // convois D / E : remorque de 3,30 m, axe décalé de 0,50 m vers la fibre (calage listings)
-      res.CV = f.y === 0 ? mean(-1.65, 1.65) : mean(Math.sign(f.y) * 0.5 - 1.65, Math.sign(f.y) * 0.5 + 1.65);
+      res.CV = f.y === 0 ? mean(-1.65, 1.65) : mean(Math.sign(f.y) * CV_OFF - 1.65, Math.sign(f.y) * CV_OFF + 1.65);
       return res;
     });
     // fibre la plus sollicitée par cas de charge
