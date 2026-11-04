@@ -352,7 +352,9 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .cmdbar kbd{font:10.5px var(--ui);color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:0 5px;background:var(--chrome)}
 .cmdbar:focus-within kbd{display:none}
 .toast{position:fixed;z-index:700;top:38px;left:50%;transform:translateX(-50%);width:min(620px,calc(100vw - 24px));background:#fff;border:1px solid var(--line2);border-left:4px solid var(--ok);border-radius:5px;box-shadow:0 10px 30px -8px rgba(20,30,50,.35);padding:9px 12px 10px;font-size:12px}
-.toast.none{border-left-color:var(--warn)}
+.toast.none{border-left-color:var(--warn)}.toast.wait,.toast.ans{border-left-color:var(--acc)}.toast .msg{margin-bottom:4px;line-height:1.45}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid #c7d6ee;border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
+.cmdbar.busy{opacity:.7}
 .toast b{font-weight:600}.toast ul{margin:5px 0 0 16px}.toast li{margin:1px 0}
 .toast .miss{color:var(--warn);margin-top:5px}.toast .hint{color:var(--mute);margin-top:4px}
 .toast .ta{display:flex;gap:8px;justify-content:flex-end;margin-top:7px}
@@ -374,7 +376,7 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   <span class="tb-doc" id="tbDoc"></span>
   <form class="cmdbar" id="cmdbar" role="search" autocomplete="off">
     <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 10h6M3 15h9M14 8l3 3-3 3"/></svg>
-    <input id="cmd" type="text" aria-label="Décrire ou modifier l’ouvrage" placeholder="Décrivez ou modifiez l’ouvrage… ex. « pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m »" spellcheck="false">
+    <input id="cmd" type="text" aria-label="Décrire ou modifier l’ouvrage" placeholder="Demandez à l’assistant… ex. « pont dalle à 3 travées de 12-16-12 m » · « pourquoi ce tablier ? » · « réduis le coût »" spellcheck="false">
     <kbd title="Raccourci : /">/</kbd>
   </form>
   <span class="tb-right"><a href="index.html">← Accueil BridgeAI Studios</a></span>
@@ -420,14 +422,14 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=7"></script>
-<script src="composer/draw.js?v=7"></script>
-<script src="composer/dxf.js?v=7"></script>
-<script src="composer/view3d.js?v=7"></script>
-<script src="composer/analysis.js?v=7"></script>
-<script src="composer/diag.js?v=7"></script>
-<script src="composer/nlp.js?v=7"></script>
-<script src="composer/wizard.js?v=7"></script>
-<script src="composer/app.js?v=7"></script>
+<script src="composer/calc.js?v=8"></script>
+<script src="composer/draw.js?v=8"></script>
+<script src="composer/dxf.js?v=8"></script>
+<script src="composer/view3d.js?v=8"></script>
+<script src="composer/analysis.js?v=8"></script>
+<script src="composer/diag.js?v=8"></script>
+<script src="composer/nlp.js?v=8"></script>
+<script src="composer/wizard.js?v=8"></script>
+<script src="composer/app.js?v=8"></script>
 </body>
 </html>

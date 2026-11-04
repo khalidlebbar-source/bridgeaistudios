@@ -85,7 +85,16 @@
       if (k === 'projet') {
         return h3('Décrivez votre ouvrage', 'En une phrase, comme à un collègue — l’assistant remplit les étapes pour vous.')
           + `<div class="wdesc"><textarea id="wzDesc" placeholder="ex. Pont dalle à 3 travées de 12-16-12 m, 2 voies et trottoirs de 1,25 m, piles colonnes de 6 m sur pieux Ø1,20, culées remblayées, sol 0,3 MPa">${esc(desc)}</textarea><button type="button" data-w="interp" class="pri">Interpréter</button></div>`
-          + (lastR ? `<div class="wres${lastR.ok.length ? '' : ' none'}">${lastR.ok.length ? '<b>Compris</b><ul>' + lastR.ok.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>' : '<b>Rien de reconnu.</b>'}${lastR.miss.length ? `<div class="miss">Non interprété : ${lastR.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : ''}${lastR.hint ? `<div class="miss">${esc(lastR.hint)}</div>` : ''}${lastR.ok.length ? '<div style="margin-top:6px"><button type="button" class="pri" data-w="torecap" style="border:1px solid var(--acc2);border-radius:4px;padding:4px 12px;cursor:pointer">Voir le récapitulatif ›</button></div>' : ''}</div>` : '')
+          + (lastR ? (() => {
+            const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
+            const any = lastR.ai ? (lastR.changes.length || lastR.message) : lastR.ok.length;
+            let h = `<div class="wres${any && !lastR.error ? '' : ' none'}">`;
+            if (lastR.error) h += `<b>${esc(lastR.error)}</b>`;
+            else if (lastR.ai) h += (lastR.message ? `<div>${esc(lastR.message)}</div>` : '') + (lastR.changes.length ? '<b>Modifications</b>' + li(lastR.changes) : '');
+            else h += (lastR.ok.length ? '<b>Compris</b>' + li(lastR.ok) : '<b>Rien de reconnu.</b>') + (lastR.miss.length ? `<div class="miss">Non interprété : ${lastR.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '') + (lastR.hint ? `<div class="miss">${esc(lastR.hint)}</div>` : '') + (lastR.why ? `<div class="miss">Interpréteur local (${esc(lastR.why)}).</div>` : '');
+            if (any && !lastR.error) h += '<div style="margin-top:6px"><button type="button" class="pri" data-w="torecap" style="border:1px solid var(--acc2);border-radius:4px;padding:4px 12px;cursor:pointer">Voir le récapitulatif ›</button></div>';
+            return h + '</div>';
+          })() : '')
           + h3('… ou partez d’un modèle', 'Choisissez l’ouvrage type le plus proche : toutes les valeurs restent modifiables aux étapes suivantes.')
           + cards('preset', PRESETS.map((p) => ({ v: p.k, t: p.t, d: p.d })), preset, 'c3')
           + h3('Identification') + `<div class="wgrid">${txt('Nom de l’ouvrage', 'projet.nom', 'Pont-route sur oued')}${txt('Repère', 'projet.ouvrage', 'OA 1')}${txt('Localisation', 'projet.lieu', 'PK, commune…')}${txt('Maître d’ouvrage', 'projet.moa', '')}${txt('Référence dossier', 'projet.ref', '')}</div>`;
@@ -241,12 +250,16 @@
       t[n > 2 ? 1 : 0] += Math.round((L - t.reduce((a, b) => a + b, 0)) * 100) / 100;
       setK('travees', t.join(' '), { dataset: { t: 'list' } });
     }
-    function interp() {
+    let busy = false;
+    async function interp() {
       const ta = $('#wzDesc'); desc = ta ? ta.value : desc;
-      if (!desc.trim() || !C.interpret) return;
-      lastR = C.interpret(desc, S);
-      if (lastR.ok.length) { S = lastR.S; preset = null; gen = { L: S.travees.reduce((a, b) => a + b, 0), n: S.travees.length, r: S.travees.length > 2 ? Math.round(S.travees[0] / S.travees[1] * 100) / 100 : 1 }; }
-      render();
+      if (!desc.trim() || !C.ask || busy) return;
+      busy = true; const bt = $('[data-w=interp]'); if (bt) { bt.disabled = true; bt.textContent = 'Analyse…'; }
+      let r; try { r = await C.ask(desc, S, C.aiContext(M, S)); } catch (e) { r = { error: 'Erreur de l’assistant.' }; }
+      busy = false;
+      lastR = r;
+      if (r.S && JSON.stringify(r.S) !== JSON.stringify(S)) { S = r.S; preset = null; gen = { L: S.travees.reduce((a, b) => a + b, 0), n: S.travees.length, r: S.travees.length > 2 ? Math.round(S.travees[0] / S.travees[1] * 100) / 100 : 1 }; }
+      if (step === 0) render(); else { calc(); $('.wz-prev').innerHTML = prevHTML(); }
       const t2 = $('#wzDesc'); if (t2) t2.focus();
     }
     function close() { back.remove(); document.removeEventListener('keydown', onKey, true); if (prevFocus && prevFocus.focus) prevFocus.focus(); }

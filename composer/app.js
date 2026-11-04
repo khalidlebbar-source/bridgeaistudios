@@ -1123,18 +1123,31 @@
     clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 9000);
   }
   function showInterp(r) {
-    const li = r.ok.map((o) => `<li>${esc(o)}</li>`).join('');
-    return (r.ok.length ? `<b>Compris</b><ul>${li}</ul>` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
-      + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
-      + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '');
+    if (r.error) return `<b>${esc(r.error)}</b>`;
+    const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
+    let h = '';
+    if (r.ai) h += (r.message ? `<div class="msg">${esc(r.message)}</div>` : '') + (r.changes.length ? `<b>Modifications</b>${li(r.changes)}` : '');
+    else {
+      h += (r.ok.length ? `<b>Compris</b>${li(r.ok)}` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
+        + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
+        + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '')
+        + (r.why ? `<div class="hint">Interpréteur local (${esc(r.why)}).</div>` : '');
+    }
+    return h;
   }
-  $('#cmdbar').addEventListener('submit', (ev) => {
+  let asking = false;
+  $('#cmdbar').addEventListener('submit', async (ev) => {
     ev.preventDefault();
-    const inp = $('#cmd'), txt = inp.value.trim(); if (!txt) return;
-    const r = C.interpret(txt, S);
-    if (!r.ok.length) { toast(showInterp(r) + '<div class="ta"><button data-t="x">Fermer</button></div>', 'none'); return; }
+    const inp = $('#cmd'), txt = inp.value.trim(); if (!txt || asking) return;
+    asking = true; $('#cmdbar').classList.add('busy'); inp.readOnly = true;
+    toast('<span class="spin"></span> L’assistant analyse votre demande…', 'wait', 60000);
+    let r;
+    try { r = await C.ask(txt, S, C.aiContext(M, S)); } catch (e) { console.error(e); r = { error: 'Erreur de l’assistant.' }; }
+    asking = false; $('#cmdbar').classList.remove('busy'); inp.readOnly = false;
+    const changed = r.S && JSON.stringify(r.S) !== JSON.stringify(S);
+    if (!changed) { toast(showInterp(r) + '<div class="ta"><button data-t="x">Fermer</button></div>', r.ai && !r.error ? 'ans' : 'none', 30000); if (r.ai && !r.error) inp.value = ''; return; }
     histT = 0; S = r.S; recompute(true); histT = 0;
-    toast(showInterp(r) + '<div class="ta"><button data-t="undo">Annuler</button><button data-t="x">OK</button></div>');
+    toast(showInterp(r) + '<div class="ta"><button data-t="undo">Annuler</button><button data-t="x">OK</button></div>', '', 20000);
     inp.value = '';
   });
   $('#toast').addEventListener('click', (ev) => {

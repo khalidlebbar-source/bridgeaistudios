@@ -336,5 +336,68 @@
     S.usage = v; S.equip.retenue = D.equip.retenue; S.culees.dalleTransition = D.culees.dalleTransition; S.equip.gargouilles = D.equip.gargouilles;
   }
 
-  return { interpret };
+  /* ── libellés des modifications (comparaison avant / après) ── */
+  function diffLabels(A, B) {
+    const L = [], f = (v) => (Array.isArray(v) ? v.map((x) => fr(x)).join(' – ') : typeof v === 'number' ? fr(v) : typeof v === 'boolean' ? (v ? 'oui' : 'non') : String(v));
+    const T = (k) => (C.TYPES[k] ? C.TYPES[k].nom : k);
+    const rows = [
+      ['projet.nom', 'Nom'], ['usage', 'Usage', (v) => (v === 'rail' ? 'pont-rail' : 'pont-route')], ['reglement', 'Règlement', (v) => (v === 'EC' ? 'Eurocodes' : 'Fascicule 61 / UIC 71')], ['classe', 'Classe'],
+      ['tablier.type', 'Tablier', T], ['tablier.h', 'Hauteur imposée', (v) => (v ? fr(v, 2) + ' m' : 'auto')], ['tablier.continu', 'Continuité', (v) => (v ? 'continu' : 'isostatique')],
+      ['travees', 'Travées', (v) => f(v) + ' m'], ['biais', 'Biais', (v) => v + ' gr'],
+      ['profil.roulable', 'Chaussée', (v) => f(v) + ' m'], ['profil.trottoirG', 'Trottoir G', (v) => f(v) + ' m'], ['profil.trottoirD', 'Trottoir D', (v) => f(v) + ' m'],
+      ['profil.nbVoiesFer', 'Voies ferrées'], ['profil.entraxe', 'Entraxe des voies', (v) => f(v) + ' m'], ['profil.largeurForcee', 'Largeur imposée', (v) => (v ? f(v) + ' m' : 'auto')],
+      ['piles.type', 'Piles', (v) => C.PILES[v].nom], ['piles.hauteurs', 'Hauteurs des piles', (v) => f(v) + ' m'],
+      ['culees.type', 'Culées', (v) => C.CULEES[v].nom], ['culees.hauteurs', 'Hauteurs des culées', (v) => f(v) + ' m'], ['culees.dalleTransition', 'Dalles de transition', f],
+      ['fond.piles', 'Fondations des piles'], ['fond.culees', 'Fondations des culées'], ['fond.sigma', 'σ sol', (v) => fr(v, 2) + ' MPa'],
+      ['fond.diam', 'Ø pieux', (v) => fr(v, 2) + ' m'], ['fond.long', 'Longueur des pieux', (v) => f(v) + ' m'], ['fond.qadm', 'Charge admissible / pieu', (v) => f(v) + ' MN'],
+      ['equip.retenue', 'Retenue'], ['equip.corniches', 'Corniches', f], ['equip.revetement', 'Revêtement', (v) => fr(v * 100) + ' cm'],
+      ['hyp.betonTab', 'Béton du tablier'], ['hyp.betonApp', 'Béton des appuis'], ['hyp.betonFond', 'Béton des fondations'], ['hyp.charpente', 'Charpente'], ['hyp.seismeA', 'Séisme a', (v) => fr(v, 2) + ' g'],
+    ];
+    const get = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+    rows.forEach(([p, lab, fm]) => {
+      const a = get(A, p), b = get(B, p);
+      if (JSON.stringify(a) !== JSON.stringify(b)) L.push(lab + ' : ' + (a === undefined ? '—' : (fm || f)(a)) + ' → ' + (fm || f)(b));
+    });
+    if (JSON.stringify(A.hyp && A.hyp.notes) !== JSON.stringify(B.hyp && B.hyp.notes)) L.push('Hypothèses particulières mises à jour');
+    return L;
+  }
+
+  /* ── assistant IA (navigateur) : /api/composer-ai, interpréteur local en secours ── */
+  const history = [];
+  async function ask(text, S, ctx) {
+    const local = (why) => { const r = interpret(text, S); return Object.assign(r, { ai: false, why, message: '', changes: diffLabels(S, r.S) }); };
+    if (typeof fetch !== 'function') return local('hors ligne');
+    let r;
+    try {
+      const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      const to = ctl ? setTimeout(() => ctl.abort(), 45000) : 0;
+      r = await fetch('/api/composer-ai', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, state: S, ctx, history: history.slice(-6) }), signal: ctl ? ctl.signal : undefined });
+      clearTimeout(to);
+    } catch (e) { return local('assistant IA injoignable'); }
+    let j = {}; try { j = await r.json(); } catch (e) { /* réponse non JSON */ }
+    if ([404, 405, 501, 503].includes(r.status)) return local(j.code === 'nokey' ? 'assistant IA non configuré' : 'assistant IA indisponible');
+    if (!r.ok) { if (r.status === 429) return { ai: true, error: j.error || 'Trop de demandes.', S, ok: [], miss: [], changes: [] }; return local(j.error || 'erreur de l’assistant IA'); }
+    const S2 = C.normalize(j.state || S);
+    history.push({ q: text, a: j.message || '' }); if (history.length > 12) history.shift();
+    return { ai: true, S: S2, message: j.message || '', changes: diffLabels(S, S2), ok: [], miss: [], model: j.model };
+  }
+
+  /* contexte de résultats envoyé à l'assistant */
+  function context(M, S) {
+    if (!M) return null;
+    const k = M.kpi, alt = [];
+    C.TYPE_KEYS.forEach((t) => {
+      try {
+        const Sx = C.normalize(Object.assign(clone(S), { tablier: Object.assign({}, S.tablier, { type: t, h: 0, continu: null }) })); Sx.hyp = C.hypDefaults(Sx.usage, t);
+        const Mx = C.compute(Sx); alt.push({ type: t, domaine: C.typeStatus(t, S.travees, S.usage).k, h: Mx.kpi.h, coutM2: Math.round(Mx.kpi.parM2), total: Math.round(Mx.kpi.total) });
+      } catch (e) { /* type non calculable */ }
+    });
+    return {
+      kpi: { L: k.Ltot, W: k.W, h: k.h, beton_m3: Math.round(k.beton), aciers_t: Math.round(k.acier / 100) / 10, cout_total: Math.round(k.total), cout_m2: Math.round(k.parM2), devise: S.devise },
+      predim: M.pd ? M.pd.regle : undefined, alertes: M.warn, comparaison_tabliers: alt,
+      appuis: (M.supports || []).map((s) => ({ id: s.id, N_kN: Math.round(s.N), fondation: s.fo && (s.fo.mode === 'pieux' ? s.fo.n + ' pieux Ø' + s.fo.D : 'semelle ' + s.fo.B + '×' + s.fo.L + '×' + s.fo.e) })),
+    };
+  }
+
+  return { interpret, diffLabels, ask, aiContext: context, aiHistory: history };
 });
