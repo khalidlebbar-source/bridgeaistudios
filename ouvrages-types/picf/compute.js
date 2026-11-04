@@ -694,6 +694,24 @@
       }
       return best || { rows: fac(c2, [0, 0, 0]), tot: 0 };
     };
+    // Session e : bandes fusionnées — chaque empreinte diffusée transversalement sur a + sD (sD = 2·HCHAU + 2·HSREM·tan30° + E3,
+    // même diffusion que dans le sens longitudinal), empreintes fondues en une bande (toutes les roues des camions Bc / tandems Bt
+    // de front), partie hors dalle perdue. Mc120 : chenilles fondues → une seule chenille (55 t) portée par la bande, sinon 2 × 55 t ;
+    // E : demi-remorque 100 t sur 3.30 m ; Me120 : un essieu de 33 t (inchangé).
+    const TRB = root.PICF_TRB != null ? root.PICF_TRB : 3; // 1 : bandes fusionnées (convois), 2 : diffusion des voies AL ; 0 : ancienne règle
+    const sDt = root.PICF_TRSD ? root.PICF_TRSD(d) : sL; // 45° chaussée, 30° remblai, + E3 (comme la diffusion longitudinale des chenilles)
+    const bandF3 = (P, c2, cs, a, one) => { const w = a + sDt; const iv = cs.map(x => [x - w / 2, x + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
+      for (const q of iv) { const Lq = cl[cl.length - 1]; if (Lq && q[0] <= Lq[1] + 1e-9) { Lq[1] = Math.max(Lq[1], q[1]); Lq[2]++; } else cl.push([q[0], q[1], 1]); }
+      return HM.map((m, k) => { let t = 0; for (const [l0, l1, nn] of cl) { const lo = Math.max(-b, l0), hi = Math.min(b, l1); if (hi > lo) t += (one ? 1 : nn) * integ(k, lo, hi) / (l1 - l0); } return P / cs.length * G * Math.min(1, l / c2) * t; }); };
+    // véhicules de front (Bc, Bt) : toutes les empreintes fondues ensemble (meilleur que la somme par véhicule ; hook PICF_TRV)
+    const veh = (P, c2, ws, a, lo, hi, nveh, sp, one) => { let best = null; nveh = nveh || 1; sp = sp || 0;
+      for (let st = lo - ws[0]; st + (nveh - 1) * sp + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) {
+        let F3 = [0, 0, 0];
+        if (root.PICF_TRV) { for (let u = 0; u < nveh; u++) { const f = bandF3(P, c2, ws.map(w => st + u * sp + w), a); F3 = F3.map((x, k) => x + f[k]); } }
+        else { const cs = []; for (let u = 0; u < nveh; u++) for (const w of ws) cs.push(st + u * sp + w); F3 = bandF3(P * nveh, c2, cs, a, one); }
+        const rows = fac(c2, F3), tot = sum(rows); if (!best || tot > best.tot) best = { rows, tot }; }
+      return best || { rows: fac(c2, [0, 0, 0]), tot: 0 }; };
+    const MGt = d.egau > 0 && d.edroi > 0 ? 0 : 0.5;
     const mid = c => c[c.length - 1];
     const Tm = mid(R.cmp.t);
     const gS = { AL: 1.2, BC: 1.2, BT: 1.2, MC: 1, ME: 1, E: 1, EC: 1.2 }, gU = { AL: 1.6, BC: 1.6, BT: 1.6, MC: 1.35, ME: 1.35, E: 1.35, EC: 1.6 };
@@ -723,11 +741,22 @@
     const live = (key, Ml) => comb(Mp, 1.35 * Mp, gS[key] * Ml, gU[key] * Ml, Tm.perm.maxS + gS[key] * Tm.lmax[key], Tm.perm.maxU + gU[key] * Tm.lmax[key]);
     { // AL : voies de la chaussée, A(l) sur la longueur de la plaque
       const qA = 0.23 + 36 / (l + 12);
-      const lanes = []; for (let j = 0; j < nvoi; j++) { const rows = distrib(qA, c0 + j * v, c0 + (j + 1) * v); lanes.push({ rows, tot: sum(rows) }); }
+      const lanes = []; for (let j = 0; j < nvoi; j++) { const sA = (TRB & 2) ? sDt : 0;
+        const rows = sA > 0 ? distrib(qA * v / (v + sA), Math.max(-b, c0 + j * v - sA / 2), Math.min(b, c0 + (j + 1) * v + sA / 2)) : distrib(qA, c0 + j * v, c0 + (j + 1) * v); lanes.push({ rows, tot: sum(rows) }); }
       let best = 0; for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) { let s = 0; for (let j = st; j < st + k; j++) s += lanes[j].tot; best = Math.max(best, s * a1tab[Math.min(k, a1tab.length) - 1] * a2); }
       out.service.push({ key: 'AL', name: 'AL', lanes, tot: best, comb: live('AL', best) });
     }
     const add = (key, name, res, k) => { const tot = res.tot * k; out.service.push({ key, name, rows: res.rows, cmd: dyn[key].d, tot, comb: live(key, tot) }); };
+    if (TRB & 1) {
+      { let best = null; for (let n = 1; n <= Math.min(nvoi, 4); n++) { const res = veh(24, 1.5 + 0.25 + sL, [0, 2], 0.25, c0 + MGt + 0.25, c1 - MGt - 0.25, n, 2.5), bc = [1.2, 1.1, 0.95, 0.8][n - 1];
+          if (!best || res.tot * bc > best.res.tot * best.bc) best = { res, bc }; } add('BC', 'BC', best.res, best.bc * dyn.BC.d); }
+      { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const res = veh(32, 1.35 + 0.25 + sL, [0, 2], 0.6, c0 + MGt + 0.5, c1 - MGt - 0.5, n, 3); if (!best || res.tot > best.tot) best = res; }
+        add('BT', 'BT', best, dyn.BT.d); }
+      // Mc120 / Me120 / E : charge d'une file (chenille 55 t, essieu 33 t, demi-remorque 100 t) sur la bande fusionnée du véhicule
+      add('MC', 'MC120', veh(110, 6.1 + sL, [0, 3.3], 1.0, c0 + 1.0, c1 - 1.0, 1, 0, !root.PICF_TRM), dyn.MC.d); // chenilles fondues : une seule chenille (55 t) portée
+      add('ME', 'ME120', point(33, 1.8 + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d);
+      add('E', 'E', veh(100, 15 + sL, [0], 3.3, c0 + 2.0, c1 - 2.0), 1.0);
+    } else {
     { // Bc : deux essieux arrière (2 × 6 t par file de roues), roues 0.25 m, 1 à 4 camions de front
       let best = null;
       for (let n = 1; n <= Math.min(nvoi, 4); n++) { const ws = []; for (let u = 0; u < n; u++) ws.push(u * 2.5, 2 + u * 2.5);
@@ -741,6 +770,7 @@
     add('MC', 'MC120', point(55, 6.1 + sL, [0, 3.3], 1.0 + sL, c0 + 1.0, c1 - 1.0), dyn.MC.d);
     add('ME', 'ME120', point(33, 1.8 + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
     add('E', 'E', point(100, 15 + sL, [-0.825, 0.825], sL, c0 + 2.675, c1 - 2.675), 1.0);
+    }
     const all = out.service.concat(out.chantier ? [out.chantier.ec] : []);
     out.design = { S: Math.max(...all.map(o => o.comb.S.MAPF)), U: Math.max(...all.map(o => o.comb.U.MAPF)) };
     return out;

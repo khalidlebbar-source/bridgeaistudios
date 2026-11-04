@@ -31,6 +31,8 @@
     // ------------------------------------------------ sommaire
     newPage();
     out.push(`                                                  SOMMAIRE DU CALCUL PICF91   N.${num}`);
+    out.push('                                                  ' + '-'.repeat(32), '');
+    const somIdx = out.length; out.push('\u0000SOMMAIRE');
     // ------------------------------------------------ caractéristiques
     newPage();
     const s = R.geom.s, m = R.mat;
@@ -391,6 +393,43 @@
         '                                                     ---------', `                                         TOTAL   = ${F(T, 2, 9)} T`, '',
         `                 POIDS D'ACIER PAR M3 DE BETON =${F(T * 1000 / R.metre.beton, 0, 4)} KG/M3`); }
     out.push('', `                                  FIN DE LA NOTE DE CALCUL PICF91   NUMERO ${num}-`);
+    // sommaire : numéros de page relevés sur la note elle-même (première page portant chaque titre)
+    { const pg = []; let cur = 0; for (const l of out) { const mm = / PICF-EL NO .* PAGE +(\d+)$/.exec(l); if (mm) cur = +mm[1]; pg.push(cur); }
+      const at = re => { for (let i = somIdx + 1; i < out.length; i++) if (re.test(out[i])) return pg[i]; return null; };
+      const P2 = n => 'P.' + String(n).padStart(2);
+      const L = [], e = (ind, re, txt) => { const n = at(re); if (n != null) L.push(' '.repeat(ind) + P2(n) + '   ' + txt); };
+      L.push('* DONNEES *', '  *******');
+      e(5, /CARACTERISTIQUES OPTIMISEES/, "CARACTERISTIQUES DE L'OUVRAGE ET REGLEMENTS DE CALCUL");
+      e(5, /DEFINITION DES CHARGES/, 'DEFINITION DES CHARGES');
+      L.push('', '* CALCUL DES EFFORTS *', '  ******************');
+      e(5, /COEFFICIENTS DE MAJORATION DYNAMIQUE/, 'MOMENTS LONGITUDINAUX     COEFICIENTS DE MAJORATION DYNAMIQUE ET DE REPARTITION TRANSVERSALE');
+      e(5, /LIGNES D'INFLUENCE DES MOMENTS LONGITUDINAUX/, "                          LIGNES D'INFLUENCE");
+      e(5, /MOMENTS PERMANENTS DANS LES SECTIONS/, '                          MOMENTS DANS LES SECTIONS DETERMINANTES');
+      e(5, /POSITION DES SURCHARGES.*TRAVERSE INFERIEURE/, '                          TRAVERSE INFERIEURE   POSITIONS DES CHARGES');
+      e(5, /MOMENTS FLECHISSANTS EXTREMES.*TRAVERSE INFERIEURE/, '                                                MOMENTS EXTREMES');
+      e(5, /POSITION DES SURCHARGES.*TRAVERSE SUPERIEURE/, '                          TRAVERSE SUPERIEURE   POSITIONS DES CHARGES');
+      e(5, /MOMENTS FLECHISSANTS EXTREMES.*TRAVERSE SUPERIEURE/, '                                                MOMENTS EXTREMES');
+      e(5, /POSITION DES SURCHARGES.*PIEDROIT/, '                          PIEDROITS             POSITIONS DES CHARGES');
+      e(5, /MOMENTS FLECHISSANTS EXTREMES.*PIEDROITS/, '                                                MOMENTS EXTREMES');
+      L.push('');
+      e(4, /LIGNES D'INFLUENCE DU COEFFICIENT MU/, "MOMENTS TRANSVERSAUX       LIGNES D'INFLUENCE DU COEFFICIENT MU");
+      e(4, /MOMENTS TRANSVERSAUX \(KN\*M\)/, '                           MOMENTS');
+      L.push('');
+      e(4, /EFFORTS TRANCHANTS EXTREMES DANS LA TRAVERSE INFERIEURE/, 'EFFORTS TRANCHANTS         TRAVERSE INFERIEURE');
+      e(4, /EFFORTS TRANCHANTS EXTREMES DANS LA TRAVERSE SUPERIEURE/, '                           TRAVERSE SUPERIEURE');
+      e(4, /EFFORTS TRANCHANTS EXTREMES DANS LES PIEDROITS/, '                           PIEDROITS');
+      L.push('');
+      e(4, /PRESSION SUR LE SOL/, 'PRESSIONS SOUS LA TRAVERSE INFERIEURE');
+      L.push('', '* CALCUL DES FERRAILLAGES *', '  ***********************');
+      e(5, /FERRAILLAGE DANS LES SECTIONS DETERMINANTES/, 'FERRAILLAGES DANS LES SECTIONS DETERMINANTES');
+      e(5, /EPURE D'ARRET DES BARRES/, 'ARRETS DES BARRES          ACIERS PRINCIPAUX');
+      e(5, /NOMENCLATURE DES BARRES/, '                           ACIERS AUXILIAIRES');
+      e(5, /ETRIERS DE LA TRAVERSE INFERIEURE/, 'ETRIERS                    TRAVERSE INFERIEURE');
+      e(5, /ETRIERS DE LA TRAVERSE SUPERIEURE/, '                           TRAVERSE SUPERIEURE');
+      e(5, /ETRIERS DES PIEDROITS/, '                           PIEDROITS');
+      L.push('', "* ELEMENTS POUR L'AVANT METRE *", '  ***************************');
+      e(5, /AVANT METRE RECAPITULATIF/, 'AVANT METRE');
+      out.splice(somIdx, 1, ...L); }
     return out.join('\n');
   }
   const PICF_NOTE = { renderNote };
