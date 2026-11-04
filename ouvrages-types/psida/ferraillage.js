@@ -150,7 +150,9 @@
     const smax = Math.min(0.40, At * mat.fe[3] / (40 * r.section.Eeq));
     const out = [];
     for (let i = 0; i < n; i++) {
-      const [g, d] = r.effortsTranchants[i], Li = r.L[i];
+      let [g, d] = r.effortsTranchants[i]; const Li = r.L[i], j = n - 1 - i;
+      // ouvrage symétrique : SETRA ne calcule que la première moitié ; travées suivantes = image miroir
+      if (j < i && sym(r.L)) { const [gj, dj] = r.effortsTranchants[j], mir = v => ({ elu: { max: -v.elu.min, min: -v.elu.max } }); g = mir(dj); d = mir(gj); }
       const rows = [];
       for (let k = 0; k <= 20; k++) {
         const a = k / 20;

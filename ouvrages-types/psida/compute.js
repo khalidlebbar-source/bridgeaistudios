@@ -402,7 +402,7 @@
   function vehVal(r, f, axles, fac, x) {
     const Lt = r.LI.xs[r.n]; let v = 0;
     const ab = f.about ? r.about : 0;
-    for (const [d, p] of axles) { const X = x + d; if (X >= -ab - 1e-9 && X <= Lt + ab + 1e-9) v += p * f(X) * fac(spanOf(r, Math.min(Math.max(X, 0), Lt))); }
+    for (const [d, p] of axles) { const X = x + d; if (X >= -ab - 1e-9 && X <= Lt + ab + 1e-9) v += p * f(X) * fac((f.spanAt || (Y => spanOf(r, Y)))(Math.min(Math.max(X, 0), Lt))); }
     return v;
   }
   // balayage discret : un essieu (ou une extrémité) sur un point de grille ; 2 véhicules d'écart >= gap
@@ -504,7 +504,7 @@
   }
 
   const MC1960 = { P: 100, len: 4.5, gap: 0, n: 1 };   // char 1960 : un seul char de 100 t, chenilles de 4,5 m (étalement imprimé)
-  const MC120 = { P: 110, len: 6.1, gap: 36.6 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
+  const MC120 = { P: 110, len: 6.1, gap: 36.2 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
   const CV_OFF = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
   const CVD = { P: 140, len: 11, gap: 18.75 }, CVE = { P: 200, len: 15, gap: 32.75 }; // 2 remorques (F61 II art. 10)
 
@@ -512,11 +512,12 @@
     const n = r.n, L = r.L, xs = r.LI.xs, Lt = xs[n];
     const step = 0.05;
     // aires par travée
-    const ar = L.map((l, s) => posNegAreas(f, xs[s], xs[s + 1]));
+    const fa = f.base || f;
+    const ar = L.map((l, s) => posNegAreas(fa, xs[s], xs[s + 1]));
     const out = {};
     // charge A
     const kA = s => (kOne ? 1 : r.gm[s].coef.A) * r.a2 * r.Lch;
-    out.A = aLoadSegments(r, signSegments(r, f).concat(extraSegs || []), kA);
+    out.A = aLoadSegments(r, signSegments(r, fa).concat(extraSegs || []), kA);
     // trottoirs (toutes travées de même signe)
     const wt = r.pstrot * (A6.ETROTG + A6.ETROTD);
     const kT = s => kOne ? 1 : r.gm[s].coef.trot, ex = extraSegs || [];
@@ -544,7 +545,7 @@
     const ce = [];
     const mcDef = r.ce.mil === 4 ? (r.f61_1960 ? MC1960 : MC120) : r.ce.mil === 3 ? MC80 : null;
     if (mcDef) {
-      const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
+      const N = 400, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
       const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0]);
       ce.push({ nom: r.ce.mil === 4 ? 'MC.120' : 'MC.80', ...mc });
     }
@@ -601,6 +602,9 @@
       const comb = combine(r, G, T, live);
       return { a, x: r.LI.xs[i] + a * l, G, T, live, ...comb };
     }));
+    // ouvrage symétrique : SETRA ne calcule que la première moitié des travées ; les suivantes sont l'image miroir
+    if (L.every((l, i) => Math.abs(l - L[n - 1 - i]) < 1e-9)) for (let i = 0; i < n; i++) { const j = n - 1 - i; if (j >= i) continue;
+      r.moments[i] = r.moments[i].map(sc => { const m = r.moments[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; }); }
     steelSections(r);
     shearsAndReactions(r, A6);
     deformations(r);
@@ -781,9 +785,11 @@
     r.effortsTranchants = r.L.map((l, i) => ['g', 'd'].map(side => {
       const cs = LI.V[i].map((c, s) => (s === i && side === 'd') ? add(c, [0, 0, 0, -1]) : c);
       const f = side === 'g' ? mkCubicLI(r, cs, { s: i, a: 0 }) : mkCubicLI(r, cs, { s: i, a: 1 });
-      const fx = side === 'g' ? (X => f(X)) : f;
-      const I = area(fx);
+      const Xs = LI.xs[i], Xe = LI.xs[i + 1];   // essieu sur l'appui : valeur du côté de la travée (limite)
+      const fx = side === 'g' ? (X => (Math.abs(X - Xs) < 1e-7 ? f(Xs + 1e-9) : f(X))) : (X => (Math.abs(X - Xe) < 1e-7 ? f(Xe - 1e-9) : f(X)));
+      const I = area(f);
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
+      fx.base = f; if (side === 'g') fx.spanAt = X => spanOf(r, Math.abs(X - Xs) < 1e-7 ? Xs + 1e-9 : X);   // charges réparties (aires) : LI d'origine
       const live = liveEffects(r, fx, A6);
       const c = combine(r, G, 0, live);
       return { side, G, live, ...c };
@@ -810,6 +816,8 @@
       const c = combine(r, G, 0, live);
       return { k, G, live, ...c };
     });
+    // ouvrage symétrique : réactions de la seconde moitié = image miroir (calcul SETRA sur la première moitié)
+    if (r.L.every((l, i) => Math.abs(l - r.L[n - 1 - i]) < 1e-9)) for (let k = 0; k <= n; k++) if (n - k < k) r.reactions[k] = { ...r.reactions[n - k], k };
   }
 
   // ============================================================ 7. sections d'acier longitudinales (BAEL 91)
