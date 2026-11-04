@@ -4,7 +4,7 @@
  *  3. Prédimensionnement PSI-DA continu 12-15-12 : h = 0,60 m (L/26).
  *  4. Fondations : contrainte ≤ σ adm, effort par pieu ≤ Q adm.
  */
-const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'), require('../composer/analysis.js'), require('../composer/diag.js'), require('../composer/nlp.js'));
+const C = Object.assign({}, require('../composer/calc.js'), require('../composer/draw.js'), require('../composer/dxf.js'), require('../composer/view3d.js'), require('../composer/analysis.js'), require('../composer/diag.js'), require('../composer/nlp.js'), require('../composer/sheet.js'));
 let fails = 0;
 const ok = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) fails++; };
 const bad = (s) => /NaN|undefined|Infinity/.test(s);
@@ -77,6 +77,27 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   t('VIPP 4 travées, piles de 6, 8 et 6 m', (S) => S.piles.hauteurs.join() === '6,8,6', 'hauteurs énumérées');
   t('travée unique de 18 m', (S) => S.travees.length === 1 && C.typeStatus(S.tablier.type, S.travees, S.usage).k !== 'hors', 'type proposé dans son domaine');
   const r = C.interpret('bonjour', S0); ok(!r.ok.length && r.hint && JSON.stringify(r.S.travees) === JSON.stringify(S0.travees), 'NLP phrase inconnue : rien de modifié, exemples proposés');
+}
+
+// 7. tracé simple, vue en plan et plan d'ensemble
+{
+  // PL : raccordement parabolique, sommet en x = 50, pentes ±2 %, R = 2000 m → T = 40 m, flèche T²/2R = 0,40 m
+  const t = C.normTrace({ z0: 100, p1: 2, pkS: 50, p2: -2, Rv: 2000 });
+  ok(Math.abs(C.lrAt(t, 50) - (101 - 0.4)) < 1e-9 && Math.abs(C.lrAt(t, 0) - 100) < 1e-9 && Math.abs(C.lrAt(t, 100) - 100) < 1e-9, 'PL : raccordement parabolique (flèche T²/2R = 0,40 m au sommet)');
+  const a = C.normTrace({ R: 100, G0: 0 }), q = C.xyAt(a, Math.PI * 50);        // quart de cercle
+  ok(Math.abs(q.X - 100) < 1e-6 && Math.abs(q.Y - 100) < 1e-6 && Math.abs(q.G - 100) < 1e-6, 'TP : arc de cercle R = 100 m, quart de tour');
+  ok(C.normTrace({ tnTxt: '10;5,5 0;4' }).tn.join() === '0,4,10,5.5', 'TN : lecture « PK;Z » (virgule décimale, tri)');
+  const d = C.defaults('route'); d.travees = [16, 20, 16]; d.tablier.type = 'PSIDP';
+  d.trace = { actif: true, pk0: 100, z0: 501.45, p1: -0.5, tnTxt: '90;498 100;497.8 112;494.4 140;494.4 150;497 160;498.4', couv: 1,
+    obstacle: { type: 'oued', zFond: 494.4, phe: 497.5, aff: 2, revanche: 1, gis: 30 }, X0: 595161, Y0: 449607, G0: 100 };
+  const m = C.compute(d), TR = m.trace, s1 = TR.sup[1];
+  ok(Math.abs(s1.H - (s1.zSeat - (494.4 - 2))) < 0.01 && Math.abs(m.supports[1].H - s1.H) < 0.01, 'tracé : hauteur de pile en lit d’oued calée sous la limite des affouillements');
+  ok(m.S.biais === 70 && TR.checks.length === 1 && TR.checks[0].ok, 'tracé : biais déduit du gisement (70 gr), revanche vérifiée');
+  const svgP = C.toSVG(C.planScene(m), { id: 't' }), svgE = C.toSVG(C.elevScene(m), { id: 'u' }), sh = C.sheetSVG(m, {});
+  ok(!bad(svgP) && !bad(svgE) && !bad(sh) && /VUE EN PLAN/.test(svgP) && /Altitudes TN/.test(svgE) && /PLAN D’ENSEMBLE/.test(sh) && /CARACTÉRISTIQUES/.test(sh), 'vue en plan, guitare et feuille A1 sans valeur invalide');
+  ok(!bad(C.buildDXF(m, {})), 'DXF avec vue en plan sans valeur invalide');
+  const m0 = C.compute(C.defaults('rail'));
+  ok(!bad(C.sheetSVG(m0, {})) && !m0.trace, 'feuille A1 sans tracé (pont-rail par défaut)');
 }
 
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');

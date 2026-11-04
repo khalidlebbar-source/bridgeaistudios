@@ -150,7 +150,7 @@
   function defaults(usage) {
     const rail = usage === 'rail';
     return {
-      projet: { nom: rail ? 'Pont-rail sur oued' : 'Pont-route sur oued', ouvrage: 'OA 1', moa: '', lieu: '', ref: '' },
+      projet: { nom: rail ? 'Pont-rail sur oued' : 'Pont-route sur oued', ouvrage: 'OA 1', moa: '', lieu: '', ref: '', phase: 'Avant-projet', indice: '00', date: '', bet: '', dessine: '', verifie: '', valide: '' },
       usage: rail ? 'rail' : 'route',
       reglement: 'EC',
       classe: 1,
@@ -231,7 +231,115 @@
     if (!['BN4', 'GBA', 'GC'].includes(e.retenue)) e.retenue = 'BN4';
     e.revetement = clamp(num(e.revetement, 0.06), 0, 0.2);
     e.corniches = !!e.corniches; e.etancheite = !!e.etancheite; e.gargouilles = !!e.gargouilles;
+    out.trace = normTrace(S.trace);
+    if (S.geo && Array.isArray(S.geo.sondages)) out.geo = S.geo; else delete out.geo;
     return out;
+  }
+
+  /* ───────── Tracé simple : TP (droite ou arc), PL (pente + raccordement parabolique), PT (dévers), TN, obstacle ───────── */
+  const TRACE_DEF = {
+    actif: false, pk0: 0, X0: 0, Y0: 0, G0: 100, R: 0, versG: '', versD: '',
+    z0: 100, p1: 0, pkS: 0, p2: 0, Rv: 0, typeDevers: 'toit', devers: 2.5,
+    tnTxt: '', couv: 1.0,
+    obstacle: { type: 'aucun', nom: '', zFond: 0, phe: 0, aff: 0, revanche: 1.0, pk: 0, zVoie: 0, gabarit: 0, gis: 0 },
+  };
+  /* « PK;Z PK;Z … » (ou une paire « PK Z » par ligne) → [[pk, z], …] triés */
+  function parsePts(txt) {
+    const T = String(txt || ''), out = [];
+    const nb = (v) => +String(v).replace(',', '.');
+    if (/;/.test(T)) { const re = /(-?\d+(?:[.,]\d+)?)\s*;\s*(-?\d+(?:[.,]\d+)?)/g; let m; while ((m = re.exec(T))) out.push([nb(m[1]), nb(m[2])]); }
+    else { const v = (T.match(/-?\d+(?:\.\d+)?/g) || []).map(Number); for (let k = 0; k + 1 < v.length; k += 2) out.push([v[k], v[k + 1]]); }
+    return out.filter((a) => a.every(Number.isFinite)).sort((a, b) => a[0] - b[0]);
+  }
+  function normTrace(t) {
+    t = t || {};
+    const o = Object.assign({}, TRACE_DEF, t);
+    o.obstacle = Object.assign({}, TRACE_DEF.obstacle, t.obstacle || {});
+    o.actif = !!o.actif;
+    ['pk0', 'X0', 'Y0', 'G0', 'R', 'z0', 'p1', 'pkS', 'p2', 'Rv', 'devers', 'couv'].forEach((k) => { o[k] = num(o[k], TRACE_DEF[k]); });
+    o.G0 = ((o.G0 % 400) + 400) % 400; o.Rv = Math.max(0, o.Rv); o.devers = clamp(o.devers, 0, 8); o.couv = clamp(o.couv, 0, 5);
+    if (Math.abs(o.R) > 0 && Math.abs(o.R) < 20) o.R = Math.sign(o.R) * 20;
+    o.typeDevers = o.typeDevers === 'unique' ? 'unique' : 'toit';
+    o.tnTxt = String(o.tnTxt || '').slice(0, 2000);
+    o.tn = parsePts(o.tnTxt);
+    o.versG = String(o.versG || '').slice(0, 40); o.versD = String(o.versD || '').slice(0, 40);
+    const b = o.obstacle;
+    b.type = ['oued', 'voie', 'route'].includes(b.type) ? b.type : 'aucun';
+    b.nom = String(b.nom || '').slice(0, 60);
+    ['zFond', 'phe', 'aff', 'revanche', 'pk', 'zVoie', 'gabarit', 'gis'].forEach((k) => { b[k] = num(b[k], TRACE_DEF.obstacle[k]); });
+    b.aff = clamp(b.aff, 0, 20); b.revanche = clamp(b.revanche, 0, 5); b.gabarit = clamp(b.gabarit, 0, 12);
+    return o;
+  }
+  /* ligne rouge (profil en long projet) au PK pk */
+  function lrAt(t, pk) {
+    const p1 = t.p1 / 100, p2 = t.p2 / 100;
+    if (!(t.Rv > 0) || Math.abs(p2 - p1) < 1e-9) return t.z0 + p1 * (pk - t.pk0);
+    const zS = t.z0 + p1 * (t.pkS - t.pk0), T = t.Rv * Math.abs(p2 - p1) / 2;
+    if (pk <= t.pkS - T) return zS + p1 * (pk - t.pkS);
+    if (pk >= t.pkS + T) return zS + p2 * (pk - t.pkS);
+    const d = pk - (t.pkS - T);
+    return zS + p1 * (pk - t.pkS) + Math.sign(p2 - p1) * d * d / (2 * t.Rv);
+  }
+  const penteAt = (t, pk) => (lrAt(t, pk + 0.5) - lrAt(t, pk - 0.5)) * 100;
+  /* axe en plan : X (est), Y (nord), gisement G (grades) au PK pk */
+  function xyAt(t, pk) {
+    const s = pk - t.pk0, th = t.G0 * Math.PI / 200;
+    if (!t.R) return { X: t.X0 + s * Math.sin(th), Y: t.Y0 + s * Math.cos(th), G: t.G0 };
+    const ph = s / t.R;
+    return { X: t.X0 + t.R * (Math.cos(th) - Math.cos(th + ph)), Y: t.Y0 + t.R * (Math.sin(th + ph) - Math.sin(th)), G: (((th + ph) * 200 / Math.PI) % 400 + 400) % 400 };
+  }
+  function tnAt(t, pk) {
+    const P = t.tn; if (!P.length) return null;
+    if (pk <= P[0][0]) return P[0][1];
+    for (let i = 1; i < P.length; i++) if (pk <= P[i][0]) { const a = P[i - 1], b = P[i]; return a[1] + (b[1] - a[1]) * (pk - a[0]) / Math.max(1e-9, b[0] - a[0]); }
+    return P[P.length - 1][1];
+  }
+  /* hauteurs d'appui, cotes et contrôles issus du tracé (h : hauteur du tablier, W : largeur) */
+  function traceCompute(S, h, xs, W, warn) {
+    const t = S.trace, ob = t.obstacle, n = xs.length - 1, rev = S.equip.revetement;
+    const rail = S.usage === 'rail', ep = rail ? 0.60 + 0.25 : rev;          // pont-rail : ballast + traverse sous le rail (LR = niveau du rail)
+    const drop = t.devers / 100 * W / 2;                                    // abaissement de la rive basse
+    const zTop = (pk) => lrAt(t, pk) - ep;
+    const sup = [];
+    for (let j = 0; j <= n; j++) {
+      const isC = j === 0 || j === n, pk = t.pk0 + xs[j], LR = lrAt(t, pk);
+      const zInt = zTop(pk) - h, zSeat = zInt - 0.30, TN = tnAt(t, pk);
+      let zFondTop = null, H = null, limAff = false;
+      if (TN != null) {
+        zFondTop = TN - t.couv;
+        if (ob.type === 'oued' && ob.aff > 0 && ob.zFond && !isC) { const za = ob.zFond - ob.aff; if (za < zFondTop) { zFondTop = za; limAff = true; } }
+        H = rnd(zSeat - zFondTop, 2);
+      }
+      sup.push(Object.assign({ j, id: isC ? 'C' + j : 'P' + j, kind: isC ? 'culee' : 'pile', pk, LR, zTop: zTop(pk), zInt, zSeat, TN, zFondTop, H, limAff, pente: penteAt(t, pk) }, xyAt(t, pk)));
+    }
+    const checks = [];
+    let biais = null;
+    if (ob.type !== 'aucun' && ob.gis > 0) {
+      const pkO = ob.pk > 0 ? ob.pk : t.pk0 + xs[n] / 2, Ga = xyAt(t, pkO).G;
+      let d = Math.abs(Ga - ob.gis) % 200; if (d > 100) d = 200 - d;
+      biais = rnd(d, 1);
+    }
+    let zIntMin = Infinity, pkMin = t.pk0;
+    for (let k = 0; k <= 200; k++) { const pk = t.pk0 + xs[n] * k / 200, z = zTop(pk) - h - drop; if (z < zIntMin) { zIntMin = z; pkMin = pk; } }
+    if (ob.type === 'oued' && ob.phe) {
+      const r = zIntMin - ob.phe;
+      checks.push({ lab: 'Revanche sous intrados / PHE', val: r, lim: ob.revanche, ok: r >= ob.revanche - 1e-6, txt: 'intrados mini ' + fr(zIntMin, 2) + ' (PK ' + fr(pkMin, 2) + ') − PHE ' + fr(ob.phe, 2) });
+    }
+    if ((ob.type === 'voie' || ob.type === 'route') && ob.zVoie && ob.pk) {
+      const z = zTop(ob.pk) - h - drop, g = z - ob.zVoie;
+      checks.push({ lab: 'Gabarit au droit de ' + (ob.nom || (ob.type === 'voie' ? 'la voie' : 'la route')), val: g, lim: ob.gabarit, ok: !(ob.gabarit > 0) || g >= ob.gabarit - 1e-6, txt: 'intrados ' + fr(z, 2) + ' − ' + (ob.type === 'voie' ? 'rail ' : 'chaussée ') + fr(ob.zVoie, 2) });
+      const inPile = sup.some((s) => s.kind === 'pile' && Math.abs(s.pk - ob.pk) < 2.5);
+      if (inPile) warn.push('Tracé : une pile est implantée à moins de 2,5 m de l’axe de ' + (ob.nom || 'l’obstacle') + ' (PK ' + fr(ob.pk, 2) + ').');
+    }
+    checks.forEach((c) => { if (!c.ok) warn.push('Tracé : ' + c.lab.toLowerCase() + ' = ' + fr(c.val, 2) + ' m < ' + fr(c.lim, 2) + ' m requis.'); });
+    sup.forEach((s) => {
+      if (s.H != null && s.kind === 'pile' && s.H < 1) warn.push('Tracé : ' + s.id + ' — hauteur disponible ' + fr(s.H, 2) + ' m trop faible (intrados trop bas par rapport au TN).');
+      if (s.H != null && s.kind === 'culee' && s.H < 0.5) warn.push('Tracé : ' + s.id + ' — hauteur disponible ' + fr(s.H, 2) + ' m trop faible.');
+    });
+    const prof = [];
+    const a = t.pk0 - 15, b = t.pk0 + xs[n] + 15;
+    for (let k = 0; k <= 120; k++) { const pk = a + (b - a) * k / 120; prof.push({ pk, LR: lrAt(t, pk), TN: tnAt(t, pk) }); }
+    return { actif: true, sup, checks, biais, prof, zIntMin, pkMin, ep, drop, hasTN: t.tn.length > 0, coords: !!(t.X0 || t.Y0) };
   }
 
   /* Statut d'un type de tablier vis-à-vis des portées : ok / limite / hors domaine */
@@ -688,6 +796,19 @@
     const tr = S.travees, n = tr.length, xs = [0];
     tr.forEach((L) => xs.push(rnd(xs[xs.length - 1] + L, 3)));
     const Ltot = xs[n], cont = S.tablier.continu && n > 1;
+    let TR = null;
+    if (S.trace.actif) {
+      TR = traceCompute(S, h, xs, W, warn);
+      TR.sup.forEach((s) => {
+        if (s.H == null) return;
+        if (s.kind === 'culee') S.culees.hauteurs[s.j === 0 ? 0 : 1] = clamp(s.H, 0.5, 15);
+        else S.piles.hauteurs[s.j - 1] = clamp(s.H, 1, 60);
+      });
+      if (TR.biais != null) {
+        if (TR.biais < 40) warn.push('Tracé : biais déduit de ' + fr(TR.biais, 1) + ' gr — franchissement très biais, pris égal à 40 gr pour le prédimensionnement ; vérifier le gisement de l’obstacle.');
+        S.biais = clamp(TR.biais, 40, 100);
+      }
+    }
     const iso = !cont;
     const dab = 0.6, Ldeck = Ltot + 2 * dab;
     const surf = W * Ltot;
@@ -883,13 +1004,13 @@
 
     return {
       S, T, PT, W, h, hAuto, pd, sec, st, xs, Ltot, Ldeck, dab, cont, iso, surf, g, gStruct, gEnt, sup, cb, LPhi,
-      lines, supports, joints, metres: M, lots, sousTotal, total, kpi, warn, notes, Lsup,
+      lines, supports, joints, metres: M, lots, sousTotal, total, kpi, warn, notes, Lsup, trace: TR,
     };
   }
 
   return {
     fr, frn, TYPES, TYPE_KEYS, CLASSES_BETON, hypDefaults, PILES, CULEES, PRIX, HEB, ELASTO,
-    defaults, normalize, compute, typeStatus, predimH, profilEnTravers,
+    defaults, normalize, compute, typeStatus, predimH, profilEnTravers, lrAt, xyAt, tnAt, normTrace,
     _int: { eta, etaInt, axleMax, lm71, sw2, area, coffLen, appareil, kCont },
   };
 });

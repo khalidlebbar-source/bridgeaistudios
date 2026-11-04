@@ -21,6 +21,7 @@
     ['1-COUPE', 7], ['1-PREFA', 30], ['1-CHARPENTE', 5], ['1-VU', 8, 'TIRETS'], ['1-AXES', 1, 'AXES'], ['1-TN', 32],
     ['1-REMBLAI', 42], ['1-PIEUX', 7, 'TIRETS'], ['1-APPUIS', 6], ['1-EQUIPEMENTS', 4], ['1-COTATION', 1],
     ['1-TEXTE', 7], ['1-TITRE', 2], ['1-CARTOUCHE', 7], ['1-CORNICHES', 8], ['1-REVETEMENT', 9], ['1-RETENUE', 200],
+    ['1-HYDRAULIQUE', 5], ['1-GEOTECHNIQUE', 30], ['1-GUITARE', 7],
   ];
   const LAY = {
     beton: '1-COUPE', prefa: '1-PREFA', acier: '1-CHARPENTE', acierL: '1-CHARPENTE', vu: '1-VU', axe: '1-AXES', tn: '1-TN',
@@ -28,6 +29,7 @@
     ballast: '1-EQUIPEMENTS', texte: '1-TEXTE', titre: '1-TITRE', note: '1-TEXTE', lead: '1-TEXTE',
     vuB: '1-VU', vuL: '1-VU', vuT: '1-VU', col: '1-COUPE', pred: '1-PREFA', perre: '1-REMBLAI', prop: '1-COUPE',
     corn: '1-CORNICHES', cornE: '1-CORNICHES', gcF: '1-RETENUE', rev: '1-REVETEMENT', etan: '1-REVETEMENT', four: '1-EQUIPEMENTS', gc: '1-RETENUE', gcR: '1-RETENUE',
+    eau: '1-HYDRAULIQUE', eauF: '1-HYDRAULIQUE', eauP: '1-HYDRAULIQUE', routeP: '1-EQUIPEMENTS', ballastP: '1-EQUIPEMENTS', aff: '1-HYDRAULIQUE', sond: '1-GEOTECHNIQUE', guit: '1-GUITARE', guitF: '1-GUITARE',
   };
 
   function enc(s) {
@@ -125,6 +127,9 @@
     // coupe sous l'élévation, calée à gauche
     const dyS = bE[1] - 16 * kE - bS[3], dxS = bE[0] - bS[0];
     writeScene(W, S, dxS, dyS);
+    // vue en plan sous la coupe transversale
+    const Pl = C.planScene ? C.planScene(M) : null;
+    if (Pl) { const bP = bounds(Pl); writeScene(W, Pl, bE[0] - bP[0], bS[1] + dyS - 20 * kE - bP[3]); }
 
     // cartouche à droite de la coupe (à l'échelle de l'élévation)
     const P = M.S.projet, k = kE;
@@ -133,7 +138,7 @@
       ['BridgeAI Studios — Bridge Composer', 4],
       [(P.nom || 'Ouvrage') + (P.ouvrage ? ' — ' + P.ouvrage : ''), 3.5],
       [(P.moa ? 'Maître d’ouvrage : ' + P.moa + '   ' : '') + (P.lieu ? 'Lieu : ' + P.lieu : ''), 2.5],
-      ['PLAN DE COFFRAGE D’ENSEMBLE — AVANT-PROJET (configurateur)', 3],
+      ['PLAN D’ENSEMBLE — ' + String(P.phase || 'Avant-projet').toUpperCase() + ' — indice ' + (P.indice || '00'), 3],
       [M.T.nom + ' — ' + M.S.travees.map((v) => C.fr(v, 2)).join(' + ') + ' = ' + C.fr(M.Ltot, 2) + ' m — largeur ' + C.fr(M.W, 2) + ' m — h = ' + C.fr(M.h, 2) + ' m', 2.5],
       ['Unité : mètre. Élévation 1/' + E.ech + ', coupe 1/' + S.ech + '. ' + (P.ref ? 'Réf. ' + P.ref + '. ' : '') + 'Date : ' + (meta.date || ''), 2.5],
       ['NOTA : béton tablier ' + M.S.hyp.betonTab + ', appuis ' + M.S.hyp.betonApp + ', fondations ' + M.S.hyp.betonFond + ' — aciers ' + M.S.hyp.acier + ' — arêtes vues chanfreinées 2 × 2 cm.', 2.5],

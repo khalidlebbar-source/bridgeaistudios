@@ -67,6 +67,21 @@ const TOOL = {
               long: num('longueur des pieux, m'), qadm: num('charge admissible par pieu, MN'),
             },
           },
+          trace: {
+            type: 'object', description: 'tracé simple ; actif = true pour caler les hauteurs d’appuis et le biais sur le tracé',
+            properties: {
+              actif: { type: 'boolean' }, pk0: num('PK de la culée C0, m'), R: num('rayon en plan, m (0 = alignement droit, + = virage à droite)'),
+              G0: num('gisement de l’axe, grades'), X0: num('X au PK de C0'), Y0: num('Y au PK de C0'), versG: { type: 'string' }, versD: { type: 'string' },
+              z0: num('ligne rouge (profil en long projet) au PK de C0, m'), p1: num('pente, % (− descendante)'), pkS: num('PK du sommet du raccordement'), p2: num('pente après le sommet, %'), Rv: num('rayon du raccordement parabolique, m (0 = aucun)'),
+              typeDevers: { type: 'string', enum: ['toit', 'unique'] }, devers: num('%'),
+              tnTxt: { type: 'string', description: 'points du terrain naturel « PK;Z PK;Z … »' }, couv: num('couverture de terre au-dessus des fondations, m'),
+              obstacle: { type: 'object', properties: {
+                type: { type: 'string', enum: ['aucun', 'oued', 'voie', 'route'] }, nom: { type: 'string' }, gis: num('gisement de l’obstacle, grades'),
+                zFond: num('cote du fond du lit'), phe: num('cote des plus hautes eaux'), aff: num('profondeur d’affouillement, m'), revanche: num('revanche minimale sous intrados, m'),
+                pk: num('PK de l’axe de la voie ou route franchie'), zVoie: num('cote du rail ou de la chaussée franchie'), gabarit: num('gabarit vertical à respecter, m'),
+              } },
+            },
+          },
           equip: { type: 'object', properties: { retenue: { type: 'string', enum: ['BN4', 'GBA', 'GC'] }, corniches: { type: 'boolean' }, etancheite: { type: 'boolean' }, gargouilles: { type: 'boolean' }, revetement: num('épaisseur de revêtement, m') } },
           hyp: {
             type: 'object', properties: {
@@ -97,6 +112,7 @@ Règles :
 - « dalle » sans précision : PSIDA jusqu’à 18 m de portée, PSIDP au-delà. « poutres » : PRAD sous 30 m, VIPP au-delà. Pont-rail à une travée courte : PRP courant.
 - Pour une longueur totale sans portées, propose une répartition équilibrée (rives ≈ 0,8 × centrale en continu) et dis-le.
 - Unités : m, MPa (1 bar = 0,1 MPa), MN par pieu, grades pour le biais.
+- Tracé : si l’ingénieur donne un PK, une pente, une ligne rouge, des cotes de TN, une PHE, un gabarit ou l’obstacle franchi, renseigne "trace" avec actif = true ; les hauteurs d’appuis sont alors déduites du tracé (inutile de les fournir).
 - Pour une question (« pourquoi… ? », « combien… ? »), réponds dans "message" à partir des résultats fournis, avec "changes" vide, sauf si elle demande explicitement un changement.
 - Pour une demande d’optimisation (« réduis le coût »), propose une modification réaliste et explique le gain attendu sans inventer de chiffres absents des résultats.
 - Message en français, précis, sans formule de politesse, 1 à 4 phrases. N’invente jamais de valeur de calcul.
@@ -113,6 +129,7 @@ function brief(S, ctx) {
   const st = {
     projet: pick(S.projet, ['nom', 'ouvrage', 'lieu']), usage: S.usage, reglement: S.reglement, classe: S.classe,
     profil: S.profil, tablier: S.tablier, travees: S.travees, biais: S.biais, piles: S.piles, culees: S.culees, fond: S.fond, equip: S.equip,
+    trace: S.trace && S.trace.actif ? Object.fromEntries(Object.entries(S.trace).filter(([k]) => k !== 'tn')) : { actif: false },
     hyp: pick(S.hyp, ['betonTab', 'betonApp', 'betonFond', 'betonPieux', 'charpente', 'gammaB', 'dT', 'seismeA', 'seismeClasse']),
   };
   return 'Composition actuelle (JSON) :\n' + JSON.stringify(st) + (ctx ? '\n\nRésultats actuels :\n' + JSON.stringify(ctx).slice(0, 6000) : '');
