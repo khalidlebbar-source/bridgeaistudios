@@ -337,7 +337,9 @@
       // les empreintes diffusées des roues d'un même véhicule se fondent en une bande unique quand elles se recouvrent
       // (charge du véhicule uniformément répartie), la partie hors de la dalle est perdue ; véhicules distincts sommés.
       // Retrouvé sur 2498 (H.SUP 15.70 m : Bc 0.038/0.075/0.113, Mc 0.035) et améliore Mc/Me de 2550/2551.
-      const sD = 2 * d.hchau + 1.5 * d.hsrem + d.e3;
+      // marge de 0.50 m au bord de la largeur chargeable, sauf si le bordereau donne déjà les bandes EGAU/EDROI (2550/2551)
+      const MG = root.PICF_MG ? root.PICF_MG(d) : (d.egau > 0 && d.edroi > 0 ? 0 : 0.5);
+      const sD = root.PICF_SD ? root.PICF_SD(d) : 2 * d.hchau + 1.5 * d.hsrem + d.e3;
       const uni = (cs, a) => { const w = a + sD; if (w < 1e-9) return cs.reduce((q, c) => q + Ki(c), 0) / cs.length;
         const iv = cs.map(c => [c - w / 2, c + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
         for (const v of iv) { const L = cl[cl.length - 1]; if (L && v[0] <= L[1] + 1e-9) { L[1] = Math.max(L[1], v[1]); L[2]++; } else cl.push([v[0], v[1], 1]); }
@@ -346,8 +348,8 @@
         return tot / cs.length; };
       const veh = (k, sp, gap, a, mg) => { let bb = 0; for (let st = c0 + mg; st + (k - 1) * sp + gap <= c1 - mg + 1e-9; st += 0.05) {
           let v = 0; for (let u = 0; u < k; u++) v += uni([st + u * sp, st + u * sp + gap], a); if (v > bb) bb = v; } return bb / (2 * b); };
-      for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, 0.75));
-      for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, 1.0));
+      for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, MG + 0.25));
+      for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, MG + 0.5));
       for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
       for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
       for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, uni([c - 0.825, c + 0.825], 0) / (2 * b));
@@ -368,12 +370,16 @@
     const Ld = d.ldalt / s;
     function ilVal(getter, x, noDalle) {
       if (noDalle && (x < 0 || x > L)) return 0;
-      if (x < 0) { if (x < -Ld) return 0; return getter(0) * (1 + x / Ld); }
-      if (x > L) { if (x > L + Ld) return 0; return getter(xsTop.length - 1) * (1 - (x - L) / Ld); }
+      if (x < 0) { if (x < -Ld) return 0; return (getter.ends ? getter.ends[0] : getter(0)) * (1 + x / Ld); }
+      if (x > L) { if (x > L + Ld) return 0; return (getter.ends ? getter.ends[1] : getter(xsTop.length - 1)) * (1 - (x - L) / Ld); }
       let i = 0, hi = xsTop.length - 1; while (hi - i > 1) { const mid = (i + hi) >> 1; if (xsTop[mid] <= x) i = mid; else hi = mid; }
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
     function ilAvg(getter, x, a, nd) { if (!a) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / 0.1)); let sm = 0; for (let k = 0; k < n; k++) sm += ilVal(getter, x - a / 2 + (k + 0.5) * a / n, nd); return sm / n; }
+    // chenilles Mc / convoi E (hook d'essai PICF_MCL) : densité P/λ, aire sur floor(λ/pas)·pas
+    const MCL = root.PICF_MCL;
+    const mcl = MCL ? (getter, x, ax, nd) => { const lam = MCL.lam(d, ax), li = MCL.floor ? Math.floor(lam / STP + 1e-9) * STP : lam;
+      const xc = MCL.align === 'start' ? x - lam / 2 + li / 2 : x; return ax.P / lam * li * ilAvg(getter, xc, li, nd); } : null;
     function envelope(getter, nd, nodyn) {
       const res = {};
       // AL : zones de même signe ; longueur chargée = somme des zones
@@ -409,7 +415,7 @@
           const sp = cv.axles[cv.axles.length - 1].x + (nt - 1) * (cv.gapTruck || 0);
           for (let kx = Math.floor(-Ld / STEP) - 1; kx * STEP <= L + Ld + sp + 1e-9; kx++) { const x0 = dir > 0 ? kx * STEP - sp : kx * STEP;
           let sm = 0;
-          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); sm += ax.P * ilAvg(getter, x, ax.a || 0, nd); }
+          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0, nd); }
           if (sm > mx) { mx = sm; pmx = { dir, x0, nt }; } if (sm < mn) { mn = sm; pmn = { dir, x0, nt }; }
         } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
@@ -424,10 +430,26 @@
       p: [0, 1, 2].map(k => i => ilTop[i].p[k] * 1000),
       det: [0, 1, 2, 3, 4, 5].map(k => i => ilTop[i].det[k]),
     };
+    // LI connues aux seuls points de la grille des tableaux (pas STP), interpolation linéaire entre eux ; effort tranchant des
+    // traverses : pas de point dédoublé, ordonnée du côté gauche au droit de la section (règle PIPO tour 7, hook PICF_JV).
+    const JV = root.PICF_JV != null ? root.PICF_JV : 1, JVS = root.PICF_JVS || 0;
+    const coarse = (raw, xk) => { const gv = ilAbs.map(g => { const i = idx(xsTop, g);
+        if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
+      const memo = xsTop.map(x => { let k = 0; while (k < ilAbs.length - 2 && ilAbs[k + 1] < x - 1e-9) k++; const t = (x - ilAbs[k]) / (ilAbs[k + 1] - ilAbs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
+      const fn = i => memo[i]; fn.ends = raw.ends; return fn; };
+    // V du radier sous les charges de la dalle de transition : effet des seuls moments d'encastrement (règle des permanentes) —
+    // on retranche la réponse à la force verticale transmise directement au pied du piédroit (hook PICF_VBD).
+    if (root.PICF_VBD && Ld > 0) { const ex = nd => { const F = new Float64Array(m.n); F[nd * 3 + 1] = -1; return extract(solve(F)); };
+      const bl = ex(m.bot[0]), br = ex(m.bot[m.bot.length - 1]), nT = xsTop.length - 1;
+      getters.Vb = getters.Vb.map((g, k) => { const v0 = g(0) - bl.b[k].V, v1 = g(nT) - br.b[k].V; const f = i => g(i); f.ends = [v0, v1]; return f; }); }
+    if (JV) { for (const [key, sec] of [['Vt', secB], ['Vb', secB]]) getters[key] = getters[key].map((g, k) => coarse(g, sec[k]));
+      if (JV === 2) for (const key of ['t', 'b', 'w', 'Vw', 'p', 'det']) getters[key] = getters[key].map(g => coarse(g, null)); }
     R.env = {};
-    for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => envelope(gt, key === 'p' && !!root.PICF_PND, key === 'p'));
+    // effort tranchant : diffusion longitudinale des roues (Bc, Bt, Me) à 45° dans la chaussée mais pente 1/2 dans le remblai
+    const vWheel = (a, dd) => a.a - dd.hsrem;
+    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : null, envelope(gt, key === 'p' && !!root.PICF_PND, key === 'p')));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
-    for (const key of ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    for (const key of root.PICF_VBNC ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
     R.sections = { t: secB, b: secB, w: secWfull, det: [0, 1, 2, 3, 4, 5] };
     R.cmp = combine(R, d, hasEC);
     R.tr = transversal(R, d, { conv, dyn, coefs, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup });
