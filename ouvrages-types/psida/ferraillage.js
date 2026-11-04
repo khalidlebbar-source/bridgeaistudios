@@ -81,6 +81,7 @@
     r.fer.etriers = etriers(r, r.fer.long);
     r.fer.appareils = appareils(m, r);
     r.fer.transv = transversal(r);
+    r.fer.propose = propose(r);
     r.fer.metre = metre(r);
   }
 
@@ -103,6 +104,7 @@
     let etr = 0;
     if (r.fer.etriers) for (const t of r.fer.etriers) etr += t.nc * r.fer.long.inf.n * (2 * (H - A11.ENROBS - A11.ENROBI) + 15 * ph[3]) * aire(ph[3]) * 7.85;
     const tra = [0, 0, 0, 0];
+    if (r.fer.propose) r.fer.propose.total.forEach((v, i) => { tra[i] = v; });
     const tot = lon.map((v, i) => v + tra[i] + (i === 3 ? etr : 0));
     const ptot = tot.reduce((a, b) => a + b, 0);
     return { lon, tra, etr, tot, ptot, beton, sousDalle, autres, ratio: ptot / beton };
@@ -350,6 +352,7 @@
       first = false;
     }
     renderTransv(m, r, T);
+    renderPropose(m, r, T);
     renderEtriers(m, r, T);
   }
   function renderAppareils(m, r, T) {
@@ -440,6 +443,76 @@
       ' < A=SUP(INF(SUP(A1,A2),ANF),AS,AU,AP) >', '   ***********************************', ' SECTION MINIMALE DU FERRAILLAGE', ' TRANSVERSAL (M2/ML)',
       row(' (COUTURE DES SCELLEMENTS DROITS) :       ', x => x.couture, 14, 6), row(' SECTION MINIMALE A METTRE EN PLACE (M2/ML)', x => x.Amin, 14, 6), ' *******************************************');
     page('', P);
+  }
+
+  // ------------------------------------------------------------------ FERRAILLAGE TRANSVERSAL PROPOSE (cf. NOTES.md v4/v5)
+  // Zones par appui : 1G/1D = demi-chevêtre (culée : côté about = ABOUT, côté travée = e − ABOUT), section = section de
+  // calcul du chevêtre ; 2G/2D = zone contiguë de longueur e, section / 3 (piles ; culées aussi en fissuration peu
+  // préjudiciable) ; travée = reste de la portée, section minimale à mettre en place, n = ⌈plage/s⌉, s = plage/n.
+  // Espacement des zones d'appui = aire (moyenne si alternés) / A tronqué au pas de 0,005. Diamètre : premier de la
+  // suite PHI3, PHI2/PHI3 ALT, PHI2, PHI1/PHI2 ALT, PHI1 donnant s ≥ 0,10 (en fissuration peu préjudiciable on part
+  // de PHI2 ; face sup. en travée = PHI3). Fissuration préjudiciable : s ≤ 0,325 (3488). Longueurs = (W − 0,06)/sin ψ et
+  // (E1 − 0,06)/sin ψ ; poids = Σ n × L × masse linéique (barres alternées : n/2 par diamètre).
+  const OPTS = [[2], [1, 2], [1], [0, 1], [0]];
+  const LAB = o => o ? (o.length === 2 ? 'PHI' + (o[0] + 1) + ' PHI' + (o[1] + 1) + '  ALT' : 'PHI' + (o[0] + 1)) : '';
+  function propose(r) {
+    const AP = r.fer.appareils, X = r.fer.transv;
+    if (!AP || !X || !r._A7) return null;
+    const ph = r.mat.phi, n = r.n, famA = !(r.mat.fiss >= 2), cap = famA ? Infinity : 0.325, about = r.about || 0;
+    const sn = Math.sin((r.biais || 100) * PI / 200);
+    const Ls = (r.largeurTotale - 0.06) / sn, Li = (r._A7.EDALLE1 - 0.06) / sn;
+    const ar = o => o.reduce((a, k) => a + aire(ph[k]), 0) / o.length;
+    const choose = (A, k0) => { for (let k = k0; k < OPTS.length; k++) if (ar(OPTS[k]) / A >= 0.1 - 1e-9) return OPTS[k]; return OPTS[OPTS.length - 1]; };
+    const tr5 = v => Math.floor(v / 0.005 + 1e-6) * 0.005;
+    const total = [0, 0, 0];
+    const poids = (z, w) => { for (const [o, L] of [[z.sup, Ls], [z.inf, Li]]) if (o && z.nb) for (const k of o) { const v = z.nb / o.length * L * aire(ph[k]) * 7.85; w[k] += v; total[k] += v; } };
+    const zone = (no, o, sup, s, len, plage) => { const nb = s > 0 ? Math.ceil(len / s - 1e-6) : 0; return { no, sup: sup || o, inf: o, s, nb, plage: plage != null ? plage : nb * s }; };
+    const vide = no => ({ no, sup: null, inf: null, s: 0, nb: 0, plage: 0 });
+    const appuis = AP.map((a, k) => {
+      const end = k === 0 || k === n, e = a.ech, A1 = a.ach;
+      const o1 = choose(A1, famA ? 2 : 0), s1 = tr5(Math.min(cap, ar(o1) / A1));
+      // zone 2 : section = max(section du chevêtre / 3, section minimale de la travée contiguë) ; longueur e (culée en
+      // fissuration peu préjudiciable : 2·esp/3, face sup. PHI2/PHI3 ALT) — 3605, 3606, 3609, 3610 exacts avec les A imprimés
+      const z2 = (no) => {
+        const sp = no === '2G' ? k - 1 : k; if ((end && !famA) || !X[sp]) return vide(no);
+        const A2 = Math.max(A1 / 3, X[sp].Amin), o2 = choose(A2, famA ? 2 : 0), s2 = tr5(Math.min(cap, ar(o2) / A2));
+        return zone(no, o2, end ? [1, 2] : null, s2, end ? 2 * a.esp / 3 : e);
+      };
+      let Z;
+      if (k === 0) Z = [zone('1G', o1, null, s1, about, about), zone('1D', o1, null, s1, e - about), z2('2D')];
+      else if (k === n) Z = [z2('2G'), zone('1G', o1, null, s1, e - about), zone('1D', o1, null, s1, about, about)];
+      else Z = [z2('2G'), zone('1G', o1, null, s1, e / 2), zone('1D', o1, null, s1, e / 2), z2('2D')];
+      const w = [0, 0, 0]; for (const z of Z) poids(z, w);
+      return { zones: Z, w };
+    });
+    const travees = r.L.map((L, i) => {
+      const g = appuis[i].zones.filter(z => /D/.test(z.no)), d = appuis[i + 1].zones.filter(z => /G/.test(z.no));
+      const sum = a => a.reduce((p, z) => p + (z === appuis[i].zones[0] || (i + 1 === n && z === appuis[n].zones[2]) ? 0 : z.plage), 0);
+      const plage = L - sum(g) - sum(d), A = X[i].Amin, o = choose(A, famA ? 2 : 0);
+      const nb = Math.max(1, Math.ceil(plage / Math.min(cap, ar(o) / A) - 1e-6));
+      const z = { no: 'T' + (i + 1), sup: [2], inf: o, s: plage / nb, nb, plage }, w = [0, 0, 0]; poids(z, w);
+      return { zone: z, w };
+    });
+    return { appuis, travees, total, Ls, Li };
+  }
+  function renderPropose(m, r, T) {
+    const { page, f, pad } = T, Q = r.fer && r.fer.propose;
+    if (!Q) return;
+    const zl = (lead, z) => lead.padEnd(11) + z.no + '      ' + LAB(z.sup).padEnd(14) + f(z.sup ? Q.Ls : 0, 9, 2) + '         ' + LAB(z.inf).padEnd(14) +
+      f(z.inf ? Q.Li : 0, 9, 2) + f(z.s, 14, 3) + pad(z.nb, 9) + f(z.plage, 10, 3);
+    const wl = w => f(w[0], 10, 3) + f(w[1], 7, 3) + f(w[2], 7, 3);
+    const pl = ['', '                         FACE SUPERIEURE                 FACE INFERIEURE                 DISPOSITIONS                POIDS ', '',
+      '           NO        DIAMETRE       LONGUEUR         DIAMETRE       LONGUEUR     ESPACEMENT  NOMBRE   PLAGE    PHI1   PHI2   PHI3 ', ''];
+    Q.appuis.forEach((a, k) => {
+      const Z = a.zones, i1 = Z.findIndex(z => z.no === '1G');
+      Z.forEach((z, j) => { pl.push(zl('', z) + ' '); if (j === i1) pl.push(('APPUI  ' + (k + 1)).padEnd(107) + wl(a.w) + ' '); });
+      pl.push(' ', ' ');
+      if (k < Q.travees.length) { const t = Q.travees[k]; pl.push(zl('TRAVEE ' + (k + 1), t.zone) + wl(t.w), ' ', ' '); }
+    });
+    pl.push(' '.repeat(97) + 'TOTAL' + f(Q.total[0], 14, 3) + f(Q.total[1], 7, 3) + f(Q.total[2], 7, 3) + ' ', ' ', ' ',
+      '    NOTA -  ALT SIGNIFIE QUE LES ACIERS DE DIAMETRE DIFFERENT SONT ALTERNES ', '            TB  SIGNIFIE QUE LES ACIERS SONT DISPOSES TETE BECHE ', ' ',
+      "            L'ESPACEMENT DES ACIERS ET LES PLAGES CORRESPONDANTES SONT MESURES SUIVANT L'AXE LONGITUDINAL DE L'OUVRAGE ");
+    page("FERRAILLAGE TRANSVERSAL PROPOSE PARALLELE AUX LIGNES D'APPUIS", pl, { sub: '                      *   * ', sub2: '                        * ' });
   }
   function renderEtriers(m, r, T) {
     const { page, f, fx, pad } = T, E = r.fer && r.fer.etriers;
