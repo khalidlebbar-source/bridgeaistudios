@@ -610,9 +610,10 @@
     var col = function (key, def) { var o = []; for (var k = 1; k <= n + 1; k++) o.push(v[key + k] !== undefined ? v[key + k] : def); return o; };
     vrow("  * TYPE DE L'APPAREIL D'APPUI          (TYPAP)", col('TYPAP', 1).map(String), 0, 59, 11);
     vrow("    NOMBRE D'APPAREILS D'APPUI          ( NAP )", col('NAP', 2).map(String), 0, 59, 11);
-    vrow('    ESPACEMENT D\'AXE EN AXE             (ESPAP)', z, 3, 63, 11);
-    vrow('    DIMENSIONS EN PLAN  LARGEUR         ( DAP )', z, 3, 63, 11);
-    vrow('                        LONGUEUR        ( LAP )', z, 3, 63, 11);
+    var AP = R.appareils || null, apv = function (f) { return AP ? AP.map(f) : z; };
+    vrow('    ESPACEMENT D\'AXE EN AXE             (ESPAP)', apv(function (a) { return a.esp; }), 3, 63, 11);
+    vrow('    DIMENSIONS EN PLAN  LARGEUR         ( DAP )', apv(function (a) { return a.larg; }), 3, 63, 11);
+    vrow('                        LONGUEUR        ( LAP )', apv(function (a) { return a.long; }), 3, 63, 11);
     D.push('              *  0  SYMBOLISE UNE ARTICULATION PAR SECTION REDUITE DE BETON (ARTICULATION FREYSSINET)');
     D.push("                 1  SYMBOLISE UNE PLAQUE D'APPUI SEMI-MOBILE A BASE D'ELASTOMERES (APPUI NEOPRENE)");
     D.push("                 2  SYMBOLISE TOUT AUTRE TYPE D'APPUI QUE L'UTILISATEUR DEVRA DIMENSIONNER");
@@ -621,7 +622,8 @@
     D.push('              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4 )');
     var eps = R.L.map(function (_, t) { return Pp && Pp.defl && Pp.defl.eps ? Pp.defl.eps[t][1] : 0; });
     vrow('    SOUS CHARGE PERMANENTE              (EPSCP)', eps, 2, 62, 11);
-    vrow('    K C P                               ( KCP )', R.L.map(function () { return 0.2; }), 2, 62, 11);
+    // KCP : varie de 0.17 à 0.22 selon le passage (ni F, ni constante) — règle NON RETROUVÉE, imprimé 0.00 (non calculé).
+    vrow('    K C P                               ( KCP )', R.L.map(function () { return 0; }), 2, 62, 11);
     // rotations maximales (provisoire) : somme des rotations de même signe sous A travée par travée
     var rot = [], Qd = R.deformQ || [];
     for (i = 0; i <= n; i++) { var sp = 0, sn = 0; Qd.forEach(function (q) { var x = i < n ? q.A[i].rg : q.A[n - 1].rd; if (x > 0) sp += x; else sn += x; }); rot.push(Math.max(sp, -sn)); }
@@ -629,9 +631,10 @@
     D.push('                               RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP(SUITE ET FIN)');
     vrow('        ROTATIONS  (ROT)', rot, 2, 31, 13);
     var card = function (k) {
-      var l = L('   ' + (k + 1)); l.at(10, String(col('TYPAP', 1)[k])); l.at(15, String(col('NAP', 2)[k])); l.at(22, '0.000'); l.at(28, '0.000'); l.at(34, '0.00'); l.at(40, '*');
-      l.at(49, fx(1, 3)); l.at(56, fx(Q.QCP1[k], 2)); l.at(63, fx(Q.QCP2[k], 2)); l.at(69, fx(1, 3)); l.at(76, fx(Q.PAMAX[k], 2)); l.at(83, fx(Q.PAMIN[k], 2));
-      l.at(89, fx(1, 3)); l.at(96, fx(Q.PBCMAX[k], 2)); l.at(103, fx(Q.PBCMIN[k], 2)); l.at(109, fx(1, 3)); l.at(116, fx(Q.PCMMAX[k], 2)); l.at(123, fx(Q.PCMMIN[k], 2));
+      var l = L('   ' + (k + 1)); l.at(10, String(col('TYPAP', 1)[k])); l.at(15, String(col('NAP', 2)[k])); var ap = AP ? AP[k] : null, kk = function (c) { return ap && ap.K[c] !== undefined ? ap.K[c] : 1; };
+      l.at(22, fx(ap ? ap.larg : 0, 3)); l.at(28, fx(ap ? ap.long : 0, 3)); l.at(34, fx(ap ? ap.esp : 0, 2)); l.at(40, '*');
+      l.at(49, fx(kk('CP'), 3)); l.at(56, fx(Q.QCP1[k], 2)); l.at(63, fx(Q.QCP2[k], 2)); l.at(69, fx(kk('A'), 3)); l.at(76, fx(Q.PAMAX[k], 2)); l.at(83, fx(Q.PAMIN[k], 2));
+      l.at(89, fx(kk('BC'), 3)); l.at(96, fx(Q.PBCMAX[k], 2)); l.at(103, fx(Q.PBCMIN[k], 2)); l.at(109, fx(kk('MC.120'), 3)); l.at(116, fx(Q.PCMMAX[k], 2)); l.at(123, fx(Q.PCMMIN[k], 2));
       return l.s;
     };
     D.push('                                                              CARTE  6'); D.push(card(0) + '*.**  *.**'); D.push('   *.**   *.**');
@@ -1122,6 +1125,87 @@
     var h4 = L(); for (t = 0; t <= n; t++) h4.at(40 + 11 * t, 'APPUI ' + (t + 1)); D.push(h4.s + ' '); D.push('  ');
     ph.forEach(function (q) { var v = V(q[1]), l = L('      EN PHASE ' + q[0]); for (var i = 0; i <= n; i++) l.at(38 + 11 * i, fx((i < n ? v[i] : 0) - (i > 0 ? v[i - 1] : 0), 1)); D.push(l.s + ' '); D.push('  '); });
   }
+  // Section 34 : DIMENSIONNEMENT DES APPAREILS D'APPUI (gabarit 2549). Coefficients d'inégalité provisoires (NOTES.md).
+  function secAppareils(D, m, R) {
+    var AP = R.appareils; if (!AP) return;
+    var v = m.values, row = function (lab, f, end, sp) { var l = L(lab); AP.forEach(function (a, i) { l.at(end + 11 * i, f(a)); }); D.push(l.s + (sp === false ? '' : ' ')); };
+    D.newPage(); D.push('  ');
+    D.push(pad(48, "DIMENSIONNEMENT DES APPAREILS D'APPUI "));
+    D.push('  '); D.push("GEOMETRIE DES APPAREILS D'APPUI ");
+    var h = L(); AP.forEach(function (a, i) { h.at(52 + 11 * i, 'APPUI ' + (i + 1)); }); D.push(h.s + ' '); D.push('  ');
+    row("           * TYPE DE L'APPAREIL D'APPUI", function (a) { return a.typ; }, 50); D.push('  ');
+    row("             NOMBRE D'APPAREILS D'APPUI", function (a) { return a.na; }, 50); D.push('  ');
+    row("             ESPACEMENT D'AXE EN AXE", function (a) { return fx(a.esp, 3); }, 52); D.push('  ');
+    row("             DIMENSIONS EN PLAN  LARGEUR", function (a) { return fx(a.larg, 3); }, 52, false); D.push('  ');
+    row("                                 LONGUEUR", function (a) { return fx(a.long, 3); }, 52, false); D.push('  ');
+    D.push("                       * 0  SYMBOLISE UNE ARTICULATION DE FREYSSINET ");
+    D.push("                         1  SYMBOLISE UN APPAREIL D'APPUI EN ELASTOMERE FRETTE ");
+    D.push("                         2  SYMBOLISE TOUT AUTRE TYPE D'APPAREIL D'APPUI A DIMENSIONNER PAR L'UTILISATEUR ");
+    D.push('  '); D.push(' ');
+    D.push("COEFFICIENTS D'INEGALITE DEREPARTITION DE LA REACTION D'APPUI ENTRE APPAREILS D'APPUI D'UNE MEME LIGNE D'APPUI ");
+    D.push('  ');
+    var noms = [['CP', 'CHARGE PERMANENTE']], vu = {};
+    AP[0].cas.forEach(function (c) { if (vu[c]) return; vu[c] = 1; noms.push([c, c === 'A' ? 'CHARGE A' : c === 'BC' ? 'CHARGE BC' : c === 'BT' ? 'CHARGE BT' : c]); });
+    noms.forEach(function (q) { row('             ' + q[1], function (a) { return fx(a.K[q[0]] === undefined ? 1 : a.K[q[0]], 3); }, 52); D.push('  '); });
+    D.push(' ');
+    D.push("REACTION D'APPUI EXTREME  POUR UN APPAREIL D'APPUI ");
+    D.push('  ');
+    [['A VIDE (MAX.)', 'vMax'], ['A VIDE (MIN.)', 'vMin'], ['EN CHARGE (MAX.)', 'cMax'], ['EN CHARGE (MIN.)', 'cMin']].forEach(function (q) {
+      row('             ' + q[0], function (a) { return fx(a[q[1]], 2); }, 52); D.push('  '); });
+    D.push(' ');
+    D.push("COMPRESSIONS MOYENNES DES APPAREILS D'APPUI (ADMISSIBLES ET ATTEINTES) ");
+    D.push('  ');
+    D.push('                           1       0                     ATTEINTES ');
+    [['MINIMALES', v.CNV, v.CBV, 'sMin'], ['MAXIMALES', v.CNS, v.CBS, 'sMax']].forEach(function (q) {
+      var l = L('             ' + q[0]); l.at(31, fx(q[1], 2)); l.at(40, fx(q[2], 2)); AP.forEach(function (a, i) { l.at(54 + 11 * i, fx(a[q[3]], 2)); }); D.push(l.s); D.push('  '); });
+    D.push(' ');
+    D.push("FERRAILLAGE DE CALCUL DES CHEVETRES (PARALLELEMENT A LA DIRECTION DES LIGNES D'APPUI)");
+    row('             LARGEUR DU CHEVETRE', function (a) { return fx(a.ech, 2); }, 52); D.push('  ');
+    row('             MOMENT APRES PONDERATION', function (a) { return fx(a.mch, 2); }, 52);
+    D.push('                         (EN TM/M ) ');
+    row('             SECTION DE CALCUL DES FERS', function (a) { return fx(a.ach, 6); }, 54);
+    D.push('             (EN M**2 PAR ML LONGITUDINAL) ');
+  }
+  // Section 35 : répartition du ferraillage transversal + ferraillage longitudinal (minimum seulement).
+  function secFerPassif(D, m, R) {
+    var FP = R.ferPassif; if (!FP) return;
+    var n = R.n, sy = true, i; for (i = 0; i < n; i++) if (Math.abs(R.L[i] - R.L[n - 1 - i]) > 1e-9) sy = false;
+    var nt = sy ? Math.ceil(n / 2) : n;
+    D.newPage(); D.push('  ');
+    D.push(pad(47, 'REPARTITION DU FERRAILLAGE TRANSVERSAL '));
+    D.push('  ');
+    D.push(pad(31, 'ESPACEMENTS MAXIMAUX DES ARMATURES DU FERRAILLAGE TRANSVERSAL MESURES '));
+    D.push(pad(30, "SUIVANT L'AXE LONGITUDINAL DE L'OUVRAGE EN FONCTION DU DIAMETRE UTILISE "));
+    D.push('  ');
+    D.push(pad(26, 'LA DIRECTION DU FERRAILLAGE TRANSVERSAL RETENU EST ' + (FP.par ? "PARALLELE AUX LIGNES D'APPUIS " : 'PERPENDICULAIRE AUX BORDS LIBRES ')));
+    D.push('  ');
+    D.push('                           *                  FACE SUPERIEURE                 *                 FACE INFERIEURE ');
+    D.push('                           *                                                  * ');
+    D.push('    ZONE         LONGUEUR  *  SECTION  PHI 10  PHI 12  PHI 14  PHI 16  PHI 20 *  SECTION  PHI 10  PHI 12  PHI 14  PHI 16  PHI 20 ');
+    D.push('                DE LA ZONE * MINIMALE                                         * MINIMALE ');
+    D.push('                           *                                                  * ');
+    var zl = function (z) {
+      var l = L('    ' + z.nom); l.at(24, fx(z.lg, 2));
+      [['sup', 37, 45], ['inf', 88, 96]].forEach(function (q) { var f = z[q[0]]; l.at(q[1], fx(f.sec, 6)); f.s.forEach(function (s, k) { if (s === null) l.at(q[2] + 8 * k - 2, '*'); else l.at(q[2] + 8 * k, fx(s, 3)); }); });
+      D.push(l.s);
+    };
+    for (var t = 0; t < nt; t++) {
+      var z = FP.travees[t];
+      if (t === 0) { zl(z[0]); z = z.slice(1); }
+      D.push('TRAVEE ' + (t + 1) + ' ');
+      z.forEach(zl);
+    }
+    D.newPage(); D.push('  ');
+    D.push(pad(56, 'FERRAILLAGE LONGITUDINAL '));
+    D.push(pad(45, 'A PREVOIR POUR TOUTE LA LARGEUR DE LA DALLE '));
+    D.push('  '); D.push(' ');
+    var h = L('           SECTION'); for (t = 0; t < nt; t++) h.at(51 + 15 * t, 'TRAVEE ' + (t + 1)); D.push(h.s + ' ');
+    D.push('  ');
+    for (i = 0; i <= 10; i++) {
+      var a = L(pad(13, fx(i / 10, 2) + 'L')), b = L(); for (t = 0; t < nt; t++) { a.at(51 + 15 * t, fx(FP.longi.sup, 6)); b.at(51 + 15 * t, fx(FP.longi.inf, 6)); }
+      D.push(a.s + ' '); D.push(b.s + ' ');
+    }
+  }
   function secFerTransv(D, m, R) {
     var FT = R.flexT; if (!FT || !FT[0].fer) return;
     var vals = function (lab, f, d) { var l = L(lab); FT.forEach(function (F, t) { if (F.fer) l.at(50 + 16 * t, fx(f(F.fer), d)); }); D.push(l.s + ' '); };
@@ -1224,6 +1308,8 @@
     secReductionFT(D, model, R);
     secFerTransv(D, model, R);
     secEffTrHyp(D, model, R);
+    try { secAppareils(D, model, R); } catch (e) { }
+    try { secFerPassif(D, model, R); } catch (e) { }
     if (R.deform) secDeform(D, model, R);
     try { secResume(D, model, R); } catch (e) { }
     secCotesFinales(D, model, R);

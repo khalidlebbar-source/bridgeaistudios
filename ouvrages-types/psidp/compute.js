@@ -290,6 +290,8 @@
     try { R.deformQ = liveDefl(R, v); } catch (err) { R.warnings.push('déformées sous surcharges : ' + err.message); }
     R.prec = precontrainte(R, v, model);
     try { R.flexT = flexionTransversale(R, v); } catch (err) { R.warnings.push('flexion transversale : ' + err.message); }
+    try { R.appareils = appareilsAppui(R, v); } catch (err) { R.warnings.push("appareils d'appui : " + err.message); }
+    try { R.ferPassif = ferraillagePassif(R, v); } catch (err) { R.warnings.push('ferraillage passif : ' + err.message); }
     return R;
   }
 
@@ -818,6 +820,67 @@
       var v1 = exact(sg * e1), v2 = exact(sg * (e1 + h));
       return v1 + (a - e1) * (v2 - v1) / h;
     };
+  }
+  // Section 34 (DIMENSIONNEMENT DES APPAREILS D'APPUI) — 2026-11-04 v6.
+  // Espacement = trunc2(min(E1/(Na-0.6), Be/(Na-0.3)) / sin(biais)) (14 passages exacts ; Na-0.3 vu seulement avec Na = 2).
+  // A vide : max = (Gmax·Kcp + max(Rhyp MS, Rhyp ES))/Na, min = (Gmin + min(Rhyp MS, Rhyp ES))/Na (2549 exact).
+  // En charge : vide ± max/min des cas [1.2·A·KA ; 1.2·bc·δB·Bc·KBC ; 1.2·δB·Bt·KBT ; δC·C·KC] + trottoirs (×1) (2549 exact
+  // avec les K imprimés). Coefficients d'inégalité : NON RÉSOLUS (constats NOTES.md) — CP = 1 avec 2 appareils (règle),
+  // les autres valent 1 provisoirement. Dimensions : provisoires. Chevêtres : règle PSIDA (largeur 2s/3 ou about·sinφ + s/3,
+  // M = R·s/(12 e), section ELS fissurée d = H - 0.04, σs fissuration préjudiciable).
+  function appareilsAppui(R, v) {
+    if (!R.reac || !R.prec || !R.prec.hypInit || !R.prec.hypServ) return null;
+    var n = R.n, P = R.prec, sb = Math.sin(gr(v.BIAIS || 100));
+    var V = function (M) { return R.L.map(function (l, t) { return (M[t + 1] - M[t]) / l; }); };
+    var rh = function (M) { var w = V(M); return R.reac.map(function (_, i) { return (i < n ? w[i] : 0) - (i > 0 ? w[i - 1] : 0); }); };
+    var hMS = rh(P.hypServ.msMax), hES = rh(P.hypServ.esMin);
+    var c0 = 0.6 * 1000 / 9.80665, ft28 = c0 + 0.06 * v.FC28, fe = v.FE1 || 50000, eta = v.ETA || 1.6;
+    var sigS = Math.min(2 * fe / 3, Math.max(fe / 2, 110 * Math.sqrt(eta * ft28 * 0.00980665) / 0.00980665));
+    var H = v.HDAL1, d = H - 0.04;
+    return R.reac.map(function (r, k) {
+      var na = Math.max(1, v['NAP' + (k + 1)] || 2), typ = v['TYPAP' + (k + 1)]; if (typ === undefined || typ === null || typ === '') typ = 1;
+      var esp = na > 1 ? Math.floor(Math.min(v.EDAL1 / (na - 0.6), R.Be / (na - 0.3)) / sb * 100 + 1e-6) / 100 : 0;
+      var dy = R.dyn.appui[k], end = k === 0 || k === n;
+      var K = { CP: na === 2 ? 1 : 1, A: 1, BC: 1, BT: 1 }, cas = [], ext = r.ext || {};
+      cas.push(['A', 1.2 * r.A[0], 1.2 * r.A[1]]);
+      if (ext.BC) cas.push(['BC', 1.2 * R.bc * dy.bc * ext.BC[0].v, 1.2 * R.bc * dy.bc * ext.BC[1].v]);
+      if (ext.BT) cas.push(['BT', 1.2 * dy.bc * ext.BT[0].v, 1.2 * dy.bc * ext.BT[1].v]);
+      Object.keys(ext).forEach(function (c) { if (c === 'BC' || c === 'BT') return; K[c] = 1; var dd = /MC/.test(c) ? dy.mc : dy.ce; cas.push([c, dd * ext[c][0].v, dd * ext[c][1].v]); });
+      var qmax = 0, qmin = 0; cas.forEach(function (c) { qmax = Math.max(qmax, c[1] * K[c[0]]); qmin = Math.min(qmin, c[2] * K[c[0]]); });
+      var vMax = (r.cp[0] * K.CP + Math.max(hMS[k], hES[k])) / na, vMin = (r.cp[1] + Math.min(hMS[k], hES[k])) / na;
+      var cMax = vMax + (qmax + r.trot[0]) / na, cMin = vMin + (qmin + r.trot[1]) / na;
+      var adm = typ === 0 ? (v.CBS || 3500) : (v.CNS || 1500), amin = cMax / adm;
+      var larg = Math.max(0.25, Math.ceil(Math.sqrt(amin) / 0.05 - 1e-9) * 0.05), long = Math.max(larg, Math.ceil(amin / larg / 0.05 - 1e-9) * 0.05);
+      var ech = end ? (R.about || v.ABOUT || 0) * sb + esp / 3 : 2 * esp / 3, mch = ech > 0 ? cMax * esp / (12 * ech) : 0;
+      var mres = function (A) { var x = -15 * A + Math.sqrt(225 * A * A + 30 * A * d); return A * sigS * (d - x / 3); };
+      var lo = 0, hi = 0.05; for (var it = 0; it < 80; it++) { var md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
+      return { typ: typ, na: na, esp: esp, larg: larg, long: long, K: K, cas: cas.map(function (c) { return c[0]; }), vMax: vMax, vMin: vMin, cMax: cMax, cMin: cMin,
+        sMin: cMin / (larg * long), sMax: cMax / (larg * long), ech: ech, mch: mch, ach: hi };
+    });
+  }
+
+  // Section 35 (REPARTITION DU FERRAILLAGE TRANSVERSAL, FERRAILLAGE LONGITUDINAL) — 2026-11-04 v6.
+  // Zones (2549, 0013, notice 0015 : exact) : ABOUT = about ; CHEV APP = esp/3/sin φ ; EXT CHEV = 2 esp/3/sin φ (esp de l'appui) ;
+  // TRAVEE = L - zones. Sections : CHEV = max(section du chevêtre, minimale de la face) ; EXT = max(chevêtre/3, minimale) ;
+  // TRAVEE = minimale (section 32 : parallèle aux lignes d'appui si φ >= 70 gr, sinon perpendiculaire aux bords libres).
+  // Espacement par diamètre = aire / section, affiché si 0.10 <= s <= 0.25 (fissuration préjudiciable : min(25 cm, 2h)).
+  // Longitudinal : minimum 5e-4·H par m (face sup. sur W, face inf. sur EDAL1) — le reste (ELU, tractions) NON calculé.
+  function ferraillagePassif(R, v) {
+    var AP = R.appareils, FT = R.flexT; if (!AP || !FT) return null;
+    var sb = Math.sin(gr(v.BIAIS || 100)), par = (v.BIAIS || 100) >= 70, n = R.n, PHI = [10, 12, 14, 16, 20];
+    var minF = function (t, f) { var fe = FT[t] && FT[t].fer; return fe ? (par ? fe.par[f] : fe.perp[f]) : 0; };
+    var esp = function (sec) { return PHI.map(function (d) { var s = Math.PI * d * d / 4e6 / sec; return s >= 0.1 - 1e-9 && s <= 0.25 + 1e-9 ? s : null; }); };
+    var zone = function (nom, lg, t, chev, div) { var o = { nom: nom, lg: lg }; ['sup', 'inf'].forEach(function (f) { var mn = minF(t, f), sc = chev === null ? mn : Math.max(chev / div, mn); o[f] = { sec: sc, s: esp(sc) }; }); return o; };
+    var tr = [];
+    for (var t = 0; t < n; t++) {
+      var a = AP[t], b = AP[t + 1], cg = a.esp / 3 / sb, cd = b.esp / 3 / sb, z = [];
+      if (t === 0) z.push(zone('ABOUT', v.ABOUT || 0, 0, a.ach, 1));
+      z.push(zone('CHEV APP G', cg, t, a.ach, 1), zone('EXT CHEV G', 2 * cg, t, a.ach, 3), zone('TRAVEE', R.L[t] - 3 * cg - 3 * cd, t, null, 1),
+        zone('EXT CHEV D', 2 * cd, t, b.ach, 3), zone('CHEV APP D', cd, t, b.ach, 1));
+      tr.push(z);
+    }
+    var lmin = 5e-4 * v.HDAL1;
+    return { par: par, travees: tr, longi: { sup: lmin * (v.EDAL1 + v.EDAL2), inf: lmin * v.EDAL1 } };
   }
   function flexionTransversale(R, v) {
     var H = v.HDAL1, hc = v.HCHAU || 0, e0 = 0.25 + 2 * hc + H, e1 = 2 * hc + H, W = R.largeurTot, nu = v.POIS || 0;
