@@ -305,6 +305,8 @@
     const v = flat(modele0);
     const r = (v.FIXSEM === 0 && v.PREMAX > 0 && !globalThis.PIPO_NODIM) ? dimensionner(v) : Object.assign(computeCore(v), { dimSeq: [[v.W, v.DELTA]] });
     r.mu = FER.plaqueMu(r);
+    if (v.MOTRAN) { const T = FER.transversal(r), dT = r.g.e3 - 0.025 - v.PHI2 / 2;
+      T.A = Math.max(FER.asELU(T.Mu, dT, r.mat.fbu, r.mat.ssElu[1]), v.FIP ? FER.asELS(T.Ms, dT, r.mat.ssEls[1], v.SIGMAF) : 0); r.transversal = T; }
     r.fer = FER.ferraillage(r);
     return r;
   }

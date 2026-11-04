@@ -444,6 +444,28 @@
       '                    TOTAL       =' + F(m.total, 9, 2) + ' T', "       POIDS D'ACIER", '           PAR M3 DE BETON =' + F(m.total / m.beton, 15, 3) + ' T/M3'];
   }
 
+  function momTransversal(r) {
+    const T = r.transversal; if (!T) return [];
+    const L = [sp(51) + 'MOMENT TRANSVERSAL PRINCIPAL', sp(27) + 'AU POINT DE COORDONNEES (0.,0.) COMPTEES A PARTIR DU CENTRE DE LA DALLE',
+      sp(88) + 'BIAIS GEOMETRIQUE ' + F(T.phi, 7, 2) + ' GR', sp(88) + 'BIAIS MECANIQUE   ' + F(T.psi, 7, 2) + ' GR',
+      sp(28) + 'DIMENSIONS DE LA PLAQUE RECTANGULAIRE EQUIVALENTE SUR APPUIS SIMPLES',
+      sp(19) + 'LARGEUR =' + F(T.LA, 7, 3) + ' M.                LONGUEUR =' + F(T.LO, 7, 3) + ' M.              TETA =' + F(T.th, 6, 3) + ' ( TRANSVERSAL )'];
+    const harm = (title, h) => { L.push('    MOMENTS DUS ' + title, sp(43) + 'FACTEUR 3', '   HARMONIQUE    FACTEUR 1    FACTEUR 2    * 10000     MOMENT');
+      for (const x of h) L.push(String(x.m).padStart(9) + F(x.f1, 15, 4) + F(x.f2, 13, 4) + F(x.f3 * 1e4, 14, 3) + F(x.M, 10, 3)); };
+    const tors = B => { L.push(sp(101) + 'POISSON=0.000', sp(101) + 'E.L.S. E.L.U.');
+      for (const k of ['MY', 'MX', 'MTOR', 'MAVF', 'MAPF']) L.push(sp(94) + k.padEnd(4) + F(B.els[k], 9, 2) + F(B.elu[k], 8, 2)); };
+    const dynLine = B => 'TOTAL AFFECTE DU COEFFICIENT DE MAJORATION DYNAMIQUE' + F(B.coef, 6, 3) + F(B.total, 13, 3);
+    for (const B of T.blocks) {
+      if (B.k === 'MC') { harm('AU CHAR       CHENILLE1', B.parts[0]); harm('AU CHAR       CHENILLE2', B.parts[1]); L.push(dynLine(B)); }
+      else if (B.k === 'EX') { harm('AU CONVOI EXCEPTIONNEL', B.parts[0]); L.push('TOTAL POUR LE CONVOI' + F(B.total, 14, 3)); }
+      else if (B.k === 'AL') { B.parts.forEach((h, i) => harm('A A(L)/VOIE' + String(i + 1).padStart(5), h)); L.push('   TOTAL PAR LA COMBINAISON LA PLUS DEFAVORABLE DES VOIES' + F(B.total, 9, 3)); }
+      else { harm('A ' + B.k, B.parts[0]); L.push(dynLine(B)); }
+      tors(B);
+    }
+    L.push('MOMENTS TRANSVERSAUX DE CALCUL (T*M)', '  ==============================', sp(42) + '<- POISSON=0.000 ->', sp(44) + 'E.L.S.   E.L.U.', sp(42) + F(T.Ms, 8, 2) + F(T.Mu, 9, 2));
+    return L;
+  }
+
   function liMu(r) {
     const L = [sp(50) + "LIGNES D'INFLUENCE DU COEFFICIENT MU", sp(24) + 'AU POINT DE COORDONNEES (0.,0.) COMPTEES A PARTIR DU CENTRE DE LA DALLE',
       'HARMONIQUE       -B          -0,75 B      0,5 B        -0,25 B       0        0,25 B      0,5 B     0,75 B       B'];
@@ -462,7 +484,7 @@
     out.push(...lignesInfluence(r), '\f');
     out.push(...momentsPermanents(r), '\f');
     out.push(...majDyn(r), '\f', ...coefK(r), '\f');
-    out.push(...sectionsDet(r), '\f', ...tablesSurcharges(r, 'T'), ...diag(r, 'T'), '\f', ...tablesSurcharges(r, 'P'), ...diag(r, 'P'), '\f', ...liMu(r), '\f', ...deplacements(r), '\f', ...tranchants(r, 'T'), '\f', ...tranchants(r, 'P'), '\f');
+    out.push(...sectionsDet(r), '\f', ...tablesSurcharges(r, 'T'), ...diag(r, 'T'), '\f', ...tablesSurcharges(r, 'P'), ...diag(r, 'P'), '\f', ...momTransversal(r), '\f', ...liMu(r), '\f', ...deplacements(r), '\f', ...tranchants(r, 'T'), '\f', ...tranchants(r, 'P'), '\f');
     out.push(...semelleLI(r), '\f', ...semelleMoments(r), '\f', ...semelleTranchants(r), '\f', ...pressions(r), '\f', ...ferMinimal(r), '\f', ...ferAdopte(r), '\f', ...ferTransversal(r), '\f', ...ferEpure(r), '\f', ...ferNomenclature(r), '\f', ...etriers(r), '\f', ...avantMetre(r));
     return out.join('\n');
   }

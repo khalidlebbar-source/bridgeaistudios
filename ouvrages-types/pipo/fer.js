@@ -164,7 +164,75 @@
     const ys = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1];
     return { LA, LO, theta, rows: [1, 3, 5].map(m => ({ m, v: ys.map(y => GM.muCoef(m * theta, 0, y)) })) };
   }
-  const api = { ferraillage, plaqueMu, asELU, asELS, elsStress };
+
+  // ---- Moment transversal principal au point (0,0) (Guyon-Massonnet, harmoniques 1..5) — cf. NOTES.md tour 6.
+  // MOMENT(m) = F1·F2·F3·(4/π)·b·q ; F1 = sin(mπc/l), 2c = a + 2·HCHAU + E3 (borné à l), F2 = |sin(mπ/2)|/m,
+  // F3 = Σ μ_m(0,e) (roues ponctuelles Bc/Bt/Br) ou moyenne de μ par Simpson 5 points sur la bande chargée
+  // (chenilles, convoi E, Me : largeur + 2·HCHAU + E3 ; A(l) : largeur de voie) ; q = P/2c.
+  function transversal(r) {
+    const v = r.v, g = r.g, mu0 = r.mu, LA = mu0.LA, LO = mu0.LO, b = LA / 2, th = mu0.theta, sn = g.sn;
+    const phi = v.BIAIS, eta = g.larg / v.OUVER, psi = phi + (100 - phi) * (eta < 2 ? Math.pow(1 - eta / 2, 2) : 0);
+    const s2 = 2 * v.HCHAU + v.E3, H = [1, 2, 3, 4, 5];
+    const cache = {}; const mu = (m, e) => { const k = m + ':' + e.toFixed(6); return k in cache ? cache[k] : (cache[k] = GM.muCoef(m * th, 0, e / b)); };
+    const simp3 = (m, a, c) => (c - a) / 6 * (mu(m, a) + 4 * mu(m, (a + c) / 2) + mu(m, c));
+    // intégration SETRA : Simpson 3 points, l'intervalle étant coupé au point étudié (pic anguleux de μ)
+    const strip = (m, e0, w) => { if (!(w > 0)) return mu(m, e0); const a = e0 - w / 2, c = e0 + w / 2;
+      return (a < -1e-9 && c > 1e-9 ? simp3(m, a, 0) + simp3(m, 0, c) : simp3(m, a, c)) / w; };
+    const F3 = (m, pos, w) => pos.reduce((s, e) => s + strip(m, e, w), 0);
+    const yL = -b + (v.ETROTG + v.EGAU) / sn, yR = yL + v.ESURCH / sn;
+    const F1 = (m, a) => { const c2 = Math.min(a + s2, LO); return Math.sin(m * Math.PI * c2 / 2 / LO); };
+    const F2 = m => (m % 2 ? 1 / m : 0);
+    // dimensions transversales (largeurs, entraxes) mesurées dans la plaque biaise : ÷ sinφ
+    const harm = (a, pos, w, q) => H.map(m => { const f1 = F1(m, a), f2 = F2(m), f3 = F3(m, pos, w / sn); return { m, f1, f2, f3, M: f1 * f2 * f3 * 4 / Math.PI * b * q }; });
+    const place = (lay0, w0) => { const lay = lay0.map(d => d / sn); const w = 0; // SETRA : seuls les centres des éléments sont tenus dans la chaussée // position la plus défavorable (somme des harmoniques impaires), charge dans la chaussée
+      const lo = yL + w / 2 - Math.min(...lay), hi = yR - w / 2 - Math.max(...lay); let bx = 0, bv = -Infinity;
+      // SETRA : un élément de la charge (roue, chenille, bande) est placé sur le point étudié
+      const loM = yL + w / 2 + Math.max(...lay), hiM = yR - w / 2 + Math.min(...lay); // disposition symétrique (−lay)
+      let cand = lay.map(d => [-d, 1]).filter(([x]) => x >= lo - 1e-9 && x <= hi + 1e-9)
+        .concat(lay.map(d => [d, -1]).filter(([x]) => x >= loM - 1e-9 && x <= hiM + 1e-9));
+      if (!cand.length) cand = [[Math.min(Math.max(0, lo), hi), 1]];
+      let bs = 1;
+      for (const [x, sg] of cand) { const val = [1, 3, 5].reduce((s, m) => s + Math.sin(m * Math.PI / 2) * F3(m, lay.map(d => x + sg * d), w) / m, 0); if (val > bv + 1e-12) { bv = val; bx = x; bs = sg; } }
+      return lay.map(d => bx + bs * d); };
+    const tot = h => h.reduce((s, x) => s + x.M, 0);
+    // MX : moment longitudinal à mi-traverse (permanent max + charge, mêmes règles que les sections déterminantes)
+    const G = r.det.mid.M, L = r.liveDet.mid.max, TR = Math.max(0, L.TR ? L.TR.eff : 0);
+    const MXf = k => { const Q = L[k] ? L[k].eff : 0;
+      if (k === 'A' || k === 'BC' || k === 'BT') return [G.elsMax + 1.2 * (Q + TR), G.eluMax + 1.6 * (Q + TR)];
+      if (k === 'EX') return [G.elsMax + Q, G.eluMax + 1.35 * Q];
+      return [G.elsMax + Q + 1.2 * TR, G.eluMax + 1.35 * Q + 1.5 * TR]; };
+    const R = Math.PI / 200, A1 = (100 - psi) * R, A2 = A1 + phi * R;
+    const tors = (MY, MX) => { const MTOR = MX * Math.sin(A1) * Math.sin(A2) + MY * Math.cos(A1) * Math.cos(A2);
+      const MAVF = (MY * Math.sin(A2) * Math.cos(A1) - MX * Math.cos(A2) * Math.sin(A1)) / Math.sin(A2 - A1);
+      const h2 = (A2 - A1) / 2, MAPF = MAVF + Math.abs(MTOR) / (2 * (MTOR * MX >= 0 ? Math.sin(h2) ** 2 : Math.cos(h2) ** 2)); return { MX, MY, MTOR, MAVF, MAPF }; };
+    const res = (total, gs, gu, k) => { const mx = MXf(k); return { els: tors(Math.max(0, gs * total), mx[0]), elu: tors(Math.max(0, gu * total), mx[1]) }; };
+    const blocks = [], dyn = r.dyn;
+    if (v.MC && v.MC !== 5) { const m80 = v.MC === 3, wc = (m80 ? 0.85 : 1.0) + s2, a = m80 ? 4.9 : 6.1, P = m80 ? 36 : 55, q = P / Math.min(a + s2, LO);
+      const p1 = place([0, m80 ? 2.95 : 3.3], m80 ? 0.85 : 1.0).sort((x, y) => Math.abs(x) - Math.abs(y)), h1 = harm(a, [p1[0]], wc, q), h2 = harm(a, [p1[1]], wc, q), t = (tot(h1) + tot(h2)) * dyn.dMc;
+      blocks.push({ k: 'MC', parts: [h1, h2], coef: dyn.dMc, total: t, ...res(t, 1, 1.35, 'MC') }); }
+    if (v.EXCEP) { const D = v.EXCEP === 1, a = D ? 11 : 15, w = 3.3 + s2, q = (D ? 140 : 100) / Math.min(a + s2, Math.max(LO, a));
+      const h = harm(a, place([0], 3.3), w, q), t = 2 * tot(h); blocks.push({ k: 'EX', parts: [h], total: t, ...res(t, 1, 1.35, 'EX') }); }
+    const cl = v.CLASSE || 1, BCT = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 0.8] }[cl] || [1];
+    if (v.BC) { let best = null; const nv = Math.max(1, Math.min(v.PVOIE || 1, BCT.length));
+      for (let n = 1; n <= nv; n++) { const lay = []; for (let i = 0; i < n; i++) lay.push(2.5 * i, 2.5 * i + 2);
+        const h = harm(1.75, place(lay, 0.25), 0, 12 * BCT[n - 1] / Math.min(1.75 + s2, LO)), t = tot(h); if (!best || t > best.t) best = { h, t }; }
+      const t = best.t * dyn.dBc; blocks.push({ k: 'BC', parts: [best.h], coef: dyn.dBc, total: t, ...res(t, 1.2, 1.6, 'BC') }); }
+    if (v.BT && cl < 3) { const bt = cl === 1 ? 1 : 0.9, h = harm(1.6, place([0, 2], 0.6), 0, 16 * bt / Math.min(1.6 + s2, LO)), t = tot(h) * dyn.dBt;
+      blocks.push({ k: 'BT', parts: [h], coef: dyn.dBt, total: t, ...res(t, 1.2, 1.6, 'BT') }); }
+    if (v.ME && v.ME !== 5) { const m80 = v.ME === 3, w = (m80 ? 3.5 : 4.0) + s2, a = m80 ? 1.6 : 1.9, P = m80 ? 22 : 33;
+      const h = harm(a, place([0], m80 ? 3.5 : 4.0), w, P / Math.min(a + s2, LO)), t = tot(h) * dyn.dMe; blocks.push({ k: 'ME', parts: [h], coef: dyn.dMe, total: t, ...res(t, 1, 1.35, 'ME') }); }
+    if (v.BC) { const h = harm(0.3, place([0], 0.6), 0, 10 / Math.min(0.3 + s2, LO)), t = tot(h) * dyn.dBc;
+      blocks.push({ k: 'BR', parts: [h], coef: dyn.dBc, total: t, ...res(t, 1.2, 1.6, 'BC') }); }
+    if (v.AL) { const nv = Math.max(1, v.PVOIE || 1), V = v.ESURCH / nv, Vb = V / sn, Al = 0.23 + 36 / (LO + 12), q = Al * V;
+      const lanes = []; for (let i = 0; i < nv; i++) lanes.push(H.map(m => { const f1 = Math.sin(m * Math.PI / 2), f3 = strip(m, yL + (i + 0.5) * Vb, Vb); return { m, f1, f2: F2(m), f3, M: f1 * F2(m) * f3 * 4 / Math.PI * b * q }; }));
+      const a1t = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] }[cl] || [1], a2 = ({ 1: 3.5, 2: 3, 3: 2.75 }[cl] || 3.5) / V;
+      let t = 0; for (let i = 0; i < nv; i++) for (let j = i; j < nv; j++) { let s = 0; for (let k = i; k <= j; k++) s += tot(lanes[k]);
+        const n = j - i + 1, val = s * a1t[Math.min(n, a1t.length) - 1] * a2; if (val > t) t = val; }
+      blocks.push({ k: 'AL', parts: lanes, total: t, ...res(t, 1.2, 1.6, 'A') }); }
+    const Ms = Math.max(0, ...blocks.map(x => x.els.MAPF)), Mu = Math.max(0, ...blocks.map(x => x.elu.MAPF));
+    return { phi, psi, LA, LO, th, blocks, Ms, Mu };
+  }
+  const api = { ferraillage, plaqueMu, transversal, asELU, asELS, elsStress };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PIPO_FER = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

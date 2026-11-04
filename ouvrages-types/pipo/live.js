@@ -41,7 +41,12 @@
       out.ME = best(slide(v.LARGENC, (y, s) => (K(y, s + m0) + K(y, s + m0 + v.LARGES)) / 2 / (2 * b)));
     }
     out.TR = (v.ETROTG + v.ETROTD) > 0 ? best(y => (integ(y, -b, -b + v.ETROTG) + integ(y, b - v.ETROTD, b)) / (2 * b)) : 0;
-    const wEx = Math.min(3.3 + 2 * v.HCHAU, v.ESURCH); out.EX = v.EXCEP ? best(slide(wEx, (y, s) => integ(y, s, s + wEx) / (3.3 + 2 * v.HCHAU) / (2 * b))) : 0;
+    const wEx = Math.min(3.3 + 2 * v.HCHAU, v.ESURCH);
+    // convoi exceptionnel : chaussée de plus de 7 m → axe du convoi à 3.50 m du bord de chaussée (1638, 1676, 1825, 1890, 1893 :
+    // K à 1e-4) ; chaussée ≤ 7 m : position libre (1846 exact, 1847 +3 % non résolu). Maximum sur les 9 fibres.
+    const exAt = (y, s) => integ(y, s, s + wEx) / (3.3 + 2 * v.HCHAU) / (2 * b);
+    out.EX = !v.EXCEP ? 0 : v.ESURCH > 7 + 1e-9 ? Math.max(...pts.map(y => Math.max(exAt(y, c0 + 3.5 - wEx / 2), exAt(y, c1 - 3.5 - wEx / 2))))
+      : Math.max(...pts.map(slide(wEx, exAt)));
     // charges non demandées (indicateurs A1 nuls) : coefficients imprimés à 0
     if (!v.AL) out.A = out.A.map(() => 0); if (!v.BC) out.BC = out.BC.map(() => 0); if (!v.BT) out.BT = out.BT.map(() => 0);
     if (!v.MC) out.MC = 0; if (!v.ME) out.ME = 0; if (!v.EXCEP) out.EX = 0; if (!v.TROT) out.TR = 0;
