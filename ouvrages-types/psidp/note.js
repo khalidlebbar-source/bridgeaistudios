@@ -475,9 +475,174 @@
           it.push([71, fx(pi, 1)], [84, fx(pf, 1)], [97, fx(R.deform.oss[t][q] + pi, 1)], [110, fx(R.deform.cpi[t][q] + pi, 1)], [123, fx(R.deform.cpt[t][q] + pi + pf, 1)]); }
         D.push(row(it));
       }
+      if (Pd && Pd.eps) {
+        D.push('                                                  ALLONGEMENT RELATIF DE LA FIBRE MOYENNE (X 10**4)');
+        D.push(row([[70, fx(Pd.eps[t][0], 1)], [83, fx(Pd.eps[t][1], 1)]]));
+      }
+      D.push("                  ROTATIONS SUR APPUIS DU TABLIER SOUS L'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)");
+      ['rg', 'rd'].forEach(function (k) {
+        var o = R.deform.oss[t][k], ci = R.deform.cpi[t][k], ct = R.deform.cpt[t][k];
+        var it2 = [[18, k === 'rg' ? 'APP G' : 'APP D'], [32, fx(o, 1)], [45, fx(ci, 1)], [58, fx(ct, 1)]];
+        if (Pd && Pd.inst[t][k] !== undefined) { var a = Pd.inst[t][k], b = Pd.flu[t][k];
+          it2.push([71, fx(a, 1)], [84, fx(b, 1)], [97, fx(o + a, 1)], [110, fx(ci + a, 1)], [123, fx(ct + a + b, 1)]); }
+        D.push(row(it2));
+      });
+      var Q = R.deformQ;
+      if (Q) {
+        D.newPage();
+        D.push('                                                DEFORMATION DU TABLIER  TRAVEE ' + (t + 1) + ' (SUITE)');
+        D.push("                                       DEFORMEES SOUS LES CHARGES D'EXPLOITATION (EN MILLIMETRES)");
+        D.push('           SECTION                                SURCHARGES DANS CHAQUE TRAVEE (DEFORMEES INSTANTANEES)');
+        var h1 = L(), h2 = L();
+        for (var j = 0; j < R.n; j++) { h1.at(49 + 15 * j, 'TRAVEE ' + (j + 1)); h2.at(42 + 15 * j, 'A'); h2.at(51 + 15 * j, '48T'); }
+        D.push(h1.s); D.push(h2.s);
+        for (q = 0; q <= 10; q++) {
+          var r2 = [[18, fx(q / 10, 2) + 'L']];
+          for (j = 0; j < R.n; j++) r2.push([44 + 15 * j, fx(Q[j].A[t][q], 2)], [51 + 15 * j, fx(Q[j].P[t][q], 2)]);
+          D.push(row(r2));
+        }
+        D.push("                  ROTATIONS SUR APPUIS DU TABLIER SOUS L'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)");
+        ['rg', 'rd'].forEach(function (k) {
+          var r3 = [[18, k === 'rg' ? 'APP G' : 'APP D']];
+          for (j = 0; j < R.n; j++) r3.push([44 + 15 * j, fx(Q[j].A[t][k], 2)], [51 + 15 * j, fx(Q[j].P[t][k], 2)]);
+          D.push(row(r3));
+        });
+      }
     }
   }
 
+
+  // --------------------------------------------------------------- résumé de l'ouvrage + avant-métré + rappel (section 39)
+  function secResume(D, m, R) {
+    var rp = function (s, w) { s = String(s); while (s.length < w) s = " " + s; return s; };
+    var v = m.values, n = R.n, i, Lt = 2 * (v.ABOUT || 0);
+    for (i = 0; i < n; i++) Lt += R.L[i];
+    D.newPage();
+    (m.titres || []).forEach(function (t) { D.push('                       ' + t); });
+    D.push(row([[30, 'NOMBRE DE TRAVEES'], [31 - 2 + String(n).length + 1, String(n)], [118, 'LONGUEUR TOTALE ='], [126, fx(Lt, 3)], [128, 'M']]));
+    var r = L('   PORTEES'); r.at(42, fx(v.ABOUT || 0, 3) + ' M'); for (i = 0; i < n; i++) r.at(54 + 12 * i, fx(R.L[i], 3) + ' M'); r.at(54 + 12 * n, fx(v.ABOUT || 0, 3) + ' M'); D.push(r.s);
+    D.push('   BIAIS GEOMETRIQUE (GRADES) ' + rp(fx(v.BIAIS, 1), 6));
+    r = L('   BIAIS MECANIQUE   (GRADES)'); for (i = 0; i < n; i++) r.at(54 + 12 * i, fx(R.biaisMeca[i], 1)); D.push(r.s);
+    var wt = (v.ETROG || 0) + (v.EGAU || 0) + (v.ESURCH || 0) + (v.EDROI || 0) + (v.ETROD || 0);
+    r = L('   CARACTERISTIQUES   TABLIER'); [v.ETROG, v.EGAU, v.ESURCH, v.EDROI, v.ETROD].forEach(function (x, k) { r.at(44 + 12 * k, fx(x || 0, 3) + ' M'); });
+    r.at(115, 'LARGEUR TOTALE ='); r.at(124, fx(wt, 3)); r.at(126, 'M'); D.push(r.s);
+    D.push('   TRANSVERSALES');
+    D.push('                      DALLE PORTEUSE    EXTRADOS=' + rp(fx(v.EDAL1 + v.EDAL2, 3), 7) + ' M   LARGEUR MOYENNE=' + rp(fx(R.Be, 3), 7) + ' M   INTRADOS=' + rp(fx(v.EDAL1, 3), 7) + ' M   EPAISSEUR=' + rp(fx(v.HDAL1, 3), 7) + ' M');
+    D.push('   CHARGES PERMANENTES : OSSATURE = (' + rp(fx(R.cp.oss[0] * v.OSSAX, 3), 7) + ' ,' + rp(fx(R.cp.oss[0] * v.OSSAN, 3), 7) + ' ) T/ML  ;  QSUP = (' + rp(fx(v.QSUPX, 3), 7) + ' ,' + rp(fx(v.QSUPN, 3), 7) + ' ) T/ML');
+    D.push('   TASSEMENTS PRIS EN COMPTE');
+    if (R.classe) D.push('   CLASSE DU PONT = ' + R.classe);
+    D.push("   CHARGES D'EXPLOITATION :  PSTROT =" + rp(fx(v.TROT || 0, 3), 6) + ' T/M2');
+    D.push('   LES COEFFICIENTS DE PRISE EN COMPTE DES CHARGES ( GAMMA Q ) SONT DEFINIS PAR LES D.C. 1979');
+    D.push('   LES CONTRAINTES LIMITES DU BETON SONT CELLES RELEVANT DU GENRE 2');
+    D.push('   ACIERS UTILISES                                            LONGITUDINAUX - TRANSVERSAUX                    ETRIERS');
+    D.push(row([[52, "             1- ACIERS PASSIFS : LIMITE D'ELASTICITE"], [74, fx(v.FE1, 0)], [109, fx(v.FE2, 0)]]));
+    D.push('             2- ACIER DUR DE PRECONTRAINTE');
+    D.push('   PROCEDE      NOMBRE  SECTION   DIAMETRE       RG             TG             T0       REL INF    PHI     FROT   RECULAN   DECAL');
+    var Pp = R.prec, N = Pp ? Pp.N : (v.NCA || 0);
+    D.push(row([[3 + String(v.PROCEDE).length, v.PROCEDE], [19, String(N)], [28, fx(v.SECT, 0)], [38, fx(v.DGAIN, 3)], [50, fx(v.FPRG, 0)], [65, fx(v.FPEG, 0)], [80, fx(v.SIGMAP0, 0)], [91, fx(v.RO / 100, 3)], [101, fx(v.PHI, 4)], [108, fx(v.F, 2)], [117, fx(v.RECUL, 3)], [127, fx(v.DECAL, 3)]]));
+    D.push("   MODE D'ANCRAGE : " + (v.MOD === 0 ? 'ACTIF AUX DEUX EXTREMITES' : 'ACTIF A UNE EXTREMITE'));
+    // avant-métré : béton = S.Ltot ; sous-dalle = EDAL1.Ltot ; autres coffrages = 2 faces latérales (rive HDAL2, sous-face
+    // d'encorbellement, chanfrein) x Ltot + 2 abouts S/sin²(biais) ; acier dur = N.A.Ltot.7.85 (exacts sur 5 passages)
+    var sb = Math.sin(v.BIAIS * Math.PI / 200), dx = (v.EDAL2 - v.EDAL3) / 2;
+    var side = v.HDAL2 + Math.hypot(v.EDAL3 / 2, v.HDAL3) + Math.hypot(dx, v.HDAL1 - v.HDAL3 - v.HDAL2);
+    var vol = R.section.S * Lt, cof = 2 * side * Lt + 2 * R.section.S / (sb * sb), ad = N * v.SECT * 1e-6 * Lt * 7.85;
+    D.push('                                                     AVANT METRE RECAPITULATIF');
+    D.push('                                                     -------------------------');
+    D.push('   ACIER DUR DE PRECONTRAINTE    ' + rp(fx(ad, 3), 10) + 'T');
+    D.push('   ACIER POUR BETON ARME (EVALUATION APPROCHEE)');
+    D.push('                                     LONGITUDINAUX                   TRANSVERSAUX            ETRIERS');
+    D.push('                                        0.0000 T                       0.0000 T               0.0000 T');   // NON CALCULÉ (ferraillage passif)
+    D.push('   BETON            VOLUME DE BETON POUR LA DALLE      ' + rp(fx(vol, 1), 10) + ' M3');
+    D.push('                    COFFRAGE DE LA SOUS-DALLE          ' + rp(fx(v.EDAL1 * Lt, 1), 10) + ' M2');
+    D.push('                    AUTRES COFFRAGES                   ' + rp(fx(cof, 1), 10) + ' M2');
+    D.push("    POIDS D'ACIER PAR M3 DE BETON     ACIER DUR DE PRECONTRAINTE  " + rp(fx(ad / vol, 4), 9) + ' T');
+    D.push('                                      ACIER POUR BETON ARME          0.0000 T');
+    if (!Pp || !Pp.G) return;
+    D.newPage();
+    D.push('                            RAPPEL DES VALEURS MOYENNES PROBABLES DES TENSIONS-FORCES DE PRECONTRAINTE');
+    D.push('                                                 ET DES CONTRAINTES NORMALES DU BETON');
+    var pts = [];
+    for (i = 0; i < n; i++) {
+      var gt = Pp.G.filter(function (g) { return g.t === i; }), Nd = gt.length - 1;
+      pts.push(['APPUI ' + (i + 1), gt[0]]); pts.push(['0.5L' + (i + 1), gt[Math.round(Nd / 2)]]);
+      if (i === n - 1) pts.push(['APPUI ' + (n + 1), gt[Nd]]);
+    }
+    pts.forEach(function (q) {
+      var g = q[1], T = [g.p.proba, g.d.msMoy, g.d.esMoy], it = [[q[0].charAt(0) === 'A' ? 8 : 9, q[0]]];
+      T.forEach(function (t, k) { it.push([24 + 13 * k, fx(t, 0)], [62 + 13 * k, fx(t * Pp.nA, 2)], [99 + 13 * k, fx(t * Pp.nA / Pp.Sn, 1)]); });
+      it.sort(function (a, b) { return a[0] - b[0]; });
+      D.push(row(it));
+    });
+    D.push("    MODE D'ANCRAGE : " + (v.MOD === 0 ? 'ACTIF AUX DEUX EXTREMITES' : 'ACTIF A UNE EXTREMITE'));
+  }
+
+  // --------------------------------------------------------------- section 41 : résultats pour le programme PP
+  // QCP1 = ossature x aire LI réaction + réaction hyperstatique M.T max ; QCP2 = CP moy x aire + hyperstatique E.S min
+  // (exacts 2549) ; PA = A + trottoirs ; PBC = 1.1 B + trottoirs (min exact, max ±1 %) ; PCM = C + trottoirs.
+  // NON RÉSOLUS (imprimés provisoirement) : dimensions/espacement des appareils, coefficients d'inégalité (1.000), EPSCP,
+  // EPSSUR, rotations maximales.
+  function secPP(D, m, R) {
+    var rp = function (x, w) { x = String(x); while (x.length < w) x = ' ' + x; return x; };
+    var v = m.values, n = R.n, Pp = R.prec, rc = R.reac; if (!rc || !R.liReacAires) return;
+    var i, hyp = function (M) { var V = R.L.map(function (l, t) { return (M[t + 1] - M[t]) / l; }), o = []; for (var k = 0; k <= n; k++) o.push((k < n ? V[k] : 0) - (k > 0 ? V[k - 1] : 0)); return o; };
+    var z = []; for (i = 0; i <= n; i++) z.push(0);
+    var h1 = Pp && Pp.hypInit ? hyp(Pp.hypInit.max) : z, h2 = Pp && Pp.hypServ ? hyp(Pp.hypServ.esMin) : z;
+    var ar = R.liReacAires.map(function (a) { return a.total; });
+    var Q = {
+      QCP1: ar.map(function (a, k) { return a * R.cp.oss[0] + h1[k]; }), QCP2: ar.map(function (a, k) { return a * R.cp.tot[0] + h2[k]; }),
+      PAMAX: rc.map(function (r) { return r.A[0] + r.trot[0]; }), PAMIN: rc.map(function (r) { return r.A[1] + r.trot[1]; }),
+      PBCMAX: rc.map(function (r) { return (R.bc || 1) * r.B[0] + r.trot[0]; }), PBCMIN: rc.map(function (r) { return (R.bc || 1) * r.B[1] + r.trot[1]; }),
+      PCMMAX: rc.map(function (r) { var c = r.ext && r.ext['MC.120'] ? r.ext['MC.120'][0].v : r.C[0]; return c + r.trot[0]; }), PCMMIN: rc.map(function (r) { var c = r.ext && r.ext['MC.120'] ? r.ext['MC.120'][1].v : r.C[1]; return c + r.trot[1]; })
+    };
+    var fx2 = function (x, d) { return fx(x, d); };
+    var vrow = function (lab, arr, d, c0, st) { var l = L(lab); arr.forEach(function (x, k) { l.at(c0 + st * k, typeof x === 'number' ? fx2(x, d) : x); }); D.push(l.s); };
+    D.newPage();
+    D.push('                                    RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP');
+    var r = L('    BIAIS GEOMETRIQUE (GRADES)=' + rp(fx(v.BIAIS, 3), 8) + '       PORTEES'); R.L.forEach(function (l, k) { r.at(61 + 12 * k, fx(l, 3) + ' M'); }); D.push(r.s);
+    D.push("    LARGEUR D'INTRADOS(ELARGT)=" + rp(fx(v.EDAL1, 3), 8) + ' M' + pad(63, 'ELARGA =') + rp(fx((R.a1 || 1) * R.nv * R.v0, 3), 8) + ' M');
+    D.push('                                                          REACTIONS D\'APPUI');
+    var hh = L(); for (i = 0; i <= n; i++) hh.at(61 + 11 * i, 'APPUI' + (i + 1)); D.push(hh.s);
+    [['    CHARGE       AVANT REMBLAIEMENT     ( QCP1 )', 'QCP1'], ['    PERMANENTE   TOTALE                 ( QCP2 )', 'QCP2'],
+     ['    CHARGE  A    NON PONDEREE           (PAMAX )', 'PAMAX'], ['    (TROTTOIRS COMPRIS)                 (PAMIN )', 'PAMIN'],
+     ['    CHARGE   BC  NON PONDEREE           (PBCMAX)', 'PBCMAX'], ['    (TROTTOIRS COMPRIS)                 (PBCMIN)', 'PBCMIN'],
+     ['    MC.120              NON PONDEREE    (PCMMAX)', 'PCMMAX'], ['    (TROTTOIRS COMPRIS)                 (PCMMIN)', 'PCMMIN']].forEach(function (q) { vrow(q[0], Q[q[1]], 2, 61, 11); });
+    D.push("                                                  GEOMETRIE DES APPAREILS D'APPUI");
+    var col = function (key, def) { var o = []; for (var k = 1; k <= n + 1; k++) o.push(v[key + k] !== undefined ? v[key + k] : def); return o; };
+    vrow("  * TYPE DE L'APPAREIL D'APPUI          (TYPAP)", col('TYPAP', 1).map(String), 0, 59, 11);
+    vrow("    NOMBRE D'APPAREILS D'APPUI          ( NAP )", col('NAP', 2).map(String), 0, 59, 11);
+    vrow('    ESPACEMENT D\'AXE EN AXE             (ESPAP)', z, 3, 63, 11);
+    vrow('    DIMENSIONS EN PLAN  LARGEUR         ( DAP )', z, 3, 63, 11);
+    vrow('                        LONGUEUR        ( LAP )', z, 3, 63, 11);
+    D.push('              *  0  SYMBOLISE UNE ARTICULATION PAR SECTION REDUITE DE BETON (ARTICULATION FREYSSINET)');
+    D.push("                 1  SYMBOLISE UNE PLAQUE D'APPUI SEMI-MOBILE A BASE D'ELASTOMERES (APPUI NEOPRENE)");
+    D.push("                 2  SYMBOLISE TOUT AUTRE TYPE D'APPUI QUE L'UTILISATEUR DEVRA DIMENSIONNER");
+    var one = z.map(function () { return 1; });
+    ['    CHARGE PERMANENTE                   (MAJCP)', '    CHARGE  A                           (MAJA )', '    CHARGE   BC                         (MAJBC)', '    MC.120                              (MAJCM)'].forEach(function (lb) { vrow(lb, one, 3, 63, 11); });
+    D.push('              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4 )');
+    var eps = R.L.map(function (_, t) { return Pp && Pp.defl && Pp.defl.eps ? Pp.defl.eps[t][1] : 0; });
+    vrow('    SOUS CHARGE PERMANENTE              (EPSCP)', eps, 2, 62, 11);
+    vrow('    K C P                               ( KCP )', R.L.map(function () { return 0.2; }), 2, 62, 11);
+    // rotations maximales (provisoire) : somme des rotations de même signe sous A travée par travée
+    var rot = [], Qd = R.deformQ || [];
+    for (i = 0; i <= n; i++) { var sp = 0, sn = 0; Qd.forEach(function (q) { var x = i < n ? q.A[i].rg : q.A[n - 1].rd; if (x > 0) sp += x; else sn += x; }); rot.push(Math.max(sp, -sn)); }
+    D.newPage();
+    D.push('                               RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP(SUITE ET FIN)');
+    vrow('        ROTATIONS  (ROT)', rot, 2, 31, 13);
+    var card = function (k) {
+      var l = L('   ' + (k + 1)); l.at(10, String(col('TYPAP', 1)[k])); l.at(15, String(col('NAP', 2)[k])); l.at(22, '0.000'); l.at(28, '0.000'); l.at(34, '0.00'); l.at(40, '*');
+      l.at(49, fx(1, 3)); l.at(56, fx(Q.QCP1[k], 2)); l.at(63, fx(Q.QCP2[k], 2)); l.at(69, fx(1, 3)); l.at(76, fx(Q.PAMAX[k], 2)); l.at(83, fx(Q.PAMIN[k], 2));
+      l.at(89, fx(1, 3)); l.at(96, fx(Q.PBCMAX[k], 2)); l.at(103, fx(Q.PBCMIN[k], 2)); l.at(109, fx(1, 3)); l.at(116, fx(Q.PCMMAX[k], 2)); l.at(123, fx(Q.PCMMIN[k], 2));
+      return l.s;
+    };
+    D.push('                                                              CARTE  6'); D.push(card(0) + '*.**  *.**'); D.push('   *.**   *.**');
+    D.push('                                                              CARTE  8'); D.push(card(n) + '*.**  *.**'); D.push('   *.**   *.**');
+    D.push('                                                      CARTES 10,12,14,');
+    for (i = 1; i < n; i++) D.push(card(i));
+    D.push('                                                              CARTE 26');
+    var c26 = L(rp(fx(v.BIAIS, 3), 8)); R.L.forEach(function (l, k) { c26.at(16 + 8 * k, fx(l, 3)); }); c26.at(65, fx(v.EDAL1, 2)); c26.at(72, fx((R.a1 || 1) * R.nv * R.v0, 2)); c26.at(80, '**.**'); c26.at(87, '**.**'); D.push(c26.s);
+    D.push('                                                              CARTE 27');
+    var c27 = L('  *.***'); eps.forEach(function (e, k) { c27.at(14 + 7 * k, fx(e, 3)); }); c27.at(55, fx(0.2, 2)); c27.at(62, fx(0, 3)); rot.forEach(function (x, k) { c27.at(68 + 6 * k, fx(x, 2)); }); D.push(c27.s);
+  }
   // --------------------------------------------------------------- précontrainte
   function cotesTable(D, m, R) {
     var v = m.values, n = R.n, c = m.cotes.values;
@@ -1060,7 +1225,9 @@
     secFerTransv(D, model, R);
     secEffTrHyp(D, model, R);
     if (R.deform) secDeform(D, model, R);
+    try { secResume(D, model, R); } catch (e) { }
     secCotesFinales(D, model, R);
+    try { secPP(D, model, R); } catch (e) { }
     D.newPage();
     D.push(pad(40, 'FIN DE LA NOTE DE CALCUL') + pad(62, 'V98244'));
     return D.lines.join('\n') + '\n';

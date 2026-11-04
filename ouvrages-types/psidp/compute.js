@@ -213,6 +213,7 @@
       trot: (v.ETROG + v.ETROD) > 0 && (v.B || 0) % 10 === 1, CE: Math.floor(ce / 10) % 10 > 0, MC120: ce % 10 === 4 || ce % 10 === 2, MC80: ce % 10 === 1 || ce % 10 === 3 };
     R.largeurVoie = Lc / R.nv;
     R.v0 = V0[R.classe];
+    R.a1 = R.classe ? a1coef(R.classe, R.nv) : 1; R.bc = R.classe && BC[R.classe] ? BC[R.classe][Math.min(R.nv, BC[R.classe].length) - 1] : 1;
 
     // Lignes d'influence
     R.liAppuis = liSupportCubics(L);
@@ -286,6 +287,7 @@
     };
     R.deform = { oss: deflections(R, R.cp.oss[0], R.EI * R.section.I), cpi: deflections(R, R.cp.tot[0], R.EI * R.section.I), cpt: deflections(R, R.cp.tot[0], R.EV28 * R.section.I) };
     R.sol = liveLoads(R, v);
+    try { R.deformQ = liveDefl(R, v); } catch (err) { R.warnings.push('déformées sous surcharges : ' + err.message); }
     R.prec = precontrainte(R, v, model);
     try { R.flexT = flexionTransversale(R, v); } catch (err) { R.warnings.push('flexion transversale : ' + err.message); }
     return R;
@@ -1568,13 +1570,17 @@
       for (i = 1; i <= S; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * h);
       var cc = w[S] / l, out = [];
       for (var q = 0; q <= 10; q++) out.push((w[Math.round(q / 10 * S)] - cc * q / 10 * l) * 1000);
+      out.rg = (th[0] - cc) * 1000; out.rd = (th[S] - cc) * 1000;
       return out;
     };
-    P.defl = { inst: [], flu: [] };
+    P.defl = { inst: [], flu: [], eps: [] };
     for (t = 0; t < n; t++) {
       var gt = G.filter(function (g) { return g.t === t; });
       P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib));
       P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib));
+      // allongement relatif de la fibre moyenne (x1e4) : instantané -F_moy/(Sn.Eij) ; total -(retrait + F_ES moy/(Sn.EF))
+      var fi = 0, fe = 0; gt.forEach(function (g) { fi += g.p.proba * nA; fe += g.d.esMoy * nA; }); fi /= gt.length; fe /= gt.length;
+      P.defl.eps.push([-fi / Sn / R.EI * 1e4, -(R.retrait + fe / Sn / R.EF) * 1e4]);
     }
     return P;
   }
@@ -1589,8 +1595,38 @@
       for (i = 1; i <= N; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * h);
       var c = w[N] / l, out = [];
       for (var q = 0; q <= 10; q++) { var x = q / 10 * l; out.push((w[Math.round(x / h)] - c * x) * 1000); }
+      out.rg = (th[0] - c) * 1000; out.rd = (th[N] - c) * 1000;   // rotations sur appuis (rad x 1e3)
       return out;
     });
+  }
+  // flèches / rotations d'une travée j d'une poutre continue : moments sur appuis Ms (n+1), moment isostatique Mf(x)
+  function deflSpan(L, j, Ms, Mf, EI) {
+    var l = L[j], N = 2000, h = l / N, th = [0], w = [0], i;
+    var M = function (x) { return Mf(x) + Ms[j] * (1 - x / l) + Ms[j + 1] * x / l; };
+    for (i = 1; i <= N; i++) th.push(th[i - 1] + M((i - 0.5) * h) / EI * h);
+    for (i = 1; i <= N; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * h);
+    var c = w[N] / l, out = [];
+    for (var q = 0; q <= 10; q++) out.push((w[q * N / 10] - c * q / 10 * l) * 1000);
+    out.rg = (th[0] - c) * 1000; out.rd = (th[N] - c) * 1000;
+    return out;
+  }
+  // déformées sous charges d'exploitation (section 38 suite) : chaque travée chargée seule, module EI28, sans K ni biais.
+  // A : A(L_j)·a1·nv·v0 sur toute la travée ; 48T : 2 voies x 24 t concentrées au milieu de la travée (notice p. 89).
+  function liveDefl(R, v) {
+    var L = R.L, n = R.n, EI = R.EI28 * R.section.I, res = [];
+    var full = function (Ms) { return Ms.length === n + 1 ? Ms : [0].concat(Ms, [0]); };
+    for (var j = 0; j < n; j++) {
+      var lj = L[j], q = R.loads && R.loads.Agen ? Agen(v, lj) * v.LVOIE * R.nv * (v['CDTA' + R.nv] || 1) : A_l(lj) * R.v0 * R.nv * a1coef(R.classe, R.nv);
+      var Mu = full(supportMomentsUniform(L, L.map(function (_, s) { return s === j ? q : 0; })));
+      var Mp = full(supportMomentsUnitForce(L, j, 0.5)).map(function (m) { return 48 * m; });
+      var rowA = [], rowP = [];
+      for (var t = 0; t < n; t++) {
+        rowA.push(deflSpan(L, t, Mu, t === j ? function (x) { return q * x * (lj - x) / 2; } : function () { return 0; }, EI));
+        rowP.push(deflSpan(L, t, Mp, t === j ? function (x) { return 48 * (x <= lj / 2 ? x / 2 : (lj - x) / 2); } : function () { return 0; }, EI));
+      }
+      res.push({ A: rowA, P: rowP });   // res[travée chargée].A[travée observée]
+    }
+    return res;
   }
 
   var api = {
