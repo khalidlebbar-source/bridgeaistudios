@@ -535,7 +535,7 @@
     D.push('              SECTION BRUTE    SECTION NETTE         V           V1      IG (SECTION BRUTE)         I(X) (SECTION NETTE)');
     D.push(row([[23, fx(R.section.S, 4)], [26, 'M2'], [40, P.N ? fx(P.Sn, 4) : ''], [43, P.N ? 'M2' : ''], [56, fx(sc.V, 4)], [58, 'M'], [68, fx(sc.VP, 4)], [70, 'M'],
       [85, fx(R.section.I, 6)], [88, 'M4'], [105, fx(R.section.I, 6)], [107, '-'], [116, P.N ? fx(P.coefI, 6) : ''], [124, 'Z(X)**2']]));
-    if (v.CABL === 4) {
+    {
       D.push('     PROFIL VERTICAL DU CABLE      NOMBRE DE DIVISIONS PAR TRAVEE');
       var l = L(); for (var t = 0; t < R.n; t++) { l.at(22 + 13 * t, 'ND' + (t + 1)); l.at(24 + 13 * t, '='); l.at(27 + 13 * t, String(R.ND[t])); } D.push(l.s);
     }
@@ -563,6 +563,7 @@
     D.push(' NOTA');
     var tr = ''; for (var t = 0; t < n; t++) tr += (t ? ' ' : '') + (t + 1 < 10 ? ' ' : '') + (t + 1) + ',';
     D.push('           DANS LES TRAVEES' + tr);
+    if (m.values.CABL !== 4) { D.push('           LES EQUATIONS SONT CELLES DU CABLE'); if (P.flBlock) fluageBlock(D, R, P.flBlock, 1); return; }
     D.push('           OU LE CABLE EST DEFINI PAR POINTS, LES EQUATIONS CI DESSUS NE DONNENT PAS EXACTEMENT');
     D.push('           LES EXCENTREMENTS DU CABLE PAR RAPPORT A LA FIBRE MOYENNE');
     D.push("L'ECART QUADRATIQUE MOYEN EST DE " + fx(P.cable.ecart, 3));
@@ -582,7 +583,7 @@
       D.push('              CUMULEE   EN GRADES           BLOCAGE   INSTANT.  T.PROBA.   T.MAXI.   T.MINI.   TOTALE  RECTANGLE  PROBABLE');
       P.G.filter(function (g) { return g.t === t; }).forEach(function (g) {
         var p = g.p;
-        D.push(row([[11, fx(g.k / R.ND[t], 2) + 'L'], [21, fx(g.X, 3)], [31, fx(g.dev, 3)], [41, fx(g.T0, 0)], [51, fx(g.bl, 0)], [61, fx(p.inst, 0)], [71, fx(p.proba, 0)],
+        D.push(row([[11, fx(g.k / P.ND[t], 2) + 'L'], [21, fx(g.X, 3)], [31, fx(g.dev, 3)], [41, fx(g.T0, 0)], [51, fx(g.bl, 0)], [61, fx(p.inst, 0)], [71, fx(p.proba, 0)],
           [81, fx(p.maxi, 0)], [91, fx(p.mini, 0)], [101, fx(p.relax, 0)], [111, fx(p.rect, 0)], [122, fx(p.infini, 0)]]));
       });
       if (t === 0) {
@@ -591,6 +592,10 @@
         D.push('*** LA TENSION DE SERVICE APPROCHEE TIENT COMPTE DES PERTES DE RETRAIT DELTA(T)= ' + pad(Math.max(0, 5 - fx(R.retrait * v.EP, 0).length), '') + fx(R.retrait * v.EP, 0) + 'T/M2 ET DE FLUAGE APPROCHE DELTA(T)= ' + fx(P.dFl, 0) + 'T/M');
         D.push("    L'EFFET  DU  RECUL  D'ANCRAGE  SE FAIT SENTIR A GAUCHE JUSQU'A  SG=" + pad(7 - fx(P.SG, 3).length, fx(P.SG, 3)) + ' M' +
           (P.SD !== null ? '  A DROITE A PARTIR DE  SD=' + pad(7 - fx(P.SD, 3).length, fx(P.SD, 3)) + ' M' : ''));
+      }
+      if (v.CABL !== 4 && v.MOD === 0) {
+        var xm2 = xMinT0(P.G);
+        if (xm2 > R.X0[t] + 1e-9 && xm2 <= R.X0[t + 1] + 1e-9) D.push('    LA TENSION MINIMALE IMMEDIATEMENT AVANT BLOCAGE EVENTUEL A POUR ABSCISSE ' + pad(7 - fx(xm2, 3).length, fx(xm2, 3)));
       }
     }
   }
@@ -612,7 +617,7 @@
       D.push('SECTION     ABSCISSE      EXCENTR          DERIVEE SECONDE DE LA L.I. DE M SUR APPUIS          F INITIALE      F INITIALE');
       var h = L('             CUMULEE       CABLE'); for (var j = 1; j < n; j++) h.at(44 + 11 * (j - 1), 'APPUI ' + (j + 1)); h.at(107, 'MOYENNE'); h.at(123, 'MAXIMALE'); D.push(h.s);
       P.G.filter(function (g) { return g.t === t; }).forEach(function (g) {
-        var l = L(); l.at(7, fx(g.k / R.ND[t], 2) + 'L'); l.at(20, fx(g.X, 3)); l.at(33, fx(g.e, 3));
+        var l = L(); l.at(7, fx(g.k / P.ND[t], 2) + 'L'); l.at(20, fx(g.X, 3)); l.at(33, fx(g.e, 3));
         g.d2.forEach(function (d, jj) { l.at(45 + 11 * jj, fx(d, 6)); });
         l.at(103, fx(g.p.proba * P.nA, 0)); l.at(119, fx(g.p.maxi * P.nA, 0)); D.push(l.s);
       });
@@ -632,7 +637,7 @@
       D.push("                         : ( A  L'INFINI ) :  M.S  :  E.S   :  MOY.  :  MAX.  :  MOY.  :   MIN.  :  MOY.  :  MAX.  : MOY.  : MIN.");
       P.G.filter(function (g) { return g.t === t; }).forEach(function (g) {
         var d = g.d, a = P.nA;
-        D.push(row([[7, fx(g.k / R.ND[t], 2) + 'L'], [16, fx(g.X, 3)], [25, fx(g.e, 3)], [33, fx(d.fl, 0)], [41, fx(d.rect, 0)], [50, fx(d.ms, 0)], [58, fx(d.es, 0)],
+        D.push(row([[7, fx(g.k / P.ND[t], 2) + 'L'], [16, fx(g.X, 3)], [25, fx(g.e, 3)], [33, fx(d.fl, 0)], [41, fx(d.rect, 0)], [50, fx(d.ms, 0)], [58, fx(d.es, 0)],
           [69, fx(d.msMoy, 0)], [78, fx(d.msMax, 0)], [87, fx(d.esMoy, 0)], [96, fx(d.esMin, 0)], [106, fx(d.msMoy * a, 0)], [114, fx(d.msMax * a, 0)], [122, fx(d.esMoy * a, 0)], [130, fx(d.esMin * a, 0)]]));
       });
       if (t === 0) {
@@ -656,10 +661,13 @@
       D.push('          SECTION     ABSCISSE      O S S A T U R E   S E U L E          PRECONTRAINTE              EN  PHASE  INITIALE');
       D.push('                      CUMULEE       MOY.        MAX.        MIN.        MOY.        MAX.        MOY.        MAX.        MIN.');
       D.push('                                    (1)         (2)         (3)         (4)         (5)        (1)+(4)     (2)+(5)     (3)+(5)');
-      P.G.filter(function (g) { return g.t === t; }).forEach(function (g) {
-        var o = g.sig, cols = [o.MO, o.MOx, o.MOn, o.Pi, o.Px, add(o.MO, o.Pi), add(o.MOx, o.Px), add(o.MOn, o.Px)];
+      var rowsMT = P.G.filter(function (g) { return g.t === t; }).map(function (g) { return { o: g.sig, lab: g.k / P.ND[t], X: g.X }; });
+      (P.extraMT || []).filter(function (e) { return e.t === t; }).forEach(function (e) { rowsMT.push({ o: e, lab: e.lab, X: e.X }); });
+      rowsMT.sort(function (a, b) { return a.X - b.X || 0; });
+      rowsMT.forEach(function (g) {
+        var o = g.o, cols = [o.MO, o.MOx, o.MOn, o.Pi, o.Px, add(o.MO, o.Pi), add(o.MOx, o.Px), add(o.MOn, o.Px)];
         [0, 1].forEach(function (f) {
-          var l = L(); if (!f) { l.at(16, fx(g.k / R.ND[t], 2) + 'L'); l.at(28, fx(g.X, 3)); }
+          var l = L(); if (!f) { l.at(16, fx(g.lab, 2) + 'L'); l.at(28, fx(g.X, 3)); }
           cols.forEach(function (c, i) { l.at(41 + 12 * i, fx(c[f], 0)); }); D.push(l.s);
         });
       });
@@ -685,18 +693,170 @@
         var p4 = es ? o.Pes : o.Pms, p5 = es ? o.PesN : o.PmsX;
         var cols = [o.MG, o.QLx, o.QLn, p4, p5, add(o.MG, p4), add(o.QLx, p5), add(o.QLn, p5), add(o.qcx, p5), add(o.qcn, p5), add(o.frx, p5), add(o.frn, p5), add(o.tax, p5), add(o.tan, p5)];
         [0, 1].forEach(function (f) {
-          var l = L(); if (!f) { l.at(8, fx(g.k / R.ND[t], 2) + 'L'); l.at(16, fx(g.X, 3)); }
+          var l = L(); if (!f) { l.at(8, fx(g.k / P.ND[t], 2) + 'L'); l.at(16, fx(g.X, 3)); }
           cols.forEach(function (c, i) { l.at(25 + 8 * i, fx(c[f], 0)); }); D.push(l.s);
         });
       });
     }
   }
 
+  // --------------------------------------------------------------- câblage automatique (sections 20 à 22)
+  function fluageBlock(D, R, blk, icr) {
+    var n = R.n, m = Math.ceil(n / 2) - 1, rec = blk.rec || {};
+    D.push(' CALCUL ITERATIF DU FLUAGE');
+    D.push('          VARIABLES ICR, II, JJ,    FM,    FMJ :');
+    D.push(row([[23, String(icr || 1)], [27, '3'], [31, '7'], [39, fx(blk.FM, 0)], [47, fx(blk.FMJ || 0, 0)]]));
+    D.push('          VARIABLES I,K,SBB(K),E(I),XM,SM,CPTM,CPPM,A1,A2,A3 :');
+    ['a' + (m + 1), 'b' + m, 'a' + m].forEach(function (id, i) {
+      var r = rec[id]; if (!r) return;
+      D.push(row([[26, String(i + 1)], [32, String(r.K)], [42, fx(r.SBB, 3)], [52, fx(r.E, 3)], [62, fx(r.XM, 3)], [72, fx(r.SM, 3)], [82, fx(r.CPTM, 3)],
+        [92, fx(r.CPPM, 3)], [102, fx(r.A1, 3)], [112, fx(r.A2, 3)], [122, fx(r.A3, 3)]]));
+    });
+  }
+  function xMinT0(G) { var b = G[0]; G.forEach(function (g) { if (g.T0 < b.T0 - 1e-6) b = g; }); return b.X; }
+  function fuseauTables(D, m, R, blk) {
+    var v = m.values, n = R.n;
+    for (var t = 0; t < n; t++) {
+      D.newPage();
+      D.push('                             ELEMENTS DE DETERMINATION DU FUSEAU LIMITE DANS LA TRAVEE ' + (t + 1));
+      D.push('                                          AVEC DES PERTES ' + blk.kind + ' ET ' + (blk.N < 10 ? ' ' : '') + blk.N + ' CABLES');
+      D.push('                                          MISE EN TENSION EN UNE SEULE SERIE');
+      D.push('                                *                           **                                     ***');
+      D.push('     SECTION  ABSCISSE  DEVIATION    T0    PERTE  AU  TENSION  RELAXATION   TERME   TENSIONS PROBABLES    FUSEAU LIMITE');
+      D.push('              CUMULEE   EN GRADES           BLOCAGE   INITIALE   TOTALE   RECTANGLE   M . S     E . S   BORD SUP  BORD INF');
+      blk.G.filter(function (g) { return g.t === t; }).forEach(function (g) {
+        D.push(row([[11, fx(g.k / 10, 2) + 'L'], [21, fx(g.X, 3)], [31, fx(g.dev, 3)], [41, fx(g.T0, 0)], [51, fx(g.bl, 0)], [61, fx(g.Ti, 0)], [71, fx(g.rel, 0)],
+          [81, fx(g.rect, 0)], [91, fx(g.ms, 0)], [101, fx(g.es, 0)], [111, fx(g.sup, 3)], [121, fx(g.inf, 3)]]));
+      });
+      D.push('    * LA DEVIATION ANGULAIRE TIENT COMPTE DE LA DEVIATION PARASITE EN LIGNE EGALE A ' + fx(v.PHI / v.F, 5) + ' RADIANS PAR METRE');
+      D.push('   ** LA TENSION T1 TIENT COMPTE EGALEMENT DE LA PERTE DE RACCOURCISSEMENT ELASTIQUE DELTA(T)= ' + fx(blk.dC, 0) + 'T/M2');
+      D.push('  *** LA TENSION DE SERVICE APPROCHEE TIENT COMPTE DES PERTES DE RETRAIT DELTA(T)=' + fx(R.retrait * v.EP, 0) + 'T/M2 ET DE FLUAGE APPROCHE DELTA(T)=' + fx(blk.fl, 0) + 'T/M2');
+      D.push("  L'EFFET DU RECUL D'ANCRAGE SE FAIT SENTIR A GAUCHE JUSQU'A SG=" + pad(7 - fx(blk.SG, 3).length, fx(blk.SG, 3)) + ' M' +
+        (blk.SD !== null ? ', A DROITE A PARTIR DE SD=' + pad(7 - fx(blk.SD, 3).length, fx(blk.SD, 3)) + ' M' : ''));
+      var xm = xMinT0(blk.G);
+      if (v.MOD === 0 && xm > R.X0[t] + 1e-9 && xm <= R.X0[t + 1] + 1e-9)
+        D.push("  LA TENSION MINIMALE APRES DEDUCTION DES PERTES DE COURBURE MAIS AVANT RECUL D'ANCRAGE EVENTUEL A POUR ABSCISSE " + pad(7 - fx(xm, 3).length, fx(xm, 3)));
+    }
+  }
+  function zcourb(D, R, blk) {
+    var n = R.n;
+    D.push('                        EXCENTREMENTS MAXIMAUX SUR APPUIS COMPATIBLES AVEC LE RAYON DE COURBURE DES GAINES');
+    D.push('                                                            *     *');
+    D.push('                                                               *');
+    D.push('                                            ZCOURB G                    ZCOURB D');
+    for (var j = 1; j < n; j++) {
+      // NON RÉSOLU : valeur provisoire = bord supérieur du fuseau sur appui
+      var g = blk.G[(j - 1) * 11 + 10];
+      D.push(row([[24, 'APPUI ' + (j + 1)], [52, fx(g.sup, 3)], [80, fx(g.sup, 3)]]));
+    }
+  }
+  function parSegsHeader(segs, base, step) {
+    var h = L();
+    segs.forEach(function (g, s) {
+      if (s === 0) { h.at(base, 'DE'); h.at(base + 2, '0'); h.at(base + 4, 'A'); h.at(base + 11, fx(g.to, 3)); }
+      else { h.at(base + 17 + step * (s - 1), 'DE'); h.at(base + 24 + step * (s - 1), fx(g.from, 3)); h.at(base + 26 + step * (s - 1), 'A'); h.at(base + 33 + step * (s - 1), fx(g.to, 3)); }
+    });
+    return h.s;
+  }
+  function eqBlock(D, R, spans) {
+    spans.forEach(function (segs, t) {
+      D.push(parSegsHeader(segs, 10, 22));
+      ['A', 'B', 'C'].forEach(function (key) {
+        var l = L(key === 'A' ? 'TRAVEE ' + (t + 1) + ' A' : pad(9, key));
+        segs.forEach(function (g, s) { l.at(21 + 22 * s, fx(g[key], 6)); });
+        D.push(l.s);
+      });
+    });
+  }
+  function secCablageAuto(D, m, R) {
+    var v = m.values, P = R.prec, au = P && P.auto, n = R.n, t, j;
+    if (!au || !au.blocks) return;
+    var BA = au.blocks[0], BR = au.blocks[1];
+    D.newPage(); fluageBlock(D, R, BA, 1);
+    fuseauTables(D, m, R, BA);
+    D.newPage();
+    D.push('                       EXCENTREMENTS   DE   BASE   NECESSAIRES   AU   REAJUSTEMENT   DES   PERTES   DE   TENSION');
+    D.push('                                                            *     *');
+    D.push('                                                               *');
+    D.push('                                X          Z               X          Z               X          Z');
+    for (t = 0; t < n; t++) {
+      D.push(row([[27, 'TRAVEE  ' + (t + 1)], [35, fx(R.X0[t], 3)], [46, fx(au.P2.zs[t], 3)], [62, fx(R.X0[t] + au.P2.xl[t], 3)], [73, fx(au.P2.zl[t], 3)],
+        [89, fx(R.X0[t + 1], 3)], [100, fx(au.P2.zs[t + 1], 3)]]));
+    }
+    zcourb(D, R, BA);
+    D.newPage(); fluageBlock(D, R, BR, 1);
+    fuseauTables(D, m, R, BR);
+    D.newPage();
+    D.push('NOMBRES DE CABLES NECESSAIRES');
+    D.push("          A L'OUVERTURE DU FUSEAU LIMITE  " + pad(6 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' ( DONT ' + pad(5 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' EN PHASE DE CONSTRUCTION )');
+    var hl = L(); for (t = 0; t < n; t++) hl.at(61 + 11 * t, 'TRAVEE' + (t + 1)); D.push(hl.s);
+    var il = L("          A L'INSCRIPTION DU CABLE DANS LA STRUCTURE"); for (t = 0; t < n; t++) il.at(60 + 11 * t, fx(BR.nb.ins[t], 2)); D.push(il.s);
+    D.push('NOMBRE RETENU : ' + (au.N < 10 ? ' ' : '') + au.N);
+    D.newPage(); zcourb(D, R, BR);
+    D.newPage();
+    D.push('                                             EQUATIONS DES PARABOLES LIMITES');
+    D.push('                                                              *     *');
+    D.push('                                                                 *');
+    D.push('                                     PARABOLES DE LA FORME  Z = A*X**2 + B*X + C');
+    D.push('              RAPPORTEES AUX AXES OX = FIBRE MOYENNE DE LA SECTION BRUTE, OZ = APPUI DE GAUCHE DE LA TRAVEE');
+    for (t = 0; t < n; t++) [au.T1, au.T2].forEach(function (T, k) {
+      var segs = T.spans[t];
+      D.push(parSegsHeader(segs, 50, 20));
+      ['A', 'B', 'C'].forEach(function (key) {
+        var l = L(key === 'A' ? '          TRAVEE ' + (t + 1) + '        TRACE ' + (k + 1) + '        A' : pad(41, key));
+        segs.forEach(function (g, s) { l.at(64 + 20 * s, fx(g[key], 6)); });
+        D.push(l.s);
+      });
+    });
+    for (t = 0; t < n; t++) {
+      D.newPage();
+      D.push('       MOMENTS HYPERSTATIQUES SUR APPUIS DUS AUX TRACES LIMITES DU CABLE DANS LA TRAVEE ' + (t + 1) + ' POUR TOUTE LA LARGEUR DE LA DALLE');
+      D.push('                                                        *     *');
+      D.push('                                                           *');
+      D.push('SECTION     ABSCISSE     EXCENTREMENT DU CABLE      DERIVEE SECONDE DE LA L.I. DE M SUR APPUIS');
+      var h2 = L('             CUMULEE       TRACE 1   TRACE 2'); for (j = 1; j < n; j++) h2.at(59 + 11 * (j - 1), 'APPUI ' + (j + 1)); h2.at(130, 'F MOYEN DE SERVICE'); D.push(h2.s);
+      for (var k = 0; k <= 10; k++) {
+        var x = k * R.L[t] / 10, l2 = L();
+        l2.at(6, fx(k / 10, 2) + 'L'); l2.at(19, fx(R.X0[t] + x, 3)); l2.at(33, fx(au.T1.z(t, x), 4)); l2.at(43, fx(au.T2.z(t, x), 4));
+        for (j = 1; j < n; j++) l2.at(59 + 11 * (j - 1), fx(au.d2(t, k, j), 6));
+        l2.at(130, fx(au.Fm(t, k), 0)); D.push(l2.s);
+      }
+      D.push('                                           MOMENTS HYPERSTATIQUES SUR APPUIS DUS AU TRACE DU CABLE EN TRAVEE ' + (t + 1));
+      var h3 = L(); for (j = 1; j < n; j++) h3.at(60 + 11 * (j - 1), 'APPUI ' + (j + 1)); D.push(h3.s);
+      [au.H1[t], au.H2[t]].forEach(function (Hh, k2) {
+        var l3 = L(k2 === 0 ? '          EN SERVICE                      TRACE 1' : '                                          TRACE 2');
+        Hh.forEach(function (x2, jj) { l3.at(61 + 11 * jj, fx(x2, 3)); }); D.push(l3.s);
+      });
+    }
+    D.push('                                           MOMENTS HYPERSTATIQUES TOTAUX SUR APPUIS DUS AU TRACE DU CABLE');
+    var h4 = L(); for (j = 1; j < n; j++) h4.at(60 + 11 * (j - 1), 'APPUI ' + (j + 1)); D.push(h4.s);
+    [au.H1tot, au.H2tot].forEach(function (Hh, k2) {
+      var l4 = L(k2 === 0 ? '          EN SERVICE                      TRACE 1' : '                                          TRACE 2');
+      Hh.forEach(function (x2, jj) { l4.at(61 + 11 * jj, fx(x2, 3)); }); D.push(l4.s);
+    });
+    D.push('MATRICE DU SYSTEME');
+    au.Mat.forEach(function (rw) { var l5 = L(); rw.forEach(function (x3, k3) { l5.at(30 + 10 * k3, fx(x3, 3)); }); D.push(l5.s); });
+    var vec = function (lab, arr, d) { var l6 = L('                    VECTEUR ' + lab + ' :'); arr.forEach(function (x4, k4) { l6.at(40 + 10 * k4, fx(x4, d)); }); D.push(l6.s); };
+    vec('R', au.Rv, 3); vec('R', au.Rv.map(function (x5) { return 0.2093 * x5; }), 3);
+    vec('B', au.lambda.map(function () { return 1; }), 4); vec('Y', au.lambda, 4);
+    D.newPage();
+    D.push('                                EQUATIONS PARABOLIQUES DU CABLE  AVANT TRANSFORMATION LINEAIRE');
+    D.push('                                                       *     *');
+    D.push('                                                          *');
+    eqBlock(D, R, au.before.spans);
+    D.newPage();
+    D.push('                                EQUATIONS PARABOLIQUES DU CABLE  APRES TRANSFORMATION LINEAIRE');
+    D.push('                                                       *     *');
+    D.push('                                                          *');
+    eqBlock(D, R, au.after.spans);
+  }
+
   function secPrecontrainte(D, m, R) {
     var P = R.prec; if (!P) return;
+    if (m.values.CABL !== 4) secCablageAuto(D, m, R);
     secCaracBP(D, m, R);
     if (!P.G) return;
-    D.newPage(); cotesTable(D, m, R);
+    if (m.values.CABL === 4) { D.newPage(); cotesTable(D, m, R); }
     secEquationsCable(D, m, R);
     secTensions(D, m, R);
     secHypInit(D, m, R);
