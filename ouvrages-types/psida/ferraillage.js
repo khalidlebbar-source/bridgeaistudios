@@ -131,7 +131,16 @@
       const chMax = (R.G.up * coef.CP + vmax + 2 * l.T.max) / nap, chMin = (R.G.dn + vmin + 2 * l.T.min) / nap;
       const adm = ap.typ === 0 ? (A13.COMPREBS || 3500) : (A13.COMPRENS || 1500);
       const larg = 0.25, long = Math.max(0.25, Math.ceil(chMax / adm / larg / 0.05 - 1e-9) * 0.05);
-      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long) };
+      // chevêtre (constats 3603, 3607, 3639, 3826, 3488, 0063) : largeur = 2 esp/3 sur appui intermédiaire,
+      // about·sin ψ (grades) + esp/3 sur culée ; moment = R en charge max × esp / (12 × largeur) ;
+      // section : ELS, section fissurée b = 1, n = 15, d = H − 0,04, σs = σ̄s (exact en fissuration préjudiciable ;
+      // approché à ~1 % en peu préjudiciable, règle exacte non retrouvée).
+      const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + ap.esp / 3 : 2 * ap.esp / 3;
+      const mch = ech > 0 ? chMax * ap.esp / (12 * ech) : 0;
+      const sS = (r.mat.sigS && r.mat.sigS[2]) || 25000, dch = (r.section.H || 0) - 0.04;
+      const mres = A => { const x = -15 * A + Math.sqrt(225 * A * A + 30 * A * dch); return A * sS * (dch - x / 3); };
+      let lo = 0, hi = 0.05; for (let it = 0; it < 80; it++) { const md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
+      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, ach: hi };
     });
   }
 
@@ -367,6 +376,13 @@
       '                                1       0                     ATTEINTES',
       '              MINIMALES     ' + f(A13.COMPRENV || 250, 9, 2) + f(A13.COMPREBV || 2000, 8, 2) + AP.map((a, k) => f(a.cMin, k ? 11 : 7, 2)).join(''),
       '              MAXIMALES     ' + f(A13.COMPRENS || 1500, 9, 2) + f(A13.COMPREBS || 3500, 8, 2) + AP.map((a, k) => f(a.cMax, k ? 11 : 7, 2)).join(''));
+    pl.push(' '.repeat(66) + '*', ' '.repeat(65) + '* *',
+      "                          FERRAILLAGE DE CALCUL DES CHEVETRES    (PARALLELEMENT A LA DIRECTION DES LIGNES D'APPUI )",
+      '             LARGEUR DU CHEVETRE' + AP.map((a, k) => f(a.ech, k ? 11 : 19, 2)).join(''), '',
+      '             MOMENT APRES PONDERATION' + AP.map((a, k) => f(a.mch, k ? 11 : 14, 2)).join(''),
+      '                         (EN TM/M )',
+      '             SECTION DE CALCUL DES FERS' + AP.map((a, k) => f(a.ach, k ? 11 : 13, 6)).join(''),
+      '              (EN M**2 PAR ML LONGITUDINAL)');
     page("DIMENSIONNEMENT DES APPAREILS D'APPUI", pl, { sub: '                        *   *', sub2: "                         GEOMETRIE DES APPAREILS D'APPUI" });
   }
 
