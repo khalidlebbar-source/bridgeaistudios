@@ -178,7 +178,7 @@
       const lab = f.mode === 'pieux' ? f.n + ' pieux Ø' + fr(f.D, 2) + ' — L = ' + frn(f.Lp) : 'Semelle ' + fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2);
       text(P, [s.x, (f.mode === 'pieux' ? yft - (f.e || 0) - f.Lp : yft - f.e - 0.1)], lab, { ht: 2, dy: -4, lay: 'note' });
     });
-    const yT = 1.6 + mm(30);
+    const yT = 1.6 + mm(n > 1 ? 38 : 30);
     title(P, [Ltot / 2, yT], 'COUPE LONGITUDINALE', ech);
     return { P, ech, titre: 'COUPE LONGITUDINALE — échelle 1/' + ech };
   }

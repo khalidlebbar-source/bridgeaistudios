@@ -8,12 +8,12 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="theme-color" content="#0c0e14">
-<meta name="description" content="Bridge Composer : composez un pont routier ou ferroviaire par blocs (tablier PSI-DA, PSI-DP, VIPP, PRAD, PRP, bipoutre mixte ; piles, culées, fondations, équipements). Prédimensionnement SETRA, descente de charges estimée EN 1991-2 ou Fascicule 61, métrés, chiffrage, note PDF et plan de coffrage DXF.">
+<meta name="description" content="Bridge Composer : décrivez votre pont en une phrase à l’assistant IA, ou composez-le par blocs (tablier PSI-DA, PSI-DP, VIPP, PRAD, PRP, bipoutre mixte ; piles, culées, fondations, équipements). Prédimensionnement SETRA, descente de charges estimée EN 1991-2 ou Fascicule 61, métrés, chiffrage, note PDF et plan de coffrage DXF.">
 <meta name="keywords" content="bridge composer, prédimensionnement pont, descente de charges, métré pont, estimation pont, PSI-DA, PSI-DP, VIPP, PRAD, PRP, bipoutre mixte, EN 1991-2, Fascicule 61, LM71, DXF AutoCAD">
 <meta property="og:title" content="Bridge Composer — BridgeAI Studios">
 <meta property="og:image" content="https://www.bridgeaistudios.com/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta property="og:description" content="Composez votre pont par blocs : prédimensionnement, descente de charges estimée, métrés, chiffrage, note PDF et plan DXF.">
+<meta property="og:description" content="Décrivez votre pont en une phrase à l’assistant IA, ou composez-le par blocs : prédimensionnement, descente de charges estimée, métrés, chiffrage, note PDF et plan DXF.">
 <meta property="og:url" content="https://www.bridgeaistudios.com/composer.html">
 <meta property="og:type" content="website">
 <meta name="robots" content="index, follow">
@@ -26,7 +26,7 @@
   --bg:#ffffff;--chrome:#f1f3f6;--chrome2:#e6e9ee;--line:#cfd4dc;--line2:#b9c0ca;
   --txt:#1b2230;--mute:#5d6676;--acc:#1f5fd1;--acc2:#174aa6;--sel:#dbe8fd;--hov:#eaf1fd;
   --warn:#9a6700;--danger:#c92a2a;--ok:#2b8a3e;--gold:#a8842a;
-  --tree-w:280px;--prop-w:330px;
+  --tree-w:320px;--prop-w:330px;
   --ui:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 html,body{height:100%}
@@ -84,8 +84,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .ph{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;height:24px;padding:0 8px;background:linear-gradient(#f7f8fa,#e9ecf1);border-bottom:1px solid var(--line);font-weight:600;font-size:11.5px;color:#2c3443;white-space:nowrap}
 .ph small{font-weight:400;color:var(--mute);overflow:hidden;text-overflow:ellipsis}
 .left{border-right:1px solid var(--line)}
-.left .tree{flex:1;min-height:0;overflow:auto;padding:3px 0}
-.right .props{flex:1;min-height:0;overflow:auto}
+.right .tree{flex:1 1 52%;min-height:120px;overflow:auto;padding:3px 0}
+.right .props{flex:1 1 48%;min-height:120px;overflow:auto}
+.right .ph2{border-top:1px solid var(--line2)}
 .right{border-left:1px solid var(--line)}
 .vsplit{cursor:col-resize;background:var(--chrome);border-right:1px solid var(--line);border-left:1px solid var(--line)}
 .vsplit:hover{background:#c9dafa}
@@ -344,26 +345,45 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 @media (max-width:900px){.wz-body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}.wz-steps{display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);padding:6px}.wz-steps button{flex:none;width:auto}.wz-steps small{display:none}.wz-prev{border-left:none;border-top:1px solid var(--line);max-height:200px;flex-direction:row}.wpv{flex:1}.wkp{flex:1}.wcards.c3{grid-template-columns:1fr 1fr}.wgen{grid-template-columns:1fr 1fr}.wgen>b{grid-column:span 2}}
 @media (max-width:560px){.wcards.c2,.wcards.c3,.wgrid{grid-template-columns:1fr}.wz-prev{display:none}.wz-back{padding:0}.wz{height:100%;border-radius:0}}
 
-/* ── barre de description (interpréteur) ── */
-.cmdbar{flex:1 1 420px;max-width:620px;margin:0 auto;display:flex;align-items:center;gap:6px;height:24px;border:1px solid var(--line2);border-radius:4px;background:#fff;padding:0 4px 0 7px}
-.cmdbar:focus-within{border-color:var(--acc);box-shadow:0 0 0 2px #dbe8fd}
-.cmdbar svg{width:15px;height:15px;flex:none;fill:none;stroke:var(--acc);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.cmdbar input{flex:1;min-width:0;border:none;outline:none;background:none;font-size:12px}
-.cmdbar kbd{font:10.5px var(--ui);color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:0 5px;background:var(--chrome)}
-.cmdbar:focus-within kbd{display:none}
-.toast{position:fixed;z-index:700;top:38px;left:50%;transform:translateX(-50%);width:min(620px,calc(100vw - 24px));background:#fff;border:1px solid var(--line2);border-left:4px solid var(--ok);border-radius:5px;box-shadow:0 10px 30px -8px rgba(20,30,50,.35);padding:9px 12px 10px;font-size:12px}
-.toast.none{border-left-color:var(--warn)}.toast.wait,.toast.ans{border-left-color:var(--acc)}.toast .msg{margin-bottom:4px;line-height:1.45}
-.spin{display:inline-block;width:12px;height:12px;border:2px solid #c7d6ee;border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}@keyframes sp{to{transform:rotate(360deg)}}
-.cmdbar.busy{opacity:.7}
-.toast b{font-weight:600}.toast ul{margin:5px 0 0 16px}.toast li{margin:1px 0}
-.toast .miss{color:var(--warn);margin-top:5px}.toast .hint{color:var(--mute);margin-top:4px}
-.toast .ta{display:flex;gap:8px;justify-content:flex-end;margin-top:7px}
-.toast .ta button{border:1px solid var(--line2);background:#fff;border-radius:3px;padding:3px 10px;cursor:pointer}.toast .ta button:hover{background:var(--hov)}
 .wdesc{display:flex;gap:8px;align-items:stretch;margin:4px 0 6px}.wdesc textarea{flex:1;min-height:54px;resize:vertical;border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font:12px var(--ui)}
 .wdesc textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 2px #dbe8fd}.wdesc button{border:1px solid var(--acc2);border-radius:4px;padding:0 14px;cursor:pointer}
 .wres{background:#f3faf5;border:1px solid #bfe3c9;border-radius:5px;padding:7px 10px;margin:4px 0 8px;font-size:11.5px}.wres.none{background:#fffaeb;border-color:#f0d58c}
 .wres ul{margin:3px 0 0 16px}.wres .miss{color:var(--warn);margin-top:3px}
-@media(max-width:999px){.cmdbar{order:5;flex-basis:100%;max-width:none;margin:0}.titlebar{flex-wrap:wrap;height:auto;padding:4px 10px;row-gap:4px}.cmdbar kbd{display:none}}
+
+.wai{display:inline-flex;align-items:center;gap:4px;margin-left:8px;height:18px;padding:0 7px;border-radius:9px;background:linear-gradient(90deg,#1f5fd1,#1a9fb0);color:#fff;font-size:10px;font-weight:600;vertical-align:2px}
+.wai svg{width:11px;height:11px;fill:#fff}
+.wex{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.wex button{border:1px solid #c7d6ee;background:#f2f7ff;color:#174aa6;border-radius:12px;padding:3px 9px;font-size:11px;cursor:pointer}.wex button:hover{border-color:var(--acc)}
+
+/* ── panneau Assistant IA (gauche) ── */
+.left.ai{background:#fbfcfe}
+.ai-ph{background:linear-gradient(90deg,#eaf1fd,#e6f6f3)}
+.ai-t{display:inline-flex;align-items:center;gap:6px;color:#174aa6}.ai-t .spk{width:14px;height:14px;fill:url(#none);fill:#1f5fd1}
+.ai-new{border:1px solid var(--line2);background:#fff;border-radius:3px;font-size:10.5px;padding:1px 7px;cursor:pointer;color:var(--mute)}.ai-new:hover{color:var(--acc);border-color:var(--acc)}
+.chat{flex:1;min-height:0;overflow:auto;padding:10px 10px 6px;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.chat .q{align-self:flex-end;max-width:88%;background:var(--acc);color:#fff;border-radius:10px 10px 2px 10px;padding:6px 10px;white-space:pre-wrap;line-height:1.4}
+.chat .a{align-self:flex-start;max-width:96%;background:#fff;border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:7px 10px;line-height:1.45}
+.chat .a.err{border-color:#f0d58c;background:#fffaeb}
+.chat .a b{font-weight:600}.chat .a ul{margin:4px 0 0 16px}.chat .a li{margin:1px 0}
+.chat .a .miss{color:var(--warn);margin-top:4px}.chat .a .hint{color:var(--mute);margin-top:4px;font-size:11px}
+.chat .a .ta{display:flex;gap:6px;margin-top:6px}.chat .a .ta button{border:1px solid var(--line2);background:#fff;border-radius:3px;padding:2px 9px;cursor:pointer;font-size:11px}.chat .a .ta button:hover{background:var(--hov)}
+.chat .a .done{color:var(--mute);font-size:11px;margin-top:5px}
+.chat .welcome{color:#3a4352;line-height:1.5}
+.chat .welcome h4{display:flex;align-items:center;gap:6px;font-size:13px;color:#1b2230;margin-bottom:4px}.chat .welcome h4 .spk{width:16px;height:16px;fill:#1f5fd1}
+.chat .welcome p{margin-bottom:8px}
+.chat .ex{display:flex;flex-direction:column;gap:5px}
+.chat .ex button{text-align:left;border:1px solid #c7d6ee;background:#f2f7ff;color:#174aa6;border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;line-height:1.35}.chat .ex button:hover{background:#e3eeff;border-color:var(--acc)}
+.chat .ex small{color:var(--mute);font-size:10.5px;margin-top:2px}
+.ai-in{flex:none;border-top:1px solid var(--line);padding:8px;background:#fff}
+.ai-in textarea{width:100%;resize:none;border:1.5px solid transparent;border-radius:6px;padding:7px 9px;font:12px/1.4 var(--ui);background:linear-gradient(#fff,#fff) padding-box,linear-gradient(90deg,#1f5fd1,#1ab8a0 60%,#c9a84c) border-box;outline:none;min-height:58px}
+.ai-in textarea:focus{box-shadow:0 0 0 3px rgba(31,95,209,.15)}
+.ai-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.ai-bar small{color:var(--mute);font-size:10.5px}.ai-bar kbd{border:1px solid var(--line);border-radius:3px;padding:0 4px;background:var(--chrome);font:10px var(--ui)}
+.ai-go{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:4px;background:var(--acc);color:#fff;padding:5px 11px;cursor:pointer;font-size:11.5px;font-weight:600}
+.ai-go svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ai-go:hover{background:var(--acc2)}
+.ai-in.busy textarea{opacity:.6}.ai-in.busy .ai-go{opacity:.6;cursor:wait}
+.chat .typing{display:inline-flex;gap:3px}.chat .typing i{width:6px;height:6px;border-radius:50%;background:#9db5e0;animation:tp 1s infinite}.chat .typing i:nth-child(2){animation-delay:.15s}.chat .typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@media(max-width:999px){.left.ai{order:3;border-top:1px solid var(--line)}.right{order:4}.chat{max-height:300px}.right .tree,.right .props{flex:none;max-height:none;overflow:visible}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -374,11 +394,6 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   <span class="tb-sep"></span>
   <span class="tb-app">Bridge Composer</span>
   <span class="tb-doc" id="tbDoc"></span>
-  <form class="cmdbar" id="cmdbar" role="search" autocomplete="off">
-    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h9M3 10h6M3 15h9M14 8l3 3-3 3"/></svg>
-    <input id="cmd" type="text" aria-label="Décrire ou modifier l’ouvrage" placeholder="Demandez à l’assistant… ex. « pont dalle à 3 travées de 12-16-12 m » · « pourquoi ce tablier ? » · « réduis le coût »" spellcheck="false">
-    <kbd title="Raccourci : /">/</kbd>
-  </form>
   <span class="tb-right"><a href="index.html">← Accueil BridgeAI Studios</a></span>
 </header>
 
@@ -389,9 +404,13 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <div class="ribbon" id="ribbon" role="toolbar" aria-label="Commandes"></div>
 
 <div class="work" id="work">
-  <aside class="pane left" aria-label="Arborescence de l’ouvrage">
-    <div class="ph">Arborescence de l’ouvrage<small id="treeSub"></small></div>
-    <div class="tree" id="tree" role="tree"></div>
+  <aside class="pane left ai" aria-label="Assistant IA">
+    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/><path d="M16 13.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Assistant IA</span><button type="button" class="ai-new" id="aiNew" title="Effacer la conversation">Nouvelle discussion</button></div>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <form class="ai-in" id="cmdbar" autocomplete="off">
+      <textarea id="cmd" rows="3" aria-label="Message à l’assistant IA" placeholder="Décrivez, modifiez ou interrogez l’ouvrage… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)" spellcheck="false"></textarea>
+      <div class="ai-bar"><small>Raccourci <kbd>/</kbd> · chaque modification est annulable</small><button type="submit" class="ai-go"><span>Envoyer</span><svg viewBox="0 0 20 20"><path d="M4 10h11M11 5l5 5-5 5"/></svg></button></div>
+    </form>
   </aside>
   <div class="vsplit" id="vsplit" title="Redimensionner"></div>
   <section class="center">
@@ -409,27 +428,28 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
     </div>
   </section>
   <div class="vsplit" id="psplit" title="Redimensionner"></div>
-  <aside class="pane right" aria-label="Propriétés">
-    <div class="ph">Propriétés<small id="propSub"></small></div>
+  <aside class="pane right" aria-label="Arborescence et propriétés">
+    <div class="ph">Arborescence de l’ouvrage<small id="treeSub"></small></div>
+    <div class="tree" id="tree" role="tree"></div>
+    <div class="ph ph2">Propriétés<small id="propSub"></small></div>
     <div class="props" id="props"></div>
   </aside>
 </div>
 <div class="cmenu" id="cmenu" role="menu" hidden></div>
-<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <footer class="status" id="status"></footer>
 
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=8"></script>
-<script src="composer/draw.js?v=8"></script>
-<script src="composer/dxf.js?v=8"></script>
-<script src="composer/view3d.js?v=8"></script>
-<script src="composer/analysis.js?v=8"></script>
-<script src="composer/diag.js?v=8"></script>
-<script src="composer/nlp.js?v=8"></script>
-<script src="composer/wizard.js?v=8"></script>
-<script src="composer/app.js?v=8"></script>
+<script src="composer/calc.js?v=10"></script>
+<script src="composer/draw.js?v=10"></script>
+<script src="composer/dxf.js?v=10"></script>
+<script src="composer/view3d.js?v=10"></script>
+<script src="composer/analysis.js?v=10"></script>
+<script src="composer/diag.js?v=10"></script>
+<script src="composer/nlp.js?v=10"></script>
+<script src="composer/wizard.js?v=10"></script>
+<script src="composer/app.js?v=10"></script>
 </body>
 </html>

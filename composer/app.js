@@ -1116,49 +1116,75 @@
   }
   window.addEventListener('beforeprint', buildPrint);
 
-  /* ───────── Barre de description : interpréteur de phrases ───────── */
-  let toastT = 0;
-  function toast(html, cls, ms) {
-    const t = $('#toast'); t.className = 'toast' + (cls ? ' ' + cls : ''); t.innerHTML = html; t.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, ms || 9000);
-  }
-  function showInterp(r) {
+  /* ───────── Assistant IA : panneau de discussion (gauche) ───────── */
+  const chat = $('#chat'), CHATKEY = 'bas-composer-chat';
+  const SPK = '<svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/><path d="M16 13.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>';
+  const EXAMPLES = [
+    ['Pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m sur pieux Ø1,20', 'décrire un ouvrage'],
+    ['Passe en dalle précontrainte et mets les culées sur pieux', 'modifier'],
+    ['Pourquoi ce type de tablier ?', 'questionner les résultats'],
+    ['Réduis le coût sans changer les portées', 'optimiser'],
+  ];
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem(CHATKEY) || '[]').slice(-40); } catch (e) { log = []; }
+  const saveLog = () => { try { localStorage.setItem(CHATKEY, JSON.stringify(log.slice(-40).map((m) => Object.assign({}, m, { prev: undefined })))); } catch (e) { /* idem */ } };
+  function answerHTML(r) {
     if (r.error) return `<b>${esc(r.error)}</b>`;
     const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
+    if (r.ai) return (r.message ? `<div>${esc(r.message)}</div>` : '') + (r.changes && r.changes.length ? `<b>Modifications</b>${li(r.changes)}` : '');
+    return (r.ok.length ? `<b>Compris</b>${li(r.ok)}` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
+      + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
+      + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '')
+      + (r.why ? `<div class="hint">Interpréteur local (${esc(r.why)}).</div>` : '');
+  }
+  function renderChat(pending) {
     let h = '';
-    if (r.ai) h += (r.message ? `<div class="msg">${esc(r.message)}</div>` : '') + (r.changes.length ? `<b>Modifications</b>${li(r.changes)}` : '');
-    else {
-      h += (r.ok.length ? `<b>Compris</b>${li(r.ok)}` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
-        + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
-        + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '')
-        + (r.why ? `<div class="hint">Interpréteur local (${esc(r.why)}).</div>` : '');
+    if (!log.length) {
+      h = `<div class="welcome"><h4>${SPK}Parlez à votre pont</h4><p>Décrivez l’ouvrage comme à un collègue : l’assistant le compose, le modifie ou répond à vos questions à partir des résultats du calcul.</p>`
+        + `<div class="ex">${EXAMPLES.map(([t, k]) => `<button type="button" data-ex="${esc(t)}">${esc(t)}<br><small>${k}</small></button>`).join('')}</div></div>`;
     }
-    return h;
+    let lastI = -1; log.forEach((m, i) => { if (m.prev && !m.undone) lastI = i; });
+    log.forEach((m, i) => {
+      h += `<div class="q">${esc(m.q)}</div>`;
+      h += `<div class="a${m.err ? ' err' : ''}">${m.html}`;
+      if (i === lastI) h += `<div class="ta"><button type="button" data-undo="${i}">Annuler cette modification</button></div>`;
+      else if (m.undone) h += '<div class="done">Modification annulée.</div>';
+      h += '</div>';
+    });
+    if (pending) h += `<div class="q">${esc(pending)}</div><div class="a"><span class="typing"><i></i><i></i><i></i></span></div>`;
+    chat.innerHTML = h;
+    chat.scrollTop = chat.scrollHeight;
   }
   let asking = false;
-  $('#cmdbar').addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const inp = $('#cmd'), txt = inp.value.trim(); if (!txt || asking) return;
-    asking = true; $('#cmdbar').classList.add('busy'); inp.readOnly = true;
-    toast('<span class="spin"></span> L’assistant analyse votre demande…', 'wait', 60000);
+  async function sendAI(txt) {
+    txt = String(txt || '').trim(); if (!txt || asking) return;
+    asking = true; $('#cmdbar').classList.add('busy'); $('#cmd').value = '';
+    renderChat(txt);
     let r;
     try { r = await C.ask(txt, S, C.aiContext(M, S)); } catch (e) { console.error(e); r = { error: 'Erreur de l’assistant.' }; }
-    asking = false; $('#cmdbar').classList.remove('busy'); inp.readOnly = false;
+    asking = false; $('#cmdbar').classList.remove('busy');
     const changed = r.S && JSON.stringify(r.S) !== JSON.stringify(S);
-    if (!changed) { toast(showInterp(r) + '<div class="ta"><button data-t="x">Fermer</button></div>', r.ai && !r.error ? 'ans' : 'none', 30000); if (r.ai && !r.error) inp.value = ''; return; }
-    histT = 0; S = r.S; recompute(true); histT = 0;
-    toast(showInterp(r) + '<div class="ta"><button data-t="undo">Annuler</button><button data-t="x">OK</button></div>', '', 20000);
-    inp.value = '';
+    const entry = { q: txt, html: answerHTML(r), err: !!r.error || (!r.ai && !r.ok.length) };
+    if (changed) { entry.prev = JSON.stringify(S); histT = 0; S = r.S; recompute(true); histT = 0; }
+    log.push(entry); saveLog(); renderChat();
+    $('#cmd').focus();
+  }
+  $('#cmdbar').addEventListener('submit', (ev) => { ev.preventDefault(); sendAI($('#cmd').value); });
+  $('#cmd').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); sendAI(ev.target.value); }
+    else if (ev.key === 'Escape') ev.target.blur();
+    ev.stopPropagation();
   });
-  $('#toast').addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-t]'); if (!b) return;
-    if (b.dataset.t === 'undo') undo();
-    $('#toast').hidden = true;
+  chat.addEventListener('click', (ev) => {
+    const ex = ev.target.closest('[data-ex]'); if (ex) return sendAI(ex.dataset.ex);
+    const u = ev.target.closest('[data-undo]');
+    if (u) { const m = log[+u.dataset.undo]; if (m && m.prev) { S = C.normalize(JSON.parse(m.prev)); m.undone = true; recompute(true); saveLog(); renderChat(); } }
   });
-  $('#cmd').addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.target.value = ''; ev.target.blur(); $('#toast').hidden = true; } ev.stopPropagation(); });
+  $('#aiNew').addEventListener('click', () => { log = []; saveLog(); if (C.aiHistory) C.aiHistory.length = 0; renderChat(); $('#cmd').focus(); });
   document.addEventListener('keydown', (ev) => {
     if (ev.key === '/' && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName) && !document.querySelector('.wz')) { ev.preventDefault(); $('#cmd').focus(); }
   });
+  renderChat();
 
   let firstVisit = false;
   try { firstVisit = !localStorage.getItem(KEY); } catch (e) { /* stockage indisponible */ }

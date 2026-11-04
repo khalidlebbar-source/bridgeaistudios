@@ -83,7 +83,8 @@
     function formHTML() {
       const k = STEPS[step][0], rail = S.usage === 'rail', n = S.travees.length;
       if (k === 'projet') {
-        return h3('Décrivez votre ouvrage', 'En une phrase, comme à un collègue — l’assistant remplit les étapes pour vous.')
+        return `<h3>Décrivez votre ouvrage<span class="wai"><svg viewBox="0 0 20 20"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant IA</span></h3><p class="wsub">En une phrase, comme à un collègue : l’assistant remplit toutes les étapes pour vous.</p>`
+          + `<div class="wex">${['Pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m', 'Viaduc VIPP de 160 m sur pieux, sol 0,2 MPa', 'Pont-rail PRP de 19,40 m, 2 voies'].map((t) => `<button type="button" data-w="ex">${esc(t)}</button>`).join('')}</div>`
           + `<div class="wdesc"><textarea id="wzDesc" placeholder="ex. Pont dalle à 3 travées de 12-16-12 m, 2 voies et trottoirs de 1,25 m, piles colonnes de 6 m sur pieux Ø1,20, culées remblayées, sol 0,3 MPa">${esc(desc)}</textarea><button type="button" data-w="interp" class="pri">Interpréter</button></div>`
           + (lastR ? (() => {
             const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
@@ -278,6 +279,7 @@
       else if (w === 'next') step === STEPS.length - 1 ? finish() : go(step + 1);
       else if (w === 'gen') { generate(); render(); }
       else if (w === 'interp') interp();
+      else if (w === 'ex') { desc = b.textContent; const ta = $('#wzDesc'); if (ta) ta.value = desc; interp(); }
       else if (w === 'torecap') go(STEPS.length - 1);
     });
     back.addEventListener('input', (ev) => {
