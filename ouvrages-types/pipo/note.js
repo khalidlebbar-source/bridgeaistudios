@@ -257,7 +257,7 @@
   function etriers(r) {
     const out = [], lim = r.mat.tauSans;
     for (const [tit, secs, e] of [['E T R I E R S   D E   L A   T R A V E R S E   S U P E R I E U R E', r.secT, r.g.e3, 'T'], ['E T R I E R S   D U   P I E D R O I T', r.secP, r.g.e2, 'P']]) {
-      const tr = secs === r.secT, lv = tr ? r.liveT : r.liveP; const d = e - 0.025 - 1.2 * r.v.PHI1; // notice SETRA : enrobage 25 mm, encombrement = 1,2 φ
+      const tr = secs === r.secT, lv = tr ? r.liveT : r.liveP; const d = e - 0.025 - 0.6 * r.v.PHI1 - 1.1 * r.v.PHI2; // hauteur utile (règle des efforts résistants : 43.57/80.01 = 0.5446)
       const rows = secs.map((s, i) => { const vals = [1, -1].map(sg => { const ee = lv[i].V[sg > 0 ? 'max' : 'min'], q = LIVE.map(k => ee[k].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
         return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: tr ? 0 : Math.abs(s.vret), TP: tr ? 0 : Math.abs(s.vtem) }, sg).elu; });
         const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); return [s.x, V, V / d]; });
@@ -266,6 +266,18 @@
         sp(34) + 'ABSCISSE        EFFORT TRANCHANT     CISAILLEMENT', sp(36) + '(M)                 (T)               (T/M2)', ' ');
       for (const [x, V, t] of rows) out.push(F(x, 40, 2) + F(V, 21, 2) + F(t, 19, 2));
       out.push('\f');
+    }
+    // semelle : sections encastrement, 3/4, 1/2, 1/4 ; d selon le diamètre des fers solidarisant (int. nappe 4, ext. φ2)
+    out.push(sp(30) + 'E T R I E R S     D E   L A    S E M E L L E', ' ');
+    for (const [lab, k, sgn, a, phi] of [['* COTE EXTERIEUR', 'E', -1, r.aExt, r.fer.ad.semE.sol.phi], ['* COTE INTERIEUR', 'I', 1, r.aInt, r.fer.ad.semI.sol.phi]]) {
+      const d = r.g.e1 - 0.025 - 0.6 * phi - 1.1 * r.v.PHI2;
+      const rows = r.semelleEff[k].map(s => { const vals = [1, -1].map(sg => { const e = s.liveV[sg > 0 ? 'max' : 'min'], q = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'].map(x => e[x].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
+        return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[1], TP: s.tem[1] }, sg).elu; });
+        const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); return [sgn * (r.g.e2 / 2 + (1 - s.t) * a), V, V / d]; });
+      const mx = Math.max(...rows.map(x => x[2])), lim = r.mat.tauSans;
+      out.push(lab, mx < lim ? sp(60) + "PAS D'ETRIERS    (CONTRAINTE DE CISAILLEMENT <" + F(lim, 6, 2) + ' T/M2)' : '', sp(19) + 'ABSCISSE          EFFORT TRANCHANT        CISAILLEMENT', sp(21) + '(M)                   (T)                  (T/M2)');
+      for (const [x, V, t] of rows) out.push(F(x, 25, 2) + F(V, 27, 2) + F(t, 19, 2));
+      out.push(' ');
     }
     return out;
   }
@@ -289,7 +301,7 @@
   }
 
   // Moments et efforts tranchants dans la semelle (colonnes A BC BT ME CM EX TR REMBLAI RETRAIT TEMPERA)
-  const SORD = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'];
+  const SORD = ['A', 'BC', 'BT', 'MC', 'ME', 'EX', 'TR']; // en-tête « ME CM » mais colonnes Mc puis Me (comme les autres tableaux)
   const SLAB = [['SECTION 1      ', '(ENCASTREMENT) '], ['SECTION 3/4    ', sp(15)], ['SECTION 1/2    ', sp(15)], ['SECTION 1/4    ', sp(15)]];
   function semelleMoments(r) {
     const L = [sp(46) + 'M O M E N T S       D A N S        L A     S E M E L L E', ' ', ' ', ' '];
@@ -300,7 +312,7 @@
         for (const sg of [1, -1]) {
           const e = s.liveM[sg > 0 ? 'max' : 'min'], q = SORD.map(x => e[x].eff);
           const els = sg > 0 ? s.M.elsMax : s.M.elsMin, elu = sg > 0 ? s.M.eluMax : s.M.eluMin;
-          const t = LV.combine({ Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[0], TP: s.tem[0] }, sg);
+          const t = LV.combine({ Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RT: s.ret[0], TP: s.tem[0] }, sg);
           L.push(SLAB[i][sg > 0 ? 0 : 1] + (sg > 0 ? 'MAX' : 'MIN') + F(els, 9, 2) + F(elu, 8, 2) + q.map(x => F(x, 8, 2)).join('') + F(0, 9, 2) + F(s.ret[0], 8, 2) + F(s.tem[0], 8, 2) + F(t.els, 9, 2) + F(t.elu, 9, 2));
         }
         L.push(' ');
@@ -316,15 +328,126 @@
         sp(25) + 'PERMA(ELU)     A      BC     BT     ME         CM       EX      TR    REMBLAI RETRAIT TEMPERA     E.L.U.', ' ');
       r.semelleEff[k].forEach((s, i) => {
         for (const sg of [1, -1]) {
-          const e = s.liveV[sg > 0 ? 'max' : 'min'], q = SORD.map(x => e[x].eff);
+          const e = s.liveV[sg > 0 ? 'max' : 'min'], q = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'].map(x => e[x].eff); // ici Me puis Mc
           const elu = sg > 0 ? s.V.eluMax : s.V.eluMin;
-          const t = LV.combine({ Gels: elu, Gelu: elu, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[1], TP: s.tem[1] }, sg);
+          const t = LV.combine({ Gels: elu, Gelu: elu, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RT: s.ret[1], TP: s.tem[1] }, sg); // q[3]=Me, q[4]=Mc
           L.push(' ' + SLAB[i][sg > 0 ? 0 : 1] + '   ' + (sg > 0 ? 'MAX' : 'MIN') + F(elu, 11, 2) + q.map(x => F(x, 8, 2)).join('') + F(0, 8, 2) + F(s.ret[1], 8, 2) + F(s.tem[1], 8, 2) + F(t.elu, 11, 2));
         }
         L.push(' ');
       });
       L.push(' ');
     }
+    return L;
+  }
+
+  // ---- Ferraillage (fer.js)
+  const F6 = x => F(x, 8, 6);
+  function ferMinimal(r) {
+    const m = r.fer.min, p2 = k => (k ? 'ACIER PHI2' : 'ACIER PHI1');
+    return [sp(31) + 'F E R R A I L L A G E    M I N I M A L     N E C E S S A I R E', ' ', sp(35) + '( S E C T I O N S     D E T E R M I N A N T E S )', ' ', ' ', ' ', ' ',
+      'FERRAILLAGE INTERIEUR     (MOMENTS POSITIFS)', ' ', ' ',
+      '      TRAVERSE SUPERIEURE               M I L I E U  ' + F6(m.trMid) + ' M2      ' + p2(0), ' ', ' ',
+      '       PIEDROIT   SECTION COURANTE DETERMINANTE      ' + F6(m.pdCour) + ' M2      ' + p2(1), ' ', ' ', ' ',
+      'FERRAILLAGE EXTERIEUR     (MOMENTS NEGATIFS)', ' ', ' ',
+      '       TRAVERSE SUPERIEURE          ANGLE SUPERIEUR  ' + F6(m.trSup) + ' M2      ' + p2(0), ' ', ' ',
+      '       PIEDROIT                     ANGLE SUPERIEUR  ' + F6(m.pdSup) + ' M2      ' + p2(0), ' ',
+      '                                     B A S E         ' + F6(m.pdBase) + ' M2      ' + p2(0), ' ', ' ', ' ',
+      'FERRAILLAGE DE LA SEMELLE', ' ', ' ',
+      '       ENCASTREMENT     COTE    EXTERIEUR            ' + F6(m.semE) + ' M2      ' + p2(1), ' ',
+      '       ENCASTREMENT     COTE    INTERIEUR            ' + F6(m.semI) + ' M2      ' + p2(1)];
+  }
+  function ferBloc(tit, o, ep) {
+    return [tit, ' ', '      CARACTERISTIQUES GEOMETRIQUES        EPAISSEUR ' + ep + ' =' + F(o.h, 5, 2) + ' M', ' ',
+      '      CARACTERISTIQUES DES ACIERS           SECTION =' + F6(o.A) + ' M2            ESPACEMENT =' + F(o.esp, 6, 3) + ' M   DIAMETRE   =' + F(o.phi, 6, 3) + ' M', ' ',
+      '     EFFORTS TRANCHANTS RESISTANTS           ACIER =' + F(o.VRs, 6, 2) + ' T                     BETON =' + F(o.VRb, 6, 2) + ' T', ' ',
+      '     CONTRAINTES MAXIMALES PONDEREES         ACIER =' + E(o.ss, 7) + ' T/M2                 BETON =' + E(o.sb, 6) + ' T/M2', ' '];
+  }
+  function ferAdopte(r) {
+    const a = r.fer.ad, H1 = [sp(23) + 'F E R R A I L L A G E      R E E L      A D O P T E', ' ', sp(23) + '( S E C T I O N S      D E T E R M I N A N T E S )', ' ', ' ', ' '];
+    const L = [...H1, sp(25) + 'F E R R A I L L A G E      I N T E R I E U R', ' ', ' ',
+      ...ferBloc(' TRAVERSE SUPERIEURE', a.trInt, 'E3'), ...ferBloc('PIEDROIT   SECTION COURANTE DETERMINANTE', a.pdCour, 'E2'), '\f',
+      ...H1, sp(26) + 'F E R R A I L L A G E      E X T E R I E U R', ' ', ' ',
+      ...ferBloc('TRAVERSE SUPERIEURE - ANGLE SUPERIEUR', a.trSup, 'E3'), ...ferBloc('PIEDROIT   -   ANGLE SUPERIEUR', a.pdSup, 'E2'), ...ferBloc('PIEDROIT   -   B A S E', a.pdBase, 'E2'), '\f',
+      ...H1, sp(35) + 'F E R R A I L L A G E    D E   L A    S E M E L L E', ' ', ' '];
+    const nap = (lab, o) => ['     CARACTERISTIQUES DES ACIERS'.slice(0, 0) + sp(41) + lab + F6(o.A) + ' M2   DIAMETRE   =' + F(o.phi, 8, 3) + ' M', sp(105) + 'ESPACEMENT =' + F(o.esp, 8, 3) + ' M', ' '];
+    for (const [tit, o, int] of [['* SEMELLE INTERIEURE', a.semI, true], ['* SEMELLE EXTERIEURE', a.semE, false]]) {
+      L.push(tit, ' ', '    CARACTERISTIQUES GEOMETRIQUES       EPAISSEUR E1 =' + F(o.h, 5, 2) + ' M      LARGEUR    =' + F(o.larg, 5, 2) + ' M', ' ');
+      const sol = nap('SECTION SOLIDARISANT PIEDROIT ET SEMELLE         = ', o.sol), fl = nap((int ? 'SECTION FILANTE SUPPLEMENTAIRE                  = ' : 'SECTION FILANTE DANS LA SEMELLE                 = '), o.fil);
+      sol[0] = '     CARACTERISTIQUES DES ACIERS        ' + sol[0].trimStart().padStart(sol[0].length - 41 + 3);
+      L.push(...(int ? [...sol, ...fl] : [...fl, ...sol]), sp(41) + 'SECTION TOTALE AU ML                            =' + F6(o.A) + ' M2', ' ',
+        '     CONTRAINTES MAXIMALES PONDEREES        ACIER =' + E(o.ss, 7) + ' T/M2                 BETON =' + E(o.sb, 8) + ' T/M2', ' ', ' ');
+    }
+    return L;
+  }
+  function ferTransversal(r) {
+    const t = r.fer.tr;
+    return [sp(43) + 'F E R R A I L L A G E   T R A N S V E R S A L', ' ',
+      'CONDITION DE NON FRAGILITE   TRAVERSE ' + F6(t.nfT) + ' M2', '                             PIEDROITS ' + F6(t.nfP) + ' M2', '                             SEMELLES ' + F6(t.nfS) + ' M2', ' ',
+      'FERRAILLAGE PLANCHER                   ' + F6(t.plancher) + ' M2', ' ', ' ', ' ',
+      'FERRAILLAGE TRANSVERSAL DE LA FACE INTERIEURE DE LA TRAVERSE',
+      sp(67) + 'SECTION = MAXIMUM(' + t.Am.toFixed(6) + ',' + t.nfT.toFixed(6) + ',' + t.plancher.toFixed(6) + ')', ' ',
+      '                  CARACTERISTIQUES GEOMETRIQUES      EPAISSEUR E3 =' + F(r.g.e3, 5, 2) + ' M', ' ',
+      '                  CARACTERISTIQUES DES ACIERS         SECTION =' + F6(t.A) + ' M2   ESPACEMENT DROIT =' + F(t.esp, 6, 3) + ' M   DIAMETRE   =' + F(r.v.PHI2, 6, 3) + ' M', ' ',
+      '                 CONTRAINTES MAXIMALES                 ACIER =' + E(t.ss, 7) + ' T/M2              BETON =' + E(t.sb, 6) + ' T/M2'];
+  }
+
+  function ferEpure(r) {
+    const f = r.fer, ep = f.ep, a = f.ad, F2 = (x, w) => F(x, w, 2);
+    const tit = sp(30) + 'E P U R E      D    A R R E T      D E S      B A R R E S';
+    const L = [tit, sp(46) + '*             *         *', sp(35) + 'F E R R A I L L A G E        I N T E R I E U R', sp(31) + "LES ABSCISSES SONT COMPTEES A PARTIR DE L'ANGLE", ' ',
+      'T R A V E R S E   S U P E R I E U R E', "      SECTION D'ACIER " + a.trInt.A.toFixed(6) + ' M2', '      ACIER PHI =' + F(a.trInt.phi, 6, 3) + ' M',
+      sp(42) + 'ABSCISSE ORIGINE         ABSCISSE EXTREMITE     LONGUEUR'];
+    const nm = [1, 4, 2, 3];
+    ep.trav.forEach(([o, e, l], i) => L.push(sp(25) + 'BARRE ' + (i + 1) + '            A' + nm[i] + 'S =' + F2(o, 8) + '            E' + nm[i] + 'S =' + F2(e, 11) + '     A' + nm[i] + 'SI =' + F2(l, 8)));
+    L.push(' ', 'P I E D R O I T', "     SECTION D'ACIER " + a.pdCour.A.toFixed(6) + ' M2', '     ACIER PHI =' + F(a.pdCour.phi, 6, 3) + ' M');
+    ep.pied.forEach(([o, e, l], i) => L.push(sp(13) + 'MOITIE ' + (i + 1) + sp(22) + 'A' + (i + 1) + 'P =' + F2(o, 8) + sp(17) + 'E' + (i + 1) + 'P =' + F2(e, 8) + '     A' + (i + 1) + 'PI =' + F2(l, 8)));
+    L.push('\f', tit, sp(46) + '*             *            *', sp(34) + 'F E R R A I L L A G E            E X T E R I E U R',
+      sp(31) + 'LES ABSCISSES SONT COMPTEES SUR LE PIEDROIT A PARTIR DE LA BASE', ' ', 'A N G L E   S U P E R I E U R',
+      '      SECTION ' + a.trSup.A.toFixed(6) + ' M2                  ABSCISSE ORIGINE            ABSCISSE EXTREMITE    LONGUEUR',
+      '      ACIER PHI =' + F(a.trSup.phi, 6, 3) + ' M                   SUR LE PIEDROIT              SUR LA TRAVERSE');
+    const na = [3, 1, 4, 2];
+    ep.ang.forEach(([p, b, l], i) => L.push(sp(24) + 'BARRE ' + (i + 1) + '             P' + na[i] + 'S =' + F2(p, 8) + '               B' + na[i] + 'S =' + F2(b, 8) + '        B' + na[i] + 'SE =' + F2(l, 7)));
+    L.push(' ', 'BASE DU PIEDROIT ET SEMELLE', '    SEMELLE INTERIEURE                     ABSCISSE ORIGINE           ABSCISSE EXTREMITE        LONGUEUR',
+      '       SECTION = ' + a.pdBase.A.toFixed(6) + ' M2                SUR LE PIEDROIT             DANS LA SEMELLE', '       ACIER PHI =' + F(a.pdBase.phi, 6, 3) + ' M');
+    ep.semI.forEach(([p, e, l], i) => L.push((i ? '                SEMELLE ET PIEDROIT   MOITIE2' : '                FERS SOLIDARISANT     MOITIE1') + ' P5S' + (i + 1) + ' =' + F2(p, 13) + '            E5SI =' + F2(e, 7) + '       L5SI' + (i + 1) + ' =' + F2(l, 11)));
+    const s = ep.semE;
+    L.push('    SEMELLE EXTERIEURE', '       SECTION = ' + a.semE.sol.A.toFixed(6) + ' M2', '       ACIER PHI =' + F(a.semE.sol.phi, 6, 3) + ' M', '                FERS SOLIDARISANT',
+      '                SEMELLE ET PIEDROIT               A5S =' + F2(s[0], 7) + '              E5SE =' + F2(s[1], 6) + '        L5SE =' + F2(s[2], 10));
+    return L;
+  }
+
+  function ferNomenclature(r) {
+    const n = r.fer.nom, f2 = x => x.toFixed(2);
+    const lg = n.tb > 0 ? '10 M +' + F(n.tb, 7, 2) + ' M ( TETE-BECHE )' : F(n.Wb, 6, 2) + ' M';
+    return [sp(31) + 'N O M E N C L A T U R E      D E S       A C I E R S       A U X I L I A I R E S', sp(46) + '(   D I A M E T R E        P H I   2    )', sp(68) + '*', ' ',
+      '- T R A V E R S E          S U P E R I E U R E', '          ACIERS LONGITUDINAUX',
+      '                   PROLONGEMENT DES ACIERS DU FERRAILLAGE EXTERIEUR              ESPACEMENT ' + f2(n.espT) + ' M - LONGUEUR ' + F(n.lExt, 11, 2) + ' M',
+      '                   PROLONGEMENT DES ACIERS DU FERRAILLAGE INTERIEUR              ESPACEMENT ' + f2(n.espT) + ' M - LONGUEURS ' + f2(n.lInt[0]) + ' M ET ' + F(n.lInt[1], 11, 2) + ' M',
+      '          ACIERS TRANSVERSAUX',
+      '                   FACE EXTERIEURE                                               ESPACEMENT ' + f2(n.espTE) + ' M - LONGUEUR        ' + lg, ' ',
+      '- G   O    U   S   S   E   T    S', '          ACIERS LONGITUDINAUX          ESPACEMENT ' + f2(n.espP) + ' M - LONGUEUR       1.80 M',
+      '          ACIERS TRANSVERSAUX            8 FERS   FILANTS   - LONGUEUR     ' + lg, ' ',
+      '- P   I    E   D   R   O   I    T   S', '                                                      ( ESPACEMENT 0.20 M SUR 2 M          A PARTIR DE LA BASE',
+      '          ACIERS TRANSVERSAUX            (', '                   SUR CHACUNE DES 2 FACES            ( ESPACEMENT ' + f2(n.espPd) + ' M SUR LE RESTE DE LA HAUTEUR',
+      '                                                      (', '                                                      ( LONGUEUR ' + lg, ' ',
+      '- S   E    M   E   L   L   E    S',
+      '          ACIERS LONGITUDINAUXFACE SUPERIEURE                 ESPACEMENT ' + f2(n.espP) + ' M - LONGUEUR ' + F(r.g.B, 12, 2) + ' M',
+      '          ACIERS TRANSVERSAUX FACE SUPERIEURE                 ESPACEMENT ' + f2(n.espSs) + ' M - LONGUEUR ' + lg,
+      '                                          FACE INFERIEURE     ESPACEMENT 0.20 M - LONGUEUR ' + lg];
+  }
+
+  function avantMetre(r) {
+    const m = r.fer.metre;
+    return [sp(24) + 'AVANT       METRE       RECAPITULATIF', ' ', 'B E T O N S', '        BETON POUR BA             ' + String(Math.round(m.beton)).padStart(7) + ' M3',
+      '        COFFRAGES                 ' + String(Math.round(m.coffrage)).padStart(7) + ' M2', ' ', 'A C I E R S',
+      '       ACIER PHI1               =' + F(m.ton[0], 9, 2) + ' T', '       ACIER PHI2               =' + F(m.ton[1], 9, 2) + ' T', '       ACIER PHI3               =' + F(m.ton[2], 9, 2) + ' T',
+      '                    TOTAL       =' + F(m.total, 9, 2) + ' T', "       POIDS D'ACIER", '           PAR M3 DE BETON =' + F(m.total / m.beton, 15, 3) + ' T/M3'];
+  }
+
+  function liMu(r) {
+    const L = [sp(50) + "LIGNES D'INFLUENCE DU COEFFICIENT MU", sp(24) + 'AU POINT DE COORDONNEES (0.,0.) COMPTEES A PARTIR DU CENTRE DE LA DALLE',
+      'HARMONIQUE       -B          -0,75 B      0,5 B        -0,25 B       0        0,25 B      0,5 B     0,75 B       B'];
+    for (const rw of r.mu.rows) L.push(String(rw.m).padStart(5) + rw.v.map((x, i) => F(x, i ? 13 : 16, 5)).join(''));
     return L;
   }
 
@@ -339,8 +462,8 @@
     out.push(...lignesInfluence(r), '\f');
     out.push(...momentsPermanents(r), '\f');
     out.push(...majDyn(r), '\f', ...coefK(r), '\f');
-    out.push(...sectionsDet(r), '\f', ...tablesSurcharges(r, 'T'), ...diag(r, 'T'), '\f', ...tablesSurcharges(r, 'P'), ...diag(r, 'P'), '\f', ...deplacements(r), '\f', ...tranchants(r, 'T'), '\f', ...tranchants(r, 'P'), '\f');
-    out.push(...semelleLI(r), '\f', ...semelleMoments(r), '\f', ...semelleTranchants(r), '\f', ...pressions(r), '\f', ...etriers(r));
+    out.push(...sectionsDet(r), '\f', ...tablesSurcharges(r, 'T'), ...diag(r, 'T'), '\f', ...tablesSurcharges(r, 'P'), ...diag(r, 'P'), '\f', ...liMu(r), '\f', ...deplacements(r), '\f', ...tranchants(r, 'T'), '\f', ...tranchants(r, 'P'), '\f');
+    out.push(...semelleLI(r), '\f', ...semelleMoments(r), '\f', ...semelleTranchants(r), '\f', ...pressions(r), '\f', ...ferMinimal(r), '\f', ...ferAdopte(r), '\f', ...ferTransversal(r), '\f', ...ferEpure(r), '\f', ...ferNomenclature(r), '\f', ...etriers(r), '\f', ...avantMetre(r));
     return out.join('\n');
   }
 

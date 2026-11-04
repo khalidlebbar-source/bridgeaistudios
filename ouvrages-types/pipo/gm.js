@@ -33,7 +33,28 @@
     // K(y,e) = K(e,y) (réciprocité) : on calcule la ligne d'influence de la fibre y
     return (y, e) => W(Math.max(-b + 1e-9, Math.min(b - 1e-9, e)))(y);
   }
-  const api = { makeK };
+  // Coefficient μ de Guyon (moment transversal, Poisson nul, α = 1) à la fibre f (relative, b = 1) pour une charge
+  // linéique sinusoïdale en e (relative) ; θ = b / portée. Solution exacte de la plaque (même formulation que PICF).
+  function muCoef(theta, f, e) {
+    const b = 1, be = Math.PI * theta;
+    const basis = (y, der) => { const ch = Math.cosh(be * y), sh = Math.sinh(be * y);
+      const C = k => Math.pow(be, k) * (k % 2 ? sh : ch), S = k => Math.pow(be, k) * (k % 2 ? ch : sh);
+      const yC = n => y * C(n) + (n ? n * C(n - 1) : 0), yS = n => y * S(n) + (n ? n * S(n - 1) : 0);
+      return [C(der), yC(der), S(der), yS(der)]; };
+    const A = [], r = [];
+    const row = (seg, y, der, c) => { const v = new Array(8).fill(0); const q = basis(y, der); for (let i = 0; i < 4; i++) v[seg * 4 + i] += c * q[i]; return v; };
+    const add = (a, c) => a.map((x, i) => x + c[i]);
+    for (const [seg, y] of [[0, -b], [1, b]]) { A.push(row(seg, y, 2, 1)); r.push(0); A.push(add(row(seg, y, 3, 1), row(seg, y, 1, -2 * be * be))); r.push(0); }
+    for (let d = 0; d < 3; d++) { A.push(add(row(0, e, d, 1), row(1, e, d, -1))); r.push(0); }
+    A.push(add(row(1, e, 3, 1), row(0, e, 3, -1))); r.push(1);
+    const n = 8, M = A.map((rw, i) => [...rw, r[i]]);
+    for (let i = 0; i < n; i++) { let p = i; for (let k = i + 1; k < n; k++) if (Math.abs(M[k][i]) > Math.abs(M[p][i])) p = k; [M[i], M[p]] = [M[p], M[i]];
+      for (let k = 0; k < n; k++) if (k !== i) { const q = M[k][i] / M[i][i]; for (let c = i; c <= n; c++) M[k][c] -= q * M[i][c]; } }
+    const x = M.map((rw, i) => rw[n] / rw[i]);
+    const seg = f < e ? 0 : 1, q = basis(f, 2); let s = 0; for (let i = 0; i < 4; i++) s += x[seg * 4 + i] * q[i];
+    return -s;
+  }
+  const api = { makeK, muCoef };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PIPO_GM = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

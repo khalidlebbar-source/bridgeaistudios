@@ -1,0 +1,170 @@
+// PIPO-EL — ferraillage (sections BAEL, ferraillage minimal, réel adopté, transversal), règles reconstituées
+// sur les pages « FERRAILLAGE » des listings SETRA (cf. NOTES.md, tour 5). Unités : m, t, t/m².
+(function (root) {
+  'use strict';
+  const req = (typeof require === 'function' && typeof module !== 'undefined');
+  const LV = req ? require('./live.js') : root.PIPO_LIVE;
+  const GM = req ? require('./gm.js') : root.PIPO_GM;
+  const aire = phi => Math.PI * phi * phi / 4;
+
+  // ELU flexion simple, diagramme parabole-rectangle (béton 3.5‰ / 2‰, acier 10‰), b = 1 m
+  function asELU(M, d, fbu, fsu) {
+    if (!(M > 0)) return 0;
+    const res = x => { const es = Math.min(0.01, 0.0035 * (d - x) / x); const ec = es === 0.01 ? 0.01 * x / (d - x) : 0.0035; const N = 200; let F = 0, Mo = 0;
+      for (let k = 0; k < N; k++) { const y = (k + 0.5) * x / N, e = ec * (1 - y / x), sg = e < 0.002 ? fbu * (1 - (1 - e / 0.002) ** 2) : fbu; F += sg * x / N; Mo += sg * x / N * (d - y); }
+      return [F, Mo]; };
+    let lo = 1e-6, hi = d * 0.99; for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (res(m)[1] < M) lo = m; else hi = m; }
+    return res(lo)[0] / fsu;
+  }
+  // ELS : section fissurée, n = 15
+  function elsStress(M, A, d) {
+    if (!(A > 0) || !(M > 0)) return { ss: 0, sb: 0 };
+    const nA = 15 * A, x = -nA + Math.sqrt(nA * nA + 2 * nA * d), I = x ** 3 / 3 + nA * (d - x) ** 2;
+    return { ss: 15 * M * (d - x) / I, sb: M * x / I };
+  }
+  // section d'acier telle que σs ≤ σs limite (fissuration préjudiciable) et σb ≤ σb limite
+  function asELS(M, d, ssl, sbl) {
+    if (!(M > 0)) return 0; let lo = 1e-7, hi = 0.3;
+    for (let i = 0; i < 90; i++) { const m = (lo + hi) / 2; const s = elsStress(M, m, d); if ((ssl && s.ss > ssl) || (sbl && s.sb > sbl)) lo = m; else hi = m; }
+    return hi;
+  }
+
+  // Totaux pondérés (mêmes combinaisons que les tableaux) : {els, elu}
+  function totaux(Mo, sg, ret, tem, lv) {
+    const e = lv[sg > 0 ? 'max' : 'min'];
+    return LV.combine({ Gels: sg > 0 ? Mo.elsMax : Mo.elsMin, Gelu: sg > 0 ? Mo.eluMax : Mo.eluMin, A: e.A.eff, BC: e.BC.eff, BT: e.BT.eff,
+      MC: e.MC.eff, ME: e.ME.eff, EX: e.EX.eff, TR: e.TR.eff, RT: ret, TP: tem }, sg);
+  }
+
+  function ferraillage(r) {
+    const v = r.v, g = r.g, mat = r.mat, sn = g.sn;
+    const fbu = mat.fbu, fsu = mat.ssElu, ssl = v.FIP ? mat.ssEls : [0, 0, 0], sbl = v.SIGMAF;
+    const PHI = [v.PHI1, v.PHI2, v.PHI3], A1 = aire(v.PHI1), A2 = aire(v.PHI2);
+    // hauteur utile (règle PICF, exacte sur les efforts résistants béton imprimés) : d = h − c − 0.6 φ − 1.1 φ2 ;
+    // enrobage 0.035 au dessus de la traverse (fibre supérieure), 0.025 ailleurs.
+    const dd = (h, c, phi) => h - c - 0.6 * phi - 1.1 * v.PHI2;
+    const need = (MU, MS, d, k) => Math.max(asELU(MU, d, fbu, fsu[k]), asELS(MS, d, ssl[k], sbl));
+    // ---- moments de dimensionnement (valeurs positives pour la fibre tendue considérée)
+    const D = r.det;
+    const mid = totaux(D.mid.M, 1, D.mid.ret, D.mid.tem, r.liveDet.mid);
+    const sup = totaux(D.sup.M, -1, D.sup.ret, D.sup.tem, r.liveDet.sup);
+    const inf = totaux(D.inf.M, -1, D.inf.ret, D.inf.tem, r.liveDet.inf);
+    let pdU = 0, pdS = 0;
+    r.secP.forEach((s, i) => { const t = totaux(s.M, 1, s.ret, s.tem, r.liveP[i].M); pdU = Math.max(pdU, t.elu); pdS = Math.max(pdS, t.els); });
+    const semTot = k => { const s = r.semelleEff[k][0]; return totaux(s.M, -1, s.ret[0], s.tem[0], s.liveM); };
+    const sE = semTot('E'), sI = semTot('I');
+    const dT = dd(g.e3, 0.025, v.PHI1), dTs = dd(g.e3, 0.035, v.PHI1), dP1 = dd(g.e2, 0.025, v.PHI1), dP2 = dd(g.e2, 0.025, v.PHI2), dS2 = dd(g.e1, 0.025, v.PHI2);
+    const min = {
+      trMid: need(mid.elu, mid.els, dT, 0),
+      pdCour: need(pdU, pdS, dP2, 1), // piédroit, section courante (moment non multiplié par sin φ)
+      trSup: need(-sup.elu, -sup.els, dTs, 0),
+      pdBase: need(-inf.elu * sn, -inf.els * sn, dP1, 0),
+      semE: need(-sE.elu, -sE.els, dS2, 1), semI: need(-sI.elu, -sI.els, dS2, 1),
+    };
+    min.pdSup = min.trSup * sn;
+    // ---- ferraillage réel adopté : maille de base dans la section la plus sollicitée de la traverse (notice §3.3.3.1)
+    const Q = Math.max(min.trMid, min.trSup), e = A1 / Q, eP = e / sn;
+    const opt = (k, m) => ({ A: (k ? A2 : A1) / (eP * m), esp: eP * m, phi: PHI[k], k });
+    const choose = (list, Am) => list.find(o => o.A >= Am - 1e-12) || list[list.length - 1];
+    const ad = {
+      trInt: { A: Q, esp: e, phi: v.PHI1, k: 0, h: g.e3, d: dT, M: mid },
+      trSup: { A: Q, esp: e, phi: v.PHI1, k: 0, h: g.e3, d: dTs, M: { els: -sup.els, elu: -sup.elu } },
+      pdSup: { A: Q * sn, esp: eP, phi: v.PHI1, k: 0, h: g.e2, d: dP1, M: { els: -sup.els * sn, elu: -sup.elu * sn } },
+    };
+    // nappe 3 (piédroit, moments positifs) : φ2 à 2d, φ2 à d, φ1 à 2d, φ1 à d (premier suffisant)
+    ad.pdCour = Object.assign(choose([opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU } });
+    // nappe 4 (base du piédroit, prolongée dans la semelle intérieure) : φ2 à d, φ1 à 2d, φ1 à d
+    ad.pdBase = Object.assign(choose([opt(1, 1), opt(0, 2), opt(0, 1)], min.pdBase), { h: g.e2, M: { els: -inf.els * sn, elu: -inf.elu * sn } });
+    // semelle intérieure : nappe 4 + nappe 5 filante si insuffisante ; extérieure : φ2 à d (fers solidarisant) + filante
+    const fil = (Am, A0) => Am > A0 + 1e-12 ? choose([opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], Am - A0) : { A: 0, esp: 0, phi: 0, k: -1 };
+    const solE = opt(1, 1);
+    ad.semI = { sol: ad.pdBase, fil: fil(min.semI, ad.pdBase.A), h: g.e1, larg: r.aInt, M: { els: -sI.els, elu: -sI.elu } };
+    ad.semE = { sol: solE, fil: fil(min.semE, solE.A), h: g.e1, larg: r.aExt, M: { els: -sE.els, elu: -sE.elu } };
+    for (const k of ['semI', 'semE']) { const o = ad[k]; o.A = o.sol.A + o.fil.A; o.phi = o.sol.phi; o.d = dd(g.e1, 0.025, o.sol.phi); }
+    for (const k of ['trInt', 'trSup', 'pdSup', 'pdCour', 'pdBase', 'semI', 'semE']) {
+      const o = ad[k]; if (o.d == null) o.d = dd(o.h, 0.025, o.phi);
+      Object.assign(o, elsStress(o.M.els, o.A, o.d));
+      const fp = /^(pd|sem)/.test(k) ? 1 / sn : 1; // piédroits et semelles : efforts par m biais (1638 : 181.64 = 181.53/sin φ)
+      o.VRb = mat.tauLim * o.d * fp; // effort tranchant résistant béton : τlim · d
+      o.VRs = 4 * o.A / o.phi * mat.tauSu * o.d * fp; // adhérence d'entraînement : périmètre 4A/φ × τs × d
+    }
+    // ---- ferraillage transversal (face intérieure de la traverse)
+    // non-fragilité : A = ft·h²/(6·fe·0.9·d), d = h − 0.025 − φ2/2 (traverse, semelles) ; piédroits : d = h − 0.025 + φ2/2, ÷ sin φ
+    const fe2 = v.SIGMA2, nfr = (h, dd2) => mat.ft * h * h / (6 * fe2 * 0.9 * dd2);
+    const tr = { nfT: nfr(g.e3, g.e3 - 0.025 - v.PHI2 / 2), nfP: nfr(g.e2, g.e2 - 0.025 + v.PHI2 / 2) / sn, nfS: nfr(g.e1, g.e1 - 0.025 - v.PHI2 / 2), plancher: 3 * A2 };
+    tr.Am = r.transversal ? r.transversal.A : 0;
+    tr.A = Math.max(tr.Am, tr.nfT, tr.plancher); tr.esp = A2 / tr.A;
+    if (r.transversal) Object.assign(tr, elsStress(r.transversal.Ms, tr.A, g.e3 - 0.025 - v.PHI2 / 2)); else Object.assign(tr, { ss: 0, sb: 0 });
+    const ep = epure(r, ad, eP);
+    // ---- nomenclature des aciers auxiliaires (φ2) — règles relevées sur 6 listings
+    const ls2 = v.PHI2 * v.SIGMA2 / (4 * mat.tauSu), Wb = g.larg / sn;
+    const nom = {
+      espT: 2 * e, espP: 2 * eP, // une barre sur deux du ferraillage principal (traverse / piédroit, goussets, semelles)
+      lExt: g.L - 2 * ep.ang[0][1] + ls2, // prolongement extérieur (approché : exact 1638/1679)
+      lInt: [ep.trav[0][0] + 0.6, ep.trav[2][0] + 0.6], // prolongement intérieur : origine des barres 1 et 3 + 0.60 (exact)
+      espTE: A2 / Math.max(tr.A / 2, tr.nfT, tr.plancher), // face extérieure : max(A/2, non-fragilité, plancher)
+      espPd: Math.min(1 / 3, A2 / tr.nfP), espSs: A2 / Math.max(tr.nfS, tr.plancher),
+      tb: Wb > 10 ? Wb - 10 + 0.6 : 0, Wb, // longueur « 10 M + x M (TETE-BECHE) » : x = largeur biaise − 10 + 0.60
+    };
+    // ---- avant-métré
+    const lb = (x) => x + (x > 10 ? 0.6 : 0); // barres filantes de largeur : recouvrement 0.60 au-delà de 10 m
+    const larg = g.larg, rho = 7.85, ton = [0, 0, 0];
+    const add = (phi, len, n) => { const k = PHI.indexOf(phi); if (k >= 0) ton[k] += rho * aire(phi) * len * n; };
+    ep.trav.forEach(b => add(ad.trInt.phi, b[2], larg / (4 * e)));
+    ep.ang.forEach(b => add(ad.trSup.phi, b[2], 2 * larg / (4 * e)));
+    ep.pied.forEach(b => add(ad.pdCour.phi, b[2], 2 * Wb / (ep.pied.length * ad.pdCour.esp)));
+    ep.semI.forEach(b => add(ad.pdBase.phi, b[2], 2 * Wb / (2 * ad.pdBase.esp)));
+    add(ad.semE.sol.phi, ep.semE[2], 2 * Wb / ad.semE.sol.esp);
+    const lT = (v.OUVER + 2 * g.e2) / sn, wl = lb(Wb);
+    add(v.PHI2, nom.lExt, larg / nom.espT); add(v.PHI2, 2 * (nom.lInt[0] + nom.lInt[1]), larg / nom.espT);
+    add(v.PHI2, wl, lT / tr.esp + lT / nom.espTE + 16); add(v.PHI2, 1.8, 2 * Wb / nom.espP);
+    add(v.PHI2, wl, 4 * (2 / 0.2 + Math.max(0, v.HAUTL - 2) / nom.espPd));
+    add(v.PHI2, g.B, 2 * Wb / nom.espP); add(v.PHI2, wl, 2 * (g.B / nom.espSs + g.B / 0.2));
+    const beton = g.e3 * (v.OUVER + 2 * g.e2) / sn * larg + (2 * v.HAUTL * g.e2 + 2 * g.e1 * g.B) * Wb; // exact (droits et 1677/1796)
+    const coffrage = (v.OUVER + 4 * v.HAUTL + 4 * g.e1 + 2 * g.e3) * Wb; // approché
+    const metre = { beton, coffrage, ton, total: ton[0] + ton[1] + ton[2] };
+    return { min, ad, tr, e, eP, Q, ep, nom, metre };
+  }
+
+  // ---- Épure d'arrêt des barres (par quart de nappe, notice §3.3.5)
+  // Règle retrouvée (traverse, 6/10 passages exacts) : à partir du point le plus sollicité, la k-ième barre (sur 4) est
+  // arrêtée à la première section de la grille où max(MU/MUmax, MS/MSmax) ≤ (4−k)/4, prolongée du décalage a = 0.8 h.
+  function epure(r, ad, eP) {
+    const v = r.v, g = r.g, L = g.L, H = g.H;
+    const env = (secs, lives) => secs.map((s, i) => { const mx = totaux(s.M, 1, s.ret, s.tem, lives[i].M), mn = totaux(s.M, -1, s.ret, s.tem, lives[i].M);
+      return { x: s.x, maxU: mx.elu, maxS: mx.els, minU: mn.elu, minS: mn.els }; });
+    const T = env(r.secT, r.liveT), P = env(r.secP, r.liveP);
+    const ratio = (o, ref, neg) => neg ? Math.max(o.minU / ref.minU, o.minS / ref.minS) : Math.max(o.maxU / ref.maxU, o.maxS / ref.maxS);
+    const seuil = (order, ref, neg) => [0.75, 0.5, 0.25, 0].map(k => { for (const o of order) if (ratio(o, ref, neg) <= k + 1e-9) return o.x; return order[order.length - 1].x; });
+    const aT = 0.8 * g.e3, aP = 0.8 * g.e2, r2 = x => Math.round(x * 100) / 100;
+    // intérieur traverse (abscisses depuis l'angle, portée biaise L)
+    const ti = seuil([...T].reverse(), T[T.length - 1], false).map(x => x - aT); // [x34, x12, x14, x0]
+    const trav = [[ti[3], L - ti[0]], [ti[0], L - ti[3]], [ti[2], L - ti[1]], [ti[1], L - ti[2]]];
+    // extérieur, angle supérieur : côté traverse (depuis l'angle), côté piédroit (depuis la base)
+    const te = seuil(T, T[0], true).map(x => x + aT);
+    const Pd = [...P].reverse(); const tp = seuil(Pd, Pd[0], true).map(x => Math.max(0, x - aP));
+    const pairs = [[tp[1], te[2]], [tp[3], te[0]], [tp[0], te[3]], [tp[2], te[1]]]; // barres 1..4 (cf. 1638)
+    const ang = pairs.map(([p, b]) => [p, b, H - p + b + (g.e2 + g.e3) / 2]);
+    // intérieur piédroit (nappe 3) : épure de la moitié des aciers (seuil 3/4 de part et d'autre du maximum)
+    let iMax = 0; P.forEach((o, i) => { if (o.maxU > P[iMax].maxU) iMax = i; });
+    const dn = P.slice(0, iMax + 1).reverse(), up = P.slice(iMax);
+    const s34 = (order) => { for (const o of order) if (ratio(o, P[iMax], false) <= 0.75 + 1e-9) return o.x; return order[order.length - 1].x; };
+    const deux = ad.pdCour.esp < 1.5 * eP;
+    const pied = deux ? [[s34(dn) - aP, H], [-0.25, s34(up) + aP]] : [[g.e1 / 2, H]];
+    // semelles : fers solidarisant (abscisses sur le piédroit depuis la base, extrémité au bord de la semelle)
+    const E5SI = g.D + g.B / 2, E5SE = -(r.aExt + g.e2 / 2), A5S = g.e1 / 2 + 0.6;
+    const p5 = [Math.max(A5S, tp[2] - 0.6), Math.max(A5S, tp[1])];
+    return { trav: trav.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]), ang: ang.map(x => x.map(r2)), pied: pied.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]),
+      semI: p5.map(p => [r2(p), r2(E5SI), r2(p + E5SI + g.e1)]), semE: [r2(A5S), r2(E5SE), r2(A5S - E5SE + g.e1)] };
+  }
+
+  // ---- Lignes d'influence du coefficient μ (point (0,0), plaque équivalente LARGEUR = larg/sinφ, LONGUEUR = OUVER + E2)
+  function plaqueMu(r) {
+    const LA = r.g.larg / r.g.sn, LO = r.v.OUVER + r.v.E2, theta = LA / 2 / LO;
+    const ys = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1];
+    return { LA, LO, theta, rows: [1, 3, 5].map(m => ({ m, v: ys.map(y => GM.muCoef(m * theta, 0, y)) })) };
+  }
+  const api = { ferraillage, plaqueMu, asELU, asELS, elsStress };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.PIPO_FER = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);

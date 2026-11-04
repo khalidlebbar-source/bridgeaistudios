@@ -5,6 +5,7 @@
   const { Frame } = req ? require('./frame.js') : root.PIPO_FRAME;
   const { flat } = req ? require('./parse.js') : root.PIPO_PARSE;
   const LV = req ? require('./live.js') : root.PIPO_LIVE;
+  const FER = req ? require('./fer.js') : root.PIPO_FER;
   const MPA = 102; // t/m² par MPa (convention du programme)
 
   function geometrie(v) {
@@ -207,7 +208,15 @@
     const aDT = globalThis.PIPO_ADT != null ? globalThis.PIPO_ADT * g.e2 : 0;
     const env = getf => { const f = li.map(o => getf(o.r)); const ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)];
       return LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt, 1, ends), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false, LV.makeLI(xsLI, f, g.L, Ldt, fA, ends)); };
-    const liveT = xsSec.map(x => { const k = ix(Math.round(x * 1e6) / 1e6); return { M: env(r => r.Mt[k]), V: env(r => r.Vt[k]) }; });
+    // effort tranchant de la traverse : la LI présente un saut unité à la section ; SETRA retient l'ordonnée du côté
+    // de l'appui gauche (charge juste à gauche de la section) en plus de celle de droite (T_TRAVERSE : réf(x) = ancienne(x − pas)).
+    const JV = globalThis.PIPO_JV != null ? globalThis.PIPO_JV : 1;
+    const envJ = (getf, xk) => { const f = li.map(o => getf(o.r)); const j = xsLI.findIndex(x => Math.abs(x - xk) < 1e-6);
+      if (j < 0 || !JV) return env(getf);
+      const xs2 = [...xsLI.slice(0, j + 1), xsLI[j], ...xsLI.slice(j + 1)], f2 = [...f.slice(0, j), f[j] + JV, f[j], ...f.slice(j + 1)];
+      const ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)];
+      return LV.enveloppes(LV.makeLI(xs2, f2, g.L, Ldt, 1, ends), v, g, dyn, Kc, LV.makeLI(xs2, f2, g.L, 0), false, LV.makeLI(xs2, f2, g.L, Ldt, fA, ends)); };
+    const liveT = xsSec.map(x => { const k = ix(Math.round(x * 1e6) / 1e6); return { M: env(r => r.Mt[k]), V: envJ(r => r.Vt[k], x) }; });
     const liveP = zsSec.map(z => { const k = iz(z); return { M: env(r => r.Mp[k]), V: env(r => r.Vp[k]) }; });
     const liveDet = { sup: env(r => r.Mt[0]), inf: env(r => r.Mp[0]), mid: env(r => r.Mt[iMid]) };
     // ---- Pressions sous semelle (bords extérieur / intérieur), largeur biaise
@@ -239,6 +248,7 @@
         [pp(Wp, -Wp * g.D), 0, 0], [pp(2.5 * g.e1 * B, 0), 2.5 * g.e1, 2.5 * g.e1]]; };
     const semCases = [semComps(tK1, hs1), semComps(tK2, hs2)];
     const semT = [1, 0.75, 0.5, 0.25];
+    const envSD = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false);
     const semelleEff = {};
     for (const side of ['E', 'I']) {
       semelleEff[side] = semT.map(t => {
@@ -250,7 +260,7 @@
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);
         const rt = c => { const q = pRT(c); return semEff(q[0], q[1], side, t, 0); };
-        return { t, M: per(0), V: per(1), liveM: envS(liM), liveV: envS(liV), ret: rt(ret), tem: rt(tem) };
+        return { t, M: per(0), V: per(1), liveM: envSD(liM), liveV: envSD(liV), ret: rt(ret), tem: rt(tem) };
       });
     }
     const out = { v, g, mat, pas, pressions, semelleEff, Lf, Kc, Ldt, liveT, liveP, liveDet, xsLI, xsSec, zsSec, li: liRows, liSem, perm, dyn, aExt, aInt, secT, secP, det, depl };
@@ -293,8 +303,10 @@
   }
   function compute(modele0) {
     const v = flat(modele0);
-    if (v.FIXSEM === 0 && v.PREMAX > 0 && !globalThis.PIPO_NODIM) return dimensionner(v);
-    const r = computeCore(v); r.dimSeq = [[v.W, v.DELTA]]; return r;
+    const r = (v.FIXSEM === 0 && v.PREMAX > 0 && !globalThis.PIPO_NODIM) ? dimensionner(v) : Object.assign(computeCore(v), { dimSeq: [[v.W, v.DELTA]] });
+    r.mu = FER.plaqueMu(r);
+    r.fer = FER.ferraillage(r);
+    return r;
   }
   const api = { compute, geometrie, materiaux };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

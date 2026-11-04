@@ -1,4 +1,4 @@
-// PIPO-EL — point d'entrée. Navigateur : charger frame.js, gm.js, live.js, parse.js, compute.js, note.js, index.js
+// PIPO-EL — point d'entrée. Navigateur : charger frame.js, gm.js, live.js, parse.js, fer.js, compute.js, note.js, index.js
 // (scripts classiques) puis utiliser globalThis.PIPO. Node : require('./index.js').
 (function (root) {
   'use strict';
