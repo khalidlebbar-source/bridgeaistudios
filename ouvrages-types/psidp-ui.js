@@ -300,7 +300,7 @@
     { id: 'charg', label: 'Charges', view: 'coupe', caption: 'charges permanentes et fascicule 61 titre II', hint: 'Classe du pont, charges permanentes caractéristiques et charges d\'exploitation.', pages: [
       { label: 'Permanentes', groups: [
         { title: 'Classe', flex: 1, cols: 1, fields: [
-          { k: 'STA', code: 'STATUT', label: 'classe du pont', type: 'sel', opts: [[100, '100 — 1re classe'], [200, '200 — 2e classe'], [300, '300 — 3e classe'], [0, '000 — fasc. 61 de 1960']], help: 'STATUT : 100, 200, 300 selon que le pont est de 1re, 2e ou 3e classe (F 61 II art. 3).' },
+          { k: 'STA', code: 'STATUT', label: 'classe du pont', type: 'sel', opts: [[100, '100 — 1re classe'], [200, '200 — 2e classe'], [300, '300 — 3e classe']], help: 'STATUT : 100, 200, 300 selon que le pont est de 1re, 2e ou 3e classe (F 61 II art. 3).' },
         ] },
         { title: 'Poids propre de l\'ossature', alt: true, flex: 3, cols: 3, fields: [
           { k: 'MASVO', code: 'MASVOL', label: 'masse volumique', unit: 't/m³', dec: 3, help: 'Valeur probable de la masse volumique du béton.', def: '2,500' },

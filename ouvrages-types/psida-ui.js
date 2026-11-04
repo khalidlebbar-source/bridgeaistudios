@@ -163,7 +163,7 @@
       ] },
       { label: 'Exploitation', groups: [
         { title: 'Fascicule 61 titre II', flex: 4, cols: 4, fields: [
-          { k: 'A8.STATUT', code: 'STATUT', label: 'classe', type: 'sel', opts: [['100', '100 — 1re classe'], ['200', '200 — 2e classe'], ['300', '300 — 3e classe'], ['000', '000 — F61 de 1960']], help: 'Classe du pont (F61 II art. 3) : 100, 200, 300 ; 000 = calcul selon le titre II de 1960.' },
+          { k: 'A8.STATUT', code: 'STATUT', label: 'classe', type: 'sel', opts: [['100', '100 — 1re classe'], ['200', '200 — 2e classe'], ['300', '300 — 3e classe']], help: 'Classe du pont (F61 II art. 3, 1971) : 100, 200 ou 300. Le règlement de 1960 (STATUT 000) n\'est pas proposé.' },
           { k: 'A8.A', code: 'A', label: 'charge A(l)', type: 'sel', opts: [['001', '001 — réglementaire'], ['100', '100 — généralisée (B3)']], help: '001 : charge A(l) réglementaire du F61 II ; 100 : charge généralisée définie en ligne B3 (passerelle, voie ferrée…).' },
           { k: 'A8.B', code: 'B', label: 'charges B', type: 'sel', opts: [['001', '001 — Bc et Bt'], ['100', '100 — BG seuls'], ['101', '101 — B + BG']], help: '001 : camions Bc et tandems Bt ; 100 : seuls camions généralisés BG (lignes B1, B2) ; 101 : B du F61 et BG.' },
           { k: 'A8.CE', code: 'CE', label: 'caract. particulier', type: 'sel', opts: [['000', '000 — aucune'], ['003', '003 — Mc80'], ['004', '004 — Mc120'], ['010', '010 — convoi D'], ['020', '020 — D et E'], ['013', '013 — D + Mc80'], ['014', '014 — D + Mc120'], ['023', '023 — D, E + Mc80'], ['024', '024 — D, E + Mc120']], help: 'Code i m j : i charges généralisées (lignes B4), m convois exceptionnels (1 : D ; 2 : D et E), j charges militaires (3 : Mc80 ; 4 : Mc120). Ex. 024 = D, E et Mc120.' },
@@ -587,7 +587,8 @@
     if ([2, 3, 4, 5].some(i => V(m, 'A6.YY' + i) !== 0)) W_('trav', 'A6.YY2', 'fibres YY non nulles : réservé aux ouvrages de largeur exceptionnelle');
     // charges
     const st = String(get(m, 'A8.STATUT') || '');
-    if (!['000', '100', '200', '300'].includes(st.slice(0, 1) + '00') || !/^\d{3}$/.test(st)) E_('charg', 'A8.STATUT', 'STATUT : 100, 200, 300 (classe du pont) ou 000 (F61 de 1960)');
+    if (st.slice(0, 1) === '0') E_('charg', 'A8.STATUT', 'STATUT 000 (fascicule 61 de 1960) : règlement non pris en charge, choisir la classe 100, 200 ou 300 (fascicule 61 de 1971)');
+    else if (!['100', '200', '300'].includes(st.slice(0, 1) + '00') || !/^\d{3}$/.test(st)) E_('charg', 'A8.STATUT', 'STATUT : 100, 200 ou 300 (classe du pont)');
     const lr = ws[1] + ws[2] + ws[3];
     if (/^[23]/.test(st) && lr >= 7 - 1e-9) W_('charg', 'A8.STATUT', `largeur roulable ${fmt(lr, 2)} m ≥ 7 m : pont de 1re classe au sens du fascicule 61 (STATUT = ${st})`);
     if (st[0] === '1' && lr < 5.5) W_('charg', 'A8.STATUT', `largeur roulable ${fmt(lr, 2)} m < 5,50 m : vérifier la classe du pont (1re classe déclarée)`);
