@@ -76,6 +76,8 @@
     diagV: '<path d="M2 12h20"/><path d="M3 12V5l9 7v7l9-7V5" />',
     diagS: '<path d="M4 3v18M20 3v18"/><path d="M4 7l16 10M4 7h6M14 17h6"/>',
     diagR: '<path d="M3 20h18"/><path d="M6 20V9M12 20V5M18 20V11"/><path d="M4 11l2-2 2 2M10 7l2-2 2 2M16 13l2-2 2 2"/>',
+    justif: '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><path d="M8 12l3 3 5-6"/>',
+    sps: '<path d="M6 2v20M6 6h4M6 10h6M6 14h3M6 18h5"/><path d="M14 4l6 3-6 3z"/>',
     efforts: '<path d="M2 6h20"/><path d="M3 6q4 13 9 0q5 13 9 0"/>',
     dock: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 14h18M6 17h6"/>',
     tree: '<path d="M4 4h6v4H4zM10 6h4M14 4h6v4h-6zM7 8v8h7M14 14h6v4h-6z"/>',
@@ -118,7 +120,9 @@
     return grp('Diagrammes', rb('diag', 'Moments<br>M', 'diagM', { arg: 'M', on: view === 'diag' && diagK === 'M', tip: 'Enveloppe des moments fléchissants le long de l’ouvrage' })
         + rb('diag', 'Tranchant<br>V', 'diagV', { arg: 'V', on: view === 'diag' && diagK === 'V' }) + rb('diag', 'Contraintes<br>ELS', 'diagS', { arg: 'S', on: view === 'diag' && diagK === 'S', tip: 'Contraintes normales en fibres extrêmes (section brute, sans précontrainte)' })
         + rb('diag', 'Réactions', 'diagR', { arg: 'R', on: view === 'diag' && diagK === 'R' }))
-      + grp('Tableaux', Object.keys(lab).map((k) => rb('tab', lab[k], k === 'efforts' ? 'diagM' : k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''));
+      + grp('Tableaux', Object.keys(lab).map((k) => rb('tab', lab[k], k === 'efforts' ? 'diagM' : k, { arg: k, on: view === 't:' + k, tip: 'Ouvrir le tableau ' + TABLES[k] })).join(''))
+      + grp('Justification', rb('justif', 'Chaîne de<br>justification', 'justif', { on: view === 't:justif', tip: 'Tablier, réactions, efforts horizontaux, appareils d’appui, piles et culées, fondations — modules de calcul du site' })
+        + rb('sps', 'Sondage<br>.sps', 'sps', { on: !!S.sps, tip: S.sps ? 'Sondage pressiométrique : ' + (S.spsNom || 'importé') + ' — cliquer pour en importer un autre' : 'Importer un sondage pressiométrique (.sps) pour les fondations' }));
   }
   function renderRibbon() { $('#ribbon').innerHTML = ribbonHTML(); }
 
@@ -385,7 +389,7 @@
   /* ───────── Fenêtre principale : onglets (vues graphiques et tableaux), rendu, sélection, navigation ───────── */
   const cv = $('#cv');
   const VIEWS = [['elev', 'Élévation'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D'], ['diag', 'Diagrammes']];
-  const TABLES = { hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
+  const TABLES = { justif: 'Justification', hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
   const isTable = () => view.startsWith('t:');
@@ -537,6 +541,100 @@
   let lastGraphic = 'elev';
   function setView(v) { view = v; if (!v.startsWith('t:')) lastGraphic = v; renderView(); renderRibbon(); }
 
+  /* ───────── Justification : chaîne des modules du site (méthodologie KLE, parties B à F) ───────── */
+  const JZ = { key: null, sum: null, err: null, busy: false, map: null, id: 0, worker: null, cb: {} };
+  const base = location.pathname.replace(/[^/]*$/, '');
+  const Mlite = () => ({ kpi: { W: M.kpi.W, h: M.kpi.h }, supports: (M.supports || []).map((x) => ({ kind: x.kind, geo: { n: x.geo && x.geo.n } })) });
+  const Skey = () => JSON.stringify([S, Mlite()]);
+  function worker() {
+    if (JZ.worker) return JZ.worker;
+    JZ.cb = {};
+    JZ.worker = new Worker(base + 'composer/justif-worker.js?v=1');
+    JZ.worker.onmessage = (ev) => { const d = ev.data, f = JZ.cb[d.id]; delete JZ.cb[d.id]; if (f) f(d); };
+    JZ.worker.onerror = (e) => { Object.values(JZ.cb).forEach((f) => f({ error: 'Le calcul a échoué : ' + (e.message || 'erreur du module') })); JZ.cb = {}; };
+    return JZ.worker;
+  }
+  function ask(op) {
+    return new Promise((res) => { const id = ++JZ.id; JZ.cb[id] = res; worker().postMessage({ id, op, S: JSON.parse(JSON.stringify(S)), Ml: Mlite(), base: location.origin + base }); });
+  }
+  async function runJustif() {
+    if (JZ.busy) return;
+    if (!C.justifChainType(S)) { JZ.map = C.justifMap(S, Mlite(), null); JZ.sum = null; if (view === 't:justif') renderTable(); return; }
+    JZ.busy = true; JZ.err = null; if (view === 't:justif') renderTable();
+    const key = Skey(), d = await ask('run');
+    JZ.busy = false;
+    if (d.error) { JZ.err = d.error; } else { JZ.map = d.map; JZ.sum = d.sum || null; JZ.key = key; }
+    renderRibbon(); if (view === 't:justif') renderTable();
+  }
+  async function pickSps() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.sps,.SPS,.txt';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try {
+        if (!(window.BA && window.BA.sondages)) await new Promise((res, rej) => { const e = document.createElement('script'); e.src = base + 'outils/js/sondages.js?v=1'; e.onload = res; e.onerror = () => rej(new Error('lecteur de sondages indisponible')); document.head.appendChild(e); });
+        const txt = await new Promise((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsText(f, 'windows-1252'); });
+        const p = window.BA.sondages.parse(txt), sp = p.s || p;
+        if (!sp.couches || !sp.couches.length) throw new Error('aucune couche de calcul ($$TVCC)');
+        S.sps = sp; S.spsNom = f.name;
+        recompute(true); openTable('justif'); runJustif();
+      } catch (e) { alert('Sondage illisible : ' + e.message); }
+    };
+    inp.click();
+  }
+  async function openOT() {
+    const w = window.open('about:blank', '_blank');
+    const d = await ask('map');
+    if (d.error || !d.map || !d.map.ok) { if (w) w.close(); alert(d.error || (d.map && d.map.why) || 'Transposition impossible'); return; }
+    try { localStorage.setItem('ba-outils-ouvrages-types', JSON.stringify(d.map.s)); } catch (e) { /* stockage indisponible */ }
+    if (w) w.location = base + 'outils/ouvrages-types.html'; else location.href = base + 'outils/ouvrages-types.html';
+  }
+  function tJustif() {
+    const mp = JZ.map, sum = JZ.sum;
+    const stale = sum && JZ.key !== Skey();
+    const ST = (st) => st === 'ok' ? '<span class="jv ok">✓ vérifié</span>' : st === 'na' ? '<span class="jv na">—</span>' : '<span class="jv ko">✗ à reprendre</span>';
+    const stepSt = (re) => { if (!sum) return ''; const v = sum.verdicts.filter((x) => re.test(x.partie)); return v.length ? (v.every((x) => x.statut === 'ok') ? 'ok' : 'ko') : ''; };
+    const steps = [
+      ['B', 'Tablier', 'flexion, sections, flèches', /^Tablier/],
+      ['C', 'Réactions & efforts horizontaux', 'rigidités, retrait, ΔT, freinage', /Interaction|^Tablier/],
+      ['C', 'Appareils d’appui', 'élastomère fretté', /Appareils/],
+      ['D', 'Piles & culées', 'fûts, chevêtre, garde-grève, retours', /^(Pile|Culée)/],
+      ['E', 'Stabilité & fondations', 'portance, décompression, glissement', /^Fondation/],
+    ];
+    let h = `<div class="jh"><div><h4>Justification de l’ouvrage <small>chaîne des modules de calcul — méthodologie KLE</small></h4>`;
+    h += `<p class="jsub">${mp && mp.ok ? `Modèle de calcul : <b>${esc(mp.nom)}</b> · ${mp.s.regl === 'ec' ? 'Eurocodes (EN 1990, EN 1991-2, EN 1992)' : S.usage === 'rail' ? 'Livret 2.01 · BAEL 91' : 'Fascicule 61 titre II · BAEL 91 · Fasc. 62 titre V'}` : ''}</p></div>`;
+    h += `<div class="jbt"><button type="button" class="pri" data-cmd="justifRun"${JZ.busy ? ' disabled' : ''}>${JZ.busy ? 'Calcul en cours…' : sum ? 'Relancer' : 'Lancer la justification'}</button>`
+      + `<button type="button" data-cmd="sps">${S.sps ? 'Changer de sondage' : 'Importer un sondage .sps'}</button>`
+      + (S.sps ? `<button type="button" data-cmd="spsDel" title="Revenir au sondage d’exemple">Retirer le sondage</button>` : '')
+      + (mp && mp.ok ? `<button type="button" data-cmd="otOpen" title="Ouvrir l’ouvrage, pré-rempli, dans le module OUVRAGES TYPES (vues, plans, notes de chaque module)">Ouvrir dans OUVRAGES TYPES ↗</button>` : '') + '</div></div>';
+    if (mp && !mp.ok) return h + `<div class="jmsg">${esc(mp.why)}</div>`;
+    h += `<div class="jchain">${steps.map(([p, t, d, re], i) => `<div class="jst ${stepSt(re)}"><i>${p}</i><b>${t}</b><small>${d}</small></div>${i < steps.length - 1 ? '<span class="ja">→</span>' : ''}`).join('')}</div>`;
+    if (JZ.busy) h += '<div class="jmsg"><span class="spin"></span> Calcul de la chaîne : tablier, efforts horizontaux, appareils d’appui, piles et culées, fondations…</div>';
+    if (JZ.err) h += `<div class="jmsg ko">${esc(JZ.err)}</div>`;
+    if (stale) h += '<div class="jmsg warn">L’ouvrage a changé depuis le dernier calcul. <button type="button" data-cmd="justifRun">Relancer</button></div>';
+    if (mp && mp.notes.length) h += `<details class="jnotes" open><summary>Hypothèses de transposition (${mp.notes.length})</summary><ul>${mp.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></details>`;
+    if (!sum) return h + (JZ.busy || JZ.err ? '' : '<div class="jmsg">Lancez la justification pour enchaîner les calculs sur l’ouvrage composé.</div>');
+    h += `<h4>Verdicts <small>${sum.ok ? 'tout est vérifié' : sum.verdicts.filter((v) => v.statut !== 'ok').length + ' point(s) à reprendre'} · calcul ${fx(sum.ms / 1000, 1)} s${sum.sps ? ' · sondage ' + esc(S.sps ? S.spsNom || sum.sps : 'd’exemple') : ''}</small></h4>`;
+    h += '<table class="t jt"><thead><tr><th class="l">Partie</th><th class="l">Statut</th><th class="l">Résultat</th></tr></thead><tbody>'
+      + sum.verdicts.map((v) => `<tr class="${v.statut === 'ok' ? '' : 'kor'}"><td class="l">${esc(v.partie)}</td><td class="l">${ST(v.statut)}</td><td class="l">${esc(v.texte)}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.appareils.length) h += '<h4>Appareils d’appui <small>élastomère fretté, EN 1337-3 (module ÉLASTOMÈRES)</small></h4><table class="t"><thead><tr><th class="l">Ligne</th><th>Nombre</th><th class="l">Plaque a × b ; feuillets</th><th>Taux max</th><th class="l">Statut</th></tr></thead><tbody>'
+      + sum.appareils.map((a) => `<tr><td class="l">${esc(a.nom)}</td><td>${a.n || ''}</td><td class="l">${a.plaque ? `${fx(a.plaque.a * 1000, 0)} × ${fx(a.plaque.b * 1000, 0)} mm ; ${a.plaque.n} × ${fx(a.plaque.ti * 1000, 0)} mm` : esc(a.app)}</td><td>${a.taux != null ? fx(a.taux, 2) : '—'}</td><td class="l">${ST(a.ok ? 'ok' : 'ko')}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.fond.length) h += '<h4>Fondations <small>Fascicule 62 titre V, sondage pressiométrique (module FONDATIONS)</small></h4><table class="t"><thead><tr><th class="l">Appui</th><th class="l">Type</th><th>B × L (m)</th><th>q’ref / q’adm ELS (MPa)</th><th>q’ref / q’adm ELU (MPa)</th><th>Décompression ELS</th><th class="l">Statut</th></tr></thead><tbody>'
+      + sum.fond.map((f) => `<tr><td class="l">${esc(f.nom)}</td><td class="l">${f.type === 'pieux' ? 'pieux' : 'semelle'}</td><td>${fx(f.B, 2)} × ${fx(f.L, 2)}</td><td>${f.qref != null ? fx(f.qref, 3) + ' / ' + fx(f.qadm, 3) : '—'}</td><td>${f.qrefU != null ? fx(f.qrefU, 3) + ' / ' + fx(f.qadmU, 3) : '—'}</td><td>${f.decomp != null ? fx(f.decomp, 0) + ' %' : '—'}</td><td class="l">${f.err ? '<span class="jv ko">' + esc(f.err) + '</span>' : ST(f.ok ? 'ok' : 'ko')}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.joints.length) h += '<h4>Joints de chaussée <small>souffle (module HORIZONTAL)</small></h4><table class="t"><thead><tr><th class="l">Lieu</th><th>Ouverture max (mm)</th><th>Fermeture max (mm)</th></tr></thead><tbody>'
+      + sum.joints.map((j) => `<tr><td class="l">${esc(j.lieu)}</td><td>${fx(j.ouv * 1000, 0)}</td><td>${fx(-j.ferm * 1000, 0)}</td></tr>`).join('') + '</tbody></table>';
+    if (sum.metres) {
+      const k = M.kpi, cb = sum.metres.beton, ca = sum.metres.aciers;
+      const ec = (a, b) => (b > 0 ? (a / b - 1) * 100 : 0);
+      h += '<h4>Quantités <small>avant-métré de la chaîne justifiée comparé à l’estimation du Composer</small></h4><table class="t"><thead><tr><th class="l">Poste</th><th>Composer (ratios)</th><th>Chaîne justifiée</th><th>Écart</th></tr></thead><tbody>'
+        + `<tr><td class="l">Béton (m³)</td><td>${f0(k.beton)}</td><td>${f0(cb)}</td><td>${(ec(cb, k.beton) >= 0 ? '+' : '') + fx(ec(cb, k.beton), 0)} %</td></tr>`
+        + `<tr><td class="l">Aciers passifs (t)</td><td>${fx(k.acier / 1000, 1)}</td><td>${fx(ca / 1000, 1)}</td><td>${(ec(ca, k.acier) >= 0 ? '+' : '') + fx(ec(ca, k.acier), 0)} %</td></tr>`
+        + (sum.metres.poutrelles ? `<tr><td class="l">Poutrelles (t)</td><td>${fx((k.metal || 0) / 1000, 1)}</td><td>${fx(sum.metres.poutrelles / 1000, 1)}</td><td></td></tr>` : '')
+        + '</tbody></table>';
+    }
+    if (sum.alertes.length) h += `<h4>Alertes des modules</h4><ul class="jal">${sum.alertes.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>`;
+    return h;
+  }
+
   /* ───────── Fenêtre de tableaux ───────── */
   function tAppuis() {
     let h = '<h4>Appuis <small>éléments et volumes</small></h4><table class="t"><thead><tr><th>Appui</th><th class="tx">Type</th><th>H (m)</th><th class="l">Éléments</th><th>Béton (m³)</th><th>N fondation (kN)</th></tr></thead><tbody>';
@@ -642,7 +740,7 @@
 
   function renderTable() {
     const k = view.slice(2);
-    const f = { hyp: tHyp, predim: tPredim, ddc: tDdc, efforts: tEfforts, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
+    const f = { justif: tJustif, hyp: tHyp, predim: tPredim, ddc: tDdc, efforts: tEfforts, appuis: tAppuis, metre: tMetre, msg: tMsg }[k];
     const box = $('#res'), st = box.scrollTop;
     box.innerHTML = f();
     box.scrollTop = st;
@@ -747,6 +845,11 @@
       case 'fondP': S.fond.piles = arg; break;
       case 'fondC': S.fond.culees = arg; break;
       case 'tab': openTable(arg); return;
+      case 'justif': openTable('justif'); if (!JZ.sum && !JZ.busy) runJustif(); return;
+      case 'justifRun': runJustif(); return;
+      case 'sps': pickSps(); return;
+      case 'spsDel': delete S.sps; delete S.spsNom; break;
+      case 'otOpen': openOT(); return;
       case 'diag': diagK = arg; setView('diag'); return;
       case 'closeT': closeTable(arg); return;
       case 'view': setView(arg); return;
