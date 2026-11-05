@@ -94,7 +94,10 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   ok(Math.abs(s1.H - (s1.zSeat - (494.4 - 2))) < 0.01 && Math.abs(m.supports[1].H - s1.H) < 0.01, 'tracé : hauteur de pile en lit d’oued calée sous la limite des affouillements');
   ok(m.S.biais === 70 && TR.checks.length === 1 && TR.checks[0].ok, 'tracé : biais déduit du gisement (70 gr), revanche vérifiée');
   const svgP = C.toSVG(C.planScene(m), { id: 't' }), svgE = C.toSVG(C.elevScene(m), { id: 'u' }), sh = C.sheetSVG(m, {});
-  ok(!bad(svgP) && !bad(svgE) && !bad(sh) && /VUE EN PLAN/.test(svgP) && /Altitudes TN/.test(svgE) && /PLAN D’ENSEMBLE/.test(sh) && /CARACTÉRISTIQUES/.test(sh), 'vue en plan, guitare et feuille A1 sans valeur invalide');
+  ok(!bad(svgP) && !bad(svgE) && !bad(sh) && /VUE EN PLAN/.test(svgP) && /Altitudes TN/.test(svgE) && /width="210" height="297"/.test(sh) && !/CARACTÉRISTIQUES/.test(sh), 'vue en plan, guitare et feuille A1 (réserve A4 verticale vide) sans valeur invalide');
+  { const sv = JSON.parse(JSON.stringify(m.S)); sv.cartouche = { orient: 'h', img: 'data:image/png;base64,iVBORw0KGgo=' }; const mh = C.compute(sv), shh = C.sheetSVG(mh, {});
+    ok(!bad(shh) && /width="297" height="210"/.test(shh) && /<image [^>]*href="data:image\/png/.test(shh), 'feuille A1 : réserve A4 horizontale avec cartouche importé');
+    sv.cartouche = { orient: 'v', img: 'javascript:alert(1)' }; ok(!/<image/.test(C.sheetSVG(C.compute(sv), {})), 'feuille A1 : image de cartouche invalide ignorée'); }
   ok(!bad(C.buildDXF(m, {})), 'DXF avec vue en plan sans valeur invalide');
   const m0 = C.compute(C.defaults('rail'));
   ok(!bad(C.sheetSVG(m0, {})) && !m0.trace, 'feuille A1 sans tracé (pont-rail par défaut)');

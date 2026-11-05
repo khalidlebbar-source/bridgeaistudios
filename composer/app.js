@@ -15,7 +15,7 @@
   let M = null, view = 'plan', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
   const openT = [];
   const expanded = new Set(['tablier', 'travees', 'appuis']);
-  try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
+  try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw && u.tw <= 300) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
 
   function load() { try { const t = localStorage.getItem(KEY); return t ? C.normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* stockage indisponible */ } }
@@ -33,6 +33,10 @@
     new: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M12 11v6M9 14h6"/>',
     open: '<path d="M3 6h6l2 2h10v11H3z"/><path d="M3 11h18"/>',
     save: '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h8V3M8 21v-7h8v7"/>',
+    saveAs: '<path d="M5 3h11l3 3v6M5 3v18h7"/><path d="M8 3v5h8V3M8 21v-6h4"/><path d="M14 20.5l1-3.4 5.2-5.2 2.4 2.4-5.2 5.2z"/>',
+    cartV: '<path d="M4 3h16v18H4z"/><path d="M12 9h7v11h-7z" stroke-dasharray="1.6 1.2"/>',
+    cartH: '<path d="M2 5h20v14H2z"/><path d="M10 12h11v6H10z" stroke-dasharray="1.6 1.2"/>',
+    cartImg: '<path d="M4 3h16v18H4z"/><path d="M8 17l3-4 2 2.5 2-3 3 4.5zM9 8.5a1.5 1.5 0 1 0 0 .1"/>',
     pdf: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 15h6M9 18h4"/>',
     dxf: '<path d="M3 20h18"/><path d="M4 17V8l5-4 5 4v9M14 11h6v6"/><path d="M7 17v-4h4v4"/>',
     home: '<path d="M3 11l9-7 9 7M6 9v11h12V9"/>',
@@ -115,13 +119,15 @@
 
   function ribbonHTML() {
     if (menu === 'fichier') {
-      return grp('Projet', rb('new', 'Nouveau', 'new', { tip: 'Assistant de création d’un nouveau pont' }) + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }))
-        + grp('Édition', rb('undo', 'Annuler', 'undo', { dis: !undoS.length, tip: 'Annuler — Ctrl+Z' }) + rb('redo', 'Rétablir', 'redo', { dis: !redoS.length, tip: 'Rétablir — Ctrl+Y' }))
-        + grp('Exporter', rb('pdf', 'Note<br>PDF', 'pdf', { tip: 'Note de prédimensionnement (impression PDF)' }) + rb('dxf', 'Plan<br>DXF', 'dxf', { tip: 'Plan d’ensemble en vraie grandeur (AutoCAD) : coupe longitudinale, coupe transversale, vue en plan' })
-          + rb('sheetSvg', 'Plan A1<br>SVG', 'planE', { tip: 'Feuille A1 du plan d’ensemble (vectoriel, imprimable)' }));
+      return grp('Projet', rb('new', 'Nouveau', 'new', { tip: 'Assistant de création d’un nouveau pont' }) + rb('open', 'Ouvrir', 'open') + rb('save', 'Enregistrer', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' })
+        + rb('saveAs', 'Enregistrer<br>sous', 'saveAs', { tip: 'Enregistrer sous un autre nom ou dans un autre format : projet, plan A1 (SVG), plan DXF, note PDF — Ctrl+Maj+S' }));
     }
     const lab = { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', efforts: 'Efforts<br>longitudinaux', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' };
-    return grp('Plan', rb('view', 'Plan<br>d’ensemble', 'planE', { arg: 'plan', on: view === 'plan', tip: 'Feuille A1 : coupe longitudinale, vue en plan, coupe transversale, tableaux, cartouche' }))
+    const ct = S.cartouche || {};
+    return grp('Plan', rb('view', 'Plan<br>d’ensemble', 'planE', { arg: 'plan', on: view === 'plan', tip: 'Feuille A1 : coupe longitudinale, vue en plan, coupe transversale et réserve A4 pour votre cartouche' })
+        + rb('cartOrient', 'Cartouche<br>vertical', 'cartV', { arg: 'v', on: ct.orient !== 'h', tip: 'Réserve A4 verticale (210 × 297 mm) en bas à droite de la feuille' })
+        + rb('cartOrient', 'Cartouche<br>horizontal', 'cartH', { arg: 'h', on: ct.orient === 'h', tip: 'Réserve A4 horizontale (297 × 210 mm) en bas à droite de la feuille' })
+        + rb('cartImg', ct.img ? 'Retirer le<br>cartouche' : 'Importer<br>cartouche', 'cartImg', { tip: ct.img ? 'Retirer le cartouche importé (' + (ct.nom || 'image') + ') et laisser la réserve A4 vide' : 'Placer votre propre cartouche (SVG, PNG ou JPG) dans la réserve A4' }))
       + grp('Données', rb('sel', 'Tracé<br>&amp; terrain', 'trace', { arg: 'trace', on: S.trace.actif, tip: 'Tracé en plan, profil en long, dévers, terrain naturel et obstacle franchi' })
         + rb('geoPdf', 'Rapport<br>géotechnique', 'geo', { on: !!(S.geo && S.geo.sondages && S.geo.sondages.length), tip: 'Importer le rapport géotechnique (PDF) : sondages et essais pressiométriques lus par l’assistant IA' }))
       + grp('Diagrammes', rb('diag', 'Moments<br>M', 'diagM', { arg: 'M', on: view === 'diag' && diagK === 'M', tip: 'Enveloppe des moments fléchissants le long de l’ouvrage' })
@@ -1021,6 +1027,11 @@
         return;
       case 'open': $('#fOpen').click(); return;
       case 'save': saveJSON(); return;
+      case 'saveAs': saveAsDialog(); return;
+      case 'cartOrient': S.cartouche = Object.assign({}, S.cartouche, { orient: arg === 'h' ? 'h' : 'v' }); view = 'plan'; lastGraphic = 'plan'; break;
+      case 'cartImg':
+        if (S.cartouche && S.cartouche.img) { S.cartouche = Object.assign({}, S.cartouche, { img: '', nom: '' }); view = 'plan'; lastGraphic = 'plan'; break; }
+        $('#fCart').click(); return;
       case 'pdf': buildPrint(); window.print(); return;
       case 'sheetSvg': download('plan-ensemble-' + slug() + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }).replace(/ width="\d+" height="\d+"/, ' width="841mm" height="594mm"'), 'image/svg+xml'); return;
       case 'dxf': download('composer-' + slug() + '.dxf', C.buildDXF(M, { date: today() }), 'application/dxf'); return;
@@ -1164,7 +1175,56 @@
     };
     r.readAsText(file);
   });
+  $('#fCart').addEventListener('change', (ev) => {
+    const file = ev.target.files[0]; ev.target.value = ''; if (!file) return;
+    if (!/^image\/(svg\+xml|png|jpeg|webp)$/.test(file.type)) { alert('Format non pris en charge : choisissez un fichier SVG, PNG ou JPG.'); return; }
+    if (file.size > 2e6) { alert('Fichier trop lourd (2 Mo maximum) : allégez l’image du cartouche.'); return; }
+    const r = new FileReader();
+    r.onload = () => { S.cartouche = Object.assign({}, S.cartouche, { img: r.result, nom: file.name }); view = 'plan'; lastGraphic = 'plan'; recompute(true); };
+    r.readAsDataURL(file);
+  });
+
+  /* ───────── Enregistrer sous : nom et format ───────── */
+  const FORMATS = {
+    json: { lab: 'Projet Bridge Composer', ext: '.json', mime: 'application/json', data: () => JSON.stringify({ app: 'BridgeAI Studios — Bridge Composer', version: 1, projet: S }, null, 2) },
+    svg: { lab: 'Plan d’ensemble A1 (vectoriel)', ext: '.svg', mime: 'image/svg+xml', data: () => '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }).replace(/ width="\d+" height="\d+"/, ' width="841mm" height="594mm"') },
+    dxf: { lab: 'Plan d’ensemble AutoCAD', ext: '.dxf', mime: 'application/dxf', data: () => C.buildDXF(M, { date: today() }) },
+    pdf: { lab: 'Note de prédimensionnement', ext: '.pdf', print: true },
+  };
+  async function saveAs(base, fmt) {
+    const F = FORMATS[fmt], name = base + F.ext;
+    if (F.print) { const t = document.title; document.title = base; buildPrint(); window.print(); setTimeout(() => { document.title = t; }, 1000); return; }
+    const data = F.data();
+    if (window.showSaveFilePicker) {
+      try {
+        const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: F.lab, accept: { [F.mime]: [F.ext] } }] });
+        const w = await h.createWritable(); await w.write(new Blob([data], { type: F.mime })); await w.close(); return;
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    download(name, data, F.mime);
+  }
+  function saveAsDialog() {
+    if ($('.dlg-back')) return;
+    const d = document.createElement('div'); d.className = 'dlg-back';
+    d.innerHTML = `<form class="dlg" role="dialog" aria-modal="true" aria-label="Enregistrer sous"><h3>Enregistrer sous</h3>
+      <label class="dl">Nom du fichier<input name="nom" value="${esc('composer-' + slug())}" spellcheck="false" required></label>
+      <fieldset><legend>Format</legend>${Object.keys(FORMATS).map((k, i) => `<label class="dr"><input type="radio" name="fmt" value="${k}"${i ? '' : ' checked'}><span>${FORMATS[k].lab}<small>${FORMATS[k].ext}${FORMATS[k].print ? ' — via l’impression du navigateur' : ''}</small></span></label>`).join('')}</fieldset>
+      <footer><button type="button" data-x>Annuler</button><button type="submit" class="pri">Enregistrer</button></footer></form>`;
+    document.body.appendChild(d);
+    const f = d.querySelector('form'), close = () => d.remove();
+    f.nom.focus(); f.nom.select();
+    d.addEventListener('mousedown', (ev) => { if (ev.target === d) close(); });
+    d.querySelector('[data-x]').addEventListener('click', close);
+    f.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); ev.stopPropagation(); });
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const base = (f.nom.value.trim() || 'composer-' + slug()).replace(/\.(json|svg|dxf|pdf)$/i, '').replace(/[\\/:*?"<>|]+/g, '-');
+      const fmt = f.fmt.value; close(); saveAs(base, fmt);
+    });
+  }
+
   document.addEventListener('keydown', (ev) => {
+    if ((ev.ctrlKey || ev.metaKey) && ev.shiftKey && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveAsDialog(); return; }
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveJSON(); }
   });
 
@@ -1428,37 +1488,25 @@
   window.addEventListener('beforeprint', buildPrint);
 
   /* ───────── Assistant IA : panneau de discussion (gauche) ───────── */
-  const chat = $('#chat'), CHATKEY = 'bas-composer-chat';
+  const chat = $('#chat'), CHATKEY = 'bas-composer-chat2';
   const SPK = '<svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/><path d="M16 13.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>';
-  const EXAMPLES = [
-    ['Pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m sur pieux Ø1,20', 'décrire un ouvrage'],
-    ['Passe en dalle précontrainte et mets les culées sur pieux', 'modifier'],
-    ['Pourquoi ce type de tablier ?', 'questionner les résultats'],
-    ['Réduis le coût sans changer les portées', 'optimiser'],
-  ];
   let log = [];
   try { log = JSON.parse(localStorage.getItem(CHATKEY) || '[]').slice(-40); } catch (e) { log = []; }
   const saveLog = () => { try { localStorage.setItem(CHATKEY, JSON.stringify(log.slice(-40).map((m) => Object.assign({}, m, { prev: undefined })))); } catch (e) { /* idem */ } };
   function answerHTML(r) {
-    if (r.error) return `<b>${esc(r.error)}</b>`;
+    if (r.error) return esc(r.error);
     const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
-    if (r.ai) return (r.message ? `<div>${esc(r.message)}</div>` : '') + (r.changes && r.changes.length ? `<b>Modifications</b>${li(r.changes)}` : '');
-    return (r.ok.length ? `<b>Compris</b>${li(r.ok)}` : '<b>Je n’ai rien reconnu dans cette phrase.</b>')
-      + (r.miss.length ? `<div class="miss">Non interprété : ${r.miss.map((w) => '« ' + esc(w) + ' »').join(', ')}</div>` : '')
-      + (r.hint ? `<div class="hint">${esc(r.hint)}</div>` : '')
-      + (r.why ? `<div class="hint">Interpréteur local (${esc(r.why)}).</div>` : '');
+    if (r.ai) return (r.message ? `<div>${esc(r.message)}</div>` : '') + (r.changes && r.changes.length ? li(r.changes) : '');
+    return r.ok.length ? `<div>C’est fait :</div>${li(r.ok)}` : '<div>Je n’ai pas compris. Pouvez-vous reformuler ?</div>';
   }
   function renderChat(pending) {
     let h = '';
-    if (!log.length) {
-      h = `<div class="welcome"><h4>${SPK}Parlez à votre pont</h4><p>Décrivez l’ouvrage comme à un collègue : l’assistant le compose, le modifie ou répond à vos questions à partir des résultats du calcul.</p>`
-        + `<div class="ex">${EXAMPLES.map(([t, k]) => `<button type="button" data-ex="${esc(t)}">${esc(t)}<br><small>${k}</small></button>`).join('')}</div></div>`;
-    }
+    if (!log.length) h = `<div class="welcome">${SPK}<p>Comment puis-je vous aider&nbsp;?</p></div>`;
     let lastI = -1; log.forEach((m, i) => { if (m.prev && !m.undone) lastI = i; });
     log.forEach((m, i) => {
       h += `<div class="q">${esc(m.q)}</div>`;
       h += `<div class="a${m.err ? ' err' : ''}">${m.html}`;
-      if (i === lastI) h += `<div class="ta"><button type="button" data-undo="${i}">Annuler cette modification</button></div>`;
+      if (i === lastI) h += `<div class="ta"><button type="button" data-undo="${i}">Annuler</button></div>`;
       else if (m.undone) h += '<div class="done">Modification annulée.</div>';
       h += '</div>';
     });
@@ -1469,7 +1517,7 @@
   let asking = false;
   async function sendAI(txt) {
     txt = String(txt || '').trim(); if (!txt || asking) return;
-    asking = true; $('#cmdbar').classList.add('busy'); $('#cmd').value = '';
+    asking = true; $('#cmdbar').classList.add('busy'); $('#cmd').value = ''; $('#cmd').style.height = '';
     renderChat(txt);
     let r;
     try { r = await C.ask(txt, S, C.aiContext(M, S)); } catch (e) { console.error(e); r = { error: 'Erreur de l’assistant.' }; }
@@ -1481,13 +1529,13 @@
     $('#cmd').focus();
   }
   $('#cmdbar').addEventListener('submit', (ev) => { ev.preventDefault(); sendAI($('#cmd').value); });
+  $('#cmd').addEventListener('input', (ev) => { const t = ev.target; t.style.height = 'auto'; t.style.height = Math.min(160, t.scrollHeight) + 'px'; });
   $('#cmd').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); sendAI(ev.target.value); }
     else if (ev.key === 'Escape') ev.target.blur();
     ev.stopPropagation();
   });
   chat.addEventListener('click', (ev) => {
-    const ex = ev.target.closest('[data-ex]'); if (ex) return sendAI(ex.dataset.ex);
     const u = ev.target.closest('[data-undo]');
     if (u) { const m = log[+u.dataset.undo]; if (m && m.prev) { S = C.normalize(JSON.parse(m.prev)); m.undone = true; recompute(true); saveLog(); renderChat(); } }
   });

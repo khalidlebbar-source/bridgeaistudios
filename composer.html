@@ -26,7 +26,7 @@
   --bg:#ffffff;--chrome:#f1f3f6;--chrome2:#e6e9ee;--line:#cfd4dc;--line2:#b9c0ca;
   --txt:#1b2230;--mute:#5d6676;--acc:#1f5fd1;--acc2:#174aa6;--sel:#dbe8fd;--hov:#eaf1fd;
   --warn:#9a6700;--danger:#c92a2a;--ok:#2b8a3e;--gold:#a8842a;
-  --tree-w:320px;--prop-w:330px;
+  --tree-w:250px;--prop-w:330px;
   --ui:'Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;
 }
 html,body{height:100%}
@@ -357,33 +357,27 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .wai svg{width:11px;height:11px;fill:#fff}
 .wex{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}.wex button{border:1px solid #c7d6ee;background:#f2f7ff;color:#174aa6;border-radius:12px;padding:3px 9px;font-size:11px;cursor:pointer}.wex button:hover{border-color:var(--acc)}
 
-/* ── panneau Assistant IA (gauche) ── */
-.left.ai{background:#fbfcfe}
-.ai-ph{background:linear-gradient(90deg,#eaf1fd,#e6f6f3)}
-.ai-t{display:inline-flex;align-items:center;gap:6px;color:#174aa6}.ai-t .spk{width:14px;height:14px;fill:url(#none);fill:#1f5fd1}
-.ai-new{border:1px solid var(--line2);background:#fff;border-radius:3px;font-size:10.5px;padding:1px 7px;cursor:pointer;color:var(--mute)}.ai-new:hover{color:var(--acc);border-color:var(--acc)}
-.chat{flex:1;min-height:0;overflow:auto;padding:10px 10px 6px;display:flex;flex-direction:column;gap:8px;font-size:12px}
-.chat .q{align-self:flex-end;max-width:88%;background:var(--acc);color:#fff;border-radius:10px 10px 2px 10px;padding:6px 10px;white-space:pre-wrap;line-height:1.4}
-.chat .a{align-self:flex-start;max-width:96%;background:#fff;border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:7px 10px;line-height:1.45}
-.chat .a.err{border-color:#f0d58c;background:#fffaeb}
-.chat .a b{font-weight:600}.chat .a ul{margin:4px 0 0 16px}.chat .a li{margin:1px 0}
-.chat .a .miss{color:var(--warn);margin-top:4px}.chat .a .hint{color:var(--mute);margin-top:4px;font-size:11px}
-.chat .a .ta{display:flex;gap:6px;margin-top:6px}.chat .a .ta button{border:1px solid var(--line2);background:#fff;border-radius:3px;padding:2px 9px;cursor:pointer;font-size:11px}.chat .a .ta button:hover{background:var(--hov)}
-.chat .a .done{color:var(--mute);font-size:11px;margin-top:5px}
-.chat .welcome{color:#3a4352;line-height:1.5}
-.chat .welcome h4{display:flex;align-items:center;gap:6px;font-size:13px;color:#1b2230;margin-bottom:4px}.chat .welcome h4 .spk{width:16px;height:16px;fill:#1f5fd1}
-.chat .welcome p{margin-bottom:8px}
-.chat .ex{display:flex;flex-direction:column;gap:5px}
-.chat .ex button{text-align:left;border:1px solid #c7d6ee;background:#f2f7ff;color:#174aa6;border-radius:8px;padding:6px 9px;font-size:11.5px;cursor:pointer;line-height:1.35}.chat .ex button:hover{background:#e3eeff;border-color:var(--acc)}
-.chat .ex small{color:var(--mute);font-size:10.5px;margin-top:2px}
-.ai-in{flex:none;border-top:1px solid var(--line);padding:8px;background:#fff}
-.ai-in textarea{width:100%;resize:none;border:1.5px solid transparent;border-radius:6px;padding:7px 9px;font:12px/1.4 var(--ui);background:linear-gradient(#fff,#fff) padding-box,linear-gradient(90deg,#1f5fd1,#1ab8a0 60%,#c9a84c) border-box;outline:none;min-height:58px}
-.ai-in textarea:focus{box-shadow:0 0 0 3px rgba(31,95,209,.15)}
-.ai-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
-.ai-bar small{color:var(--mute);font-size:10.5px}.ai-bar kbd{border:1px solid var(--line);border-radius:3px;padding:0 4px;background:var(--chrome);font:10px var(--ui)}
-.ai-go{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:4px;background:var(--acc);color:#fff;padding:5px 11px;cursor:pointer;font-size:11.5px;font-weight:600}
-.ai-go svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.ai-go:hover{background:var(--acc2)}
-.ai-in.busy textarea{opacity:.6}.ai-in.busy .ai-go{opacity:.6;cursor:wait}
+/* ── panneau Assistant (gauche), sobre ── */
+.left.ai{background:#fff}
+.ai-ph{background:#fff}
+.ai-t{display:inline-flex;align-items:center;gap:6px;color:#1b2230;font-weight:600}.ai-t .spk{width:13px;height:13px;fill:#c9a84c}
+.ai-new{display:grid;place-items:center;width:24px;height:24px;border:none;background:none;border-radius:5px;cursor:pointer;color:var(--mute)}
+.ai-new svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}.ai-new:hover{background:var(--hov);color:#1b2230}
+.chat{flex:1;min-height:0;overflow:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:12px;font-size:12.5px}
+.chat .q{align-self:flex-end;max-width:90%;background:#f1efe9;color:#1b2230;border-radius:12px;padding:6px 11px;white-space:pre-wrap;line-height:1.45}
+.chat .a{align-self:stretch;color:#1b2230;line-height:1.55;padding:0 2px}
+.chat .a ul{margin:3px 0 0 16px}.chat .a li{margin:1px 0}
+.chat .a .ta{margin-top:4px}.chat .a .ta button{border:none;background:none;padding:0;color:var(--mute);font-size:11px;cursor:pointer;text-decoration:underline}.chat .a .ta button:hover{color:var(--acc)}
+.chat .a .done{color:var(--mute);font-size:11px;margin-top:4px}
+.chat .welcome{margin:auto 0;display:flex;flex-direction:column;align-items:center;gap:8px;color:#3a4352;text-align:center}
+.chat .welcome .spk{width:22px;height:22px;fill:#c9a84c}.chat .welcome p{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#1b2230}
+.ai-in{flex:none;padding:8px 10px 10px;background:#fff}
+.ai-box{position:relative;border:1px solid var(--line2);border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ai-box:focus-within{border-color:#b9c3d3;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.ai-in textarea{display:block;width:100%;resize:none;border:none;border-radius:12px;padding:9px 40px 9px 11px;font:12.5px/1.45 var(--ui);background:transparent;outline:none;min-height:44px;max-height:160px}
+.ai-go{position:absolute;right:7px;bottom:7px;display:grid;place-items:center;width:26px;height:26px;border:none;border-radius:7px;background:#c9a84c;cursor:pointer}
+.ai-go svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.ai-go:hover{background:#b8963b}
+.ai-in.busy textarea{opacity:.6}.ai-in.busy .ai-go{opacity:.5;cursor:wait}
 .chat .typing{display:inline-flex;gap:3px}.chat .typing i{width:6px;height:6px;border-radius:50%;background:#9db5e0;animation:tp 1s infinite}.chat .typing i:nth-child(2){animation-delay:.15s}.chat .typing i:nth-child(3){animation-delay:.3s}
 @keyframes tp{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media(max-width:999px){.left.ai{order:3;border-top:1px solid var(--line)}.right{order:4}.chat{max-height:300px}.right .tree,.right .props{flex:none;max-height:none;overflow:visible}}
@@ -406,6 +400,19 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .jv{font-weight:600;white-space:nowrap}.jv.ok{color:var(--ok)}.jv.ko{color:var(--danger)}.jv.na{color:var(--mute)}
 .t.jt td{white-space:normal}.t tr.kor td{background:#fff8f8}
 .jal{margin:4px 0 0 18px;font-size:11.5px;color:var(--warn)}
+/* ── Enregistrer sous ── */
+.dlg-back{position:fixed;inset:0;background:rgba(20,26,38,.35);display:grid;place-items:center;z-index:200}
+.dlg{width:min(420px,calc(100vw - 32px));background:#fff;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:16px 18px 14px;font-size:12.5px}
+.dlg h3{font-size:15px;margin:0 0 12px;font-weight:600}
+.dlg .dl{display:flex;flex-direction:column;gap:4px;color:var(--mute);font-size:11.5px;margin-bottom:12px}
+.dlg .dl input{border:1px solid var(--line2);border-radius:4px;padding:6px 8px;font:13px var(--ui);color:#1b2230}.dlg .dl input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(31,95,209,.15)}
+.dlg fieldset{border:none;padding:0;margin:0 0 14px}.dlg legend{color:var(--mute);font-size:11.5px;margin-bottom:5px}
+.dlg .dr{display:flex;gap:9px;align-items:flex-start;padding:6px 8px;border:1px solid var(--line);border-radius:5px;margin-bottom:5px;cursor:pointer}
+.dlg .dr:has(input:checked){border-color:var(--acc);background:#f2f7ff}.dlg .dr input{margin-top:2px}
+.dlg .dr span{display:flex;flex-direction:column}.dlg .dr small{color:var(--mute);font-size:10.5px}
+.dlg footer{display:flex;justify-content:flex-end;gap:8px}
+.dlg footer button{border:1px solid var(--line2);background:#fff;border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px}
+.dlg footer button.pri{background:var(--acc);border-color:var(--acc2);color:#fff}.dlg footer button:hover{filter:brightness(.97)}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -427,11 +434,10 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 
 <div class="work" id="work">
   <aside class="pane left ai" aria-label="Assistant IA">
-    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/><path d="M16 13.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>Assistant IA</span><button type="button" class="ai-new" id="aiNew" title="Effacer la conversation">Nouvelle discussion</button></div>
+    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</span><button type="button" class="ai-new" id="aiNew" title="Nouvelle discussion" aria-label="Nouvelle discussion"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button></div>
     <div class="chat" id="chat" aria-live="polite"></div>
     <form class="ai-in" id="cmdbar" autocomplete="off">
-      <textarea id="cmd" rows="3" aria-label="Message à l’assistant IA" placeholder="Décrivez, modifiez ou interrogez l’ouvrage… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)" spellcheck="false"></textarea>
-      <div class="ai-bar"><small>Raccourci <kbd>/</kbd> · chaque modification est annulable</small><button type="submit" class="ai-go"><span>Envoyer</span><svg viewBox="0 0 20 20"><path d="M4 10h11M11 5l5 5-5 5"/></svg></button></div>
+      <div class="ai-box"><textarea id="cmd" rows="2" aria-label="Message à l’assistant" placeholder="Écrivez à l’assistant…" spellcheck="false"></textarea><button type="submit" class="ai-go" aria-label="Envoyer" title="Envoyer (Entrée)"><svg viewBox="0 0 20 20"><path d="M10 16V4M5 9l5-5 5 5"/></svg></button></div>
     </form>
   </aside>
   <div class="vsplit" id="vsplit" title="Redimensionner"></div>
@@ -462,6 +468,7 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <footer class="status" id="status"></footer>
 
 <input type="file" id="fOpen" accept=".json,application/json" class="sr">
+<input type="file" id="fCart" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" class="sr">
 <div id="print" aria-hidden="true"></div>
 
 <script src="composer/calc.js?v=12"></script>

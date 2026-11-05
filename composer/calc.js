@@ -187,6 +187,7 @@
     if (!['strategique', 'important', 'courant'].includes(h.seismeClasse)) h.seismeClasse = 'courant';
     ['acier', 'precontrainte', 'charpente', 'exposition', 'notes'].forEach((k) => { h[k] = String(h[k] == null ? HD[k] : h[k]).slice(0, k === 'notes' ? 4000 : 60); });
     Object.keys(out.prix).forEach((k) => { out.prix[k] = Math.max(0, num(out.prix[k], D.prix[k])); });
+    { const c = S.cartouche || {}; out.cartouche = { orient: c.orient === 'h' ? 'h' : 'v', img: typeof c.img === 'string' && /^data:image\/(svg\+xml|png|jpe?g|webp);base64,/.test(c.img) && c.img.length < 3e6 ? c.img : '', nom: typeof c.nom === 'string' ? c.nom.slice(0, 120) : '' }; }
     out.usage = out.usage === 'rail' ? 'rail' : 'route';
     out.reglement = out.reglement === 'F61' ? 'F61' : 'EC';
     out.classe = clamp(Math.round(num(out.classe, 1)), 1, 3);
