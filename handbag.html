@@ -71,6 +71,20 @@ body:not(.home) #home{display:none}
 .rtile .more{display:block;margin:0 8px 10px;padding:6px 10px;border-radius:7px;font-size:11.5px;color:var(--c);text-decoration:none;background:color-mix(in srgb,var(--c) 7%,#fff);font-weight:500}
 .rtile .more:hover{background:color-mix(in srgb,var(--c) 14%,#fff)}
 .rub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mods{margin:0 0 22px;background:var(--white);border:1px solid var(--border);border-radius:13px;box-shadow:var(--shadow);padding:14px 16px 16px}
+.mods-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.mods-h h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:22px;color:var(--ink)}
+.mods-h h2 span{font-size:10.5px;color:var(--ink3);background:#f1eee8;border-radius:99px;padding:1px 8px;margin-left:8px;font-family:inherit;vertical-align:middle}
+.mods-h a{font-size:11.5px;color:var(--gold);text-decoration:none}.mods-h a:hover{text-decoration:underline}
+.mods-sub{font-size:12px;color:var(--ink3);margin:-4px 0 12px;line-height:1.5}
+.mods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.mcard{display:block;border:1px solid var(--border);border-radius:9px;padding:8px 11px;text-decoration:none;color:var(--ink);border-left:3px solid var(--teal)}
+.mcard:hover{border-color:var(--gold2);border-left-color:var(--teal)}
+.mcard.beta{border-left-color:var(--gold2)}
+.mcard .c{font-size:9.5px;letter-spacing:.12em;color:var(--teal);font-weight:500}.mcard.beta .c{color:var(--gold)}
+.mcard .c i{font-style:normal;letter-spacing:.04em;color:var(--ink3);font-weight:400;margin-left:6px}
+.mcard .n{font-size:12.8px;line-height:1.3;margin-top:2px}
+.mcard.dev{opacity:.5;pointer-events:none}
 .rcard{display:block;background:var(--white);border:1px solid var(--border);border-radius:11px;padding:12px 14px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);border-left:3px solid var(--c)}
 .rcard:hover{border-color:var(--gold2);border-left-color:var(--c)}
 .rcard .t{font-size:13.5px;font-weight:400;line-height:1.3}
@@ -315,6 +329,7 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
 <div id="print"></div>
 
 <script src="handbag/katex/katex.min.js"></script>
+<script src="outils/js/catalogue.js"></script>
 <script src="handbag/calcs.js"></script>
 <script src="handbag/figures.js"></script>
 <script src="handbag/lib/kit.js"></script>
@@ -403,14 +418,20 @@ const slug = c => norm(c).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const CATS = RUB.filter(r => CALCS.some(c => c.cat === r)).concat([...new Set(CALCS.map(c => c.cat))].filter(c => !RUB.includes(c)));
 const byCat = cat => ORDER.filter(c => c.cat === cat);
 const NMAX = 8;
+/* ── outils de calculs des ponts (catalogue des modules, pages outils/*.html) ── */
+const MODS = ((window.BA && BA.catalogue) || []).filter(m => m.code);
+const mcard = m => m.statut === "dev" ? `<div class="mcard dev"><div class="c">${m.code}<i>Bientôt</i></div><div class="n">${m.nom}</div></div>`
+  : `<a class="mcard ${m.statut}" href="outils/${m.slug}.html" title="${strip(m.desc || "").replace(/"/g, "")}"><div class="c">${m.code}${m.statut === "beta" ? "<i>Bêta</i>" : ""}</div><div class="n">${m.nom}</div></a>`;
+const modsBlock = l => l.length ? `<section class="mods" aria-label="Outils de calculs des ponts"><div class="mods-h"><h2>Outils de calculs des ponts<span>${l.length} modules</span></h2><a href="outils-ponts.html">Voir comment les outils s’enchaînent →</a></div><p class="mods-sub">Du tablier aux fondations : chaque outil calcule une partie d’ouvrage, produit sa note de calcul et transmet ses résultats au suivant.</p><div class="mods-grid">${l.map(mcard).join("")}</div></section>` : "";
 function renderHome(q = "") {
   document.body.classList.add("home"); cur = null; document.title = "BridgeAI Studios — HandBag";
-  const t = norm(q), top = `<div class="h-top"><div><div class="eyebrow">HandBag</div><h1>Calculs usuels d'ouvrages d'art</h1><div class="sub">${CALCS.length} feuilles de calcul en ${CATS.length} rubriques, chacune avec sa note de calcul PDF prête à imprimer.</div></div><input class="h-find" id="find" type="search" placeholder="Rechercher un calcul…" aria-label="Rechercher un calcul" value="${q.replace(/"/g, "&quot;")}"></div>`;
+  const t = norm(q), top = `<div class="h-top"><div><div class="eyebrow">HandBag</div><h1>Calculs usuels d'ouvrages d'art</h1><div class="sub">${CALCS.length} feuilles de calcul en ${CATS.length} rubriques et ${MODS.length} outils de calculs des ponts, chacun avec sa note de calcul PDF prête à imprimer.</div></div><input class="h-find" id="find" type="search" placeholder="Rechercher un calcul…" aria-label="Rechercher un calcul" value="${q.replace(/"/g, "&quot;")}"></div>`;
   let body = "";
   if (t) {
     const hits = ORDER.filter(c => norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t));
-    body = `<div class="tbl-t">${hits.length} feuille${hits.length > 1 ? "s" : ""} trouvée${hits.length > 1 ? "s" : ""}</div><div class="rub-grid">${hits.map(rcard).join("") || `<p class="notes">Aucun calcul ne correspond.</p>`}</div>`;
-  } else body = `<div class="tiles-grid">${CATS.map(cat => { const l = byCat(cat), c = catColor(cat);
+    const mh = MODS.filter(m => norm(m.code + " " + m.nom + " " + (m.desc || "") + " " + (m.reg || "")).includes(t));
+    body = modsBlock(mh) + `<div class="tbl-t">${hits.length} feuille${hits.length > 1 ? "s" : ""} trouvée${hits.length > 1 ? "s" : ""}</div><div class="rub-grid">${hits.map(rcard).join("") || `<p class="notes">Aucun calcul ne correspond.</p>`}</div>`;
+  } else body = modsBlock(MODS) + `<div class="tiles-grid">${CATS.map(cat => { const l = byCat(cat), c = catColor(cat);
     return `<div class="rtile" style="--c:${c}"><a class="rtile-h" href="#r:${slug(cat)}">${catIcon(cat)}<span class="nm">${cat}</span><span class="nb">${l.length}</span></a><ul>${l.slice(0, NMAX).map(x => `<li><a href="#${x.id}"><span class="dot"></span><span>${tx(x.t)}</span></a></li>`).join("")}</ul>${l.length > NMAX ? `<a class="more" href="#r:${slug(cat)}">Voir les ${l.length} feuilles →</a>` : ""}</div>`; }).join("")}</div>`;
   $("#home").innerHTML = top + body + `<div class="home-foot">Calculs vérifiés contre les textes réglementaires et les classeurs de référence ; chaque feuille rappelle ses sources.</div>`;
   const f = $("#find"); f.addEventListener("input", e => { const v = e.target.value, pos = e.target.selectionStart; renderHome(v); const g = $("#find"); g.focus(); g.setSelectionRange(pos, pos); });
