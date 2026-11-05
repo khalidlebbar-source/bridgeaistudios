@@ -170,6 +170,8 @@
   }
 
   /* ───────── Normalisation des saisies ───────── */
+  /* nota du plan d'ensemble, modifiable par l'utilisateur (une ligne par point) */
+  const NOTA_DEF = 'Les cotes sont exprimées en mètres et les niveaux en m NGM, sauf indication contraire.\nLe présent plan est à lire avec la note de calcul et les plans de détail.\nAucune cote ne doit être mesurée sur le plan.';
   function normalize(src) {
     const S = JSON.parse(JSON.stringify(src || {}));
     const D = defaults(S.usage);
@@ -187,6 +189,7 @@
     if (!['strategique', 'important', 'courant'].includes(h.seismeClasse)) h.seismeClasse = 'courant';
     ['acier', 'precontrainte', 'charpente', 'exposition', 'notes'].forEach((k) => { h[k] = String(h[k] == null ? HD[k] : h[k]).slice(0, k === 'notes' ? 4000 : 60); });
     Object.keys(out.prix).forEach((k) => { out.prix[k] = Math.max(0, num(out.prix[k], D.prix[k])); });
+    out.nota = typeof S.nota === 'string' ? S.nota.slice(0, 2000) : NOTA_DEF;
     { const c = S.cartouche || {}; out.cartouche = { orient: c.orient === 'h' ? 'h' : 'v', img: typeof c.img === 'string' && /^data:image\/(svg\+xml|png|jpe?g|webp);base64,/.test(c.img) && c.img.length < 3e6 ? c.img : '', nom: typeof c.nom === 'string' ? c.nom.slice(0, 120) : '' }; }
     out.usage = out.usage === 'rail' ? 'rail' : 'route';
     out.reglement = out.reglement === 'F61' ? 'F61' : 'EC';

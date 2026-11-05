@@ -36,6 +36,7 @@
     saveAs: '<path d="M5 3h11l3 3v6M5 3v18h7"/><path d="M8 3v5h8V3M8 21v-6h4"/><path d="M14 20.5l1-3.4 5.2-5.2 2.4 2.4-5.2 5.2z"/>',
     cartV: '<path d="M4 3h16v18H4z"/><path d="M12 9h7v11h-7z" stroke-dasharray="1.6 1.2"/>',
     cartH: '<path d="M2 5h20v14H2z"/><path d="M10 12h11v6H10z" stroke-dasharray="1.6 1.2"/>',
+    nota: '<path d="M5 3h14v18H5z"/><path d="M8 7h3M8 11h8M8 14h8M8 17h5"/>',
     cartImg: '<path d="M4 3h16v18H4z"/><path d="M8 17l3-4 2 2.5 2-3 3 4.5zM9 8.5a1.5 1.5 0 1 0 0 .1"/>',
     pdf: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 15h6M9 18h4"/>',
     dxf: '<path d="M3 20h18"/><path d="M4 17V8l5-4 5 4v9M14 11h6v6"/><path d="M7 17v-4h4v4"/>',
@@ -125,6 +126,7 @@
     const lab = { predim: 'Prédimen-<br>sionnement', ddc: 'Descente<br>de charges', efforts: 'Efforts<br>longitudinaux', appuis: 'Appuis &amp;<br>fondations', metre: 'Métrés<br>&amp; coût', msg: 'Messages' };
     const ct = S.cartouche || {};
     return grp('Plan', rb('view', 'Plan<br>d’ensemble', 'planE', { arg: 'plan', on: view === 'plan', tip: 'Feuille A1 : coupe longitudinale, vue en plan, coupe transversale et réserve A4 pour votre cartouche' })
+        + rb('nota', 'Nota', 'nota', { on: !!(S.nota || '').trim(), tip: 'Rédiger le NOTA du plan d’ensemble (une ligne par point)' })
         + rb('cartOrient', 'Cartouche<br>vertical', 'cartV', { arg: 'v', on: ct.orient !== 'h', tip: 'Réserve A4 verticale (210 × 297 mm) en bas à droite de la feuille' })
         + rb('cartOrient', 'Cartouche<br>horizontal', 'cartH', { arg: 'h', on: ct.orient === 'h', tip: 'Réserve A4 horizontale (297 × 210 mm) en bas à droite de la feuille' })
         + rb('cartImg', ct.img ? 'Retirer le<br>cartouche' : 'Importer<br>cartouche', 'cartImg', { tip: ct.img ? 'Retirer le cartouche importé (' + (ct.nom || 'image') + ') et laisser la réserve A4 vide' : 'Placer votre propre cartouche (SVG, PNG ou JPG) dans la réserve A4' }))
@@ -1028,6 +1030,7 @@
       case 'open': $('#fOpen').click(); return;
       case 'save': saveJSON(); return;
       case 'saveAs': saveAsDialog(); return;
+      case 'nota': notaDialog(); return;
       case 'cartOrient': S.cartouche = Object.assign({}, S.cartouche, { orient: arg === 'h' ? 'h' : 'v' }); view = 'plan'; lastGraphic = 'plan'; break;
       case 'cartImg':
         if (S.cartouche && S.cartouche.img) { S.cartouche = Object.assign({}, S.cartouche, { img: '', nom: '' }); view = 'plan'; lastGraphic = 'plan'; break; }
@@ -1202,6 +1205,20 @@
       } catch (e) { if (e && e.name === 'AbortError') return; }
     }
     download(name, data, F.mime);
+  }
+  function notaDialog() {
+    if ($('.dlg-back')) return;
+    const d = document.createElement('div'); d.className = 'dlg-back';
+    d.innerHTML = `<form class="dlg" role="dialog" aria-modal="true" aria-label="Nota du plan"><h3>Nota du plan d’ensemble</h3>
+      <label class="dl">Un point par ligne — numérotation automatique. Laissez vide pour ne pas afficher de nota.<textarea name="t" rows="8" spellcheck="true">${esc(S.nota || '')}</textarea></label>
+      <footer><button type="button" data-x>Annuler</button><button type="submit" class="pri">Appliquer</button></footer></form>`;
+    document.body.appendChild(d);
+    const f = d.querySelector('form'), close = () => d.remove();
+    f.t.focus();
+    d.addEventListener('mousedown', (ev) => { if (ev.target === d) close(); });
+    d.querySelector('[data-x]').addEventListener('click', close);
+    f.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); ev.stopPropagation(); });
+    f.addEventListener('submit', (ev) => { ev.preventDefault(); S.nota = f.t.value.slice(0, 2000); close(); view = 'plan'; lastGraphic = 'plan'; recompute(true); });
   }
   function saveAsDialog() {
     if ($('.dlg-back')) return;

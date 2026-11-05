@@ -1,7 +1,7 @@
 /* BridgeAI Studios — Bridge Composer : PLAN D'ENSEMBLE (feuille A1 paysage, 841 × 594 mm)
  * Assemble sur une même feuille, à la manière des plans d'ensemble de bureau d'études :
  *   coupe longitudinale (avec profil en long / guitare et sondages), vue en plan, coupe transversale,
- *   et une réserve A4 (verticale ou horizontale) laissée vide pour le cartouche de l'utilisateur.
+ *   un NOTA court rédigé par l'utilisateur et une réserve A4 (verticale ou horizontale) laissée vide pour son cartouche.
  * Chaque vue est une scène de draw.js rendue par toSVG puis imbriquée (<svg> enfant) dans son cadre. */
 (function (root, factory) {
   const isNode = typeof module === 'object' && module.exports;
@@ -31,6 +31,25 @@
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${o.fs || 3}"${o.a ? ` text-anchor="${o.a}"` : ''}${o.b ? ' font-weight="700"' : ''}${o.i ? ' font-style="italic"' : ''}${o.c ? ` fill="${o.c}"` : ''}${o.tag ? ` data-tag="${o.tag}"` : ''}>${esc(s)}</text>`;
   };
   const R = (x, y, w, h, st) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" style="${st || 'fill:none;stroke:#1e1e1e;stroke-width:.35'}"/>`;
+  function wrap(str, w, fs) {
+    const n = Math.max(8, Math.floor(w / (fs * 0.5))), out = [];
+    String(str).split(/\s+/).forEach((wd) => { const l = out.length ? out[out.length - 1] + ' ' + wd : wd; if (out.length && l.length <= n) out[out.length - 1] = l; else out.push(wd); });
+    return out;
+  }
+  /* NOTA : points saisis par l'utilisateur, numérotés ; renvoie { svg, h } */
+  function notaBlock(txt, x, w, fs) {
+    const pts = String(txt || '').split(/\n/).map((l) => l.trim()).filter(Boolean);
+    if (!pts.length) return null;
+    const lines = [];
+    pts.forEach((p, i) => wrap(p.replace(/^\d+[.)-]\s*/, ''), w - 14, fs).forEach((l, k) => lines.push([k ? '' : (i + 1) + '.', l])));
+    const lh = fs * 1.4, h = 10 + lines.length * lh + 3;
+    return { h, draw: (y) => {
+      let s = T(x + 4, y + 6, 'NOTA', { fs: 3.2, b: true }) + `<path d="M${x + 4} ${y + 7}h${(3.2 * 2.4).toFixed(1)}" style="stroke:#14171f;stroke-width:.3"/>`;
+      lines.forEach(([n, l], k) => { const yy = y + 11.5 + k * lh; if (n) s += T(x + 4, yy, n, { fs }); s += T(x + 9, yy, l, { fs }); });
+      return s;
+    } };
+  }
+
   /* réserve A4 : cadre vide, ou le cartouche importé par l'utilisateur (image SVG/PNG/JPG) */
   function reserveA4(box, img) {
     const [x, y, w, h] = box;
@@ -51,7 +70,10 @@
     const frame = (b) => R(b[0], b[1], b[2], b[3], 'fill:none;stroke:#c9ced8;stroke-width:.3');
     s += frame(Zl.long) + embed(eL, Zl.long, 'pl', opt);
     s += frame(Zl.plan) + embed(eP, Zl.plan, 'pp', opt);
-    s += frame(Zl.sec) + embed(eS, Zl.sec, 'ps', opt);
+    const [cx, , cw] = Zl.cart, top = Zl.cart[1] - 6, nb = notaBlock(M.S && M.S.nota, cx, cw, 2.6);
+    const nh = nb ? Math.min(nb.h, top - 14 - 120) : 0, sec = [Zl.sec[0], 14, Zl.sec[2], top - 14 - (nb ? nh + 4 : 0)];
+    s += frame(sec) + embed(eS, sec, 'ps', opt);
+    if (nb) s += `<clipPath id="nclip"><rect x="${cx}" y="${top - nh}" width="${cw}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>`;
     s += reserveA4(Zl.cart, ct.img);
     s += T(SW - 12, SH - 3, 'Échelles : coupe longitudinale 1/' + eL.ech + ' · vue en plan 1/' + eP.ech + ' · coupe transversale 1/' + eS.ech + ' — format A1', { fs: 2.2, a: 'end', c: '#555' });
     return s + '</svg>';
