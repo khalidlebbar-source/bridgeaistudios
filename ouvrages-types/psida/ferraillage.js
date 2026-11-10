@@ -273,7 +273,11 @@
     const cS = comptes(F.sup.n, F.N1, 0), cI = comptes(F.inf.n, F.N1, F.inf.k0);
     const cum = (c, k, a) => c.slice(0, k).reduce((p, q) => p + q, 0) * a;
     // nombre de positions et diamètre du dernier fer pour couvrir Amax
-    function nbFers(c, Am) {
+    function nbFers(c, Am, gm) {
+      // nombre de rangs : colonnes de la gamme (fers de construction compris), φ2 pour le dernier fer « au mieux »
+      if (gm && !G.PSIDA_NBF_PHI1) { const cl = gm.cols;
+        for (let k = 1; k <= c.length; k++) { if (k > 1 && cl[2 * (k - 1)].om >= Am - 1e-12) return { k, last: 1 }; if (cl[2 * k - 1].om >= Am - 1e-12) return { k, last: 0 }; }
+        return { k: c.length, last: 0 }; }
       for (let k = 1; k <= c.length; k++) {
         if (cum(c, k - 1, aire(ph[0])) + c[k - 1] * aire(ph[1]) >= Am - 1e-12 && k > 1) return { k, last: 1 };
         if (cum(c, k, aire(ph[0])) >= Am - 1e-12) return { k, last: 0 };
@@ -301,13 +305,52 @@
       }
       return x1 == null ? null : [x1, x2];
     }
+    // ---- arrêts par « épure à rampes » (constat 2026-11-10, 3826 LSA2 à ±0,05 m) : un fer de rang r n'est pleinement
+    // efficace qu'à ls de son extrémité (résistance linéaire de 0 à l'extrémité à 1 à ls) ; la résistance cumulée
+    // Ω(r−1) + Σ ΔΩ·rampe doit couvrir l'enveloppe décalée de 0,8 H (max sur ±0,8 H) ; Ω = colonnes de la gamme
+    // (fers de construction compris). Rangs arrêtés par groupes (1)(2,3)(4,5)… (sup.) / (4,5)(6,7)… (inf.), position
+    // commune minimale ; groupes traités du rang le plus élevé au plus bas.
+    const RAMPE = !G.PSIDA_EPURE_LIN;
+    const omegas = (gm, K, last) => { const c = gm.cols, o = [c[0].om]; for (let k = 1; k <= K; k++) o.push(k === K && last ? c[2 * (k - 1)].om : c[2 * k - 1].om); return o; };
+    // envS : fonction u -> enveloppe décalée (u >= 0 distance depuis la zone pleine), Lu : longueur utile ; renvoie u_r
+    function rampes(envS, Lu, om, lo, K, groups) {
+      const du = 0.01, N = Math.max(2, Math.ceil(Lu / du)), U = Array.from({ length: N + 1 }, (_, i) => i * Lu / N), E = U.map(envS);
+      const ue = {};
+      const ok = (g, x) => { const g0 = Math.min(...g); for (let i = 0; i <= N; i++) { let R = om[g0 - 1]; for (let q = g0; q <= K; q++) { const e = g.includes(q) ? x : ue[q]; R += (om[q] - om[q - 1]) * Math.min(1, Math.max(0, (e - U[i]) / ls)); } if (R < E[i] - 1e-9) return false; } return true; };
+      for (const g of groups.slice().sort((a, b) => Math.max(...b) - Math.max(...a))) {
+        let a = 0, b = Lu + ls; if (!ok(g, b)) { for (const q of g) ue[q] = b; continue; }
+        for (let it = 0; it < 40; it++) { const mm = (a + b) / 2; if (ok(g, mm)) b = mm; else a = mm; }
+        for (const q of g) ue[q] = b;
+      }
+      return ue;
+    }
+    const grp = (lo, K) => { const V = G.PSIDA_GRP || 'A', g = []; let q = lo;
+      if (V === 'S') { for (; q <= K; q++) g.push([q]); return g; }
+      if (V === 'C') { let t = K; const h = []; while (t >= lo + (lo === 1 ? 1 : 0)) { h.unshift(t - 1 >= lo + (lo === 1 ? 1 : 0) ? [t - 1, t] : [t]); t -= 2; } if (lo === 1) h.unshift([1]); return h; }
+      if (lo === 1) { g.push([1]); q = 2; } for (; q <= K; q += 2) g.push(q + 1 <= K ? [q, q + 1] : [q]);
+      if (V === 'B' && g.length > 1 && g[g.length - 1].length === 1 && K > lo) { const z = g.pop(); g[g.length - 1].push(...z); }
+      return g; };
+    const envAt = (env, i) => x => { const v = env[i], Li = L[i], t = Math.min(Math.max(x / Li, 0), 1); for (let j = 1; j < v.length; j++) if (t <= SA[j] + 1e-12) return v[j - 1] + (v[j] - v[j - 1]) * (t - SA[j - 1]) / (SA[j] - SA[j - 1]); return v[v.length - 1]; };
+    const winMax = (fn, a, b) => { let m = -Infinity; const N = Math.max(1, Math.ceil((b - a) / 0.01)); for (let i = 0; i <= N; i++) m = Math.max(m, fn(a + (b - a) * i / N)); return m; };
     const blocs = { sup: [], inf: [] };
     const fer = (nom, j, phi, nb, o, x, oStar, xStar, len) => ({ nom, j, phi, nb, o, x, oStar: !!oStar, xStar: !!xStar, len: len != null ? len : x - o });
     // --- fers principaux supérieurs sur appuis intermédiaires
     const LSA = {}, cap0S = cum(cS, 3, aire(ph[2]));
     for (let k = 1; k < n; k++) {
-      let Am = 0; for (const i of [k - 1, k]) for (const v of F.sup.env[i]) Am = Math.max(Am, v);
-      const nf = nbFers(cS, Am), list = [];
+      // section maximale à couvrir : demi-travées contiguës à l'appui k (et non l'appui suivant : 3603 LSA2 6 rangs)
+      let Am = 0; F.sup.env[k - 1].forEach((v, j) => { if (G.PSIDA_AM_ALL || SA[j] >= 0.5) Am = Math.max(Am, v); }); F.sup.env[k].forEach((v, j) => { if (G.PSIDA_AM_ALL || SA[j] <= 0.5) Am = Math.max(Am, v); });
+      const nf = nbFers(cS, Am, F.sup.gamme), list = [];
+      if (RAMPE) {
+        const om = omegas(F.sup.gamme, nf.k, nf.last), gl = envAt(F.sup.env, k - 1), gr = envAt(F.sup.env, k), Ll = L[k - 1], Lr = L[k];
+        const full = X => X < 0 ? gl(Ll + X) : gr(X);                         // X : abscisse depuis l'appui k
+        // longueur utile : jusqu'au minimum de l'enveloppe dans la travée (au-delà : zone de l'appui suivant)
+        const umin = (fn, Ls) => { let um = 0, vm = Infinity; for (let q = 0; q <= 400; q++) { const v = fn(Ls * q / 400); if (v < vm - 1e-12) { vm = v; um = Ls * q / 400; } } return um; };
+        const LuR = umin(u => gr(u), Lr), LuL = umin(u => gl(Ll - u), Ll);
+        const uR = rampes(u => winMax(full, Math.max(-Ll, u - e), Math.min(LuR, u + e)), LuR, om, 1, nf.k, grp(1, nf.k));
+        const uL = rampes(u => winMax(full, Math.max(-LuL, -u - e), Math.min(Lr, -u + e)), LuL, om, 1, nf.k, grp(1, nf.k));
+        for (let j = 1; j <= nf.k; j++) { const phi = j === nf.k && nf.last ? ph[1] : ph[0]; list.push(fer('LSA' + (k + 1), j, phi, cS[j - 1], Ll - uL[j], uR[j], false, false, uL[j] + uR[j])); }
+        LSA[k] = list; continue;
+      }
       for (let j = 1; j <= nf.k; j++) {
         const c = j === 1 ? cap0S : cum(cS, j - 1, aire(ph[0]));
         const dl = depuisAppui(F.sup.env, k - 1, c, 1) + e, dr = depuisAppui(F.sup.env, k, c, 0) + e;
@@ -320,9 +363,22 @@
     const LIT = {}, cap0I = cum(cI, 3, aire(ph[2]));
     const LIAext = {};   // extension des fers de construction inférieurs d'appui (côté gauche / droit)
     for (let k = 1; k < n; k++) LIAext[k] = [L[k - 1] - (intervalle(F.inf.env, k - 1, cap0I) || [0, 0])[1] + e, (intervalle(F.inf.env, k, cap0I) || [L[k], L[k]])[0] + e];
+    // épure à rampes des fers inférieurs de travée : rangs 1–3 (groupe filant, base = fers de construction d'appui φ3)
+    // puis (4,5)(6,7)… ; les fers de construction inférieurs d'appui prolongent les rangs 1–3 d'une longueur ls.
+    const RI = {};
+    if (RAMPE) for (let i = 0; i < n; i++) {
+      let Am = 0; for (const v of F.inf.env[i]) Am = Math.max(Am, v);
+      const nf = nbFers(cI, Am, F.inf.gamme), om = omegas(F.inf.gamme, nf.k, nf.last), g = envAt(F.inf.env, i), Li = L[i];
+      let tp = 0, vm = -1; for (let q = 0; q <= 400; q++) { const x = Li * q / 400, v = g(x); if (v > vm) { vm = v; tp = x; } }
+      const gg = G.PSIDA_LIT13 === 0 ? grp(4, nf.k) : [[1, 2, 3].filter(q => q <= nf.k)].concat(grp(4, nf.k)), lo = G.PSIDA_LIT13 === 0 ? 4 : 1;
+      const uL = rampes(u => winMax(g, Math.max(0, tp - u - e), Math.min(Li, tp - u + e)), tp, om, lo, nf.k, gg);
+      const uR = rampes(u => winMax(g, Math.max(0, tp + u - e), Math.min(Li, tp + u + e)), Li - tp, om, lo, nf.k, gg);
+      RI[i] = { i, tp, uL, uR };
+    }
+    if (RAMPE && G.PSIDA_LIT13 !== 0) for (let k = 1; k < n; k++) LIAext[k] = [L[k - 1] - (RI[k - 1].tp + RI[k - 1].uR[1]) + ls, RI[k].tp - RI[k].uL[1] + ls];
     for (let i = 0; i < n; i++) {
       let Am = 0; for (const v of F.inf.env[i]) Am = Math.max(Am, v);
-      const nf = nbFers(cI, Am), list = [];
+      const nf = nbFers(cI, Am, F.inf.gamme), list = [];
       for (let j = 1; j <= nf.k; j++) {
         const phi = j === nf.k && nf.last ? ph[1] : ph[0];
         if (j <= 3) {
@@ -331,6 +387,8 @@
           const bout = -(ab - r._A11.ENROBI) - 12 * ph[0];
           const o = i === 0 ? bout : LIAext[i][1] - ls, x = i === n - 1 ? L[i] - bout : L[i] - LIAext[i + 1][0] + ls;
           list.push(fer('LIT' + (i + 1), j, phi, cI[j - 1], o, x, i === 0, i === n - 1));
+        } else if (RAMPE) {
+          const R = RI[i]; list.push(fer('LIT' + (i + 1), j, phi, cI[j - 1], R.tp - R.uL[j], R.tp + R.uR[j]));
         } else {
           const iv = intervalle(F.inf.env, i, cum(cI, j - 1, aire(ph[0]))) || [L[i] / 2, L[i] / 2];
           list.push(fer('LIT' + (i + 1), j, phi, cI[j - 1], iv[0] - e, iv[1] + e));

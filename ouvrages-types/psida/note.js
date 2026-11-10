@@ -337,7 +337,7 @@
       const R = r.reactions, nA = n + 1, ap = Array.from({ length: nA }, (_, k) => pad('APPUI' + (k + 1), 11)).join('');
       const row = (lab, fn) => padR(lab, 52) + R.map(x => f(fn(x), 11, 2)).join('');
       const cmax = x => Math.max(0, ...x.live.CE.map(c => c.max.v)), cmin = x => Math.min(0, ...x.live.CE.map(c => c.min.v));
-      const pp = ['                                                              *     * ', '',
+      const pp = ['                                     RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP73 ', '                                                              *     * ', '',
         `    BIAIS GEOMETRIQUE (GRADES)=${f(r.biais, 8, 3)}       PORTEES ` + L.map(v => f(v, 10, 3) + ' M').join(''), '',
         `    LARGEUR D'INTRADOS(ELARGT)=${f(r.section.Eintr, 8, 3)} M                                         LARGEUR SURCHARGEABLE(ELARGA)=${f(r.Lch, 8, 3)} M`,
         '                                                                 * ', '                                                          REACTIONS D\'APPUI', '                                                                 * ',
@@ -367,11 +367,50 @@
       }
       if (r.deformations) {
         const D = r.deformations;
-        pp.push('', '                                                       ' + L.map((_, j) => pad('TRAVEE' + (j + 1), 11)).join(''), '',
+        pp.push('                                                                 * ', '              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4 ) ',
+          '                                                                 * ', '                                                       ' + L.map((_, j) => pad('TRAVEE' + (j + 1), 11)).join(''), '',
           padR('    SOUS CHARGE PERMANENTE              (EPSCP)', 52) + D.map(d => f(d.eps[1], 11, 2)).join(''), '',
           `    SOUS L'ACTION DES CHARGES , LA VARIATION RELATIVE  MAXIMALE (EPSSUR) EST DE ${f(Math.max(...D.map(d => Math.max(...d.eps.slice(2).map(Math.abs)))), 7, 3)}`);
       }
       page(t0, pp, { sub: m.titre[1] || '' });
+      // ------------------------------------------------ PP73 (SUITE ET FIN) : rotations + cartes PP68
+      if (r.deformations && AP) {
+        const D = r.deformations, nA = n + 1;
+        // ROT = max sur les deux signes de |rotation CP finale + plus forte rotation de ce signe sous A seule (une travée)|
+        const rot = Array.from({ length: nA }, (_, k) => {
+          const Rk = k < n ? D[k].rotG : D[k - 1].rotD; let b = 0;
+          for (const sg of [1, -1]) { let mA = 0; for (let j = 0; j < n; j++) { const a = Rk[2 + 2 * j]; if (a * sg > mA * sg) mA = a; } b = Math.max(b, Math.abs(Rk[1] + mA)); }
+          return b; });
+        const epsSur = Math.max(...D.map(d => Math.max(...d.eps.slice(2).map(Math.abs))));
+        const cmax = x => Math.max(0, ...x.live.CE.map(c => c.max.v)), cmin = x => Math.min(0, ...x.live.CE.map(c => c.min.v));
+        const mxc = (a, re) => Math.max(1, ...a.cas.filter(c => re.test(c)).map(c => a.coef[c]));
+        const carte = k => { const x = R[k], a = AP[k];
+          return pad(k + 1, 3) + pad(a.typ, 5) + pad(a.nap, 5) + f(a.long, 7, 3) + f(a.larg, 6, 3) + f(a.esp, 6, 2) + '   *   ' +
+            f(a.coef.CP, 6, 3) + f(r.cp.ossMoy * (x.G.up / r.cp.gMax), 7, 2) + f(r.cp.gMoy * (x.G.up / r.cp.gMax), 7, 2) +
+            f(a.coef.A, 6, 3) + f(x.live.A.pos.v + x.live.T.max, 7, 2) + f(x.live.A.neg.v + x.live.T.min, 7, 2) +
+            f(a.coef.BC, 6, 3) + f(Math.max(x.live.Bc.max, x.live.Bt.max) + x.live.T.max, 7, 2) + f(Math.min(x.live.Bc.min, x.live.Bt.min) + x.live.T.min, 7, 2) +
+            f(mxc(a, /CVOI|MC/), 6, 3) + f(cmax(x) + x.live.T.max, 7, 2) + f(cmin(x) + x.live.T.min, 7, 2) + ' '; };
+        const HD = '  N0 TYPAP NAP  LAP   DAP  ESPAP NFEUIL MAJCP  QCP1   QCP2  MAJA  PAMAX  PAMIN  MAJBC PBCMAX PBCMIN MAJCM PCMMAX PCMMIN ';
+        const S1 = '                                                                 * ', S2 = '                                                              *     * ';
+        const pz = ['                                     ROTATIONS MAXIMALES ABSOLUES DU TABLIER SUR APPUIS (X 10**3 ) ', S1, ' ',
+          '                           ' + Array.from({ length: nA }, (_, k) => pad('APPUI' + (k + 1), 13)).join('') + ' ', ' ',
+          '        ROTATIONS  (ROT)   ' + rot.map((v, k) => f(v, k ? 13 : 8, 2)).join('') + ' ', S2, S1, S2, ' ',
+          '                  RESULTATS REGROUPES DANS LES CARTES CORRESPONDANTES DU BORDEREAU DES DONNEES DU PROGRAMME PP68 ', ' '];
+        for (const [c, k] of [[6, 0], [8, n]]) pz.push(S1, '                                                              CARTE ' + pad(c, 2) + ' ', S1,
+          HD + 'KSEM  QDT', carte(k) + '*.**  *.**', ' ', '  EXCNDT EXCNAP ', '   *.**   *.** ');
+        if (n > 1) {
+          pz.push(S1, '                                                      CARTES ' + Array.from({ length: n - 1 }, (_, i) => (10 + 2 * i) + ',').join('') + ' ', HD, ' ');
+          for (let k = 1; k < n; k++) pz.push(carte(k), ' ');
+        } else pz.push(' ');
+        pz.push(S1, '                                                              CARTE 26 ', S1,
+          '   BIAIS    D1      D2      D3      D4      D5      D6    ELARGT ELARGA  LDALT EXFRBC ',
+          f(r.biais, 8, 3) + L.map(v => f(v, 8, 3)).join('') + ' '.repeat(8 * (6 - n)) + f(r.section.Eintr, 7, 2) + f(r.Lch, 7, 2) + '   **.**  **.** ',
+          S1, '                                                              CARTE 27 ', S1,
+          '  EPSTEM EPSCP1 EPSCP2 EPSCP3 EPSCP4 EPSCP5 EPSCP6 KCP  EPSSUR  ROT1  ROT2  ROT3  ROT4  ROT5  ROT6  ROT7 ',
+          '  *.*** ' + D.map(d => f(d.eps[1], 7, 3)).join('') + ' '.repeat(7 * (6 - n)) + '  *.** ' + f(epsSur, 7, 3) + rot.map(v => f(v, 6, 2)).join(''),
+          ' ', ' ', '       NOTA  LES DONNEES REPRESENTEES PAR DES ASTERISQUES NE SONT PAS CALCULEES PAR LE PROGRAMME PSI DAEL ');
+        page('                   RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP73 (SUITE ET FIN)'.trim(), pz, { sub: '                      *     * ' });
+      }
     }
     return pages.join('\n\f');
   }

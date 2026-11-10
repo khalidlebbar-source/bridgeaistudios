@@ -807,8 +807,10 @@
     // réactions : sans majoration dynamique ni tassements (notice SETRA)
     r.reactions = Array.from({ length: n + 1 }, (_, k) => {
       const f0 = mkCubicLI(r, LI.R[k], { s: k, a: 0 });
-      const f = withAbout(r, f0, M => (k < n ? (M[k + 1] - M[k]) / r.L[k] : 0) - (k > 0 ? (M[k] - M[k - 1]) / r.L[k - 1] : 0),
+      const f1 = withAbout(r, f0, M => (k < n ? (M[k + 1] - M[k]) / r.L[k] : 0) - (k > 0 ? (M[k] - M[k - 1]) / r.L[k - 1] : 0),
         (side, u) => ((side === 0 && k === 0) || (side === 1 && k === n) ? 1 : 0));
+      // seul l'about contigu à l'appui étudié est chargeable (OA26 : minima nuls sur une travée unique)
+      const LtR = LI.xs[n], f = globalThis.PSIDA_ABOUT_ALL ? f1 : Object.assign(X => ((X < 0 && k !== 0) || (X > LtR && k !== n)) ? 0 : f1(X), { about: f1.about });
       const I = area(f0) + (k === 0 || k === n ? r.liR[k].about : 0);
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
       const ab = k === 0 || k === n ? [{ s: k === 0 ? 0 : n - 1, l: r.about, area: r.liR[k].about }] : [];
