@@ -161,7 +161,7 @@
     R.mat.tauLim = ifis === 'PP' ? Math.min(0.2 * fc / 1.5, 5) : Math.min(0.15 * fc / 1.5, 4);
     R.mat.ssLim = ifis === 'PP' ? null : d.fe.map((fe, i) => { const fp = Math.min(2 / 3 * fe, Math.max(0.5 * fe, 110 * Math.sqrt(d.eta[i] * ft))); return ifis === 'P' ? fp : 0.8 * fp; });
     // --- sol (modèle de Winkler, kv = Esol (B+W) / (2 B W), B = portée droite)
-    const Bd = L * s; const kv = d.esol * 1000 * (Bd + W) / (2 * Bd * W); // kN/m3
+    const Bd = L * s; const kv = d.esol * 1000 * (Bd + W) / (2 * Bd * W) * (root.PICF_KVF || 1); // kN/m3
     R.sol = { kv, Bd };
     // --- charges permanentes
     const gb = d.mvbet * G, gs = d.mvsol * G;
@@ -319,12 +319,36 @@
       const K = guyonK(theta, gridY.map(y => y / b), f / b);
       const Ki = y => { const t = (y + b) / hy, j = Math.max(0, Math.min(gridY.length - 2, Math.floor(t))); return K[j] + (K[j + 1] - K[j]) * (t - j); };
       const integ = (a, c) => { const N = Math.max(4, Math.ceil((c - a) / hy)); let sm = 0; for (let k = 0; k < N; k++) sm += Ki(a + (k + 0.5) * (c - a) / N); return sm / N * (c - a) / (2 * b); };
-      for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) best.AL[k - 1] = Math.max(best.AL[k - 1], integ(c0 + st * v, c0 + (st + k) * v));
+      if (root.PICF_ALOLD) for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) best.AL[k - 1] = Math.max(best.AL[k - 1], integ(c0 + st * v, c0 + (st + k) * v));
       if (hasEC) {
         const e0 = -b + d.ec.egau, e1 = e0 + d.ec.esurch;
-        best.TERRE = Math.max(best.TERRE, integ(e0, e1));
+        if (root.PICF_ALOLD) best.TERRE = Math.max(best.TERRE, integ(e0, e1));
         for (let c = e0 + 3; c <= e1 - 3 + 1e-9; c += 0.05) best.EC = Math.max(best.EC, (Ki(c - 1.2) + Ki(c + 1.2)) / 2 / (2 * b));
       }
+    }
+    // AL et TERRE (session g) : 9 fibres de la section médiane (K exact) ; CHAQUE VOIE est diffusée transversalement jusqu'au
+    // plan moyen de la traverse (sD = 2·HCHAU + 2·HSREM·tan30° + E3, comme les chenilles), la bande est coupée aux bords de la
+    // dalle (±b) et la charge de la voie y est renormalisée (rien n'est perdu) ; k voies = somme des voies contiguës.
+    // TERRE (remblai de chantier) : bande EC (EGAU, ESURCH) diffusée de 2·HSREM(chantier)·tan30° + E3, même renormalisation.
+    // Reproduit AL 2498 0.333/0.667/1.000 (0.334/0.667/1.001), 2531 0.497/0.772/0.911/1.005, 2550 0.477/0.709/0.882,
+    // 2551 0.482/0.719/0.880 (exact), TERRE 0.682/0.621 (0.682/0.622).
+    if (!root.PICF_ALOLD) {
+      const t30 = Math.tan(Math.PI / 6), sAL = 2 * d.hchau + 2 * d.hsrem * t30 + d.e3;
+      const band = (Ki, a, c, sd) => { const lo = Math.max(-b, a - sd / 2), hi = Math.min(b, c + sd / 2), N = 400; let sm = 0;
+        for (let k = 0; k < N; k++) sm += Ki(lo + (k + 0.5) * (hi - lo) / N); return sm / N * (c - a) / (2 * b); };
+      const hy2 = b / 200, gy2 = []; for (let y = -b; y <= b + 1e-9; y += hy2) gy2.push(y / b);
+      let ecN = 0;
+      for (const fe of fib) { const K = guyonK(theta, gy2, fe);
+        const Ki = y => { const t = (y + b) / hy2, j = Math.max(0, Math.min(gy2.length - 2, Math.floor(t))); return K[j] + (K[j + 1] - K[j]) * (t - j); };
+        const lane = []; for (let j = 0; j < nvoi; j++) lane.push(band(Ki, c0 + j * v, c0 + (j + 1) * v, sAL));
+        for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) { let x = 0; for (let j = st; j < st + k; j++) x += lane[j]; best.AL[k - 1] = Math.max(best.AL[k - 1], x); }
+        if (hasEC) { const e0 = -b + d.ec.egau; best.TERRE = Math.max(best.TERRE, band(Ki, e0, e0 + d.ec.esurch, 2 * (d.ec.hsrem || 0) * t30 + d.e3));
+          if (!root.PICF_ECOLD) { const w = 0.6 + 2 * (d.ec.hsrem || 0) * t30 + d.e3, e1 = e0 + d.ec.esurch; // engin : roues 0.60 m à ±1.20 m, même diffusion
+            const bw = (lo0, hi0) => { const lo = Math.max(-b, lo0), hi = Math.min(b, hi0), N = 200; let sm = 0; for (let k = 0; k < N; k++) sm += Ki(lo + (k + 0.5) * (hi - lo) / N); return sm / N; };
+            for (let c = e0 + 3; c <= e1 - 3 + 1e-9; c += 0.05) { const v = w >= 2.4 ? bw(c - 1.2 - w / 2, c + 1.2 + w / 2) : (bw(c - 1.2 - w / 2, c - 1.2 + w / 2) + bw(c + 1.2 - w / 2, c + 1.2 + w / 2)) / 2;
+              ecN = Math.max(ecN, v / (2 * b)); } } }
+      }
+      if (hasEC && !root.PICF_ECOLD) best.EC = ecN;
     }
     // Charges concentrées et convoi E (notice SETRA PICF/PIPO § 2.5.2 : « en examinant successivement 9 fibres
     // de la section médiane ») : lignes d'influence de K interpolées linéairement dans la table 9×9, charges
@@ -367,9 +391,10 @@
 
     // --- surcharges : enveloppes par section
     // valeur d'une LI à l'abscisse x (x<0 ou x>L : sur la dalle de transition, réaction en tête de piédroit)
-    const Ld = d.ldalt / s;
+    const Ld = d.ldalt / s, Ld0 = Ld;
     function ilVal(getter, x, noDalle) {
       if (noDalle && (x < 0 || x > L)) return 0;
+      const Ld = getter.Ld || Ld0;
       if (x < 0) { if (x < -Ld) return 0; return (getter.ends ? getter.ends[0] : getter(0)) * (1 + x / Ld); }
       if (x > L) { if (x > L + Ld) return 0; return (getter.ends ? getter.ends[1] : getter(xsTop.length - 1)) * (1 - (x - L) / Ld); }
       let i = 0, hi = xsTop.length - 1; while (hi - i > 1) { const mid = (i + hi) >> 1; if (xsTop[mid] <= x) i = mid; else hi = mid; }
@@ -446,7 +471,7 @@
     const coarse = (raw, xk) => { const gv = ilAbs.map(g => { const i = idx(xsTop, g);
         if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
       const memo = xsTop.map(x => { let k = 0; while (k < ilAbs.length - 2 && ilAbs[k + 1] < x - 1e-9) k++; const t = (x - ilAbs[k]) / (ilAbs[k + 1] - ilAbs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
-      const fn = i => memo[i]; fn.ends = raw.ends; return fn; };
+      const fn = i => memo[i]; fn.ends = raw.ends; fn.Ld = raw.Ld; return fn; };
     // V du radier sous les charges de la dalle de transition : effet des seuls moments d'encastrement (règle des permanentes) —
     // on retranche la réponse à la force verticale transmise directement au pied du piédroit (hook PICF_VBD).
     if (root.PICF_VBD && Ld > 0) { const ex = nd => { const F = new Float64Array(m.n); F[nd * 3 + 1] = -1; return extract(solve(F)); };
@@ -454,12 +479,17 @@
       getters.Vb = getters.Vb.map((g, k) => { const v0 = g(0) - bl.b[k].V, v1 = g(nT) - br.b[k].V; const f = i => g(i); f.ends = [v0, v1]; return f; }); }
     if (JV) { for (const [key, sec] of [['Vt', secB], ['Vb', secB]]) getters[key] = getters[key].map((g, k) => coarse(g, sec[k]));
       if (JV === 2) for (const key of ['t', 'b', 'w', 'Vw', 'p', 'det']) getters[key] = getters[key].map(g => coarse(g, null)); }
+    if (root.PICF_LDV) getters.Vb.forEach(g => { g.Ld = root.PICF_LDV(d, s, Ld); });
+    if (root.PICF_GET) root.PICF_GET(getters, { L, Ld, xsTop, ilVal });
     R.env = {};
     // effort tranchant : diffusion longitudinale des roues (Bc, Bt, Me) à 45° dans la chaussée mais pente 1/2 dans le remblai
     const vWheel = (a, dd) => a.a - dd.hsrem;
     let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : null, envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p')));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
     for (const key of root.PICF_VBNC ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    // V traverse inférieure à l'angle (x = 0) : SETRA imprime MIN = 0 pour toutes les surcharges (2531/2550/2551, EC34 compris) ;
+    // nos minima (−0.3 à −1.5 kN) viennent de la LI légèrement négative sur la dalle de transition opposée (hook PICF_VB0 = ancien).
+    if (!root.PICF_VB0 && R.env.Vb.length) { const e = R.env.Vb[0]; for (const k of Object.keys(e)) if (k.endsWith('-') && e[k].v < 0) e[k] = Object.assign({}, e[k], { v: 0 }); }
     R.sections = { t: secB, b: secB, w: secWfull, det: [0, 1, 2, 3, 4, 5] };
     R.cmp = combine(R, d, hasEC);
     R.tr = transversal(R, d, { conv, dyn, coefs, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup });
@@ -623,10 +653,14 @@
     const els = { b: { o: fer.AI_T, At: area(2) / eG, len: L }, t: { o: fer.AS_T, At: area(2) / eG, len: L }, w: { o: fer.AS_P, At: area(2) / eG * s, len: H } };
     const SERIE = [0.08, 0.10, 0.125, 0.16, 0.20, 0.25, 0.32];
     let needAny = false;
-    for (const el of ['b', 't', 'w']) { const e = els[el]; e.rows = VV(el).map(r => ({ ...r, tau: r.V / 1000 / e.o.d })); if (e.rows.some(r => r.tau > tau0)) needAny = true; }
+    // hauteur utile des étriers (session g) : d = h − c − 0.6·φ − 1.1·φ2 avec φ = diamètre des aciers INTÉRIEURS retenus pour l'élément
+    // (p.26) : 2531 TI (2 PHI2) 0.6462, piédroits (PHI2) 0.6462/0.5462/0.7725, sinon PHI1 — intervalles déduits des τ imprimés (4 passages).
+    const din = { b: fer.TI, t: fer.TS, w: fer.PD };
+    for (const el of ['b', 't', 'w']) els[el].d = root.PICF_ETRD ? els[el].o.d : din[el].d;
+    for (const el of ['b', 't', 'w']) { const e = els[el]; e.rows = VV(el).map(r => ({ ...r, tau: r.V / 1000 / e.d })); if (e.rows.some(r => r.tau > tau0)) needAny = true; }
     for (const el of ['b', 't', 'w']) {
       const e = els[el], fe3 = d.fe[2];
-      e.s1 = Math.min(0.4, 0.9 * e.o.d); e.s2 = e.At * fe3 / 0.4; const gen = Math.min(e.s1, e.s2);
+      e.s1 = Math.min(0.4, 0.9 * (root.PICF_ETRS1 ? e.d : e.o.d)); e.s2 = e.At * fe3 / 0.4; const gen = Math.min(e.s1, e.s2);
       for (const r of e.rows) r.s3 = r.tau > 0.3 * ft ? 0.9 * e.At * fe3 / (r.tau - 0.3 * ft) : null;
       if (!needAny) continue;
       // grille complète (traverses : symétrie)
