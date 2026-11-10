@@ -212,9 +212,10 @@
     const nf = v.PVOIE || 1;
     const SBc = v.BC ? pBc * nf : 0, SBt = v.BT ? 64 : 0;
     const SMc = v.MC === 3 ? 72 : v.MC === 4 ? 110 : 0;
-    const SMe = v.ME === 3 ? 44 : v.ME === 4 ? 66 : 0;
+    let SMe = v.ME === 3 ? 44 : v.ME === 4 ? 66 : 0;
+    if (v.ME === 5) { SMe = 0; for (let j = 1; j <= Math.max(1, v.NES || 1); j++) SMe += v['POESS' + j] || 0; SMe *= Math.max(1, v.NCAM || 1); }
     const dBc = delta(SBc), dMc = delta(v.MC ? SMc : (v.ME === 3 ? 72 : v.ME === 4 ? 110 : 0));
-    const dyn = { SBc, SBt, SMc, SMe, dBc, dBt: v.BT || v.BC ? dBc : 0, dMc, dMe: dMc };
+    const dyn = { SBc, SBt, SMc, SMe, dBc, dBt: v.BT || v.BC ? dBc : 0, dMc, dMe: v.ME === 5 ? (v.DYNAB || 1) : dMc };
 
     // ---- Portée fictive (flèche équivalente sous charge uniforme) et coefficients K
     // portée fictive : formule fermée de la notice (λ, termes en k'δ) — numériquement, l'excentrement n'y intervient

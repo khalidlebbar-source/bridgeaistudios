@@ -48,7 +48,7 @@
     // tour 8 : chaussée > 7 m → bande de 3.30 m SANS diffusion transversale (1890 0.1267/0.1268, 1893 0.0967/0.0966 ; HCHAU fort),
     // centrée à 3.50 m du bord ; la diffusion 2·HCHAU n'est gardée que pour la position libre (1846 exact).
     const exFix = (y, s) => integ(y, s, s + 3.3) / 3.3 / (2 * b);
-    out.EX = !v.EXCEP ? 0 : v.ESURCH > 7 + 1e-9 ? Math.max(...pts.map(y => Math.max(exFix(y, c0 + 3.5 - 1.65), exFix(y, c1 - 3.5 - 1.65))))
+    out.EX = !v.EXCEP ? 0 : v.ESURCH > (globalThis.PIPO_EX7 != null ? globalThis.PIPO_EX7 : 7 + 1e-9) ? Math.max(...pts.map(y => Math.max(exFix(y, c0 + 3.5 - 1.65), exFix(y, c1 - 3.5 - 1.65))))
       : Math.max(...pts.map(slide(wEx, exAt)));
     // charges non demandées (indicateurs A1 nuls) : coefficients imprimés à 0
     if (!v.AL) out.A = out.A.map(() => 0); if (!v.BC) out.BC = out.BC.map(() => 0); if (!v.BT) out.BT = out.BT.map(() => 0);
@@ -124,7 +124,13 @@
             if (s2 > bBc.s + 5e-4) bBc = { s: s2, pos: [grid[i], grid[j]], sens }; } }
       }
       const axle = (P, D, dd) => { let b = { s: 0, x: 0 }; for (const x of grid) { const s = (P * avg(x, dd) + P * avg(x + D, dd)) * sg; if (s > b.s + 5e-6) b = { s, x }; } return b; };
-      const bBt = axle(16, 1.35, dBt), bMe = axle(meP, meD, dMe);
+      const bBt = axle(16, 1.35, dBt);
+      // ME = 5 : surcharge généralisée à essieux (lignes S2/S3) : essieux (ABESSj, POESSj), j ≤ NES, un véhicule par voie,
+      // effet = K_ME · DYNAB · Σ P·LI (1677 : 0.0996 × 1.5 × 117.296 = 17.52) ; véhicule dans les deux sens.
+      let bMe;
+      if (v.ME === 5) { const ax = []; for (let j = 1; j <= Math.max(1, v.NES || 1); j++) if (v['POESS' + j]) ax.push([v['ABESS' + j] || 0, v['POESS' + j]]);
+        bMe = { s: 0, x: 0 }; for (const sens of [1, -1]) for (const x of grid) { const s = ax.reduce((t, [d, P]) => t + P * avg(x + sens * d, dMe), 0) * sg; if (s > bMe.s + 5e-6 && s > 5e-4) bMe = { s, x }; } }
+      else bMe = axle(meP, meD, dMe);
       // Notice §2.4 : longueur de répartition λ = chenille + 2d, d = HCHAU + E3/2 ; aire calculée au pas des LI,
       // listings : aire sur floor(λ/pas)·pas seulement (pas d interpolation), densité P/λ (1638, 1796 exacts).
       const MV = globalThis.PIPO_MCV != null ? globalThis.PIPO_MCV : 1;

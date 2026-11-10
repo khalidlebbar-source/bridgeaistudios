@@ -221,6 +221,11 @@
       blocks.push({ k: 'BT', parts: [h], coef: dyn.dBt, total: t, ...res(t, 1.2, 1.6, 'BT') }); }
     if (v.ME && v.ME !== 5) { const m80 = v.ME === 3, w = (m80 ? 3.5 : 4.0) + s2, a = m80 ? 1.6 : 1.9, P = m80 ? 22 : 33;
       const h = harm(a, place([0], m80 ? 3.5 : 4.0), w, P / Math.min(a + s2, LO)), t = tot(h) * dyn.dMe; blocks.push({ k: 'ME', parts: [h], coef: dyn.dMe, total: t, ...res(t, 1, 1.35, 'ME') }); }
+    // ME = 5 (charge généralisée à essieux, lignes S2/S3) : deux roues ponctuelles distantes de LARGES (÷ sinφ), une sur le point (pas de contrainte de chaussée : 1677, 2e roue hors chaussée) ;
+    // a = étendue des essieux + 0.25 (2c = a + 2·HCHAU + E3), q = (ΣPOESS/2)/2c, total × DYNAB (1677 : F3, MOMENT, MY exacts).
+    if (v.ME === 5) { let P = 0, x0 = Infinity, x1 = -Infinity; for (let j = 1; j <= Math.max(1, v.NES || 1); j++) if (v['POESS' + j]) { P += v['POESS' + j]; x0 = Math.min(x0, v['ABESS' + j] || 0); x1 = Math.max(x1, v['ABESS' + j] || 0); }
+      const a = (x1 > x0 ? x1 - x0 : 0) + 0.25, h = harm(a, [0, (v.LARGES || 0) / sn], 0, P / 2 / Math.min(a + s2, LO)), t = tot(h) * dyn.dMe;
+      blocks.push({ k: 'ME', parts: [h], coef: dyn.dMe, total: t, ...res(t, 1, 1.35, 'ME') }); }
     if (v.BC) { const h = harm(0.3, place([0], 0.6), 0, 10 / Math.min(0.3 + s2, LO)), t = tot(h) * dyn.dBc;
       blocks.push({ k: 'BR', parts: [h], coef: dyn.dBc, total: t, ...res(t, 1.2, 1.6, 'BC') }); }
     if (v.AL) { const nv = Math.max(1, v.PVOIE || 1), V = v.ESURCH / nv, Vb = V / sn, Al = 0.23 + 36 / (LO + 12), q = Al * V;
