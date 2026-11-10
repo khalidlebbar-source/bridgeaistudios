@@ -573,7 +573,8 @@
         var cand = pa.filter(function (p) { return p.area * sg > 1e-9; }), nc = Math.min(cand.length, 14);
         for (var mask = 1; mask < (1 << nc); mask++) {
           var ll = 0, aa = 0, lens = [];
-          for (var c = 0; c < nc; c++) if (mask >> c & 1) { ll += cand[c].len; aa += cand[c].area; lens.push(cand[c].len); }
+          var sel = []; for (var c = 0; c < nc; c++) if (mask >> c & 1) { ll += cand[c].len; aa += cand[c].area; sel.push(cand[c]); }
+          lens = sel.slice().sort(function (p1, p2) { return Math.abs(p2.area) * A_l(p2.len) - Math.abs(p1.area) * A_l(p1.len); }).map(function (p) { return p.len; });
           var val = (R.loads.Agen ? Agen(v, ll) * v.LVOIE * R.nv * (v.CDTA1 || 1) : A_l(ll) * R.v0 * R.nv * (KK ? a1coef(R.classe, R.nv) : 1)) * aa;
           if (si === 0 ? val > S.A[0] : val < S.A[1]) { S.A[si] = val; S.Alens[si] = lens; }
         }
@@ -596,13 +597,13 @@
         var one = grid.map(function (s) { return effAx(tr[1], s, kbc, 'bc'); });
         for (var i1 = 0; i1 < grid.length; i1++) {
           upd('BC', one[i1] * R.nv, { type: 'BC', sens: tr[0], pos: [grid[i1]] });
-          for (var i2 = 0; i2 < grid.length; i2++) if (Math.abs(grid[i2] - grid[i1]) >= 10.5 - 1e-9) upd('BC', (one[i1] + one[i2]) * R.nv, { type: 'BC', sens: tr[0], pos: [grid[i1], grid[i2]] });
+          for (var i2 = 0; i2 < grid.length; i2++) if (Math.abs(grid[i2] - grid[i1]) >= 10.5 - 1e-9) upd('BC', (one[i1] + one[i2]) * R.nv, { type: 'BC', sens: tr[0], pos: Math.abs(grid[i2] - grid[i1]) <= 10.5 + 1e-9 ? [Math.min(grid[i1], grid[i2]), Math.max(grid[i1], grid[i2])] : (Math.abs(one[i2]) > Math.abs(one[i1]) ? [grid[i2], grid[i1]] : [grid[i1], grid[i2]]) });
           [10.5].forEach(function (d) { upd('BC', (one[i1] + effAx(tr[1], grid[i1] + d, kbc, 'bc')) * R.nv, { type: 'BC', sens: tr[0], pos: [grid[i1], grid[i1] + d] }); });
         }
       });
       if (K[0].BT !== undefined) {
         var kbt = function (jj) { return KK ? 1 : K[jj].BT; };
-        grid.forEach(function (s) { ['GD', 'DG'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * R.nv, { type: 'BT', sens: sens, pos: [s] }); }); });
+        grid.forEach(function (s) { ['DG', 'GD'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * R.nv, { type: 'BT', sens: sens, pos: [s] }); }); });
       }
     }
     var unif = function (s, P, len, coefK, type) {
@@ -626,7 +627,7 @@
         for (var i2 = 0; i2 < grid.length; i2++) {
           var dg = Math.abs(grid[i2] - grid[i1]);
           if (dg < minGap - 1e-9 || dg > maxGap + 1e-9) continue;
-          upd(key, one2[i1] + one2[i2], { type: key, pos: [grid[i1], grid[i2]] });
+          upd(key, one2[i1] + one2[i2], { type: key, pos: [Math.max(grid[i1], grid[i2]), Math.min(grid[i1], grid[i2])] });
         }
       }
     };

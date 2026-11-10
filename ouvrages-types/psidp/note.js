@@ -26,13 +26,14 @@
   function cap(t) { return t; }
 
   function Doc(model, opts) {
-    this.lines = []; this.page = 0;
+    this.lines = []; this.page = 0; this.pageStarts = []; this.marks = {};
     var p = (model.passage || '').replace(/-/g, '.');
     this.stamp = p; this.num = (opts && opts.numero) || model.numeroRaw2 || '';
   }
   Doc.prototype.push = function (s) { this.lines.push(s === undefined ? '' : String(s)); };
   Doc.prototype.newPage = function () {
     this.page++;
+    this.pageStarts.push(this.lines.length);
     var pg = String(this.page);
     this.push(row([[25, 'LE ' + this.stamp], [118 - 2, 'PSIDP ' + this.num], [131, 'PAGE ' + (pg.length < 3 ? pad(3 - pg.length, pg) : pg)]]));
     this.push(new Array(133).join('-'));
@@ -43,6 +44,91 @@
     this.push(pad(st, star)); this.push(pad(st, '*' + pad(w - 2, '') + '*'));
     this.push(pad(st, '*  ' + t + '  *')); this.push(pad(st, '*' + pad(w - 2, '') + '*')); this.push(pad(st, star));
   };
+
+  // --------------------------------------------------------------- sommaire (page 1)
+  // Pages des sections non calculées par cette version : une page de renvoi chacune, pour que la pagination
+  // (et donc le sommaire) suive le déroulé du listing SETRA.
+  function placeholder(D, titre, mark) {
+    D.newPage(); if (mark) D.marks[D.page] = mark;
+    D.push('');
+    D.push(pad(10, titre + ' - SECTION NON PRODUITE PAR CETTE VERSION DU MOTEUR'));
+  }
+  // Entrées du sommaire : [regex de la page, libellé, mode] ; mode 'once' = première page seulement,
+  // 'run' = à chaque début de suite de pages (blocs itératifs du fuseau), 'page' = chaque page.
+  var SOMMAIRE = [
+    [/CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE/, "DONNEES: GEOMETRIE DE L'OUVRAGE", 'once'],
+    [/\*  MATERIAUX  \*/, '       : MATERIAUX', 'once'],
+    [/APPUIS - DIVERS/, "       : APPAREILS D'APPUI", 'once'],
+    [/BASE DE CALCUL DE BETON PRECONTRAINT/, '       : CALCUL B.P.', 'once'],
+    [/CHARGES \(ACTIONS\)/, '       : CHARGES REGLEMENTAIRES ADMISES', 'once'],
+    [/^TRACE1$/, 'TRACE DU CABLE MOYEN', 'once'],
+    [/LIGNES D'INFLUENCE DES MOMENTS FLECHISSANTS SUR APPUIS/, "LIGNES D'INFLUENCE  :  MOMENTS FLECHISSANTS LONGITUDINAUX SUR APPUIS", 'once'],
+    [/LIGNES D'INFLUENCE DES MOMENTS FLECHISSANTS EN TRAVEE/, '                    :  MOMENTS FLECHISSANTS LONGITUDINAUX EN TRAVEE', 'once'],
+    [/ZEROS DES LIGNES D'INFLUENCE/, '                    : ZEROS ET AIRES', 'once'],
+    [/LIGNES D'INFLUENCE DES EFFORTS TRANCHANTS/, '                    :  EFFORTS TRANCHANTS', 'once'],
+    [/LIGNES D'INFLUENCE DES REACTIONS/, "                    : REACTIONS D'APPUI", 'once'],
+    [/DENSITE DE CHARGE PERMANENTE/, 'MAJORATION DYNAMIQUE', 'once'],
+    [/COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE EN TRAVEE/, 'COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE ( K )', 'once'],
+    [/RECAPITULATION DES COEFFICIENTS CORRECTIFS/, 'COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE', 'once'],
+    [/DUS AUX DENIVELLATIONS|EN FONCTION D'UNE DENIVELLATION/, "DENIVELLATION D'APPUIS", 'once'],
+    [/^\s+MOMENTS FLECHISSANTS EN TRAVEE \d/m, 'MOMENTS FLECHISSANTS LONG. EXTREMES ET', 'once'],
+    [/POSITIONS DES SURCHARGES CORRESPONDANT/, 'POSITIONS DES SURCHARGES CORRESPONDANTES', 'once'],
+    [/^\s*EFFORTS TRANCHANTS SUR APPUIS/m, 'EFFORTS TRANCHANTS', 'once'],
+    [/^\s*REACTIONS D'APPUIS\s*$/m, "REACTIONS D'APPUIS", 'once'],
+    [/CALCUL ITERATIF DU FLUAGE|ELEMENTS DE DETERMINATION DU FUSEAU LIMITE/, 'ELEMENTS DE DETERMINATION DU FUSEAU LIMITE', 'run'],
+    [/EXCENTREMENTS +DE +BASE/, 'EXCENTREMENTS DE BASE NECESSAIRES AU REAJUSTEMENT DES PERTES DE TENSION', 'run'],
+    [/NOMBRES DE CABLES NECESSAIRES|EXCENTREMENTS MAXIMAUX SUR APPUIS/, null, 'run'],
+    [/EQUATIONS DES PARABOLES LIMITES/, 'PARABOLES LIMITES DU FUSEAU', 'run'],
+    [/MOMENTS HYPERSTATIQUES SUR APPUIS DUS AUX TRACES LIMITES/, 'MOMENTS HYPERSTATIQUES DE PRECONTRAINTE', 'run'],
+    [/EQUATIONS PARABOLIQUES DU CABLE +(AVANT|APRES) T/, 'EQUATIONS PARABOLIQUES DU CABLE AVANT TRANSFORMATION LINEAIRE', 'page'],
+    [/CARACTERISTIQUES GENERALES NECESSAIRES A LA JUSTIFICATION/, 'DONNEES PRINCIPALES NECESSAIRES AU CALCUL B.P.', 'once'],
+    [/^TRACE2$/, 'TRACE DU CABLE MOYEN', 'once'],
+    [/EQUATIONS PARABOLIQUES DU CABLE UTILISEE/, 'EQUATIONS PARABOLIQUES DU CABLE', 'once'],
+    [/TENSIONS EN PHASE INITIALE ET PREMIERE/, 'TENSIONS EN PHASE INITIALE', 'once'],
+    [/^\s+PHASE INITIALE\s*$/m, 'FORCES ET MOMENTS HYPERSTATIQUES EN PHASE INITIALE', 'once'],
+    [/PHASES MISE EN SERVICE \(M\.S\)/, 'TENSIONS,FORCES ET MOMENTS HYPERSTATIQUES DE PRECONTRAINTE EN SERVICE', 'once'],
+    [/A LA FIN DE LA MISE EN TENSION$/m, 'CONTRAINTES NORMALES DU BETON : A LA FIN DE LA MISE EN TENSION (M.T)', 'once'],
+    [/A LA MISE EN SERVICE DE L'OUVRAGE$/m, '                              : A LA MISE EN SERVICE (M.S)', 'once'],
+    [/EN SERVICE DEFINITIF$/m, '                              : EN SERVICE DEFINITIF (E.S)', 'once'],
+    [/^ELU$/, 'JUSTIFICATIONS E.L.U.', 'once'],
+    [/^ELUT$/, 'ELEMENTS DE CALCUL DU FERRAILLAGE LONGITUDINAL', 'once'],
+    [/^EXT1$/, 'CONTRAINTES NORMALES EXTREMES ATTEINTES DANS LE BETON', 'once'],
+    [/ELEMENTS DE CALCUL DU MOMENT DE FLEXION/, 'ELEMENTS DE CALCUL DES MOMENTS DE FLEXION TRANSVERSALE', 'once'],
+    [/MOMENTS PRINCIPAUX DE FLEXION TRANSVERSALE/, 'MOMENTS FLECHISSANTS TRANSVERSAUX EXTREMES', 'once'],
+    [/ELEMENTS DE REDUCTION DES EFFORTS/, 'TENSEURS DES EFFORTS REDUITS AU CENTRE MECANIQUE DES TRAVEES', 'once'],
+    [/FERRAILLAGE DE FLEXION TRANSVERSALE/, 'FERRAILLAGE TRANSVERSAL EN TRAVEE', 'once'],
+    [/EFFORTS TRANCHANTS HYPERSTATIQUES SUR APPUIS/, 'EFFORTS TRANCHANTS DE PRECONTRAINTE', 'once'],
+    [/DIMENSIONNEMENT DES APPAREILS D'APPUI/, "APPAREILS D'APPUI - CHEVETRES INCORPORES", 'once'],
+    [/REPARTITION DU FERRAILLAGE TRANSVERSAL/, 'REPARTITION DU FERRAILLAGE TRANSVERSAL', 'once'],
+    [/^\s+FERRAILLAGE LONGITUDINAL\s*$/m, 'FERRAILLAGE LONGITUDINAL A METTRE EN OEUVRE', 'once'],
+    [/^SHEAR2$/, 'EFFORTS TRANCHANTS', 'once'],
+    [/^ETR$/, 'CALCUL DES ETRIERS', 'once'],
+    [/^POUS$/, 'POUSSEE AU VIDE DE LA PRECONTRAINTE', 'once'],
+    [/DEFORMATION DU TABLIER/, 'DEFORMATIONS ET CONTRE-FLECHES A DONNER AU FOND DE MOULE', 'once'],
+    [/^RESUME$/, 'RESUME DES DONNEES PRINCIPALES - AVANT METRE RECAPITULATIF', 'once'],
+    [/RAPPEL DES VALEURS MOYENNES PROBABLES/, 'RESUME DES TENSIONS ET FORCES DE PRECONTRAINTE', 'once'],
+    [/^EXT2$/, 'CONTRAINTES NORMALES EXTREMES ATTEINTES DANS LE BETON', 'once'],
+    [/^COTFA$/, "COTES DE L'AXE DU CABLE MOYEN", 'once'],
+    [/^COTFG$/, 'COTES DE LA SOUS-GAINE DU CABLE MOYEN', 'once'],
+    [/^PP$/, 'RESULTATS UTILES AU CALCUL DES APPUIS', 'once']
+  ];
+  function sommaire(D) {
+    var st = D.pageStarts, out = [], k = 0, prevRun = -1, p;
+    for (p = 2; p <= st.length; p++) {
+      var mk = D.marks[p];
+      var txt = mk || D.lines.slice(st[p - 1] + 2, p < st.length ? st[p] : D.lines.length).slice(0, 8).join('\n');
+      for (var j = k; j < SOMMAIRE.length; j++) {
+        var e = SOMMAIRE[j];
+        var isMk = /^\^[A-Z0-9]+\$$/.test(e[0].source);
+        if (mk ? (!isMk || !e[0].test(mk)) : (isMk || !e[0].test(txt))) continue;
+        if (e[2] === 'once') { if (e[1]) out.push([p, e[1]]); k = j + 1; prevRun = -1; }
+        else if (e[2] === 'page') { out.push([p, e[1]]); k = j; prevRun = -1; }
+        else { if (prevRun !== j && e[1]) out.push([p, e[1]]); prevRun = j; k = Math.min(k, j); var r0 = j; while (r0 > 0 && SOMMAIRE[r0 - 1][2] === 'run') r0--; k = r0; }
+        break;
+      }
+    }
+    return [' '].concat(out.map(function (o) { var s = String(o[0]); while (s.length < 3) s = ' ' + s; return pad(10, 'P ' + s + '   ' + o[1]); }));
+  }
 
   // --------------------------------------------------------------- sections
   function spansToPrint(R, v) { var n = R.n; return (v.SYM === 1) ? Math.ceil(n / 2) : n; }
@@ -451,7 +537,7 @@
     for (var a = 0; a < na; a++) {
       var S = R.reac[a], e = S.ext;
       [0, 1].forEach(function (si) {
-        var g = function (k) { return e[k] ? f1(e[k][si].v) : null; };
+        var g = function (k) { return e[k] ? f1(e[k][si].v * (k === 'BC' ? (R.bc || 1) : 1)) : null; };
         var items = [[21, f1(S.cp[si])], [31, f1(S.trot[si])], [41, f1(S.A[si])], [51, g('BC')], [61, g('BT')], [82, g('CVOI.D')], [92, g('CVOI.E')], [102, g('MC.120')], [121, f1(S.comb[si].qlqc)], [131, f1(S.comb[si].elu)]].filter(function (x) { return x[1] !== null; });
         if (si === 0) items.unshift([7, 'APPUI'], [9, String(a + 1)]);
         D.push(row(items));
@@ -968,7 +1054,7 @@
     var v = m.values, P = R.prec, au = P && P.auto, n = R.n, t, j;
     if (!au || !au.blocks) return;
     var BA = au.blocks[0], BR = au.blocks[1];
-    D.newPage(); fluageBlock(D, R, BA, 1);
+    fluageBlock(D, R, BA, 1);
     fuseauTables(D, m, R, BA);
     D.newPage();
     D.push('                       EXCENTREMENTS   DE   BASE   NECESSAIRES   AU   REAJUSTEMENT   DES   PERTES   DE   TENSION');
@@ -980,7 +1066,7 @@
         [89, fx(R.X0[t + 1], 3)], [100, fx(au.P2.zs[t + 1], 3)]]));
     }
     zcourb(D, R, BA);
-    D.newPage(); fluageBlock(D, R, BR, 1);
+    fluageBlock(D, R, BR, 1);
     fuseauTables(D, m, R, BR);
     D.newPage();
     D.push('NOMBRES DE CABLES NECESSAIRES');
@@ -1273,7 +1359,7 @@
     if (m.values.CABL !== 4) secCablageAuto(D, m, R);
     secCaracBP(D, m, R);
     if (!P.G) return;
-    if (m.values.CABL === 4) { D.newPage(); cotesTable(D, m, R); }
+    if (m.values.CABL === 4) { D.newPage(); D.marks[D.page] = 'TRACE2'; cotesTable(D, m, R); }
     secEquationsCable(D, m, R);
     secTensions(D, m, R);
     secHypInit(D, m, R);
@@ -1291,29 +1377,45 @@
     D.push('                                  NOTE DE CALCUL DE PONT DALLE D\'INERTIE CONSTANTE EN BETON PRECONTRAINT');
     D.push('                                             P S I D P - E L ** V E R S I O N  B P E L 9 1');
     D.newPage();
+    var somAt = D.lines.length;
     secGeometrie(D, model, R);
     secMateriaux(D, model, R);
     secAppuis(D, model, R);
     secBaseBP(D, model, R);
     secCharges(D, model, R);
-    if (model.values.CABL === 4 && model.cotes && model.cotes.values) secCotesCable(D, model, R);
+    if (model.values.CABL === 4 && model.cotes && model.cotes.values) { secCotesCable(D, model, R); D.marks[D.page] = 'TRACE1'; }
     secLI(D, model, R);
     secDyn(D, model, R);
     secTransv(D, model, R);
     secDeniv(D, model, R);
     if (R.sol) secSollicitations(D, model, R);
-    if (R._shearLines) { D.newPage(); R._shearLines.forEach(function (l) { D.push(l); }); }
     secPrecontrainte(D, model, R);
+    if (R.prec && R.prec.G) {
+      placeholder(D, 'JUSTIFICATIONS E.L.U.', 'ELU');
+      for (var tp = 0; tp < spansToPrint(R, model.values); tp++) placeholder(D, 'ELU - FERRAILLAGE LONGITUDINAL TRAVEE NO.' + (tp + 1), tp ? null : 'ELUT');
+      placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES', 'EXT1');
+    }
     secFlexT(D, model, R);
     secReductionFT(D, model, R);
     secFerTransv(D, model, R);
     secEffTrHyp(D, model, R);
     try { secAppareils(D, model, R); } catch (e) { }
     try { secFerPassif(D, model, R); } catch (e) { }
+    if (R._shearLines) { D.newPage(); D.marks[D.page] = 'SHEAR2'; R._shearLines.forEach(function (l) { D.push(l); }); }
+    if (R.prec && R.prec.G) { placeholder(D, 'CALCUL DES ETRIERS', 'ETR'); placeholder(D, 'POUSSEE AU VIDE DE LA PRECONTRAINTE', 'POUS'); }
     if (R.deform) secDeform(D, model, R);
+    var pg0 = D.page;
     try { secResume(D, model, R); } catch (e) { }
+    if (D.page > pg0) D.marks[pg0 + 1] = 'RESUME';
+    if (R.prec && R.prec.G) placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES (RESUME)', 'EXT2');
+    pg0 = D.page;
     secCotesFinales(D, model, R);
+    if (D.page > pg0) { D.marks[pg0 + 1] = 'COTFA'; if (D.page > pg0 + 1) D.marks[pg0 + 2] = 'COTFG'; }
+    pg0 = D.page;
     try { secPP(D, model, R); } catch (e) { }
+    if (D.page > pg0) D.marks[pg0 + 1] = 'PP';
+    var som = sommaire(D);
+    D.lines.splice.apply(D.lines, [somAt, 0].concat(som));
     D.newPage();
     D.push(pad(40, 'FIN DE LA NOTE DE CALCUL') + pad(62, 'V98244'));
     return D.lines.join('\n') + '\n';
