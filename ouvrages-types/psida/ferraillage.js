@@ -536,8 +536,8 @@
   // ------------------------------------------------------------------ ferraillage transversal inférieur (mi-travée)
   // Moment longitudinal principal = M max travée / E DALLE ; moments transversaux = max des fibres (My ELS / ELU max) ;
   // A1 = 1,2 AS(ν), A2 = 1,2 AU(ν) ; AS, AU avec ν = 0 ; d = H − 0,04 ; AP = 5·10⁻⁴ H ;
-  // ANF = ftj H² / (6 × 0,9 d fe) ; A = sup(inf(sup(A1, A2), ANF), AS, AU, AP). Torsion (biais) et section de couture des
-  // scellements droits NON reconstituées (0).
+  // ANF = ftj H² / (6 × 0,9 d fe) ; A = sup(inf(sup(A1, A2), ANF), AS, AU, AP), A1…AU calculés avec le MOMENT DE CALCUL
+  // (My + |T|)/sin² φ (torsion des biais, cf. NOTES v9 ; crochet PSIDA_NOTORS = 1 : ancien modèle sans torsion).
   function transversal(r) {
     if (!r.flexT || !r.flexT[0].my) return null;
     const P = G.PSIDA, mat = r.mat, H = r.section.H, d = H - 0.04, fe = mat.fe[2] || mat.fe[0];
@@ -549,13 +549,25 @@
       const ml = { els: Math.max(...mom.map(x => x.els.max)) / r.section.Eeq, elu: Math.max(...mom.map(x => x.elu.max)) / r.section.Eeq };
       const my = { els: Math.max(...F.my.map(y => y.els.max)), elu: Math.max(...F.my.map(y => y.elu.max)) };
       const my0 = F.my0 ? { els: Math.max(...F.my0.map(y => y.els.max)), elu: Math.max(...F.my0.map(y => y.elu.max)) } : my;
+      // Torsion des biais (règle v9, exacte sur 3603–3609) : moments principaux M1 = ml (direction à γ = 100 − ψ de l'axe),
+      // M2 = my ; tenseur dans le repère de l'axe (Mx, My, Mxy) ; moment de torsion « dans le béton » sur la facette
+      // parallèle aux lignes d'appui (angle φ) : T = Mxy sin φ + My cos φ ; τ = 6 T / H² ; moment de calcul des fers
+      // parallèles aux lignes d'appui = (My + |T|) / sin² φ.
+      const gr = Math.PI / 200, phi = (r.biais || 100) * gr, gam = (100 - (F.psi != null ? F.psi : (r.biais || 100))) * gr;
+      const sp_ = Math.sin(phi), cp = Math.abs(Math.cos(phi)) < 1e-12 ? 0 : Math.cos(phi), sg = Math.sin(gam), cg = Math.cos(gam);
+      const tors = (M1, M2) => {
+        const Myy = M1 * sg * sg + M2 * cg * cg, Mxy = (M1 - M2) * sg * cg, T = Mxy * sp_ + Myy * cp;
+        return { T: Math.abs(T), tau: 6 * Math.abs(T) / (H * H), Mc: cp === 0 && sg === 0 ? M2 : (Myy + Math.abs(T)) / (sp_ * sp_) };
+      };
+      const tq = { els: tors(ml.els, my.els), elu: tors(ml.elu, my.elu) }, tq0 = { els: tors(ml.els, my0.els), elu: tors(ml.elu, my0.elu) };
+      const mc = G.PSIDA_NOTORS ? my : { els: tq.els.Mc, elu: tq.elu.Mc }, mc0 = G.PSIDA_NOTORS ? my0 : { els: tq0.els.Mc, elu: tq0.elu.Mc };
       const asS = M => (ss && M > 0 ? P.asELS(M, 1, d, ss).As : 0), asU = M => P.asELU(M, 1, d, mt);
-      const A1 = 1.2 * asS(my.els), A2 = 1.2 * asU(my.elu), AS = asS(my0.els), AU = asU(my0.elu);
+      const A1 = 1.2 * asS(mc.els), A2 = 1.2 * asU(mc.elu), AS = asS(mc0.els), AU = asU(mc0.elu);
       const AP = 5e-4 * H, ANF = mat.ftj * H * H / (6 * 0.9 * d * fe);
       const A = Math.max(Math.min(Math.max(A1, A2), ANF), AS, AU, AP);
       // couture des scellements droits (constat exact sur 9 passages) : 4 φ1 τs / fe − 5 φ4², τs = 0,6 × 1,5² ftj
       const ph = mat.phi, couture = Math.max(0, 4 * ph[0] * 0.6 * 2.25 * mat.ftj / (mat.fe[0] || fe) - 5 * ph[3] * ph[3]);
-      return { nu, ml, my, my0, A1, A2, AS, AU, AP, ANF, A, couture, Amin: Math.max(A, couture), d };
+      return { nu, ml, my, my0, tq, tq0, mc, mc0, A1, A2, AS, AU, AP, ANF, A, couture, Amin: Math.max(A, couture), d };
     });
   }
   function renderTransv(m, r, T) {
@@ -573,15 +585,15 @@
     const both = (fn) => { const o = []; for (const e of ['ELS', 'ELU']) { o.push(row(lnu(e, nu), x => fn(x, e, false), 14, 2)); if (two) o.push(row(lnu(e, 0), x => fn(x, e, true), 14, 2)); } return o; };
     P.push(...both((x, e, z) => (z ? x.my0 : x.my)[e.toLowerCase()]));
     P.push(row(' BIAIS GEOMETRIQUE (GRADES)             ', () => r.biais, 14, 2), row(' BIAIS MECANIQUE (GRADES)               ', (x) => r.flexT[X.indexOf(x)].psi, 14, 2),
-      ' MOMENT DE TORSION DANS LE BETON (TM/M)', ...both(() => 0), ' CONTRAINTE DE CISAILLEMENT SIMPLE (T/M2)', ' DU BETON PAR TORSION', ...both(() => 0),
+      ' MOMENT DE TORSION DANS LE BETON (TM/M)', ...both((x, e, z) => (z ? x.tq0 : x.tq)[e.toLowerCase()].T), ' CONTRAINTE DE CISAILLEMENT SIMPLE (T/M2)', ' DU BETON PAR TORSION', ...both((x, e, z) => (z ? x.tq0 : x.tq)[e.toLowerCase()].tau),
       "             EVALUATION DES SECTIONS D'ACIER  DU FERRAILLAGE TRANSVERSAL INFERIEUR EN SECTION MEDIANE DE CHAQUE TRAVEE",
       "                                 (FERRAILLAGE TRANSVERSAL DISPOSE PARALLELEMENT AUX LIGNES D'APPUI)",
       '                                                               *   *                              HAUTEUR UTILE = ' + f(X[0].d, 6, 2) + ' M',
       '                                                                 *', tr,
-      ` CALCUL ELS AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my.els, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A1 =", x => x.A1, 9, 6),
-      ` CALCUL ELU AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my.elu, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A2 =", x => x.A2, 9, 6),
-      ` CALCUL ELS AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my0.els, 14, 2), row("        SECTION  D'ACIER :                AS =", x => x.AS, 9, 6),
-      ` CALCUL ELU AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.my0.elu, 14, 2), row("        SECTION  D'ACIER :                AU =", x => x.AU, 9, 6),
+      ` CALCUL ELS AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.mc.els, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A1 =", x => x.A1, 9, 6),
+      ` CALCUL ELU AVEC POISSON = ${f(nu, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.mc.elu, 14, 2), row("        1.2*(SECTION  D'ACIER ) :         A2 =", x => x.A2, 9, 6),
+      ` CALCUL ELS AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.mc0.els, 14, 2), row("        SECTION  D'ACIER :                AS =", x => x.AS, 9, 6),
+      ` CALCUL ELU AVEC POISSON = ${f(0, 5, 2)}`, row('        MOMEMT (TM/M)                  ', x => x.mc0.elu, 14, 2), row("        SECTION  D'ACIER :                AU =", x => x.AU, 9, 6),
       row(' ARMATURE DE PEAU  :                      AP =', x => x.AP, 9, 6), row(' CONDITION DE NON-FRAGILITE :             ANF=', x => x.ANF, 9, 6),
       ' SECTION DE CALCUL DU FERRAILLAGE', row(' TRANSVERSAL INFERIEUR (M2/ML) :          A  =', x => x.A, 9, 6),
       ' < A=SUP(INF(SUP(A1,A2),ANF),AS,AU,AP) >', '   ***********************************', ' SECTION MINIMALE DU FERRAILLAGE', ' TRANSVERSAL (M2/ML)',

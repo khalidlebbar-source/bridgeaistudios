@@ -505,7 +505,8 @@
 
   const MC1960 = { P: 100, len: 4.5, gap: 0, n: 1 };   // char 1960 : un seul char de 100 t, chenilles de 4,5 m (étalement imprimé)
   const MC120 = { P: 110, len: 6.1, gap: 36.2 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
-  const CV_OFF = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
+  const CV_OFF = 0.425;   // v9 (avec LI interpolée au pas imprimé 0,5) ; v8 : 0,375 avec intégration continue
+  const CV_OFF_V8 = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
   const CVD = { P: 140, len: 11, gap: 18.75 }, CVE = { P: 200, len: 15, gap: 32.75 }; // 2 remorques (F61 II art. 10)
 
   function liveEffects(r, f, A6, dynOverride, extraSegs, kOne) {
@@ -666,7 +667,7 @@
     const term = nom => (F.etal.find(e => e.nom === nom) || F.etal[0]).t;
     const trap = (f, a, b) => { const n = Math.max(1, Math.round((b - a) / h)); let t = 0; for (let i = 0; i <= n; i++) t += (i === 0 || i === n ? 0.5 : 1) * f(a + i * (b - a) / n); return t * (b - a) / n; };
     // intégrale exacte de la ligne d'influence tabulée (pas h depuis le bord gauche de l'extrados, interpolation linéaire)
-    const intPL = (f, a, b) => { const o = -W / 2, g = e => { const k = Math.floor((e - o) / h + 1e-9), e0 = o + k * h, t = (e - e0) / h; return t < 1e-12 ? f(e0) : f(e0) * (1 - t) + f(e0 + h) * t; };
+    const intPL = (f, a, b, h = 0.125) => { const o = -W / 2, g = e => { const k = Math.floor((e - o) / h + 1e-9), e0 = o + k * h, t = (e - e0) / h; return t < 1e-12 ? f(e0) : f(e0) * (1 - t) + f(e0 + h) * t; };
       const pts = [a]; for (let k = Math.ceil((a - o) / h - 1e-9); o + k * h < b - 1e-9; k++) if (o + k * h > a + 1e-9) pts.push(o + k * h); pts.push(b);
       let t = 0; for (let i = 0; i < pts.length - 1; i++) t += (g(pts[i]) + g(pts[i + 1])) / 2 * (pts[i + 1] - pts[i]); return t; };
     const dyn = r.cmd[sp] || {};
@@ -724,8 +725,8 @@
         } else {
           // convoi D/E : remorque de 3,30 m, densité P/longueur, axe à ±0,40 m de l'axe de la chaussée (calage 3826/3827,
           // règle exacte non retrouvée)
-          const cv = nom === 'CVOI.D' ? CVD : CVE, cE = (F.etal.find(e => e.nom === nom) || {}).c || F.Leq, w = 3.3, p = cv.P / cv.len / w * Math.min(1, cE / F.Leq), xc = (x0 + x1) / 2;   // charge contenue dans l'étalement 2c
-          for (const off of [-CV_OFF, CV_OFF]) { const x = xc + off - w / 2, val = p * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+          const cv = nom === 'CVOI.D' ? CVD : CVE, cE = (F.etal.find(e => e.nom === nom) || {}).c || F.Leq, w = G.PSIDA_CVWID || 3.3, p = cv.P / cv.len / w * Math.min(1, cE / F.Leq), xc = (x0 + x1) / 2;   // charge contenue dans l'étalement 2c
+          const cvo = G.PSIDA_CVOFF != null ? G.PSIDA_CVOFF : (G.PSIDA_CV_V8 ? CV_OFF_V8 : CV_OFF); for (const off of [-cvo, cvo]) { const x = xc + off - w / 2, val = p * A1 * (G.PSIDA_CV_V8 && !G.PSIDA_CVPL ? trap(Zc, x, x + w) : intPL(Zc, x, x + w, G.PSIDA_CVPL || 0.5)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
         }
         if (mx > cMx.v) cMx = { v: mx, nom }; if (mn < cMn.v) cMn = { v: mn, nom };
       }
