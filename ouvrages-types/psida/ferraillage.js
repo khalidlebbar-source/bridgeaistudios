@@ -83,6 +83,42 @@
     r.fer.transv = transversal(r);
     r.fer.propose = propose(r);
     r.fer.metre = metre(r);
+    r.fer.verif = verification(r);
+  }
+
+
+  // ------------------------------------------------------------------ VERIFICATION DE L'OUVRAGE AUX SECTIONS LES PLUS SOLLICITEES
+  // (résumé) Constats v10 (3826, 0063, 3603, 3488, 3639, OA26) : sections = chaque travée (M ELS/ELU max) et chaque appui
+  // intermédiaire (M min des deux travées contiguës) ; aciers tendus = première colonne de la GAMME couvrant le maximum
+  // de l'enveloppe (φ2 compris : 3826 travée 45 φ32 + 6 φ16) ; largeur = largeur de calcul de la nappe tendue (W en travée,
+  // largeur supérieure sur appui), hauteur utile retenue ; n = 15 (exact : rapports σs/σb imprimés). ELU : diagramme
+  // parabole-rectangle, pivots A/B, moment pris autour des aciers tendus. APPROXIMATIF : aciers comprimés (section et
+  // position non retrouvées ; ici fers de construction de la nappe opposée, colonne 0 de la gamme, à H − d_opposée).
+  function verification(r) {
+    const F = r.fer.long, H = r.ferLong.H, mat = r.mat, n = r.n, out = [];
+    const pick = (G, v) => G.gamme.cols.find(c => c.om >= v - 1e-9) || G.gamme.cols[G.gamme.cols.length - 1];
+    const fbu = 0.85 * mat.fcj / 1.5, Es = mat.Es || 2.04e7, fsu = mat.fe[0] / 1.15;
+    const pr = ec => { let N = 0, Mt = 0; const nn = 400; for (let i = 0; i < nn; i++) { const z = (i + 0.5) / nn, e = ec * (1 - z), s = e >= 2 ? 1 : 1 - (1 - e / 2) * (1 - e / 2); N += s / nn; Mt += s * z / nn; } return [N, Mt / N]; };
+    for (let k = 0; k < 2 * n - 1; k++) {
+      const sup = k % 2 === 1, G = sup ? F.sup : F.inf, O = sup ? F.inf : F.sup;
+      let env, M, Mu;
+      if (!sup) { const i = k / 2; env = Math.max(...G.env[i]); M = Math.max(...r.moments[i].map(s => s.els.max)); Mu = Math.max(...r.moments[i].map(s => s.elu.max)); }
+      else { const i = (k - 1) / 2; env = Math.max(G.env[i][G.env[i].length - 1], G.env[i + 1][0]);
+        M = -Math.min(...r.moments[i].map(s => s.els.min), ...r.moments[i + 1].map(s => s.els.min));
+        Mu = -Math.min(...r.moments[i].map(s => s.elu.min), ...r.moments[i + 1].map(s => s.elu.min)); }
+      const As = pick(G, env).om, As2 = O.gamme.cols[0].om, b = G.b, d = G.d, d2 = H - O.d, ne = 15;
+      // ELS : section fissurée avec aciers comprimés
+      const B = ne * (As + As2), C = -ne * (As * d + As2 * d2), y = (-B + Math.sqrt(B * B - 2 * b * C)) / b;
+      const I = b * y * y * y / 3 + ne * As2 * (y - d2) * (y - d2) + ne * As * (d - y) * (d - y);
+      // ELU
+      const st = t => { let ec, es; if (t <= 1) { ec = 3.5 * t; es = 10; } else { ec = 3.5; es = 10 / t; }
+        const x = d * ec / (ec + es), q = pr(ec), e2 = ec * (x - d2) / x, s2 = Math.max(-fsu, Math.min(fsu, Es * e2 / 1000));
+        return { ec, es, e2, M: b * x * q[0] * fbu * (d - q[1] * x) + As2 * s2 * (d - d2) }; };
+      let lo = 1e-4, hi = 50; for (let it = 0; it < 80; it++) { const mid = Math.sqrt(lo * hi); if (st(mid).M < Mu) lo = mid; else hi = mid; }
+      const u = st(lo);
+      out.push({ y, sb: -M * y / I, ss2: -ne * M * (y - d2) / I, ss: ne * M * (d - y) / I, ec: -u.ec, e2: -u.e2, es: u.es });
+    }
+    return out;
   }
 
   // ------------------------------------------------------------------ avant-métré récapitulatif
@@ -213,7 +249,14 @@
       const videMax = R.G.up * coef.CP / nap, videMin = R.G.dn / nap;
       const chMax = (R.G.up * coef.CP + vmax + 2 * l.T.max) / nap, chMin = (R.G.dn + vmin + 2 * l.T.min) / nap;
       const adm = ap.typ === 0 ? (A13.COMPREBS || 3500) : (A13.COMPRENS || 1500);
-      const larg = 0.25, long = Math.max(0.25, Math.ceil(chMax / adm / larg / 0.05 - 1e-9) * 0.05);
+      // dimensions (v10) : largeur 0,25, 0,30, 0,35… ; pour chaque largeur, longueur de largeur à largeur + 0,25 au pas
+      // de 0,05 ; premier couple tel que R/aire ≤ admissible (0,30×0,55 puis 0,35×0,50 : 3604–3610, 3639, 3488, 3452).
+      // Crochet PSIDA_AP_V9 = 1 : ancienne règle (largeur 0,25, longueur libre).
+      let larg = 0.25, long = Math.max(0.25, Math.ceil(chMax / adm / larg / 0.05 - 1e-9) * 0.05);
+      if (!G.PSIDA_AP_V9) {
+        const need = chMax / adm; let done = false;
+        for (let a = 5; a <= 20 && !done; a++) for (let b = a; b <= a + 5; b++) if ((a * 0.05) * (b * 0.05) >= need - 1e-9) { larg = a * 0.05; long = b * 0.05; done = true; break; }
+      }
       // chevêtre (constats 3603, 3607, 3639, 3826, 3488, 0063) : largeur = 2 esp/3 sur appui intermédiaire,
       // about·sin ψ (grades) + esp/3 sur culée ; moment = R en charge max × esp / (12 × largeur) ;
       // section : ELS, section fissurée b = 1, n = 15, d = H − 0,04, σs = σ̄s (exact en fissuration préjudiciable ;

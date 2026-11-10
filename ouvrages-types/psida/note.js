@@ -319,6 +319,18 @@
       '   CARACTERISTIQUES   TABLIER      ' + r.profil.map(v => f(v, 9, 3) + ' M  ').join('') + `      LARGEUR TOTALE = ${f(r.largeurTotale, 7, 3)} M`,
       '   TRANSVERSALES', `                      DALLE PORTEUSE    EXTRADOS=${f(r.section.Eextr, 7, 3)} M   LARGEUR MOYENNE=${f(r.section.Eeq, 7, 3)} M   INTRADOS=${f(r.section.Eintr, 7, 3)} M    EPAISSEUR=${f(r.section.H, 7, 3)} M`, '',
       '   CLASSE DU PONT = ' + r.classe];
+    const VF = r.fer && r.fer.verif;
+    if (VF && VF.length) {
+      const row = (lab, fn, w) => padR(lab, 21) + VF.map(fn).map(v => pad(v, w)).join('') + ' ';
+      ps.push('', '                                 *** VERIFICATION DE L\'OUVRAGE AUX SECTIONS LES PLUS SOLLICITEES *** ', '',
+        '                          TRAVEE1   APPUI2   TRAVEE2   APPUI3   TRAVEE3   APPUI4   TRAVEE4   APPUI5   TRAVEE5   APPUI6   TRAVEE6 ', '',
+        ' * ELS (' + (r.mat.fiss >= 2 ? 'FISSURATION PREJUDICIABLE' : 'FISSURATION PEU NUISIBLE') + ') * ', '', '  * BETON COMPRIME ', '',
+        row('    HAUTEUR EN METRE', v => fx(v.y, 3), 10), '', row('    CONTRAINTES EN T/M2', v => Math.round(v.sb) + '.', 10), '',
+        '  * ACIER COMPRIME ', '', row('    CONTRAINTES EN T/M2', v => Math.round(v.ss2) + '.', 10), '',
+        '  * ACIER TENDU ', '', row('    CONTRAINTES EN T/M2', v => Math.round(v.ss) + '.', 10), '',
+        ' * ELU (DEFORMATION EN 0/00) * ', '', row('  * BETON COMPRIME', v => fx(v.ec, 2), 10), '',
+        row('  * ACIER COMPRIME', v => fx(v.e2, 2), 10), '', row('  * ACIER TENDU', v => fx(v.es, 2), 10));
+    }
     const MT = r.fer && r.fer.metre;
     if (MT) {
       ps.push('', '                                                *** AVANT-METRE RECAPITULATIF *** ',
