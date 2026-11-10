@@ -287,7 +287,11 @@
           return { elsMax: Math.max(...els), elsMin: Math.min(...els), eluMax: Math.max(...uMax), eluMin: Math.min(...uMin) };
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);
-        const rt = c => { const q = pRT(c); return semEff(q[0], q[1], side, t, 0); };
+        // Retrait / température : effort tranchant = pression ±6M/B² (exact) ; moment imprimé par SETRA (208/208 valeurs, réglage
+        // et contrôle) : M = −(p²/2·l − p²/(9B)·l²), p = pression de bord due au cas, l = t·débord (même valeur côté ext. / int.).
+        // Loi empirique (quadratique en p : rapport RT/TP = carré du rapport des pressions) — origine non identifiée.
+        const rt = c => { const q = pRT(c), r0 = semEff(q[0], q[1], side, t, 0), l = t * (side === 'E' ? aExt : aInt), p2 = q[0] * q[0];
+          return globalThis.PIPO_RTSEM === 0 ? r0 : [-(p2 / 2 * l - p2 / (9 * B) * l * l), r0[1]]; };
         const o = { t, M: per(0), V: per(1), liveM: envSD(liM), liveV: envSD(liV), ret: rt(ret), tem: rt(tem) };
         if (rmP) [0, 1].forEach(j => { const a = rmP.map(p => semEff(p[0], p[1], side, t, side === 'E' ? v.PSREMB : 0)[j]); const lv = j ? o.liveV : o.liveM;
           // moments : ligne MAX bornée à 0 (talon 1890/1893 : 0.00 imprimé), ligne MIN non bornée (patin : 0.72 / 1.36)

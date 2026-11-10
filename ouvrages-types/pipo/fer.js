@@ -77,7 +77,7 @@
     ad.pdBase = Object.assign(choose([opt(1, 1), opt(0, 2), opt(0, 1)], min.pdBase), { h: g.e2, M: { els: -inf.els * sn, elu: -inf.elu * sn } });
     // semelle intérieure : nappe 4 + nappe 5 filante si insuffisante ; extérieure : φ2 à d (fers solidarisant) + filante
     const fil = (Am, A0) => Am > A0 + 1e-12 ? choose([opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], Am - A0) : { A: 0, esp: 0, phi: 0, k: -1 };
-    const solE = opt(1, 1);
+    const solE = choose([opt(1, 1), opt(0, 2), opt(0, 1)], min.semE); // même gamme que la nappe 4 (1825 : φ1 à d)
     ad.semI = { sol: ad.pdBase, fil: fil(min.semI, ad.pdBase.A), h: g.e1, larg: r.aInt, M: { els: -sI.els, elu: -sI.elu } };
     ad.semE = { sol: solE, fil: fil(min.semE, solE.A), h: g.e1, larg: r.aExt, M: { els: -sE.els, elu: -sE.elu } };
     for (const k of ['semI', 'semE']) { const o = ad[k]; o.A = o.sol.A + o.fil.A; o.phi = o.sol.phi; o.d = dd(g.e1, 0.025, o.sol.phi); }

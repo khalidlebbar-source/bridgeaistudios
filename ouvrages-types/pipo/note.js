@@ -274,7 +274,9 @@
       const d = r.g.e1 - 0.025 - 0.6 * phi - 1.1 * r.v.PHI2;
       const rows = r.semelleEff[k].map(s => { const vals = [1, -1].map(sg => { const e = s.liveV[sg > 0 ? 'max' : 'min'], q = ['A', 'BC', 'BT', 'ME', 'MC', 'EX', 'TR'].map(x => e[x].eff), G = sg > 0 ? s.V.eluMax : s.V.eluMin;
         return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[1], TP: s.tem[1] }, sg).elu; });
-        const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); return [sgn * (r.g.e2 / 2 + (1 - s.t) * a), V, V / d]; });
+        const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); // abscisse depuis l'axe du piédroit : e2/2 + (1 − t)·(débord + e2/2) (pas = quart de la distance axe–bord, pas du débord),
+        // arrondi en simple précision (FORTRAN REAL : 0.325 imprimé 0.32, 1.275 → 1.27).
+        return [sgn * Math.fround(r.g.e2 / 2 + (1 - s.t) * (a + r.g.e2 / 2)), V, V / d]; });
       const mx = Math.max(...rows.map(x => x[2])), lim = r.mat.tauSans;
       out.push(lab, mx < lim ? sp(60) + "PAS D'ETRIERS    (CONTRAINTE DE CISAILLEMENT <" + F(lim, 6, 2) + ' T/M2)' : '', sp(19) + 'ABSCISSE          EFFORT TRANCHANT        CISAILLEMENT', sp(21) + '(M)                   (T)                  (T/M2)');
       for (const [x, V, t] of rows) out.push(F(x, 25, 2) + F(V, 27, 2) + F(t, 19, 2));
@@ -372,11 +374,13 @@
       ...H1, sp(35) + 'F E R R A I L L A G E    D E   L A    S E M E L L E', ' ', ' '];
     const nap = (lab, o) => ['     CARACTERISTIQUES DES ACIERS'.slice(0, 0) + sp(41) + lab + F6(o.A) + ' M2   DIAMETRE   =' + F(o.phi, 8, 3) + ' M', sp(105) + 'ESPACEMENT =' + F(o.esp, 8, 3) + ' M', ' '];
     for (const [tit, o, int] of [['* SEMELLE INTERIEURE', a.semI, true], ['* SEMELLE EXTERIEURE', a.semE, false]]) {
-      L.push(tit, ' ', '    CARACTERISTIQUES GEOMETRIQUES       EPAISSEUR E1 =' + F(o.h, 5, 2) + ' M      LARGEUR    =' + F(o.larg, 5, 2) + ' M', ' ');
+      L.push(tit, ' ', '    CARACTERISTIQUES GEOMETRIQUES       EPAISSEUR E1 =' + F(o.h, 5, 2) + ' M      LARGEUR    =' + F(Math.fround(o.larg), 5, 2) + ' M', ' ');
       const sol = nap('SECTION SOLIDARISANT PIEDROIT ET SEMELLE         = ', o.sol), fl = nap((int ? 'SECTION FILANTE SUPPLEMENTAIRE                  = ' : 'SECTION FILANTE DANS LA SEMELLE                 = '), o.fil);
-      sol[0] = '     CARACTERISTIQUES DES ACIERS        ' + sol[0].trimStart().padStart(sol[0].length - 41 + 3);
-      L.push(...(int ? [...sol, ...fl] : [...fl, ...sol]), sp(41) + 'SECTION TOTALE AU ML                            =' + F6(o.A) + ' M2', ' ',
-        '     CONTRAINTES MAXIMALES PONDEREES        ACIER =' + E(o.ss, 7) + ' T/M2                 BETON =' + E(o.sb, 8) + ' T/M2', ' ', ' ');
+      // le libellé « CARACTERISTIQUES DES ACIERS » porte sur la première nappe imprimée (solidarisant à l'int., filante à l'ext.)
+      const first = int ? sol : fl;
+      first[0] = '     CARACTERISTIQUES DES ACIERS' + (int ? sp(8) : sp(9)) + first[0].trimStart();
+      L.push(...(int ? [...sol, ...fl] : [...fl, ...sol]), sp(41) + 'SECTION TOTALE AU ML                            = ' + F6(o.A) + ' M2', ' ',
+        '     CONTRAINTES MAXIMALES PONDEREES        ACIER =' + E(o.ss, 7) + ' T/M2                 BETON =' + E(o.sb, 9) + ' T/M2', ' ', ' ');
     }
     return L;
   }
