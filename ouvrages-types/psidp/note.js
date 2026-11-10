@@ -580,7 +580,7 @@
         D.push("                                       DEFORMEES SOUS LES CHARGES D'EXPLOITATION (EN MILLIMETRES)");
         D.push('           SECTION                                SURCHARGES DANS CHAQUE TRAVEE (DEFORMEES INSTANTANEES)');
         var h1 = L(), h2 = L();
-        for (var j = 0; j < R.n; j++) { h1.at(49 + 15 * j, 'TRAVEE ' + (j + 1)); h2.at(42 + 15 * j, 'A'); h2.at(51 + 15 * j, '48T'); }
+        for (var j = 0; j < R.n; j++) { h1.at(49 + 15 * j, 'TRAVEE ' + (j + 1)); h2.at(42 + 15 * j, 'A'); h2.at(51 + 15 * j, (24 * R.nv) + 'T'); }
         D.push(h1.s); D.push(h2.s);
         for (q = 0; q <= 10; q++) {
           var r2 = [[18, fx(q / 10, 2) + 'L']];

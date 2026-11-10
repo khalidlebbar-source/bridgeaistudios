@@ -959,8 +959,11 @@
         zone('EXT CHEV D', 2 * cd, t, b.ach, 3), zone('CHEV APP D', cd, t, b.ach, 1));
       tr.push(z);
     }
-    var lmin = 5e-4 * v.HDAL1;
-    return { par: par, travees: tr, longi: { sup: lmin * (v.EDAL1 + v.EDAL2), inf: lmin * v.EDAL1 } };
+    // armatures longitudinales minimales par face (largeur b : extrados W = EDAL1 + EDAL2, intrados EDAL1) :
+    // max(5e-4·H·b ; 0.1 % de S réparti au prorata des largeurs, 1e-3·S·b/(W + EDAL1)) — 2483–2488 : 0.004517 / 0.003378
+    // (branche 0.1 % S) ; tous les autres passages : branche 5e-4·H·b (2549 0.003200 / 0.001848, 0013 0.004000 / 0.002400).
+    var lmin = 5e-4 * v.HDAL1, Wx = v.EDAL1 + v.EDAL2, lS = globalThis.PSIDP_LMIN === 0 ? 0 : 1e-3 * R.section.S / (Wx + v.EDAL1);
+    return { par: par, travees: tr, longi: { sup: Math.max(lmin, lS) * Wx, inf: Math.max(lmin, lS) * v.EDAL1 } };
   }
   function flexionTransversale(R, v) {
     var H = v.HDAL1, hc = v.HCHAU || 0, e0 = 0.25 + 2 * hc + H, e1 = 2 * hc + H, W = R.largeurTot, nu = v.POIS || 0;
@@ -979,7 +982,10 @@
         var yP = -Math.min(fb.f * bS, eInt);
         var mus = [1, 3, 5].map(function (m) { var mu = muLine(bS, LS, yP, m, nu, eInt, FLEXT_H(sP)); return function (e) { return mu(e / sP); }; });
         var grid = [], kk; for (kk = 0; -W / 2 + kk * 0.5 <= W / 2 + 1e-9; kk++) grid.push(-W / 2 + kk * 0.5); if (grid[grid.length - 1] < W / 2 - 1e-9) grid.push(W / 2);
-        return { n: fb.n, y: yP * sP, yP: yP, mus: mus, grid: grid, vals: grid.map(function (e) { return mus.map(function (mu) { return mu(e); }); }), star: mus.map(function (mu) { return mu(yP * sP); }) };
+        // point extrême W/2 hors grille : SETRA imprime la valeur au point de la grille interne au pas 0.125 (depuis -W/2)
+        // arrondi par excès, -W/2 + ⌈W/0.125⌉·0.125 (2483 : 6.225 pour W/2 = 6.150)
+        var eEnd = globalThis.PSIDP_LIEND === 0 ? W / 2 : -W / 2 + Math.ceil(W / 0.125 - 1e-9) * 0.125;
+        return { n: fb.n, y: yP * sP, yP: yP, mus: mus, grid: grid, vals: grid.map(function (e, i) { var ee = (i === grid.length - 1 && Math.abs(e - W / 2) < 1e-9 && Math.abs((e + W / 2) / 0.5 - Math.round((e + W / 2) / 0.5)) > 1e-6) ? eEnd : e; return mus.map(function (mu) { return mu(ee); }); }), star: mus.map(function (mu) { return mu(yP * sP); }) };
       });
       var F = { psi: psi, DB: DB, Be: R.Be, nu: nu, A1: A1, A2: A2, LS: LS, bS: bS, theta: bS / LS, sinPsi: sP, eInt: eInt, etal: etal, fibres: fibres };
       F.prec = flexTPrec(R, v, t);
@@ -1059,9 +1065,9 @@
           var val = (R.loads.Agen ? (v['CDTA' + nn] || 1) : a1coef(cl, nn)) * tt; if (val > aMax.v + 1e-12) aMax = { v: val, n: nn }; if (val < aMin.v - 1e-12) aMin = { v: val, n: nn }; }
       }
       res.A = { max: aMax, min: aMin };
-      // trottoirs : 0.45 t/m2 (charge locale), trottoir par trottoir
+      // trottoirs : 0.45 t/m2 (charge locale), trottoir par trottoir ; aucune charge si TROT = 0 au bordereau (2483–2488, 2766)
       var tr = [], pt = 0.45;
-      if (R.loads.trot) {
+      if (R.loads.trot && v.TROT > 0) {
         if (v.ETROG > 0) tr.push(pt * A1 * trap(Zr, -W / 2, sn(-W / 2 + v.ETROG)));
         if (v.ETROD > 0) tr.push(pt * A1 * trap(Zr, sn(W / 2 - v.ETROD), W / 2));
       }
@@ -1097,8 +1103,15 @@
           for (kk = 0; x0 + kk * h <= x1 - (ent + 1) + 1e-9; kk++) { var x = x0 + kk * h, val = (big ? dyn.mc : dyn.mc) * Pc * A2 * (mean(x) + mean(x + ent)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
         } else {
           var cv = nom === 'CVOI.D' ? { P: 140, len: 11 } : { P: 200, len: 15 }, w = 3.3, pc = cv.P / cv.len / w * Math.min(1, etc(nom) / F.DB), xc = (x0 + x1) / 2;
-          [-0.375, 0.375].forEach(function (off) { var x = xc + off - w / 2, val = pc * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); });
+          var cvm = globalThis.PSIDP_CVMODE === undefined ? 2 : globalThis.PSIDP_CVMODE, offs = [-0.375, 0.375];
+          if (cvm >= 1) { // axe du convoi à 3.50 m du bord de la largeur roulable Lr (F61 / correspondance SETRA) : e = Lr/2 − 3.50
+            var Lr = (v.EGAU || 0) + v.ESURCH + (v.EDROI || 0), xr = -W / 2 + (v.ETROG || 0) + Lr / 2, ee = Lr / 2 - 3.5;
+            if (globalThis.PSIDP_CVW) { w = globalThis.PSIDP_CVW; pc = cv.P / cv.len / w * Math.min(1, etc(nom) / F.DB); }
+            xc = xr; offs = ee < -1e-9 ? [] : (cvm === 2 ? [-0.375, 0.375] : (cvm === 3 ? [-Math.max(ee, 0.375), Math.max(ee, 0.375)] : [-ee, ee])); if (globalThis.PSIDP_CVOFFS) offs = globalThis.PSIDP_CVOFFS;
+          }
+          offs.forEach(function (off) { var x = xc + off - w / 2, val = pc * A1 * trap(Zc, x, x + w); mx = Math.max(mx, val); mn = Math.min(mn, val); });
         }
+        if (globalThis.PSIDP_CVDIAG) (res.cdiag || (res.cdiag = {}))[nom] = mx;
         if (mx > cMx.v) cMx = { v: mx, nom: nom }; if (mn < cMn.v) cMn = { v: mn, nom: nom };
       });
       res.C = { max: cMx, min: cMn };
@@ -1482,9 +1495,12 @@
       lam = new Array(n).fill(0.5);
       for (var it3 = 0; it3 < 400; it3++) {
         for (var k4 = 0; k4 < n; k4++) {
+          // ouvrage symétrique (SYM = 1) : λ des travées symétriques liés (variable commune)
+          var k4s = (v.SYM === 1 && globalThis.PSIDP_LAMSYM === 1) ? n - 1 - k4 : k4;
+          if (k4s < k4) continue;
           var num = 0, den = 0;
-          Mat.forEach(function (rw, q) { var r0 = Rv[q]; rw.forEach(function (x, kk) { if (kk !== k4) r0 -= x * lam[kk]; }); num += rw[k4] * r0; den += rw[k4] * rw[k4]; });
-          if (den > 0) lam[k4] = Math.max(0, Math.min(1, num / den));
+          Mat.forEach(function (rw, q) { var r0 = Rv[q], c0 = rw[k4] + (k4s !== k4 ? rw[k4s] : 0); rw.forEach(function (x, kk) { if (kk !== k4 && kk !== k4s) r0 -= x * lam[kk]; }); num += c0 * r0; den += c0 * c0; });
+          if (den > 0) lam[k4] = lam[k4s] = Math.max(0, Math.min(1, num / den));
         }
       }
     }
@@ -1773,18 +1789,18 @@
     return out;
   }
   // déformées sous charges d'exploitation (section 38 suite) : chaque travée chargée seule, module EI28, sans K ni biais.
-  // A : A(L_j)·a1·nv·v0 sur toute la travée ; 48T : 2 voies x 24 t concentrées au milieu de la travée (notice p. 89).
+  // A : A(L_j)·a1·nv·v0 sur toute la travée ; charge concentrée 24 t par voie (NV) au milieu de la travée (en-tête 24T/48T/72T).
   function liveDefl(R, v) {
     var L = R.L, n = R.n, EI = R.EI28 * R.section.I, res = [];
     var full = function (Ms) { return Ms.length === n + 1 ? Ms : [0].concat(Ms, [0]); };
     for (var j = 0; j < n; j++) {
       var lj = L[j], q = R.loads && R.loads.Agen ? Agen(v, lj) * v.LVOIE * R.nv * (v['CDTA' + R.nv] || 1) : A_l(lj) * R.v0 * R.nv * a1coef(R.classe, R.nv);
       var Mu = full(supportMomentsUniform(L, L.map(function (_, s) { return s === j ? q : 0; })));
-      var Mp = full(supportMomentsUnitForce(L, j, 0.5)).map(function (m) { return 48 * m; });
+      var PT = 24 * R.nv, Mp = full(supportMomentsUnitForce(L, j, 0.5)).map(function (m) { return PT * m; });
       var rowA = [], rowP = [];
       for (var t = 0; t < n; t++) {
         rowA.push(deflSpan(L, t, Mu, t === j ? function (x) { return q * x * (lj - x) / 2; } : function () { return 0; }, EI));
-        rowP.push(deflSpan(L, t, Mp, t === j ? function (x) { return 48 * (x <= lj / 2 ? x / 2 : (lj - x) / 2); } : function () { return 0; }, EI));
+        rowP.push(deflSpan(L, t, Mp, t === j ? function (x) { return PT * (x <= lj / 2 ? x / 2 : (lj - x) / 2); } : function () { return 0; }, EI));
       }
       res.push({ A: rowA, P: rowP });   // res[travée chargée].A[travée observée]
     }
