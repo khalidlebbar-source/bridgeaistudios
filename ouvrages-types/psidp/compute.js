@@ -226,6 +226,7 @@
     // LI moments en travée : sections 0.05,0.1..0.9,0.95
     R.sectionsMom = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95];
     R.liTravees = L.map(function (l, t) { return liSpanSection(L, R.liAppuis, t); });
+    R.liTraveesP = L.map(function (l, t) { return liSpanSection(L, R.liAppuis, t, true); });
     // LI efforts tranchants (côté gauche de chaque travée = pente) et réactions
     R.X0 = [0]; L.forEach(function (l) { R.X0.push(R.X0[R.X0.length - 1] + l); });
     R.liTraveesAires = R.liTravees.map(function (secs, t) { return secs.map(function (s) {
@@ -317,18 +318,21 @@
   }
 
   // LI moment en section x0 (relative) de la travée t : M = (1-x0) Mg + x0 Md + isostatique
-  function liSpanSection(L, liA, t) {
+  // f32 = true : copie d'impression en simple précision (SETRA calcule en REAL*4), opérations arrondies une à une
+  function liSpanSection(L, liA, t, f32) {
     var n = L.length, l = L[t];
-    var getSup = function (i, j) { if (i <= 0 || i >= n) return { A: 0, B: 0, C: 0 }; return liA[i - 1][j]; };
+    var f = f32 ? Math.fround : function (x) { return x; };
+    var getSup = function (i, j) { if (i <= 0 || i >= n) return { A: 0, B: 0, C: 0 }; var c = liA[i - 1][j]; return f32 ? { A: f(c.A), B: f(c.B), C: f(c.C) } : c; };
     return [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95].map(function (x0) {
-      var cols = [];
+      var cols = [], X = f(x0), U = f(1 - X), lf = f(l);
+      var lin = function (a, b) { return f(f(U * a) + f(X * b)); };
       for (var j = 0; j < n; j++) {
         var g = getSup(t, j), d = getSup(t + 1, j);
-        var cc = { A: (1 - x0) * g.A + x0 * d.A, B: (1 - x0) * g.B + x0 * d.B, C: (1 - x0) * g.C + x0 * d.C, D: 0 };
+        var cc = { A: lin(g.A, d.A), B: lin(g.B, d.B), C: lin(g.C, d.C), D: 0 };
         if (j === t) {
           // force à gauche de la section (x<x0) : iso = x l (1-x0) ; à droite : x0 l (1-x)
-          var G = { A: cc.A, B: cc.B, C: cc.C + l * (1 - x0), D: 0 };
-          var Dd = { A: cc.A, B: cc.B, C: cc.C - l * x0, D: l * x0 };
+          var G = { A: cc.A, B: cc.B, C: f(cc.C + f(lf * U)), D: 0 };
+          var Dd = { A: cc.A, B: cc.B, C: f(cc.C - f(lf * X)), D: f(lf * X) };
           cols.push(G); cols.push(Dd);
         } else cols.push(cc);
       }
@@ -1415,7 +1419,18 @@
       // T2 : rayon minimal sur appuis, point bas sur le bord inférieur relevé si nécessaire pour rester au-dessus du bord inf.
       var P4 = { xl: P3.xl.slice(), zl: P3.xl.map(function (x, tt) { return ginf(tt, P3.kl[tt]); }), zs: P3.zs.slice() };
       var rminSide = function () { return { R: v.RMIN || 8 }; };
-      for (t = 0; t < n; t++) {
+      // Point bas de T2 (règle retrouvée 2026-11-10, exacte sur 0013, 0014, 2481 ; 2483 à 0.002 près) : profondeur géométrique zs - zi
+      // reportée sous les points de passage sur appuis (même forme que les nombres d'inscription) :
+      // travée intermédiaire : (z_g + z_d)/2 - (zs - zi). Travée de rive : bord inf au point bas (défaut) ; la variante
+      // zi - x_rel·(zs - z_appui) (PSIDP_T2MODE 1 : bornée par le bord inf, 2 : seule) est exacte sur 2481/0013 mais pas 0014 (essai négatif).
+      if (globalThis.PSIDP_T2MODE !== 0) {
+        for (t = 0; t < n; t++) {
+          var xr7 = P3.xl[t] / L[t];
+          if (t > 0 && t < n - 1) P4.zl[t] = (P3.zs[t] + P3.zs[t + 1]) / 2 - (zs - zi);
+          else if (n > 1 && (globalThis.PSIDP_T2MODE === 1 || globalThis.PSIDP_T2MODE === 2)) { var zf7 = t === 0 ? zi - xr7 * (zs - P3.zs[1]) : zi - (1 - xr7) * (zs - P3.zs[n - 1]); P4.zl[t] = globalThis.PSIDP_T2MODE === 2 ? zf7 : Math.max(P4.zl[t], zf7); }
+        }
+      }
+      for (t = 0; t < n && globalThis.PSIDP_T2MODE === 0; t++) {
         for (var it2 = 0; it2 < 200; it2++) {
           var tr2 = traceFromPoints(R, P4, { side: rminSide }), ok2 = true;
           for (var kk2 = 1; kk2 < 10; kk2++) if (tr2.z(t, kk2 * L[t] / 10) < ginf(t, kk2) - 1e-9) ok2 = false;

@@ -322,7 +322,7 @@
       var c = 0; for (j = 0; j < n; j++) { if (j === t) { h.at(35 + 14 * c, 'TRAVEE ' + (j + 1) + 'G'); c++; h.at(35 + 14 * c, 'TRAVEE ' + (j + 1) + 'D'); c++; } else { h.at(35 + 14 * c, 'TRAVEE ' + (j + 1)); c++; } }
       D.push(h.s);
       var X0 = 0;
-      R.liTravees[t].forEach(function (s) {
+      (R.liTraveesP || R.liTravees)[t].forEach(function (s) {
         cubLines(D, s.cols, null, [[10, fx(s.x0, 2) + 'L'], [17, fx(X0 + s.abs, 3)]], { letter: 21, first: 35, step: 14 }, true);
       });
       D.newPage();
