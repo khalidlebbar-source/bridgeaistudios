@@ -1609,13 +1609,19 @@
     }
     var ft28 = -R.limites.trEnrQC, rG = R.cp.tot[0] / R.cp.tot[1], dFl = 0, js = -1, Smin = Infinity, j;
     for (j = 1; j < n; j++) { var ss = R.sol[j - 1].filter(function (s) { return Math.abs(s.x0 - 1) < 1e-9; })[0]; if (ss && ss.cp[1] < Smin) { Smin = ss.cp[1]; js = j; } }
+    // raccourcissement élastique approché (règle retrouvée 2026-11-10, voir NOTES.md) : ΔC = β·Ep/(2·Eij)·σb(fluage),
+    // σb(fluage) = Δσfl·EI28/(KFL·Ep), β = 0.023703·√fcj (fcj en T/m²) — exact sur 2549/2550 et sur le bloc 1 du câblage auto.
+    var betaC = 0.023703 * Math.sqrt(v.FCJ), dcRule = function (fl) { return betaC * v.EP / (2 * R.EI) * fl * R.EI28 / (v.KFL * v.EP); };
+    var modeC = globalThis.PSIDP_DCMODE === undefined ? 1 : globalThis.PSIDP_DCMODE;
     for (it = 0; it < 40 && js > 0; it++) {
+      if (it > 0 && (imp ? modeC >= 1 : modeC >= 2)) dC = dcRule(dFl);
       var sel = G.filter(function (g) { return g.t === js - 1 || g.t === js; }), FM = 0;
       sel.forEach(function (g) { FM += los(g, dC, dFl).infini * nA; }); FM /= sel.length;
       var s0 = R.sol[js - 1].filter(function (s) { return Math.abs(s.x0 - 1) < 1e-9; })[0];
       var ge = G.filter(function (g) { return g.t === js && g.k === 0; })[0].e;
       var sig = (FM / Sb) * (1 - 0.8 * ge / Vs) - ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib;
       dFl = v.KFL * v.EP / R.EI28 * sig;
+      P.flImp = { FM: FM, a: (1 - 0.8 * ge / Vs) / Sb, b: -ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib, ge: ge, js: js };
     }
     if (!imp && P.auto && P.auto.P3) {
       // fluage approché du câble retenu : « CALCUL ITERATIF DU FLUAGE » (σb max aux sections clés, FM = N.A.T∞ moyen : NON RÉSOLU)
@@ -1635,7 +1641,9 @@
       var FMf = 0, FMJ = 0;
       for (it = 0; it < 40; it++) {
         var mT = 0, mI = 0; uniq.forEach(function (g) { var q = los(g, dC, dFl); mT += q.infini; mI += q.proba; }); mT /= uniq.length; mI /= uniq.length;
-        FMf = nA * mT; FMJ = nA * mI; var nf = fl2(FMf); if (Math.abs(nf - dFl) < 0.01) { dFl = nf; break; } dFl = nf;
+        FMf = nA * mT; FMJ = nA * mI; var nf = fl2(FMf);
+        if (modeC === 3) dC = dcRule(nf) * FMJ / FMf;
+        if (Math.abs(nf - dFl) < 0.01 && modeC !== 3) { dFl = nf; break; } dFl = nf;
       }
       P.flBlock = { FM: FMf, FMJ: FMJ, rec: rec };
     }
