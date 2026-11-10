@@ -200,7 +200,7 @@
         const pos = key => {
           const p = e[key] && e[key].pos; if (!p || !e[key].v) return 'DG   0.00   0.00';
           const cv = R.conv[key.slice(0, -1)]; const xs = [];
-          for (let t = 0; t < p.nt; t++) { const ps = cv.axles.map(ax => p.x0 + p.dir * (ax.x + t * (cv.gapTruck || 0))); xs.push(key[0] === 'E' && key[1] !== 'C' ? Math.max(...ps) : Math.min(...ps)); }
+          for (let t = 0; t < p.nt; t++) { const ps = cv.axles.map(ax => (p.xs ? p.xs[t] : p.x0) + p.dir * (ax.x + (p.xs ? 0 : t * (cv.gapTruck || 0)))); xs.push(key[0] === 'E' && key[1] !== 'C' ? Math.max(...ps) : Math.min(...ps)); }
           xs.sort((a, c) => a - c); while (xs.length < 2) xs.push(0);
           return `${p.dir > 0 ? 'DG' : 'GD'} ${F(xs[0], 2, 6)}   ${F(xs[1], 2)}`; };
         for (const sg of ['+', '-']) {

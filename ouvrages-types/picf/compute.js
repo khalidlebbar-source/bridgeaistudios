@@ -418,6 +418,16 @@
           for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0, nd); }
           if (sm > mx) { mx = sm; pmx = { dir, x0, nt }; } if (sm < mn) { mn = sm; pmn = { dir, x0, nt }; }
         } }
+        // Bc : distance entre camions d'une même file VARIABLE (≥ 4.50 m entre essieux extrêmes, fascicule 61 II) ; chaque camion
+        // a son essieu le plus à droite sur la grille de pas 0.5 m (positions imprimées « DG -5.00 13.50 » : écart 18.5 m).
+        if (cv.trucks > 1 && !root.PICF_BCFIX) { const tl = cv.axles[cv.axles.length - 1].x;
+          for (const dir of [1, -1]) { const ks = [], vs = [];
+            for (let kx = Math.floor(-Ld / STEP) - 1; kx * STEP <= L + Ld + tl + 1e-9; kx++) { const x0 = dir > 0 ? kx * STEP - tl : kx * STEP; let sm = 0;
+              for (const ax of cv.axles) { const x = x0 + dir * ax.x; sm += ax.P * ilAvg(getter, x, vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0, nd); }
+              if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; ks.push(x0); vs.push(sm); }
+            const gmin = Math.round(cv.gapTruck / STEP);
+            for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < vs.length; j++) { const sm = vs[i] + vs[j];
+              if (root.PICF_BCTIE ? sm >= mx - 1e-9 : sm > mx + 1e-12) { mx = sm; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? sm <= mn + 1e-9 : sm < mn - 1e-12) { mn = sm; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
         const kk = nodyn ? k / ({ BC: dyn.BC.d, BT: dyn.BT.d, MC: dyn.MC.d, ME: dyn.ME.d, E: 1, EC: 1.5 }[key]) : k;
         res[key + '+'] = { v: mx * G * kk, pos: pmx }; res[key + '-'] = { v: mn * G * kk, pos: pmn };
@@ -447,7 +457,7 @@
     R.env = {};
     // effort tranchant : diffusion longitudinale des roues (Bc, Bt, Me) à 45° dans la chaussée mais pente 1/2 dans le remblai
     const vWheel = (a, dd) => a.a - dd.hsrem;
-    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : null, envelope(gt, key === 'p' && !!root.PICF_PND, key === 'p')));
+    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : null, envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p')));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
     for (const key of root.PICF_VBNC ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
     R.sections = { t: secB, b: secB, w: secWfull, det: [0, 1, 2, 3, 4, 5] };
@@ -520,7 +530,10 @@
     for (const k of Object.keys(r)) { const o = r[k]; o.d = dd(o.h, d.phi[o.phi]); Object.assign(o, elsStress(o.MS / 1000, o.A, o.d)); o.VRb = R.mat.tauLim * o.d * 1000;
       // effort tranchant « acier » : adhérence d'entraînement, périmètre 4A/φ × τs × d
       o.VRs = 4 * o.A / (d.phi[o.phi] / 1000) * R.mat.taus * o.d * 1000; }
-    r.ANF = { t: 0.0008 * d.e3, b: 0.0008 * d.e1, w: 0.0008 * d.e2 / s };
+    // non-fragilité : moment de fissuration ft·h²/6 repris par As·fe·0.9d, d = h − enrobage − φ2/2 (même hauteur utile que A20) ;
+    // exact 0.000575 / 0.000497 / 0.000800 (h 0.70 / 0.60 / 0.85) ; piédroits ÷ sin(biais)
+    const anf = h => root.PICF_ANF0 ? 0.0008 * h : R.mat.ft * h * h / (6 * d.fe[1] * 0.9 * (h - c - d.phi[1] / 2000));
+    r.ANF = { t: anf(d.e3), b: anf(d.e1), w: anf(d.e2) / s };
     // ferraillage transversal de la traverse supérieure (face intérieure) : moments transversaux de calcul (p.21),
     // barres PHI2 en nappe extérieure : d = e3 − enrobage − φ2/2 (A20 exact sur 2531/2550/2551 à partir des moments imprimés)
     if (R.tr) { const dT = d.e3 - c - d.phi[1] / 2000; r.dT = dT;
@@ -830,7 +843,9 @@
         for (const l of LIVE) { lmax[l] = Math.max(0, env[l + '+'].v); lmin[l] = Math.min(0, env[l + '-'].v); lU = Math.max(lU, gU[l] * lmax[l]); lUn = Math.min(lUn, gU[l] * lmin[l]); }
         const rb = get(C.remb); lmax.REMB = Math.max(0, rb); lmin.REMB = Math.min(0, rb);
         let ec = null; let dU = p.maxU + lU + 1.6 * lmax.REMB, nU = p.minU + lUn + 1.6 * lmin.REMB; // la température n'entre pas dans les efforts tranchants ELU (2531 PD : 301.9 = 291.5 + 1.6·6.5)
-        if (hasEC) { ec = { mx: Math.max(0, env['EC+'].v), mn: Math.min(0, env['EC-'].v) }; }
+        if (hasEC) { ec = { mx: Math.max(0, env['EC+'].v), mn: Math.min(0, env['EC-'].v) };
+          // phase chantier également enveloppée à l'ELU (2550 V TS x = 0 : MIN 89.9 = 90.7 + 1.6·EC34)
+          if (!root.PICF_VNOCH) { dU = Math.max(dU, p.ch.maxU + 1.6 * ec.mx); nU = Math.min(nU, p.ch.minU + 1.6 * ec.mn); } }
         return { x, perm: p, tmax, tmin, lmax, lmin, ec, design: { maxU: dU, minU: nU } };
       });
     }
