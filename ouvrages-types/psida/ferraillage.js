@@ -232,14 +232,19 @@
   // peu préjudiciable) ou 0,15 fcj/1,5. Effort tranchant maximal : enveloppe bilinéaire, max de la droite joignant
   // les valeurs ELU maximales des deux extrémités de la travée et de celle joignant les opposées des minimales
   // (exact sur 3826). Cisaillement τ = V / (E DALLE × d_sup) (à 0,1 % près). Espacement maximal :
-  // min(0,40 ; At fe / (0,4 MPa × E DALLE)). Épure retenue : n = ⌈L/s⌉ cours également espacés sur la portée.
+  // min(0,40 ; At fe / (0,4 MPa × E DALLE)), 0,4 MPa = 400/9,81 t/m² (v8). Épure retenue : s = plus grande valeur
+  // de la série de Renard R10 ≤ espacement maximal, n = ⌈L/s⌉ cours également espacés sur la portée (v8).
   function etriers(r, F) {
     if (!r.effortsTranchants) return null;
     const mat = r.mat, ph = mat.phi, n = r.n;
     const At = 2 * F.inf.n * aire(ph[3]);
     const tl = (mat.fiss <= 1 ? 0.2 : 0.15) * mat.fcj / 1.5;
     const bd = r.section.Eeq * F.sup.d;
-    const smax = Math.min(0.40, At * mat.fe[3] / (40 * r.section.Eeq));
+    // 0,4 MPa converti en t/m² (1 MPa = 1000/9,81 t/m²) : 3639 0,174 et 4015 0,289 exacts (40 t/m² donnait 0,178 / 0,295)
+    const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * r.section.Eeq));
+    // espacement de l'épure : plus grande valeur de la série de Renard R10 ≤ smax (3639 0,174 → 0,16 ; 4015 0,289 → 0,25)
+    const R10 = [0.40, 0.315, 0.25, 0.20, 0.16, 0.125, 0.10, 0.08, 0.063, 0.05];
+    const sEp = G.PSIDA_EP_SMAX ? smax : (R10.find(v => v <= smax + 1e-9) || smax);
     const out = [];
     for (let i = 0; i < n; i++) {
       let [g, d] = r.effortsTranchants[i]; const Li = r.L[i], j = n - 1 - i;
@@ -252,7 +257,7 @@
         const V = Math.max(v1, v2);
         rows.push({ a, V, tau: V / bd, s: smax });
       }
-      const nc = Math.ceil(Li / smax - 1e-9);
+      const nc = Math.ceil(Li / sEp - 1e-9);
       out.push({ rows, At, tl, nc, esp: Li / nc, L: Li });
     }
     return out;
