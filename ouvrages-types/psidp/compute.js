@@ -6,7 +6,7 @@
   var gr = function (x) { return x * PI / 200; };
   // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
   // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
-  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1 };
+  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
   // v28 : FM1 = force d'inscription à force unique au bloc 1 ; DCB = règle β exacte du ΔC au bloc 1 (activable maintenant que FM1 est juste).
   for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
@@ -231,7 +231,8 @@
 
     // BPEL : contraintes limites (T/m2 ; 1 MPa = 100/9.81 T/m2)
 
-    var c0 = 0.6 * 1000 / 9.80665, ftj = c0 + 0.06 * v.FCJ, ft28 = c0 + 0.06 * v.FC28;
+    var c0 = globalThis.PSIDP_C0 === 1 ? 61.2 : 0.6 * 1000 / 9.80665, ftj // v32 : SETRA imprime ft28 = 61.2 + 0.06 fc28 (« -271.200 ») ; PSIDP_C0 = 1 l'applique (réglage +53, contrôle −8 : NON activé)
+       = c0 + 0.06 * v.FCJ, ft28 = c0 + 0.06 * v.FC28;
     R.limites = {
       compInit: 0.6 * v.FCJ, comp: 0.6 * v.FC28,
       trEnrInit: -0.7 * ftj, trEnrQC: -ft28, trHorsInit: -1.5 * ftj, trHors: -3 * ft28, trHorsQC: -1.5 * ft28,
@@ -1534,7 +1535,7 @@
       var rows3 = function () {
         var c = curCrit; if (!c) return null; var fk = function (id) { return keyE.filter(function (q) { return q.id === id; })[0]; }, r;
         if (c.by === 'ouv') r = [fk('a1'), fk('b0'), fk('c') || { id: 'c', t: 0, k: 0, E: 0, abut: true }];
-        else { var tI = c.tI !== undefined ? c.tI : (c.k === 10 ? c.t + 1 : c.t); r = [fk('a' + tI), fk('b' + tI), fk('a' + (tI + 1))]; }
+        else { var tI = c.tI !== undefined ? c.tI : (c.k === 10 ? c.t + 1 : c.t); r = globalThis.PSIDP_R3ORD === 0 ? [fk('a' + tI), fk('b' + tI), fk('a' + (tI + 1))] : [fk('a' + (tI + 1)), fk('b' + tI), fk('a' + tI)]; } // v32 : ordre imprimé = appui droit, travée, appui gauche
         r = r.map(function (q, i) { if (!q) return null; var o = {}; for (var kk in q) o[kk] = q[kk]; o.id = 'r' + i; if (Eprev && Eprev[i] !== undefined) o.E = Eprev[i]; return o; });
         rowsE = r.map(function (q) { return q ? q.E : undefined; });
         return r.filter(function (q) { return q; });
@@ -1547,8 +1548,10 @@
           if (ke.abut) { var a1c = FM / S * (1 - 0.8 * E / V); rows.push(a1c); if (rec) rec[ke.id] = { sb: a1c, K: 3, SBB: 0, E: E, XM: 0, SM: 0, CPTM: 0, CPPM: 0, A1: a1c, A2: 0, A3: 0 }; return; }
           var top = ke.app, vv = top ? V : -VP, XM = top ? s.cp[1] + tp[1] : s.cp[0] + tp[0];
           var A1 = FM / S * (1 - 0.8 * E / vv);
-          var cand = top ? [[-ft28, s.comb[1].qlqcta, 5]] : [[-ft28, s.comb[0].qlqcta, 5], [0, s.comb[0].freq, 3]], bst = null;
-          if (top && FLR === 1 && globalThis.PSIDP_FLK3 !== 0) cand.push([0, s.comb[1].freq, 3]); // 0013B, 2764 : lignes d'appui K = 3 (SBB = 0, combinaison fréquente)
+          var ta = globalThis.PSIDP_SMTA ? tp[top ? 1 : 0] : 0; // v32 (PSIDP_SMTA = 1) : ligne K = 5, SETRA ajoute la dénivellation d'appui déjà comprise dans XM (0013A appui 2 : SM = −659.269 = C.E. + TROTT + TA)
+          var tf = globalThis.PSIDP_SMTA === 2 ? ta : 0; // v32 (SMTA = 2) : idem sur les lignes K = 3 (combinaison fréquente ; 0015 appui 2 : SM = −374.572)
+          var cand = top ? [[-ft28, s.comb[1].qlqcta + ta, 5]] : [[-ft28, s.comb[0].qlqcta + ta, 5], [0, s.comb[0].freq + tf, 3]], bst = null;
+          if (top && FLR === 1 && globalThis.PSIDP_FLK3 !== 0) cand.push([0, s.comb[1].freq + tf, 3]); // 0013B, 2764 : lignes d'appui K = 3 (SBB = 0, combinaison fréquente)
           cand.forEach(function (cd) { var sb = A1 + cd[0] * E / vv + (CPTM - cd[1]) * E / I; rows.push(sb);
             if (!bst || sb > bst.sb) bst = { sb: sb, K: cd[2], SBB: cd[0], E: E, XM: XM, SM: cd[1] - XM, CPTM: CPTM, CPPM: CPTM * R.cp.sup[0] / R.cp.tot[0], A1: A1, A2: cd[0] * E / vv, A3: (CPTM - cd[1]) * E / I }; });
           if (rec) rec[ke.id] = bst;

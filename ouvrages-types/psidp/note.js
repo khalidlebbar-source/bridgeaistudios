@@ -1000,7 +1000,7 @@
     D.push('          VARIABLES ICR, II, JJ,    FM,    FMJ :');
     D.push(row([[23, String(icr || 1)], [27, '3'], [31, '7'], [39, fx(blk.FM, 0)], [47, fx(blk.FMJ || 0, 0)]]));
     D.push('          VARIABLES I,K,SBB(K),E(I),XM,SM,CPTM,CPPM,A1,A2,A3 :');
-    ['a' + (m + 1), 'b' + m, 'a' + m].forEach(function (id, i) {
+    (rec.r0 || rec.r1 ? ['r0', 'r1', 'r2'] : ['a' + (m + 1), 'b' + m, 'a' + m]).forEach(function (id, i) { // v32 : lignes I = 1..3 du critère (FLROWS)
       var r = rec[id]; if (!r) return;
       D.push(row([[26, String(i + 1)], [32, String(r.K)], [42, fx(r.SBB, 3)], [52, fx(r.E, 3)], [62, fx(r.XM, 3)], [72, fx(r.SM, 3)], [82, fx(r.CPTM, 3)],
         [92, fx(r.CPPM, 3)], [102, fx(r.A1, 3)], [112, fx(r.A2, 3)], [122, fx(r.A3, 3)]]));
