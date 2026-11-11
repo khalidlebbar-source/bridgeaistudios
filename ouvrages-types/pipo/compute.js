@@ -315,7 +315,18 @@
               : [ev(pp(cp.N * sn, 0)), ev(pp(0, cp.Mc * sn * sn)), pat, ev(pp(2.5 * g.e1 * B, 0)), vals[k][1], vals[k][4]];
             return [...at, els[k] - at.reduce((s, x) => s + x, 0)]; };
           const pv = semCases.map((cs, k) => parts(cs, k));
-          const uMax = pv.map(a => a.reduce((s, x) => s + (x > 0 ? 1.35 * x : x), 0)), uMin = pv.map(a => a.reduce((s, x) => s + (x < 0 ? 1.35 * x : x), 0));
+          let uMax = pv.map(a => a.reduce((s, x) => s + (x > 0 ? 1.35 * x : x), 0)), uMin = pv.map(a => a.reduce((s, x) => s + (x < 0 ? 1.35 * x : x), 0));
+          // Tour 15 — côté EXTÉRIEUR, deux groupes de charges permanentes à coefficient fixe (pas de règle du signe par part) :
+          // groupe « pesant » A = réaction du cadre (cp N + M), groupe DT, terres du patin (poids direct HAUTL et HSREMB + leur
+          // réaction propre), groupe piédroit (+ poids direct de la semelle pour l'effort tranchant) ; groupe B = le reste
+          // (poussées K, réaction des terres du talon, réaction du poids de semelle). MIN = 1.35·A + B ; moments : MAX = A + 1.35·B.
+          // Effort tranchant MIN 52/52, moments MIN et MAX 47/52 (13 passages) ; effort tranchant MAX : découpage du tour 13 (52/52).
+          if (SEMELU && side === 'E' && globalThis.PIPO_SEMEXT !== 0) {
+            const ev = (p, w) => semEff(p[0], p[1], side, t, w)[j], pp = (N, Mm) => [N / B - 6 * Mm / B / B, N / B + 6 * Mm / B / B];
+            const aA = vals.map(a => a[0] + a[1] + a[4] + ev(pp(patW, patMp), 0) + ev([0, 0], v.SPEC * v.HAUTL) + ev([0, 0], v.SPEC * v.HSREMB) + (j === 1 ? ev([0, 0], 2.5 * g.e1) : 0));
+            const uMin2 = aA.map((a, k) => 1.35 * a + (els[k] - a)), uMax2 = aA.map((a, k) => a + 1.35 * (els[k] - a));
+            uMin = uMin2; if (j === 0) uMax = uMax2;
+          }
           return { elsMax: Math.max(...els), elsMin: Math.min(...els), eluMax: Math.max(...uMax), eluMin: Math.min(...uMin) };
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);

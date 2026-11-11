@@ -75,13 +75,16 @@
     // tour 14 : la section minimale imprimée est calculée avec le diamètre de la disposition adoptée (premier suffisant) :
     // calcul d'abord avec φ2 (d = dP2) ; si la gamme retient φ1, section recalculée avec φ1 (d = dP1) et choix refait.
     // (cour : 1799/1815 exacts en φ1 ; base : 1638/1679/1799/1815/1846 φ1, 1676/1680/1825/1847 φ2 exacts.)
-    const chooseRe = (list, MU, MS) => { const NEW = globalThis.PIPO_FMPHI !== 0;
-      let Am = NEW ? need(MU, MS, dP2, 1) : null, k = 1, o;
+    // tour 15 : base des ouvrages biais — section biaise (d_b = e2/sinφ − c − 0.6φ − 1.1φ2), moment du cadre brut,
+    // section minimale = sinφ · A(M, d_b) (1677, 1796, 1893 exacts ; 1890 à 1e-6 près) ; option bias = [facteur, h].
+    const chooseRe = (list, MU, MS, bias) => { const NEW = globalThis.PIPO_FMPHI !== 0;
+      const [f, hh] = bias || [1, g.e2], d2 = dd(hh, 0.025, v.PHI2), d1 = dd(hh, 0.025, v.PHI1);
+      let Am = NEW ? f * need(MU, MS, d2, 1) : null, k = 1, o;
       if (!NEW) return null;
-      o = choose(list, Am); if (o.k === 0) { Am = need(MU, MS, dP1, 0); k = 0; o = choose(list, Am); } return { o, Am, k }; };
+      o = choose(list, Am); if (o.k === 0) { Am = f * need(MU, MS, d1, 0); k = 0; o = choose(list, Am); } return { o, Am, k }; };
     const L3 = [opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], L4 = [opt(1, 1), opt(0, 2), opt(0, 1)];
     const fb = globalThis.PIPO_FMBASE != null ? globalThis.PIPO_FMBASE(sn) : sn * sn; // base : moment × sin²φ (tour 14)
-    const rc = chooseRe(L3, pdU, pdS), rb = chooseRe(L4, -inf.elu * fb, -inf.els * fb);
+    const rc = globalThis.PIPO_PDB !== 0 ? chooseRe(L3, pdU / sn, pdS / sn, [1, g.e2 / sn]) : chooseRe(L3, pdU, pdS), rb = globalThis.PIPO_PDB !== 0 && globalThis.PIPO_FMBASE == null ? chooseRe(L4, -inf.elu, -inf.els, [sn, g.e2 / sn]) : chooseRe(L4, -inf.elu * fb, -inf.els * fb);
     min.kCour = 1; min.kBase = 0;
     if (rc) { min.pdCour = rc.Am; min.kCour = rc.k; } if (rb) { min.pdBase = rb.Am; min.kBase = rb.k; }
     ad.pdCour = Object.assign(rc ? rc.o : choose(L3, min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU } });
@@ -99,6 +102,14 @@
       const fp = /^(pd|sem)/.test(k) ? 1 / sn : 1; // piédroits et semelles : efforts par m biais (1638 : 181.64 = 181.53/sin φ)
       o.VRb = mat.tauLim * o.d * fp; // effort tranchant résistant béton : τlim · d
       o.VRs = 4 * o.A / o.phi * mat.tauSu * o.d * fp; // adhérence d'entraînement : périmètre 4A/φ × τs × d
+      // Tour 15 — piédroits des ouvrages biais (1890, 1893 exacts) : section biaise d'épaisseur e2/sinφ,
+      // d_b = e2/sinφ − c − 0.6φ − 1.1φ2 ; béton τlim·d_b ; acier 4A/φ·τs·d_b/sinφ² (angle, base), /sinφ (section courante) ;
+      // contraintes ELS avec le moment du cadre non multiplié par sinφ et A/sinφ (angle, base), M et A (section courante).
+      if (/^pd/.test(k) && globalThis.PIPO_PDB !== 0) {
+        const cour = k === 'pdCour', db = dd(g.e2 / sn, 0.025, o.phi);
+        Object.assign(o, elsStress(cour ? o.M.els : o.M.els / sn, cour ? o.A : o.A / sn, db));
+        o.VRb = mat.tauLim * db; o.VRs = 4 * o.A / o.phi * mat.tauSu * db / (cour ? sn : sn * sn);
+      }
     }
     // ---- ferraillage transversal (face intérieure de la traverse)
     // non-fragilité : A = ft·h²/(6·fe·0.9·d), d = h − 0.025 − φ2/2 (traverse, semelles) ; piédroits : d = h − 0.025 + φ2/2, ÷ sin φ
