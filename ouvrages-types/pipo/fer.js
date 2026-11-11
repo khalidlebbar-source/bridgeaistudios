@@ -98,7 +98,9 @@
     for (const k of ['semI', 'semE']) { const o = ad[k]; o.A = o.sol.A + o.fil.A; o.phi = o.sol.phi; o.d = dd(g.e1, 0.025, o.sol.phi); }
     for (const k of ['trInt', 'trSup', 'pdSup', 'pdCour', 'pdBase', 'semI', 'semE']) {
       const o = ad[k]; if (o.d == null) o.d = dd(o.h, 0.025, o.phi);
-      Object.assign(o, elsStress(o.M.els, o.A, o.d));
+      // Tour 16 — semelle extérieure (fers solidarisant, espacés le long du piédroit biais) : section A/sinφ par mètre
+      // perpendiculaire, d inchangé (1677, 1890, 1893 exacts avec le moment imprimé ; droits inchangés).
+      Object.assign(o, elsStress(o.M.els, k === 'semE' && globalThis.PIPO_SEMEB !== 0 ? o.A / sn : o.A, o.d));
       const fp = /^(pd|sem)/.test(k) ? 1 / sn : 1; // piédroits et semelles : efforts par m biais (1638 : 181.64 = 181.53/sin φ)
       o.VRb = mat.tauLim * o.d * fp; // effort tranchant résistant béton : τlim · d
       o.VRs = 4 * o.A / o.phi * mat.tauSu * o.d * fp; // adhérence d'entraînement : périmètre 4A/φ × τs × d
@@ -165,7 +167,23 @@
     const trav = [[ti[3], L - ti[0]], [ti[0], L - ti[3]], [ti[2], L - ti[1]], [ti[1], L - ti[2]]];
     // extérieur, angle supérieur : côté traverse (depuis l'angle), côté piédroit (depuis la base)
     const te = seuil(T, T[0], true).map(x => x + aT);
-    const Pd = [...P].reverse(); const tp = seuil(Pd, Pd[0], true).map(x => Math.max(0, x - aP));
+    const Pd = [...P].reverse(); let tp = seuil(Pd, Pd[0], true).map(x => Math.max(0, x - aP)); const tp0 = tp;
+    // Tour 16 — côté piédroit (P1S…P4S, 34/52 exacts contre 0) : seuils sur le moment rapporté au moment résistant de la
+    // nappe adoptée (approximation linéaire M_R = M_angle·A_adoptée/A_nécessaire) : M(x)/M_angle ≤ k·ρ,
+    // ρ = Q / A_nécessaire(M_angle) — M_angle = moments ELU/ELS de l'angle supérieur, section biaise du piédroit d_b ;
+    // k = 3/4, 1/2, 1/4 ; 4e barre : k = A_aux/Q (aciers de prolongement φ2 à 2·eP) ; origine = x − 0.8·e2/sinφ − ls,
+    // ls = φ·(fe/γs)/(4·τsu) (scellement droit sous la contrainte de calcul ELU : notice §3.3.5 « décalage + ancrage »).
+    if (globalThis.PIPO_EPANG !== 0) {
+      const mat = r.mat, sn = g.sn, phi = ad.trSup.phi, db = g.e2 / sn - 0.025 - 0.6 * phi - 1.1 * v.PHI2, Ms = ad.trSup.M;
+      const R0 = { minU: -Ms.elu, minS: -Ms.els }, T0 = Pd[0];
+      const Areq = Math.max(asELU(Ms.elu, db, mat.fbu, mat.ssElu[0]), asELS(Ms.els, db, v.FIP ? mat.ssEls[0] : 0, v.SIGMAF));
+      const Q = ad.trSup.A, Aaux = aire(v.PHI2) / (2 * eP);
+      const ls = phi * v.SIGMA1 / 1.15 / (4 * mat.tauSu), off = 0.8 * g.e2 / sn + ls;
+      let rho = Q / Areq, Rr = R0;
+      if (globalThis.PIPO_EPV) { const o = globalThis.PIPO_EPV({ ad, T0, db, mat, v, asELU, asELS, Q, Areq, sn }); rho = o.rho; Rr = o.R0 || T0; }
+      const ks = (globalThis.PIPO_EPK || [0.75, 0.5, 0.25, -1]).map(k => k < 0 ? -k * Aaux / Q : k);
+      tp = ks.map(k => { for (const o of Pd) if (Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * rho + 1e-9) return o.x - off; return Pd[Pd.length - 1].x - off; });
+    }
     const pairs = [[tp[1], te[2]], [tp[3], te[0]], [tp[0], te[3]], [tp[2], te[1]]]; // barres 1..4 (cf. 1638)
     const ang = pairs.map(([p, b]) => [p, b, H - p + b + (g.e2 + g.e3) / 2]);
     // intérieur piédroit (nappe 3) : épure de la moitié des aciers (seuil 3/4 de part et d'autre du maximum)
@@ -176,7 +194,7 @@
     const pied = deux ? [[s34(dn) - aP, H], [-0.25, s34(up) + aP]] : [[g.e1 / 2, H]];
     // semelles : fers solidarisant (abscisses sur le piédroit depuis la base, extrémité au bord de la semelle)
     const E5SI = g.D + g.B / 2, E5SE = -(r.aExt + g.e2 / 2), A5S = g.e1 / 2 + 0.6;
-    const p5 = [Math.max(A5S, tp[2] - 0.6), Math.max(A5S, tp[1])];
+    const p5 = [Math.max(A5S, tp0[2] - 0.6), Math.max(A5S, tp0[1])]; // (approché, ancienne règle : nappe 4 non reconstituée)
     return { trav: trav.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]), ang: ang.map(x => x.map(r2)), pied: pied.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]),
       semI: p5.map(p => [r2(p), r2(E5SI), r2(p + E5SI + g.e1)]), semE: [r2(A5S), r2(E5SE), r2(A5S - E5SE + g.e1)] };
   }
