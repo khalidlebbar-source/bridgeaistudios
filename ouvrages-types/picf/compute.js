@@ -504,13 +504,18 @@
     const vWheel = (a, dd) => a.a - dd.hsrem;
     let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : null, envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p')));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
-    for (const key of root.PICF_VBNC ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    const VBSYM = root.PICF_VBSYM != null ? root.PICF_VBSYM : 1;
+    for (const key of root.PICF_VBNC || VBSYM === 1 ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    // session j : radier — à mi-portée SETRA imprime MAX = −MIN = (MAX − MIN)/2 (ordonnée du saut de la LI prise à mi-hauteur à x = L/2 :
+    // moyenne de la section et de son symétrique) ; VBSYM 1 : section x = L/2 calculée, 2 : à partir de la section précédente recopiée, 0 : ancien
+    if (VBSYM) { const a = R.env.Vb; a[a.length - 1] = Object.assign({}, a[a.length - 1]); const e = a[a.length - 1]; for (const k of Object.keys(e)) if (k.endsWith('+') && e[k.slice(0, -1) + '-']) { const p = e[k], n = e[k.slice(0, -1) + '-'], h = (p.v - n.v) / 2;
+      e[k] = Object.assign({}, p, { v: h }); e[k.slice(0, -1) + '-'] = Object.assign({}, n, { v: -h }); } }
     // V traverse inférieure à l'angle (x = 0) : SETRA imprime MIN = 0 pour toutes les surcharges (2531/2550/2551, EC34 compris) ;
     // nos minima (−0.3 à −1.5 kN) viennent de la LI légèrement négative sur la dalle de transition opposée (hook PICF_VB0 = ancien).
     if (!root.PICF_VB0 && R.env.Vb.length) { const e = R.env.Vb[0]; for (const k of Object.keys(e)) if (k.endsWith('-') && e[k].v < 0) e[k] = Object.assign({}, e[k], { v: 0 }); }
     R.sections = { t: secB, b: secB, w: secWfull, det: [0, 1, 2, 3, 4, 5] };
     R.cmp = combine(R, d, hasEC);
-    R.tr = transversal(R, d, { conv, dyn, coefs, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup });
+    R.tr = transversal(R, d, { conv, dyn, coefs, c0, c1, v, nvoi, a1tab, a2, hasEC, ch, qsup, STP });
     R.fer = ferraillage(R, d);
     R.det = detailing(R, d);
     // avant-métré (règles déduites des p.32) : goussets supposés 0.50×0.50 (sup.) et 0.60×0.60 (inf.)
@@ -749,7 +754,19 @@
     const t30 = Math.tan(Math.PI / 6), sL = 2 * d.hchau + 2 * d.hsrem * t30 + d.e3;
     const fac = (c2, F3) => { const cc = Math.min(c2, l); return HM.map((m, k) => { const F1 = Math.sin(m * Math.PI * cc / 2 / l), F2 = 1 / m; return { m, F1, F2, F3: F3[k], M: F1 * F2 * F3[k] * 4 / Math.PI * bT / cc }; }); };
     const sum = rows => rows.reduce((a, r) => a + r.M, 0);
-    const distrib = (q, y0, y1) => fac(l, HM.map((m, k) => q * G * l * integ(k, y0, y1)));
+    // Session j : charges réparties — intégration de μ par la méthode des trapèzes sur une grille uniforme de la largeur de la plaque
+    // équivalente [−bT, bT] : 8 intervalles entre les 9 fibres de Guyon (pas bT/4), chacun subdivisé pour un pas ≤ pas des tableaux
+    // (N = 8·⌈2bT/(8·STP)⌉ : 32 pour 2531/2550/2551, 40 pour 2498), la fibre 0 sur un nœud (d'où l'artefact F3 ≈ constant en m) ;
+    // bornes de la bande chargée insérées comme nœuds ; charge totale sur la portée biaise entre axes L (et non la longueur l de la plaque).
+    const TRG = root.PICF_TRG != null ? root.PICF_TRG : 1; // 1 : charges réparties ; 2 : bandes des convois
+    const NG = root.PICF_TRNG ? root.PICF_TRNG(bT, X.STP) : 8 * Math.ceil(2 * bT / (8 * X.STP) - 1e-9), hG = 2 * bT / NG;
+    const muG = HM.map(m => { const a = []; for (let i = 0; i <= NG; i++) a.push(guyonMu(m * thT, 0, (-bT + i * hG) / bT)); return a; });
+    const trapG = (k, y0, y1) => { y0 = Math.max(-bT, y0); y1 = Math.min(bT, y1); if (!(y1 > y0)) return 0;
+      if (root.PICF_TRS) { let t = 0; for (let i = 0; i <= NG; i++) { const y = -bT + i * hG, w = (i == 0 || i == NG) ? 0.5 : 1; const inb = y > y0 + 1e-9 && y < y1 - 1e-9 ? 1 : (Math.abs(y - y0) < 1e-9 || Math.abs(y - y1) < 1e-9 ? 0.5 : 0); t += w * inb * muG[k][i]; } return t * hG; } const f = y => guyonMu(HM[k] * thT, 0, y / bT);
+      const xs = [y0], fs = [f(y0)]; for (let i = 0; i <= NG; i++) { const y = -bT + i * hG; if (y > y0 + 1e-9 && y < y1 - 1e-9) { xs.push(y); fs.push(muG[k][i]); } } xs.push(y1); fs.push(f(y1));
+      let t = 0; for (let i = 0; i < xs.length - 1; i++) t += (fs[i] + fs[i + 1]) / 2 * (xs[i + 1] - xs[i]); return t; };
+    const Lsp = TRG ? R.geom.L : l;
+    const distrib = (q, y0, y1) => fac(l, HM.map((m, k) => q * G * Lsp * (TRG ? trapG(k, y0, y1) : integ(k, y0, y1))));
     // charges ponctuelles : groupe longitudinal (2c), positions transversales relatives ws (poids P t par file), largeur a
     const point = (P, c2, ws, a, lo, hi) => {
       let best = null; // lo/hi : bornes des positions des files (ws relatives)
@@ -767,15 +784,19 @@
     const sDt = root.PICF_TRSD ? root.PICF_TRSD(d) : sL; // 45° chaussée, 30° remblai, + E3 (comme la diffusion longitudinale des chenilles)
     const bandF3 = (P, c2, cs, a, one) => { const w = a + sDt; const iv = cs.map(x => [x - w / 2, x + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
       for (const q of iv) { const Lq = cl[cl.length - 1]; if (Lq && q[0] <= Lq[1] + 1e-9) { Lq[1] = Math.max(Lq[1], q[1]); Lq[2]++; } else cl.push([q[0], q[1], 1]); }
-      return HM.map((m, k) => { let t = 0; for (const [l0, l1, nn] of cl) { const lo = Math.max(-b, l0), hi = Math.min(b, l1); if (hi > lo) t += (one ? 1 : nn) * integ(k, lo, hi) / (l1 - l0); } return P / cs.length * G * Math.min(1, l / c2) * t; }); };
+      const bB = root.PICF_TRCB ? bT : b;
+      return HM.map((m, k) => { let t = 0; for (const [l0, l1, nn] of cl) { const lo = Math.max(-bB, l0), hi = Math.min(bB, l1); if (hi > lo) t += (one ? 1 : nn) * ((TRG & 2) && !exactF ? trapG(k, lo, hi) : integ(k, lo, hi)) / (l1 - l0); } return P / cs.length * G * Math.min(1, ((TRG & 2) && root.PICF_TRLC ? Lsp : l) / c2) * t; }); }; // charge sur la portée biaise L (comme les charges réparties)
+    let exactF = false; const SEL = (TRG & 4) || root.PICF_TRSEL; // sélection de la position / du nombre de véhicules sur l'intégrale exacte de μ
     // véhicules de front (Bc, Bt) : toutes les empreintes fondues ensemble (meilleur que la somme par véhicule ; hook PICF_TRV)
     const veh = (P, c2, ws, a, lo, hi, nveh, sp, one) => { let best = null; nveh = nveh || 1; sp = sp || 0;
       for (let st = lo - ws[0]; st + (nveh - 1) * sp + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) {
         let F3 = [0, 0, 0];
         if (root.PICF_TRV) { for (let u = 0; u < nveh; u++) { const f = bandF3(P, c2, ws.map(w => st + u * sp + w), a); F3 = F3.map((x, k) => x + f[k]); } }
-        else { const cs = []; for (let u = 0; u < nveh; u++) for (const w of ws) cs.push(st + u * sp + w); F3 = bandF3(P * nveh, c2, cs, a, one); }
-        const rows = fac(c2, F3), tot = sum(rows); if (!best || tot > best.tot) best = { rows, tot }; }
-      return best || { rows: fac(c2, [0, 0, 0]), tot: 0 }; };
+        else { const cs = []; for (let u = 0; u < nveh; u++) for (const w of ws) cs.push(st + u * sp + w); F3 = bandF3(P * nveh, c2, cs, a, one);
+          if (SEL) { const Fx = root.PICF_TRSEL === 2 ? (exactF = true, bandF3(P * nveh, c2, cs, a, one)) : HM.map((m, k) => P * nveh / cs.length * G * Math.min(1, l / c2) * cs.reduce((t, y) => t + (root.PICF_TRSEL === 3 ? mubar(k, y, a + sDt) : root.PICF_TRSEL === 4 ? mubar(k, y, a + 2 * d.hchau + d.e3) : lin(tab[k].a, y)), 0)); exactF = false; var key = sum(fac(c2, Fx)); } }
+        if (root.PICF_DBG) root.PICF_DBG({ P, c2, nveh, st, F3, l, bT, b, sDt, a });
+        const rows = fac(c2, F3), tot = sum(rows), kk = SEL && key != null ? key : tot; if (!best || kk > best.key + 1e-9) best = { rows, tot, key: kk }; }
+      return best || { rows: fac(c2, [0, 0, 0]), tot: 0, key: 0 }; };
     const MGt = d.egau > 0 && d.edroi > 0 ? 0 : 0.5;
     const mid = c => c[c.length - 1];
     const Tm = mid(R.cmp.t);
@@ -805,17 +826,18 @@
     out.perm = { rows: perm, tot: Mp };
     const live = (key, Ml) => comb(Mp, 1.35 * Mp, gS[key] * Ml, gU[key] * Ml, Tm.perm.maxS + gS[key] * Tm.lmax[key], Tm.perm.maxU + gU[key] * Tm.lmax[key]);
     { // AL : voies de la chaussée, A(l) sur la longueur de la plaque
-      const qA = 0.23 + 36 / (l + 12);
-      const lanes = []; for (let j = 0; j < nvoi; j++) { const sA = (TRB & 2) ? sDt : 0;
-        const rows = sA > 0 ? distrib(qA * v / (v + sA), Math.max(-b, c0 + j * v - sA / 2), Math.min(b, c0 + (j + 1) * v + sA / 2)) : distrib(qA, c0 + j * v, c0 + (j + 1) * v); lanes.push({ rows, tot: sum(rows) }); }
+      const qA = 0.23 + 36 / ((TRG ? Lsp : l) + 12); // A(l) sur la portée biaise L (session j)
+      const lanes = []; for (let j = 0; j < nvoi; j++) { const sA = (TRB & 2) ? (root.PICF_TRALS != null ? 2 * d.hchau + 2 * d.hsrem * root.PICF_TRALS + d.e3 : sDt) : 0;
+        const bC = (TRG && !root.PICF_TRALB) ? bT : b, lo = Math.max(-bC, c0 + j * v - sA / 2), hi = Math.min(bC, c0 + (j + 1) * v + sA / 2), wN = root.PICF_TRALC ? hi - lo : v + sA; // session j : voie diffusée coupée aux bords de la plaque équivalente ±bT (pas de la dalle), partie hors plaque perdue (PICF_TRALB : ±b ; PICF_TRALC : renormalisée)
+        const rows = sA > 0 ? distrib(qA * v / wN, lo, hi) : distrib(qA, c0 + j * v, c0 + (j + 1) * v); lanes.push({ rows, tot: sum(rows) }); }
       let best = 0; for (let k = 1; k <= nvoi; k++) for (let st = 0; st + k <= nvoi; st++) { let s = 0; for (let j = st; j < st + k; j++) s += lanes[j].tot; best = Math.max(best, s * a1tab[Math.min(k, a1tab.length) - 1] * a2); }
       out.service.push({ key: 'AL', name: 'AL', lanes, tot: best, comb: live('AL', best) });
     }
     const add = (key, name, res, k) => { const tot = res.tot * k; out.service.push({ key, name, rows: res.rows, cmd: dyn[key].d, tot, comb: live(key, tot) }); };
     if (TRB & 1) {
       { let best = null; for (let n = 1; n <= Math.min(nvoi, 4); n++) { const res = veh(24, 1.5 + 0.25 + sL, [0, 2], 0.25, c0 + MGt + 0.25, c1 - MGt - 0.25, n, 2.5), bc = [1.2, 1.1, 0.95, 0.8][n - 1];
-          if (!best || res.tot * bc > best.res.tot * best.bc) best = { res, bc }; } add('BC', 'BC', best.res, best.bc * dyn.BC.d); }
-      { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const res = veh(32, 1.35 + 0.25 + sL, [0, 2], 0.6, c0 + MGt + 0.5, c1 - MGt - 0.5, n, 3); if (!best || res.tot > best.tot) best = res; }
+          if (!best || res.key * bc > best.res.key * best.bc + 1e-9) best = { res, bc }; } add('BC', 'BC', best.res, best.bc * dyn.BC.d); }
+      { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const res = veh(32, 1.35 + 0.25 + sL, [0, 2], 0.6, c0 + MGt + 0.5, c1 - MGt - 0.5, n, 3); if (!best || res.key > best.key + 1e-9) best = res; }
         add('BT', 'BT', best, dyn.BT.d); }
       // Mc120 / Me120 / E : charge d'une file (chenille 55 t, essieu 33 t, demi-remorque 100 t) sur la bande fusionnée du véhicule
       add('MC', 'MC120', veh(110, 6.1 + sL, [0, 3.3], 1.0, c0 + 1.0, c1 - 1.0, 1, 0, !root.PICF_TRM), dyn.MC.d); // chenilles fondues : une seule chenille (55 t) portée
