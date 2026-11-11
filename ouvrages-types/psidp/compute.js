@@ -6,7 +6,8 @@
   var gr = function (x) { return x * PI / 200; };
   // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
   // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
-  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1 };
+  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1 };
+  // v28 : FM1 = force d'inscription à force unique au bloc 1 ; DCB = règle β exacte du ΔC au bloc 1 (activable maintenant que FM1 est juste).
   for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
   // ---------------------------------------------------------------- algèbre
@@ -1278,6 +1279,7 @@
           var a1 = s / t1, e = 0;
           ks.forEach(function (q) { var u = Math.abs(X(q) - xm); var zz = u <= t1 ? zm + a1 * u * u : ze - a2 * (d - u) * (d - u); e += Math.pow(zz - (c[q] - VP), 2); });
           if (!best || e < best.e - 1e-15) best = { e: e, a1: a1, a2: a2, t1: t1, R: Rr };
+          if (typeof globalThis.PSIDP_RIMP === 'function' && globalThis.PSIDP_RIMP(t, side) === Rr) { best = { e: -1, a1: a1, a2: a2, t1: t1, R: Rr }; break; } // banc (rayon imposé), absent en usage normal
         }
         var xt = xm + side * best.t1;
         segs.push({ a: best.a1, x0: xm, z0: zm, from: Math.min(xm, xt), to: Math.max(xm, xt) });
@@ -1400,10 +1402,13 @@
     var ft28 = -Lm.trEnrQC;
     // ---------------------------------------------------------------- bornes du fuseau à une section
     var bounds = function (t, k, Tms, Tes, Ti, N) {
+      return boundsF(t, k, N * A * (1.02 * s0 - 0.8 * (s0 - Tms)), N * A * (0.98 * s0 - 1.2 * (s0 - Tes)), N * A * (1.02 * s0 - 0.8 * (s0 - Ti)));
+    };
+    // bornes du fuseau pour des forces données (MS max, ES min, T initiale max)
+    var boundsF = function (t, k, MSmx, ESmn, TImx) {
       var s = sec(t, k), c = s.comb, tp = s.tp || [0, 0], x = k / 10;
       var end = t === 0 ? 'L' : (t === n - 1 ? 'R' : null), lo = end === 'L' ? 0.3 : 0.4, hi = end === 'R' ? 0.7 : 0.6;
       var teH = x >= lo - 1e-9 && x <= hi + 1e-9, beH = (x >= 0.9 - 1e-9 && t < n - 1) || (x <= 0.1 + 1e-9 && t > 0);
-      var MSmx = N * A * (1.02 * s0 - 0.8 * (s0 - Tms)), ESmn = N * A * (0.98 * s0 - 1.2 * (s0 - Tes)), TImx = N * A * (1.02 * s0 - 0.8 * (s0 - Ti));
       var cs = [];
       [MSmx, ESmn].forEach(function (p) {
         cs.push([p, s.cp[0] + tp[0], 0, Lm.trHors, Lm.comp], [p, s.cp[1] + tp[1], 0, Lm.trHors, Lm.comp]);
@@ -1556,6 +1561,29 @@
     // RÈGLE v20 (PSIDP_FMPREV = 1) : un bloc de rang ≥ 2 prend FM = N·A·E.S et FMJ = N·A·T initiale du tableau PRÉCÉDENT
     // à la section critique de ce tableau (pas de point fixe sur son propre tableau) ; la ligne d'about suit le critère précédent.
     var FMPREV = globalThis.PSIDP_FMPREV || 0;
+    // RÈGLE v28 (crochet PSIDP_FM1, défaut 1) : FM du bloc 1 du « CALCUL ITERATIF » = force nécessaire à l'INSCRIPTION du câble dans
+    // la structure, calculée avec une force UNIQUE P (mêmes P pour M.S, E.S et T initiale, sans coefficients 1.02/0.98 ni pertes) :
+    // plus petite P telle que, dans chaque travée, le fuseau limite tienne entre zs (appuis) et zi (travée) — même critère que
+    // nombres(), maximum sur les travées. Indépendante de A, du frottement et de NCA (0015/0015A, 2483…2488) ; ICR = 1 au bloc 1.
+    // Vérifiée à l'arrondi près sur 11 passages (écarts 2483–2488 +0.27 %, 0014 +3.8 % = moments de la section 16 faux).
+    var pIns = function () {
+      var bP = function (t, k, P) { return boundsF(t, k, P, P, P); }, best = -Infinity;
+      for (var t = 0; t < n; t++) {
+        var f = function (P) {
+          var ml = Infinity, xl = 0; for (var kk = 1; kk < 10; kk++) { var b = bP(t, kk, P); if (b.sup < ml) { ml = b.sup; xl = kk / 10; } }
+          var il = t === 0 ? null : bP(t, 0, P).inf, ir = t === n - 1 ? null : bP(t, 10, P).inf;
+          if (il !== null && ir !== null) return (il + ir) / 2 - ml - (zs - zi);
+          if (il === null && ir === null) return zi - ml;
+          if (il === null) return (zi - ml) / xl - (zs - ir);
+          return (zi - ml) / (1 - xl) - (zs - il);
+        };
+        var a = 1, b2 = 1e5; if (f(b2) > 0) continue;
+        for (var j = 0; j < 80; j++) { var mm = (a + b2) / 2; if (f(mm) > 0) a = mm; else b2 = mm; }
+        best = Math.max(best, b2);
+      }
+      return isFinite(best) ? best : null;
+    };
+    var FM1v = null, FM1on = globalThis.PSIDP_FM1 === undefined ? 1 : globalThis.PSIDP_FM1;
     var prevF = function (Bp, N) { var c = Bp && Bp.nb && Bp.nb.crit; if (!FMPREV || !c) return null; var g = Bp.G[c.t * 11 + c.k]; return [N * A * g.es, N * A * g.Ti, c.by, c]; };
     // N de FM : nombre de câbles courant AVANT la mise à jour par « NOMBRES DE CABLES » (0013 : tableau réajusté à 17 câbles, FM à 16 ;
     // cycle N + 1 : FM à N + 1, cf. 2481, 2764) — Nfm = N du tableau précédent pour le bloc réajusté d'un cycle.
@@ -1563,7 +1591,9 @@
     // du tableau précédent à sa section critique, tracé = base du bloc réajusté précédent (bloc approché) ou base propre (bloc réajusté)
     var dcmOf = function (Bp, N, base, kind) { var c = Bp && Bp.nb && Bp.nb.crit; if (globalThis.PSIDP_DCMEAN !== 1 || !c) return null;
       return { F: N * A * Bp.G[c.t * 11 + c.k].Ti, base: kind === 'REAJUSTEES' || Bp.kind !== 'REAJUSTEES' ? base : Bp.base }; };
-    var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var Nf = (FMPREV === 2 ? 0 : Nfm) || N, f = prevF(Bp, Nf), dm = dcmOf(Bp, Nf, base, kind); return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null, dm) : block(N, base, kind, keyE, undefined, undefined, undefined, undefined, null, dm); };
+    var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var Nf = (FMPREV === 2 ? 0 : Nfm) || N, f = prevF(Bp, Nf), dm = dcmOf(Bp, Nf, base, kind);
+      if (!f && !Bp && kind === 'APPROCHEES' && FM1on === 1) { if (FM1v === null) FM1v = pIns() || 0; if (FM1v > 0) return block(N, base, kind, keyE, FM1v, undefined, 'ins', undefined, null, dm); }
+      return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null, dm) : block(N, base, kind, keyE, undefined, undefined, undefined, undefined, null, dm); };
     var solveN = function (N, base, kind, keyE, Bp) {
       var B, seen = {};
       for (var it = 0; it < 15; it++) {
