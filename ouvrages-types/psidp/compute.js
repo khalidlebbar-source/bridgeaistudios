@@ -1738,7 +1738,18 @@
             // essai v19 : point bas de rive = max(bord inf, zi − x_rel·(zs − z_appui), point tel que T2 passe au bord inf à 0.2 L de la culée)
             var zf8 = t === 0 ? zi - xr7 * (zs - P3.zs[1]) : zi - (1 - xr7) * (zs - P3.zs[n - 1]);
             var u8 = t === 0 ? 0.2 * L[t] / P3.xl[t] : 0.2 * L[t] / (L[t] - P3.xl[t]), zt8 = ginf(t, t === 0 ? 2 : 8) / (2 * u8 - u8 * u8);
-            P4.zl[t] = Math.max(P4.zl[t], zf8, u8 < 1 ? zt8 : -Infinity); }
+            if (globalThis.PSIDP_T2RIVE === 0) P4.zl[t] = Math.max(P4.zl[t], zf8, u8 < 1 ? zt8 : -Infinity);
+            else {
+              // RÈGLE v33 (paraboles limites imprimées, 9 passages de réglage, 20 systèmes) : point bas de T2 en rive = max(bord inf,
+              // zi − x_rel·(zs − z_appui)) relevé par pas de 0.005 m jusqu'à ce que T2 (parabole issue de la culée) reste au-dessus du
+              // bord inf − T2TOL (0.005 m, même tolérance que le rayon de T2) aux sections 0.1 L situées entre la culée et le point bas.
+              // Marges imprimées à 0.2 L : −0.0050 … −0.0011 (pas de 0.005 × 0.75). PSIDP_T2RIVE = 0 : ancien relèvement continu strict.
+              var tol8 = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0.005, z8 = Math.max(P4.zl[t], zf8), xlr = t === 0 ? P3.xl[t] : L[t] - P3.xl[t];
+              for (var it8 = 0; it8 < 400; it8++) { var ok8b = true;
+                for (var k8b = 1; k8b < 10; k8b++) { var dx8 = k8b * L[t] / 10; if (dx8 >= xlr - 1e-9) break; var uu = dx8 / xlr;
+                  if (z8 * (2 * uu - uu * uu) < ginf(t, t === 0 ? k8b : 10 - k8b) - tol8 - 1e-9) ok8b = false; }
+                if (ok8b) break; z8 += 0.005; }
+              P4.zl[t] = z8; } }
           else if (n > 1 && (globalThis.PSIDP_T2MODE === 1 || globalThis.PSIDP_T2MODE === 2)) { var zf7 = t === 0 ? zi - xr7 * (zs - P3.zs[1]) : zi - (1 - xr7) * (zs - P3.zs[n - 1]); P4.zl[t] = globalThis.PSIDP_T2MODE === 2 ? zf7 : Math.max(P4.zl[t], zf7); }
         }
       }
