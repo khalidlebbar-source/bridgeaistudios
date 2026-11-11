@@ -399,7 +399,13 @@
     // sur appuis : appuis intermédiaires = enveloppe des travées adjacentes
     r.cmdAppui = Array.from({ length: n + 1 }, (_, k) => {
       const adj = [k - 1, k].filter(s => s >= 0 && s < n);
-      return { bc: Math.max(...adj.map(s => r.cmd[s].bc)), mc: Math.max(...adj.map(s => r.cmd[s].mc)), end: k === 0 || k === n };
+      const end = k === 0 || k === n;
+      const o = { bc: Math.max(...adj.map(s => r.cmd[s].bc)), mc: Math.max(...adj.map(s => r.cmd[s].mc)), end };
+      // culées (notice PSIDP-EL, page « COEFFICIENTS DE MAJORATION DYNAMIQUE SUR APPUIS », valeurs « fixées arbitrairement
+      // par le programme ») : δ culée = (δ travée + 1,5)/2 pour B, (δ travée + 1,2)/2 pour Mc120 (convois : (1 + 1,2)/2 = 1,1),
+      // jamais inférieur au δ de la travée de rive. Crochet PSIDA_DYNC0 = 1 : δ de la travée (ancien calcul).
+      if (end && !globalThis.PSIDA_DYNC0) { o.bc = Math.max(o.bc, (o.bc + 1.5) / 2); o.mc = Math.max(o.mc, (o.mc + 1.2) / 2); }
+      return o;
     });
 
     // --- coefficients de répartition transversale (Guyon-Massonnet)
