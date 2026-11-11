@@ -213,7 +213,9 @@
     const ywl = Array.from(new Set([...secWfull, H / 2].map(x => +x.toFixed(6)))).sort((a, b) => a - b);
     const EAF = 1e4; // SETRA néglige les déformations d'effort normal (barres quasi inextensibles)
     const EIt = Ev * 1000 * d.e3 ** 3 / 12, EIb = Ev * 1000 * d.e1 ** 3 / 12, EIw = Ev * 1000 * (d.e2 / s) ** 3 / 12;
-    const m = buildFrame({ L, H, xt: xsTop, xb: xsBot, yw: ywl, EIt, EIb, EIw, EAt: EAF * Ev * 1000 * d.e3, EAb: EAF * Ev * 1000 * d.e1, EAw: EAF * Ev * 1000 * d.e2 / s, k: kv });
+    // crochet d'essai PICF_EA : EA = PICF_EA·EI (règle PIPO tour 17 : 1e6) ; défaut : EA = 1e4·Ev·e
+    const EAr = root.PICF_EA, EAt = EAr ? EAr * EIt : EAF * Ev * 1000 * d.e3, EAb = EAr ? EAr * EIb : EAF * Ev * 1000 * d.e1, EAw = EAr ? EAr * EIw : EAF * Ev * 1000 * d.e2 / s;
+    const m = buildFrame({ L, H, xt: xsTop, xb: xsBot, yw: ywl, EIt, EIb, EIw, EAt, EAb, EAw, k: kv });
     R._frame = m;
     const idx = (arr, x) => arr.findIndex(v => Math.abs(v - x) < 1e-6);
     // points d'étude
@@ -298,7 +300,7 @@
     if (ch) { cases.chqN = scaleRes(qUnit, ch.qn * 0); cases.chRN = scaleRes(rUnit, ch.rn); cases.chRX = scaleRes(rUnit, ch.rx); }
     // température : dilatation imposée de la traverse supérieure ; module différé,
     // part rapidement variable affectée du rapport Ei/Ev
-    const tUnit = (() => { const F = new Float64Array(m.n); const N = EAF * Ev * 1000 * d.e3 * 1e-5; F[m.top[0] * 3] -= N; F[m.top[m.top.length - 1] * 3] += N; return run({ F, fm: new Map() }); })();
+    const tUnit = (() => { const F = new Float64Array(m.n); const N = EAt * 1e-5; F[m.top[0] * 3] -= N; F[m.top[m.top.length - 1] * 3] += N; return run({ F, fm: new Map() }); })();
     const ter = d.ter || 0, rr = Ei / Ev;
     cases.tempP = scaleRes(tUnit, (d.tep - ter) + ter * rr); // dilatation
     cases.tempM = scaleRes(tUnit, (d.tem + ter) - ter * rr); // contraction (tem < 0)
@@ -419,13 +421,22 @@
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
     function ilAvg(getter, x, a, nd) { if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / 0.1)); let sm = 0;
-      const SPL = root.PICF_VTSPL && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? root.PICF_VTSPL : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
-      for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n; if (SPL && rg(u) !== r0) { if (SPL === 2) sm += ilVal(getter, r0 < 0 ? -1e-9 : r0 > 0 ? L + 1e-9 : (u < 0 ? 0 : L), nd); continue; } sm += ilVal(getter, u, nd); } return sm / n; }
+      const SPL = (root.PICF_VTSPL ?? 5) && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? (root.PICF_VTSPL ?? 5) : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
+      const Lg = getter.Ld || Ld0, e0 = getter.ends ? getter.ends[0] : getter(0), e1 = getter.ends ? getter.ends[1] : getter(xsTop.length - 1);
+      for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n;
+        // essai PICF_VTSPL = 3 : charge dont le centre est sur une dalle de transition → toute l'empreinte sur la LI de la dalle (prolongée)
+        // V TS (RETENU, défaut 5) : charge (essieu, chenille) dont le CENTRE est sur une dalle de transition → partie de l'empreinte hors
+        // de la dalle perdue ; centre dans la travée → empreinte complète (Mc « dalle seule » jusqu'à x = λ/2)
+        if ((SPL === 5 || SPL === 6) && rg(u) !== r0 && r0 !== 0 && (root.PICF_VTSPLC || ['MC', 'BC', 'BT', 'ME']).includes(envConv)) { if (SPL === 6 && !nd) sm += r0 < 0 ? e0 : e1; continue; } // essai 5 : centre sur la dalle → partie hors dalle perdue
+        if (SPL === 3 && rg(u) !== r0 && r0 !== 0 && Lg > 0) { if (nd) continue; sm += r0 < 0 ? (u < -Lg ? 0 : e0 * (1 + u / Lg)) : (u > L + Lg ? 0 : e1 * (1 - (u - L) / Lg)); continue; }
+        if (SPL >= 3 && rg(u) !== r0 && r0 === 0 && SPL === 4) { sm += r0 === 0 && u < 0 ? e0 * 0 : 0; continue; }
+        if (SPL >= 3) { sm += ilVal(getter, u, nd); continue; }
+        if (SPL && rg(u) !== r0) { if (SPL === 2) sm += ilVal(getter, r0 < 0 ? -1e-9 : r0 > 0 ? L + 1e-9 : (u < 0 ? 0 : L), nd); continue; } sm += ilVal(getter, u, nd); } return sm / n; }
     // chenilles Mc / convoi E (hook d'essai PICF_MCL) : densité P/λ, aire sur floor(λ/pas)·pas
     const MCL = root.PICF_MCL;
     const mcl = MCL ? (getter, x, ax, nd) => { const lam = MCL.lam(d, ax), li = MCL.floor ? Math.floor(lam / STP + 1e-9) * STP : lam;
       const xc = MCL.align === 'start' ? x - lam / 2 + li / 2 : x; return ax.P / lam * li * ilAvg(getter, xc, li, nd); } : null;
-    let envKey = null, envIdx = -1;
+    let envKey = null, envIdx = -1, envConv = null;
     function envelope(getter, nd, nodyn, wnd) {
       const res = {};
       // AL : zones de même signe ; longueur chargée = somme des zones
@@ -454,7 +465,7 @@
         res['AL' + (sg > 0 ? '+' : '-')] = { v: sg * best.v * G * coefs.ALf, len: best.len };
       }
       for (const key of ['BC', 'BT', 'MC', 'ME', 'E'].concat(hasEC ? ['EC'] : [])) {
-        const cv = conv[key]; let mx = 0, mn = 0, pmx = null, pmn = null;
+        envConv = key; const cv = conv[key]; let mx = 0, mn = 0, pmx = null, pmn = null;
         const span = cv.axles[cv.axles.length - 1].x + (cv.trucks > 1 ? cv.gapTruck : 0);
         // grille de déplacement : pas des tableaux (0.25 m si L ≤ 10 : 2498 Mc 14.75/18.75, Bc 14.25/15.75) ; balayage étendu de la
         // demi-empreinte diffusée (2498, H.SUP 15.70 m : Mc centré à 14.75 pour L = 5.35). Crochet PICF_CSTP = 0 : ancien (0.5, sans extension).
@@ -646,13 +657,16 @@
     const area = i => Math.PI * (d.phi[i] / 1000) ** 2 / 4;
     const need = (o, MU, MS, fac) => Math.max(asELU(MU * fac / 1000, o.d, fbu, R.mat.fsu[o.phi]), asELS(MS * fac / 1000, o.d, R.mat.ssLim ? R.mat.ssLim[o.phi] : 0));
     const tol = 1e-9;
+    // essai PICF_EPLIN (règle PIPO tour 16) : seuil « moitié » linéarisé M(x)/M_ref ≤ ½·ρ, ρ = Q/A_nécessaire(M_ref)
+    const EPL = root.PICF_EPLIN || 0;
+    const halfLin = (o, U, S, U0, S0, fac) => { const A0 = need(o, U0, S0, fac); const rho = o.A / A0; const r = Math.max(U0 > 0 ? U / U0 : 0, S0 > 0 ? S / S0 : 0); return r <= 0.5 * rho + tol; };
     // --- ferraillage intérieur des traverses : 2 familles, arrêt au pas des sections, décalage a = 0.8 h
     function travInt(o, env, h) {
       const a = 0.8 * h; const nd = env.map(r => need(o, r.maxU, r.maxS, 1));
       let im = 0; nd.forEach((v, k) => { if (v > nd[im]) im = k; });
       let zero = 0, half = null;
       if (!grp) for (let k = im; k >= 0; k--) if (!(env[k].maxU > 0 || env[k].maxS > 0)) { zero = Math.max(0, env[k].x - a); break; }
-      for (let k = im; k >= 0; k--) if (nd[k] <= o.A / 2 + tol) { half = Math.max(0, env[k].x - a); break; }
+      for (let k = im; k >= 0; k--) if (EPL & 1 ? halfLin(o, env[k].maxU, env[k].maxS, env[im].maxU, env[im].maxS, 1) : nd[k] <= o.A / 2 + tol) { half = Math.max(0, env[k].x - a); break; }
       if (half === null || half < zero) half = zero;
       const bars = o.n === 1 ? [[zero, L - zero]] : [[zero, L - half], [half, L - zero]];
       return { phi: o.phi, esp: o.esp, bars };
@@ -664,8 +678,9 @@
       const nd = env.map(r => need(o, r.maxU, r.maxS, s));
       let im = 0; nd.forEach((v, k) => { if (v > nd[im]) im = k; });
       let up = top, lo = bot;
-      for (let k = im; k < env.length; k++) if (nd[k] <= o.A / 2 + tol) { up = Math.min(top, env[k].x + a); break; }
-      for (let k = im; k >= 0; k--) if (nd[k] <= o.A / 2 + tol) { lo = Math.max(bot, env[k].x - a); break; }
+      const hOK = k => EPL & 2 ? halfLin(o, env[k].maxU, env[k].maxS, env[im].maxU, env[im].maxS, s) : nd[k] <= o.A / 2 + tol;
+      for (let k = im; k < env.length; k++) if (hOK(k)) { up = Math.min(top, env[k].x + a); break; }
+      for (let k = im; k >= 0; k--) if (hOK(k)) { lo = Math.max(bot, env[k].x - a); break; }
       return { phi: o.phi, esp: o.esp, bars: [[bot, up], [lo, top]] };
     }
     // --- ferraillage extérieur des angles : côté traverse (depuis l'angle) et côté piédroit
@@ -673,12 +688,12 @@
       const aT = 0.8 * hT, aP = 0.8 * g.e2;
       let zero = null, half = null, lap = false;
       for (const r of envT) { if (zero === null && !(r.minU < 0 || r.minS < 0)) zero = r.x + aT;
-        if (half === null && need(oT, -r.minU, -r.minS, 1) <= oT.A / 2 + tol) half = r.x + aT; }
+        if (half === null && (EPL & 4 ? halfLin(oT, -r.minU, -r.minS, -envT[0].minU, -envT[0].minS, 1) : need(oT, -r.minU, -r.minS, 1) <= oT.A / 2 + tol)) half = r.x + aT; }
       if (zero === null) { zero = L / 2 + ls(0) / 2; lap = true; }
       if (half === null || half > zero) half = zero;
       const full = sup ? 2.5 - ls(0) : 2.5; let hp = null;
       const seq = sup ? envP.slice().reverse() : envP;
-      for (const r of seq) if (need(oP, -r.minU, -r.minS, s) <= oP.A / 2 + tol) { hp = sup ? r.x - aP : r.x + aP; break; }
+      for (const r of seq) if (EPL & 8 ? halfLin(oP, -r.minU, -r.minS, -seq[0].minU, -seq[0].minS, s) : need(oP, -r.minU, -r.minS, s) <= oP.A / 2 + tol) { hp = sup ? r.x - aP : r.x + aP; break; }
       if (hp === null || (sup ? hp < full : hp > full)) hp = full;
       const fam = lap ? [[full, zero], [hp, half]] : [[full, half], [hp, zero]];
       const e = sup ? (g.e2 + g.e3) / 2 : (g.e1 + g.e2) / 2;

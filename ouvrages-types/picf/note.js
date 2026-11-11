@@ -389,7 +389,7 @@
     }
     newPage();
     out.push('', '', '', '', '                                            AVANT METRE RECAPITULATIF', '                                            ===========================', '', '', '', '');
-    out.push('                   B E T O N S', '', `                            BETON POUR BA              ${F(R.metre.beton, 0, 4).replace('.', '')} M3`, '', `                            COFFRAGES                  ${F(R.metre.coffrage, 0, 4).replace('.', '')} M2`);
+    out.push('                   B E T O N S', '', `                            BETON POUR BA              ${F(Math.floor(R.metre.beton), 0, 4).replace('.', '')} M3`, '', `                            COFFRAGES                  ${F(Math.floor(R.metre.coffrage), 0, 4).replace('.', '')} M2`);
     { const t = R.det.ton.map(v => v / 1000), T = t[0] + t[1] + t[2];
       out.push('', '', '                   ACIERS', '', ...t.map((v, i) => `                            ACIER PHI${i + 1}           = ${F(v, 2, 8)} T`),
         '                                                     ---------', `                                         TOTAL   = ${F(T, 2, 9)} T`, '',
