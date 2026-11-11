@@ -499,17 +499,33 @@
     var xg = -half + v.ETROG;
     var xc0 = xg + v.EGAU, xc1 = xc0 + v.ESURCH, xd = xc1 + v.EDROI;
     var out = {}, KX = globalThis.PSIDP_KEXACT || 0;
+    Object.defineProperty(out, '_k', { value: k, enumerable: false });
     // moyenne exacte de la LI (fonction continue) sur [a, b] : essai v16 (crochet PSIDP_KEXACT, 1 = trottoirs, 2 = + A)
     var mean = function (a, b) { var nn = 400, s = 0; for (var q = 0; q <= nn; q++) s += (q === 0 || q === nn ? 0.5 : 1) * k.exact(a + (b - a) * q / nn); return s / nn; };
+    // moyenne de la LI interpolée linéairement entre les points de grille, intégrée exactement sur [ua ; ub] (indices de grille réels)
+    var linMean = function (ua, ub) {
+      var P = function (u) { var i = Math.max(0, Math.min(g.length - 2, Math.floor(u + 1e-9))), t = u - i, s = 0; for (var j = 0; j < i; j++) s += (g[j] + g[j + 1]) / 2; return s + g[i] * t + (g[i + 1] - g[i]) * t * t / 2; };
+      return ub > ua ? (P(ub) - P(ua)) / (ub - ua) : K(Math.floor(ua));
+    };
+    // v30 (crochet PSIDP_KTROT, 1 par défaut ; 0 = bornes tronquées) : trottoirs entre le bord intérieur EXACT et le bord extérieur
+    // tronqué à la grille (gauche : point 0 ; droite : floor(W/h)) — constaté exact sur 2482 / 2483 / 2764 / 2765 / 2766
+    var KTR = globalThis.PSIDP_KTROT !== undefined ? globalThis.PSIDP_KTROT : 1;
     if (v.ETROG > 0 || v.ETROD > 0) {
-      var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : trap(idx(xd), idx(half))) : null;
+      var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : KTR ? linMean(0, (xg + half) / h) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : KTR ? linMean((xd + half) / h, idx(half)) : trap(idx(xd), idx(half))) : null;
       out.trot = { un: Math.max(tg || 0, td || 0), deux: (tg !== null && td !== null) ? (tg * v.ETROG + td * v.ETROD) / (v.ETROG + v.ETROD) : (tg || td) };
     }
-    var V = R.largeurVoie, best = { val: -1e9, nv: 1 };
+    var V = R.largeurVoie, best = { val: -1e9, nv: 1 }, KAM = globalThis.PSIDP_KAMODE !== undefined ? globalThis.PSIDP_KAMODE : 3; // v30 : 3 par défaut (voies une à une, bornes arrondies) ; 0 = ancienne fenêtre unique tronquée
     var nst = Math.round(V / h);
     for (var nvc = 1; nvc <= R.nv; nvc++) {
       var a1 = R.loads.Agen ? (v['CDTA' + nvc] || 1) : a1coef(R.classe, nvc), m = -1e9, wst = Math.round(nvc * V / h);
       if (KX >= 2) { for (var xa = xc0; xa + nvc * V <= xc1 + 1e-9; xa += h) m = Math.max(m, mean(xa, xa + nvc * V)); if (xc1 - nvc * V > xc0) m = Math.max(m, mean(xc1 - nvc * V, xc1)); }
+      else if (KAM === 1 || (KAM === 2 && (v.EGAU > 0 || v.EDROI > 0))) {
+        var ua0 = (xc0 + half) / h, ua1 = (xc1 + half) / h, wu = nvc * V / h;
+        for (var ua = ua0; ua + wu <= ua1 + 1e-9; ua += 0.1) m = Math.max(m, linMean(ua, ua + wu)); m = Math.max(m, linMean(ua1 - wu, ua1));
+      } else if (KAM >= 3) {
+        var rnd = KAM === 5 ? function (u) { return Math.floor(u + 1e-6); } : KAM === 6 ? function (u) { return Math.ceil(u - 1e-6); } : Math.round;
+        for (var s0 = 0; s0 + nvc <= R.nv; s0++) { var mm3 = 0; for (var l3 = s0; l3 < s0 + nvc; l3++) { var la = (xc0 + half + l3 * V) / h, lb = (xc0 + half + (l3 + 1) * V) / h; mm3 += KAM === 4 ? linMean(la, lb) : trap(rnd(la), rnd(lb)); } m = Math.max(m, mm3 / nvc); }
+      }
       else for (var i = idx(xc0); i + wst <= idx(xc1) + 1e-9; i++) m = Math.max(m, trap(i, i + wst));
       var val = a1 * m * nvc / R.nv;
       if (val > best.val) best = { val: val, nv: nvc };

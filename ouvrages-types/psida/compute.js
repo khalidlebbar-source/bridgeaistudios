@@ -1019,12 +1019,20 @@
       const g0 = sn(xCh0), g1 = sn(xCh1);
       const res = { y: f.y, lib: f.lib, ligne };
       // trottoirs (les deux chargés)
-      const tg = A6.ETROTG > 0 ? meanC(yL, xTG) : null, td = A6.ETROTD > 0 ? meanC(xCh1 + A6.EDROI, -yL) : null;
+      // v16 (règle PSIDP v30, crochet PSIDA_KTROT, 1 par défaut ; 0 = moyenne exacte de la LI continue) : LI interpolée
+      // linéairement entre les nœuds de la grille 0,125 m, bord intérieur EXACT, bord extérieur tronqué à la grille
+      const KTR = G.PSIDA_KTROT === undefined ? 1 : G.PSIDA_KTROT;
+      const KLg = y => { const u = (y - yL) / h, i = Math.floor(u + 1e-9), t = u - i; return K(yL + i * h) * (1 - t) + K(yL + (i + 1) * h) * t; };
+      const meanL = (a, c, m = 400) => { let t = 0; for (let i = 0; i < m; i++) t += KLg(a + (c - a) * (i + 0.5) / m); return t / m; };
+      const yOut = yL + Math.floor(W / h + 1e-9) * h;
+      const tg = A6.ETROTG > 0 ? (KTR ? meanL(yL, xTG) : meanC(yL, xTG)) : null, td = A6.ETROTD > 0 ? (KTR ? meanL(xCh1 + A6.EDROI, yOut) : meanC(xCh1 + A6.EDROI, -yL)) : null;
       res.trot = tg != null && td != null ? (tg + td) / 2 : (tg ?? td ?? 0);
       // charge A : meilleure combinaison de voies adjacentes (i voies de largeur v), coefficient a1
       const v = Lch / nv; let bestA = { v: 0 };
       for (let k = 1; k <= nv; k++) for (let p = 0; p + k <= nv; p++) {
-        const val = a1Coef(cl, k) * k / nv * mean(xCh0 + p * v, xCh0 + (p + k) * v);
+        // v16 (règle PSIDP v30, crochet PSIDA_KAMODE, 3 par défaut : moyenne des K des voies une à une, bornes de chaque voie arrondies ; 0 = fenêtre unique)
+        let mk; if ((G.PSIDA_KAMODE === undefined ? 3 : G.PSIDA_KAMODE) === 3) { mk = 0; for (let q = p; q < p + k; q++) mk += mean(xCh0 + q * v, xCh0 + (q + 1) * v); mk /= k; } else mk = mean(xCh0 + p * v, xCh0 + (p + k) * v);
+        const val = a1Coef(cl, k) * k / nv * mk;
         if (val > bestA.v) bestA = { v: val, k };
       }
       res.A = bestA.v; res.nA = bestA.k;
