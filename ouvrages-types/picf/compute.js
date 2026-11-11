@@ -489,7 +489,9 @@
     const coarse = (raw, xk) => { const gv = ilAbs.map(g => { const i = idx(xsTop, g);
         if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
       const memo = xsTop.map(x => { let k = 0; while (k < ilAbs.length - 2 && ilAbs[k + 1] < x - 1e-9) k++; const t = (x - ilAbs[k]) / (ilAbs[k + 1] - ilAbs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
-      const fn = i => memo[i]; fn.ends = raw.ends; fn.Ld = raw.Ld; return fn; };
+      const fn = i => memo[i]; fn.ends = raw.ends; fn.Ld = raw.Ld;
+      if (root.PICF_VBEND && xk != null) { const n = gv.length; fn.ends = [gv[0], root.PICF_VBEND === 2 ? gv[n - 1] : gv[n - 2]]; if (root.PICF_VBEND === 1) { gv[n - 1] = gv[n - 2]; } }
+      return fn; };
     // V du radier sous les charges de la dalle de transition : effet des seuls moments d'encastrement (règle des permanentes) —
     // on retranche la réponse à la force verticale transmise directement au pied du piédroit (hook PICF_VBD).
     if (root.PICF_VBD && Ld > 0) { const ex = nd => { const F = new Float64Array(m.n); F[nd * 3 + 1] = -1; return extract(solve(F)); };
@@ -751,14 +753,14 @@
     const lin = (arr, y) => { const t = (Math.max(-bT, Math.min(bT, y)) + bT) / hy, i = Math.min(N - 1, Math.floor(t)); return arr[i] + (arr[i + 1] - arr[i]) * (t - i); };
     const integ = (k, y0, y1) => lin(tab[k].cu, y1) - lin(tab[k].cu, y0);
     const mubar = (k, y, a) => a > 1e-6 ? integ(k, y - a / 2, y + a / 2) / a : lin(tab[k].a, y);
-    const t30 = Math.tan(Math.PI / 6), sL = 2 * d.hchau + 2 * d.hsrem * t30 + d.e3;
+    const t30 = Math.tan(Math.PI / 6), sL = root.PICF_TRSL ? root.PICF_TRSL(d) : root.PICF_TRSLOLD ? 2 * d.hchau + 2 * d.hsrem * t30 + d.e3 : 1.5 * (d.hchau + d.hsrem) + d.e3; // session k : pente 3/4 dans la chaussée et le remblai (2c et largeur des bandes)
     const fac = (c2, F3) => { const cc = Math.min(c2, l); return HM.map((m, k) => { const F1 = Math.sin(m * Math.PI * cc / 2 / l), F2 = 1 / m; return { m, F1, F2, F3: F3[k], M: F1 * F2 * F3[k] * 4 / Math.PI * bT / cc }; }); };
     const sum = rows => rows.reduce((a, r) => a + r.M, 0);
     // Session j : charges réparties — intégration de μ par la méthode des trapèzes sur une grille uniforme de la largeur de la plaque
     // équivalente [−bT, bT] : 8 intervalles entre les 9 fibres de Guyon (pas bT/4), chacun subdivisé pour un pas ≤ pas des tableaux
     // (N = 8·⌈2bT/(8·STP)⌉ : 32 pour 2531/2550/2551, 40 pour 2498), la fibre 0 sur un nœud (d'où l'artefact F3 ≈ constant en m) ;
     // bornes de la bande chargée insérées comme nœuds ; charge totale sur la portée biaise entre axes L (et non la longueur l de la plaque).
-    const TRG = root.PICF_TRG != null ? root.PICF_TRG : 1; // 1 : charges réparties ; 2 : bandes des convois
+    const TRG = root.PICF_TRG != null ? root.PICF_TRG : 3; // 1 : charges réparties ; 2 : bandes des convois
     const NG = root.PICF_TRNG ? root.PICF_TRNG(bT, X.STP) : 8 * Math.ceil(2 * bT / (8 * X.STP) - 1e-9), hG = 2 * bT / NG;
     const muG = HM.map(m => { const a = []; for (let i = 0; i <= NG; i++) a.push(guyonMu(m * thT, 0, (-bT + i * hG) / bT)); return a; });
     const trapG = (k, y0, y1) => { y0 = Math.max(-bT, y0); y1 = Math.min(bT, y1); if (!(y1 > y0)) return 0;
@@ -782,20 +784,26 @@
     // E : demi-remorque 100 t sur 3.30 m ; Me120 : un essieu de 33 t (inchangé).
     const TRB = root.PICF_TRB != null ? root.PICF_TRB : 3; // 1 : bandes fusionnées (convois), 2 : diffusion des voies AL ; 0 : ancienne règle
     const sDt = root.PICF_TRSD ? root.PICF_TRSD(d) : sL; // 45° chaussée, 30° remblai, + E3 (comme la diffusion longitudinale des chenilles)
-    const bandF3 = (P, c2, cs, a, one) => { const w = a + sDt; const iv = cs.map(x => [x - w / 2, x + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
+    const fY = root.PICF_TRY ? root.PICF_TRY(R, d) : 1; // essai (PIPO tour 14) : positions/largeurs transversales ÷ sin du biais
+    const bandF3 = (P, c2, cs, a, one) => { const w = (a + sDt) * fY; const iv = cs.map(x => [x * fY - w / 2, x * fY + w / 2]).sort((x, y) => x[0] - y[0]), cl = [];
       for (const q of iv) { const Lq = cl[cl.length - 1]; if (Lq && q[0] <= Lq[1] + 1e-9) { Lq[1] = Math.max(Lq[1], q[1]); Lq[2]++; } else cl.push([q[0], q[1], 1]); }
-      const bB = root.PICF_TRCB ? bT : b;
+      const bB = root.PICF_TRCB ? bT : b * fY;
       return HM.map((m, k) => { let t = 0; for (const [l0, l1, nn] of cl) { const lo = Math.max(-bB, l0), hi = Math.min(bB, l1); if (hi > lo) t += (one ? 1 : nn) * ((TRG & 2) && !exactF ? trapG(k, lo, hi) : integ(k, lo, hi)) / (l1 - l0); } return P / cs.length * G * Math.min(1, ((TRG & 2) && root.PICF_TRLC ? Lsp : l) / c2) * t; }); }; // charge sur la portée biaise L (comme les charges réparties)
-    let exactF = false; const SEL = (TRG & 4) || root.PICF_TRSEL; // sélection de la position / du nombre de véhicules sur l'intégrale exacte de μ
+    let exactF = false; const SEL = (TRG & 4) || root.PICF_TRSEL; const NSEL = root.PICF_TRNS != null ? root.PICF_TRNS : 3; // choix du nombre de véhicules sur μ ponctuel (1) / moyen (2)
+    const nk = r => NSEL === 6 ? (r.nv === 2 ? 1 : 0) : NSEL ? r.nkey : r.key; // sélection de la position / du nombre de véhicules sur l'intégrale exacte de μ
     // véhicules de front (Bc, Bt) : toutes les empreintes fondues ensemble (meilleur que la somme par véhicule ; hook PICF_TRV)
-    const veh = (P, c2, ws, a, lo, hi, nveh, sp, one) => { let best = null; nveh = nveh || 1; sp = sp || 0;
+    const veh = (P, c2, ws, a, lo, hi, nveh, sp, one) => { let best = null; nveh = nveh || 1; sp = sp || 0; let bestP = null; const cs = [];
       for (let st = lo - ws[0]; st + (nveh - 1) * sp + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) {
         let F3 = [0, 0, 0];
         if (root.PICF_TRV) { for (let u = 0; u < nveh; u++) { const f = bandF3(P, c2, ws.map(w => st + u * sp + w), a); F3 = F3.map((x, k) => x + f[k]); } }
-        else { const cs = []; for (let u = 0; u < nveh; u++) for (const w of ws) cs.push(st + u * sp + w); F3 = bandF3(P * nveh, c2, cs, a, one);
+        else { cs.length = 0; for (let u = 0; u < nveh; u++) for (const w of ws) cs.push(st + u * sp + w); F3 = bandF3(P * nveh, c2, cs, a, one);
           if (SEL) { const Fx = root.PICF_TRSEL === 2 ? (exactF = true, bandF3(P * nveh, c2, cs, a, one)) : HM.map((m, k) => P * nveh / cs.length * G * Math.min(1, l / c2) * cs.reduce((t, y) => t + (root.PICF_TRSEL === 3 ? mubar(k, y, a + sDt) : root.PICF_TRSEL === 4 ? mubar(k, y, a + 2 * d.hchau + d.e3) : lin(tab[k].a, y)), 0)); exactF = false; var key = sum(fac(c2, Fx)); } }
         if (root.PICF_DBG) root.PICF_DBG({ P, c2, nveh, st, F3, l, bT, b, sDt, a });
-        const rows = fac(c2, F3), tot = sum(rows), kk = SEL && key != null ? key : tot; if (!best || kk > best.key + 1e-9) best = { rows, tot, key: kk }; }
+        const rows = fac(c2, F3), tot = sum(rows), kk = SEL && key != null ? key : tot;
+        if (NSEL === 5) { exactF = true; const Fe = bandF3(P * nveh, c2, cs, a, one); exactF = false; const kp = sum(fac(c2, Fe)); if (root.PICF_DBGN) root.PICF_DBGN({ P, nveh, st, kp }); if (bestP == null || kp > bestP) bestP = kp; }
+        else if (NSEL) { const Fp = HM.map((m, k) => P * nveh / cs.length * G * Math.min(1, l / c2) * cs.reduce((t, y) => t + (NSEL === 2 ? mubar(k, y, a + sDt) : NSEL === 3 ? mubar(k, y, a) : NSEL === 4 ? mubar(k, y, a + 2 * d.hchau + d.e3) : lin(tab[k].a, y)), 0)), kp = sum(fac(c2, Fp)); if (root.PICF_DBGN) root.PICF_DBGN({ P, nveh, st, kp }); if (bestP == null || kp > bestP) bestP = kp; }
+        if (!best || kk > best.key + 1e-9) best = { rows, tot, key: kk }; }
+      if (best && NSEL) best.nkey = bestP; if (best) best.nv = nveh;
       return best || { rows: fac(c2, [0, 0, 0]), tot: 0, key: 0 }; };
     const MGt = d.egau > 0 && d.edroi > 0 ? 0 : 0.5;
     const mid = c => c[c.length - 1];
@@ -816,7 +824,8 @@
       const e0 = -b + d.ec.egau, e1 = e0 + d.ec.esurch;
       const ter = distrib(ch.qx, e0, e1);
       const sEC = 2 * d.ec.hsrem + d.e3;
-      const ec = point(25, 0.6 + sEC, [-1.2, 1.2], 0.6 + sEC, e0 + 1.8, e1 - 1.8); // axe à 3 m au moins du bord de ESURCH
+      const sECt = root.PICF_TRECS ? root.PICF_TRECS(d) : 1.5 * d.ec.hsrem + d.e3; // 2c imprimé 1.50 = 0.60 + 1.5·0.20 + 0.60
+      const ec = root.PICF_TREC !== 0 ? veh(50, 0.6 + sECt, [-1.2, 1.2], 0.6 + sECt - sDt, e0 + 1.8, e1 - 1.8) : point(25, 0.6 + sEC, [-1.2, 1.2], 0.6 + sEC, e0 + 1.8, e1 - 1.8); // axe à 3 m au moins du bord de ESURCH
       const Mp = sum(oss) + sum(ter), Mec = ec.tot * 1.5;
       out.chantier = { oss: { rows: oss, tot: sum(oss) }, ter: { rows: ter, tot: sum(ter) },
         ec: { rows: ec.rows, cmd: 1.5, tot: Mec, comb: comb(Mp, 1.35 * Mp, 1.2 * Mec, 1.6 * Mec, Tm.perm.ch.maxS + 1.2 * Tm.ec.mx, Tm.perm.ch.maxU + 1.6 * Tm.ec.mx) } };
@@ -836,12 +845,12 @@
     const add = (key, name, res, k) => { const tot = res.tot * k; out.service.push({ key, name, rows: res.rows, cmd: dyn[key].d, tot, comb: live(key, tot) }); };
     if (TRB & 1) {
       { let best = null; for (let n = 1; n <= Math.min(nvoi, 4); n++) { const res = veh(24, 1.5 + 0.25 + sL, [0, 2], 0.25, c0 + MGt + 0.25, c1 - MGt - 0.25, n, 2.5), bc = [1.2, 1.1, 0.95, 0.8][n - 1];
-          if (!best || res.key * bc > best.res.key * best.bc + 1e-9) best = { res, bc }; } add('BC', 'BC', best.res, best.bc * dyn.BC.d); }
-      { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const res = veh(32, 1.35 + 0.25 + sL, [0, 2], 0.6, c0 + MGt + 0.5, c1 - MGt - 0.5, n, 3); if (!best || res.key > best.key + 1e-9) best = res; }
+          if (!best || nk(res) * bc > nk(best.res) * best.bc + 1e-9) best = { res, bc }; } add('BC', 'BC', best.res, best.bc * dyn.BC.d); }
+      { let best = null; for (let n = 1; n <= Math.min(nvoi, 2); n++) { const res = veh(32, 1.35 + 0.25 + sL, [0, 2], 0.6, c0 + MGt + 0.5, c1 - MGt - 0.5, n, 3); if (!best || nk(res) > nk(best) + 1e-9) best = res; }
         add('BT', 'BT', best, dyn.BT.d); }
       // Mc120 / Me120 / E : charge d'une file (chenille 55 t, essieu 33 t, demi-remorque 100 t) sur la bande fusionnée du véhicule
       add('MC', 'MC120', veh(110, 6.1 + sL, [0, 3.3], 1.0, c0 + 1.0, c1 - 1.0, 1, 0, !root.PICF_TRM), dyn.MC.d); // chenilles fondues : une seule chenille (55 t) portée
-      add('ME', 'ME120', point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d);
+      add('ME', 'ME120', root.PICF_TRME !== 0 ? veh(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0, c0 + 2.5, c1 - 2.5) : point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d);
       add('E', 'E', veh(100, 15 + sL, [0], 3.3, c0 + 2.0, c1 - 2.0), 1.0);
     } else {
     { // Bc : deux essieux arrière (2 × 6 t par file de roues), roues 0.25 m, 1 à 4 camions de front
@@ -855,7 +864,7 @@
         const res = point(16, 1.35 + 0.25 + sL, ws, 0.6 + sL, c0 + 1.0, c1 - 1.0); if (!best || res.tot > best.tot) best = res; }
       add('BT', 'BT', best, dyn.BT.d); }
     add('MC', 'MC120', point(55, 6.1 + sL, [0, 3.3], 1.0 + sL, c0 + 1.0, c1 - 1.0), dyn.MC.d);
-    add('ME', 'ME120', point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
+    add('ME', 'ME120', root.PICF_TRME !== 0 ? veh(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0, c0 + 2.5, c1 - 2.5) : point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
     add('E', 'E', point(100, 15 + sL, [-0.825, 0.825], sL, c0 + 2.675, c1 - 2.675), 1.0);
     }
     const all = out.service.concat(out.chantier ? [out.chantier.ec] : []);
