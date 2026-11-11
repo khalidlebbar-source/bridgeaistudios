@@ -16,12 +16,18 @@
     const t = v * Math.pow(10, d), fl = Math.floor(t);
     if (t - fl === 0.5 && Number.isFinite(t) && Math.abs(t) < 1e15) { const ev = RND_AWAY ? (t > 0 ? fl + 1 : fl) : fl % 2 === 0 ? fl : fl + 1; v = ev / Math.pow(10, d); }
     let s = v.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s; }
-  const fdot = (v, w) => pad(Math.round(v) + '.', w);
+  // v24 : entier suivi d'un point (EI, EV...) : valeur en simple précision puis même règle d'égalité que fx
+  // (3060 T/M2 : Ei = 3517980,496 -> float32 3517980,5 -> 3517981 avant 2010, 3517980 ensuite). PSIDA_FDOT0 = 1 : Math.round direct.
+  const fdot = (v, w) => pad((G.PSIDA_FDOT0 ? Math.round(v) : fx(v, 0)) + '.', w);
   const STAR = ['                                                              *     * ', '                                                                 * '];
 
   function renderNote(m, r, opt) {
     opt = opt || {};
-    RND_AWAY = m.version === '2006' && G.PSIDA_RNDV !== 0;
+    // v24 : la date du passage identifie aussi la génération du programme : passages antérieurs à 2010 (3452, 3453, 3488 de 2007–2008)
+    // = même arrondi des égalités que la version 2006 (constat v19 sur 3488 ; Ei imprimé 3517981 vs 3517980 en 2022). PSIDA_RNDDATE = 0 : sans.
+    const yy = m.date && /^\d\d$/.test(String(m.date.a).trim()) ? +String(m.date.a).trim() : null;
+    const preV2010 = G.PSIDA_RNDDATE !== 0 && yy != null && (yy < 10 || yy >= 90);
+    RND_AWAY = (m.version === '2006' || preV2010) && G.PSIDA_RNDV !== 0;
     const num = String(opt.numero != null ? opt.numero : (m.numero || '0000')).padStart(4, '0');
     const d = opt.date || m.date || { j: '01', m: '01', a: '00' };
     const dstr = `${d.j}  ${d.m}  ${d.a}`;
@@ -288,7 +294,7 @@
         '         ' + D.eps.map(v => f(v, 8, 1)).join(''), '', '', '',
         '              ROTATIONS SUR APPUIS DU TABLIER SOUS L\'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)', '', '',
         '       APP G' + D.rotG.map(v => f(v, 8, 1)).join(''), '', '', '       APP D' + D.rotD.map(v => f(v, 8, 1)).join(''));
-      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad(Math.round(mt.Ei + 1e-3) + '.', 8) + ' T/M2', ...pd]);
+      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad((G.PSIDA_FDOT0 ? Math.round(mt.Ei + 1e-3) : fx(mt.Ei, 0)) + '.', 8) + ' T/M2', ...pd]);
     }
     if (r.effortsTranchants) {
       const pv2 = [...STAR, '', '', '                                      CHARGE      CHARGE A      CHARGE B       CHARGE C      TROTTOIRS        ETATS-LIMITES',

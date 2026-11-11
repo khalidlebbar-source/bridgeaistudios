@@ -794,6 +794,9 @@
       const res = { n: fb.n };
       // charges permanentes
       const be = r.section.Eeq / 2;
+      // v24 (ESSAI, NON RETENU) : trottoir droit jusqu au dernier nœud de la grille de la LI (règle K v23) : PSIDA_MYTOUT = 0 ;
+      // 3607 imprimé entre les deux bornes (−1,053 : W/2 −1,058, nœud −1,037) ; PSIDA_MYTRV 1–3 : variantes d intégration (négatives).
+      const WR = -W / 2 + Math.round(W / h) * h, wrT = G.PSIDA_MYTOUT === 0 ? WR : W / 2;
       const cMax = r.cp.gMax / r.section.Eeq * A1 * intPL(Zr, -be, be), cMin = r.cp.gMin / W * A1 * trap(Zr, -W / 2, W / 2);
       res.cp = { max: cMax, min: cMin };
       // charge A
@@ -805,8 +808,9 @@
       res.A = { max: aMax, min: aMin };
       // trottoirs (3 × PSTROT)
       const tr = [];
-      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, -W / 2, sn(-W / 2 + A6.ETROTG)));
-      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * trap(Zr, sn(W / 2 - A6.ETROTD), W / 2));
+      const trv = G.PSIDA_MYTRV || 0, tI = trv ? (a, b) => intPL(Zr, a, b) : (a, b) => trap(Zr, a, b);
+      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * tI(-W / 2, trv === 2 ? -W / 2 + A6.ETROTG : sn(-W / 2 + A6.ETROTG)));
+      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * tI(trv === 2 ? W / 2 - A6.ETROTD : sn(W / 2 - A6.ETROTD), trv === 3 ? W / 2 : wrT));
       res.T = { max: tr.filter(x => x > 0).reduce((a, b) => a + b, 0), min: tr.filter(x => x < 0).reduce((a, b) => a + b, 0) };
       // systèmes B : groupes de véhicules accolés
       const groups = (Zb, nMax, wV, wheels, coef, P, d) => {
@@ -1054,7 +1058,10 @@
     const out = fibres.map(f => {
       const K = Kline(Weq, Leq, f.y);
       const N = Math.round(W / 0.125);
-      const ligne = []; for (let i = 0; i <= N + 2; i++) ligne.push(K(yL + 0.125 * i));
+      // v24 : nombre de points imprimés = INT(W / 0,125) + 3 (3639 : W = 9,20 -> 76 points, et non round + 3 = 77) ;
+      // PSIDA_LINPR = 1 : round (ancien). Le bord des trottoirs (v23) reste le nœud round(W / 0,125).
+      const NP = G.PSIDA_LINPR ? N : Math.floor(W / 0.125 + 1e-9);
+      const ligne = []; for (let i = 0; i <= NP + 2; i++) ligne.push(K(yL + 0.125 * i));
       // ligne d'influence tabulée au pas de 0,125 m depuis le bord gauche de l'extrados : les bornes des zones chargées
       // et les positions des véhicules sont prises sur cette grille (guide PSIDP annexe 6 § 2 ; 3639 : bord de chaussée
       // à −3,00 m → nœud −2,975 m).
