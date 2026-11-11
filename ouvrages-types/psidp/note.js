@@ -1050,31 +1050,9 @@
       });
     });
   }
-  function secCablageAuto(D, m, R) {
-    var v = m.values, P = R.prec, au = P && P.auto, n = R.n, t, j;
-    if (!au || !au.blocks) return;
-    var BA = au.blocks[0], BR = au.blocks[1];
-    fluageBlock(D, R, BA, 1);
-    fuseauTables(D, m, R, BA);
-    D.newPage();
-    D.push('                       EXCENTREMENTS   DE   BASE   NECESSAIRES   AU   REAJUSTEMENT   DES   PERTES   DE   TENSION');
-    D.push('                                                            *     *');
-    D.push('                                                               *');
-    D.push('                                X          Z               X          Z               X          Z');
-    for (t = 0; t < n; t++) {
-      D.push(row([[27, 'TRAVEE  ' + (t + 1)], [35, fx(R.X0[t], 3)], [46, fx(au.P2.zs[t], 3)], [62, fx(R.X0[t] + au.P2.xl[t], 3)], [73, fx(au.P2.zl[t], 3)],
-        [89, fx(R.X0[t + 1], 3)], [100, fx(au.P2.zs[t + 1], 3)]]));
-    }
-    zcourb(D, R, BA);
-    fluageBlock(D, R, BR, 1);
-    fuseauTables(D, m, R, BR);
-    D.newPage();
-    D.push('NOMBRES DE CABLES NECESSAIRES');
-    D.push("          A L'OUVERTURE DU FUSEAU LIMITE  " + pad(6 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' ( DONT ' + pad(5 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' EN PHASE DE CONSTRUCTION )');
-    var hl = L(); for (t = 0; t < n; t++) hl.at(61 + 11 * t, 'TRAVEE' + (t + 1)); D.push(hl.s);
-    var il = L("          A L'INSCRIPTION DU CABLE DANS LA STRUCTURE"); for (t = 0; t < n; t++) il.at(60 + 11 * t, fx(BR.nb.ins[t], 2)); D.push(il.s);
-    D.push('NOMBRE RETENU : ' + (au.N < 10 ? ' ' : '') + au.N);
-    D.newPage(); zcourb(D, R, BR);
+  // une tentative de tracé concordant : paraboles limites, hyperstatiques des tracés limites, matrice, vecteurs (au.lambda null : « PAS DE SOLUTION »)
+  function attemptBlock(D, R, au) {
+    var n = R.n, t, j;
     D.newPage();
     D.push('                                             EQUATIONS DES PARABOLES LIMITES');
     D.push('                                                              *     *');
@@ -1119,8 +1097,45 @@
     D.push('MATRICE DU SYSTEME');
     au.Mat.forEach(function (rw) { var l5 = L(); rw.forEach(function (x3, k3) { l5.at(30 + 10 * k3, fx(x3, 3)); }); D.push(l5.s); });
     var vec = function (lab, arr, d) { var l6 = L('                    VECTEUR ' + lab + ' :'); arr.forEach(function (x4, k4) { l6.at(40 + 10 * k4, fx(x4, d)); }); D.push(l6.s); };
-    vec('R', au.Rv, 3); vec('R', au.Rv.map(function (x5) { return 0.2093 * x5; }), 3);
-    vec('B', au.lambda.map(function () { return 1; }), 4); vec('Y', au.lambda, 4);
+    vec('R', au.Rv, 3); vec("R", au.R2v || au.Rv.map(function (x5) { return 0.2093 * x5; }), 3);
+    vec('B', au.Rv.map(function () { return 1; }).concat([1]), 4);
+    if (au.lambda) vec('Y', au.lambda, 4); else { D.push(''); D.push('                    PAS DE SOLUTION'); }
+  }
+  function secCablageAuto(D, m, R) {
+    var v = m.values, P = R.prec, au = P && P.auto, n = R.n, t, j;
+    if (!au || !au.blocks) return;
+    // RÈGLE (v12) : un cycle par nombre de câbles essayé ; une tentative sans solution est imprimée 5 fois (identiques), puis N + 1.
+    var cycles = (au.cycles && au.cycles.length) ? au.cycles : [{ BA: au.blocks[0], BR: au.blocks[1], N: au.N, st: { lam: au.lambda } }];
+    cycles.forEach(function (cy, ic) {
+      var last = ic === cycles.length - 1;
+      var BA = cy.BA, BR = cy.BR, P2c = cy.BR.P2 || au.P2;
+      fluageBlock(D, R, BA, 1);
+      fuseauTables(D, m, R, BA);
+      D.newPage();
+      D.push('                       EXCENTREMENTS   DE   BASE   NECESSAIRES   AU   REAJUSTEMENT   DES   PERTES   DE   TENSION');
+      D.push('                                                            *     *');
+      D.push('                                                               *');
+      D.push('                                X          Z               X          Z               X          Z');
+      for (t = 0; t < n; t++) {
+        D.push(row([[27, 'TRAVEE  ' + (t + 1)], [35, fx(R.X0[t], 3)], [46, fx(P2c.zs[t], 3)], [62, fx(R.X0[t] + P2c.xl[t], 3)], [73, fx(P2c.zl[t], 3)],
+          [89, fx(R.X0[t + 1], 3)], [100, fx(P2c.zs[t + 1], 3)]]));
+      }
+      zcourb(D, R, BA);
+      fluageBlock(D, R, BR, 1);
+      fuseauTables(D, m, R, BR);
+      D.newPage();
+      D.push('NOMBRES DE CABLES NECESSAIRES');
+      D.push("          A L'OUVERTURE DU FUSEAU LIMITE  " + pad(6 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' ( DONT ' + pad(5 - fx(BR.nb.ouv, 2).length, fx(BR.nb.ouv, 2)) + ' EN PHASE DE CONSTRUCTION )');
+      var hl = L(); for (t = 0; t < n; t++) hl.at(61 + 11 * t, 'TRAVEE' + (t + 1)); D.push(hl.s);
+      var il = L("          A L'INSCRIPTION DU CABLE DANS LA STRUCTURE"); for (t = 0; t < n; t++) il.at(60 + 11 * t, fx(BR.nb.ins[t], 2)); D.push(il.s);
+      D.push('NOMBRE RETENU : ' + (cy.N < 10 ? ' ' : '') + cy.N);
+      D.newPage(); zcourb(D, R, BR);
+      if (last && cy.st.lam) { attemptBlock(D, R, au); return; }
+      var a = cy.st, Hs = function (HH) { var o = []; for (var jj = 0; jj < n - 1; jj++) { var sm2 = 0; HH.forEach(function (h) { sm2 += h[jj]; }); o.push(sm2); } return o; };
+      var af = { T1: a.T1, T2: a.T2, H1: a.H1, H2: a.H2, H1tot: Hs(a.H1), H2tot: Hs(a.H2), Mat: a.Mat, Rv: a.Rv, R2v: a.R2v, Fm: a.Fm, d2: a.d2, lambda: null };
+      for (var r5 = 0; r5 < 5; r5++) attemptBlock(D, R, af);
+    });
+    if (!au.concordant) attemptBlock(D, R, au);
     D.newPage();
     D.push('                                EQUATIONS PARABOLIQUES DU CABLE  AVANT TRANSFORMATION LINEAIRE');
     D.push('                                                       *     *');

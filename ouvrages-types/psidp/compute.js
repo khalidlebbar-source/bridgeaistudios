@@ -1467,8 +1467,22 @@
         Mat.push(row); Rv.push(-tot);
       }
       // tracé concordant : Mat.lambda = R, 0 <= lambda <= 1 (simplexe ; objectif : max somme des lambda)
-      var lam = null;
-      (function () {
+      var lam = null, Q2 = 50 * I / VP, Rmx = Math.max.apply(null, Rv.map(Math.abs)), R2v = Rv.map(function (r) { return Rmx > 0 ? Q2 * Math.abs(r) / Rmx : Q2; });
+      if (globalThis.PSIDP_LPMODE !== 0) (function () {
+        // RÈGLE (v12, 23 systèmes du corpus) : (N-1) doubles inéquations R - R2 <= Mat.λ <= R + R2, R2_j = 50 T/m² · I/V' · R_j / max R ;
+        // 0 <= λ <= 1, λ symétriques si SYM = 1 ; solution = écart total Σ|Mat.λ - R| minimal (phase 1 du simplexe), puis max Σλ.
+        var grp = [], gi = {}; for (var k6 = 0; k6 < n; k6++) { var kk6 = (v.SYM === 1 && globalThis.PSIDP_LAMSYM !== 0) ? Math.min(k6, n - 1 - k6) : k6; if (gi[kk6] === undefined) { gi[kk6] = grp.length; grp.push([]); } grp[gi[kk6]].push(k6); }
+        var ng = grp.length, m6 = Mat.length, nv6 = ng + 2 * m6, Aq = [], bq = [], c6 = new Array(nv6).fill(0), tol = 1e-7;
+        for (var g6 = 0; g6 < ng; g6++) c6[g6] = 1e-6;
+        for (var q6 = 0; q6 < m6; q6++) { c6[ng + q6] = -1; c6[ng + m6 + q6] = -1;
+          var rw6 = new Array(nv6).fill(0); grp.forEach(function (gg, g7) { gg.forEach(function (k7) { rw6[g7] += Mat[q6][k7]; }); }); rw6[ng + q6] = -1; rw6[ng + m6 + q6] = 1;
+          Aq.push(rw6); bq.push(Rv[q6] + tol); Aq.push(rw6.map(function (x) { return -x; })); bq.push(-Rv[q6] + tol);
+          var e7 = new Array(nv6).fill(0); e7[ng + q6] = 1; Aq.push(e7); bq.push(R2v[q6]); var e8 = new Array(nv6).fill(0); e8[ng + m6 + q6] = 1; Aq.push(e8); bq.push(R2v[q6]); }
+        for (g6 = 0; g6 < ng; g6++) { var e9 = new Array(nv6).fill(0); e9[g6] = 1; Aq.push(e9); bq.push(1); }
+        var x6 = lpMax(c6, Aq, bq);
+        if (x6) { lam = new Array(n).fill(0); grp.forEach(function (gg, g7) { gg.forEach(function (k7) { lam[k7] = Math.max(0, Math.min(1, x6[g7])); }); }); }
+      })();
+      else (function () {
         var Aq = [], bq = [];
         Mat.forEach(function (rw, q) { Aq.push(rw.slice()); bq.push(Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); Aq.push(rw.map(function (x) { return -x; })); bq.push(-Rv[q] + 2e-3 * Math.abs(Rv[q]) + 1e-3); });
         for (var k3 = 0; k3 < n; k3++) { var e1 = new Array(n).fill(0); e1[k3] = 1; Aq.push(e1); bq.push(1); }
@@ -1476,19 +1490,24 @@
         lam = lpMax(new Array(n).fill(1), Aq, bq);
       })();
 
-      return { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz };
+      return { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: R2v, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz };
     };
     // itérations : décalage vers le haut des points sur appuis (pas 0.01 m jusqu'au bord sup du fuseau), puis +1 câble (max +4)
-    var st = null, BAk = BA, BRk = BR, Nr = BR.N, MAXPLUS = 0, DZMAX = 0;
+    // RÈGLE (v12, notice PSIDP « recherche du tracé » + listings 2481, 2482, 0013B, 2764, 2765) : en l'absence de solution, les 5 tentatives
+    // de décalage laissent le système inchangé (impressions identiques), puis N -> N + 1 et nouveau cycle complet, au plus 4 câbles supplémentaires.
+    var st = null, BAk = BA, BRk = BR, Nr = BR.N, MAXPLUS = globalThis.PSIDP_MAXPLUS !== undefined ? globalThis.PSIDP_MAXPLUS : (globalThis.PSIDP_LPMODE === 0 ? 0 : 4), DZMAX = 0, cycles = [];
     for (var plus = 0; plus <= MAXPLUS && !(st && st.lam); plus++) {
       if (plus > 0) { Nr = BR.N + plus; BAk = block(Nr, base1, 'APPROCHEES', key1); BAk.nb = nombres(BAk);
-        var P2k = basePts(BAk); BRk = block(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2); BRk.nb = nombres(BRk); }
+        var P2k = basePts(BAk), key2k = [{ id: 'c', t: 0, k: 0, E: BAk.G[0].inf, abut: true }];
+        for (var t8 = 0; t8 < n; t8++) { key2k.push({ id: 'b' + t8, t: t8, k: P2k.kl[t8], E: P2k.zl[t8] }); if (t8 < n - 1) key2k.push({ id: 'a' + (t8 + 1), t: t8, k: 10, E: P2k.zs[t8 + 1], app: true }); }
+        BRk = block(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2k); BRk.nb = nombres(BRk); BRk.P2 = P2k; }
       var room = Infinity; for (var jj = 1; jj < n; jj++) { var gg = BRk.G[(jj - 1) * 11 + 10]; room = Math.min(room, gg.sup - gg.inf); }
       for (var dz = 0; dz <= Math.min(DZMAX, Math.max(0, room)) + 1e-9; dz += 0.01) { st = attempt(BRk, Nr, dz); if (st.lam) break; }
+      cycles.push({ BA: BAk, BR: BRk, st: st, N: Nr });
       if (!st.lam && plus === MAXPLUS) st = attempt(BR, BR.N, 0);
     }
     if (!st.lam) { Nr = BR.N; BAk = BA; BRk = BR; }
-    BA = BAk; BR = BRk;
+    BA = BAk; BR = BRk; if (BR.P2) P2 = BR.P2;
     var P3 = st.P3, P4 = st.P4, T1 = st.T1, T2 = st.T2, H1 = st.H1, H2 = st.H2, Mat = st.Mat, Rv = st.Rv, lam = st.lam, Fm = st.Fm, d2 = st.d2;
     var concordant = !!lam;
     if (!lam) { // NON RÉSOLU : itérations de décalage / câbles supplémentaires ; à défaut, moindres carrés bornés
@@ -1561,7 +1580,7 @@
     }
     var cable = mkCable(loss); cable.ecart = 0;
     var Hs = function (HH) { var o = []; for (var jj = 0; jj < n - 1; jj++) { var sm2 = 0; HH.forEach(function (h) { sm2 += h[jj]; }); o.push(sm2); } return o; };
-    return { N: Nr, cable: cable, blocks: [BA, BR], P2: P2, H1tot: Hs(H1), H2tot: Hs(H2), keyFl: function (e) { return null; }, T1: T1, T2: T2, P3: P3, P4: P4, H1: H1, H2: H2, Mat: Mat, Rv: Rv, lambda: lam, concordant: concordant,
+    return { N: Nr, cable: cable, blocks: [BA, BR], cycles: cycles, P2: P2, H1tot: Hs(H1), H2tot: Hs(H2), keyFl: function (e) { return null; }, T1: T1, T2: T2, P3: P3, P4: P4, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: st.R2v, lambda: lam, concordant: concordant,
       before: before, after: after, dj: dj, zs: zs, zi: zi, Fm: Fm, d2: d2 };
   }
 
