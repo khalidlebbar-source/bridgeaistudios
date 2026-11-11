@@ -418,11 +418,14 @@
       let i = 0, hi = xsTop.length - 1; while (hi - i > 1) { const mid = (i + hi) >> 1; if (xsTop[mid] <= x) i = mid; else hi = mid; }
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
-    function ilAvg(getter, x, a, nd) { if (!a) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / 0.1)); let sm = 0; for (let k = 0; k < n; k++) sm += ilVal(getter, x - a / 2 + (k + 0.5) * a / n, nd); return sm / n; }
+    function ilAvg(getter, x, a, nd) { if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / 0.1)); let sm = 0;
+      const SPL = root.PICF_VTSPL && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? root.PICF_VTSPL : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
+      for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n; if (SPL && rg(u) !== r0) { if (SPL === 2) sm += ilVal(getter, r0 < 0 ? -1e-9 : r0 > 0 ? L + 1e-9 : (u < 0 ? 0 : L), nd); continue; } sm += ilVal(getter, u, nd); } return sm / n; }
     // chenilles Mc / convoi E (hook d'essai PICF_MCL) : densité P/λ, aire sur floor(λ/pas)·pas
     const MCL = root.PICF_MCL;
     const mcl = MCL ? (getter, x, ax, nd) => { const lam = MCL.lam(d, ax), li = MCL.floor ? Math.floor(lam / STP + 1e-9) * STP : lam;
       const xc = MCL.align === 'start' ? x - lam / 2 + li / 2 : x; return ax.P / lam * li * ilAvg(getter, xc, li, nd); } : null;
+    let envKey = null, envIdx = -1;
     function envelope(getter, nd, nodyn, wnd) {
       const res = {};
       // AL : zones de même signe ; longueur chargée = somme des zones
@@ -453,25 +456,28 @@
       for (const key of ['BC', 'BT', 'MC', 'ME', 'E'].concat(hasEC ? ['EC'] : [])) {
         const cv = conv[key]; let mx = 0, mn = 0, pmx = null, pmn = null;
         const span = cv.axles[cv.axles.length - 1].x + (cv.trucks > 1 ? cv.gapTruck : 0);
-        const STEP = 0.5; for (const dir of [1, -1]) for (let nt = 1; nt <= cv.trucks; nt++) {
+        // grille de déplacement : pas des tableaux (0.25 m si L ≤ 10 : 2498 Mc 14.75/18.75, Bc 14.25/15.75) ; balayage étendu de la
+        // demi-empreinte diffusée (2498, H.SUP 15.70 m : Mc centré à 14.75 pour L = 5.35). Crochet PICF_CSTP = 0 : ancien (0.5, sans extension).
+        const CST = root.PICF_CSTP ?? 7, STEP = CST & 1 ? STP : 0.5, ext = (CST & 2) && !((CST & 4) && /^V/.test(envKey || '')) ? Math.ceil(Math.max(...cv.axles.map(a => a.a || 0)) / 2 / STEP) : 0;
+        for (const dir of [1, -1]) for (let nt = 1; nt <= cv.trucks; nt++) {
           // l'essieu le plus à droite parcourt la grille de pas 0.5 m (convention déduite des positions imprimées)
           const sp = cv.axles[cv.axles.length - 1].x + (nt - 1) * (cv.gapTruck || 0);
-          for (let kx = Math.floor(-Ld / STEP) - 1; kx * STEP <= L + Ld + sp + 1e-9; kx++) { const x0 = dir > 0 ? kx * STEP - sp : kx * STEP;
+          for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + sp + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - sp : kx * STEP;
           let sm = 0, smw = 0; const W = wnd && (key === 'BC' || key === 'BT' || key === 'ME');
           for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0;
             sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, aa, nd); if (W) smw += ax.P * ilAvg(getter, x, aa, true); }
-          const sP = W ? smw : sm, sN = W && wnd === 1 ? smw : sm;
+          const sP = W ? smw : sm, sN = W && wnd === 1 ? smw : sm; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, nt, x0, sP);
           if (sP > mx) { mx = sP; pmx = { dir, x0, nt }; } if (sN < mn) { mn = sN; pmn = { dir, x0, nt }; }
         } }
         // Bc : distance entre camions d'une même file VARIABLE (≥ 4.50 m entre essieux extrêmes, fascicule 61 II) ; chaque camion
         // a son essieu le plus à droite sur la grille de pas 0.5 m (positions imprimées « DG -5.00 13.50 » : écart 18.5 m).
         if (cv.trucks > 1 && !root.PICF_BCFIX) { const tl = cv.axles[cv.axles.length - 1].x;
           for (const dir of [1, -1]) { const ks = [], vs = [], vw = [];
-            for (let kx = Math.floor(-Ld / STEP) - 1; kx * STEP <= L + Ld + tl + 1e-9; kx++) { const x0 = dir > 0 ? kx * STEP - tl : kx * STEP; let sm = 0, smw = 0;
+            for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + tl + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - tl : kx * STEP; let sm = 0, smw = 0;
               for (const ax of cv.axles) { const x = x0 + dir * ax.x, aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0; sm += ax.P * ilAvg(getter, x, aa, nd); if (wnd) smw += ax.P * ilAvg(getter, x, aa, true); }
               if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
             const gmin = Math.round(cv.gapTruck / STEP);
-            for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < vs.length; j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j];
+            for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < vs.length; j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j]; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, [ks[i], ks[j]], smP, vs[i], vs[j]);
               if (root.PICF_BCTIE ? smP >= mx - 1e-9 : smP > mx + 1e-12) { mx = smP; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? smN <= mn + 1e-9 : smN < mn - 1e-12) { mn = smN; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
         const kk = nodyn ? k / ({ BC: dyn.BC.d, BT: dyn.BT.d, MC: dyn.MC.d, ME: dyn.ME.d, E: 1, EC: 1.5 }[key]) : k;
@@ -487,7 +493,7 @@
     };
     // LI connues aux seuls points de la grille des tableaux (pas STP), interpolation linéaire entre eux ; effort tranchant des
     // traverses : pas de point dédoublé, ordonnée du côté gauche au droit de la section (règle PIPO tour 7, hook PICF_JV).
-    const JV = root.PICF_JV != null ? root.PICF_JV : 1, JVS = root.PICF_JVS || 0;
+    const JV = root.PICF_JV != null ? root.PICF_JV : 2, JVS = root.PICF_JVS || 0;
     const coarse = (raw, xk) => { const gv = ilAbs.map(g => { const i = idx(xsTop, g);
         if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
       const memo = xsTop.map(x => { let k = 0; while (k < ilAbs.length - 2 && ilAbs[k + 1] < x - 1e-9) k++; const t = (x - ilAbs[k]) / (ilAbs[k + 1] - ilAbs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
@@ -506,7 +512,7 @@
     R.env = {};
     // effort tranchant : diffusion longitudinale des roues (Bc, Bt, Me) à 45° dans la chaussée mais pente 1/2 dans le remblai
     const vWheel = (a, dd) => a.a - dd.hsrem;
-    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map(gt => (vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : (key === 'Vb' && root.PICF_VBA != null ? (typeof root.PICF_VBA === 'function' ? root.PICF_VBA : (ax => ax.a + root.PICF_VBA)) : null), envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p', (root.PICF_VBWK || ['Vb']).includes(key) ? (root.PICF_VBWD ?? 0) : 0)));
+    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map((gt, gi) => (envKey = key, envIdx = gi, vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : (key === 'Vb' && root.PICF_VBA != null ? (typeof root.PICF_VBA === 'function' ? root.PICF_VBA : (ax => ax.a + root.PICF_VBA)) : null), envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p', (root.PICF_VBWK || ['Vb']).includes(key) ? (root.PICF_VBWD ?? 0) : 0)));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
     // session l : ouvrages DROITS (2550, 2498) — V TS des surcharges imprimé à la section x_k avec la LI de la section x_(k−1)
     // (2550 x = 0.50 : AL/Bc/Bt/Mc/Me/E/EC = valeurs de x = 0 à 0.1 près). Crochet PICF_VTSH : 0 = sans décalage, 2 = aussi biais, 3 = après recopie.

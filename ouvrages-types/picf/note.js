@@ -104,6 +104,8 @@
       out.push(`                                                                COEFFICIENT DE MAJORATION DYNAMIQUE ${F(dyn, 3)}`);
     };
     if (hasEC) { out.push(`                                                 CHARGE ${pad(ecName, 7)}(ENGIN DE CHANTIER)                                        1.20   1.60`); convoyText(ecName, 1, 1, '15.500 M SUR 4.000 M', '3.00', '2.400', [[0, 50, '0.60 X 0.60'], [9.5, 50, '0.60 X 0.60']], 1.5); out.push(''); }
+    // charge sur les remblais (PSREM, t/m²) : ligne imprimée seulement si elle est non nulle (listing 2498 : « 1.000 T/M2  1.20 1.60 »)
+    if (d.psrem > 0) out.push(`                                                 CHARGE SUR LES REMBLAIS      ${F(d.psrem, 3)} T/M2                                 1.20   1.60`, '');
     out.push('                         A CARACTERE PARTICULIER', '');
     out.push('                                                 CHARGE MC120 DEFINIE AU TITRE II FASC.61(1971)                            1.00   1.35', '');
     out.push('                                                 CHARGE ME120 DEFINIE AU TITRE II FASC.61(1971)                            1.00   1.35', '');
