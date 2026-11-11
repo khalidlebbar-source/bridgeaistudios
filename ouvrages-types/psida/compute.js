@@ -456,6 +456,18 @@
       // v17 : chenille (charge répartie) intégrée par morceaux entre les appuis (règle du point milieu, ~400 points au total) —
       // une cellule à cheval sur un appui prenait la valeur de l'autre côté du saut des LI d'effort tranchant (OA26 : 114,70 → 114,86)
       const { len, P, N: Nd } = axles.dist, cuts = [x, ...r.LI.xs.filter(X => X > x + 1e-9 && X < x + len - 1e-9), x + len];
+      if (G.PSIDA_CVTRAP && !f.jump && (axles.dist.cv || G.PSIDA_CVTRAP === 2)) {   // essai v20 : aire de la LI interpolée linéairement entre les points à 0,05 L
+        for (let c = 0; c + 1 < cuts.length; c++) {
+          const a = Math.max(cuts[c], -ab), b = Math.min(cuts[c + 1], Lt + ab); if (b <= a + 1e-12) continue;
+          const mid = (a + b) / 2, s = spanOf(r, Math.min(Math.max(mid, 0), Lt)), x0 = r.LI.xs[s], h = r.L[s] / 20, k = fac(s);
+          if (mid < 0 || mid > Lt) { const m = 200; for (let j = 0; j < m; j++) { const X = a + (b - a) * (j + 0.5) / m; v += P / len * (b - a) / m * f(X) * k; } continue; }
+          const fi = X => { const t = Math.min(19, Math.max(0, Math.floor((X - x0) / h + 1e-9))), X0 = x0 + t * h, X1 = X0 + h;
+            const f0 = f(t === 0 ? X0 + 1e-9 : X0), f1 = f(t === 19 ? X1 - 1e-9 : X1); return f0 + (f1 - f0) * (X - X0) / h; };
+          const pts = [a]; for (let t = 1; t < 20; t++) { const X = x0 + t * h; if (X > a + 1e-9 && X < b - 1e-9) pts.push(X); } pts.push(b);
+          for (let j = 0; j + 1 < pts.length; j++) v += P / len * (fi(pts[j]) + fi(pts[j + 1])) / 2 * (pts[j + 1] - pts[j]) * k;
+        }
+        return v;
+      }
       for (let c = 0; c + 1 < cuts.length; c++) {
         const a = Math.max(cuts[c], -ab), b = Math.min(cuts[c + 1], Lt + ab); if (b <= a + 1e-12) continue;
         const m = Math.max(Nd ? 1 : 4, Math.ceil((Nd || 400) * (b - a) / len));
@@ -624,7 +636,7 @@
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
       const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([d.len * (k + 0.5) / N, d.P / N]);
-      if (G.PSIDA_CVDIST !== 0) ax.dist = { len: d.len, P: d.P, N: G.PSIDA_CVDIST > 1 ? G.PSIDA_CVDIST : 0, jumpOnly: !!G.PSIDA_CVJ };   // v17 : intégration par morceaux (crochet 0 : 40 points)
+      if (G.PSIDA_CVDIST !== 0) ax.dist = { len: d.len, P: d.P, N: G.PSIDA_CVDIST > 1 ? G.PSIDA_CVDIST : 0, jumpOnly: !!G.PSIDA_CVJ, cv: 1 };   // v17 : intégration par morceaux (crochet 0 : 40 points)
       const cv = vehicleScan(r, f, ax, kOne ? (sp => 1) : spanFactor(r, 'CV', null), step, 2, d.gap, [0], false, G.PSIDA_CVNEAR === 0 ? 0 : d.nom);
       ce.push({ nom, ...cv });
     }

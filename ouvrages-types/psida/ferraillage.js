@@ -755,7 +755,10 @@
     const choose = (A, k0) => { for (let k = k0; k < OPTS.length; k++) if (ar(OPTS[k]) / A >= 0.1 - 1e-9) return OPTS[k]; return OPTS[OPTS.length - 1]; };
     const tr5 = v => Math.floor(v / 0.005 + 1e-6) * 0.005;
     const total = [0, 0, 0];
-    const poids = (z, w) => { for (const [o, L] of [[z.sup, Ls], [z.inf, Li]]) if (o && z.nb) for (const k of o) { const v = z.nb / o.length * L * aire(ph[k]) * 7.85; w[k] += v; total[k] += v; } };
+    // v20 : longueur des aciers inférieurs TB (tête-bêche) = E1/(2 sin ψ) + 3 E1/8 − 0,03 (exacte sur 3603–3610 et la notice O001 :
+    // 3,91/3,91/3,94/3,97 pour E1 4,50 et ψ 100/95/90/85 ; 6,09/6,11/6,14/6,19 pour E1 7,00 ; 6,82 pour E1 7,60, ψ 80) ; crochet PSIDA_TBL = 0 : pleine
+    const E1 = r._A7.EDALLE1, LiTB = G.PSIDA_TBL === 0 ? Li : E1 / (2 * sn) + 3 * E1 / 8 - 0.03;
+    const poids = (z, w) => { for (const [o, L] of [[z.sup, Ls], [z.inf, z.tbI ? LiTB : Li]]) if (o && z.nb) for (const k of o) { const v = z.nb / o.length * L * aire(ph[k]) * 7.85; w[k] += v; total[k] += v; } };
     const zone = (no, o, sup, s, len, plage) => { const nb = s > 0 ? Math.ceil(len / s - 1e-6) : 0; return { no, sup: sup || o, inf: o, s, nb, plage: plage != null ? plage : nb * s }; };
     const vide = no => ({ no, sup: null, inf: null, s: 0, nb: 0, plage: 0 });
     const appuis = AP.map((a, k) => {
@@ -786,13 +789,13 @@
       const z = { no: 'T' + (i + 1), sup: [2], inf: o, s: plage / nb, nb, plage, tbI: famA && G.PSIDA_TB !== 0 }, w = [0, 0, 0]; poids(z, w);
       return { zone: z, w };
     });
-    return { appuis, travees, total, Ls, Li };
+    return { appuis, travees, total, Ls, Li, LiTB };
   }
   function renderPropose(m, r, T) {
     const { page, f, pad } = T, Q = r.fer && r.fer.propose;
     if (!Q) return;
     const zl = (lead, z) => lead.padEnd(11) + z.no + '      ' + LAB(z.sup).padEnd(14) + f(z.sup ? Q.Ls : 0, 9, 2) + '         ' + (LAB(z.inf) + (z.tbI ? '  TB' : '')).padEnd(14) +
-      f(z.inf ? Q.Li : 0, 9, 2) + f(z.s, 14, 3) + pad(z.nb, 9) + f(z.plage, 10, 3);
+      f(z.inf ? (z.tbI ? Q.LiTB : Q.Li) : 0, 9, 2) + f(z.s, 14, 3) + pad(z.nb, 9) + f(z.plage, 10, 3);
     const wl = w => f(w[0], 10, 3) + f(w[1], 7, 3) + f(w[2], 7, 3);
     const pl = ['', '                         FACE SUPERIEURE                 FACE INFERIEURE                 DISPOSITIONS                POIDS ', '',
       '           NO        DIAMETRE       LONGUEUR         DIAMETRE       LONGUEUR     ESPACEMENT  NOMBRE   PLAGE    PHI1   PHI2   PHI3 ', ''];
