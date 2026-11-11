@@ -543,6 +543,17 @@
     for (i = idx(xc0); -half + (i + 34.4) * h <= xc1 + h - 1e-9; i++) m4 = Math.max(m4, (trap(i, i + 8) + trap(i + Math.round(3.3 / h), i + Math.round(4.3 / h))) / 2);
     out.MC120 = m4;
     var xm = Math.min(xc0 + 3.5, (xc0 + xc1) / 2);
+    var CEM = globalThis.PSIDP_CEMODE !== undefined ? globalThis.PSIDP_CEMODE : 1; // v29 : 1 par défaut
+    if (CEM) {
+      // essai v29 : axe du convoi libre dans [bord chaussée + 3.5 ; bord chaussée opposé − 3.5], maximum
+      var lo = xc0 + 3.5, hi = xc1 - 3.5; if (hi < lo) { lo = hi = (xc0 + xc1) / 2; }
+      var meanAt = function (xa) {
+        if (CEM === 2) { var i0 = idx(xa - 1.65), i1 = idx(xa + 1.65); return trap(i0, i1); }
+        if (CEM === 3) { var j0 = Math.round((xa - 1.65 + half) / h), j1 = Math.round((xa + 1.65 + half) / h); return trap(j0, j1); }
+        var ss = 0, N = 330; for (var q = 0; q < N; q++) { var x = xa - 1.65 + 3.3 * (q + 0.5) / N, u = (x + half) / h, ii = Math.floor(u), tt = u - ii; ss += K(ii) * (1 - tt) + K(ii + 1) * tt; } return ss / N; };
+      var bestc = -1e9; for (var xa = lo; xa <= hi + 1e-9; xa += 0.0125) bestc = Math.max(bestc, meanAt(xa)); bestc = Math.max(bestc, meanAt(hi));
+      out.CE = bestc;
+    } else
     out.CE = (function () { var ss = 0, N = 330; for (var q = 0; q < N; q++) { var x = xm - 1.65 + 3.3 * (q + 0.5) / N, u = (x + half) / h, ii = Math.floor(u), tt = u - ii; ss += K(ii) * (1 - tt) + K(ii + 1) * tt; } return ss / N; })();
     return out;
   }
@@ -676,9 +687,15 @@
       var one2 = grid.map(function (s) { return unif(s, P, len, coefK, type); });
       for (var i1 = 0; i1 < grid.length; i1++) {
         upd(key, one2[i1], { type: key, pos: [grid[i1]] });
+        // v29 (crochet PSIDP_CVNEAR) : convois D/E — second véhicule au point de grille le plus proche de s1 ± entraxe nominal (19 / 33 m)
+        var CVN = globalThis.PSIDP_CVNEAR !== undefined ? globalThis.PSIDP_CVNEAR : 5, near = CVN && maxGap < 1e8 && (CVN === 1 || CVN === 5 || ((CVN === 2 || CVN === 4) && key === "CVOI.D") || (CVN === 3 && key === "CVOI.E")), downOnly = CVN >= 4, dnom = (minGap + maxGap) / 2, bestUp = -1, bestDn = -1;
+        if (near) for (var i3 = 0; i3 < grid.length; i3++) { var dd = grid[i3] - grid[i1];
+          if (dd > 0 && (bestUp < 0 || Math.abs(dd - dnom) < Math.abs(grid[bestUp] - grid[i1] - dnom) - 1e-9)) bestUp = i3;
+          if (dd < 0 && (bestDn < 0 || Math.abs(-dd - dnom) < Math.abs(grid[i1] - grid[bestDn] - dnom) - 1e-9)) bestDn = i3; }
         for (var i2 = 0; i2 < grid.length; i2++) {
           var dg = Math.abs(grid[i2] - grid[i1]);
-          if (dg < minGap - 1e-9 || dg > maxGap + 1e-9) continue;
+          if (near) { if (i2 !== bestDn && (downOnly || i2 !== bestUp)) continue; }
+          else if (dg < minGap - 1e-9 || dg > maxGap + 1e-9) continue;
           upd(key, one2[i1] + one2[i2], { type: key, pos: [Math.max(grid[i1], grid[i2]), Math.min(grid[i1], grid[i2])] });
         }
       }
@@ -715,7 +732,11 @@
       var secs = [];
       for (var q = 0; q <= 10; q++) {
         var x0 = q / 10, f = sectionLI(R, t, x0);
-        var S = loadEffects(R, v, f, { minor: true, dyn: cfgT.dyn, kink: X0[t] + x0 * L[t] });
+        // v29 : ouvrage symétrique (SYM = 1) — SETRA ne calcule que la première moitié et en déduit la seconde par symétrie
+        // (les sections symétriques ne sont pas imprimées) ; nécessaire depuis la règle de position des convois D/E, orientée.
+        var tm = n - 1 - t, qm = 10 - q, symOn = v.SYM === 1 && (globalThis.PSIDP_SYMMIR !== undefined ? globalThis.PSIDP_SYMMIR : 1) && (tm < t || (tm === t && qm < q));
+        var S = symOn ? Object.assign({}, res[tm] ? res[tm][qm].raw : secs[qm].raw) : loadEffects(R, v, f, { minor: true, dyn: cfgT.dyn, kink: X0[t] + x0 * L[t] });
+        S.raw = Object.assign({}, S);
         S.x0 = x0; S.abs = X0[t] + x0 * L[t];
         var area = integ(R, f);
         S.oss = [R.cp.oss[1] * area, R.cp.oss[2] * area]; S.cp = [R.cp.tot[1] * area, R.cp.tot[2] * area];
