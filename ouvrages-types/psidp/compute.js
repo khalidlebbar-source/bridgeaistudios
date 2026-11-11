@@ -1421,8 +1421,9 @@
       var P3 = basePts(BR); P3.zs = P3.zs.map(function (z, jj) { return (jj === 0 || jj === n) ? z : z + dz; }); var gsup = function (t, k) { return BR.G[t * 11 + k].sup; }, ginf = function (t, k) { return BR.G[t * 11 + k].inf; };
       // T1 : point bas sur le bord supérieur ; côté appui : la plus grande longueur de raccord (<= 0.36 d) restant sous le bord sup.
       var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
-        var best = 0.05 * d;
-        for (var f = 0.36; f >= 0.05; f -= 0.0025) {
+        var best = 0.05 * d, f0 = 0.36;
+        if (globalThis.PSIDP_T1CAP === 1) f0 = Math.min(0.36, 0.18 * L[tt] / d);
+        for (var f = f0; f >= 0.05; f -= 0.0025) {
           var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
           for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
           if (ok) { best = f * d; break; }
@@ -1450,6 +1451,23 @@
           if (ok2) break; P4.zl[t] += 0.002;
         }
       }
+      // RÈGLE (v13, listings 0013, 0013A, 0014, 0015, 2764, 2766 ; 0013B à 0.002 près) : rayon de T2 sur chaque côté d'appui intermédiaire
+      // = RMIN + 2k m, k minimal tel que T2 reste au-dessus du bord inf du fuseau réajusté aux sections situées à 0.1L et 0.2L de l'appui
+      // (côté appui du point bas). Augmenter R allonge le raccord et relève la parabole principale.
+      var rT2 = {}, tolT2 = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0; // 0,005 reproduit 0013B et 2766 mais serait une tolérance déduite des listings (SPEC) ; gain négligeable
+      if (globalThis.PSIDP_T2RK !== 0) rminSide = function (tt, side) { var q = rT2[tt + '_' + side]; return { R: q !== undefined ? q : (v.RMIN || 8) }; };
+      if (globalThis.PSIDP_T2RK !== 0) for (t = 0; t < n; t++) [-1, 1].forEach(function (side) {
+        if ((side < 0 && t === 0) || (side > 0 && t === n - 1)) return;
+        var key = t + '_' + side, ks = side < 0 ? [1, 2] : [9, 8];
+        for (var k8 = 0; k8 <= 40; k8++) {
+          rT2[key] = (v.RMIN || 8) + 2 * k8;
+          var d8 = side < 0 ? P4.xl[t] : L[t] - P4.xl[t], h8 = P4.zs[side < 0 ? t : t + 1] - P4.zl[t];
+          if (2 * rT2[key] * h8 / d8 >= d8) break;
+          var tr8 = traceFromPoints(R, P4, { side: rminSide }), ok8 = true;
+          ks.forEach(function (kk) { var x8 = kk * L[t] / 10; if ((x8 - P4.xl[t]) * side > 1e-9 && tr8.z(t, x8) < ginf(t, kk) - tolT2 - 1e-9) ok8 = false; });
+          if (ok8) break;
+        }
+      });
       var T2 = traceFromPoints(R, P4, { side: rminSide });
       // ---------------------------------------------------------------- hyperstatiques des tracés limites (Simpson, F moyen de service)
       var W = simpsonW(10, 1);
