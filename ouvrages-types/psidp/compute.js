@@ -1418,7 +1418,7 @@
       return { sup: sup, inf: inf };
     };
     // ---------------------------------------------------------------- un bloc « éléments de détermination du fuseau »
-    var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 0 : globalThis.PSIDP_FMCRIT;
+    var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 1 : globalThis.PSIDP_FMCRIT; // v18 : actif par défaut (règle v17), 0 = ancien calcul
     var block = function (N, base, kind, keyE, FMin) {
       var G = [], t, k;
       for (t = 0; t < n; t++) for (k = 0; k <= 10; k++) G.push({ t: t, k: k, x: k * L[t] / 10, X: R.X0[t] + k * L[t] / 10 });
@@ -1559,12 +1559,18 @@
       // ---------------------------------------------------------------- paraboles limites
       var P3 = basePts(BR); P3.zs = P3.zs.map(function (z, jj) { return (jj === 0 || jj === n) ? z : z + dz; }); var gsup = function (t, k) { return BR.G[t * 11 + k].sup; }, ginf = function (t, k) { return BR.G[t * 11 + k].inf; };
       // T1 : point bas sur le bord supérieur ; côté appui : la plus grande longueur de raccord (<= 0.36 d) restant sous le bord sup.
+      // RÈGLES v18 (listings 0013…2766, systèmes imprimés de 2481 N = 9…13 et 2765 N = 11/12) :
+      //  - longueur de raccord plafonnée à 0.36 d ET à 0.18 L (même raccord qu'en travée intermédiaire, 0.36 × 0.5 L) : côté appui des
+      //    travées de rive t2 imprimé 0.164–0.179 L (PSIDP_T1CAP = 0 : ancien plafond 0.36 d seul) ;
+      //  - le bord sup n'est contrôlé que sur la longueur du raccord (de l'inflexion à l'appui) : la parabole principale DÉPASSE le
+      //    bord sup imprimé de 0.013 à 0.023 m à 0.2 L de l'appui sur 2482–2488, 2764, 2765, 0015A (PSIDP_T1CHK = 0 : toutes les sections).
       var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
         var best = 0.05 * d, f0 = 0.36;
-        if (globalThis.PSIDP_T1CAP === 1) f0 = Math.min(0.36, 0.18 * L[tt] / d);
+        if (globalThis.PSIDP_T1CAP !== 0) f0 = Math.min(0.36, 0.18 * L[tt] / d);
         for (var f = f0; f >= 0.05; f -= 0.0025) {
           var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
-          for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
+          var xt9 = side < 0 ? f * d : L[tt] - f * d, chk = globalThis.PSIDP_T1CHK !== undefined ? globalThis.PSIDP_T1CHK : 1;
+          for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if (chk === 1 && (side < 0 ? xx > xt9 + 1e-9 : xx < xt9 - 1e-9)) continue; if (chk === 3 && (side < 0 ? xx > xt9 + 1e-9 && xx < xt9 + 0.1 * L[tt] - 1e-9 : xx < xt9 - 1e-9 && xx > xt9 - 0.1 * L[tt] + 1e-9)) continue; if (chk === 2 && Math.abs(xx - (side < 0 ? 0 : L[tt])) > 0.1 * L[tt] + 1e-9) continue; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
           if (ok) { best = f * d; break; }
         }
         return { t2: best };
@@ -1852,7 +1858,7 @@
         FMf = nA * mT; FMJ = nA * mI;
         // RÈGLE v17 : FM = N·A·E.S, FMJ = N·A·T initiale du dernier tableau « PERTES REAJUSTEES » à sa section critique
         var BRf = P.auto.blocks && P.auto.blocks[1], cf = BRf && BRf.nb && BRf.nb.crit;
-        if (globalThis.PSIDP_FMCRIT === 1 && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti; }
+        if ((globalThis.PSIDP_FMCRIT === undefined || globalThis.PSIDP_FMCRIT === 1) && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti; }
         var nf = fl2(FMf);
         if (modeC === 3) dC = dcRule(nf) * FMJ / FMf;
         if (Math.abs(nf - dFl) < 0.01 && modeC !== 3) { dFl = nf; break; } dFl = nf;
