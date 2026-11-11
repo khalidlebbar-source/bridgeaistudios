@@ -78,7 +78,9 @@
         s, ls, N1,
       },
     };
-    if (r.momentsFin && !G.PSIDA_ENV) { r.fer.long.sup.envF = env(true, r.momentsFin); r.fer.long.inf.envF = env(false, r.momentsFin); r.fer.long.SAF = r.momentsFin[0].map(s => s.a); }
+    if (r.momentsFin && !G.PSIDA_ENV) { r.fer.long.sup.envF = env(true, r.momentsFin); r.fer.long.inf.envF = env(false, r.momentsFin); r.fer.long.SAF = r.momentsFin[0].map(s => s.a);
+      const w = G.PSIDA_R1AVG != null ? G.PSIDA_R1AVG : 0, SA0 = r.moments[0].map(s => s.a), SF = r.fer.long.SAF;
+      r.fer.long.inf.envA = r.fer.long.inf.envF.map(v => v.map((x, j) => j > 0 && j < v.length - 1 && !SA0.some(a => Math.abs(a - SF[j]) < 1e-9) ? w * x + (1 - w) * (v[j - 1] + v[j + 1]) / 2 : x)); }
     r.fer.long.epure = epure(r, r.fer.long, H);
     r.fer.etriers = etriers(r, r.fer.long);
     r.fer.appareils = appareils(m, r);
@@ -386,10 +388,10 @@
     const RAMPE = !G.PSIDA_EPURE_LIN;
     const omegas = (gm, K, last) => { const c = gm.cols, o = [c[0].om]; for (let k = 1; k <= K; k++) o.push(k === K && last ? c[2 * (k - 1)].om : c[2 * k - 1].om); return o; };
     // envS : fonction u -> enveloppe décalée (u >= 0 distance depuis la zone pleine), Lu : longueur utile ; renvoie u_r
-    function rampes(envS, Lu, om, lo, K, groups, lr0) {
+    function rampes(envS, Lu, om, lo, K, groups, lr0, ue0) {
       const lr = lr0 != null ? lr0 : G.PSIDA_LSR != null ? Math.max(1e-6, ls * G.PSIDA_LSR) : ls;   // diagnostic : longueur de rampe
       const du = 0.01, N = Math.max(2, Math.ceil(Lu / du)), U = Array.from({ length: N + 1 }, (_, i) => i * Lu / N), E = U.map(envS);
-      const ue = {};
+      const ue = Object.assign({}, ue0 || {});
       const ok = (g, x) => { const g0 = Math.min(...g); for (let i = 0; i <= N; i++) { let R = om[g0 - 1]; for (let q = g0; q <= K; q++) { const e = g.includes(q) ? x : ue[q]; R += (om[q] - om[q - 1]) * Math.min(1, Math.max(0, (e - U[i]) / lr)); } if (R < E[i] - 1e-9) return false; } return true; };
       for (const g of groups.slice().sort((a, b) => Math.max(...b) - Math.max(...a))) {
         let a = 0, b = Lu + ls; if (!ok(g, b)) { for (const q of g) ue[q] = b; continue; }
@@ -412,7 +414,7 @@
       if (lo === 1) { g.push([1]); q = 2; } for (; q <= K; q += 2) g.push(q + 1 <= K ? [q, q + 1] : [q]);
       if (V === 'B' && g.length > 1 && g[g.length - 1].length === 1 && K > lo) { const z = g.pop(); g[g.length - 1].push(...z); }
       return g; };
-    const envAt = (env0, i) => { const fin = V12 && F.SAF && (env0 === F.sup.env ? F.sup.envF : env0 === F.inf.env ? F.inf.envF : null), env = fin || env0, S = fin ? F.SAF : SA;
+    const envAt = (env0, i, isF) => { const fin = isF ? env0 : V12 && F.SAF && (env0 === F.sup.env ? F.sup.envF : env0 === F.inf.env ? F.inf.envF : null), env = fin || env0, S = fin ? F.SAF : SA;
       return x => { const v = env[i], Li = L[i], t = Math.min(Math.max(x / Li, 0), 1); for (let j = 1; j < v.length; j++) if (t <= S[j] + 1e-12) return v[j - 1] + (v[j] - v[j - 1]) * (t - S[j - 1]) / (S[j] - S[j - 1]); return v[v.length - 1]; }; };
     const winMax = (fn, a, b) => { let m = -Infinity; const N = Math.max(1, Math.ceil((b - a) / 0.01)); for (let i = 0; i <= N; i++) m = Math.max(m, fn(a + (b - a) * i / N)); return m; };
     const blocs = { sup: [], inf: [] };
@@ -429,11 +431,18 @@
         // longueur utile : jusqu'au minimum de l'enveloppe dans la travée (au-delà : zone de l'appui suivant)
         const umin = (fn, Ls) => { let um = 0, vm = Infinity; for (let q = 0; q <= 400; q++) { const v = fn(Ls * q / 400); if (v < vm - 1e-12) { vm = v; um = Ls * q / 400; } } return um; };
         const LuR = umin(u => gr(u), Lr), LuL = umin(u => gl(Ll - u), Ll);
-        const V12S = V12 && !!G.PSIDA_LSA12;   // appuis : regroupement v12 essayé (PSIDA_LSA12 = 1) — moins bon que les groupes à rampes (dernier groupe trop court)
+        const V12S = V12 && G.PSIDA_LSA12 !== 0;   // v18 : activé (dernier groupe prolongé à rampes, PSIDA_LSAL)   // appuis : regroupement v12 essayé (PSIDA_LSA12 = 1) — moins bon que les groupes à rampes (dernier groupe trop court)
         let uR = rampes(u => winMax(full, Math.max(-Ll, u - e), Math.min(LuR, u + e)), LuR, om, 1, nf.k, V12S ? singles(1, nf.k) : grp(1, nf.k), V12S ? R0 : null);
         let uL = rampes(u => winMax(full, Math.max(-LuL, -u - e), Math.min(Lr, -u + e)), LuL, om, 1, nf.k, V12S ? singles(1, nf.k) : grp(1, nf.k), V12S ? R0 : null);
         if (V12 && typeof G.PSIDA_DUMP === 'function') { const t = (lr0, gg) => [rampes(u => winMax(full, Math.max(-Ll, u - e), Math.min(LuR, u + e)), LuR, om, 1, nf.k, gg, lr0), rampes(u => winMax(full, Math.max(-LuL, -u - e), Math.min(Lr, -u + e)), LuL, om, 1, nf.k, gg, lr0)]; G.PSIDA_DUMP('LSA', k, { Ll, single: t(R0, singles(1, nf.k)), ramp: t(null, grp(1, nf.k)) }); }
-        if (V12S) { uR = regroupe(uR, 1, nf.k); uL = regroupe(uL, 1, nf.k); }
+        if (V12S) { uR = regroupe(uR, 1, nf.k); uL = regroupe(uL, 1, nf.k);
+          // v18 : dernier groupe (fers les plus courts) prolongé par l'épure à rampes (ancrage ls), les autres groupes restant à t_s
+          const LM = G.PSIDA_LSAL == null ? 1 : G.PSIDA_LSAL;
+          if (LM) { const K = nf.k, fix = (u, envS, Lu) => { let s0 = K; while (s0 > 1 && Math.abs(u[s0 - 1] - u[K]) < 1e-9) s0--;
+              const g = LM === 2 ? [K] : Array.from({ length: K - s0 + 1 }, (_, q) => s0 + q);
+              const lr = G.PSIDA_LSALR === 1 ? (nf.last ? ph[1] : ph[0]) / ph[0] * ls : ls;
+              const w = rampes(envS, Lu, om, 1, K, [g], lr)[K]; if (w > u[K]) for (let q = s0; q <= K; q++) u[q] = w; };
+            fix(uR, u => winMax(full, Math.max(-Ll, u - e), Math.min(LuR, u + e)), LuR); fix(uL, u => winMax(full, Math.max(-LuL, -u - e), Math.min(Lr, -u + e)), LuL); } }
         for (let j = 1; j <= nf.k; j++) { const phi = j === nf.k && nf.last ? ph[1] : ph[0]; list.push(fer('LSA' + (k + 1), j, phi, cS[j - 1], Ll - uL[j], uR[j], false, false, uL[j] + uR[j])); }
         LSA[k] = list; continue;
       }
@@ -460,8 +469,19 @@
       if (V12) {
         // longueur utile prolongée au-delà des appuis (t_r peut dépasser l'appui : rang 1 d'about, 3826 −0,41)
         const g0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : g(x);   // hors travée : enveloppe nulle (3607–3610 LIT3 : env(0) > Ω0)
-        const ext = 3 * e + ls, uL = regroupe(rampes(u => winMax(g0, tp - u - e, tp - u + e), tp + ext, om, 1, nf.k, singles(1, nf.k), R0), 1, nf.k);
-        const uR = regroupe(rampes(u => winMax(g0, tp + u - e, tp + u + e), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0), 1, nf.k);
+        const ext = 3 * e + ls, tL = rampes(u => winMax(g0, tp - u - e, tp - u + e), tp + ext, om, 1, nf.k, singles(1, nf.k), R0);
+        const tR = rampes(u => winMax(g0, tp + u - e, tp + u + e), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0);
+        // v18 : arrêt théorique du rang 1 (seuil Ω0 = fers de construction) sur l'enveloppe « adoucie » aux sections internes
+        // non imprimées (moyenne de la valeur calculée et de la corde des sections voisines, F.inf.envA) ; crochet PSIDA_R1AVG = 1 : sans
+        if (F.inf.envA && G.PSIDA_R1AVG !== 1) { const ga = envAt(F.inf.envA, i, true), ga0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x);
+          tR[1] = rampes(u => winMax(ga0, tp + u - e, tp + u + e), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1];
+          tL[1] = rampes(u => winMax(ga0, tp - u - e, tp - u + e), tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1]; }
+        const uL = regroupe(tL, 1, nf.k), uR = regroupe(tR, 1, nf.k);
+        // v18 : dernier groupe (rangs les plus élevés, fers les plus courts près du maximum) prolongé par l'épure à rampes,
+        // comme pour les LSA (crochet PSIDA_LITL = 0 : t_s sans rampe)
+        if (G.PSIDA_LITL !== 0) { const K = nf.k, fix = (u, envS, Lu) => { let s0 = K; while (s0 > 1 && Math.abs(u[s0 - 1] - u[K]) < 1e-9) s0--; if (s0 <= 1) return;
+            const w = rampes(envS, Lu, om, 1, K, [Array.from({ length: K - s0 + 1 }, (_, q) => s0 + q)], ls)[K]; if (w > u[K]) for (let q = s0; q <= K; q++) u[q] = w; };
+          fix(uR, u => winMax(g0, tp + u - e, tp + u + e), Li - tp + ext); fix(uL, u => winMax(g0, tp - u - e, tp - u + e), tp + ext); }
         RI[i] = { i, tp, uL, uR }; continue;
       }
       const uL = rampes(u => winMax(g, Math.max(0, tp - u - e), Math.min(Li, tp - u + e)), tp, om, lo, nf.k, gg);
@@ -520,6 +540,14 @@
       for (const b of LSA[k]) if (b.j > 3) list.push(fer('LIA' + (k + 1), b.j, ph[2], cI[b.j - 1], b.o, b.x, false, false, b.len));
       LIA[k] = list;
     }
+    // v18 (constat 3603 rang 4 : LST1 4 → 9,84, LIA2 4 ← 9,85 ; LIT1 4 finit en 10,31, LSA2 4 commence en 9,37) : quand le fer
+    // inférieur de travée et le fer supérieur d'appui de même rang (≥ 4) se chevauchent, les fers de construction qui les
+    // doublent (LST / LIA) se rejoignent au milieu du chevauchement. NON ACTIVÉ (−24 / −7 valeurs sur l'ensemble) : crochet PSIDA_CMID = 1 pour l'essayer.
+    if (V12 && G.PSIDA_CMID === 1) for (let k = 1; k < n; k++) for (const a of LIA[k]) { if (a.j <= 3) continue;
+      const tl = LST[k - 1].find(b => b.j === a.j), tr = LST[k].find(b => b.j === a.j);
+      if (tl && !tl.xStar && tl.x > a.o) { const mm = (tl.x + a.o) / 2; tl.x = mm; tl.len = tl.x - tl.o; a.o = mm; }
+      if (tr && !tr.oStar && tr.o < a.x) { const mm = (tr.o + a.x) / 2; tr.o = mm; tr.len = tr.x - tr.o; a.x = mm; }
+      a.len = L[k - 1] - a.o + a.x; }
     for (let i = 0; i < n; i++) {
       blocs.sup.push({ titre: i === 0 ? 'TRAVEE 1' : 'APPUI ' + (i + 1) + '  TRAVEE ' + (i + 1), groupes: (i === 0 ? [] : [{ lab: 'APPUI ' + (i + 1), fers: LSA[i], princ: true }]).concat([{ lab: 'TRAVEE ' + (i + 1), fers: LST[i], princ: false }]) });
       blocs.inf.push({ titre: i === 0 ? 'TRAVEE 1' : 'APPUI ' + (i + 1) + '  TRAVEE ' + (i + 1), groupes: (i === 0 ? [] : [{ lab: 'APPUI ' + (i + 1), fers: LIA[i], princ: false }]).concat([{ lab: 'TRAVEE ' + (i + 1), fers: LIT[i], princ: true }]) });
