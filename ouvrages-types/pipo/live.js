@@ -82,7 +82,7 @@
         if (cur && Math.abs(cur.b - p) < 1e-9 && !(Ld > 0 && (Math.abs(p) < 1e-9 || Math.abs(p - L) < 1e-9))) { cur.b = q; cur.l += q - p; cur.a += ar; } else { cur = { a0: p, b: q, l: q - p, a: ar }; Z.push(cur); }
         if (yb <= 0) cur = null;
       }
-      return Z.filter(z => z.a > 1e-12); };
+      return Z.filter(z => z.a > (globalThis.PIPO_ZEPS != null ? globalThis.PIPO_ZEPS : 1e-6)); }; // tour 17 : zones d'aire nulle (résidus d'inextensibilité, ordonnées ~1e-8 aux angles) écartées
     return { at, zones, X, Y };
   }
 

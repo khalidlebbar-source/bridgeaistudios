@@ -146,7 +146,12 @@
     add(v.PHI2, wl, 4 * (2 / 0.2 + Math.max(0, v.HAUTL - 2) / nom.espPd));
     add(v.PHI2, g.B, 2 * Wb / nom.espP); add(v.PHI2, wl, 2 * (g.B / nom.espSs + g.B / 0.2));
     const beton = g.e3 * (v.OUVER + 2 * g.e2) / sn * larg + (2 * v.HAUTL * g.e2 + 2 * g.e1 * g.B) * Wb; // exact (droits et 1677/1796)
-    const coffrage = (v.OUVER + 4 * v.HAUTL + 4 * g.e1 + 2 * g.e3) * Wb; // approché
+    // tour 17 : coffrage = intrados (OUVER × largeur biaise) + faces intérieures (2·HAUTL) et extérieures (2·(HAUTL + e3)) des piédroits
+    // + les deux tympans (2 × section du « tube » + semelles) ; semelles coulées en fouille (pas de coffrage latéral) ; béton et coffrage
+    // imprimés tronqués (INT Fortran) : droits exacts (9/9). Biais : traverse en rive comptée e3/sinφ (1677, 1796 ; hypothèse sur 2 passages).
+    const secT = g.e3 * (v.OUVER + 2 * g.e2) / sn + 2 * v.HAUTL * g.e2 + 2 * g.e1 * g.B;
+    const coffrage = globalThis.PIPO_COFF === 0 ? (v.OUVER + 4 * v.HAUTL + 4 * g.e1 + 2 * g.e3) * Wb
+      : (v.OUVER + 4 * v.HAUTL + 2 * g.e3 / sn) * Wb + 2 * secT;
     const metre = { beton, coffrage, ton, total: ton[0] + ton[1] + ton[2] };
     return { min, ad, tr, e, eP, Q, ep, nom, metre };
   }

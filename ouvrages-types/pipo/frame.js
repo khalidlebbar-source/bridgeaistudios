@@ -11,7 +11,7 @@
   Frame.prototype.bar = function (i, j, EI, EA) {
     const a = this.nodes[i], b = this.nodes[j];
     const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy);
-    this.bars.push({ i, j, EI, EA: EA || EI * 1e5, L, c: dx / L, s: dy / L });
+    this.bars.push({ i, j, EI, EA: EA || EI * (globalThis.PIPO_EAK || 1e6), /* tour 17 : barres quasi inextensibles (déformation d'effort normal négligée, méthode des forces SETRA) — 1e5 laissait des ordonnées parasites ~1e-7 ; 1e8 : mal conditionné */ L, c: dx / L, s: dy / L });
     return this.bars.length - 1;
   };
   Frame.prototype.spring = function (n, k) { this.springs.push({ n, k }); };

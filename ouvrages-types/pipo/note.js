@@ -443,8 +443,8 @@
 
   function avantMetre(r) {
     const m = r.fer.metre;
-    return [sp(24) + 'AVANT       METRE       RECAPITULATIF', ' ', 'B E T O N S', '        BETON POUR BA             ' + String(Math.round(m.beton)).padStart(7) + ' M3',
-      '        COFFRAGES                 ' + String(Math.round(m.coffrage)).padStart(7) + ' M2', ' ', 'A C I E R S',
+    return [sp(24) + 'AVANT       METRE       RECAPITULATIF', ' ', 'B E T O N S', '        BETON POUR BA             ' + String(Math.floor(m.beton + 1e-9)).padStart(7) + ' M3',
+      '        COFFRAGES                 ' + String(Math.floor(m.coffrage + 1e-9)).padStart(7) + ' M2', ' ', 'A C I E R S',
       '       ACIER PHI1               =' + F(m.ton[0], 9, 2) + ' T', '       ACIER PHI2               =' + F(m.ton[1], 9, 2) + ' T', '       ACIER PHI3               =' + F(m.ton[2], 9, 2) + ' T',
       '                    TOTAL       =' + F(m.total, 9, 2) + ' T', "       POIDS D'ACIER", '           PAR M3 DE BETON =' + F(m.total / m.beton, 15, 3) + ' T/M3'];
   }
