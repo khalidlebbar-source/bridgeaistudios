@@ -1419,7 +1419,7 @@
     };
     // ---------------------------------------------------------------- un bloc « éléments de détermination du fuseau »
     var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 1 : globalThis.PSIDP_FMCRIT; // v18 : actif par défaut (règle v17), 0 = ancien calcul
-    var block = function (N, base, kind, keyE, FMin) {
+    var block = function (N, base, kind, keyE, FMin, FMJin, byIn, critIn, Eprev) {
       var G = [], t, k;
       for (t = 0; t < n; t++) for (k = 0; k <= 10; k++) G.push({ t: t, k: k, x: k * L[t] / 10, X: R.X0[t] + k * L[t] / 10 });
       var segsAll = []; base.spans.forEach(function (S2, tt) { S2.forEach(function (sg) { segsAll.push({ a: sg.A, from: R.X0[tt] + sg.from, to: R.X0[tt] + sg.to }); }); });
@@ -1457,16 +1457,30 @@
           g.es = g.Ti - g.rel - retr - fl - g.rect; g.ms = g.Ti - rt * (g.Ti - g.es);
         });
       };
-      var curBy = null;
+      var curBy = byIn || null, FMP = FMJin !== undefined, curCrit = critIn || null, FLR = globalThis.PSIDP_FLROWS || 0, rowsE = null;
+      // RÈGLE v20 (PSIDP_FLROWS = 1) : le « CALCUL ITERATIF DU FLUAGE » n'a que TROIS lignes I = 1..3, fixées par le critère (ICR) du
+      // tableau précédent (bloc 1 : son propre tableau) : inscription -> appui gauche, travée, appui droit de la travée d'inscription
+      // maximale ; ouverture -> appui 2, travée 1, about. E(I) : excentrements du tracé de base du bloc (réajusté) ; dans un bloc
+      // « APPROCHEES » de rang ≥ 2, E(I) n'est pas recalculé : il reste celui de la ligne de même rang du bloc précédent
+      // (2481, 2764 : E identiques ; 0013B N = 15 : E(2) de la travée 2 appliqué à la travée 1, E(3) d'appui sur la ligne d'about).
+      var rows3 = function () {
+        var c = curCrit; if (!c) return null; var fk = function (id) { return keyE.filter(function (q) { return q.id === id; })[0]; }, r;
+        if (c.by === 'ouv') r = [fk('a1'), fk('b0'), fk('c') || { id: 'c', t: 0, k: 0, E: 0, abut: true }];
+        else { var tI = c.tI !== undefined ? c.tI : (c.k === 10 ? c.t + 1 : c.t); r = [fk('a' + tI), fk('b' + tI), fk('a' + (tI + 1))]; }
+        r = r.map(function (q, i) { if (!q) return null; var o = {}; for (var kk in q) o[kk] = q[kk]; o.id = 'r' + i; if (Eprev && Eprev[i] !== undefined) o.E = Eprev[i]; return o; });
+        rowsE = r.map(function (q) { return q ? q.E : undefined; });
+        return r.filter(function (q) { return q; });
+      };
       var fluage = function (FM, rec) {
-        var rows = [];
-        keyE.forEach(function (ke) {
+        var rows = [], KE = (FLR === 1 && rows3()) || keyE;
+        KE.forEach(function (ke) {
           var s = sec(ke.t, ke.k), tp = s.tp || [0, 0], E = ke.E, CPTM = (s.cp[0] + s.cp[1]) / 2;
-          if (ke.abut && FMCRIT && curBy !== 'ouv') return; // v17 : ligne d'about seulement si l'ouverture du fuseau est déterminante (0013, 0013B)
+          if (ke.abut && FMCRIT && curBy !== 'ouv' && !(FLR === 1 && curCrit)) return; // v17 : ligne d'about seulement si l'ouverture du fuseau est déterminante (0013, 0013B)
           if (ke.abut) { var a1c = FM / S * (1 - 0.8 * E / V); rows.push(a1c); if (rec) rec[ke.id] = { sb: a1c, K: 3, SBB: 0, E: E, XM: 0, SM: 0, CPTM: 0, CPPM: 0, A1: a1c, A2: 0, A3: 0 }; return; }
           var top = ke.app, vv = top ? V : -VP, XM = top ? s.cp[1] + tp[1] : s.cp[0] + tp[0];
           var A1 = FM / S * (1 - 0.8 * E / vv);
           var cand = top ? [[-ft28, s.comb[1].qlqcta, 5]] : [[-ft28, s.comb[0].qlqcta, 5], [0, s.comb[0].freq, 3]], bst = null;
+          if (top && FLR === 1 && globalThis.PSIDP_FLK3 !== 0) cand.push([0, s.comb[1].freq, 3]); // 0013B, 2764 : lignes d'appui K = 3 (SBB = 0, combinaison fréquente)
           cand.forEach(function (cd) { var sb = A1 + cd[0] * E / vv + (CPTM - cd[1]) * E / I; rows.push(sb);
             if (!bst || sb > bst.sb) bst = { sb: sb, K: cd[2], SBB: cd[0], E: E, XM: XM, SM: cd[1] - XM, CPTM: CPTM, CPPM: CPTM * R.cp.sup[0] / R.cp.tot[0], A1: A1, A2: cd[0] * E / vv, A3: (CPTM - cd[1]) * E / I }; });
           if (rec) rec[ke.id] = bst;
@@ -1474,21 +1488,25 @@
         return kfl * Math.max.apply(null, rows);
       };
       var FM = FMin || N * A * 0.75 * s0, fl = fluage(FM);
+      // ΔC du tableau (v20, crochet PSIDP_DCB) : 1 = règle β (v8) sur le fluage du bloc, exacte au bloc 1 (FMJ = 0)
+      var DCB = globalThis.PSIDP_DCB || 0, dC0 = dC;
+      var setDC = function (f) { if (DCB === 1 && !(FMJin > 0)) dC = 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * f * R.EI28 / (v.KFL * Ep); else dC = dC0; };
+      setDC(fl);
       for (var it = 0; it < 30; it++) {
         tab(fl);
         var me = 0; U.forEach(function (g) { me += g.es; }); me /= U.length;
         // RÈGLE v17 : FM = N·A·E.S et FMJ = N·A·T initiale à la section critique du fuseau (cf. nombres().crit)
-        if (FMCRIT && !FMin) { var nbc = nombres({ G: G }); if (nbc.crit) { me = G[nbc.crit.t * 11 + nbc.crit.k].es; curBy = nbc.crit.by; } }
+        if (FMCRIT && !FMin) { var nbc = nombres({ G: G }); if (nbc.crit) { me = G[nbc.crit.t * 11 + nbc.crit.k].es; curBy = nbc.crit.by; if (FLR === 1 && !critIn) curCrit = nbc.crit; } }
         var FM2 = FMin || N * A * me, fl2 = fluage(FM2);
-        if (Math.abs(fl2 - fl) < 0.01) { fl = fl2; FM = FM2; break; }
-        fl = fl2; FM = FM2;
+        if (Math.abs(fl2 - fl) < 0.01) { fl = fl2; FM = FM2; setDC(fl); break; }
+        fl = fl2; FM = FM2; setDC(fl);
       }
       tab(fl);
       var rec = {}; fluage(FM, rec);
       var mti = 0, mes = 0; U.forEach(function (g) { mti += g.Ti; mes += g.es; });
       G.forEach(function (g) { var b = bounds(g.t, g.k, g.ms, g.es, g.Ti, N); g.sup = b.sup; g.inf = b.inf; });
       if (FMCRIT) { var nbf = nombres({ G: G }); if (nbf.crit) { var gc = G[nbf.crit.t * 11 + nbf.crit.k]; mti = gc.Ti; mes = gc.es; } }
-      return { N: N, kind: kind, G: G, dC: dC, fl: fl, FM: FM, FMJ: kind === 'REAJUSTEES' ? FM * mti / mes : 0, rec: rec, SG: sg, SD: sd !== null ? Lt - sd : null, base: base };
+      return { N: N, kind: kind, G: G, dC: dC, fl: fl, FM: FM, FMJ: FMP ? FMJin : (kind === 'REAJUSTEES' ? FM * mti / mes : 0), rec: rec, SG: sg, SD: sd !== null ? Lt - sd : null, base: base, keyE: keyE, rowsE: rowsE };
     };
     // nombres de câbles nécessaires (ouverture du fuseau, inscription dans la structure) avec les tensions du bloc
     var nombres = function (B) {
@@ -1517,24 +1535,36 @@
       if (ouv >= insMax || tI < 0) { // 0013, 0013B : point bas (bord sup minimal) de la travée de rive gauche (0.40L)
         var kb = 1; for (var k3 = 1; k3 < 10; k3++) if (B.G[k3].sup < B.G[kb].sup - 1e-12) kb = k3;
         crit = { t: 0, k: kb, by: 'ouv' }; }
-      else crit = tI > 0 ? { t: tI - 1, k: 10, by: 'ins' } : { t: 0, k: 10, by: 'ins' };
+      else crit = tI > 0 ? { t: tI - 1, k: 10, by: 'ins', tI: tI } : { t: 0, k: 10, by: 'ins', tI: tI };
       // notice PSIDP-EL (NCAB) : « le programme compare cette valeur introduite en données et le nombre théorique résultant du calcul
       // pour en retenir le plus grand des deux » (2766 : NCA = 17, nombre théorique 16)
       var Nth = Math.ceil(Math.max.apply(null, [ouv].concat(ins.filter(isFinite))) - 1e-9);
       return { ouv: ouv, ins: ins, crit: crit, N: globalThis.PSIDP_NCAMAX === 0 ? Nth : Math.max(Nth, Math.round(v.NCA || 0)) };
     };
     // point fixe sur N pour un type de bloc
-    var solveN = function (N, base, kind, keyE) {
+    // RÈGLE v20 (PSIDP_FMPREV = 1) : un bloc de rang ≥ 2 prend FM = N·A·E.S et FMJ = N·A·T initiale du tableau PRÉCÉDENT
+    // à la section critique de ce tableau (pas de point fixe sur son propre tableau) ; la ligne d'about suit le critère précédent.
+    var FMPREV = globalThis.PSIDP_FMPREV || 0;
+    var prevF = function (Bp, N) { var c = Bp && Bp.nb && Bp.nb.crit; if (!FMPREV || !c) return null; var g = Bp.G[c.t * 11 + c.k]; return [N * A * g.es, N * A * g.Ti, c.by, c]; };
+    // N de FM : nombre de câbles courant AVANT la mise à jour par « NOMBRES DE CABLES » (0013 : tableau réajusté à 17 câbles, FM à 16 ;
+    // cycle N + 1 : FM à N + 1, cf. 2481, 2764) — Nfm = N du tableau précédent pour le bloc réajusté d'un cycle.
+    var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var f = prevF(Bp, (FMPREV === 2 ? 0 : Nfm) || N); return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null) : block(N, base, kind, keyE); };
+    var solveN = function (N, base, kind, keyE, Bp) {
       var B, seen = {};
       for (var it = 0; it < 15; it++) {
-        B = block(N, base, kind, keyE); var nb = nombres(B); B.nb = nb;
+        B = blockP(N, base, kind, keyE, Bp, false, Bp ? Bp.N : undefined); var nb = nombres(B); B.nb = nb;
         if (nb.N === N || seen[nb.N]) break; seen[N] = 1; N = nb.N;
       }
       return B;
     };
     // ---------------------------------------------------------------- tracé de base n°1 et bloc approché
     var P1 = { xl: [], zl: [], zs: [] };
-    for (var t = 0; t < n; t++) { var endS = t === 0 || t === n - 1; P1.xl.push((t === 0 ? 0.4 : (t === n - 1 ? 0.6 : 0.5)) * L[t]); P1.zl.push(endS ? -H / 6 : -H / 4); }
+    // RÈGLE v21 (PSIDP_TB1RIVE : 0 = défaut, 0.40 L fixe ; 1 = tracé de base 1 seul ; 2 = bases 1 et 2 + paraboles limites) : point bas de rive à 0.40 L, reculé vers la culée par pas de 0.05 L tant que la distance
+    // point bas -> premier appui intermédiaire est inférieure à 0.40 L de la travée adjacente (équivaut à L rive / L adjacente >= 2/3
+    // pour 0.40 L). Observé sur 2765 (contrôle, 15-24-24-15 : point bas imprimé à 0.35 L) ; sans effet sur les autres passages.
+    var TB1R = globalThis.PSIDP_TB1RIVE || 0;
+    var xRive = function (t, adj) { var x = 0.4; if (TB1R) while (x > 0.2 && (1 - x) * L[t] < 0.4 * L[adj] - 1e-6) x -= 0.05; return x; };
+    for (var t = 0; t < n; t++) { var endS = t === 0 || t === n - 1; P1.xl.push((t === 0 ? (n > 1 ? xRive(0, 1) : 0.4) : (t === n - 1 ? 1 - xRive(t, t - 1) : 0.5)) * L[t]); P1.zl.push(endS ? -H / 6 : -H / 4); }
     for (var j = 0; j <= n; j++) P1.zs.push(j === 0 || j === n ? 0 : zs);
     var base1 = traceFromPoints(R, P1);
     var key1 = [];
@@ -1546,6 +1576,15 @@
       var Pp = { xl: [], zl: [], zs: [] }, kl = [];
       for (var t2 = 0; t2 < n; t2++) {
         var bk = 1; for (var kk = 1; kk < 10; kk++) if (B.G[t2 * 11 + kk].sup < B.G[t2 * 11 + bk].sup - 1e-12) bk = kk;
+        // RÈGLE v21 : la section du point bas du tracé de base n° 1 fait partie des sections examinées même hors grille 0.1 L
+        // (2765 : X = 5.250 = 0.35 L imprimé, Z = -0.038 sous les bords sup 0.30/0.40 L -0.034/-0.035) ; bord sup en ce point par
+        // interpolation parabolique sur les trois sections 0.1 L voisines (approximation : SETRA calcule la section elle-même).
+        var u1 = P1.xl[t2] / L[t2] * 10, k1 = Math.floor(u1 + 1e-9);
+        if (TB1R >= 2 && u1 - k1 > 1e-6 && k1 >= 1 && k1 <= 8) {
+          var f0 = B.G[t2 * 11 + k1 - 1].sup, f1 = B.G[t2 * 11 + k1].sup, f2 = B.G[t2 * 11 + k1 + 1].sup, w = u1 - k1;
+          var zq = f1 + w * (f2 - f0) / 2 + w * w * (f2 - 2 * f1 + f0) / 2;
+          if (zq < B.G[t2 * 11 + bk].sup - 1e-12) { Pp.xl.push(P1.xl[t2]); Pp.zl.push(zq); kl.push(Math.round(u1)); continue; }
+        }
         Pp.xl.push(bk * L[t2] / 10); Pp.zl.push(B.G[t2 * 11 + bk].sup); kl.push(bk);
       }
       for (var jj = 0; jj <= n; jj++) Pp.zs.push(jj === 0 || jj === n ? 0 : B.G[(jj - 1) * 11 + 10].inf);
@@ -1553,9 +1592,10 @@
     };
     var P2 = basePts(BA), base2 = traceFromPoints(R, P2), key2 = [{ id: 'c', t: 0, k: 0, E: BA.G[0].inf, abut: true }];
     for (t = 0; t < n; t++) { key2.push({ id: 'b' + t, t: t, k: P2.kl[t], E: P2.zl[t] }); if (t < n - 1) key2.push({ id: 'a' + (t + 1), t: t, k: 10, E: P2.zs[t + 1], app: true }); }
-    var BR = solveN(BA.N, base2, 'REAJUSTEES', key2);
+    var BR = solveN(BA.N, base2, 'REAJUSTEES', key2, BA);
     // tentative de tracé concordant pour un bloc réajusté donné et un décalage dz des points de passage sur appuis
     var attempt = function (BR, Nr, dz) {
+      if (typeof globalThis.PSIDP_BRFIX === 'function') globalThis.PSIDP_BRFIX(BR, Nr); // outil de mise au point (fuseau imposé) ; absent en usage normal
       // ---------------------------------------------------------------- paraboles limites
       var P3 = basePts(BR); P3.zs = P3.zs.map(function (z, jj) { return (jj === 0 || jj === n) ? z : z + dz; }); var gsup = function (t, k) { return BR.G[t * 11 + k].sup; }, ginf = function (t, k) { return BR.G[t * 11 + k].inf; };
       // T1 : point bas sur le bord supérieur ; côté appui : la plus grande longueur de raccord (<= 0.36 d) restant sous le bord sup.
@@ -1567,11 +1607,19 @@
       var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
         var best = 0.05 * d, f0 = 0.36;
         if (globalThis.PSIDP_T1CAP !== 0) f0 = Math.min(0.36, 0.18 * L[tt] / d);
-        for (var f = f0; f >= 0.05; f -= 0.0025) {
+        var t1ok = function (f) {
           var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
           var xt9 = side < 0 ? f * d : L[tt] - f * d, chk = globalThis.PSIDP_T1CHK !== undefined ? globalThis.PSIDP_T1CHK : 1;
+          // RÈGLE v19 : le point d'inflexion (jonction parabole principale / raccord) reste sous le bord sup interpolé linéairement
+          // entre les sections 0.1 L voisines (PSIDP_T1INF = 1 ; défaut 0 : non contrôlé, voir NOTES v19)
+          if (globalThis.PSIDP_T1INF === 1) { var ui = xt9 / L[tt] * 10, ki = Math.min(9, Math.max(0, Math.floor(ui))), si = gsup(tt, ki) + (gsup(tt, ki + 1) - gsup(tt, ki)) * (ui - ki);
+            if (tr.z(tt, xt9) > si + 1e-9) ok = false; }
           for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if (chk === 1 && (side < 0 ? xx > xt9 + 1e-9 : xx < xt9 - 1e-9)) continue; if (chk === 3 && (side < 0 ? xx > xt9 + 1e-9 && xx < xt9 + 0.1 * L[tt] - 1e-9 : xx < xt9 - 1e-9 && xx > xt9 - 0.1 * L[tt] + 1e-9)) continue; if (chk === 2 && Math.abs(xx - (side < 0 ? 0 : L[tt])) > 0.1 * L[tt] + 1e-9) continue; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
-          if (ok) { best = f * d; break; }
+          return ok;
+        };
+        for (var f = f0; f >= 0.05; f -= 0.0025) {
+          if (t1ok(f)) { best = f * d; if (globalThis.PSIDP_T1INF === 1 && f < f0 - 1e-9) { var lo9 = f, hi9 = Math.min(f0, f + 0.0025);
+              for (var it9 = 0; it9 < 12; it9++) { var m9 = (lo9 + hi9) / 2; if (t1ok(m9)) lo9 = m9; else hi9 = m9; } best = lo9 * d; } break; }
         }
         return { t2: best };
       } });
@@ -1585,7 +1633,12 @@
       if (globalThis.PSIDP_T2MODE !== 0) {
         for (t = 0; t < n; t++) {
           var xr7 = P3.xl[t] / L[t];
-          if (t > 0 && t < n - 1) P4.zl[t] = (P3.zs[t] + P3.zs[t + 1]) / 2 - (zs - zi);
+          if (t > 0 && t < n - 1) P4.zl[t] = globalThis.PSIDP_T2MODE === 3 || globalThis.PSIDP_T2MODE === 4 ? Math.max(P4.zl[t], (P3.zs[t] + P3.zs[t + 1]) / 2 - (zs - zi)) : (P3.zs[t] + P3.zs[t + 1]) / 2 - (zs - zi);
+          else if (n > 1 && (globalThis.PSIDP_T2MODE === 3 || globalThis.PSIDP_T2MODE === 5)) {
+            // essai v19 : point bas de rive = max(bord inf, zi − x_rel·(zs − z_appui), point tel que T2 passe au bord inf à 0.2 L de la culée)
+            var zf8 = t === 0 ? zi - xr7 * (zs - P3.zs[1]) : zi - (1 - xr7) * (zs - P3.zs[n - 1]);
+            var u8 = t === 0 ? 0.2 * L[t] / P3.xl[t] : 0.2 * L[t] / (L[t] - P3.xl[t]), zt8 = ginf(t, t === 0 ? 2 : 8) / (2 * u8 - u8 * u8);
+            P4.zl[t] = Math.max(P4.zl[t], zf8, u8 < 1 ? zt8 : -Infinity); }
           else if (n > 1 && (globalThis.PSIDP_T2MODE === 1 || globalThis.PSIDP_T2MODE === 2)) { var zf7 = t === 0 ? zi - xr7 * (zs - P3.zs[1]) : zi - (1 - xr7) * (zs - P3.zs[n - 1]); P4.zl[t] = globalThis.PSIDP_T2MODE === 2 ? zf7 : Math.max(P4.zl[t], zf7); }
         }
       }
@@ -1599,11 +1652,18 @@
       // RÈGLE (v13, listings 0013, 0013A, 0014, 0015, 2764, 2766 ; 0013B à 0.002 près) : rayon de T2 sur chaque côté d'appui intermédiaire
       // = RMIN + 2k m, k minimal tel que T2 reste au-dessus du bord inf du fuseau réajusté aux sections situées à 0.1L et 0.2L de l'appui
       // (côté appui du point bas). Augmenter R allonge le raccord et relève la parabole principale.
-      var rT2 = {}, tolT2 = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0; // 0,005 reproduit 0013B et 2766 mais serait une tolérance déduite des listings (SPEC) ; gain négligeable
+      // RÈGLE v22 (fuseau IMPRIMÉ imposé, banc v22/fx.js + rk2.js : 9 passages de réglage, tous les N, 32 décisions de rayon liantes) :
+      // T2 peut passer SOUS le bord inf d'au plus 0.005 m aux sections contrôlées. Rayons retenus : marge ≥ −5.0 mm ; rayon inférieur
+      // (R − 2) rejeté : marge ≤ −5.2 mm, sans exception (rive : 0.1/0.2 L ; travée intermédiaire : 0.1/0.2/0.3 L). Constante ronde unique.
+      // PSIDP_T2TOL = 0 : ancien contrôle strict.
+      var rT2 = {}, tolT2 = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0.005;
       if (globalThis.PSIDP_T2RK !== 0) rminSide = function (tt, side) { var q = rT2[tt + '_' + side]; return { R: q !== undefined ? q : (v.RMIN || 8) }; };
       if (globalThis.PSIDP_T2RK !== 0) for (t = 0; t < n; t++) [-1, 1].forEach(function (side) {
         if ((side < 0 && t === 0) || (side > 0 && t === n - 1)) return;
+        // RÈGLE v22 : en travée intermédiaire la section 0.3 L de l'appui est contrôlée en plus de 0.1/0.2 L (2481 N = 11–13 : 32/26, 44/36,
+        // 46/38 m ; 2766 travées 2/4 : 18.5/12.5 m) ; en rive 0.3 L n'est pas contrôlée (marges imprimées −25 à −46 mm). PSIDP_T2K3 = 0 : 0.1/0.2 L partout.
         var key = t + '_' + side, ks = side < 0 ? [1, 2] : [9, 8];
+        if (globalThis.PSIDP_T2K3 !== 0 && t > 0 && t < n - 1) ks = side < 0 ? [1, 2, 3] : [9, 8, 7];
         for (var k8 = 0; k8 <= 40; k8++) {
           rT2[key] = (v.RMIN || 8) + 2 * k8;
           var d8 = side < 0 ? P4.xl[t] : L[t] - P4.xl[t], h8 = P4.zs[side < 0 ? t : t + 1] - P4.zl[t];
@@ -1660,10 +1720,10 @@
     // de décalage laissent le système inchangé (impressions identiques), puis N -> N + 1 et nouveau cycle complet, au plus 4 câbles supplémentaires.
     var st = null, BAk = BA, BRk = BR, Nr = BR.N, MAXPLUS = globalThis.PSIDP_MAXPLUS !== undefined ? globalThis.PSIDP_MAXPLUS : (globalThis.PSIDP_LPMODE === 0 ? 0 : 4), DZMAX = 0, cycles = [];
     for (var plus = 0; plus <= MAXPLUS && !(st && st.lam); plus++) {
-      if (plus > 0) { Nr = BR.N + plus; BAk = block(Nr, base1, 'APPROCHEES', key1); BAk.nb = nombres(BAk);
+      if (plus > 0) { Nr = BR.N + plus; BAk = FMPREV ? blockP(Nr, base1, 'APPROCHEES', BRk.keyE, BRk, true) : block(Nr, base1, 'APPROCHEES', key1); BAk.nb = nombres(BAk);
         var P2k = basePts(BAk), key2k = [{ id: 'c', t: 0, k: 0, E: BAk.G[0].inf, abut: true }];
         for (var t8 = 0; t8 < n; t8++) { key2k.push({ id: 'b' + t8, t: t8, k: P2k.kl[t8], E: P2k.zl[t8] }); if (t8 < n - 1) key2k.push({ id: 'a' + (t8 + 1), t: t8, k: 10, E: P2k.zs[t8 + 1], app: true }); }
-        BRk = block(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2k); BRk.nb = nombres(BRk); BRk.P2 = P2k; }
+        BRk = blockP(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2k, BAk); BRk.nb = nombres(BRk); BRk.P2 = P2k; }
       var room = Infinity; for (var jj = 1; jj < n; jj++) { var gg = BRk.G[(jj - 1) * 11 + 10]; room = Math.min(room, gg.sup - gg.inf); }
       for (var dz = 0; dz <= Math.min(DZMAX, Math.max(0, room)) + 1e-9; dz += 0.01) { st = attempt(BRk, Nr, dz); if (st.lam) break; }
       cycles.push({ BA: BAk, BR: BRk, st: st, N: Nr });
@@ -1844,14 +1904,27 @@
       var fl2 = function (FM) {
         var mx = -Infinity;
         keys.forEach(function (ke) {
+          if (ke.abut) return;
           var g = G.filter(function (q) { return q.t === ke.t && q.k === ke.k; })[0], s = R.sol[ke.t].filter(function (q) { return Math.abs(q.x0 - ke.k / 10) < 1e-9; })[0];
           var tp = s.tp || [0, 0], E = g.e, CPTM = (s.cp[0] + s.cp[1]) / 2, top = ke.app, vv = top ? Vs : -VP, XM = top ? s.cp[1] + tp[1] : s.cp[0] + tp[0];
+          // RÈGLE v19 (0013, 0014, 0015, 2764, 2766 : bloc final imprimé) : sur les lignes de travée, l'excentrement E(I) est celui du câble
+          // à 0.80 L de la travée (moments XM, CPTM… de la section clé) — PSIDP_FLE8 = 1 ; défaut 0 : excentrement de la section clé (NOTES v19)
+          if (!top && globalThis.PSIDP_FLE8 === 1) E = G.filter(function (q) { return q.t === ke.t && q.k === 8; })[0].e;
           var A1 = FM / Sb * (1 - 0.8 * E / vv), cand = top ? [[-ft28, s.comb[1].qlqcta, 5]] : [[-ft28, s.comb[0].qlqcta, 5], [0, s.comb[0].freq, 3]], bst = null;
           cand.forEach(function (cd) { var sb = A1 + cd[0] * E / vv + (CPTM - cd[1]) * E / Ib; if (!bst || sb > bst.sb) bst = { sb: sb, K: cd[2], SBB: cd[0], E: E, XM: XM, SM: cd[1] - XM, CPTM: CPTM, CPPM: CPTM * R.cp.sup[0] / R.cp.tot[0], A1: A1, A2: cd[0] * E / vv, A3: (CPTM - cd[1]) * E / Ib }; });
           rec[ke.id] = bst; mx = Math.max(mx, bst.sb);
         });
         return kfl * mx;
       };
+      // RÈGLE v19 (lignes du bloc final imprimé, 0013, 0014, 0015, 2764, 2766…) : mêmes lignes que les blocs du fuseau —
+      // inscription déterminante : appuis encadrant la travée d'inscription maximale + cette travée ; ouverture : appui 2, travée 1, about.
+      // PSIDP_FLKEYS = 1 (crit. du 1er bloc réajusté) / 2 (dernier bloc) ; défaut 0 : toutes les sections clés (NOTES v19)
+      var BRk = P.auto.blocks && (globalThis.PSIDP_FLKEYS === 2 ? P.auto.blocks[P.auto.blocks.length - 1] : P.auto.blocks[1]), ck = BRk && BRk.nb && BRk.nb.crit;
+      if (globalThis.PSIDP_FLKEYS >= 1 && ck) {
+        if (ck.by === 'ins' && ck.tI !== undefined) keys = keys.filter(function (ke) { return ke.id === 'b' + ck.tI || ke.id === 'a' + ck.tI || ke.id === 'a' + (ck.tI + 1); });
+        else if (ck.by === 'ouv') { keys = keys.filter(function (ke) { return ke.id === 'b0' || ke.id === 'a1'; }); keys.push({ id: 'c', t: 0, k: 0, abut: true }); }
+      }
+      var fl2b = fl2; fl2 = function (FM) { var r = fl2b(FM), ab = keys.some(function (ke) { return ke.abut; }); if (ab) { var a1c = FM / Sb; rec.c = { sb: a1c, K: 3, SBB: 0, E: 0, XM: 0, SM: 0, CPTM: 0, CPPM: 0, A1: a1c, A2: 0, A3: 0 }; r = Math.max(r, kfl * a1c); } return r; };
       var FMf = 0, FMJ = 0;
       for (it = 0; it < 40; it++) {
         var mT = 0, mI = 0; uniq.forEach(function (g) { var q = los(g, dC, dFl); mT += q.infini; mI += q.proba; }); mT /= uniq.length; mI /= uniq.length;
