@@ -1369,6 +1369,252 @@
       D.push('  '); D.push(' ');
     });
   }
+  // Section 37 — chargement équivalent à la précontrainte moyenne (BPEL : p = -F·z'' sur chaque arc parabolique,
+  // F = N·A·moyenne de la tension sur l'arc ; R = F·|z'| à l'ancrage de rive). Arcs : 4 par travée (arc nul de
+  // longueur 0 en tête de la travée de rive gauche / en fin de la travée de rive droite).
+  function secChargeEq(D, m, R) {
+    var P = R.prec; if (!P || !P.G || !P.cable || !P.cable.spans) return;
+    var n = R.n, nA = P.nA;
+    var arcs = [];
+    for (var t = 0; t < n; t++) {
+      var sg = P.cable.spans[t].slice(), Lt = R.L[t];
+      while (sg.length < 4) { if (t === 0) sg.unshift({ A: 0, B: 0, C: 0, from: 0, to: 0 }); else { var e0 = sg[sg.length - 1]; sg.push({ A: 0, B: 0, C: 0, from: e0.to, to: e0.to }); } }
+      arcs.push(sg.slice(0, 4));
+    }
+    function field(t, key) {
+      var G = P.G.filter(function (g) { return g.t === t; }).sort(function (a, b) { return a.x - b.x; });
+      return function (x) {
+        for (var i = 0; i < G.length - 1; i++) if (x <= G[i + 1].x + 1e-9) { var a = G[i], b = G[i + 1], u = (x - a.x) / ((b.x - a.x) || 1); return key(a) + (key(b) - key(a)) * u; }
+        return key(G[G.length - 1]);
+      };
+    }
+    function mean(f, a, b) { if (b - a < 1e-9) return f(a); var M = 40, h = (b - a) / M, s = 0; for (var k = 0; k <= M; k++) s += ((k === 0 || k === M) ? 1 : (k % 2 ? 4 : 2)) * f(a + k * h); return s * h / 3 / (b - a); }
+    var states = [['    DENSITE A LA FIN DE LA MISE ', '         EN PRECONTRAINTE ', function (g) { return g.p.proba; }],
+      ['    DENSITE A LA MISE EN SERVICE ', null, function (g) { return g.d.msMoy; }],
+      ['    DENSITE EN SERVICE TOUTES ', '      PERTES DEDUITES ', function (g) { return g.d.esMoy; }]];
+    for (var t0 = 0; t0 < n; t0 += 5) {
+      var ts = []; for (var q = t0; q < Math.min(n, t0 + 5); q++) ts.push(q);
+      D.newPage(); D.push('  ');
+      D.push(pad(40, "CHARGEMENT EQUIVALENT A L'EFFET DE LA PRECONTRAINTE MOYENNE "));
+      D.push(' '); D.push('  ');
+      var h = L(); ts.forEach(function (t, i) { h.at(44 + 17 * i, 'TRAVEE ' + (t + 1)); }); D.push(h.s + ' ');
+      D.push('  ');
+      states.forEach(function (st) {
+        D.push(st[0]); if (st[1]) D.push(st[1]); D.push('  ');
+        for (var k = 0; k < 4; k++) {
+          var l = L(); l.at(18, 'P ' + (k + 1));
+          ts.forEach(function (t, i) { var a = arcs[t][k], F = nA * mean(field(t, st[2]), a.from, a.to); l.at(44 + 17 * i, fx(-2 * a.A * F, 4)); });
+          D.push(l.s + ' '); D.push('  ');
+        }
+        var lr = L(); lr.at(17, 'R'); var any = false;
+        ts.forEach(function (t, i) {
+          var Lt = R.L[t];
+          if (t === 0) { var a = arcs[0][1]; lr.at(44 + 17 * i, fx(nA * field(0, st[2])(0) * Math.abs(a.B), 4)); any = true; }
+          else if (t === n - 1) { var b = arcs[t][2], s = 2 * b.A * Lt + b.B; lr.at(44 + 17 * i, fx(nA * field(t, st[2])(Lt) * Math.abs(s), 4)); any = true; }
+        });
+        D.push(lr.s + ' '); D.push('  ');
+      });
+      D.push("    PLAGES D'APPLICATION ");
+      D.push('    DES DIFFERENTES DENSITES ');
+      for (var k2 = 0; k2 < 4; k2++) {
+        var l1 = L(), l2 = L(); l2.at(17, 'P ' + (k2 + 1));
+        ts.forEach(function (t, i) { var a = arcs[t][k2]; l1.at(32 + 17 * i, 'DE'); l1.at(42 + 17 * i, fx(a.from, 3)); l2.at(31 + 17 * i, 'A'); l2.at(42 + 17 * i, fx(a.to, 3)); });
+        D.push(l1.s + ' '); D.push(l2.s + ' '); if (k2 < 3) D.push('  ');
+      }
+    }
+  }
+
+  // Section 36 — sécurité vis-à-vis de l'effort tranchant général (notice PSIDP-EL p. 56 ; BPEL 7.2,2 / 7.3).
+  // Appui intermédiaire le plus sollicité (ELS et ELU choisis séparément) ; V = effort de la page « EFFORTS
+  // TRANCHANTS SUR APPUIS » + effort hyperstatique de précontrainte E.S ; relevage = F·z'(h/2) côté travée étudiée,
+  // F = N·A·tension E.S min. sur appui ; σx = F/S ; τ = Vr·Sstat/(I·bn), bn = b(axe neutre) − N·Φ ;
+  // τ̄² = min(0,4 ft(ft + 2/3 σx) ; 2 ft/fc (0,6 fc − σx)(ft + 2/3 σx)) ; σb = 2τu/sin 2βu ≤ 2/3·0,85 fc/1,5 ;
+  // tg 2βu = 2τu/σx, βu ≥ 30° ; densité At/(bn st) = max(0,4 MPa ; (τu − ft/3) tg βu)·γs/fe (NON RÉSOLU) ;
+  // taux = fe/1,15 ; espacement maximal = HDAL1 (constat 10/10).
+  function secEtriers(D, m, R) {
+    var P = R.prec, v = m.values; if (!P || !P.G || !P.hypServ || !R.shear || R.n < 2) return;
+    var n = R.n, H = v.HDAL1, Mh = P.hypServ.esMin;
+    var Vh = R.L.map(function (l, t) { return (Mh[t + 1] - Mh[t]) / l; });
+    function slopeAt(t, x) { var sg = P.cable.spans[t]; for (var i = 0; i < sg.length; i++) if (x <= sg[i].to + 1e-9) return 2 * sg[i].A * x + sg[i].B; var e = sg[sg.length - 1]; return 2 * e.A * x + e.B; }
+    function tensAt(X) { var best = null; P.G.forEach(function (g) { if (!best || Math.abs(g.X - X) < Math.abs(best.X - X) - 1e-9) best = g; }); return best.d.esMin; }
+    function pick(key) {
+      var b = null;
+      for (var k = 1; k < n; k++) {
+        [['GAUCHE', k - 1, 'droite', 1], ['DROITE', k, 'gauche', 0]].forEach(function (c) {
+          var S = R.shear[c[1]] && R.shear[c[1]][c[2]]; if (!S) return;
+          var V = Math.abs(S.comb[c[3]][key] + Vh[c[1]]);
+          if (!b || V > b.V + 1e-9) b = { V: V, ap: k + 1, side: c[0], t: c[1], x: c[0] === 'DROITE' ? H / 2 : R.L[c[1]] - H / 2 };
+        });
+      }
+      var F = P.nA * tensAt(R.X0[b.ap - 1]);
+      b.rel = -Math.abs(F * slopeAt(b.t, b.x)); b.red = b.V + b.rel; b.sig = F / R.section.S; return b;
+    }
+    var s = pick('qlqc'), u = pick('elu');
+    var fc = v.FC28, ft = 0.6 * (1000 / 9.80665) + 0.06 * fc;
+    var H1 = v.HDAL1, H2 = v.HDAL2, H3 = v.HDAL3, E1 = v.EDAL1, E2 = v.EDAL2, E3 = v.EDAL3, a = E1 / 2, c = E2 / 2;
+    var poly = E2 > 0 ? [[-a, 0], [a, 0], [a + E3 / 2, H3], [a + c, H1 - H2], [a + c, H1], [-a - c, H1], [-a - c, H1 - H2], [-a - E3 / 2, H3]] : [[-a, 0], [a, 0], [a, H1], [-a, H1]];
+    function width(y) { var xs = []; for (var i = 0; i < poly.length; i++) { var p1 = poly[i], p2 = poly[(i + 1) % poly.length]; if ((p1[1] <= y && p2[1] > y) || (p2[1] <= y && p1[1] > y)) xs.push(p1[0] + (p2[0] - p1[0]) * (y - p1[1]) / (p2[1] - p1[1])); } xs.sort(function (x, y2) { return x - y2; }); var w = 0; for (var j = 0; j + 1 < xs.length; j += 2) w += xs[j + 1] - xs[j]; return w; }
+    var yg = R.section.VP, Ss = 0, M = 400; for (var k = 0; k < M; k++) { var y = yg + (H1 - yg) * (k + 0.5) / M; Ss += width(y) * (y - yg) * (H1 - yg) / M; }
+    var bn = width(yg) - P.N * (v.DGAIN || 0), kz = Ss / (R.section.I * bn);
+    var tS = s.red * kz, tU = u.red * kz;
+    var tl = Math.sqrt(Math.min(0.4 * ft * (ft + 2 / 3 * s.sig), 2 * ft / fc * (0.6 * fc - s.sig) * (ft + 2 / 3 * s.sig)));
+    var b2 = Math.atan(2 * tU / u.sig) / 2, bmin = Math.PI / 6; if (!(b2 > bmin)) b2 = bmin;
+    var tg = Math.tan(b2), fe = (v.FE2 || v.FE1) / 1.15;
+    var dens = Math.max(400 / 9.81, (tU - ft / 3) * tg) / fe;
+    function ln(cols) { var l = ''; cols.forEach(function (c) { while (l.length < c[0]) l += ' '; l += c[1]; }); return l; }
+    D.newPage(); D.push('  ');
+    D.push(pad(29, "SECURITE RELATIVE AU CISAILLEMENT VIS A VIS DE L'EFFORT TRANCHANT GENERAL "));
+    D.push(pad(27, "LE CALCUL EST EFFECTUE AU VOISINAGE DE L'APPUI INTERMEDIAIRE LE PLUS SOLLICITE "));
+    D.push('  '); D.push(' '); D.push('  ');
+    D.push(pad(48, "ETUDE A L'ETAT-LIMITE D'UTILISATION         ETUDE A L'ETAT-LIMITE ULTIME "));
+    D.push('  ');
+    D.push(ln([[58, 'APPUI ' + s.ap + '  ' + s.side], [98, 'APPUI ' + u.ap + '  ' + u.side + ' ']]));
+    D.push('  '); D.push(' ');
+    D.push('      ELEMENTS DE JUSTIFICATION                 VALEUR DE CALCUL      VALEUR LIMITE     VALEUR DE CALCUL      VALEUR LIMITE ');
+    D.push('  ');
+    D.push(ln([[6, 'EFFORT TRANCHANT SUR APPUI'], [54, fx(s.V, 1)], [75, '*'], [94, fx(u.V, 1)], [115, '*']])); D.push('  ');
+    D.push(ln([[6, 'EFFET DE RELEVAGE DU CABLE'], [54, fx(s.rel, 1)], [75, '*'], [94, fx(u.rel, 1)], [115, '*']])); D.push('  ');
+    D.push(ln([[6, 'EFFORT TRANCHANT REDUIT MAXIMAL'], [54, fx(s.red, 1)], [75, '*'], [94, fx(u.red, 1)], [115, '*']])); D.push('  ');
+    D.push('      ------------------------------ '); D.push('  ');
+    D.push(ln([[6, 'CONTRAINTE NORMALE DU BETON'], [54, fx(s.sig, 0)], [75, '*'], [94, fx(u.sig, 0)], [115, '*']])); D.push('  ');
+    D.push(ln([[6, 'CONTRAINTE TANGENTE'], [54, fx(tS, 0)], [74, fx(tl, 0)], [94, fx(tU, 0)], [115, '* ']])); D.push('  ');
+    D.push('      COMPRESSION DU ');
+    D.push(ln([[6, "BETON DE L'AME"], [55, '*'], [75, '*'], [94, fx(2 * tU / Math.sin(2 * b2), 0)], [113, fx(2 / 3 * 0.85 * fc / 1.5, 0) + ' ']])); D.push('  ');
+    D.push('      ------------------------------ '); D.push('  ');
+    D.push(ln([[6, 'ANGLE BETA'], [55, '*'], [75, '*'], [95, fx(b2 * 200 / Math.PI, 3) + ' GRADES'], [115, '*']])); D.push('  ');
+    D.push(ln([[6, 'TANGENTE BETA'], [55, '*'], [75, '*'], [96, fx(tg, 3)], [115, '*']])); D.push('  ');
+    D.push('      ------------------------------ '); D.push('  ');
+    D.push(ln([[6, 'DENSITE MINIMALE DES ETRIERS :'], [96, fx(dens, 6) + ' M2/M2 ']])); D.push('  ');
+    D.push(ln([[6, "TAUX DE TRAVAIL DE L'ACIER DES ETRIERS"], [55, '*'], [75, '*'], [95, '*'], [112, fx(fe, 0) + ' ']])); D.push('  ');
+    D.push(ln([[6, "ESPACEMENT MAXIMAL DES COURS D'ETRIERS"], [55, '*'], [75, '*'], [95, '*'], [116, fx(H, 3)]]));
+  }
+
+  // Section 31 — contraintes normales extrêmes (ELS) : extrêmes des tableaux M.T / M.S / E.S (toutes travées).
+  // Section d'enrobage = 3·Φ gaine centrée sur l'axe du câble (constat : 0.255 / 0.258 / 0.270 = 3 × DGAIN) ;
+  // contrainte « en section d'enrobage » = minimum aux deux bords de cette zone (interpolation linéaire sup/inf).
+  function secExtremes(D, m, R) {
+    var P = R.prec, v = m.values; if (!P || !P.G) return;
+    var Lm = R.limites, Vs = R.section.V, Vi = R.section.VP, H = Vs + Vi, c = 3 * (v.DGAIN || 0);
+    var add = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
+    function acc() { return { cmax: -Infinity, enr: { v: Infinity }, hors: { v: Infinity } }; }
+    function feed(A, g, s) {
+      if (!s) return;
+      A.cmax = Math.max(A.cmax, s[0], s[1]);
+      var h = Math.min(s[0], s[1]); if (h < A.hors.v) A.hors = { v: h, g: g };
+      [g.e - c / 2, g.e + c / 2].forEach(function (z) { z = Math.max(-Vi, Math.min(Vs, z)); var q = s[1] + (s[0] - s[1]) * (z + Vi) / H; if (q < A.enr.v) A.enr = { v: q, g: g }; });
+    }
+    var ini = acc(), ms = {}, es = {}, keys = ['QL', 'FR', 'QC', 'TA'];
+    keys.forEach(function (k) { ms[k] = acc(); es[k] = acc(); });
+    var msC = acc(), esC = acc();
+    P.G.forEach(function (g) {
+      var o = g.sig; feed(ini, g, add(o.MO, o.Pi)); feed(ini, g, add(o.MOx, o.Px)); feed(ini, g, add(o.MOn, o.Px));
+      if (!o.QLx) return;
+      [[ms, msC, o.PmsX, o.Pms], [es, esC, o.PesN, o.Pes]].forEach(function (q) {
+        var T = q[0], p5 = q[2];
+        var cb = { QL: [o.QLx, o.QLn], FR: [o.frx, o.frn], QC: [o.qcx, o.qcn], TA: [o.tax, o.tan] };
+        keys.forEach(function (k) { cb[k].forEach(function (x) { var s2 = add(x, p5); feed(T[k], g, s2); feed(q[1], g, s2); }); });
+        feed(q[1], g, add(o.MG, q[3]));
+      });
+    });
+    (P.extraMT || []).forEach(function (e) { feed(ini, e, add(e.MO, e.Pi)); feed(ini, e, add(e.MOx, e.Px)); feed(ini, e, add(e.MOn, e.Px)); });
+    function loc(g) { return '(' + fx(g.k / P.ND[g.t], 2) + 'L  TRAVEE ' + (g.t + 1) + ') '; }
+    function trLine(lab, A, lenr, lhors) {
+      var l = L(lab); l.at(63, fx(A.enr.v, 0)); l.at(68, '/'); l.at(78, fx(lenr, 0)); l.at(93, fx(A.hors.v, 0)); l.at(98, '/'); l.at(108, fx(lhors, 0));
+      D.push(l.s);
+      var bad1 = A.enr.v < lenr - 0.5, bad2 = A.hors.v < lhors - 0.5;
+      if (bad1 || bad2) {
+        var u = '', w = ''; if (bad1) { u = pad(57, '*********************'); w = pad(59, loc(A.enr.g)); }
+        if (bad2) { while (u.length < 86) u += ' '; u += '*********************'; while (w.length < 88) w += ' '; w += loc(A.hors.g); }
+        D.push(u + ' '); D.push(w);
+      }
+      D.push('  ');
+    }
+    function cpLine(lab, x, lim) { var l = L(lab); l.at(63, fx(x, 0)); l.at(68, '/'); l.at(78, fx(lim, 0)); D.push(l.s + ' '); D.push(' '); }
+    D.newPage(); D.push('  ');
+    D.push(pad(49, "ETUDE A L'ETAT LIMITE DE SERVICE "));
+    D.push(pad(45, 'CONTRAINTES NORMALES EXTREMES DU BETON '));
+    D.push('  '); D.push(' '); D.push('  ');
+    D.push(pad(35, 'RAPPEL : LES CONTRAINTES LIMITES SONT CELLES DU GENRE ' + Math.floor(v.GEN / 100) + ' '));
+    D.push(pad(44, 'COEFFICIENT PSI1= ' + fx(v.PSI1, 3) + ' '));
+    D.push(pad(44, "LA SECTION D'ENROBAGE MESURE " + fx(c, 3) + " M CENTRE SUR L'AXE DU CABLE "));
+    D.push('  '); D.push(' '); D.push('  ');
+    D.push('                1.  CONTRAINTES DE COMPRESSION          ATTEINTES       LIMITES ');
+    D.push('                    -------------------------- '); D.push('  ');
+    cpLine('                       >> EN  PHASE  INITIALE', ini.cmax, Lm.compInit);
+    cpLine('                       >> A LA MISE EN SERVICE', msC.cmax, Lm.comp);
+    cpLine('                       >> EN SERVICE DEFINITIF', esC.cmax, Lm.comp);
+    D.push('  ');
+    D.push('                2.  CONTRAINTES DE TRACTION             ATTEINTES       LIMITES       ATTEINTES       LIMITES');
+    D.push("                    -----------------------              EN SECTION D'ENROBAGE        HORS SECTION D'ENROBAGE");
+    D.push('  ');
+    trLine('                       >> EN  PHASE  INITIALE', ini, Lm.trEnrInit, Lm.trHorsInit);
+    D.push(' ');
+    [['                       >> A LA MISE EN SERVICE ', ms], ['                       >> EN SERVICE DEFINITIF ', es]].forEach(function (q) {
+      D.push(q[0]); D.push('  ');
+      trLine('                           SOUS  QL=CP+K.TP (K=1.00)', q[1].QL, 0, Lm.trHors);
+      trLine('                           SOUS  QL + PSI1.QR', q[1].FR, 0, Lm.trHors);
+      trLine('                           SOUS  QL + QC', q[1].QC, Lm.trEnrQC, Lm.trHorsQC);
+      trLine('                           SOUS  QL+QC+K.TA (K=1.00)', q[1].TA, Lm.trEnrQC, Lm.trHorsQC);
+      D.push(' ');
+    });
+    D.push('  ');
+    D.push('NOTA : ATTENTION AUX VALEURS SOULIGNEES, ELLES INDIQUENT UN DEPASSEMENT DE LIMITE ');
+    D.push('---- ');
+  }
+
+  // Section 30 — justification ELU (résistance). M ULT = moment ELU extérieur + moment total de précontrainte
+  // (isostatique N·A·σp·e + hyperstatique interpolé entre appuis) : M.S = ELU de la section 16 + précontrainte M.S max,
+  // E.S = ELU + précontrainte E.S min (vérifié 2549 0.1L : −94.5 / −77.55) ; M.T = {1,35 Gmax ; 1,0 Gmin} ossature +
+  // précontrainte initiale (APPROCHÉ). Ligne supérieure si M ULT min < 0, inférieure si M ULT max > 0.
+  // Sections d'acier : ferraillage de peau, total 0,1 % B (constat exact : sup + inf = 0,001·S sur 2549, 2764, 0013)
+  // réparti au prorata des aires au-dessus / au-dessous du centre de gravité (APPROCHÉ, règle NON RÉSOLUE) ; M LIM
+  // (pivots), non-fragilité et colonnes ELS non calculés.
+  function secELU(D, m, R) {
+    var P = R.prec, v = m.values; if (!P || !P.G || !R.sol || !P.hypInit || !P.hypServ) return false;
+    var H1 = v.HDAL1, H2 = v.HDAL2, H3 = v.HDAL3, E1 = v.EDAL1, E2 = v.EDAL2, E3 = v.EDAL3, a = E1 / 2, c = E2 / 2;
+    var poly = E2 > 0 ? [[-a, 0], [a, 0], [a + E3 / 2, H3], [a + c, H1 - H2], [a + c, H1], [-a - c, H1], [-a - c, H1 - H2], [-a - E3 / 2, H3]] : [[-a, 0], [a, 0], [a, H1], [-a, H1]];
+    function width(y) { var xs = []; for (var i = 0; i < poly.length; i++) { var p1 = poly[i], p2 = poly[(i + 1) % poly.length]; if ((p1[1] <= y && p2[1] > y) || (p2[1] <= y && p1[1] > y)) xs.push(p1[0] + (p2[0] - p1[0]) * (y - p1[1]) / (p2[1] - p1[1])); } xs.sort(function (x, y2) { return x - y2; }); var w = 0; for (var j = 0; j + 1 < xs.length; j += 2) w += xs[j + 1] - xs[j]; return w; }
+    var yg = R.section.VP, Aup = 0, M = 400; for (var k = 0; k < M; k++) Aup += width(yg + (H1 - yg) * (k + 0.5) / M) * (H1 - yg) / M;
+    var Atot = 0.001 * R.section.S, asup = Atot * Aup / R.section.S, ainf = Atot - asup;
+    var nt = spansToPrint(R, v);
+    D.newPage(); D.push('  ');
+    D.push(pad(34, "E.L.U.: JUSTIFICATION A L'ETAT LIMITE ULTIME RESISTANCE "));
+    D.push('  '); D.push(' '); D.push('  ');
+    D.push('                                  RAPPEL DES ABREVIATIONS    M.T : A LA MISE EN TENSION ');
+    D.push('                                                             M.S : A LA MISE EN SERVICE ');
+    D.push('                                                             E.S : EN SERVICE DEFINITIF ');
+    D.push('  ');
+    D.push('                                                             F.P : FERRAILLAGE DE PEAU ');
+    D.push('                                                             N.F : FERRAILLAGE MINIMUM DE NON-FRAGILITE ');
+    var pg0 = D.page;
+    function hypAt(Mh, t, x) { return Mh[t] + (Mh[t + 1] - Mh[t]) * x / R.L[t]; }
+    for (var t = 0; t < nt; t++) {
+      D.newPage(); if (t === 0) D.marks[D.page] = 'ELUT';
+      D.push('  '); D.push(pad(58, 'T R A V E E   ' + (t + 1) + ' ')); D.push('  ');
+      D.push('                      FERRAILLAGE       :      ETAT - LIMITE  ULTIME ( E L U )          :       ETAT-LIMITE DE SERVICE ( E L S ) ');
+      D.push('  SECTION ABSCISSE  SECTION   DIVERS    :     M . T     :     M . S     :     E . S     :     M . T    :    M . S    :    E . S    :');
+      D.push("          CUMULEE   D'ACIER             : M ULT./M LIM. : M ULT./M LIM. : M ULT./M LIM. :  BETON ACIERS: BETON ACIERS: BETON ACIERS:");
+      D.push(' '); D.push('  ');
+      var G = P.G.filter(function (g) { return g.t === t; }).sort(function (x, y) { return x.k - y.k; });
+      G.forEach(function (g) {
+        var so = R.sol[t] && R.sol[t][g.k]; if (!so) return;
+        var mt = P.nA * g.p.proba * g.e + hypAt(P.hypInit.max, t, g.x);
+        var ms = P.nA * g.d.msMax * g.e + hypAt(P.hypServ.msMax, t, g.x);
+        var es = P.nA * g.d.esMin * g.e + hypAt(P.hypServ.esMin, t, g.x);
+        var hi = [1.35 * v.OSSAX * g.MO + mt, so.comb[0].elu + ms, so.comb[0].elu + es];
+        var lo = [1.0 * v.OSSAN * g.MO + mt, so.comb[1].elu + ms, so.comb[1].elu + es];
+        [0, 1].forEach(function (f) {
+          var l = L(); if (!f) { l.at(7, fx(g.k / P.ND[t], 2) + 'L'); l.at(16, fx(g.X, 3)); }
+          l.at(27, fx(f ? ainf : asup, 6)); l.at(32, 'F.P'); l.at(41, ':');
+          for (var q = 0; q < 3; q++) { var mu = f ? Math.max(hi[q], lo[q]) : Math.min(hi[q], lo[q]); if (f ? mu > 0 : mu < 0) l.at(48 + 16 * q, fx(mu, 1)); l.at(57 + 16 * q, ':'); }
+          D.push(l.s + ' ');
+          D.push('                                        :               :               :               : ');
+        });
+        D.push('  ');
+      });
+    }
+    return true;
+  }
   function secPrecontrainte(D, m, R) {
     var P = R.prec; if (!P) return;
     if (m.values.CABL !== 4) secCablageAuto(D, m, R);
@@ -1406,9 +1652,12 @@
     if (R.sol) secSollicitations(D, model, R);
     secPrecontrainte(D, model, R);
     if (R.prec && R.prec.G) {
-      placeholder(D, 'JUSTIFICATIONS E.L.U.', 'ELU');
-      for (var tp = 0; tp < spansToPrint(R, model.values); tp++) placeholder(D, 'ELU - FERRAILLAGE LONGITUDINAL TRAVEE NO.' + (tp + 1), tp ? null : 'ELUT');
-      placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES', 'EXT1');
+      var pgu = D.page, okU = false; try { okU = secELU(D, model, R); } catch (e) { okU = false; }
+      if (okU) D.marks[pgu + 1] = 'ELU';
+      else { D.lines.length = D.pageStarts[pgu] !== undefined ? D.pageStarts[pgu] : D.lines.length; D.pageStarts.length = pgu; D.page = pgu;
+        placeholder(D, 'JUSTIFICATIONS E.L.U.', 'ELU');
+        for (var tp = 0; tp < spansToPrint(R, model.values); tp++) placeholder(D, 'ELU - FERRAILLAGE LONGITUDINAL TRAVEE NO.' + (tp + 1), tp ? null : 'ELUT'); }
+      var pgx = D.page; try { secExtremes(D, model, R); } catch (e) { } if (D.page > pgx) D.marks[pgx + 1] = 'EXT1'; else placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES', 'EXT1');
     }
     secFlexT(D, model, R);
     secReductionFT(D, model, R);
@@ -1417,12 +1666,12 @@
     try { secAppareils(D, model, R); } catch (e) { }
     try { secFerPassif(D, model, R); } catch (e) { }
     if (R._shearLines) { D.newPage(); D.marks[D.page] = 'SHEAR2'; R._shearLines.forEach(function (l) { D.push(l); }); }
-    if (R.prec && R.prec.G) { placeholder(D, 'CALCUL DES ETRIERS', 'ETR'); placeholder(D, 'POUSSEE AU VIDE DE LA PRECONTRAINTE', 'POUS'); }
+    if (R.prec && R.prec.G) { var pge = D.page; try { secEtriers(D, model, R); } catch (e) { } if (D.page > pge) D.marks[pge + 1] = 'ETR'; else placeholder(D, 'CALCUL DES ETRIERS', 'ETR'); var pgq = D.page; secChargeEq(D, model, R); if (D.page > pgq) D.marks[pgq + 1] = 'POUS'; else placeholder(D, 'POUSSEE AU VIDE DE LA PRECONTRAINTE', 'POUS'); }
     if (R.deform) secDeform(D, model, R);
     var pg0 = D.page;
     try { secResume(D, model, R); } catch (e) { }
     if (D.page > pg0) D.marks[pg0 + 1] = 'RESUME';
-    if (R.prec && R.prec.G) placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES (RESUME)', 'EXT2');
+    if (R.prec && R.prec.G) { var pgy = D.page; try { secExtremes(D, model, R); } catch (e) { } if (D.page > pgy) D.marks[pgy + 1] = 'EXT2'; else placeholder(D, 'ETAT LIMITE DE SERVICE - CONTRAINTES EXTREMES (RESUME)', 'EXT2'); }
     pg0 = D.page;
     secCotesFinales(D, model, R);
     if (D.page > pg0) { D.marks[pg0 + 1] = 'COTFA'; if (D.page > pg0 + 1) D.marks[pg0 + 2] = 'COTFG'; }
