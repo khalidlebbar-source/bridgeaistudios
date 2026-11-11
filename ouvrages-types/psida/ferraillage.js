@@ -49,6 +49,8 @@
     // hauteurs utiles retenues : nappe supérieure = hauteur provisoire ; nappe inférieure = H − ENROBI − φ2 − φ1/2
     // en fissuration préjudiciable (constat 3826, 3827, 0063, OA26, 3639), sinon hauteur provisoire (3603…3610 ;
     // LIGNINF = 1 : 3452, 3453, 3488). Non expliqué : 3639 nappe supérieure (0,457 au lieu de 0,478).
+    const cpd = typeof G.PSIDA_CPS === 'function' ? G.PSIDA_CPS(r) : undefined;   // diagnostic : c' imposé
+    if (cpd !== undefined) g.dS = r3(H - A11.ENROBS - cpd);
     const dS = G.PSIDA_DSU ? H - A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]) : g.dS, dI = (mat.fiss >= 2 && A3.LIGNINF !== 1) ? r3(H - A11.ENROBI - ph[1] - ph[0] / 2) : g.dI;
     const env = (sup, MM) => (MM || r.moments).map(sp => sp.map(s => {
       const Me = sup ? -s.els.min : s.els.max, Mu = sup ? -s.elu.min : s.elu.max;
@@ -271,26 +273,34 @@
       // approché à ~1 % en peu préjudiciable, règle exacte non retrouvée).
       const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + ap.esp / 3 : 2 * ap.esp / 3;
       const mch = ech > 0 ? chMax * ap.esp / (12 * ech) : 0;
-      const sS = (r.mat.sigS && r.mat.sigS[2]) || 25000, dch = (r.section.H || 0) - 0.04;
-      const mres = A => { const x = -15 * A + Math.sqrt(225 * A * A + 30 * A * dch); return A * sS * (dch - x / 3); };
-      let lo = 0, hi = 0.05; for (let it = 0; it < 80; it++) { const md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
-      // v13 : fissuration peu préjudiciable → section à l'ELU (réaction ELU = 1,125[1,2G + 1,42(A|B|Tr) | 1,2 C], moment
-      // ELU = R_u esp / (12 largeur), d = H − 0,04) ; section imprimée « PAR ML LONGITUDINAL » = section × sin φ (3603–3606).
-      // Crochet PSIDA_CHV12 = 1 : ancien calcul (ELS σs = 2/3 fe, sans sin φ).
-      let ach = hi, mchu = null;
-      if (!G.PSIDA_CHV12) {
-        if (!(r.mat.fiss >= 2) && ech > 0) {
-          const ku = c => c[3] ? 1.35 : 1.5975 / 1.2;
-          cands[0][3] = cands[1][3] = cands[2][3] = 0; for (let j = 3; j < cands.length; j++) cands[j][3] = 1;
-          const vu = Math.max(...cands.map(c => c[0] * c[2] * ku(c)));
-          const chU = (1.35 * R.G.up * coef.CP + vu + 1.5975 * kT * l.T.max) / nap;
-          mchu = chU * ap.esp / (12 * ech);
-          const fe = r.mat.fe[2] || r.mat.fe[0];
-          ach = G.PSIDA.asELU(mchu, 1, dch, Object.assign({}, r.mat, { fe: [fe, fe, fe, fe] }));
+      // v23 : hauteur utile du chevêtre d = H − ENROBS − 0,6 φt (φt = plus gros diamètre des fers de zone 1 retenus au
+      // FERRAILLAGE TRANSVERSAL PROPOSE ; 0,6 φ = φ/2 majoré de 20 %) : H − 0,0396 pour φt 16, H − 0,0492 pour 3639 (PHI1/PHI2 ALT, φ 32).
+      // Ici d provisoire (H − 0,04) ; propose() recalcule ach(d) avec le diamètre choisi. Crochet PSIDA_DCH0 = 1 : H − 0,04 partout.
+      const sS = (r.mat.sigS && r.mat.sigS[2]) || 25000;
+      let mchu = null;
+      const achOf = dch => {
+        const mres = A => { const x = -15 * A + Math.sqrt(225 * A * A + 30 * A * dch); return A * sS * (dch - x / 3); };
+        let lo = 0, hi = 0.05; for (let it = 0; it < 80; it++) { const md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
+        // v13 : fissuration peu préjudiciable → section à l'ELU (réaction ELU = 1,125[1,2G + 1,42(A|B|Tr) | 1,2 C], moment
+        // ELU = R_u esp / (12 largeur)) ; section imprimée « PAR ML LONGITUDINAL » = section × sin φ (3603–3606).
+        // Crochet PSIDA_CHV12 = 1 : ancien calcul (ELS σs = 2/3 fe, sans sin φ).
+        let ach = hi;
+        if (!G.PSIDA_CHV12) {
+          if (!(r.mat.fiss >= 2) && ech > 0) {
+            const ku = c => c[3] ? 1.35 : 1.5975 / 1.2;
+            cands[0][3] = cands[1][3] = cands[2][3] = 0; for (let j = 3; j < cands.length; j++) cands[j][3] = 1;
+            const vu = Math.max(...cands.map(c => c[0] * c[2] * ku(c)));
+            const chU = (1.35 * R.G.up * coef.CP + vu + 1.5975 * kT * l.T.max) / nap;
+            mchu = chU * ap.esp / (12 * ech);
+            const fe = r.mat.fe[2] || r.mat.fe[0];
+            ach = G.PSIDA.asELU(mchu, 1, dch, Object.assign({}, r.mat, { fe: [fe, fe, fe, fe] }));
+          }
+          ach *= Math.sin((r.biais || 100) * Math.PI / 200);
         }
-        ach *= Math.sin((r.biais || 100) * Math.PI / 200);
-      }
-      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach };
+        return ach;
+      };
+      const ach = achOf((r.section.H || 0) - 0.04);
+      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach, achOf };
     });
   }
 
@@ -308,7 +318,8 @@
     const tl = (mat.fiss <= 1 ? 0.2 : 0.15) * mat.fcj / 1.5;
     // hauteur utile du cisaillement (v17) : d = H − ENROBS − (φ2 + φ1/2) − 0,1 (φ1 + φ2) non arrondie — constat à 1e-5 m sur
     // 18/19 passages (familles φ1 32 / φ2 16 et φ1 25 / φ2 16, φ4 indifférent) ; 3639 (φ2 14) non expliqué. Crochet PSIDA_TAUD = 0 : d_sup.
-    const dTau = G.PSIDA_TAUD === 0 ? F.sup.d : r.ferLong.H - r._A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]);
+    const cpd = typeof G.PSIDA_CPS === 'function' ? G.PSIDA_CPS(r) : undefined;
+    const dTau = cpd !== undefined ? r.ferLong.H - r._A11.ENROBS - cpd : G.PSIDA_TAUD === 0 ? F.sup.d : r.ferLong.H - r._A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]);
     const bd = r.section.Eeq * dTau;
     // 0,4 MPa converti en t/m² (1 MPa = 1000/9,81 t/m²) : 3639 0,174 et 4015 0,289 exacts (40 t/m² donnait 0,178 / 0,295)
     const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * r.section.Eeq));
@@ -763,17 +774,26 @@
     const vide = no => ({ no, sup: null, inf: null, s: 0, nb: 0, plage: 0 });
     const appuis = AP.map((a, k) => {
       const end = k === 0 || k === n, e = a.ech, A1 = a.ach;
-      const o1 = choose(A1, famA ? 2 : 0), s1 = tr5(Math.min(cap, ar(o1) / A1));
+      let o1 = choose(A1, famA ? 2 : 0), A1b = A1;
+      if (!G.PSIDA_DCH0 && a.achOf) {
+        const H = r.section.H || 0, cS = (r._A11 && r._A11.ENROBS) || 0;
+        for (let q = famA ? 2 : 0; q < OPTS.length; q++) {
+          const Aq = a.achOf(H - cS - 0.6 * ph[Math.min(...OPTS[q])]);
+          if (ar(OPTS[q]) / Aq >= 0.1 - 1e-9 || q === OPTS.length - 1) { o1 = OPTS[q]; A1b = Aq; break; }
+        }
+        a.ach = A1b;
+      }
+      const s1 = tr5(Math.min(cap, ar(o1) / A1b));
       // zone 2 : section = max(section du chevêtre / 3, section minimale de la travée contiguë) ; longueur e (culée en
       // fissuration peu préjudiciable : 2·esp/3, face sup. PHI2/PHI3 ALT) — 3605, 3606, 3609, 3610 exacts avec les A imprimés
       const z2 = (no) => {
         const sp = no === '2G' ? k - 1 : k; if ((end && !famA) || !X[sp]) return vide(no);
-        const A2 = Math.max(A1 / 3, X[sp].Amin), o2 = choose(A2, famA ? 2 : 0), s2 = tr5(Math.min(cap, ar(o2) / A2));
-        return zone(no, o2, end ? [1, 2] : null, s2, end ? 2 * a.esp / 3 : e);
+        const A2 = Math.max(A1b / 3, X[sp].Amin), o2 = choose(A2, famA ? 2 : 0), s2 = tr5(Math.min(cap, ar(o2) / A2));
+        return zone(no, o2, end ? [1, 2] : null, s2, end ? 2 * a.esp / 3 / (G.PSIDA_Z2SIN ? sn : 1) : e / (G.PSIDA_Z2SIN === 2 ? sn : 1));
       };
       let Z;
-      if (k === 0) Z = [zone('1G', o1, null, s1, about, about), zone('1D', o1, null, s1, e - about), z2('2D')];
-      else if (k === n) Z = [z2('2G'), zone('1G', o1, null, s1, e - about), zone('1D', o1, null, s1, about, about)];
+      if (k === 0) Z = [zone('1G', o1, null, s1, about, about), zone('1D', o1, null, s1, G.PSIDA_Z1SIN ? a.esp / 3 / sn : e - about), z2('2D')];
+      else if (k === n) Z = [z2('2G'), zone('1G', o1, null, s1, G.PSIDA_Z1SIN ? a.esp / 3 / sn : e - about), zone('1D', o1, null, s1, about, about)];
       else Z = [z2('2G'), zone('1G', o1, null, s1, e / 2), zone('1D', o1, null, s1, e / 2), z2('2D')];
       const w = [0, 0, 0]; for (const z of Z) poids(z, w);
       return { zones: Z, w };

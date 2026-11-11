@@ -485,7 +485,7 @@
     return v;
   }
   // balayage discret : un essieu (ou une extrémité) sur un point de grille ; 2 véhicules d'écart >= gap
-  function vehicleScan(r, f, axles, fac, step, nmax, gap, anchors, exactGap, nearGap) {
+  function vehicleScan(r, f, axles, fac, step, nmax, gap, anchors, exactGap, nearGap, gapOk) {
     const grid = r._grid || (r._grid = posGrid(r));
     const offs = anchors || axles.map(a => a[0]);
     const cand = new Set();
@@ -509,7 +509,7 @@
             if (jb >= 0 && ok(xs[jb])) { const w = v + sg * vals[jb]; if (w > b2 + 1e-6 * Math.max(1, Math.abs(b2 === -Infinity ? 0 : b2))) { b2 = w; p2 = [xs[i], xs[jb]]; } }
           } else
           for (let j = i + 1; j < xs.length; j++) {
-            if (xs[j] - xs[i] < gap - 1e-6 || !ok(xs[j])) continue;
+            if ((gapOk ? !gapOk(xs[i], xs[j]) : xs[j] - xs[i] < gap - 1e-6) || !ok(xs[j])) continue;
             const w = v + sg * vals[j]; if (w > b2 + 1e-6 * Math.max(1, Math.abs(b2 === -Infinity ? 0 : b2))) { b2 = w; p2 = [xs[i], xs[j]]; }
           }
         }
@@ -592,7 +592,16 @@
   }
 
   const MC1960 = { P: 100, len: 4.5, gap: 0, n: 1 };   // char 1960 : un seul char de 100 t, chenilles de 4,5 m (étalement imprimé)
-  const MC120 = { P: 110, len: 6.1, gap: 36.2 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
+  const MC120 = { P: 110, len: 6.1, gap: 36.2, clear: 30.5 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9, clear: 30.5 };
+  // v23 : espacement de deux chars Mc (F61 II : 30,50 m au moins entre les points de contact de deux véhicules successifs).
+  // SETRA tolère une demi-maille de la grille des positions de la travée où se trouve le premier char (h = 0,05 L) :
+  // x2 − x1 ≥ longueur + 30,50 − h/2 (Mc120 : 36,60 − h/2). 3607 travée 1 (h 0,65 : 36,25 refusé, 36,35 accepté),
+  // travée 2 (h 0,90 : 36,05 refusé, 36,20 accepté). Crochet PSIDA_MCGAP0 = 1 : ancien seuil fixe 36,20 m.
+  function mcGapOk(r, d) {
+    if (G.PSIDA_MCGAP0 || !d.clear) return null;
+    const X = r.LI.xs, n = r.n;
+    return (x1, x2) => { let s = 0; while (s < n - 1 && x1 >= X[s + 1] - 1e-9) s++; const h = 0.05 * (X[s + 1] - X[s]); return x2 - x1 >= d.len + d.clear - h / 2 - 1e-6; };
+  }
   const CV_OFF = 0.425;   // v9 (avec LI interpolée au pas imprimé 0,5) ; v8 : 0,375 avec intégration continue
   const CV_OFF_V8 = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
   const CVD = { P: 140, len: 11, gap: 18.75, nom: 19 }, CVE = { P: 200, len: 15, gap: 32.75, nom: 33 }; // 2 remorques (F61 II art. 10)
@@ -637,7 +646,7 @@
     if (mcDef) {
       const N = G.PSIDA_MCN || 400, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
       ax.dist = { len: mcDef.len, P: mcDef.P };
-      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0]);
+      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0], false, 0, mcGapOk(r, mcDef));
       ce.push({ nom: r.ce.mil === 4 ? 'MC.120' : 'MC.80', ...mc });
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
@@ -1061,7 +1070,9 @@
       const KTR = G.PSIDA_KTROT === undefined ? 1 : G.PSIDA_KTROT;
       const KLg = y => { const u = (y - yL) / h, i = Math.floor(u + 1e-9), t = u - i; return K(yL + i * h) * (1 - t) + K(yL + (i + 1) * h) * t; };
       const meanL = (a, c, m = 400) => { let t = 0; for (let i = 0; i < m; i++) t += KLg(a + (c - a) * (i + 0.5) / m); return t / m; };
-      const yOut = yL + Math.floor(W / h + 1e-9) * h;
+      // v23 : bord extérieur = dernier nœud de la grille de la LI imprimée (N = round(W / 0,125) intervalles, comme la LI) ;
+      // crochet PSIDA_KTOUT = 1 : ancienne troncature (floor)
+      const yOut = yL + (G.PSIDA_KTOUT ? Math.floor(W / h + 1e-9) : Math.round(W / h)) * h;
       const tg = A6.ETROTG > 0 ? (KTR ? meanL(yL, xTG) : meanC(yL, xTG)) : null, td = A6.ETROTD > 0 ? (KTR ? meanL(xCh1 + A6.EDROI, yOut) : meanC(xCh1 + A6.EDROI, -yL)) : null;
       res.trot = tg != null && td != null ? (tg + td) / 2 : (tg ?? td ?? 0);
       // charge A : meilleure combinaison de voies adjacentes (i voies de largeur v), coefficient a1
