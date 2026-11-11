@@ -49,7 +49,7 @@
     // hauteurs utiles retenues : nappe supérieure = hauteur provisoire ; nappe inférieure = H − ENROBI − φ2 − φ1/2
     // en fissuration préjudiciable (constat 3826, 3827, 0063, OA26, 3639), sinon hauteur provisoire (3603…3610 ;
     // LIGNINF = 1 : 3452, 3453, 3488). Non expliqué : 3639 nappe supérieure (0,457 au lieu de 0,478).
-    const dS = g.dS, dI = (mat.fiss >= 2 && A3.LIGNINF !== 1) ? r3(H - A11.ENROBI - ph[1] - ph[0] / 2) : g.dI;
+    const dS = G.PSIDA_DSU ? H - A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]) : g.dS, dI = (mat.fiss >= 2 && A3.LIGNINF !== 1) ? r3(H - A11.ENROBI - ph[1] - ph[0] / 2) : g.dI;
     const env = (sup, MM) => (MM || r.moments).map(sp => sp.map(s => {
       const Me = sup ? -s.els.min : s.els.max, Mu = sup ? -s.elu.min : s.elu.max;
       const b = sup ? g.bS : g.bI, d = sup ? dS : dI;
@@ -296,7 +296,7 @@
   // Section par cours = 2 brins × nombre de groupes inférieurs × aire(φ4). τ limite = 0,2 fcj/1,5 (fissuration
   // peu préjudiciable) ou 0,15 fcj/1,5. Effort tranchant maximal : enveloppe bilinéaire, max de la droite joignant
   // les valeurs ELU maximales des deux extrémités de la travée et de celle joignant les opposées des minimales
-  // (exact sur 3826). Cisaillement τ = V / (E DALLE × d_sup) (à 0,1 % près). Espacement maximal :
+  // (exact sur 3826). Cisaillement τ = V / (E DALLE × d), d = H − ENROBS − (φ2 + φ1/2) − 0,1 (φ1 + φ2) (v17). Espacement maximal :
   // min(0,40 ; At fe / (0,4 MPa × E DALLE)), 0,4 MPa = 400/9,81 t/m² (v8). Épure retenue : s = plus grande valeur
   // de la série de Renard R10 ≤ espacement maximal, n = ⌈L/s⌉ cours également espacés sur la portée (v8).
   function etriers(r, F) {
@@ -304,7 +304,10 @@
     const mat = r.mat, ph = mat.phi, n = r.n;
     const At = 2 * F.inf.n * aire(ph[3]);
     const tl = (mat.fiss <= 1 ? 0.2 : 0.15) * mat.fcj / 1.5;
-    const bd = r.section.Eeq * F.sup.d;
+    // hauteur utile du cisaillement (v17) : d = H − ENROBS − (φ2 + φ1/2) − 0,1 (φ1 + φ2) non arrondie — constat à 1e-5 m sur
+    // 18/19 passages (familles φ1 32 / φ2 16 et φ1 25 / φ2 16, φ4 indifférent) ; 3639 (φ2 14) non expliqué. Crochet PSIDA_TAUD = 0 : d_sup.
+    const dTau = G.PSIDA_TAUD === 0 ? F.sup.d : r.ferLong.H - r._A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]);
+    const bd = r.section.Eeq * dTau;
     // 0,4 MPa converti en t/m² (1 MPa = 1000/9,81 t/m²) : 3639 0,174 et 4015 0,289 exacts (40 t/m² donnait 0,178 / 0,295)
     const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * r.section.Eeq));
     // espacement de l'épure : plus grande valeur de la série de Renard R10 ≤ smax (3639 0,174 → 0,16 ; 4015 0,289 → 0,25)

@@ -449,6 +449,17 @@
   function vehVal(r, f, axles, fac, x) {
     const Lt = r.LI.xs[r.n]; let v = 0;
     const ab = f.about ? r.about : 0;
+    if (axles.dist && !G.PSIDA_MCOLD && !(axles.dist.jumpOnly && !f.jump)) {   // crochet PSIDA_MCOLD = 1 : ancien point milieu global
+      // v17 : chenille (charge répartie) intégrée par morceaux entre les appuis (règle du point milieu, ~400 points au total) —
+      // une cellule à cheval sur un appui prenait la valeur de l'autre côté du saut des LI d'effort tranchant (OA26 : 114,70 → 114,86)
+      const { len, P, N: Nd } = axles.dist, cuts = [x, ...r.LI.xs.filter(X => X > x + 1e-9 && X < x + len - 1e-9), x + len];
+      for (let c = 0; c + 1 < cuts.length; c++) {
+        const a = Math.max(cuts[c], -ab), b = Math.min(cuts[c + 1], Lt + ab); if (b <= a + 1e-12) continue;
+        const m = Math.max(Nd ? 1 : 4, Math.ceil((Nd || 400) * (b - a) / len));
+        for (let k = 0; k < m; k++) { const X = a + (b - a) * (k + 0.5) / m; v += P / len * (b - a) / m * f(X) * fac((f.spanAt || (Y => spanOf(r, Y)))(Math.min(Math.max(X, 0), Lt))); }
+      }
+      return v;
+    }
     for (const [d, p] of axles) { const X = x + d; if (X >= -ab - 1e-9 && X <= Lt + ab + 1e-9) v += p * f(X) * fac((f.spanAt || (Y => spanOf(r, Y)))(Math.min(Math.max(X, 0), Lt))); }
     return v;
   }
@@ -600,12 +611,14 @@
     const ce = [];
     const mcDef = r.ce.mil === 4 ? (r.f61_1960 ? MC1960 : MC120) : r.ce.mil === 3 ? MC80 : null;
     if (mcDef) {
-      const N = 400, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
+      const N = G.PSIDA_MCN || 400, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
+      ax.dist = { len: mcDef.len, P: mcDef.P };
       const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0]);
       ce.push({ nom: r.ce.mil === 4 ? 'MC.120' : 'MC.80', ...mc });
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
       const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([d.len * (k + 0.5) / N, d.P / N]);
+      if (G.PSIDA_CVDIST !== 0) ax.dist = { len: d.len, P: d.P, N: G.PSIDA_CVDIST > 1 ? G.PSIDA_CVDIST : 0, jumpOnly: !!G.PSIDA_CVJ };   // v17 : intégration par morceaux (crochet 0 : 40 points)
       const cv = vehicleScan(r, f, ax, kOne ? (sp => 1) : spanFactor(r, 'CV', null), step, 2, d.gap, [0], false, G.PSIDA_CVNEAR === 0 ? 0 : d.nom);
       ce.push({ nom, ...cv });
     }
@@ -865,7 +878,7 @@
       const fx = side === 'g' ? (X => (Math.abs(X - Xs) < 1e-7 ? f(Xs + 1e-9) : f(X))) : (X => (Math.abs(X - Xe) < 1e-7 ? f(Xe - 1e-9) : f(X)));
       const I = area(f);
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
-      fx.base = f; if (side === 'g') fx.spanAt = X => spanOf(r, Math.abs(X - Xs) < 1e-7 ? Xs + 1e-9 : X);   // charges réparties (aires) : LI d'origine
+      fx.base = f; fx.jump = true; if (side === 'g') fx.spanAt = X => spanOf(r, Math.abs(X - Xs) < 1e-7 ? Xs + 1e-9 : X);   // charges réparties (aires) : LI d'origine
       const live = liveEffects(r, fx, A6);
       const c = combine(r, G, 0, live);
       return { side, G, live, ...c };
@@ -886,7 +899,7 @@
       const f1 = withAbout(r, f0, M => (k < n ? (M[k + 1] - M[k]) / r.L[k] : 0) - (k > 0 ? (M[k] - M[k - 1]) / r.L[k - 1] : 0),
         (side, u) => ((side === 0 && k === 0) || (side === 1 && k === n) ? 1 : 0));
       // seul l'about contigu à l'appui étudié est chargeable (OA26 : minima nuls sur une travée unique)
-      const LtR = LI.xs[n], f = globalThis.PSIDA_ABOUT_ALL ? f1 : Object.assign(X => ((X < 0 && k !== 0) || (X > LtR && k !== n)) ? 0 : f1(X), { about: f1.about });
+      const LtR = LI.xs[n], f = globalThis.PSIDA_ABOUT_ALL ? f1 : Object.assign(X => ((X < 0 && k !== 0) || (X > LtR && k !== n)) ? 0 : f1(X), { about: f1.about, jump: true });
       const I = area(f0) + (k === 0 || k === n ? r.liR[k].about : 0);
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
       const ab = k === 0 || k === n ? [{ s: k === 0 ? 0 : n - 1, l: r.about, area: r.liR[k].about }] : [];
