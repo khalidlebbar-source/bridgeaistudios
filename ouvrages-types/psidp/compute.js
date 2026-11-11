@@ -92,6 +92,39 @@
     }
     return out;
   }
+  function liSupportCubicsSP(L) {
+    var F = Math.fround, n = L.length, m = n - 1, out = [];
+    if (m <= 0) return out;
+    var A = [];
+    for (var k = 0; k < m; k++) {
+      var row = new Array(m).fill(0);
+      row[k] = F(F(2 * L[k]) + F(2 * L[k + 1]));
+      if (k > 0) row[k - 1] = F(L[k]);
+      if (k < m - 1) row[k + 1] = F(L[k + 1]);
+      A.push(row);
+    }
+    var G = [];
+    for (var c = 0; c < m; c++) {
+      var M = A.map(function (r, i) { return r.slice().concat([i === c ? 1 : 0]); });
+      for (var i = 0; i < m; i++) for (var r = i + 1; r < m; r++) {
+        var f = F(M[r][i] / M[i][i]);
+        for (var j = i; j <= m; j++) M[r][j] = F(M[r][j] - F(f * M[i][j]));
+      }
+      var x = new Array(m);
+      for (i = m - 1; i >= 0; i--) { var s = M[i][m]; for (j = i + 1; j < m; j++) s = F(s - F(M[i][j] * x[j])); x[i] = F(s / M[i][i]); }
+      G.push(x);
+    }
+    var g = function (i, c) { return (c < 0 || c >= m) ? 0 : G[c][i]; };
+    for (i = 0; i < m; i++) {
+      var rowc = [];
+      for (j = 0; j < n; j++) {
+        var l2 = F(L[j] * L[j]), g1 = g(i, j - 1), g2 = g(i, j);
+        rowc.push({ A: F(-F(l2 * F(g1 - g2))) + 0, B: F(F(3 * l2) * g1) + 0, C: F(-F(l2 * F(F(2 * g1) + g2))) + 0 });
+      }
+      out.push(rowc);
+    }
+    return out;
+  }
   function partArea(c, a, b, l) { var F = function (x) { return c.A * Math.pow(x, 4) / 4 + c.B * Math.pow(x, 3) / 3 + c.C * x * x / 2 + (c.D || 0) * x; }; return l * (F(b) - F(a)); }
   function cubicArea(c, l) { return l * (c.A / 4 + c.B / 3 + c.C / 2 + (c.D || 0)); }
 
@@ -226,7 +259,10 @@
     // LI moments en travée : sections 0.05,0.1..0.9,0.95
     R.sectionsMom = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95];
     R.liTravees = L.map(function (l, t) { return liSpanSection(L, R.liAppuis, t); });
-    R.liTraveesP = L.map(function (l, t) { return liSpanSection(L, R.liAppuis, t, true); });
+    // copie d'impression simple précision des LI sur appuis (v16) : inverse de la matrice des trois moments par Gauss sans
+    // pivot en REAL*4 (multiplicateur arrondi), coefficients A = -l²(g1-g2), B = 3l²g1, C = -l²(2g1+g2)
+    R.liAppuisP = (globalThis.PSIDP_LISP === 0) ? R.liAppuis : liSupportCubicsSP(L);
+    R.liTraveesP = L.map(function (l, t) { return liSpanSection(L, (globalThis.PSIDP_LISP08 === 0) ? R.liAppuis : R.liAppuisP, t, true); });
     // LI efforts tranchants (côté gauche de chaque travée = pente) et réactions
     R.X0 = [0]; L.forEach(function (l) { R.X0.push(R.X0[R.X0.length - 1] + l); });
     R.liTraveesAires = R.liTravees.map(function (secs, t) { return secs.map(function (s) {
@@ -457,16 +493,19 @@
     var trap = function (i0, i1) { if (i1 <= i0) return K(i0); var s = (K(i0) + K(i1)) / 2; for (var i = i0 + 1; i < i1; i++) s += K(i); return s / (i1 - i0); };
     var xg = -half + v.ETROG;
     var xc0 = xg + v.EGAU, xc1 = xc0 + v.ESURCH, xd = xc1 + v.EDROI;
-    var out = {};
+    var out = {}, KX = globalThis.PSIDP_KEXACT || 0;
+    // moyenne exacte de la LI (fonction continue) sur [a, b] : essai v16 (crochet PSIDP_KEXACT, 1 = trottoirs, 2 = + A)
+    var mean = function (a, b) { var nn = 400, s = 0; for (var q = 0; q <= nn; q++) s += (q === 0 || q === nn ? 0.5 : 1) * k.exact(a + (b - a) * q / nn); return s / nn; };
     if (v.ETROG > 0 || v.ETROD > 0) {
-      var tg = v.ETROG > 0 ? trap(0, idx(xg)) : null, td = v.ETROD > 0 ? trap(idx(xd), idx(half)) : null;
+      var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : trap(idx(xd), idx(half))) : null;
       out.trot = { un: Math.max(tg || 0, td || 0), deux: (tg !== null && td !== null) ? (tg * v.ETROG + td * v.ETROD) / (v.ETROG + v.ETROD) : (tg || td) };
     }
     var V = R.largeurVoie, best = { val: -1e9, nv: 1 };
     var nst = Math.round(V / h);
     for (var nvc = 1; nvc <= R.nv; nvc++) {
       var a1 = R.loads.Agen ? (v['CDTA' + nvc] || 1) : a1coef(R.classe, nvc), m = -1e9, wst = Math.round(nvc * V / h);
-      for (var i = idx(xc0); i + wst <= idx(xc1) + 1e-9; i++) m = Math.max(m, trap(i, i + wst));
+      if (KX >= 2) { for (var xa = xc0; xa + nvc * V <= xc1 + 1e-9; xa += h) m = Math.max(m, mean(xa, xa + nvc * V)); if (xc1 - nvc * V > xc0) m = Math.max(m, mean(xc1 - nvc * V, xc1)); }
+      else for (var i = idx(xc0); i + wst <= idx(xc1) + 1e-9; i++) m = Math.max(m, trap(i, i + wst));
       var val = a1 * m * nvc / R.nv;
       if (val > best.val) best = { val: val, nv: nvc };
     }
@@ -608,7 +647,10 @@
       });
       if (K[0].BT !== undefined) {
         var kbt = function (jj) { return KK ? 1 : K[jj].BT; };
-        grid.forEach(function (s) { ['DG', 'GD'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * R.nv, { type: 'BT', sens: sens, pos: [s] }); }); });
+        // largeur totale (réactions, sans K) : nombre de tandems Bt = min(2, nv) (fasc. 61 : 2 tandems au plus ; en-tête « BT(2 /3) » ;
+        // constat 2483–2488 : réactions BT = 2/3 de nv tandems) — v16
+        var nbt = (KK && globalThis.PSIDP_BTREAC !== 0) ? Math.max(1, Math.min(2, R.nv)) : R.nv;
+        grid.forEach(function (s) { ['DG', 'GD'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * nbt, { type: 'BT', sens: sens, pos: [s] }); }); });
       }
     }
     var unif = function (s, P, len, coefK, type) {
@@ -1088,7 +1130,10 @@
       var at = function (M) { return M[t] * (1 - g.x / R.L[t]) + M[t + 1] * g.x / R.L[t]; };
       ML = [(sol.comb[0].qlqc + g.d.esMin * P.nA * g.e + at(P.hypServ.esMin)) / R.Be, (sol.comb[1].qlqc + g.d.msMax * P.nA * g.e + at(P.hypServ.msMax)) / R.Be];
     }
-    return { xr: xr, Fes: g.d.esMin * P.nA, Fms: g.d.msMax * P.nA, As: As, ML: ML };
+    // effort normal par mètre (v16) : contrainte moyenne sur la section NETTE (S − N·πΦ²/4, gaines déduites) × HDAL1
+    // (constat exact 0013, 2549, 2483, 2766 à partir des forces imprimées) ; globalThis.PSIDP_NBE = 1 : ancien F/Be
+    var Snet = R.section.S - (P.N || 0) * R.Sgaine, kN = (globalThis.PSIDP_NBE === 1 || !(Snet > 0)) ? 1 / R.Be : v.HDAL1 / Snet;
+    return { xr: xr, Fes: g.d.esMin * P.nA, Fms: g.d.msMax * P.nA, Nes: g.d.esMin * P.nA * kN, Nms: g.d.msMax * P.nA * kN, As: As, ML: ML };
   }
   // Ferraillage de flexion transversale en travée (notice PSIDP p. 81 commentée) : facettes OX (My, N cos²ψ), OY (Mx, N sin²ψ),
   // OX0 (Mx cos²ψ + My sin²ψ, N = 0) ; face inférieure : moments max et N = F ES min / Be, face supérieure : moments min et
@@ -1107,7 +1152,7 @@
       for (var f in o) o[f].w = req(o[f].M, o[f].N);
       return o;
     };
-    var inf = face('max', F.prec.ML[0], F.prec.Fes / R.Be), sup = face('min', F.prec.ML[1], F.prec.Fms / R.Be), sphi = Math.sin(gr(v.BIAIS));
+    var inf = face('max', F.prec.ML[0], F.prec.Nes), sup = face('min', F.prec.ML[1], F.prec.Nms), sphi = Math.sin(gr(v.BIAIS));
     return { inf: inf, sup: sup, perp: { sup: sup.OX0.w, inf: inf.OX0.w }, par: { sup: sup.OX0.w / sphi, inf: inf.OX0.w / sphi }, longi: 5e-4 * H };
   }
   // Moments transversaux My au centre de la travée (guide PSIDP annexe 6 § 3.2.2 ; même module que PSIDA) :
@@ -1132,7 +1177,7 @@
       var Zr = Z(term('CHARGE REPARTIE')), res = { n: fb.n }, be = R.Be / 2;
       res.cp = { max: R.cp.tot[1] / R.Be * A1 * intPL(Zr, -be, be), min: R.cp.tot[2] / W * A1 * trap(Zr, -W / 2, W / 2) };
       // précontrainte : poussée F·(A2+A3)/EDAL1 uniforme sur l'intrados (ES min → max, MS max → min) — écart 1 à 6 % NON RÉSOLU
-      if (pr) { var Dp = intPL(Zr, -v.EDAL1 / 2, v.EDAL1 / 2), cst = -pr.As / v.EDAL1 * A1 * Dp; res.prec = { max: cst * pr.Fes, min: cst * pr.Fms }; }
+      if (pr) { var wP = globalThis.PSIDP_PRW ? globalThis.PSIDP_PRW(v, R) : v.EDAL1, Dp = intPL(Zr, -wP / 2, wP / 2), cst = -pr.As / wP * A1 * Dp; res.prec = { max: cst * pr.Fes, min: cst * pr.Fms }; }
       else res.prec = { max: 0, min: 0 };
       // charge A par voie
       var aMax = { v: 0, n: 0 }, aMin = { v: 0, n: 0 };

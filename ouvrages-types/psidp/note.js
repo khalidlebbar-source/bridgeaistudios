@@ -294,7 +294,7 @@
     D.push("                               X ETANT L'ABSCISSE RELATIVE DE LA FORCE DANS LA TRAVEE");
     var h = L('             FORCE DANS LA'); for (j = 0; j < n; j++) h.at(41 + 17 * j, 'TRAVEE ' + (j + 1)); D.push(h.s);
     D.push('SECTION SUR');
-    for (i = 0; i < n - 1; i++) cubLines(D, R.liAppuis[i], null, [[11, 'APPUI'], [13, String(i + 2)]], { letter: 27, first: 41, step: 17 });
+    for (i = 0; i < n - 1; i++) cubLines(D, (R.liAppuisP || R.liAppuis)[i], null, [[11, 'APPUI'], [13, String(i + 2)]], { letter: 27, first: 41, step: 17 });
     D.push("                           AIRES DES LIGNES D'INFLUENCE DES MOMENTS FLECHISSANTS SUR APPUIS");
     h = L('             AIRE TOTALE'); for (j = 0; j < n; j++) h.at(41 + 17 * j, 'TRAVEE ' + (j + 1)); D.push(h.s);
     D.push('SECTION SUR');
@@ -1204,8 +1204,8 @@
     D.push('  '); D.push(' ');
     line('     BIAIS MECANIQUE', function (F) { return F.psi; });
     D.push('  '); D.push(' ');
-    line('     EFFORT NORMAL DE PRECONTRAINTE', function (F) { return F.prec ? F.prec.Fes / R.Be : null; });
-    line('', function (F) { return F.prec ? F.prec.Fms / R.Be : null; });
+    line('     EFFORT NORMAL DE PRECONTRAINTE', function (F) { return F.prec ? F.prec.Nes : null; });
+    line('', function (F) { return F.prec ? F.prec.Nms : null; });
   }
   // Section 33 : efforts tranchants et réactions hyperstatiques dus au câble : V = (M_j+1 - M_j)/L avec les moments
   // hyperstatiques M.T max initiaux, M.S max, E.S min (exact 2549) ; réaction = V droite - V gauche.
