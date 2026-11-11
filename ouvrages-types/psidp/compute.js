@@ -195,9 +195,16 @@
 
     // Géométrie
     var sec = sectionBrute(v);
+    // v31 : V / V1 imprimés et rendement = valeurs CALCULÉES sur la section (le bordereau ne donne V qu'au mm) ;
+    // crochet PSIDP_VCALC : 0 = valeurs du bordereau partout (ancien), 1 = calculées à l'impression et au rendement (défaut),
+    // 2 = calculées aussi dans les calculs.
+    var vcalc = globalThis.PSIDP_VCALC === undefined ? 3 : globalThis.PSIDP_VCALC;
     R.section = { S: v.S || sec.S, I: v.I || sec.I, V: v.V || sec.V, VP: v.VP || sec.VP, calc: sec };
+    if (vcalc >= 2 && sec.V) { R.section.V = sec.V; R.section.VP = sec.VP; }
+    if (vcalc === 3 && sec.S) { R.section.Ipr = R.section.I; R.section.S = sec.S; R.section.I = sec.I; }
     var S = R.section.S, I = R.section.I, Vs = R.section.V, Vi = R.section.VP;
     R.section.rendement = I / (S * Vs * Vi);
+    if (vcalc >= 1 && sec.V) { R.section.Vpr = sec.V; R.section.VPpr = sec.VP; R.section.rendement = I / (S * sec.V * sec.VP); }
     R.Be = 12 * I / Math.pow(v.HDAL1, 3);
     var largeurTot = v.ETROG + v.EGAU + v.ESURCH + v.EDROI + v.ETROD;
     R.largeurTot = largeurTot;
@@ -228,17 +235,19 @@
     R.limites = {
       compInit: 0.6 * v.FCJ, comp: 0.6 * v.FC28,
       trEnrInit: -0.7 * ftj, trEnrQC: -ft28, trHorsInit: -1.5 * ftj, trHors: -3 * ft28, trHorsQC: -1.5 * ft28,
-      aciers: 25000
+      aciers: (globalThis.PSIDP_ACIER0 ? 50000 : (v.FE1 || 50000)) / 2 // v31 : fe/2 (25485 = 50970/2 sur 2549/2550)
     };
 
     // Charges permanentes
-    var ossM = S * v.MASVO;
-    var qsupM = (v.QSUPX + v.QSUPN) / 2;
+    // v31 (règle PSIDA v25) : charges permanentes en simple précision (crochet PSIDP_CPF = 0 : double)
+    var cpf = globalThis.PSIDP_CPF === 0 ? function (x) { return x; } : Math.fround;
+    var ossM = cpf(cpf(S) * cpf(v.MASVO));
+    var qsupM = cpf(cpf(cpf(v.QSUPX) + cpf(v.QSUPN)) / 2);
     R.cp = {
-      oss: [ossM, ossM * v.OSSAX, ossM * v.OSSAN],
-      sup: [qsupM, v.QSUPX, v.QSUPN]
+      oss: [ossM, cpf(ossM * cpf(v.OSSAX)), cpf(ossM * cpf(v.OSSAN))],
+      sup: [qsupM, cpf(v.QSUPX), cpf(v.QSUPN)]
     };
-    R.cp.tot = [0, 1, 2].map(function (k) { return R.cp.oss[k] + R.cp.sup[k]; });
+    R.cp.tot = [0, 1, 2].map(function (k) { return cpf(R.cp.oss[k] + R.cp.sup[k]); });
 
     // Charges d'exploitation : classe, voies
     var Lr = v.ESURCH + v.EGAU + v.EDROI, Lc = v.ESURCH;
@@ -308,7 +317,7 @@
       var a = R.dyn.travee[Math.max(0, i - 1)], b = R.dyn.travee[Math.min(n - 1, i)];
       var o = { bc: Math.max(a.bc, b.bc), mc: Math.max(a.mc, b.mc), ce: 1 };
       // appuis de rive : valeurs fixées forfaitairement (sécurité anti-soulèvement, notice PSIDP-EL)
-      if (i === 0 || i === n) { var d0 = R.dyn.travee[i === 0 ? 0 : n - 1]; o = { bc: (d0.bc + 1.5) / 2, mc: (d0.mc + 1.2) / 2, ce: 1.1 }; }
+      if (i === 0 || i === n) { var d0 = R.dyn.travee[i === 0 ? 0 : n - 1]; o = { bc: (d0.bc + 1.5) / 2, mc: globalThis.PSIDP_DYNMC0 === 1 ? (d0.mc + 1.2) / 2 : Math.max(d0.mc, (d0.mc + 1.2) / 2), ce: 1.1 }; } // v31 : Mc = max(δ1, (δ1 + 1.2)/2) (PSIDA v21)
       R.dyn.appui.push(o);
     }
     // tassements : probables (TP) et probables + aléatoires (combinaisons 0/DTP par appui), module EI28/YOUNG
@@ -508,10 +517,11 @@
       return ub > ua ? (P(ub) - P(ua)) / (ub - ua) : K(Math.floor(ua));
     };
     // v30 (crochet PSIDP_KTROT, 1 par défaut ; 0 = bornes tronquées) : trottoirs entre le bord intérieur EXACT et le bord extérieur
-    // tronqué à la grille (gauche : point 0 ; droite : floor(W/h)) — constaté exact sur 2482 / 2483 / 2764 / 2765 / 2766
+    // sur la grille (gauche : point 0 ; droite : v31, règle PSIDA v23 : nœud ARRONDI round(W/h) ; PSIDP_KTOUT = 1 : floor(W/h) ;
+    // sans effet sur le corpus PSIDP, W/h y a toujours une partie fractionnaire < 0.5) — constaté exact sur 2482 / 2483 / 2764 / 2765 / 2766
     var KTR = globalThis.PSIDP_KTROT !== undefined ? globalThis.PSIDP_KTROT : 1;
     if (v.ETROG > 0 || v.ETROD > 0) {
-      var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : KTR ? linMean(0, (xg + half) / h) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : KTR ? linMean((xd + half) / h, idx(half)) : trap(idx(xd), idx(half))) : null;
+      var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : KTR ? linMean(0, (xg + half) / h) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : KTR ? linMean((xd + half) / h, globalThis.PSIDP_KTOUT === 1 ? idx(half) : Math.round(W / h)) : trap(idx(xd), idx(half))) : null;
       out.trot = { un: Math.max(tg || 0, td || 0), deux: (tg !== null && td !== null) ? (tg * v.ETROG + td * v.ETROD) / (v.ETROG + v.ETROD) : (tg || td) };
     }
     var V = R.largeurVoie, best = { val: -1e9, nv: 1 }, KAM = globalThis.PSIDP_KAMODE !== undefined ? globalThis.PSIDP_KAMODE : 3; // v30 : 3 par défaut (voies une à une, bornes arrondies) ; 0 = ancienne fenêtre unique tronquée
@@ -682,7 +692,9 @@
         // largeur totale (réactions, sans K) : nombre de tandems Bt = min(2, nv) (fasc. 61 : 2 tandems au plus ; en-tête « BT(2 /3) » ;
         // constat 2483–2488 : réactions BT = 2/3 de nv tandems) — v16
         var nbt = (KK && globalThis.PSIDP_BTREAC !== 0) ? Math.max(1, Math.min(2, R.nv)) : R.nv;
-        grid.forEach(function (s) { ['DG', 'GD'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * nbt, { type: 'BT', sens: sens, pos: [s] }); }); });
+        // v31 : coefficient bt du fascicule 61 (classe 1 : 1,0 ; classe 2 : 0,9) — 0013 réactions BT 57.7 = 0.9 × 64.1 ; PSIDP_BT0 = 1 : sans
+        var btc = (globalThis.PSIDP_BT0 === 1 || !KK) ? 1 : (R.classe === 2 ? 0.9 : 1); // avec K : bt déjà dans K_BT
+        grid.forEach(function (s) { ['DG', 'GD'].forEach(function (sens) { upd('BT', effAx(tandem, s, kbt, 'bc') * nbt * btc, { type: 'BT', sens: sens, pos: [s] }); }); });
       }
     }
     var unif = function (s, P, len, coefK, type) {
@@ -699,7 +711,7 @@
       }
       return a * P / len;
     };
-    var consider = function (key, P, len, minGap, maxGap, coefK, type) {
+    var consider = function (key, P, len, minGap, maxGap, coefK, type, gapFn) {
       var one2 = grid.map(function (s) { return unif(s, P, len, coefK, type); });
       for (var i1 = 0; i1 < grid.length; i1++) {
         upd(key, one2[i1], { type: key, pos: [grid[i1]] });
@@ -711,7 +723,7 @@
         for (var i2 = 0; i2 < grid.length; i2++) {
           var dg = Math.abs(grid[i2] - grid[i1]);
           if (near) { if (i2 !== bestDn && (downOnly || i2 !== bestUp)) continue; }
-          else if (dg < minGap - 1e-9 || dg > maxGap + 1e-9) continue;
+          else if (dg < (gapFn ? gapFn(Math.min(grid[i1], grid[i2])) : minGap) - 1e-9 || dg > maxGap + 1e-9) continue;
           upd(key, one2[i1] + one2[i2], { type: key, pos: [Math.max(grid[i1], grid[i2]), Math.min(grid[i1], grid[i2])] });
         }
       }
@@ -721,7 +733,10 @@
       consider('CVOI.D', 140, 11, 18.6, 19.4, kce, 'ce');
       consider('CVOI.E', 200, 15, 32.5, 33.5, kce, 'ce');
     }
-    if (R.loads.MC120) consider('MC.120', 110, 6.1, 36.4, 1e9, function (jj) { return KK ? 1 : K[jj].MC120; }, 'mc');
+    // v31 (règle PSIDA v23) : deux chars Mc120 — x2 − x1 ≥ 6.10 + 30.50 − h/2, h = 0.05 L de la travée du premier char
+    // (demi-maille de la grille des positions). Crochet PSIDP_MCGAP0 = 1 : seuil fixe 36.4 (ancien).
+    var mcGap = globalThis.PSIDP_MCGAP0 === 1 ? null : function (x1) { var jj = Math.max(0, Math.min(n - 1, spanOf(R, x1))); return 6.1 + 30.5 - 0.05 * R.L[jj] / 2; };
+    if (R.loads.MC120) consider('MC.120', 110, 6.1, 36.4, 1e9, function (jj) { return KK ? 1 : K[jj].MC120; }, 'mc', mcGap);
     var pick = function (keys) { var r = [{ v: 0 }, { v: 0 }]; keys.forEach(function (kk) { var e = ext[kk]; if (!e) return; if (e[0].v > r[0].v) r[0] = e[0]; if (e[1].v < r[1].v) r[1] = e[1]; }); return r; };
     var Bx = pick(['BC', 'BT']), Cx = pick(['CVOI.D', 'CVOI.E', 'MC.120']);
     S.B = [Bx[0].v, Bx[1].v]; S.Bpos = Bx; S.C = [Cx[0].v, Cx[1].v]; S.Cpos = Cx; S.ext = ext;

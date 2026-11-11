@@ -4,9 +4,20 @@
   var P = (typeof module !== 'undefined' && module.exports && typeof require === 'function') ? require('./parse.js') : root.PSIDP_PARSE;
 
   // --------------------------------------------------------------- outils de mise en page
+  // v31 (règle PSIDA v19/v24) : arrondi des égalités exactes selon la génération du programme (date du passage) :
+  // avant 2010 en s'éloignant de zéro (toFixed), à partir de 2010 demi-pair. Crochet PSIDP_RNDDATE = 0 : toFixed partout.
+  // PSIDP_FXF = 1 : valeur ramenée en simple précision avant arrondi (toutes décimales) ; 2 : seulement les entiers suivis d'un point.
+  var RND_EVEN = false;
   function fx(v, d) {
     if (v === null || v === undefined || isNaN(v)) return '';
-    var s = Number(v).toFixed(d);
+    v = Number(v);
+    var fxf = root.PSIDP_FXF === undefined ? FXF_DEF : root.PSIDP_FXF;
+    if (fxf === 1 || (fxf === 2 && d === 0)) v = Math.fround(v);
+    if (RND_EVEN && isFinite(v)) {
+      var t = v * Math.pow(10, d), fl = Math.floor(t);
+      if (t - fl === 0.5 && Math.abs(t) < 1e15) v = (fl % 2 === 0 ? fl : fl + 1) / Math.pow(10, d);
+    }
+    var s = v.toFixed(d);
     if (/^-0\.?0*$/.test(s)) s = s.slice(1);
     return d === 0 ? s + '.' : s;
   }
@@ -253,7 +264,7 @@
     D.push('     CARACTERISTIQUES MECANIQUES DE LA SECTION BRUTE');
     D.push('                                                    CENTRE  DE  GRAVITE');
     D.push('                                    AIRE              V           V1           INERTIE           RENDEMENT');
-    D.push(row([[39, fx(R.section.S, 4)], [42, 'M2'], [55, fx(R.section.V, 4)], [57, 'M'], [67, fx(R.section.VP, 4)], [69, 'M'], [84, fx(R.section.I, 6)], [87, 'M4'], [104, fx(R.section.rendement, 4)]]));
+    D.push(row([[39, fx(R.section.S, 4)], [42, 'M2'], [55, fx(R.section.Vpr || R.section.V, 4)], [57, 'M'], [67, fx(R.section.VPpr || R.section.VP, 4)], [69, 'M'], [84, fx(R.section.Ipr || R.section.I, 6)], [87, 'M4'], [104, fx(R.section.rendement, 4)]]));
   }
 
   function secCharges(D, m, R) {
@@ -816,7 +827,7 @@
     D.push('                                                 CENTRE  DE  GRAVITE');
     D.push('              SECTION BRUTE    SECTION NETTE         V           V1      IG (SECTION BRUTE)         I(X) (SECTION NETTE)');
     D.push(row([[23, fx(R.section.S, 4)], [26, 'M2'], [40, P.N ? fx(P.Sn, 4) : ''], [43, P.N ? 'M2' : ''], [56, fx(sc.V, 4)], [58, 'M'], [68, fx(sc.VP, 4)], [70, 'M'],
-      [85, fx(R.section.I, 6)], [88, 'M4'], [105, fx(R.section.I, 6)], [107, '-'], [116, P.N ? fx(P.coefI, 6) : ''], [124, 'Z(X)**2']]));
+      [85, fx(R.section.Ipr || R.section.I, 6)], [88, 'M4'], [105, fx(R.section.Ipr || R.section.I, 6)], [107, '-'], [116, P.N ? fx(P.coefI, 6) : ''], [124, 'Z(X)**2']]));
     {
       D.push('     PROFIL VERTICAL DU CABLE      NOMBRE DE DIVISIONS PAR TRAVEE');
       var l = L(); for (var t = 0; t < R.n; t++) { l.at(22 + 13 * t, 'ND' + (t + 1)); l.at(24 + 13 * t, '='); l.at(27 + 13 * t, String(R.ND[t])); } D.push(l.s);
@@ -1443,7 +1454,9 @@
         [['GAUCHE', k - 1, 'droite', 1], ['DROITE', k, 'gauche', 0]].forEach(function (c) {
           var S = R.shear[c[1]] && R.shear[c[1]][c[2]]; if (!S) return;
           var V = Math.abs(S.comb[c[3]][key] + Vh[c[1]]);
-          if (!b || V > b.V + 1e-9) b = { V: V, ap: k + 1, side: c[0], t: c[1], x: c[0] === 'DROITE' ? H / 2 : R.L[c[1]] - H / 2 };
+          // essai v31 (crochet PSIDP_ETRRED = 1, inactif) : appui retenu sur l'effort réduit V + relevage
+          var crit = V; if (globalThis.PSIDP_ETRRED === 1) { var xx = c[0] === 'DROITE' ? H / 2 : R.L[c[1]] - H / 2; crit = V - Math.abs(P.nA * tensAt(R.X0[k]) * slopeAt(c[1], xx)); }
+          if (!b || crit > b.crit + 1e-9) b = { crit: crit, V: V, ap: k + 1, side: c[0], t: c[1], x: c[0] === 'DROITE' ? H / 2 : R.L[c[1]] - H / 2 };
         });
       }
       var F = P.nA * tensAt(R.X0[b.ap - 1]);
@@ -1624,7 +1637,10 @@
     secContraintesServ(D, m, R, true);
   }
 
+  var FXF_DEF = 2;
   function renderNote(model, R, opts) {
+    var yy = /(\d\d)\s*$/.exec(String(model.date || '')); yy = yy ? +yy[1] : null;
+    RND_EVEN = root.PSIDP_RNDDATE !== 0 && yy !== null && yy >= 10 && yy < 90;
     var D = new Doc(model, opts);
     D.lines = P.formatBordereau(model).replace(/\n$/, '').split('\n');
     D.push('CONTROLE SOMMAIRE DE COMPATIBILITE DES DONNEES');
