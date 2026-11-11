@@ -50,6 +50,13 @@
     const exFix = (y, s) => integ(y, s, s + 3.3) / 3.3 / (2 * b);
     out.EX = !v.EXCEP ? 0 : v.ESURCH > (globalThis.PIPO_EX7 != null ? globalThis.PIPO_EX7 : 7 + 1e-9) ? Math.max(...pts.map(y => Math.max(exFix(y, c0 + 3.5 - 1.65), exFix(y, c1 - 3.5 - 1.65))))
       : Math.max(...pts.map(slide(wEx, exAt)));
+    // Tour 18, règle PSIDP/PSIDA « axe du convoi libre entre bord + 3.50 et bord opposé − 3.50, maximum » (PIPO_EXK3 = 1 : bande 3.30
+    // sans diffusion ; 2 : bande diffusée wEx). Chaussée < 7 m : intervalle vide → règle actuelle conservée.
+    if (v.EXCEP && globalThis.PIPO_EXK3 && v.ESURCH >= 7 - 1e-9) {
+      const wk = globalThis.PIPO_EXK3 === 2 ? wEx0 : 3.3, a0 = c0 + 3.5, a1 = c1 - 3.5; let m = 0;
+      for (const y of pts) for (let ax = a0; ax <= a1 + 1e-9; ax += Math.max(0.01, (a1 - a0) / 200)) m = Math.max(m, integ(y, ax - wk / 2, ax + wk / 2) / wk / (2 * b));
+      out.EX = m;
+    }
     // charges non demandées (indicateurs A1 nuls) : coefficients imprimés à 0
     if (!v.AL) out.A = out.A.map(() => 0); if (!v.BC) out.BC = out.BC.map(() => 0); if (!v.BT) out.BT = out.BT.map(() => 0);
     if (!v.MC) out.MC = 0; if (!v.ME) out.ME = 0; if (!v.EXCEP) out.EX = 0; if (!v.TROT) out.TR = 0;
@@ -142,11 +149,21 @@
       const areaSimp = (x, lam) => { let s = 0; const nn = 20; for (let i = 0; i <= nn; i++) s += li.at(x + lam * i / nn) * (i === 0 || i === nn ? 1 : i % 2 ? 4 : 2); return s * lam / nn / 3; };
       let bMc = { s: 0, x: 0 };
       for (const x of grid) { const s = (MV ? areaPas(x, globalThis.PIPO_MCLAM ? globalThis.PIPO_MCLAM(v, g) : lq) : areaSimp(x, lc)) * sg; if (s > bMc.s) bMc = { s, x }; }
-      const lex0 = (v.EXCEP === 1 ? 11 : 15) + 2 * v.HCHAU, lex = lex0 + g.e3 / 2, lexq = lex0 + g.e3, Pex = v.EXCEP === 1 ? 280 : 200;
+      const lex0 = (v.EXCEP === 1 ? 11 : 15) + 2 * v.HCHAU, lex = lex0 + g.e3 / 2, lexq = lex0 + g.e3, Pex = v.EXCEP === 1 ? 140 : 200; // notice PIPO §2.4 : densité = poids d'UNE remorque / λ ; F.61 II (1971) : D = 2 remorques de 140 t (3,30 × 11 m), E = 2 remorques de 200 t (3,30 × 15 m)
       let bEx = { s: 0, x: 0 };
       // positions parcourues de droite à gauche (égalité d'aire : SETRA imprime la position la plus à droite, « 0.00 » sur 1890)
       const gridEx = globalThis.PIPO_EXREV === 0 ? grid : grid.slice().reverse();
-      if (v.EXCEP) for (const x of gridEx) { const s = (MV ? areaPas(x, lexq) : areaSimp(x, lex)) * sg; if (s > bEx.s + 1e-9) bEx = { s, x }; }
+      // Fascicule 61 (1971) : convoi D = 2 remorques (entraxe 19 m), E = 2 remorques de 200 t (entraxe 33 m). Règle PSIDP/PSIDA :
+      // remorque avant sur la grille, arrière au point de grille le plus proche de s − entraxe. Essai PIPO tour 18 : PIPO_EX2 = 1 (arrière),
+      // 2 (avant/arrière : seconde remorque à s ± entraxe).
+      const EX2 = globalThis.PIPO_EX2 || 0, exGap = v.EXCEP === 1 ? 19 : 33;
+      const exArea = x => MV ? areaPas(x, lexq) : areaSimp(x, lex);
+      const near = t => t < grid[0] || t > grid[grid.length - 1] ? t : grid.reduce((a, g2) => Math.abs(g2 - t) < Math.abs(a - t) - 1e-9 ? g2 : a, grid[0]);
+      // RÉSULTAT (tour 18) : 1 → réglage 84.0 → 83.9, contrôle 81.7 → 81.5 ; 3 (meilleure des deux) → 83.9 / 81.6 : ÉCARTÉ, PIPO-EL charge
+      // UNE seule remorque (en-tête « ABSCISSE DU CAMION », une seule abscisse imprimée). Défaut 0.
+      const exS = x => { const s = exArea(x); if (!EX2) return s; const r = exArea(near(x - exGap));
+        return EX2 === 3 ? s + sg * Math.max(sg * r, sg * exArea(near(x + exGap))) : s + r; };
+      if (v.EXCEP) for (const x of gridEx) { const s = exS(x) * sg; if (s > bEx.s + 1e-9) bEx = { s, x }; }
       res[key] = {
         A: { l: bestA.l, aire: sg * bestA.val, eff: sg * bestA.val * Kc.combA * v.COEFA },
         BC: { pos: bBc.pos, sens: bBc.sens, s: sg * bBc.s, eff: sg * bBc.s * Kc.combBC * dyn.dBc * v.COEFB },
