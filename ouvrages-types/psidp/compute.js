@@ -1418,7 +1418,7 @@
       return { sup: sup, inf: inf };
     };
     // ---------------------------------------------------------------- un bloc « éléments de détermination du fuseau »
-    var Lt = R.X0[n];
+    var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 0 : globalThis.PSIDP_FMCRIT;
     var block = function (N, base, kind, keyE, FMin) {
       var G = [], t, k;
       for (t = 0; t < n; t++) for (k = 0; k <= 10; k++) G.push({ t: t, k: k, x: k * L[t] / 10, X: R.X0[t] + k * L[t] / 10 });
@@ -1457,10 +1457,12 @@
           g.es = g.Ti - g.rel - retr - fl - g.rect; g.ms = g.Ti - rt * (g.Ti - g.es);
         });
       };
+      var curBy = null;
       var fluage = function (FM, rec) {
         var rows = [];
         keyE.forEach(function (ke) {
           var s = sec(ke.t, ke.k), tp = s.tp || [0, 0], E = ke.E, CPTM = (s.cp[0] + s.cp[1]) / 2;
+          if (ke.abut && FMCRIT && curBy !== 'ouv') return; // v17 : ligne d'about seulement si l'ouverture du fuseau est déterminante (0013, 0013B)
           if (ke.abut) { var a1c = FM / S * (1 - 0.8 * E / V); rows.push(a1c); if (rec) rec[ke.id] = { sb: a1c, K: 3, SBB: 0, E: E, XM: 0, SM: 0, CPTM: 0, CPPM: 0, A1: a1c, A2: 0, A3: 0 }; return; }
           var top = ke.app, vv = top ? V : -VP, XM = top ? s.cp[1] + tp[1] : s.cp[0] + tp[0];
           var A1 = FM / S * (1 - 0.8 * E / vv);
@@ -1475,6 +1477,8 @@
       for (var it = 0; it < 30; it++) {
         tab(fl);
         var me = 0; U.forEach(function (g) { me += g.es; }); me /= U.length;
+        // RÈGLE v17 : FM = N·A·E.S et FMJ = N·A·T initiale à la section critique du fuseau (cf. nombres().crit)
+        if (FMCRIT && !FMin) { var nbc = nombres({ G: G }); if (nbc.crit) { me = G[nbc.crit.t * 11 + nbc.crit.k].es; curBy = nbc.crit.by; } }
         var FM2 = FMin || N * A * me, fl2 = fluage(FM2);
         if (Math.abs(fl2 - fl) < 0.01) { fl = fl2; FM = FM2; break; }
         fl = fl2; FM = FM2;
@@ -1483,6 +1487,7 @@
       var rec = {}; fluage(FM, rec);
       var mti = 0, mes = 0; U.forEach(function (g) { mti += g.Ti; mes += g.es; });
       G.forEach(function (g) { var b = bounds(g.t, g.k, g.ms, g.es, g.Ti, N); g.sup = b.sup; g.inf = b.inf; });
+      if (FMCRIT) { var nbf = nombres({ G: G }); if (nbf.crit) { var gc = G[nbf.crit.t * 11 + nbf.crit.k]; mti = gc.Ti; mes = gc.es; } }
       return { N: N, kind: kind, G: G, dC: dC, fl: fl, FM: FM, FMJ: kind === 'REAJUSTEES' ? FM * mti / mes : 0, rec: rec, SG: sg, SD: sd !== null ? Lt - sd : null, base: base };
     };
     // nombres de câbles nécessaires (ouverture du fuseau, inscription dans la structure) avec les tensions du bloc
@@ -1505,7 +1510,18 @@
         for (var j = 0; j < 60; j++) { var mm = (a + b2) / 2; if (f(mm) > 0) a = mm; else b2 = mm; }
         ins.push(b2);
       }
-      return { ouv: ouv, ins: ins, N: Math.ceil(Math.max.apply(null, [ouv].concat(ins.filter(isFinite))) - 1e-9) };
+      // section critique (RÈGLE v17) : ouverture déterminante -> section où le fuseau se ferme (largeur minimale à N = ouv) ;
+      // inscription déterminante -> appui de gauche de la travée d'inscription maximale (appui de droite pour la travée de rive gauche)
+      var crit = null, insMax = -Infinity, tI = -1;
+      ins.forEach(function (x, ti) { if (isFinite(x) && x > insMax + 1e-4 * Math.abs(x)) { insMax = x; tI = ti; } });
+      if (ouv >= insMax || tI < 0) { // 0013, 0013B : point bas (bord sup minimal) de la travée de rive gauche (0.40L)
+        var kb = 1; for (var k3 = 1; k3 < 10; k3++) if (B.G[k3].sup < B.G[kb].sup - 1e-12) kb = k3;
+        crit = { t: 0, k: kb, by: 'ouv' }; }
+      else crit = tI > 0 ? { t: tI - 1, k: 10, by: 'ins' } : { t: 0, k: 10, by: 'ins' };
+      // notice PSIDP-EL (NCAB) : « le programme compare cette valeur introduite en données et le nombre théorique résultant du calcul
+      // pour en retenir le plus grand des deux » (2766 : NCA = 17, nombre théorique 16)
+      var Nth = Math.ceil(Math.max.apply(null, [ouv].concat(ins.filter(isFinite))) - 1e-9);
+      return { ouv: ouv, ins: ins, crit: crit, N: globalThis.PSIDP_NCAMAX === 0 ? Nth : Math.max(Nth, Math.round(v.NCA || 0)) };
     };
     // point fixe sur N pour un type de bloc
     var solveN = function (N, base, kind, keyE) {
@@ -1833,7 +1849,11 @@
       var FMf = 0, FMJ = 0;
       for (it = 0; it < 40; it++) {
         var mT = 0, mI = 0; uniq.forEach(function (g) { var q = los(g, dC, dFl); mT += q.infini; mI += q.proba; }); mT /= uniq.length; mI /= uniq.length;
-        FMf = nA * mT; FMJ = nA * mI; var nf = fl2(FMf);
+        FMf = nA * mT; FMJ = nA * mI;
+        // RÈGLE v17 : FM = N·A·E.S, FMJ = N·A·T initiale du dernier tableau « PERTES REAJUSTEES » à sa section critique
+        var BRf = P.auto.blocks && P.auto.blocks[1], cf = BRf && BRf.nb && BRf.nb.crit;
+        if (globalThis.PSIDP_FMCRIT === 1 && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti; }
+        var nf = fl2(FMf);
         if (modeC === 3) dC = dcRule(nf) * FMJ / FMf;
         if (Math.abs(nf - dFl) < 0.01 && modeC !== 3) { dFl = nf; break; } dFl = nf;
       }
