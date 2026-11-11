@@ -4,6 +4,10 @@
   'use strict';
   var PI = Math.PI;
   var gr = function (x) { return x * PI / 200; };
+  // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
+  // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
+  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1 };
+  for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
   // ---------------------------------------------------------------- algèbre
   function solve(A, b) {
@@ -1419,7 +1423,7 @@
     };
     // ---------------------------------------------------------------- un bloc « éléments de détermination du fuseau »
     var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 1 : globalThis.PSIDP_FMCRIT; // v18 : actif par défaut (règle v17), 0 = ancien calcul
-    var block = function (N, base, kind, keyE, FMin, FMJin, byIn, critIn, Eprev) {
+    var block = function (N, base, kind, keyE, FMin, FMJin, byIn, critIn, Eprev, dcm) {
       var G = [], t, k;
       for (t = 0; t < n; t++) for (k = 0; k <= 10; k++) G.push({ t: t, k: k, x: k * L[t] / 10, X: R.X0[t] + k * L[t] / 10 });
       var segsAll = []; base.spans.forEach(function (S2, tt) { S2.forEach(function (sg) { segsAll.push({ a: sg.A, from: R.X0[tt] + sg.from, to: R.X0[tt] + sg.to }); }); });
@@ -1428,13 +1432,14 @@
       G.forEach(function (g) { g.aG = angTo(g.X) + r * g.X; g.aD = Atot - angTo(g.X) + r * (Lt - g.X); g.t0G = s0 * Math.exp(-v.F * g.aG); g.t0D = s0 * Math.exp(-v.F * g.aD); });
       var U = G.filter(function (g) { return !(g.k === 0 && g.t > 0); });
       var ip = function (key, X) { var q = 0; while (q < U.length - 2 && X > U[q + 1].X) q++; var u = (X - U[q].X) / (U[q + 1].X - U[q].X); return U[q][key] * (1 - u) + U[q + 1][key] * u; };
+      var BLEXT = globalThis.PSIDP_BLEXT || 0;
       var recul = function (key, left) {
         var lo = 0, hi = Lt;
         for (var it = 0; it < 60; it++) {
           var sg = (lo + hi) / 2, ts = ip(key, left ? sg : Lt - sg), pts = [0];
           U.forEach(function (g) { var xx = left ? g.X : Lt - g.X; if (xx > 0 && xx < sg) pts.push(xx); }); pts.push(sg); pts.sort(function (p, q) { return p - q; });
           var sm = 0; for (var i = 0; i < pts.length - 1; i++) { var fa = ip(key, left ? pts[i] : Lt - pts[i]) - ts, fb = ip(key, left ? pts[i + 1] : Lt - pts[i + 1]) - ts; sm += (fa + fb) / 2 * (pts[i + 1] - pts[i]); }
-          if (2 * sm > v.RECUL * Ep) hi = sg; else lo = sg;
+          if (2 * sm + 2 * (ip(key, left ? 0 : Lt) - ts) * BLEXT > v.RECUL * Ep) hi = sg; else lo = sg;
         }
         return lo;
       };
@@ -1448,6 +1453,12 @@
       // raccourcissement élastique (NON RÉSOLU : approximation = Ep/2Eij x contrainte moyenne au niveau du câble)
       var sm = 0; U.forEach(function (g) { var F = N * A * (g.T0 - g.bl); sm += F / S + F * g.e * g.e / I + Moss(g.t, g.x) * g.e / I; });
       var dC = Math.max(0, Ep / (2 * R.EI) * sm / U.length);
+      // v26 (PSIDP_DCMEAN = 1, blocs de rang ≥ 2 seulement) : règle BPEL du raccourcissement élastique, ΔC = β·Ep/(2·Eij)·σ̄,
+      // σ̄ = contrainte du béton au câble moyennée le long du câble (Simpson pondéré par la longueur, grille 0.1 L), force FMJ constante,
+      // tracé des lignes du bloc réajusté précédent (bloc réajusté : son tracé de base 2), M ossature, SANS moment hyperstatique (v25 : ±4 %)
+      if (dcm) { var sw = 0, sl = 0; G.forEach(function (g) { var w = (g.k === 0 || g.k === 10 ? 1 : (g.k % 2 ? 4 : 2)) * L[g.t] / 30, e = dcm.base.z(g.t, g.x);
+          sw += w * (dcm.F / S + dcm.F * e * e / I + Moss(g.t, g.x) * e / I); sl += w; });
+        dC = Math.max(0, 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * sw / sl); }
       // fluage approché : « CALCUL ITERATIF DU FLUAGE » aux sections clés (FM : NON RÉSOLU, point fixe N.A.T∞ moyen)
       var tab = function (fl) {
         G.forEach(function (g) {
@@ -1490,7 +1501,7 @@
       var FM = FMin || N * A * 0.75 * s0, fl = fluage(FM);
       // ΔC du tableau (v20, crochet PSIDP_DCB) : 1 = règle β (v8) sur le fluage du bloc, exacte au bloc 1 (FMJ = 0)
       var DCB = globalThis.PSIDP_DCB || 0, dC0 = dC;
-      var setDC = function (f) { if (DCB === 1 && !(FMJin > 0)) dC = 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * f * R.EI28 / (v.KFL * Ep); else dC = dC0; };
+      var setDC = function (f) { if (DCB === 1 && !(FMJin > 0) && !dcm) dC = 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * f * R.EI28 / (v.KFL * Ep); else dC = dC0; if (typeof globalThis.PSIDP_DCFIX === 'function') { var dfx = globalThis.PSIDP_DCFIX(v, kind, N); if (dfx != null) dC = dfx; } }; // PSIDP_DCFIX : banc (ΔC imposé), absent en usage normal
       setDC(fl);
       for (var it = 0; it < 30; it++) {
         tab(fl);
@@ -1506,7 +1517,7 @@
       var mti = 0, mes = 0; U.forEach(function (g) { mti += g.Ti; mes += g.es; });
       G.forEach(function (g) { var b = bounds(g.t, g.k, g.ms, g.es, g.Ti, N); g.sup = b.sup; g.inf = b.inf; });
       if (FMCRIT) { var nbf = nombres({ G: G }); if (nbf.crit) { var gc = G[nbf.crit.t * 11 + nbf.crit.k]; mti = gc.Ti; mes = gc.es; } }
-      return { N: N, kind: kind, G: G, dC: dC, fl: fl, FM: FM, FMJ: FMP ? FMJin : (kind === 'REAJUSTEES' ? FM * mti / mes : 0), rec: rec, SG: sg, SD: sd !== null ? Lt - sd : null, base: base, keyE: keyE, rowsE: rowsE };
+      return { N: N, kind: kind, G: G, dC: dC, fl: fl, FM: FM, FMJ: FMP ? FMJin : (kind === 'REAJUSTEES' ? FM * mti / mes : 0), rec: rec, SG: sg, SD: sd !== null ? Lt - sd : null, base: base, keyE: keyE, rowsE: rowsE, Moss: Moss, Sb: S, Ib: I, sec: sec, Vb: V, VPb: VP, ft28b: ft28, cpr: R.cp };
     };
     // nombres de câbles nécessaires (ouverture du fuseau, inscription dans la structure) avec les tensions du bloc
     var nombres = function (B) {
@@ -1548,7 +1559,11 @@
     var prevF = function (Bp, N) { var c = Bp && Bp.nb && Bp.nb.crit; if (!FMPREV || !c) return null; var g = Bp.G[c.t * 11 + c.k]; return [N * A * g.es, N * A * g.Ti, c.by, c]; };
     // N de FM : nombre de câbles courant AVANT la mise à jour par « NOMBRES DE CABLES » (0013 : tableau réajusté à 17 câbles, FM à 16 ;
     // cycle N + 1 : FM à N + 1, cf. 2481, 2764) — Nfm = N du tableau précédent pour le bloc réajusté d'un cycle.
-    var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var f = prevF(Bp, (FMPREV === 2 ? 0 : Nfm) || N); return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null) : block(N, base, kind, keyE); };
+    // v26 (PSIDP_DCMEAN = 1) : données du ΔC « contrainte moyenne » d'un bloc de rang ≥ 2 (Bp = bloc précédent) : force FMJ = N·A·T initiale
+    // du tableau précédent à sa section critique, tracé = base du bloc réajusté précédent (bloc approché) ou base propre (bloc réajusté)
+    var dcmOf = function (Bp, N, base, kind) { var c = Bp && Bp.nb && Bp.nb.crit; if (globalThis.PSIDP_DCMEAN !== 1 || !c) return null;
+      return { F: N * A * Bp.G[c.t * 11 + c.k].Ti, base: kind === 'REAJUSTEES' || Bp.kind !== 'REAJUSTEES' ? base : Bp.base }; };
+    var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var Nf = (FMPREV === 2 ? 0 : Nfm) || N, f = prevF(Bp, Nf), dm = dcmOf(Bp, Nf, base, kind); return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null, dm) : block(N, base, kind, keyE, undefined, undefined, undefined, undefined, null, dm); };
     var solveN = function (N, base, kind, keyE, Bp) {
       var B, seen = {};
       for (var it = 0; it < 15; it++) {
@@ -1720,7 +1735,7 @@
     // de décalage laissent le système inchangé (impressions identiques), puis N -> N + 1 et nouveau cycle complet, au plus 4 câbles supplémentaires.
     var st = null, BAk = BA, BRk = BR, Nr = BR.N, MAXPLUS = globalThis.PSIDP_MAXPLUS !== undefined ? globalThis.PSIDP_MAXPLUS : (globalThis.PSIDP_LPMODE === 0 ? 0 : 4), DZMAX = 0, cycles = [];
     for (var plus = 0; plus <= MAXPLUS && !(st && st.lam); plus++) {
-      if (plus > 0) { Nr = BR.N + plus; BAk = FMPREV ? blockP(Nr, base1, 'APPROCHEES', BRk.keyE, BRk, true) : block(Nr, base1, 'APPROCHEES', key1); BAk.nb = nombres(BAk);
+      if (plus > 0) { Nr = BR.N + plus; BAk = FMPREV ? blockP(Nr, base1, 'APPROCHEES', BRk.keyE, BRk, true) : block(Nr, base1, 'APPROCHEES', key1, undefined, undefined, undefined, undefined, null, dcmOf(BRk, Nr, base1, 'APPROCHEES')); BAk.nb = nombres(BAk);
         var P2k = basePts(BAk), key2k = [{ id: 'c', t: 0, k: 0, E: BAk.G[0].inf, abut: true }];
         for (var t8 = 0; t8 < n; t8++) { key2k.push({ id: 'b' + t8, t: t8, k: P2k.kl[t8], E: P2k.zl[t8] }); if (t8 < n - 1) key2k.push({ id: 'a' + (t8 + 1), t: t8, k: 10, E: P2k.zs[t8 + 1], app: true }); }
         BRk = blockP(Nr, traceFromPoints(R, P2k), 'REAJUSTEES', key2k, BAk); BRk.nb = nombres(BRk); BRk.P2 = P2k; }
