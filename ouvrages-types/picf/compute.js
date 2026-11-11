@@ -134,7 +134,8 @@
     out.BC = { trucks: 2, gapTruck: 10.5, axles: ax(BC_CAMION.map(a => ({ ...a, a: 0.25 })), sW) };
     out.BT = { trucks: 1, axles: ax([{ x: 0, P: 16, a: 0.25 }, { x: 1.35, P: 16, a: 0.25 }], sW) };
     out.MC = { trucks: 1, axles: ax([{ x: 0, P: 110, a: 6.10 }], sL) };
-    out.ME = { trucks: 1, axles: ax([{ x: 0, P: 33, a: 0.15 }, { x: 1.80, P: 33, a: 0.15 }], sW) };
+    // Me120 : entraxe des essieux 1.80 m (fascicule 61 II) ; crochet de diagnostic PICF_MED (PIPO : 1.75 reproduit les listings).
+    out.ME = { trucks: 1, axles: ax([{ x: 0, P: 33, a: 0.15 }, { x: (typeof root !== 'undefined' && root.PICF_MED) || 1.80, P: 33, a: 0.15 }], sW) };
     out.E = { trucks: 1, axles: ax([{ x: 0, P: 200, a: 15.0 }, { x: 33.0, P: 200, a: 15.0 }], sL) };
     out.EC = { trucks: 1, axles: ax([{ x: 0, P: 50, a: 0.60 }, { x: 9.5, P: 50, a: 0.60 }], sEC) };
     return out;
@@ -229,6 +230,23 @@
 
     // --- lignes d'influence (charge unité 1 kN sur la traverse supérieure)
     const ilTop = xsTop.map((x, i) => { const F = new Float64Array(m.n); F[m.top[i] * 3 + 1] = -1; return extract(solve(F)); });
+    // --- post-traitement du radier : terme hyperstatique (MG − MD)/L compté avec le mauvais signe (session i).
+    // Le cadre donne des moments d'angle exacts ; les efforts internes du radier (M, V, pression) imprimés par SETRA
+    // correspondent au radier libre sur sol élastique chargé par les efforts d'extrémité du cadre PLUS des forces verticales
+    // antisymétriques ±γ·(MG − MD)/L, γ = 2 (inversion du signe du terme hyperstatique) : LI 1/4 TR INF exacte à 1e-4
+    // sur les 4 passages (γ ajusté 2.003–2.009). Crochet PICF_RAH : facteur γ (0 = ancien calcul).
+    const RAH = root.PICF_RAH != null ? root.PICF_RAH : 2;
+    if (RAH) {
+      const nb = m.bot.length, N = nb * 2, KB = new Float64Array(N * N);
+      m.groups.b.forEach((e, i) => { const id = [1, 2, 4, 5]; for (let a = 0; a < 4; a++) for (let b2 = 0; b2 < 4; b2++) KB[(2 * i + a) * N + 2 * i + b2] += e.kl[id[a]][id[b2]]; });
+      const FB = new Float64Array(N); FB[0] = -1; FB[N - 2] = 1; const wB = luSolve(luFactor(KB, N), FB);
+      const uF = new Float64Array(m.n); m.bot.forEach((nd, i) => { uF[nd * 3 + 1] = wB[2 * i]; uF[nd * 3 + 2] = wB[2 * i + 1]; });
+      const cr = extract(uF); const jL = m.groups.b.length;
+      const corr = r => { const f = RAH * (forcesAt(m, 'b', 0, r.u).M - forcesAt(m, 'b', jL, r.u).M) / L;
+        r.b.forEach((q, k) => { q.M += f * cr.b[k].M; q.V += f * cr.b[k].V; }); r.p = r.p.map((v, k) => v + f * cr.p[k]); r.det[3] += f * cr.det[3]; r.det[4] += f * cr.det[4]; };
+      for (const r of ilTop) corr(r);
+      R._rah = { cr, corr };
+    }
     // LI (page 7) : abscisses tous les 0.5 m + L
     const ilAbs = range(0, L, STP).filter(x => x < L - 1e-6).concat([L]);
     R.ilPage = ilAbs.map(x => { const i = idx(xsTop, x); return [x, ...ilTop[i].det]; });
@@ -801,7 +819,7 @@
         add('BT', 'BT', best, dyn.BT.d); }
       // Mc120 / Me120 / E : charge d'une file (chenille 55 t, essieu 33 t, demi-remorque 100 t) sur la bande fusionnée du véhicule
       add('MC', 'MC120', veh(110, 6.1 + sL, [0, 3.3], 1.0, c0 + 1.0, c1 - 1.0, 1, 0, !root.PICF_TRM), dyn.MC.d); // chenilles fondues : une seule chenille (55 t) portée
-      add('ME', 'ME120', point(33, 1.8 + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d);
+      add('ME', 'ME120', point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d);
       add('E', 'E', veh(100, 15 + sL, [0], 3.3, c0 + 2.0, c1 - 2.0), 1.0);
     } else {
     { // Bc : deux essieux arrière (2 × 6 t par file de roues), roues 0.25 m, 1 à 4 camions de front
@@ -815,7 +833,7 @@
         const res = point(16, 1.35 + 0.25 + sL, ws, 0.6 + sL, c0 + 1.0, c1 - 1.0); if (!best || res.tot > best.tot) best = res; }
       add('BT', 'BT', best, dyn.BT.d); }
     add('MC', 'MC120', point(55, 6.1 + sL, [0, 3.3], 1.0 + sL, c0 + 1.0, c1 - 1.0), dyn.MC.d);
-    add('ME', 'ME120', point(33, 1.8 + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
+    add('ME', 'ME120', point(33, (root.PICF_MEDT || 1.8) + 0.15 + sL, [0], 4.0 + sL, c0 + 2.5, c1 - 2.5), dyn.ME.d); // facteur 3 imprimé ≈ 33 t (un essieu)
     add('E', 'E', point(100, 15 + sL, [-0.825, 0.825], sL, c0 + 2.675, c1 - 2.675), 1.0);
     }
     const all = out.service.concat(out.chantier ? [out.chantier.ec] : []);
