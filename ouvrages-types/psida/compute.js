@@ -349,7 +349,10 @@
     });
     // moments en travée
     r.liTravee = L.map((l, i) => SECT.filter(a => a > 0 && a < 1).map(a => {
-      const cols = LI.momentLI(i, a), colsP = (lisp === 5 ? LI : LIP).momentLI(i, a);
+      const cols = LI.momentLI(i, a);
+      // v19 : coefficients imprimés = valeur double précision stockée en REAL*4 (Math.fround avant impression) ; crochet PSIDA_LITF = 0 : sans
+      const litf = globalThis.PSIDA_LITF === undefined ? 0 : globalThis.PSIDA_LITF, fr = c => c.map(v => Math.fround(v));
+      const colsP = (lisp === 5 ? LI : LIP).momentLI(i, a).map(c => !litf ? c : c.c ? { s: c.s, c: fr(c.c) } : { s: c.s, G: fr(c.G), D: fr(c.D) });
       const aires = cols.map(col => col.s === i ? areaCub(col.G, l, 0, a) + areaCub(col.D, l, a, 1) : areaCub(col.c, L[col.s]));
       const f = x => LI.evalM(cols, i, a, i, x);
       const z = zeros(f, 1e-6, 1 - 1e-6);
@@ -495,6 +498,9 @@
       }
       let best = b1, pos = p1; if (p2 && b2 >= b1 - 1e-6 * Math.max(1, Math.abs(b1 === -Infinity ? 0 : b1))) { best = b2; pos = p2; }
       if (pos && pos.length === 2 && nearGap) pos = [Math.max(...pos), Math.min(...pos)];
+      // v19 : deux camions accolés à l'entraxe exact (2e camion à x + gap) : imprimés dans l'ordre des abscisses (x, x + gap) ;
+      // sinon le camion le plus chargeant en premier. Crochet PSIDA_POSORD = 0 : ancien ordre (contribution) partout.
+      else if (pos && pos.length === 2 && exactGap && G.PSIDA_POSORD !== 0 && Math.abs(Math.abs(pos[1] - pos[0]) - gap) < 1e-6) pos = [Math.min(...pos), Math.max(...pos)];
       else if (pos && pos.length === 2) { const c = pos.map(x => sg * vehVal(r, f, axles, fac, x)); if (c[1] > c[0] + 1e-9) pos = [pos[1], pos[0]]; }
       res[sg > 0 ? 'max' : 'min'] = { v: best > 0 ? sg * best : 0, pos: best > 0 ? pos : null };
     }

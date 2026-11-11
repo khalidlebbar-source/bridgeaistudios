@@ -8,16 +8,20 @@
   const pad = (s, w) => { s = String(s); return s.length >= w ? s : ' '.repeat(w - s.length) + s; };
   const padR = (s, w) => { s = String(s); return s.length >= w ? s : s + ' '.repeat(w - s.length); };
   const f = (v, w, d) => pad(fx(v, d), w);
+  // v19 : listings de la version 2006 du programme (bordereau A6 EDROI F6.3, listings 2007–2008) : égalités exactes arrondies
+  // en s'éloignant de zéro (20,125 -> 20.13 ; -2,625 -> -2.63) ; versions ultérieures : demi-pair. Crochet PSIDA_RNDV = 0 : demi-pair partout.
+  let RND_AWAY = false;
   function fx(v, d) { if (v == null || !isFinite(v)) return '*'.repeat(Math.max(1, d + 2)); v = Math.fround(+v);
     // arrondi Fortran : demi-pair sur les égalités exactes (0,625 -> 0.62 ; 1,875 -> 1.88)
     const t = v * Math.pow(10, d), fl = Math.floor(t);
-    if (t - fl === 0.5 && Number.isFinite(t) && Math.abs(t) < 1e15) { const ev = fl % 2 === 0 ? fl : fl + 1; v = ev / Math.pow(10, d); }
+    if (t - fl === 0.5 && Number.isFinite(t) && Math.abs(t) < 1e15) { const ev = RND_AWAY ? (t > 0 ? fl + 1 : fl) : fl % 2 === 0 ? fl : fl + 1; v = ev / Math.pow(10, d); }
     let s = v.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s; }
   const fdot = (v, w) => pad(Math.round(v) + '.', w);
   const STAR = ['                                                              *     * ', '                                                                 * '];
 
   function renderNote(m, r, opt) {
     opt = opt || {};
+    RND_AWAY = m.version === '2006' && G.PSIDA_RNDV !== 0;
     const num = String(opt.numero != null ? opt.numero : (m.numero || '0000')).padStart(4, '0');
     const d = opt.date || m.date || { j: '01', m: '01', a: '00' };
     const dstr = `${d.j}  ${d.m}  ${d.a}`;

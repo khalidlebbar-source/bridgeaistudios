@@ -657,6 +657,13 @@
       '                         (EN TM/M )',
       '             SECTION DE CALCUL DES FERS' + AP.map((a, k) => f(a.ach, k ? 11 : 13, 6)).join(''),
       '              (EN M**2 PAR ML LONGITUDINAL)');
+    // v19 : avertissement imprimé par SETRA en fin de dimensionnement des appareils (page sans en-tête, tous les passages du corpus)
+    if (!G.PSIDA_NONOTAAP) pl.push('', '', '',
+      "    NOTA : LORSQUE LES APPUIS NE SONT PAS EGALEMENT ESPACES OU LORSQUE LES APPAREILS D'APPUI LATERAUX D'UNE MEME LIGNE", '',
+      '           SONT EN FORT RETRAIT PAR RAPPORT AUX BORDS LIBRES LES RESULTATS DE LA NOTE DE CALCUL AUTOMATIQUE DOIVENT', '',
+      "           ETRE CORRIGES MANUELLEMENT SELON LES INDICATIONS DE L'ANNEXE 4 DU DOCUMENT PSIDP-EL EDITION OCTOBRE 85", '',
+      '         IL EST EGALEMENT RECOMMANDE DE SE REPORTER A CE DOCUMENT POUR APPORTER DES RENFORCEMENTS', '',
+      '         AU FERRAILLAGE LONGITUDINAL AU VOISINAGE DES PILES LORSQUE LES APPUIS SONT TROP ESPACES');
     page("DIMENSIONNEMENT DES APPAREILS D'APPUI", pl, { sub: '                        *   *', sub2: "                         GEOMETRIE DES APPAREILS D'APPUI" });
   }
 
