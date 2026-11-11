@@ -292,7 +292,10 @@
         [hk ? pp(hk.N * sn + v.SPEC * v.HSREMB * aExt, hk.Mc * sn * sn) : [0, 0], v.SPEC * v.HSREMB, 0],
         [pp(Wp, -Wp * g.D), 0, 0], [pp(2.5 * g.e1 * B, 0), 2.5 * g.e1, 2.5 * g.e1]]; };
     const semCases = [semComps(tK1, hs1), semComps(tK2, hs2)];
+    if (typeof globalThis.PIPO_SEMDIAG === 'function') globalThis.PIPO_SEMDIAG({ cp, dt, tK1, tK2, hs1, hs2, Wp, sn, B, aExt, aInt, semCases, v, g, wSem, M, Mvert, terres });
     const semT = [1, 0.75, 0.5, 0.25];
+    const SEMELU = globalThis.PIPO_SEMELU !== 0;
+    const patW = v.SPEC * (v.HAUTL + v.HSREMB) * aExt, patMp = patW * ((g.D - B / 2 - g.e2 / 2) / 2 - g.D); // terres du patin : poids et moment / centre
     const envSD = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false);
     const semelleEff = {};
     for (const side of ['E', 'I']) {
@@ -300,7 +303,19 @@
         const per = j => { // j = 0 moment, 1 effort tranchant
           const vals = semCases.map(cs => cs.map(([p, qE, qI]) => semEff(p[0], p[1], side, t, side === 'E' ? qE : qI)[j]));
           const els = vals.map(a => a.reduce((s, x) => s + x, 0));
-          const uMax = vals.map(a => a.reduce((s, x) => s + (x > 0 ? 1.35 * x : x), 0)), uMin = vals.map(a => a.reduce((s, x) => s + (x < 0 ? 1.35 * x : x), 0));
+          // Tour 13 — découpage SETRA des charges permanentes pour l'ELU (1.35 sur les parts défavorables, 1.0 sur les autres) :
+          // moments côté INT. : parts {moment du cadre (cp), moment de la DT et de l'excentrement du piédroit PRIS AVEC LE SIGNE
+          // OPPOSÉ, réaction propre des terres du patin (N et moment physiques)} + reste ; efforts tranchants côté EXT. :
+          // {cp N, cp M, réaction propre des terres du patin, réaction du poids de semelle, groupe DT, groupe piédroit} + reste.
+          const split = SEMELU && ((side === 'I' && j === 0) || (side === 'E' && j === 1));
+          const parts = (cs, k) => { if (!split) return vals[k];
+            const ev = p => semEff(p[0], p[1], side, t, 0)[j], pp = (N, Mm) => [N / B - 6 * Mm / B / B, N / B + 6 * Mm / B / B];
+            const pat = ev(pp(patW, patMp));
+            const at = side === 'I' ? [ev(pp(0, cp.Mc * sn * sn)), ev(pp(0, -dt.Mc * sn)), ev(pp(0, Wp * g.D)), pat]
+              : [ev(pp(cp.N * sn, 0)), ev(pp(0, cp.Mc * sn * sn)), pat, ev(pp(2.5 * g.e1 * B, 0)), vals[k][1], vals[k][4]];
+            return [...at, els[k] - at.reduce((s, x) => s + x, 0)]; };
+          const pv = semCases.map((cs, k) => parts(cs, k));
+          const uMax = pv.map(a => a.reduce((s, x) => s + (x > 0 ? 1.35 * x : x), 0)), uMin = pv.map(a => a.reduce((s, x) => s + (x < 0 ? 1.35 * x : x), 0));
           return { elsMax: Math.max(...els), elsMin: Math.min(...els), eluMax: Math.max(...uMax), eluMin: Math.min(...uMin) };
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);
