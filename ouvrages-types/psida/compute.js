@@ -453,7 +453,7 @@
     return v;
   }
   // balayage discret : un essieu (ou une extrémité) sur un point de grille ; 2 véhicules d'écart >= gap
-  function vehicleScan(r, f, axles, fac, step, nmax, gap, anchors, exactGap) {
+  function vehicleScan(r, f, axles, fac, step, nmax, gap, anchors, exactGap, nearGap) {
     const grid = r._grid || (r._grid = posGrid(r));
     const offs = anchors || axles.map(a => a[0]);
     const cand = new Set();
@@ -471,6 +471,11 @@
         if (v > b1 + 1e-6 * Math.max(1, Math.abs(b1 === -Infinity ? 0 : b1))) { b1 = v; p1 = [xs[i]]; }
         if (nmax > 1) {
           if (exactGap && ok(xs[i] + gap)) { const w = v + sg * vehVal(r, f, axles, fac, xs[i] + gap); if (w > b2 + 1e-6 * Math.max(1, Math.abs(b2 === -Infinity ? 0 : b2))) { b2 = w; p2 = [xs[i], xs[i] + gap]; } }
+          if (nearGap) {
+            // v15 (règle PSIDP v29) : véhicule AVANT sur la grille, véhicule arrière au point de grille le plus proche de x − entraxe nominal
+            let jb = -1; for (let j = 0; j < i; j++) if (jb < 0 || Math.abs(xs[i] - xs[j] - nearGap) < Math.abs(xs[i] - xs[jb] - nearGap) - 1e-9) jb = j;
+            if (jb >= 0 && ok(xs[jb])) { const w = v + sg * vals[jb]; if (w > b2 + 1e-6 * Math.max(1, Math.abs(b2 === -Infinity ? 0 : b2))) { b2 = w; p2 = [xs[i], xs[jb]]; } }
+          } else
           for (let j = i + 1; j < xs.length; j++) {
             if (xs[j] - xs[i] < gap - 1e-6 || !ok(xs[j])) continue;
             const w = v + sg * vals[j]; if (w > b2 + 1e-6 * Math.max(1, Math.abs(b2 === -Infinity ? 0 : b2))) { b2 = w; p2 = [xs[i], xs[j]]; }
@@ -478,7 +483,8 @@
         }
       }
       let best = b1, pos = p1; if (p2 && b2 >= b1 - 1e-6 * Math.max(1, Math.abs(b1 === -Infinity ? 0 : b1))) { best = b2; pos = p2; }
-      if (pos && pos.length === 2) { const c = pos.map(x => sg * vehVal(r, f, axles, fac, x)); if (c[1] > c[0] + 1e-9) pos = [pos[1], pos[0]]; }
+      if (pos && pos.length === 2 && nearGap) pos = [Math.max(...pos), Math.min(...pos)];
+      else if (pos && pos.length === 2) { const c = pos.map(x => sg * vehVal(r, f, axles, fac, x)); if (c[1] > c[0] + 1e-9) pos = [pos[1], pos[0]]; }
       res[sg > 0 ? 'max' : 'min'] = { v: best > 0 ? sg * best : 0, pos: best > 0 ? pos : null };
     }
     return res;
@@ -554,7 +560,7 @@
   const MC120 = { P: 110, len: 6.1, gap: 36.2 }, MC80 = { P: 72, len: 4.9, gap: 30.5 + 4.9 };
   const CV_OFF = 0.425;   // v9 (avec LI interpolée au pas imprimé 0,5) ; v8 : 0,375 avec intégration continue
   const CV_OFF_V8 = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
-  const CVD = { P: 140, len: 11, gap: 18.75 }, CVE = { P: 200, len: 15, gap: 32.75 }; // 2 remorques (F61 II art. 10)
+  const CVD = { P: 140, len: 11, gap: 18.75, nom: 19 }, CVE = { P: 200, len: 15, gap: 32.75, nom: 33 }; // 2 remorques (F61 II art. 10)
 
   function liveEffects(r, f, A6, dynOverride, extraSegs, kOne) {
     const n = r.n, L = r.L, xs = r.LI.xs, Lt = xs[n];
@@ -600,7 +606,7 @@
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
       const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([d.len * (k + 0.5) / N, d.P / N]);
-      const cv = vehicleScan(r, f, ax, kOne ? (sp => 1) : spanFactor(r, 'CV', null), step, 2, d.gap, [0]);
+      const cv = vehicleScan(r, f, ax, kOne ? (sp => 1) : spanFactor(r, 'CV', null), step, 2, d.gap, [0], false, G.PSIDA_CVNEAR === 0 ? 0 : d.nom);
       ce.push({ nom, ...cv });
     }
     let cmax = { v: 0, nom: '' }, cmin = { v: 0, nom: '' };
@@ -788,8 +794,14 @@
         } else {
           // convoi D/E : remorque de 3,30 m, densité P/longueur, axe à ±0,40 m de l'axe de la chaussée (calage 3826/3827,
           // règle exacte non retrouvée)
-          const cv = nom === 'CVOI.D' ? CVD : CVE, cE = (F.etal.find(e => e.nom === nom) || {}).c || F.Leq, w = G.PSIDA_CVWID || 3.3, p = cv.P / cv.len / w * Math.min(1, cE / F.Leq), xc = (x0 + x1) / 2;   // charge contenue dans l'étalement 2c
-          const cvo = G.PSIDA_CVOFF != null ? G.PSIDA_CVOFF : (G.PSIDA_CV_V8 ? CV_OFF_V8 : CV_OFF); for (const off of [-cvo, cvo]) { const x = xc + off - w / 2, val = p * A1 * (G.PSIDA_CV_V8 && !G.PSIDA_CVPL ? trap(Zc, x, x + w) : intPL(Zc, x, x + w, G.PSIDA_CVPL || 0.5)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+          const cv = nom === 'CVOI.D' ? CVD : CVE, cE = (F.etal.find(e => e.nom === nom) || {}).c || F.Leq, w = (G.PSIDA_CVWID || 3.3), p = cv.P / cv.len / w * Math.min(1, cE / F.Leq), xc = (x0 + x1) / 2;   // charge contenue dans l'étalement 2c
+          const cvm = G.PSIDA_CVMY || 0, xr0 = -W / 2 + A6.ETROTG, xr1 = xr0 + A6.EGAU + Lch + A6.EDROI;
+          let offs; if (cvm) { const ee = Math.max(0, (xr1 - xr0) / 2 - 3.5), xm = (xr0 + xr1) / 2 - xc; offs = [];
+            if (cvm === 3 || cvm === 4) { // bord gauche du convoi sur la grille (pas 0,125 depuis le bord d'extrados), axe à ≥ 3,50 m des bords
+              const gl = Math.ceil((xr0 + 3.5 - w / 2 - (-W / 2)) / h - 1e-9), gr = Math.floor((xr1 - 3.5 - w / 2 - (-W / 2)) / h + 1e-9);
+              for (let k = gl; k <= Math.max(gl, gr); k++) if (cvm === 4 || k === gl || k === Math.max(gl, gr)) offs.push(-W / 2 + k * h + w / 2 - xc); }
+            else if (cvm === 2) offs = [xm - ee, xm + ee]; else for (let u = -ee; u <= ee + 1e-9; u += 0.0125) offs.push(xm + u); }
+          const cvo = G.PSIDA_CVOFF != null ? G.PSIDA_CVOFF : (G.PSIDA_CV_V8 ? CV_OFF_V8 : CV_OFF); for (const off of (offs || [-cvo, cvo])) { const x = xc + off - w / 2, val = p * A1 * (G.PSIDA_CV_V8 && !G.PSIDA_CVPL ? trap(Zc, x, x + w) : intPL(Zc, x, x + w, G.PSIDA_CVPL || 0.5)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
         }
         if (mx > cMx.v) cMx = { v: mx, nom }; if (mn < cMn.v) cMn = { v: mn, nom };
       }
@@ -1039,6 +1051,17 @@
       for (let x = g0; x <= g1 - 4.25 + 1e-9; x += h) bestMc = Math.max(bestMc, (meanW(x, 1) + meanW(x + 3.25, 1)) / 2);
       res.Mc = bestMc;
       // convois D / E : remorque de 3,30 m, axe décalé de 0,50 m vers la fibre (calage listings)
+      const cvk = G.PSIDA_CVK === undefined ? 1 : G.PSIDA_CVK;
+      if (cvk) {
+        // v15 (règle PSIDP v29) : axe du convoi (3,30 m) libre dans [bord + 3,50 ; bord opposé − 3,50], maximum de la moyenne
+        // de la LI (interpolée linéairement au pas 0,125 m depuis le bord d'extrados). cvk = 1 : bords de la largeur roulable
+        // (EGAU + ESURCH + EDROI) ; 2 : bords de la largeur chargeable.
+        const e0 = cvk === 2 ? xCh0 : xTG, e1 = cvk === 2 ? xCh1 : xCh1 + A6.EDROI;
+        let lo = e0 + 3.5, hi = e1 - 3.5; if (hi < lo) lo = hi = (e0 + e1) / 2;
+        const KL = y => { const u = (y - yL) / h, i = Math.floor(u), t = u - i; return K(yL + i * h) * (1 - t) + K(yL + (i + 1) * h) * t; };
+        const mA = xa => { let t = 0; const m = 330; for (let i = 0; i < m; i++) t += (G.PSIDA_CVKC ? K : KL)(xa - 1.65 + 3.3 * (i + 0.5) / m); return t / m; };
+        let bc = -1e9; for (let xa = lo; xa <= hi + 1e-9; xa += 0.0125) bc = Math.max(bc, mA(xa)); res.CV = Math.max(bc, mA(hi));
+      } else
       res.CV = f.y === 0 ? meanC(-1.65, 1.65) : meanC(Math.sign(f.y) * 0.5 - 1.65, Math.sign(f.y) * 0.5 + 1.65);
       return res;
     });
