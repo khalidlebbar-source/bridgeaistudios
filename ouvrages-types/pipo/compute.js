@@ -149,6 +149,12 @@
       return M.solve(cs);
     };
     const hs1 = hs(v.RANK1), hs2 = hs(v.RANK2);
+    // Effort tranchant du piédroit sous HSREMB (tour 12, 1890/1893, K1 et K2 : 4 cas exacts) : SETRA n'imprime pas
+    // V = q·(H/2 − z) + C (C = terme hyperstatique constant, moments exacts), mais V = C·q·(H/2 − z) : le terme
+    // isostatique est multiplié par C au lieu de lui être ajouté (loi empirique du programme, comme RT/TP en semelle).
+    if (globalThis.PIPO_HSV !== 0) [[hs1, v.RANK1], [hs2, v.RANK2]].forEach(([h, K]) => { if (!h) return;
+      const q = K * v.SPEC * v.HSREMB, C = h.Vp[0] - q * (g.H / 2 - zs[0]);
+      h.Vp = h.Vp.map((t, k) => C * q * (g.H / 2 - zs[k])); });
     // ---- Surcharge sur remblai (SUREMB, densité PSREMB, sans dalle de transition) : même schéma que HSREMB —
     // poussée uniforme K·PSREMB sur les piédroits + charge PSREMB sur le patin (moment au centre de semelle ÷ sin²φ) ;
     // colonne REMB = enveloppe des deux cas K = RANK1 / RANK2 (tour 8, 1890 : traverse −0.13/−0.43, pressions 0.50/0.33).
@@ -183,7 +189,7 @@
       const tMax = Math.max(t1, t2), tMin = Math.min(t1, t2), hMax = Math.max(h1, h2), hMin = Math.min(h1, h2);
       const c = (arr, sens) => arr.reduce((s, x) => s + (sens > 0 ? (x > 0 ? 1.35 * x : x) : (x < 0 ? 1.35 * x : x)), 0);
       return { elsMax: a + b + tMax + hMax, eluMax: c([a, b, tMax, hMax], 1), elsMin: a + b + tMin + hMin, eluMin: c([a, b, tMin, hMin], -1),
-        g: a + b, t: [tMax, tMin], h: [hMax, hMin] };
+        g: a + b, t: [tMax, tMin], h: [hMax, hMin], raw: [a, b, t1, t2, h1, h2] };
     };
     const secT = xsSec.map(x => { const k = ix(Math.round(x * 1e6) / 1e6); return { x, M: combo(r => r.Mt[k]), V: combo(r => r.Vt[k]), ret: ret.Mt[k], tem: tem.Mt[k], vret: ret.Vt[k], vtem: tem.Vt[k] }; });
     const secP = zsSec.map(z => { const k = iz(z); return { x: z, M: combo(r => r.Mp[k]), V: combo(r => r.Vp[k]), ret: ret.Mp[k], tem: tem.Mp[k], vret: ret.Vp[k], vtem: tem.Vp[k] }; });
@@ -195,8 +201,17 @@
       { imposed: { [M.C0]: [0, 0, 0.01], [M.C1]: [0, 0, -0.01] } },
       { imposed: { [M.C0]: [0, 0, 0.01], [M.C1]: [0, 0, 0.01] } },
     ].map(cs => { const res = M.fr.solve(cs); const p = M.post(res); const N = res.end[M.bl[0]][0];
-      const sm = semelle(p, N, 0); return { sup: -p.Mp[iTop], base: -p.Mp[0], mid: -p.Mt[iMid], mI: sm.mI, mE: sm.mE }; });
-    for (const k of [1, 2]) for (const f of ['sup', 'base', 'mid', 'mI', 'mE']) depl[k][f] = -depl[k][f];
+      const sm = semelle(p, N, 0); return { sup: -p.Mp[iTop], base: -p.Mp[0], mid: -p.Mt[iMid], mI: sm.mI, mE: sm.mE, N }; });
+    for (const k of [1, 2]) for (const f of (k === 2 && globalThis.PIPO_DEPL !== 0 ? ['mI', 'mE'] : ['sup', 'base', 'mid', 'mI', 'mE'])) depl[k][f] = -depl[k][f];
+    // Tour 12 — moments d'encastrement des semelles sous déplacements (13 passages, 99.6 / 98.7 %) :
+    // moment au centre de semelle M = M_base (imprimé, signe du tableau) − N·sinφ·DELTA (pas de sin²φ, pas de ressort) ;
+    // pressions de bord n ∓ 6M/B², n = N·sinφ/B ; la ligne « SEMELLE EXT. » est calculée avec le débord INTÉRIEUR et
+    // « SEMELLE INT. » avec le débord EXTÉRIEUR ; côté INT. la part uniforme vaut −n/3 (loi empirique du programme :
+    // reproduit le soulèvement et les rotations antisymétriques à 1e-3 ; N = 0 dans les cas symétriques).
+    if (globalThis.PIPO_DEPL !== 0) for (const k of [0, 1, 2, 3]) { const d = depl[k], N = k === 1 || k === 2 ? 0 : d.N;
+      const m6 = 6 * (d.base - N * sn * g.D) / B / B, n = N * sn / B, n2 = -n / 3;
+      const cant = (a, p0, p1) => -(p0 * a * a / 2 + (p1 - p0) / B * a ** 3 / 6);
+      d.mE = cant(aInt, n - m6, n + m6); d.mI = cant(aExt, n2 + m6, n2 - m6); }
     const perm = {
       inf: permAt(r => r.Mp[0]), sup: permAt(r => r.Mp[iTop]), mid: permAt(r => r.Mt[iMid]),
     };
@@ -229,6 +244,7 @@
     const rML = M.solve({ nodal: { [M.T[0]]: [0, 0, 1] } }), rMR = M.solve({ nodal: { [M.T[M.T.length - 1]]: [0, 0, -1] } });
     const aDT = globalThis.PIPO_ADT != null ? globalThis.PIPO_ADT * g.e2 : 0;
     const env = getf => { const f = li.map(o => getf(o.r)); let ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)]; if (globalThis.PIPO_ENDS) ends = globalThis.PIPO_ENDS(ends);
+      if (globalThis.PIPO_LIDIAG) globalThis.PIPO_LIDIAG(LV.makeLI(xsLI, f, g.L, Ldt, 1, ends), f);
       return LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt, 1, ends), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false, LV.makeLI(xsLI, f, g.L, Ldt, fA, ends)); };
     // effort tranchant de la traverse : la LI présente un saut unité à la section ; SETRA retient l'ordonnée du côté
     // de l'appui gauche (charge juste à gauche de la section) en plus de celle de droite (T_TRAVERSE : réf(x) = ancienne(x − pas)).

@@ -95,7 +95,10 @@
     li0 = li0 || li;
     const res = {};
     const lc0 = (v.MC === 3 ? 4.9 : 6.1) + 2 * v.HCHAU, lc = lc0 + g.e3 / 2, lq = lc0 + g.e3, Pmc = v.MC === 3 ? 72 : 110;
-    const meP = v.ME === 3 ? 22 : 33, meD = v.ME === 3 ? 1.5 : 1.8;
+    // Me : essieux à 1.80 m (Me120) / 1.50 m (Me80), valeur réglementaire conservée. Tour 11 : les listings SETRA correspondent
+    // exactement à 1.75 m pour Me120 (Σ des ordonnées à 1e-3, optimum net, contrôle confirmé) — constante NON justifiée par un texte
+    // trouvé, donc non activée par défaut (règle SPEC) ; essai : globalThis.PIPO_MED = v => 1.75.
+    const meP = v.ME === 3 ? 22 : 33, meD = globalThis.PIPO_MED ? globalThis.PIPO_MED(v) : v.ME === 3 ? 1.5 : 1.8;
     const lo = li.X[0] - 20, hi = li.X[li.X.length - 1] + 2;
     const pg = v.LU === 2 ? 0.25 : 0.5; // pas de déplacement des charges = pas des lignes d'influence
     const grid = []; for (let x = Math.ceil(lo / pg) * pg; x <= hi + 1e-9; x += pg) grid.push(Math.round(x * 1000) / 1000);
