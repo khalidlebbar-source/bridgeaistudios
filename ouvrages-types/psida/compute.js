@@ -303,11 +303,13 @@
 
     // --- charges permanentes
     const masvol = A8.MASVOL > 0 ? A8.MASVOL : 2.5;
-    const oss = sec.A * masvol;
-    const ossMax = oss * (A8.OSMAX || 1), ossMin = oss * (A8.OSMIN || 1);
-    const gMax = ossMax + A8.QSUPMAX, gMin = ossMin + A8.QSUPMIN;
-    r.cp = { masvol, oss, ossMax, ossMin, qsupMax: A8.QSUPMAX, qsupMin: A8.QSUPMIN, ossMoy: (ossMax + ossMin) / 2,
-      qsupMoy: (A8.QSUPMAX + A8.QSUPMIN) / 2, gMax, gMin, gMoy: (gMax + gMin) / 2 };
+    // v25 : charges permanentes en simple précision (REAL*4) — crochet PSIDA_CPF = 0 : double
+    const F4 = (globalThis.PSIDA_CPF ?? 1) ? Math.fround : (x) => x;
+    const oss = F4(F4(sec.A) * F4(masvol));
+    const ossMax = F4(oss * F4(A8.OSMAX || 1)), ossMin = F4(oss * F4(A8.OSMIN || 1));
+    const gMax = F4(ossMax + F4(A8.QSUPMAX)), gMin = F4(ossMin + F4(A8.QSUPMIN));
+    r.cp = { masvol, oss, ossMax, ossMin, qsupMax: A8.QSUPMAX, qsupMin: A8.QSUPMIN, ossMoy: F4(F4(ossMax + ossMin) / 2),
+      qsupMoy: F4(F4(F4(A8.QSUPMAX) + F4(A8.QSUPMIN)) / 2), gMax, gMin, gMoy: F4(F4(gMax + gMin) / 2) };
 
     // --- classe, voies
     const statut = parseInt(A8.STATUT, 10) || 0;

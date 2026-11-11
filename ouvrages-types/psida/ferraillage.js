@@ -339,7 +339,11 @@
         rows.push({ a, V, tau: V / bd, s: smax });
       }
       const nc = Math.ceil(Li / sEp - 1e-9);
-      out.push({ rows, At, tl, nc, esp: Li / nc, L: Li });
+      // v25 : poids partiel = n cours × nI étriers × longueur développée × aire φ4 × 7,85 ; longueur développée = celle de
+      // l'avant-métré (2 (H − ENROBS − ENROBI) + 15 φ4, même formule que la ligne 147) — APPROCHÉE (cf. NOTES v8 / v25).
+      const A11e = r._A11 || {}, He = r.ferLong ? r.ferLong.H : 0;
+      const poids = nc * F.inf.n * (2 * (He - (A11e.ENROBS || 0) - (A11e.ENROBI || 0)) + 15 * ph[3]) * aire(ph[3]) * 7.85;
+      out.push({ rows, At, tl, nc, esp: Li / nc, L: Li, poids });
     }
     return out;
   }
@@ -843,7 +847,7 @@
       const pe = [' '.repeat(65) + 'EPURE RETENUE', ' '.repeat(68) + '*     *', ' '.repeat(71) + '*', '',
         '                      ABSCISSE DE DEPART                 ESPACEMENTS                 NOMBRE                 PLAGE COUVERTE', '',
         '                             0.', ' '.repeat(55) + f(t.esp, 10, 3) + pad(t.nc, 23) + f(t.L, 29, 2), '                            ' + fx(t.L, 2), '',
-        ' '.repeat(60) + "NOMBRE DE COURS D'ETRIERS" + pad(t.nc, 4)];
+        ' '.repeat(60) + "NOMBRE DE COURS D'ETRIERS" + pad(t.nc, 4) + (G.PSIDA_NOPOIDS || !(t.poids > 0) ? '' : '          POIDS PARTIEL ' + fx(t.poids, 3))];
       page('ETRIERS DE LA TRAVEE  ' + (i + 1), pe, { sub: '                          *     *', sub2: '                             *' });
     });
   }

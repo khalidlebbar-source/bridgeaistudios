@@ -237,7 +237,9 @@
         if (Math.abs(sc.a - 0.05) < 1e-9 || Math.abs(sc.a - 0.95) < 1e-9 || (sc.a === 0 && i === 0)) continue;
         const l = sc.live;
         const row = (A, B, C, first) => {
-          const lens = (A.segs || []).slice().sort((p, q) => Math.abs(q.area) - Math.abs(p.area)).map(g => fx(g.l, 2));
+          const AO = G.PSIDA_AORD ?? 1, Alf = (l) => 0.23 + 36 / (l + 12), kAs = (g) => (r.gm && r.gm[g.s] ? r.gm[g.s].coef.A : 1);
+          const key = AO === 1 ? (g => Alf(g.l) * Math.abs(g.area)) : AO === 2 ? (g => Math.abs(g.area) * kAs(g)) : AO === 3 ? (g => g.l) : AO === 4 ? (g => Alf(g.l) * Math.abs(g.area) * kAs(g)) : (g => Math.abs(g.area));
+          const lens = (A.segs || []).slice().sort((p, q) => key(q) - key(p)).map(g => fx(g.l, 2));
           let t = (first ? '        ' + fx(sc.a, 2) + ' L' + f(sc.x, 11, 3) + '     ' : ' '.repeat(30)) + padR(lens.map(v => pad(v, 7)).join(''), 30);
           t += B && B.pos ? padR('    ' + B.typ, 10) + padR(B.sens, 4) + padR(B.pos.map(v => f(v + (B.typ === 'BC' && B.sens === 'DG' ? 0 : 0), 7, 2)).join(''), 19) : ' '.repeat(33);
           if (C && C.pos) t += padR(C.nom, 7) + C.pos.slice().sort((p, q) => q - p).map(v => f(v, 7, 2)).join('');
