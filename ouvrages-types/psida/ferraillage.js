@@ -247,7 +247,11 @@
       for (const c of l.CE || []) { const d = /CVOI/.test(c.nom) ? (end ? 1.1 : 1) : dy.mc; cands.push([c.max.v * d, c.min.v * d, coef[c.nom] || 1]); }
       const vmax = Math.max(...cands.map(c => c[0] * c[2])), vmin = Math.min(...cands.map(c => c[1] * c[2]));
       const videMax = R.G.up * coef.CP / nap, videMin = R.G.dn / nap;
-      const chMax = (R.G.up * coef.CP + vmax + 2 * l.T.max) / nap, chMin = (R.G.dn + vmin + 2 * l.T.min) / nap;
+      // trottoirs : facteur 2 conservé. Constat v11 (NON retenu, cf. NOTES) : 3639 et 3603 (Na = 2) sont exacts avec les
+      // trottoirs comptés UNE fois (facteur Na/2) mais le score de réglage baisse (résumé, ferraillage transversal calés sur
+      // l'ancien facteur). Crochet PSIDA_AP_TNA2 = 1 : facteur Na/2.
+      const kT = G.PSIDA_AP_TNA2 ? nap / 2 : 2;
+      const chMax = (R.G.up * coef.CP + vmax + kT * l.T.max) / nap, chMin = (R.G.dn + vmin + kT * l.T.min) / nap;
       const adm = ap.typ === 0 ? (A13.COMPREBS || 3500) : (A13.COMPRENS || 1500);
       // dimensions (v10) : largeur 0,25, 0,30, 0,35… ; pour chaque largeur, longueur de largeur à largeur + 0,25 au pas
       // de 0,05 ; premier couple tel que R/aire ≤ admissible (0,30×0,55 puis 0,35×0,50 : 3604–3610, 3639, 3488, 3452).

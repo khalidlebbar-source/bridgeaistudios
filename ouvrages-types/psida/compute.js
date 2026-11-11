@@ -517,7 +517,8 @@
     const ar = L.map((l, s) => posNegAreas(fa, xs[s], xs[s + 1]));
     const out = {};
     // charge A
-    const kA = s => (kOne ? 1 : r.gm[s].coef.A) * r.a2 * r.Lch;
+    // réactions (kOne) : a1(classe, nombre de voies) inclus (3639 classe 2 : 96,3 / 49,6 = 0,9 × LI ; v11)
+    const kA = s => (kOne ? (G.PSIDA_REAC_NOA1 ? 1 : a1Coef(r.classe, r.nvoies)) : r.gm[s].coef.A) * r.a2 * r.Lch;
     out.A = aLoadSegments(r, signSegments(r, fa).concat(extraSegs || []), kA);
     // trottoirs (toutes travées de même signe)
     const wt = r.pstrot * (A6.ETROTG + A6.ETROTD);
