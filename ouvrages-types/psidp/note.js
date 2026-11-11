@@ -1570,7 +1570,7 @@
   // réparti au prorata des aires au-dessus / au-dessous du centre de gravité (APPROCHÉ, règle NON RÉSOLUE) ; M LIM
   // (pivots), non-fragilité et colonnes ELS non calculés.
   function secELU(D, m, R) {
-    var P = R.prec, v = m.values; if (!P || !P.G || !R.sol || !P.hypInit || !P.hypServ) return false;
+    var P = R.prec, v = m.values; if (!P || !P.G || !R.sol || !P.hypInit || !P.hypServ || !R.elu) return false;
     var H1 = v.HDAL1, H2 = v.HDAL2, H3 = v.HDAL3, E1 = v.EDAL1, E2 = v.EDAL2, E3 = v.EDAL3, a = E1 / 2, c = E2 / 2;
     var poly = E2 > 0 ? [[-a, 0], [a, 0], [a + E3 / 2, H3], [a + c, H1 - H2], [a + c, H1], [-a - c, H1], [-a - c, H1 - H2], [-a - E3 / 2, H3]] : [[-a, 0], [a, 0], [a, H1], [-a, H1]];
     function width(y) { var xs = []; for (var i = 0; i < poly.length; i++) { var p1 = poly[i], p2 = poly[(i + 1) % poly.length]; if ((p1[1] <= y && p2[1] > y) || (p2[1] <= y && p1[1] > y)) xs.push(p1[0] + (p2[0] - p1[0]) * (y - p1[1]) / (p2[1] - p1[1])); } xs.sort(function (x, y2) { return x - y2; }); var w = 0; for (var j = 0; j + 1 < xs.length; j += 2) w += xs[j + 1] - xs[j]; return w; }
@@ -1595,20 +1595,14 @@
       D.push('  SECTION ABSCISSE  SECTION   DIVERS    :     M . T     :     M . S     :     E . S     :     M . T    :    M . S    :    E . S    :');
       D.push("          CUMULEE   D'ACIER             : M ULT./M LIM. : M ULT./M LIM. : M ULT./M LIM. :  BETON ACIERS: BETON ACIERS: BETON ACIERS:");
       D.push(' '); D.push('  ');
-      var G = P.G.filter(function (g) { return g.t === t; }).sort(function (x, y) { return x.k - y.k; });
-      G.forEach(function (g) {
-        var so = R.sol[t] && R.sol[t][g.k]; if (!so) return;
-        var mt = P.nA * g.p.proba * g.e + hypAt(P.hypInit.max, t, g.x);
-        var ms = P.nA * g.d.msMax * g.e + hypAt(P.hypServ.msMax, t, g.x);
-        var es = P.nA * g.d.esMin * g.e + hypAt(P.hypServ.esMin, t, g.x);
-        var hi = [1.35 * v.OSSAX * g.MO + mt, so.comb[0].elu + ms, so.comb[0].elu + es];
-        var lo = [1.0 * v.OSSAN * g.MO + mt, so.comb[1].elu + ms, so.comb[1].elu + es];
+      (R.elu.spans[t] || []).forEach(function (r) {
         [0, 1].forEach(function (f) {
-          var l = L(); if (!f) { l.at(7, fx(g.k / P.ND[t], 2) + 'L'); l.at(16, fx(g.X, 3)); }
-          l.at(27, fx(f ? ainf : asup, 6)); l.at(32, 'F.P'); l.at(41, ':');
-          for (var q = 0; q < 3; q++) { var mu = f ? Math.max(hi[q], lo[q]) : Math.min(hi[q], lo[q]); if (f ? mu > 0 : mu < 0) l.at(48 + 16 * q, fx(mu, 1)); l.at(57 + 16 * q, ':'); }
-          D.push(l.s + ' ');
-          D.push('                                        :               :               :               : ');
+          var l = L(), l2 = L(); if (!f) { l.at(7, fx(r.k / P.ND[t], 2) + 'L'); l.at(16, fx(r.X, 3)); }
+          l.at(27, fx(f ? r.asI : r.asS, 6)); l.at(f ? (r.labI.length > 3 ? 37 : 32) : (r.labS.length > 3 ? 37 : 32), f ? r.labI : r.labS); l.at(41, ':'); while (l2.s.length < 40) l2.s += ' '; l2.s += ':';
+          for (var q = 0; q < 3; q++) { var ph = r.ph[q], z = f ? ph.inf : ph.sup;
+            if (z) { l.at(48 + 16 * q, fx(f ? ph.mmax : ph.mmin, 1)); l.at(56 + 16 * q, fx(z.M, 1)); while (l2.s.length < 41 + 16 * q) l2.s += ' '; l2.s += '(' + fx(z.eb, 2).padStart(6) + ',' + fx(z.es, 2).padStart(6) + ')'; }
+            [l, l2].forEach(function (o) { while (o.s.length < 56 + 16 * q) o.s += ' '; o.s += ':'; }); }
+          D.push(l.s + ' '); D.push(l2.s + ' ');
         });
         D.push('  ');
       });

@@ -293,6 +293,7 @@
     try { R.flexT = flexionTransversale(R, v); } catch (err) { R.warnings.push('flexion transversale : ' + err.message); }
     try { R.appareils = appareilsAppui(R, v); } catch (err) { R.warnings.push("appareils d'appui : " + err.message); }
     try { R.ferPassif = ferraillagePassif(R, v); } catch (err) { R.warnings.push('ferraillage passif : ' + err.message); }
+    try { R.elu = eluLongitudinal(R, v); } catch (err) { R.warnings.push('ELU : ' + err.message); }
     return R;
   }
 
@@ -905,6 +906,79 @@
   // avec les K imprimés). Coefficients d'inégalité : coefInegalite() (CP, A, Bc, Bt exacts ; Mc120 approché ;
   // convois D/E : 1 provisoire, NON RÉSOLUS). Dimensions : provisoires. Chevêtres : règle PSIDA (largeur 2s/3 ou about·sinφ + s/3,
   // M = R·s/(12 e), section ELS fissurée d = H - 0.04, σs fissuration préjudiciable).
+  // Section 30 — justification ELU (notice PSIDP-EL, commentaires de la page 42 : égalité des efforts normaux, raccourcissement
+  // du béton ≤ 3,5 ‰, allongement de l'acier passif tendu ≤ 10 ‰). Section en T simplifiée (goussets HDAL3/EDAL3 négligés),
+  // béton parabole-rectangle, aciers passifs tendus seuls (élasto-plastiques fe/1,15, à 0,035 m du parement : exemple de la notice),
+  // armatures de précontrainte élasto-plastiques fpeg/1,15, allongement total = σp/Ep + 5·σb/Ep + Δε (σb : contrainte du béton au
+  // niveau du câble sous la seule précontrainte ; terme « 5 σb / Ep » de la notice). Phases : M.T (P1 = tension maxi, câble non
+  // injecté : pas de surtension, béton 0,85 fcj/1,5), M.S (P1, fc28/1,5), E.S (P2, fc28/1,5) — résistances retrouvées sur 2549.
+  function eluLongitudinal(R, v) {
+    var P = R.prec; if (!P || !P.G || !R.sol || !P.hypInit || !P.hypServ) return null;
+    var H = v.HDAL1, a = v.EDAL1 / 2, c = v.EDAL2 / 2, H2 = v.HDAL2, H3 = v.HDAL3, E3 = v.EDAL3, W = v.EDAL1 + v.EDAL2;
+    var poly = v.EDAL2 > 0 ? [[-a, 0], [a, 0], [a, H3], [a + E3 / 2, H3], [a + c, H - H2], [a + c, H], [-a - c, H], [-a - c, H - H2], [-a - E3 / 2, H3], [-a, H3]] : [[-a, 0], [a, 0], [a, H], [-a, H]];
+    function width(y) { var xs = []; for (var i = 0; i < poly.length; i++) { var p1 = poly[i], p2 = poly[(i + 1) % poly.length]; if ((p1[1] <= y && p2[1] > y) || (p2[1] <= y && p1[1] > y)) xs.push(p1[0] + (p2[0] - p1[0]) * (y - p1[1]) / (p2[1] - p1[1])); } xs.sort(function (x, z) { return x - z; }); var w = 0; for (var j = 0; j + 1 < xs.length; j += 2) w += xs[j + 1] - xs[j]; return w; }
+    var ft28 = 0.6 * (1000 / 9.80665) + 0.06 * v.FC28, sc = R.section.calc || R.section, S = sc.S, I = sc.I, VP = sc.VP, Ep = v.EP, fpd = v.FPEG / 1.15, fsd = v.FE1 / 1.15, Es = 2e7, cov = 0.035, Ap = P.nA;
+    function sigb(e) { return e >= 2e-3 ? 1 : 1 - Math.pow(1 - e / 2e-3, 2); }
+    function solve(hog, As, yc, sp0, fbu, unb) {
+      var d = H - cov, dc = hog ? yc : H - yc, N = Ap * sp0, zg = hog ? VP : H - VP;
+      var sb = N / S + N * (yc - VP) * (yc - VP) / I;
+      function forces(eb, es) {
+        var y = eb / (eb + es) * d, C = 0, Mc = 0, n = 120;
+        for (var i = 0; i < n; i++) { var z = (i + 0.5) / n * y, e = eb * (y - z) / y, s = sigb(e) * fbu * width(hog ? z : H - z) * y / n; C += s; Mc += s * z; }
+        var dep = es * (dc - y) / (d - y), spu = unb ? sp0 : Math.min(Ep * (sp0 / Ep + 5 * sb / Ep + dep), fpd);
+        var Fs = As * Math.min(fsd, Es * es), dFp = Ap * (spu - sp0);
+        return { Nint: C - Fs - dFp, M: (C > 0 ? C * (zg - Mc / C) : 0) + Fs * (d - zg) + dFp * (dc - zg), eb: eb, es: es };
+      }
+      var f = forces(3.5e-3, 10e-3), lo, hi, i, m;
+      if (f.Nint >= N) { lo = 1e-7; hi = 3.5e-3; for (i = 0; i < 60; i++) { m = (lo + hi) / 2; if (forces(m, 10e-3).Nint < N) lo = m; else hi = m; } f = forces((lo + hi) / 2, 10e-3); }
+      else { lo = 1e-6; hi = 10e-3; for (i = 0; i < 60; i++) { m = (lo + hi) / 2; if (forces(3.5e-3, m).Nint > N) lo = m; else hi = m; } f = forces(3.5e-3, (lo + hi) / 2); }
+      return { M: hog ? -f.M : f.M, eb: -f.eb * 1e3, es: f.es * 1e3 };
+    }
+    // Ferraillage de peau (BPEL 6.1,31) : par mètre de parement, max(3 cm² ; 0,1 % B / (W + EDAL1)) sur l'extrados (W) et
+    // l'intrados (EDAL1) [2549 : 3,83 cm²/m sur les deux faces ; notice 0015 : 3 cm²/m] ; intrados renforcé à 1,5 ‰ B au
+    // voisinage des appuis intermédiaires (notice : sections à 0,1 L au plus d'un appui intermédiaire).
+    var rho = Math.max(3e-4, 0.001 * S / (W + v.EDAL1)), fpS = rho * W, fpI = rho * v.EDAL1, fpI2 = Math.max(fpI, 0.0015 * S);
+    var fb = [0.85 * v.FCJ / 1.5, v.FC28 / 1.5, v.FC28 / 1.5];
+    var lo0 = typeof globalThis.PSIDP_MTLO === 'number' ? globalThis.PSIDP_MTLO : 1.0;
+    function hypAt(Mh, t, x) { return Mh[t] + (Mh[t + 1] - Mh[t]) * x / R.L[t]; }
+    var out = [];
+    for (var t = 0; t < R.n; t++) {
+      var G = P.G.filter(function (g) { return g.t === t; }).sort(function (x, y) { return x.k - y.k; }), rows = [];
+      G.forEach(function (g) {
+        var so = R.sol[t] && R.sol[t][g.k]; if (!so) return;
+        var nd = P.ND[t], nearL = t > 0 && g.k / nd <= 0.1 + 1e-9, nearR = t < R.n - 1 && g.k / nd >= 0.9 - 1e-9;
+        var asS0 = fpS, asI0 = (nearL || nearR) ? fpI2 : fpI;
+        // Non-fragilité (BPEL 6.1,32) : As = Bt/1000 + Nbt/fe · ft28/|σBt|, diagramme ELS linéaire de la combinaison (colonne)
+        // donnant la traction extrême de la face (toutes combinaisons, y compris QL + TA + QC), section en T simplifiée
+        // (2549 0.2L / 0.7L : 0,002044 / 0,002437 exacts à l'arrondi des contraintes).
+        function nf(phase, face) {
+          var o = g.sig; if (!o || !o.QLx || !globalThis.PSIDP_NF) return 0; // non-fragilité exacte sur 2549/2550 mais −0,5 pt sur les passages automatiques (contraintes ELS approchées) : désactivée par défaut
+          var p5 = phase === 2 ? o.PesN : o.PmsX, best = null;
+          [o.QLx, o.QLn, o.qcx, o.qcn, o.frx, o.frn, o.tax, o.tan].forEach(function (c) { if (!c) return; var st = c[0] + p5[0], sb = c[1] + p5[1], sv = face ? sb : st; if (!best || sv < best.sv) best = { sv: sv, st: st, sb: sb }; });
+          if (!best || best.sv >= 0) return 0;
+          var st = best.st, sb = best.sb, Bt = 0, Nbt = 0, n = 200;
+          for (var i = 0; i < n; i++) { var y = (i + 0.5) / n * H, sy = sb + (st - sb) * y / H; if (sy < 0) { var w = width(y) * H / n; Bt += w; Nbt -= sy * w; } }
+          return Bt / 1000 + Nbt / v.FE1 * ft28 / (-best.sv);
+        }
+        var asS = [asS0, Math.max(asS0, nf(1, 0)), Math.max(asS0, nf(2, 0))], asI = [asI0, Math.max(asI0, nf(1, 1)), Math.max(asI0, nf(2, 1))];
+        function lab(a, a0) { var mx = Math.max(a[0], a[1], a[2]); return mx <= a0 + 1e-12 ? 'F.P' : (a[2] >= a[1] ? 'N.F  E.S' : 'N.F  M.S'); }
+        var sp = [g.p.maxi, g.d.msMax, g.d.esMin];
+        var mp = [Ap * sp[0] * g.e + hypAt(P.hypInit.max, t, g.x), Ap * sp[1] * g.e + hypAt(P.hypServ.msMax, t, g.x), Ap * sp[2] * g.e + hypAt(P.hypServ.esMin, t, g.x)];
+        var hi = [1.35 * v.OSSAX * g.MO + mp[0], so.comb[0].elu + mp[1], so.comb[0].elu + mp[2]];
+        var lo = [lo0 * v.OSSAN * g.MO + mp[0], so.comb[1].elu + mp[1], so.comb[1].elu + mp[2]];
+        var ph = [];
+        for (var q = 0; q < 3; q++) {
+          var mmin = Math.min(hi[q], lo[q]), mmax = Math.max(hi[q], lo[q]), yc = VP + g.e;
+          var z0 = q > 0 ? 0.05 : 0; // M.S / E.S : un moment nul à l'impression (0.0, about) est justifié des deux côtés (2764, 2766 0.00L) ; M.T : strict
+          ph.push({ mmin: mmin, mmax: mmax, sup: mmin < z0 ? solve(true, asS[q], yc, sp[q], fb[q], q === 0) : null, inf: mmax > -z0 ? solve(false, asI[q], yc, sp[q], fb[q], q === 0) : null });
+        }
+        rows.push({ k: g.k, X: g.X, asS: Math.max.apply(null, asS), asI: Math.max.apply(null, asI), labS: lab(asS, asS0), labI: lab(asI, asI0), ph: ph });
+      });
+      out.push(rows);
+    }
+    return { spans: out, fpS: fpS, fpI: fpI };
+  }
+
   function appareilsAppui(R, v) {
     if (!R.reac || !R.prec || !R.prec.hypInit || !R.prec.hypServ) return null;
     var n = R.n, P = R.prec, sb = Math.sin(gr(v.BIAIS || 100));
@@ -930,7 +1004,11 @@
       var vMax = (r.cp[0] * K.CP + Math.max(hMS[k], hES[k])) / na, vMin = (r.cp[1] + Math.min(hMS[k], hES[k])) / na;
       var cMax = vMax + (qmax + r.trot[0]) / na, cMin = vMin + (qmin + r.trot[1]) / na;
       var adm = typ === 0 ? (v.CBS || 3500) : (v.CNS || 1500), amin = cMax / adm;
-      var larg = Math.max(0.25, Math.ceil(Math.sqrt(amin) / 0.05 - 1e-9) * 0.05), long = Math.max(larg, Math.ceil(amin / larg / 0.05 - 1e-9) * 0.05);
+      // Dimensions en plan : règle PSIDA (NOTES PSIDA v9) — largeurs 0,25 ; 0,30 ; … ; pour chaque largeur, longueurs de « largeur » à
+      // « largeur + 0,25 » au pas de 0,05 ; premier couple d’aire ≥ R en charge max / admissible — ESSAI NÉGATIF (34 : 54,1 → 53,4 %), actif seulement si globalThis.PSIDP_APPSIDA = 1.
+      var larg, long;
+      if (!globalThis.PSIDP_APPSIDA) { larg = Math.max(0.25, Math.ceil(Math.sqrt(amin) / 0.05 - 1e-9) * 0.05); long = Math.max(larg, Math.ceil(amin / larg / 0.05 - 1e-9) * 0.05); }
+      else { search: for (var iw = 0; iw < 40; iw++) { var w0 = Math.round((0.25 + 0.05 * iw) * 100) / 100; for (var il = 0; il <= 5; il++) { var l0 = Math.round((w0 + 0.05 * il) * 100) / 100; if (w0 * l0 >= amin - 1e-12) { larg = w0; long = l0; break search; } } } }
       var ech = end ? (R.about || v.ABOUT || 0) * sb + esp / 3 : 2 * esp / 3, mch = ech > 0 ? cMax * esp / (12 * ech) : 0;
       var mres = function (A) { var x = -15 * A + Math.sqrt(225 * A * A + 30 * A * d); return A * sigS * (d - x / 3); };
       var lo = 0, hi = 0.05; for (var it = 0; it < 80; it++) { var md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
