@@ -72,9 +72,21 @@
       pdSup: { A: Q * sn, esp: eP, phi: v.PHI1, k: 0, h: g.e2, d: dP1, M: { els: -sup.els * sn, elu: -sup.elu * sn } },
     };
     // nappe 3 (piédroit, moments positifs) : φ2 à 2d, φ2 à d, φ1 à 2d, φ1 à d (premier suffisant)
-    ad.pdCour = Object.assign(choose([opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU } });
+    // tour 14 : la section minimale imprimée est calculée avec le diamètre de la disposition adoptée (premier suffisant) :
+    // calcul d'abord avec φ2 (d = dP2) ; si la gamme retient φ1, section recalculée avec φ1 (d = dP1) et choix refait.
+    // (cour : 1799/1815 exacts en φ1 ; base : 1638/1679/1799/1815/1846 φ1, 1676/1680/1825/1847 φ2 exacts.)
+    const chooseRe = (list, MU, MS) => { const NEW = globalThis.PIPO_FMPHI !== 0;
+      let Am = NEW ? need(MU, MS, dP2, 1) : null, k = 1, o;
+      if (!NEW) return null;
+      o = choose(list, Am); if (o.k === 0) { Am = need(MU, MS, dP1, 0); k = 0; o = choose(list, Am); } return { o, Am, k }; };
+    const L3 = [opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], L4 = [opt(1, 1), opt(0, 2), opt(0, 1)];
+    const fb = globalThis.PIPO_FMBASE != null ? globalThis.PIPO_FMBASE(sn) : sn * sn; // base : moment × sin²φ (tour 14)
+    const rc = chooseRe(L3, pdU, pdS), rb = chooseRe(L4, -inf.elu * fb, -inf.els * fb);
+    min.kCour = 1; min.kBase = 0;
+    if (rc) { min.pdCour = rc.Am; min.kCour = rc.k; } if (rb) { min.pdBase = rb.Am; min.kBase = rb.k; }
+    ad.pdCour = Object.assign(rc ? rc.o : choose(L3, min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU } });
     // nappe 4 (base du piédroit, prolongée dans la semelle intérieure) : φ2 à d, φ1 à 2d, φ1 à d
-    ad.pdBase = Object.assign(choose([opt(1, 1), opt(0, 2), opt(0, 1)], min.pdBase), { h: g.e2, M: { els: -inf.els * sn, elu: -inf.elu * sn } });
+    ad.pdBase = Object.assign(rb ? rb.o : choose(L4, min.pdBase), { h: g.e2, M: { els: -inf.els * sn, elu: -inf.elu * sn } });
     // semelle intérieure : nappe 4 + nappe 5 filante si insuffisante ; extérieure : φ2 à d (fers solidarisant) + filante
     const fil = (Am, A0) => Am > A0 + 1e-12 ? choose([opt(1, 2), opt(1, 1), opt(0, 2), opt(0, 1)], Am - A0) : { A: 0, esp: 0, phi: 0, k: -1 };
     const solE = choose([opt(1, 1), opt(0, 2), opt(0, 1)], min.semE); // même gamme que la nappe 4 (1825 : φ1 à d)
@@ -162,7 +174,8 @@
   function plaqueMu(r) {
     const LA = r.g.larg / r.g.sn, LO = r.v.OUVER + r.v.E2, theta = LA / 2 / LO;
     const ys = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1];
-    return { LA, LO, theta, rows: [1, 3, 5].map(m => ({ m, v: ys.map(y => GM.muCoef(m * theta, 0, y)) })) };
+    return { LA, LO, theta, rows: [1, 3, 5].map(m => ({ m, v: ys.map(y => GM.muCoef(m * theta, 0, y / r.g.sn)) })) };
+    // biais : colonnes ±B imprimées pour des charges en y·b/sinφ (15/15 exacts sur 1638, 1677, 1796, 1890, 1893 — tour 14)
   }
 
   // ---- Moment transversal principal au point (0,0) (Guyon-Massonnet, harmoniques 1..5) — cf. NOTES.md tour 6.

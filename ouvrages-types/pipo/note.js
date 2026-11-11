@@ -350,11 +350,11 @@
     return [sp(31) + 'F E R R A I L L A G E    M I N I M A L     N E C E S S A I R E', ' ', sp(35) + '( S E C T I O N S     D E T E R M I N A N T E S )', ' ', ' ', ' ', ' ',
       'FERRAILLAGE INTERIEUR     (MOMENTS POSITIFS)', ' ', ' ',
       '      TRAVERSE SUPERIEURE               M I L I E U  ' + F6(m.trMid) + ' M2      ' + p2(0), ' ', ' ',
-      '       PIEDROIT   SECTION COURANTE DETERMINANTE      ' + F6(m.pdCour) + ' M2      ' + p2(1), ' ', ' ', ' ',
+      '       PIEDROIT   SECTION COURANTE DETERMINANTE      ' + F6(m.pdCour) + ' M2      ' + p2(m.kCour), ' ', ' ', ' ',
       'FERRAILLAGE EXTERIEUR     (MOMENTS NEGATIFS)', ' ', ' ',
       '       TRAVERSE SUPERIEURE          ANGLE SUPERIEUR  ' + F6(m.trSup) + ' M2      ' + p2(0), ' ', ' ',
       '       PIEDROIT                     ANGLE SUPERIEUR  ' + F6(m.pdSup) + ' M2      ' + p2(0), ' ',
-      '                                     B A S E         ' + F6(m.pdBase) + ' M2      ' + p2(0), ' ', ' ', ' ',
+      '                                     B A S E         ' + F6(m.pdBase) + ' M2      ' + p2(m.kBase), ' ', ' ', ' ',
       'FERRAILLAGE DE LA SEMELLE', ' ', ' ',
       '       ENCASTREMENT     COTE    EXTERIEUR            ' + F6(m.semE) + ' M2      ' + p2(1), ' ',
       '       ENCASTREMENT     COTE    INTERIEUR            ' + F6(m.semI) + ' M2      ' + p2(1)];
