@@ -604,9 +604,24 @@
       const comb = combine(r, G, T, live);
       return { a, x: r.LI.xs[i] + a * l, G, T, live, ...comb };
     }));
+    // sections intermédiaires (0,15 ; 0,25 … 0,85 L) : calcul interne de l'enveloppe sur 21 abscisses (pas de 0,05 L) pour
+    // l'épure d'arrêt des barres (constat v12 : l'interpolation linéaire sur les 13 sections imprimées raccourcit les fers
+    // près du maximum). Non imprimées. Crochet PSIDA_FIN = 0 : épure sur les 13 sections.
+    if (G.PSIDA_FIN !== 0) {
+      const S21 = Array.from({ length: 21 }, (_, k) => Math.round(k * 5) / 100);
+      r.momentsFin = L.map((l, i) => S21.map(a => {
+        const q = SECT.findIndex(b => Math.abs(b - a) < 1e-9); if (q >= 0) return r.moments[i][q];
+        const f = mkMomentLI(r, i, a);
+        const xs = r.LI.xs; let I = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(f, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; }
+        const Gm = { up: Math.max(gMax * I, gMin * I), dn: Math.min(gMax * I, gMin * I) };
+        const comb = combine(r, Gm, settlementEffect(r, tassM(i, a)), liveEffects(r, f, A6));
+        return { a, x: r.LI.xs[i] + a * l, ...comb };
+      }));
+    }
     // ouvrage symétrique : SETRA ne calcule que la première moitié des travées ; les suivantes sont l'image miroir
     if (L.every((l, i) => Math.abs(l - L[n - 1 - i]) < 1e-9)) for (let i = 0; i < n; i++) { const j = n - 1 - i; if (j >= i) continue;
-      r.moments[i] = r.moments[i].map(sc => { const m = r.moments[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; }); }
+      r.moments[i] = r.moments[i].map(sc => { const m = r.moments[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; });
+      if (r.momentsFin) r.momentsFin[i] = r.momentsFin[i].map(sc => { const m = r.momentsFin[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; }); }
     steelSections(r);
     shearsAndReactions(r, A6);
     deformations(r);
