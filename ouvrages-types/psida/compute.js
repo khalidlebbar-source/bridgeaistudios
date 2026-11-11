@@ -69,6 +69,48 @@
     }
     return res;
   }
+  // Même LI calculée comme le programme SETRA (REAL*4), chaque opération arrondie en simple précision (Math.fround) :
+  // pour chaque travée chargée s et chaque terme (A, C) de la cubique, résolution du système des trois moments
+  // (2(L_k+L_k+1), L_k, L_k+1) par Gauss SANS pivot avec le second membre l²·c (c = [1,0,−1] à l'appui droit,
+  // [−1,3,−2] à l'appui gauche), cumul des deux résolutions, puis B = −(A + C) (la LI s'annule en x = 1).
+  // Banc (scratchpad v14/bench.js, 12 passages 1971) : 261/276 coefficients imprimés exacts (double : 239 ;
+  // inverse de la matrice par Gauss sans pivot comme PSIDP v16 : 235 ; Thomas : 216–227).
+  function gaussSP(A, b) {
+    const F = Math.fround, m = b.length, M = A.map((r, i) => r.slice().concat([b[i]]));
+    for (let i = 0; i < m; i++) for (let r = i + 1; r < m; r++) {
+      const f = F(M[r][i] / M[i][i]);
+      for (let j = i; j <= m; j++) M[r][j] = F(M[r][j] - F(f * M[i][j]));
+    }
+    const x = new Array(m);
+    for (let i = m - 1; i >= 0; i--) { let s = M[i][m]; for (let j = i + 1; j < m; j++) s = F(s - F(M[i][j] * x[j])); x[i] = F(s / M[i][i]); }
+    return x;
+  }
+  function supportLISP(L) {
+    const F = Math.fround, n = L.length, m = n - 1;
+    const res = []; for (let k = 0; k <= n; k++) res.push(L.map(() => [0, 0, 0, 0]));
+    if (m <= 0) return res;
+    const A = [];
+    for (let k = 0; k < m; k++) {
+      const row = new Array(m).fill(0);
+      row[k] = F(F(2 * L[k]) + F(2 * L[k + 1]));
+      if (k > 0) row[k - 1] = F(L[k]); if (k < m - 1) row[k + 1] = F(L[k + 1]);
+      A.push(row);
+    }
+    for (let s = 0; s < n; s++) {
+      const l2 = F(L[s] * L[s]);
+      for (const k of [0, 2]) {
+        let acc = new Array(m).fill(0);
+        for (const [jj, c] of [[s, [1, 0, -1]], [s - 1, [-1, 3, -2]]]) {
+          if (jj < 0 || jj >= m) continue;
+          const rhs = new Array(m).fill(0); rhs[jj] = F(l2 * c[k]);
+          const M = gaussSP(A, rhs); acc = acc.map((v, j) => F(v + M[j]));
+        }
+        for (let j = 0; j < m; j++) res[j + 1][s][k] = acc[j] + 0;
+      }
+      for (let j = 1; j < n; j++) res[j][s][1] = F(-F(res[j][s][0] + res[j][s][2])) + 0;
+    }
+    return res;
+  }
   // effet d'un moment unitaire imposé à l'appui d'extrémité (encorbellement d'about) sur les moments intérieurs
   function endMomentEffect(L, side) {
     const n = L.length, m = n - 1, F = flexMat(L), rhs = new Array(m).fill(0);
@@ -82,17 +124,19 @@
 
   const SECT = [0, 0.05, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 1.00];
 
-  function influence(L, about) {
-    const n = L.length, SL = supportLI(L);
+  function influence(L, about, SLin, sp) {
+    const n = L.length, SL = SLin || supportLI(L);
+    const Fr = sp ? Math.fround : (x => x);
+    const addF = sp ? (a, b, k = 1) => a.map((v, i) => Fr(v + Fr(k * (b[i] || 0)))) : add;
     const xs = [0]; for (const l of L) xs.push(xs[xs.length - 1] + l); // abscisses des appuis
     // ---- moments en travée : section a (relatif) de la travée i
     function momentLI(i, a) {
       const cols = [];
       for (let s = 0; s < n; s++) {
-        const c = add(SL[i][s].map(v => v * (1 - a)), SL[i + 1][s].map(v => v * a));
+        const c = addF(SL[i][s].map(v => Fr(v * Fr(1 - a))), SL[i + 1][s].map(v => Fr(v * a)));
         if (s === i) {
-          const G1 = add(c, [0, 0, L[i] * (1 - a), 0]);              // force à gauche de la section
-          const D1 = add(c, [0, 0, -L[i] * a, L[i] * a]);            // force à droite
+          const G1 = addF(c, [0, 0, Fr(L[i] * Fr(1 - a)), 0]);              // force à gauche de la section
+          const D1 = addF(c, [0, 0, Fr(-L[i] * a), Fr(L[i] * a)]);            // force à droite
           cols.push({ s, G: G1, D: D1 });
         } else cols.push({ s, c });
       }
@@ -107,8 +151,8 @@
     // ---- effort tranchant à gauche (côté gauche) de la travée i : V = (Mr - Ml)/L + iso
     function shearLI(i) {
       return L.map((_, s) => {
-        const c = add(SL[i + 1][s], SL[i][s], -1).map(v => v / L[i]);
-        if (s === i) return add(c, [0, 0, -1, 1]); // D=1 quand force à droite de la section
+        const c = addF(SL[i + 1][s], SL[i][s], -1).map(v => Fr(v / L[i]));
+        if (s === i) return addF(c, [0, 0, -1, 1]); // D=1 quand force à droite de la section
         return c;
       });
     }
@@ -286,8 +330,11 @@
       return { nap, typ, esp };
     });
     // --- lignes d'influence
-    const LI = influence(L, about); r.LI = LI;
-    r.liAppuis = []; for (let k = 1; k < n; k++) r.liAppuis.push({ k, coefs: LI.SL[k].map(c => c.slice(0, 3)),
+    const lisp = globalThis.PSIDA_LISP === undefined ? 5 : globalThis.PSIDA_LISP; // 0 : double partout ; 1 : appuis seuls ; 5 : appuis + V/R (v14)
+    const LI = influence(L, about, lisp === 3 ? supportLISP(L) : null); r.LI = LI;
+    const LIP = lisp === 4 || lisp === 5 ? influence(L, about, supportLISP(L), true) : lisp >= 2 ? influence(L, about, supportLISP(L)) : lisp === -2 ? influence(L, about, LI.SL.map(a => a.map(c => c.map(Math.fround)))) : LI; // base des LI imprimées
+    const SLP = lisp === -1 ? LI.SL.map(a => a.map(c => c.map(Math.fround))) : lisp >= 1 ? (lisp >= 2 ? LIP.SL : supportLISP(L)) : LI.SL;
+    r.liAppuis = []; for (let k = 1; k < n; k++) r.liAppuis.push({ k, coefs: SLP[k].map(c => c.slice(0, 3)),
       aires: L.map((l, s) => areaCub(LI.SL[k][s], l)) });
     // foyers
     // foyers : zéro du diagramme de la travée i pour une force tendant vers l'appui droit (foyer de gauche)
@@ -302,7 +349,7 @@
     });
     // moments en travée
     r.liTravee = L.map((l, i) => SECT.filter(a => a > 0 && a < 1).map(a => {
-      const cols = LI.momentLI(i, a);
+      const cols = LI.momentLI(i, a), colsP = (lisp === 5 ? LI : LIP).momentLI(i, a);
       const aires = cols.map(col => col.s === i ? areaCub(col.G, l, 0, a) + areaCub(col.D, l, a, 1) : areaCub(col.c, L[col.s]));
       const f = x => LI.evalM(cols, i, a, i, x);
       const z = zeros(f, 1e-6, 1 - 1e-6);
@@ -312,10 +359,10 @@
         const ag = (x0 <= a ? areaCub(cols[i].G, l, 0, x0) : areaCub(cols[i].G, l, 0, a) + areaCub(cols[i].D, l, a, x0));
         zero = { x: x0 * l, ag, ad: aires[i] - ag };
       }
-      return { a, x: a * l, cols, aires, total: aires.reduce((p, q) => p + q, 0), zero };
+      return { a, x: a * l, cols: colsP, aires, total: aires.reduce((p, q) => p + q, 0), zero };
     }));
     // efforts tranchants
-    r.liV = L.map((l, i) => ({ coefs: LI.V[i].map(c => c.slice(0, 3)),
+    r.liV = L.map((l, i) => ({ coefs: LIP.V[i].map(c => c.slice(0, 3)),
       airesG: L.map((ll, s) => areaCub(LI.V[i][s], ll)),
       airesD: L.map((ll, s) => areaCub(s === i ? add(LI.V[i][s], [0, 0, 0, -1]) : LI.V[i][s], ll)) }));
     // réactions
@@ -323,7 +370,7 @@
       const aires = L.map((l, s) => areaCub(cs[s], l));
       let ab = 0;
       if (k === 0 || k === n) ab = aboutArea(LI, k, about, 0) + aboutArea(LI, k, about, 1);
-      return { coefs: cs.map(c => c.slice(0, 3)), aires, about: ab, total: aires.reduce((p, q) => p + q, 0) + ab };
+      return { coefs: LIP.R[k].map(c => c.slice(0, 3)), aires, about: ab, total: aires.reduce((p, q) => p + q, 0) + ab };
     });
 
     // --- dénivellations d'appui (1 cm) avec Ei
