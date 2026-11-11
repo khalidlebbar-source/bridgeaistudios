@@ -249,10 +249,10 @@
       for (const c of l.CE || []) { const d = /CVOI/.test(c.nom) ? (end ? 1.1 : 1) : dy.mc; cands.push([c.max.v * d, c.min.v * d, coef[c.nom] || 1]); }
       const vmax = Math.max(...cands.map(c => c[0] * c[2])), vmin = Math.min(...cands.map(c => c[1] * c[2]));
       const videMax = R.G.up * coef.CP / nap, videMin = R.G.dn / nap;
-      // trottoirs : facteur 2 conservé. Constat v11 (NON retenu, cf. NOTES) : 3639 et 3603 (Na = 2) sont exacts avec les
+      // trottoirs : facteur Na/2 (v11, activé en v13 avec la section ELU des chevêtres) : 3639 et 3603 (Na = 2) sont exacts avec les
       // trottoirs comptés UNE fois (facteur Na/2) mais le score de réglage baisse (résumé, ferraillage transversal calés sur
       // l'ancien facteur). Crochet PSIDA_AP_TNA2 = 1 : facteur Na/2.
-      const kT = G.PSIDA_AP_TNA2 ? nap / 2 : 2;
+      const kT = G.PSIDA_AP_TNA2 === 0 ? 2 : nap / 2;   // v13 : Na/2 par défaut (réactions exactes 3488, 3603–3606, 3639, 0063)
       const chMax = (R.G.up * coef.CP + vmax + kT * l.T.max) / nap, chMin = (R.G.dn + vmin + kT * l.T.min) / nap;
       const adm = ap.typ === 0 ? (A13.COMPREBS || 3500) : (A13.COMPRENS || 1500);
       // dimensions (v10) : largeur 0,25, 0,30, 0,35… ; pour chaque largeur, longueur de largeur à largeur + 0,25 au pas
@@ -272,7 +272,23 @@
       const sS = (r.mat.sigS && r.mat.sigS[2]) || 25000, dch = (r.section.H || 0) - 0.04;
       const mres = A => { const x = -15 * A + Math.sqrt(225 * A * A + 30 * A * dch); return A * sS * (dch - x / 3); };
       let lo = 0, hi = 0.05; for (let it = 0; it < 80; it++) { const md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
-      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, ach: hi };
+      // v13 : fissuration peu préjudiciable → section à l'ELU (réaction ELU = 1,125[1,2G + 1,42(A|B|Tr) | 1,2 C], moment
+      // ELU = R_u esp / (12 largeur), d = H − 0,04) ; section imprimée « PAR ML LONGITUDINAL » = section × sin φ (3603–3606).
+      // Crochet PSIDA_CHV12 = 1 : ancien calcul (ELS σs = 2/3 fe, sans sin φ).
+      let ach = hi, mchu = null;
+      if (!G.PSIDA_CHV12) {
+        if (!(r.mat.fiss >= 2) && ech > 0) {
+          const ku = c => c[3] ? 1.35 : 1.5975 / 1.2;
+          cands[0][3] = cands[1][3] = cands[2][3] = 0; for (let j = 3; j < cands.length; j++) cands[j][3] = 1;
+          const vu = Math.max(...cands.map(c => c[0] * c[2] * ku(c)));
+          const chU = (1.35 * R.G.up * coef.CP + vu + 1.5975 * kT * l.T.max) / nap;
+          mchu = chU * ap.esp / (12 * ech);
+          const fe = r.mat.fe[2] || r.mat.fe[0];
+          ach = G.PSIDA.asELU(mchu, 1, dch, Object.assign({}, r.mat, { fe: [fe, fe, fe, fe] }));
+        }
+        ach *= Math.sin((r.biais || 100) * Math.PI / 200);
+      }
+      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach };
     });
   }
 
@@ -726,7 +742,10 @@
       const sum = a => a.reduce((p, z) => p + (z === appuis[i].zones[0] || (i + 1 === n && z === appuis[n].zones[2]) ? 0 : z.plage), 0);
       const plage = L - sum(g) - sum(d), A = X[i].Amin, o = choose(A, famA ? 2 : 0);
       const nb = Math.max(1, Math.ceil(plage / Math.min(cap, ar(o) / A) - 1e-6));
-      const z = { no: 'T' + (i + 1), sup: [2], inf: o, s: plage / nb, nb, plage }, w = [0, 0, 0]; poids(z, w);
+      // v13 : en fissuration peu préjudiciable les aciers inférieurs de travée sont « TB » (tête-bêche) sur 8/8 passages
+      // (3603–3610), jamais en fissuration préjudiciable (5/5) ; longueur TB NON RÉSOLUE (≈ 0,88 × longueur pleine) :
+      // on imprime la longueur pleine. Crochet PSIDA_TB = 0 : pas de mention TB.
+      const z = { no: 'T' + (i + 1), sup: [2], inf: o, s: plage / nb, nb, plage, tbI: famA && G.PSIDA_TB !== 0 }, w = [0, 0, 0]; poids(z, w);
       return { zone: z, w };
     });
     return { appuis, travees, total, Ls, Li };
@@ -734,7 +753,7 @@
   function renderPropose(m, r, T) {
     const { page, f, pad } = T, Q = r.fer && r.fer.propose;
     if (!Q) return;
-    const zl = (lead, z) => lead.padEnd(11) + z.no + '      ' + LAB(z.sup).padEnd(14) + f(z.sup ? Q.Ls : 0, 9, 2) + '         ' + LAB(z.inf).padEnd(14) +
+    const zl = (lead, z) => lead.padEnd(11) + z.no + '      ' + LAB(z.sup).padEnd(14) + f(z.sup ? Q.Ls : 0, 9, 2) + '         ' + (LAB(z.inf) + (z.tbI ? '  TB' : '')).padEnd(14) +
       f(z.inf ? Q.Li : 0, 9, 2) + f(z.s, 14, 3) + pad(z.nb, 9) + f(z.plage, 10, 3);
     const wl = w => f(w[0], 10, 3) + f(w[1], 7, 3) + f(w[2], 7, 3);
     const pl = ['', '                         FACE SUPERIEURE                 FACE INFERIEURE                 DISPOSITIONS                POIDS ', '',
