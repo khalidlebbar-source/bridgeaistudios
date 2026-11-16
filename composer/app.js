@@ -1518,7 +1518,7 @@
   }
   function renderChat(pending) {
     let h = '';
-    if (!log.length) h = `<div class="welcome">${SPK}<p>Comment puis-je vous aider&nbsp;?</p></div>`;
+    if (!log.length) h = `<div class="welcome">${SPK}<p>Comment puis-je vous aider&nbsp;?</p>${V && V.supported ? '<p class="vhint">Écrivez, ou appuyez sur le micro et parlez.</p>' : ''}</div>`;
     let lastI = -1; log.forEach((m, i) => { if (m.prev && !m.undone) lastI = i; });
     log.forEach((m, i) => {
       h += `<div class="q">${esc(m.q)}</div>`;
@@ -1531,8 +1531,9 @@
     chat.innerHTML = h;
     chat.scrollTop = chat.scrollHeight;
   }
-  let asking = false;
+  let asking = false, viaVoix = false;
   async function sendAI(txt) {
+    const parle = viaVoix; viaVoix = false;
     txt = String(txt || '').trim(); if (!txt || asking) return;
     asking = true; $('#cmdbar').classList.add('busy'); $('#cmd').value = ''; $('#cmd').style.height = '';
     renderChat(txt);
@@ -1543,12 +1544,30 @@
     const entry = { q: txt, html: answerHTML(r), err: !!r.error || (!r.ai && !r.ok.length) };
     if (changed) { entry.prev = JSON.stringify(S); histT = 0; S = r.S; recompute(true); histT = 0; }
     log.push(entry); saveLog(); renderChat();
+    if (parle && V && V.pref()) { const d = document.createElement('div'); d.innerHTML = entry.html.replace(/<\/(li|div)>/g, '. </$1>'); V.speak(d.textContent.replace(/:\s*\./g, ' :').replace(/\.\s*\./g, '.')); }
     $('#cmd').focus();
   }
+  /* ───────── commande vocale ───────── */
+  const V = C.voice;
+  const micOn = (on) => { $('#cmdbar .ai-box').classList.toggle('rec', on); $('#cmd').placeholder = on ? 'Je vous écoute…' : 'Écrivez à l’assistant…'; $('#aiMic').setAttribute('aria-pressed', on ? 'true' : 'false'); };
+  function dictee() {
+    if (!V) return;
+    if (V.active()) { V.stop(); return; }
+    if (asking) return;
+    V.start($('#cmd'), {
+      onState: micOn,
+      onEnd: (t) => { viaVoix = true; sendAI(t); },
+      onError: (m) => { log.push({ q: '🎤', html: esc(m), err: true }); saveLog(); renderChat(); },
+    });
+  }
+  if (!V || !V.supported) { $('#cmdbar').classList.add('ai-novoice'); }
+  else $('#aiMic').addEventListener('click', dictee);
+  { const b = $('#aiVoice'); if (!V || !V.tts) b.style.display = 'none'; else { const upd = () => b.setAttribute('aria-pressed', V.pref() ? 'true' : 'false'); upd(); b.addEventListener('click', () => { V.pref(!V.pref()); if (!V.pref()) V.hush(); upd(); b.title = V.pref() ? 'Lire les réponses à voix haute' : 'Réponses vocales coupées'; }); } }
+  document.addEventListener('keydown', (ev) => { if (ev.altKey && (ev.code === 'KeyV') && !document.querySelector('.wz')) { ev.preventDefault(); dictee(); } });
   $('#cmdbar').addEventListener('submit', (ev) => { ev.preventDefault(); sendAI($('#cmd').value); });
   $('#cmd').addEventListener('input', (ev) => { const t = ev.target; t.style.height = 'auto'; t.style.height = Math.min(160, t.scrollHeight) + 'px'; });
   $('#cmd').addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); sendAI(ev.target.value); }
+    if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); if (V && V.active()) V.stop(); sendAI(ev.target.value); }
     else if (ev.key === 'Escape') ev.target.blur();
     ev.stopPropagation();
   });

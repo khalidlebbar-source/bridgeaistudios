@@ -85,7 +85,7 @@
       if (k === 'projet') {
         return `<h3>Décrivez votre ouvrage<span class="wai"><svg viewBox="0 0 20 20"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant IA</span></h3><p class="wsub">En une phrase, comme à un collègue : l’assistant remplit toutes les étapes pour vous.</p>`
           + `<div class="wex">${['Pont dalle à 3 travées de 12-16-12 m, piles colonnes de 6 m', 'Viaduc VIPP de 160 m sur pieux, sol 0,2 MPa', 'Pont-rail PRP de 19,40 m, 2 voies'].map((t) => `<button type="button" data-w="ex">${esc(t)}</button>`).join('')}</div>`
-          + `<div class="wdesc"><textarea id="wzDesc" placeholder="ex. Pont dalle à 3 travées de 12-16-12 m, 2 voies et trottoirs de 1,25 m, piles colonnes de 6 m sur pieux Ø1,20, culées remblayées, sol 0,3 MPa">${esc(desc)}</textarea><button type="button" data-w="interp" class="pri">Interpréter</button></div>`
+          + `<div class="wdesc"><textarea id="wzDesc" placeholder="ex. Pont dalle à 3 travées de 12-16-12 m, 2 voies et trottoirs de 1,25 m, piles colonnes de 6 m sur pieux Ø1,20, culées remblayées, sol 0,3 MPa">${esc(desc)}</textarea>${C.voice && C.voice.supported ? '<button type="button" data-w="mic" class="wz-mic" title="Dicter la description" aria-label="Dicter la description"><svg viewBox="0 0 20 20"><rect x="7.2" y="2.5" width="5.6" height="10" rx="2.8"/><path d="M4.5 9.8a5.5 5.5 0 0011 0M10 15.3v2.4"/></svg></button> ' : ''}<button type="button" data-w="interp" class="pri">Interpréter</button></div>`
           + (lastR ? (() => {
             const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
             const any = lastR.ai ? (lastR.changes.length || lastR.message) : lastR.ok.length;
@@ -278,7 +278,16 @@
       else if (w === 'prev') go(step - 1);
       else if (w === 'next') step === STEPS.length - 1 ? finish() : go(step + 1);
       else if (w === 'gen') { generate(); render(); }
-      else if (w === 'interp') interp();
+      else if (w === 'interp') { if (C.voice && C.voice.active()) C.voice.stop(); interp(); }
+      else if (w === 'mic') {
+        const ta = $('#wzDesc'); if (!ta || !C.voice) return;
+        if (C.voice.active()) { C.voice.stop(); return; }
+        C.voice.start(ta, {
+          onState: (on) => { const m = document.querySelector('.wz-mic'); if (m) m.classList.toggle('rec', on); ta.placeholder = on ? 'Je vous écoute… décrivez l’ouvrage' : ''; },
+          onEnd: (t) => { desc = t; interp(); },
+          onError: (m) => { const d = document.querySelector('.wdesc'); if (!d) return; let e = d.querySelector('.wz-verr'); if (!e) { e = document.createElement('p'); e.className = 'wz-verr'; d.appendChild(e); } e.textContent = m; },
+        });
+      }
       else if (w === 'ex') { desc = b.textContent; const ta = $('#wzDesc'); if (ta) ta.value = desc; interp(); }
       else if (w === 'torecap') go(STEPS.length - 1);
     });

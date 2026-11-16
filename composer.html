@@ -370,13 +370,26 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .chat .a .ta{margin-top:4px}.chat .a .ta button{border:none;background:none;padding:0;color:var(--mute);font-size:11px;cursor:pointer;text-decoration:underline}.chat .a .ta button:hover{color:var(--acc)}
 .chat .a .done{color:var(--mute);font-size:11px;margin-top:4px}
 .chat .welcome{margin:auto 0;display:flex;flex-direction:column;align-items:center;gap:8px;color:#3a4352;text-align:center}
-.chat .welcome .spk{width:22px;height:22px;fill:#c9a84c}.chat .welcome p{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#1b2230}
+.chat .welcome .spk{width:22px;height:22px;fill:#c9a84c}.chat .welcome p.vhint{font:12px/1.4 var(--ui);color:var(--mute)}
+.wz-verr{margin:6px 0 0;font-size:12px;color:#c92a2a}.chat .welcome p{font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#1b2230}
 .ai-in{flex:none;padding:8px 10px 10px;background:#fff}
 .ai-box{position:relative;border:1px solid var(--line2);border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .ai-box:focus-within{border-color:#b9c3d3;box-shadow:0 1px 6px rgba(0,0,0,.08)}
 .ai-in textarea{display:block;width:100%;resize:none;border:none;border-radius:12px;padding:9px 40px 9px 11px;font:12.5px/1.45 var(--ui);background:transparent;outline:none;min-height:44px;max-height:160px}
 .ai-go{position:absolute;right:7px;bottom:7px;display:grid;place-items:center;width:26px;height:26px;border:none;border-radius:7px;background:#c9a84c;cursor:pointer}
 .ai-go svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.ai-go:hover{background:#b8963b}
+.ai-acts{display:flex;gap:2px}
+#aiVoice .x{display:none}#aiVoice[aria-pressed="false"] .x{display:inline}#aiVoice[aria-pressed="false"] .w{display:none}
+.ai-in textarea{padding-right:72px}
+.ai-mic{position:absolute;right:38px;bottom:7px;display:grid;place-items:center;width:26px;height:26px;border:none;border-radius:7px;background:transparent;color:#5b6474;cursor:pointer}
+.ai-mic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.ai-mic:hover{background:var(--hov);color:#1b2230}
+.ai-box.rec{border-color:#e03131;box-shadow:0 0 0 3px rgba(224,49,49,.12)}
+.ai-box.rec .ai-mic{background:#e03131;color:#fff;animation:micp 1.2s ease-in-out infinite}
+@keyframes micp{0%,100%{box-shadow:0 0 0 0 rgba(224,49,49,.45)}50%{box-shadow:0 0 0 6px rgba(224,49,49,0)}}
+.ai-novoice .ai-mic{display:none}.ai-novoice textarea{padding-right:40px}
+.wdesc{position:relative}.wz-mic{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--line2);border-radius:8px;background:#fff;color:#5b6474;cursor:pointer;vertical-align:middle}
+.wz-mic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.wz-mic.rec{background:#e03131;border-color:#e03131;color:#fff;animation:micp 1.2s ease-in-out infinite}
 .ai-in.busy textarea{opacity:.6}.ai-in.busy .ai-go{opacity:.5;cursor:wait}
 .chat .typing{display:inline-flex;gap:3px}.chat .typing i{width:6px;height:6px;border-radius:50%;background:#9db5e0;animation:tp 1s infinite}.chat .typing i:nth-child(2){animation-delay:.15s}.chat .typing i:nth-child(3){animation-delay:.3s}
 @keyframes tp{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
@@ -435,10 +448,10 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 
 <div class="work" id="work">
   <aside class="pane left ai" aria-label="Assistant IA">
-    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</span><button type="button" class="ai-new" id="aiNew" title="Nouvelle discussion" aria-label="Nouvelle discussion"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button></div>
+    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</span><span class="ai-acts"><button type="button" class="ai-new" id="aiVoice" title="Lire les réponses à voix haute" aria-label="Lire les réponses à voix haute" aria-pressed="true"><svg viewBox="0 0 20 20"><path d="M3 8h3l4-3.5v11L6 12H3z"/><path class="w" d="M13 7.5a3.5 3.5 0 010 5M15.2 5.3a6.6 6.6 0 010 9.4"/><path class="x" d="M13 8l4 4M17 8l-4 4"/></svg></button><button type="button" class="ai-new" id="aiNew" title="Nouvelle discussion" aria-label="Nouvelle discussion"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button></span></div>
     <div class="chat" id="chat" aria-live="polite"></div>
     <form class="ai-in" id="cmdbar" autocomplete="off">
-      <div class="ai-box"><textarea id="cmd" rows="2" aria-label="Message à l’assistant" placeholder="Écrivez à l’assistant…" spellcheck="false"></textarea><button type="submit" class="ai-go" aria-label="Envoyer" title="Envoyer (Entrée)"><svg viewBox="0 0 20 20"><path d="M10 16V4M5 9l5-5 5 5"/></svg></button></div>
+      <div class="ai-box"><textarea id="cmd" rows="2" aria-label="Message à l’assistant" placeholder="Écrivez à l’assistant…" spellcheck="false"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Parler à l’assistant" title="Parler à l’assistant (Alt+V)"><svg viewBox="0 0 20 20"><rect x="7.2" y="2.5" width="5.6" height="10" rx="2.8"/><path d="M4.5 9.8a5.5 5.5 0 0011 0M10 15.3v2.4"/></svg></button><button type="submit" class="ai-go" aria-label="Envoyer" title="Envoyer (Entrée)"><svg viewBox="0 0 20 20"><path d="M10 16V4M5 9l5-5 5 5"/></svg></button></div>
     </form>
   </aside>
   <div class="vsplit" id="vsplit" title="Redimensionner"></div>
@@ -472,16 +485,17 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fCart" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=12"></script>
-<script src="composer/draw.js?v=12"></script>
-<script src="composer/sheet.js?v=12"></script>
-<script src="composer/dxf.js?v=12"></script>
-<script src="composer/view3d.js?v=12"></script>
-<script src="composer/analysis.js?v=12"></script>
-<script src="composer/diag.js?v=12"></script>
-<script src="composer/nlp.js?v=12"></script>
-<script src="composer/justif.js?v=12"></script>
-<script src="composer/wizard.js?v=12"></script>
-<script src="composer/app.js?v=12"></script>
+<script src="composer/calc.js?v=13"></script>
+<script src="composer/draw.js?v=13"></script>
+<script src="composer/sheet.js?v=13"></script>
+<script src="composer/dxf.js?v=13"></script>
+<script src="composer/view3d.js?v=13"></script>
+<script src="composer/analysis.js?v=13"></script>
+<script src="composer/diag.js?v=13"></script>
+<script src="composer/voice.js?v=13"></script>
+<script src="composer/nlp.js?v=13"></script>
+<script src="composer/justif.js?v=13"></script>
+<script src="composer/wizard.js?v=13"></script>
+<script src="composer/app.js?v=13"></script>
 </body>
 </html>
