@@ -169,11 +169,14 @@
       const areaPas = (x, lam) => { const n = Math.floor(lam / pg + 1e-9), t = lam / pg - n; let s = 0; for (let i = 0; i < n; i++) s += seg(x + i * pg, x + (i + 1) * pg); if (MV === 2 && t > 1e-9) s += t * seg(x + n * pg, x + (n + 1) * pg); return s; };
       const areaSimp = (x, lam) => { let s = 0; const nn = 20; for (let i = 0; i <= nn; i++) s += li.at(x + lam * i / nn) * (i === 0 || i === nn ? 1 : i % 2 ? 4 : 2); return s * lam / nn / 3; };
       let bMc = { s: 0, x: 0 };
-      for (const x of grid) { const s = (MV ? areaPas(x, globalThis.PIPO_MCLAM ? globalThis.PIPO_MCLAM(v, g) : lq) : areaSimp(x, lc)) * sg; if (s > bMc.s) bMc = { s, x }; }
+      // Tour 23 : origine de la chenille Mc parcourue jusqu'à la portée L seulement (PIPO_MCX = 0 : ancienne grille complète)
+      const MCX = globalThis.PIPO_MCX != null ? globalThis.PIPO_MCX : 1;
+      for (const x of grid) { if (MCX && x > g.L + 1e-9) continue; const s = (MV ? areaPas(x, globalThis.PIPO_MCLAM ? globalThis.PIPO_MCLAM(v, g) : lq) : areaSimp(x, lc)) * sg; if (s > bMc.s || (MCX & 2 && s >= bMc.s - 1e-12 && Math.abs(s) < 1e-9)) bMc = { s, x }; }
       const lex0 = (v.EXCEP === 1 ? 11 : 15) + 2 * v.HCHAU, lex = lex0 + g.e3 / 2, lexq = lex0 + g.e3, Pex = v.EXCEP === 1 ? 140 : 200; // notice PIPO §2.4 : densité = poids d'UNE remorque / λ ; F.61 II (1971) : D = 2 remorques de 140 t (3,30 × 11 m), E = 2 remorques de 200 t (3,30 × 15 m)
       let bEx = { s: 0, x: 0 };
       // positions parcourues de droite à gauche (égalité d'aire : SETRA imprime la position la plus à droite, « 0.00 » sur 1890)
-      const gridEx = globalThis.PIPO_EXREV === 0 ? grid : grid.slice().reverse();
+      let gridEx = globalThis.PIPO_EXREV === 0 ? grid : grid.slice().reverse();
+      if (globalThis.PIPO_EXX === 1) gridEx = gridEx.filter(x => x <= g.L + 1e-9); // tour 23 (essai, défaut inactif) : comme Mc, origine ≤ L — réglage +0, contrôle +2
       // Fascicule 61 (1971) : convoi D = 2 remorques (entraxe 19 m), E = 2 remorques de 200 t (entraxe 33 m). Règle PSIDP/PSIDA :
       // remorque avant sur la grille, arrière au point de grille le plus proche de s − entraxe. Essai PIPO tour 18 : PIPO_EX2 = 1 (arrière),
       // 2 (avant/arrière : seconde remorque à s ± entraxe).

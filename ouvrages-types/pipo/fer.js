@@ -96,6 +96,8 @@
     ad.semI = { sol: ad.pdBase, fil: fil(min.semI, ad.pdBase.A), h: g.e1, larg: r.aInt, M: { els: -sI.els, elu: -sI.elu } };
     ad.semE = { sol: solE, fil: fil(min.semE, solE.A), h: g.e1, larg: r.aExt, M: { els: -sE.els, elu: -sE.elu } };
     for (const k of ['semI', 'semE']) { const o = ad[k]; o.A = o.sol.A + o.fil.A; o.phi = o.sol.phi; o.d = dd(g.e1, 0.025, o.sol.phi); }
+    // Tour 23 — périmètre d'adhérence avec π = 3.14 (1638 : 39.63 / 69.95 / 34.98 = nos valeurs × 3.14/π).
+    const kpi = globalThis.PIPO_PI314 === 1 ? 3.14 / Math.PI : 1;
     for (const k of ['trInt', 'trSup', 'pdSup', 'pdCour', 'pdBase', 'semI', 'semE']) {
       const o = ad[k]; if (o.d == null) o.d = dd(o.h, 0.025, o.phi);
       // Tour 16 — semelle extérieure (fers solidarisant, espacés le long du piédroit biais) : section A/sinφ par mètre
@@ -103,14 +105,14 @@
       Object.assign(o, elsStress(o.M.els, k === 'semE' && globalThis.PIPO_SEMEB !== 0 ? o.A / sn : o.A, o.d));
       const fp = /^(pd|sem)/.test(k) ? 1 / sn : 1; // piédroits et semelles : efforts par m biais (1638 : 181.64 = 181.53/sin φ)
       o.VRb = mat.tauLim * o.d * fp; // effort tranchant résistant béton : τlim · d
-      o.VRs = 4 * o.A / o.phi * mat.tauSu * o.d * fp; // adhérence d'entraînement : périmètre 4A/φ × τs × d
+      o.VRs = 4 * o.A / o.phi * kpi * mat.tauSu * o.d * fp; // adhérence d'entraînement : périmètre 4A/φ × τs × d
       // Tour 15 — piédroits des ouvrages biais (1890, 1893 exacts) : section biaise d'épaisseur e2/sinφ,
       // d_b = e2/sinφ − c − 0.6φ − 1.1φ2 ; béton τlim·d_b ; acier 4A/φ·τs·d_b/sinφ² (angle, base), /sinφ (section courante) ;
       // contraintes ELS avec le moment du cadre non multiplié par sinφ et A/sinφ (angle, base), M et A (section courante).
       if (/^pd/.test(k) && globalThis.PIPO_PDB !== 0) {
         const cour = k === 'pdCour', db = dd(g.e2 / sn, 0.025, o.phi);
         Object.assign(o, elsStress(cour ? o.M.els : o.M.els / sn, cour ? o.A : o.A / sn, db));
-        o.VRb = mat.tauLim * db; o.VRs = 4 * o.A / o.phi * mat.tauSu * db / (cour ? sn : sn * sn);
+        o.VRb = mat.tauLim * db; o.VRs = 4 * o.A / o.phi * kpi * mat.tauSu * db / (cour ? sn : sn * sn) * (globalThis.PIPO_VRSB === 0 ? 1 : sn);
       }
     }
     // ---- ferraillage transversal (face intérieure de la traverse)
@@ -160,6 +162,7 @@
   // Règle retrouvée (traverse, 6/10 passages exacts) : à partir du point le plus sollicité, la k-ième barre (sur 4) est
   // arrêtée à la première section de la grille où max(MU/MUmax, MS/MSmax) ≤ (4−k)/4, prolongée du décalage a = 0.8 h.
   function epure(r, ad, eP) {
+    const e0g = ad => ad.trSup.esp; let epInfo = null;
     const v = r.v, g = r.g, L = g.L, H = g.H;
     const env = (secs, lives) => secs.map((s, i) => { const mx = totaux(s.M, 1, s.ret, s.tem, lives[i].M), mn = totaux(s.M, -1, s.ret, s.tem, lives[i].M);
       return { x: s.x, maxU: mx.elu, maxS: mx.els, minU: mn.elu, minS: mn.els }; });
@@ -171,7 +174,7 @@
     const ti = seuil([...T].reverse(), T[T.length - 1], false).map(x => x - aT); // [x34, x12, x14, x0]
     const trav = [[ti[3], L - ti[0]], [ti[0], L - ti[3]], [ti[2], L - ti[1]], [ti[1], L - ti[2]]];
     // extérieur, angle supérieur : côté traverse (depuis l'angle), côté piédroit (depuis la base)
-    const te = seuil(T, T[0], true).map(x => x + aT);
+    let te = seuil(T, T[0], true).map(x => x + aT);
     const Pd = [...P].reverse(); let tp = seuil(Pd, Pd[0], true).map(x => Math.max(0, x - aP)); const tp0 = tp;
     // Tour 16 — côté piédroit (P1S…P4S, 34/52 exacts contre 0) : seuils sur le moment rapporté au moment résistant de la
     // nappe adoptée (approximation linéaire M_R = M_angle·A_adoptée/A_nécessaire) : M(x)/M_angle ≤ k·ρ,
@@ -182,12 +185,22 @@
       const mat = r.mat, sn = g.sn, phi = ad.trSup.phi, db = g.e2 / sn - 0.025 - 0.6 * phi - 1.1 * v.PHI2, Ms = ad.trSup.M;
       const R0 = { minU: -Ms.elu, minS: -Ms.els }, T0 = Pd[0];
       const Areq = Math.max(asELU(Ms.elu, db, mat.fbu, mat.ssElu[0]), asELS(Ms.els, db, v.FIP ? mat.ssEls[0] : 0, v.SIGMAF));
-      const Q = ad.trSup.A, Aaux = aire(v.PHI2) / (2 * eP);
+      const Q = ad.trSup.A, AX = globalThis.PIPO_AAUX || 0, Aaux = AX === 1 && ad.pdBase.k === 1 ? ad.pdBase.A : AX === 2 && ad.pdBase.k === 1 ? 2 * aire(v.PHI2) / (2 * eP) : AX === 3 ? Math.max(ad.pdBase.A, aire(v.PHI2) / (2 * eP)) : AX === 4 ? ad.pdBase.A / 2 : aire(v.PHI2) / (2 * eP);
       const ls = phi * v.SIGMA1 / 1.15 / (4 * mat.tauSu), off = 0.8 * g.e2 / sn + ls;
       let rho = Q / Areq, Rr = R0;
       if (globalThis.PIPO_EPV) { const o = globalThis.PIPO_EPV({ ad, T0, db, mat, v, asELU, asELS, Q, Areq, sn }); rho = o.rho; Rr = o.R0 || T0; }
-      const ks = (globalThis.PIPO_EPK || [0.75, 0.5, 0.25, -1]).map(k => k < 0 ? -k * Aaux / Q : k);
+      const ks = (globalThis.PIPO_EPK || [0.75, 0.5, 0.25, -1]).map(k => k < 0 ? -k * Aaux / Q : k); epInfo = { rho, ks, Rr, off, Q, Aaux, Areq };
       tp = ks.map(k => { for (const o of Pd) if (Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * rho + 1e-9) return o.x - off; return Pd[Pd.length - 1].x - off; });
+    }
+    // Tour 23 (essai) — côté traverse : même règle que le piédroit (moment rapporté au moment résistant de la nappe adoptée)
+    const EPTR = globalThis.PIPO_EPTR || 0;
+    if (EPTR) {
+      const mat = r.mat, Ms = ad.trSup.M, dT = ad.trSup.d, phi = ad.trSup.phi;
+      const Areq = Math.max(asELU(Ms.elu, dT, mat.fbu, mat.ssElu[0]), asELS(Ms.els, dT, v.FIP ? mat.ssEls[0] : 0, v.SIGMAF));
+      const Q = ad.trSup.A, Aaux = aire(v.PHI2) / (2 * e0g(ad)), rho = Q / Areq, R0 = { minU: -Ms.elu, minS: -Ms.els };
+      const ls = phi * v.SIGMA1 / 1.15 / (4 * mat.tauSu), off = aT + (EPTR & 2 ? ls : 0), Rr = EPTR & 4 ? T[0] : R0;
+      const ks = [0.75, 0.5, 0.25, EPTR & 8 ? 0 : -1].map(k => k < 0 ? -k * Aaux / Q : k);
+      te = ks.map(k => { for (const o of T) if (Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * (EPTR & 16 ? 1 : rho) + 1e-9) return o.x + off; return T[T.length - 1].x + off; });
     }
     const pairs = [[tp[1], te[2]], [tp[3], te[0]], [tp[0], te[3]], [tp[2], te[1]]]; // barres 1..4 (cf. 1638)
     const ang = pairs.map(([p, b]) => [p, b, H - p + b + (g.e2 + g.e3) / 2]);
@@ -198,6 +211,7 @@
     const deux = ad.pdCour.esp < 1.5 * eP;
     const pied = deux ? [[s34(dn) - aP, H], [-0.25, s34(up) + aP]] : [[g.e1 / 2, H]];
     // semelles : fers solidarisant (abscisses sur le piédroit depuis la base, extrémité au bord de la semelle)
+    if (globalThis.PIPO_EPDBG) globalThis.PIPO_EPDBG({ epInfo, P, Pd, T, tp, tp0, te, ad, eP, g, v, r });
     const E5SI = g.D + g.B / 2, E5SE = -(r.aExt + g.e2 / 2), A5S = g.e1 / 2 + 0.6;
     const p5 = [Math.max(A5S, tp0[2] - 0.6), Math.max(A5S, tp0[1])]; // (approché, ancienne règle : nappe 4 non reconstituée)
     return { trav: trav.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]), ang: ang.map(x => x.map(r2)), pied: pied.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]),
