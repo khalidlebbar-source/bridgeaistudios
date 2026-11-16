@@ -6,7 +6,7 @@
   var gr = function (x) { return x * PI / 200; };
   // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
   // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
-  var DEF26 = { BLCURV: 1, NETS: 1, DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
+  var DEF26 = { PXC: 1, BLCURV: 1, NETS: 1, DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
   // v28 : FM1 = force d'inscription à force unique au bloc 1 ; DCB = règle β exacte du ΔC au bloc 1 (activable maintenant que FM1 est juste).
   for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
@@ -1447,7 +1447,9 @@
     var n = R.n, L = R.L, S = R.section.S, I = R.section.I, V = R.section.V, VP = R.section.VP;
     var A = v.SECT * 1e-6, Phi = v.DGAIN, s0 = v.SIGMAP0, Lm = R.limites, H = v.HDAL1;
     if (!A || !s0 || !Phi || !R.sol) return null;
-    var zs = V - v.COUVS - Phi / 2 - v.DECAL, zi = -VP + v.COUVI + Phi / 2 + v.DECAL;
+    // v37 (PSIDP_PXC = 1) : ligne complémentaire du bordereau sous COUVS / COUVI (« +0.0 +1.8 », 2483–2488) = correction en mm de l'enrobage
+    var pxc = (globalThis.PSIDP_PXC || 0) && v.PROCEDE_X ? v.PROCEDE_X.map(function (q) { return parseFloat(q) || 0; }) : [0, 0];
+    var zs = V - v.COUVS - (pxc[0] || 0) / 1000 - Phi / 2 - v.DECAL, zi = -VP + v.COUVI + (pxc[1] || 0) / 1000 + Phi / 2 + v.DECAL;
     var Ep = v.EP, kfl = v.KFL * Ep / R.EI28, rt = v.RT === undefined ? 0.5 : v.RT, retr = R.retrait * Ep;
     var sec = function (t, k) { return R.sol[t].filter(function (s) { return Math.abs(s.x0 - k / 10) < 1e-9; })[0]; };
     var Mu = supportMomentsUniform(L, L.map(function () { return R.cp.oss[0]; }));
