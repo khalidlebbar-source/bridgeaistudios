@@ -7,6 +7,7 @@
 
   // ---------------------------------------------------------------- algèbre
   function luFactor(A, n) { // A : Float64Array n*n (row-major), pivot partiel
+    if (root.PICF_F32) return luFactor32(A, n);
     const piv = new Int32Array(n);
     for (let i = 0; i < n; i++) piv[i] = i;
     for (let k = 0; k < n; k++) {
@@ -21,7 +22,18 @@
     }
     return { A, piv, n };
   }
+  // essai session p : Gauss sans pivot en simple précision (REAL*4), crochet PICF_F32 (1 = facteur et résolution, 2 = + matrice arrondie)
+  function luFactor32(A0, n) { const fr = Math.fround, A = new Float64Array(n * n), piv = new Int32Array(n);
+    for (let i = 0; i < n * n; i++) A[i] = fr(A0[i]); for (let i = 0; i < n; i++) piv[i] = i;
+    for (let k = 0; k < n; k++) { const d = A[k * n + k];
+      for (let i = k + 1; i < n; i++) { const f = fr(A[i * n + k] / d); if (f === 0) continue; A[i * n + k] = f;
+        for (let j = k + 1; j < n; j++) A[i * n + j] = fr(A[i * n + j] - fr(f * A[k * n + j])); } }
+    return { A, piv, n, f32: true }; }
   function luSolve(F, b) {
+    if (F.f32) { const { A, n } = F, fr = Math.fround, x = new Float64Array(n); for (let i = 0; i < n; i++) x[i] = fr(b[i]);
+      for (let i = 0; i < n; i++) { let s = x[i]; for (let j = 0; j < i; j++) s = fr(s - fr(A[i * n + j] * x[j])); x[i] = s; }
+      for (let i = n - 1; i >= 0; i--) { let s = x[i]; for (let j = i + 1; j < n; j++) s = fr(s - fr(A[i * n + j] * x[j])); x[i] = fr(s / A[i * n + i]); }
+      return x; }
     const { A, piv, n } = F; const x = new Float64Array(n);
     for (let i = 0; i < n; i++) x[i] = b[piv[i]];
     for (let i = 0; i < n; i++) { let s = x[i]; for (let j = 0; j < i; j++) s -= A[i * n + j] * x[j]; x[i] = s; }
@@ -128,7 +140,7 @@
     // Diffusion longitudinale jusqu'au plan moyen de la traverse (calée sur les 3 listings) :
     //  roues (Bc, Bt, Me, engin) : 45° dans chaussée et remblai ; chenilles Mc et convoi E : 45° chaussée, 30° remblai.
     const t30 = Math.tan(Math.PI / 6);
-    const sW = 2 * (d.hchau + d.hsrem) + d.e3, sL = 2 * d.hchau + 2 * d.hsrem * t30 + d.e3, sEC = 2 * (d.ec ? d.ec.hsrem : 0) + d.e3;
+    const sW = 2 * (d.hchau + d.hsrem) + d.e3, sL = root.PICF_SL ? root.PICF_SL(d) : 2 * d.hchau + 2 * d.hsrem * t30 + d.e3, sEC = (root.PICF_EC34 ?? 0) ? 1.5 * (d.ec ? d.ec.hsrem : 0) + d.e3 : 2 * (d.ec ? d.ec.hsrem : 0) + d.e3;
     const ax = (list, s) => list.map(a => ({ ...a, a: (a.a || 0) + s }));
     const out = {};
     out.BC = { trucks: 2, gapTruck: 10.5, axles: ax(BC_CAMION.map(a => ({ ...a, a: 0.25 })), sW) };
@@ -153,7 +165,7 @@
     const hasEC = d.ec.nom && d.ec.nom !== '0';
     R.geom = { L, H, W, s, biais: d.biais, e1: d.e1, e2: d.e2, e3: d.e3, ldalt: d.ldalt, Ld: d.ldalt / s };
     // --- matériaux (BAEL 91)
-    const fc = d.fcj, ft = 0.6 + 0.06 * fc, Ei = 11000 * Math.cbrt(fc), Ev = 3700 * Math.cbrt(fc);
+    const fc = d.fcj, ft = 0.6 + 0.06 * fc, EvR = root.PICF_EVR ? Math.round : (x => x), Ei = EvR(11000 * Math.cbrt(fc)), Ev = EvR(3700 * Math.cbrt(fc)); // PICF_EVR : essai session p (modules arrondis)
     R.mat = { fc, ft, Ei, Ev, fbu: 0.85 * fc / 1.5, fbuQ: 0.85 * fc / (0.85 * 1.5), sbc: 0.6 * fc,
       fsu: d.fe.map(f => f / 1.15), tauLim0: 0.07 * fc / 1.5, taus: 0.6 * d.psis ** 2 * ft };
     // fissuration : PP (peu préjudiciable), P (préjudiciable), TP (très préjudiciable) — BAEL 91 révisé 99
@@ -172,6 +184,7 @@
     const qsup = { n: d.qsupn + qrem.n, x: d.qsupx + qrem.x }; qsup.p = (qsup.n + qsup.x) / 2;
     const rdt = { n: d.rdtn, x: d.rdtx, p: (d.rdtn + d.rdtx) / 2 };
     const ch = hasEC ? { qn: d.ec.qremn, qx: d.ec.qremx, qp: (d.ec.qremn + d.ec.qremx) / 2, rn: d.ec.rdtn, rx: d.ec.rdtx, rp: (d.ec.rdtn + d.ec.rdtx) / 2 } : null;
+    if (root.PICF_GF32) { const fr = Math.fround; for (const o of [qrem, qsup, rdt, ch]) if (o) for (const k in o) if (typeof o[k] === 'number') o[k] = fr(o[k]); } // essai session p
     R.charges = { gb, gs, Cr, qrem, qsup, rdt, chantier: ch };
 
     // --- coefficients de majoration dynamique : delta = 1 + 0.4/(1+0.2 L) + 0.6/(1 + 4 G/S)
@@ -396,7 +409,9 @@
       for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, MG + 0.5));
       for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
       for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
-      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, uni([c - 0.825, c + 0.825], 0) / (2 * b));
+      // Règle PSIDP/PSIDA n° 3 (axe libre dans [bord + 3.50 ; bord − 3.50], maximum) : déjà la règle PICF. Crochet d'essai PICF_EK = 1 :
+      // bande unique de 3.30 m sans diffusion (règle PIPO chaussée > 7 m) — session o : négatif, non retenu.
+      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, (root.PICF_EK === 1 ? uni([c], 3.3 - sD) : uni([c - 0.825, c + 0.825], 0)) / (2 * b));
     }
     const coefs = { AL: best.AL.map((c, i) => ({ n: i + 1, c, a1: a1tab[Math.min(i + 1, a1tab.length) - 1], a2 })),
       BC: best.BC.map((c, i) => ({ n: i + 1, c, bc: [1.2, 1.1, 0.95, 0.8][i] })), BT: best.BT.map((c, i) => ({ n: i + 1, c, bt: 1.0 })),
@@ -406,6 +421,11 @@
     coefs.BTf = Math.max(...coefs.BT.map(o => o.c * o.bt));
     if (hasEC) { coefs.EC = best.EC; coefs.TERRE = best.TERRE; }
     if (root.PICF_DIAG_COEFS) Object.assign(coefs, root.PICF_DIAG_COEFS); // diagnostic uniquement (jamais en production)
+    { const cr = root.PICF_CRND | 0, r3 = x => Math.round(x * 1000) / 1000; // essai session p : coefficients lus arrondis à l'impression
+      if (cr & 1) { for (const k of ['AL', 'BC', 'BT']) coefs[k].forEach(o => { o.c = r3(o.c); }); for (const k of ['MC', 'ME', 'E', 'EC', 'TERRE']) if (typeof coefs[k] === 'number') coefs[k] = r3(coefs[k]);
+        coefs.ALf = Math.max(...coefs.AL.map(o => o.c * o.a1 * o.a2)); coefs.BCf = Math.max(...coefs.BC.map(o => o.c * o.bc)); coefs.BTf = Math.max(...coefs.BT.map(o => o.c * o.bt)); }
+      if (cr & 2) for (const k in dyn) if (dyn[k] && dyn[k].d) dyn[k].d = r3(dyn[k].d);
+      if (cr & 4) coefs.ALf = r3(coefs.ALf), coefs.BCf = r3(coefs.BCf), coefs.BTf = r3(coefs.BTf); }
     R.coefs = coefs;
     if (ch) { cases.chqN = scaleRes(qUnit, ch.qn * coefs.TERRE); cases.chqX = scaleRes(qUnit, ch.qx * coefs.TERRE); }
 
@@ -420,7 +440,7 @@
       let i = 0, hi = xsTop.length - 1; while (hi - i > 1) { const mid = (i + hi) >> 1; if (xsTop[mid] <= x) i = mid; else hi = mid; }
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
-    function ilAvg(getter, x, a, nd) { if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / 0.1)); let sm = 0;
+    function ilAvg(getter, x, a, nd) { if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
       const SPL = (root.PICF_VTSPL ?? 5) && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? (root.PICF_VTSPL ?? 5) : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
       const Lg = getter.Ld || Ld0, e0 = getter.ends ? getter.ends[0] : getter(0), e1 = getter.ends ? getter.ends[1] : getter(xsTop.length - 1);
       for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n;
@@ -475,7 +495,12 @@
           const sp = cv.axles[cv.axles.length - 1].x + (nt - 1) * (cv.gapTruck || 0);
           for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + sp + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - sp : kx * STEP;
           let sm = 0, smw = 0; const W = wnd && (key === 'BC' || key === 'BT' || key === 'ME');
-          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0;
+          // Règle PSIDP/PSIDA n° 1 (session o, crochet PICF_EXR = 1) : remorque avant sur la grille, arrière au point de grille le plus proche
+          // de s1 − 33 m, la grille étant bornée à l'ouvrage [−Ld, L + Ld] (étendue de ext) : arrière ramenée sur l'ouvrage si elle en sort.
+          const gLo = (Math.floor(-Ld / STEP) - 1 - ext) * STEP, gHi = (Math.ceil((L + Ld) / STEP) + ext) * STEP;
+          const exr = root.PICF_EXR === 1 && key === 'E' ? (ax => { const xf = dir > 0 ? x0 + dir * sp : x0, xr = xf - dir * sp;
+            return ax.x === 0 && dir > 0 ? Math.max(gLo, xr) : ax.x > 0 && dir < 0 ? Math.min(gHi, x0 - sp) : null; }) : null;
+          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const xe = exr ? exr(ax) : null; const x = xe != null ? xe : x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0;
             sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, aa, nd); if (W) smw += ax.P * ilAvg(getter, x, aa, true); }
           const sP = W ? smw : sm, sN = W && wnd === 1 ? smw : sm; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, nt, x0, sP);
           if (sP > mx) { mx = sP; pmx = { dir, x0, nt }; } if (sN < mn) { mn = sN; pmn = { dir, x0, nt }; }
@@ -488,7 +513,7 @@
               for (const ax of cv.axles) { const x = x0 + dir * ax.x, aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0; sm += ax.P * ilAvg(getter, x, aa, nd); if (wnd) smw += ax.P * ilAvg(getter, x, aa, true); }
               if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
             const gmin = Math.round(cv.gapTruck / STEP);
-            for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < vs.length; j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j]; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, [ks[i], ks[j]], smP, vs[i], vs[j]);
+            for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < (root.PICF_BCGMAX ? Math.min(vs.length, i + Math.round(root.PICF_BCGMAX / STEP) + 1) : vs.length); j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j]; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, [ks[i], ks[j]], smP, vs[i], vs[j]);
               if (root.PICF_BCTIE ? smP >= mx - 1e-9 : smP > mx + 1e-12) { mx = smP; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? smN <= mn + 1e-9 : smN < mn - 1e-12) { mn = smN; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
         const kk = nodyn ? k / ({ BC: dyn.BC.d, BT: dyn.BT.d, MC: dyn.MC.d, ME: dyn.ME.d, E: 1, EC: 1.5 }[key]) : k;
@@ -505,9 +530,12 @@
     // LI connues aux seuls points de la grille des tableaux (pas STP), interpolation linéaire entre eux ; effort tranchant des
     // traverses : pas de point dédoublé, ordonnée du côté gauche au droit de la section (règle PIPO tour 7, hook PICF_JV).
     const JV = root.PICF_JV != null ? root.PICF_JV : 2, JVS = root.PICF_JVS || 0;
-    const coarse = (raw, xk) => { const gv = ilAbs.map(g => { const i = idx(xsTop, g);
+    const coarse = (raw, xk) => { const MID = root.PICF_VTMID && xk != null && Math.abs(xk - Lh) < 1e-6; // essai session p : section L/2, nœud ajouté, saut à mi-hauteur
+      const abs = MID && !ilAbs.some(g => Math.abs(g - Lh) < 1e-6) ? ilAbs.concat([Lh]).sort((a, b) => a - b) : ilAbs;
+      const gv = abs.map(g => { const i = idx(xsTop, g);
+        if (MID && Math.abs(g - xk) < 1e-6 && i >= 2) return ((2 * raw(i - 1) - raw(i - 2)) + (2 * raw(i + 1) - raw(i + 2))) / 2;
         if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
-      const memo = xsTop.map(x => { let k = 0; while (k < ilAbs.length - 2 && ilAbs[k + 1] < x - 1e-9) k++; const t = (x - ilAbs[k]) / (ilAbs[k + 1] - ilAbs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
+      const memo = xsTop.map(x => { let k = 0; while (k < abs.length - 2 && abs[k + 1] < x - 1e-9) k++; const t = (x - abs[k]) / (abs[k + 1] - abs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
       const fn = i => memo[i]; fn.ends = raw.ends; fn.Ld = raw.Ld;
       if (root.PICF_VBEND && xk != null) { const n = gv.length; fn.ends = [gv[0], root.PICF_VBEND === 2 ? gv[n - 1] : gv[n - 2]]; if (root.PICF_VBEND === 1) { gv[n - 1] = gv[n - 2]; } }
       return fn; };
@@ -523,14 +551,24 @@
     R.env = {};
     // effort tranchant : diffusion longitudinale des roues (Bc, Bt, Me) à 45° dans la chaussée mais pente 1/2 dans le remblai
     const vWheel = (a, dd) => a.a - dd.hsrem;
-    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map((gt, gi) => (envKey = key, envIdx = gi, vNoA = (root.PICF_VKEYS || ['Vt']).includes(key) ? (root.PICF_VNOA || vWheel) : (key === 'Vb' && root.PICF_VBA != null ? (typeof root.PICF_VBA === 'function' ? root.PICF_VBA : (ax => ax.a + root.PICF_VBA)) : null), envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p', (root.PICF_VBWK || ['Vb']).includes(key) ? (root.PICF_VBWD ?? 0) : 0)));
+    // session p : roues Bc/Bt/Me pour V piédroits, moments du radier et des piédroits, V TI, pressions, sections déterminantes : diffusion
+    // longitudinale à pente 3/4 dans la chaussée et le remblai, a + 1.5·(HCHAU + HSREM) + E3 (même pente que les coefficients K et les
+    // moments transversaux) ; traverse sup. : 45° (moments) et pente 1/2 dans le remblai (V TS) inchangés. Crochet PICF_VW34 = 0 : ancien calcul.
+    const vW34 = (a, dd) => a.a - 0.5 * (dd.hchau + dd.hsrem);
+    const VW34 = (root.PICF_VW34 ?? 1) ? { Vw: vW34, b: vW34, w: vW34, Vb: vW34, p: vW34, det: vW34 } : {};
+    const VKEYS = root.PICF_VKEYS || ['Vt', ...Object.keys(VW34)];
+    let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map((gt, gi) => (envKey = key, envIdx = gi, vNoA = VKEYS.includes(key) ? ((root.PICF_VNOA && root.PICF_VNOA[key]) || (typeof root.PICF_VNOA === 'function' ? root.PICF_VNOA : (VW34[key] || vWheel))) : (key === 'Vb' && root.PICF_VBA != null ? (typeof root.PICF_VBA === 'function' ? root.PICF_VBA : (ax => ax.a + root.PICF_VBA)) : null), envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p', (root.PICF_VBWK || ['Vb']).includes(key) ? (root.PICF_VBWD ?? 0) : 0)));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
     // session l : ouvrages DROITS (2550, 2498) — V TS des surcharges imprimé à la section x_k avec la LI de la section x_(k−1)
     // (2550 x = 0.50 : AL/Bc/Bt/Mc/Me/E/EC = valeurs de x = 0 à 0.1 près). Crochet PICF_VTSH : 0 = sans décalage, 2 = aussi biais, 3 = après recopie.
     const VTSH = root.PICF_VTSH ?? 1;
+    const symE = e0 => { const e = Object.assign({}, e0); for (const k of Object.keys(e)) if (k.endsWith('+') && e[k.slice(0, -1) + '-']) { const p = e[k], n = e[k.slice(0, -1) + '-'], h = (p.v - n.v) / 2;
+      e[k] = Object.assign({}, p, { v: h }); e[k.slice(0, -1) + '-'] = Object.assign({}, n, { v: -h }); } return e; };
+    const VTSM = root.PICF_VTSM ?? 3, vtMid = R.env.Vt.length ? (root.PICF_VTMID ? R.env.Vt[R.env.Vt.length - 1] : symE(R.env.Vt[R.env.Vt.length - 1])) : null; // session p (RETENU) : section L/2 symétrisée MAX = −MIN = (MAX − MIN)/2 en dernière ligne ; biais : aussi la ligne précédente (listing 2531/2551 6.50)
     if (VTSH && VTSH !== 3 && (VTSH === 2 || Math.abs(s - 1) < 1e-9)) { const a = R.env.Vt; for (let k = a.length - 1; k >= 1; k--) a[k] = a[k - 1]; }
     const VBSYM = root.PICF_VBSYM != null ? root.PICF_VBSYM : 1;
     for (const key of root.PICF_VBNC || VBSYM === 1 ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    if (VTSM && vtMid) { const a = R.env.Vt, n = a.length, biais = Math.abs(s - 1) > 1e-9; if (VTSM & 1) a[n - 1] = vtMid; if ((VTSM & 2) && biais && n > 2) a[n - 2] = vtMid; if ((VTSM & 4) && !biais && n > 2) a[n - 2] = vtMid; }
     // session j : radier — à mi-portée SETRA imprime MAX = −MIN = (MAX − MIN)/2 (ordonnée du saut de la LI prise à mi-hauteur à x = L/2 :
     // moyenne de la section et de son symétrique) ; VBSYM 1 : section x = L/2 calculée, 2 : à partir de la section précédente recopiée, 0 : ancien
     if (VBSYM) { const a = R.env.Vb; a[a.length - 1] = Object.assign({}, a[a.length - 1]); const e = a[a.length - 1]; for (const k of Object.keys(e)) if (k.endsWith('+') && e[k.slice(0, -1) + '-']) { const p = e[k], n = e[k.slice(0, -1) + '-'], h = (p.v - n.v) / 2;

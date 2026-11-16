@@ -1,7 +1,7 @@
 // PICF-EL — rendu de la note de calcul au format du listing SETRA (PICF91 v1.06).
 (function (root) {
   const P = (typeof module !== 'undefined' && module.exports) ? require('./parse.js') : root.PICF_PARSE;
-  const F = (v, d, w) => { let s = (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toFixed(d); if (d === 0) s += '.'; return w ? s.padStart(w) : s; };
+  const F = (v, d, w) => { const fr = root.PICF_FR ?? 1; /* session p : valeurs imprimées en simple précision (REAL*4) ; 0 = double */ if ((fr & 1) || ((fr & 2) && d === 0)) v = Math.fround(v); if (root.PICF_RNDE) { const t = v * Math.pow(10, d), fl = Math.floor(t); if (t - fl === 0.5) v = (fl % 2 === 0 ? fl : fl + 1) / Math.pow(10, d); } let s =(Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toFixed(d); if (d === 0) s += '.'; return w ? s.padStart(w) : s; };
   const pad = (s, n) => String(s).padEnd(n);
   const SEP = '-'.repeat(129);
 
