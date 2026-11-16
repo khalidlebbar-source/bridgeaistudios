@@ -124,7 +124,11 @@
       var rowc = [];
       for (j = 0; j < n; j++) {
         var l2 = F(L[j] * L[j]), g1 = g(i, j - 1), g2 = g(i, j);
-        rowc.push({ A: F(-F(l2 * F(g1 - g2))) + 0, B: F(F(3 * l2) * g1) + 0, C: F(-F(l2 * F(F(2 * g1) + g2))) + 0 });
+        var LA = globalThis.PSIDP_LIA || 0; // v39 essai : ordres d'opérations REAL*4 des coefficients A, B, C
+        if (LA === 1) rowc.push({ A: F(F(l2 * g2) - F(l2 * g1)) + 0, B: F(F(3 * l2) * g1) + 0, C: F(-F(F(l2 * F(2 * g1)) + F(l2 * g2))) + 0 });
+        else if (LA === 2) rowc.push({ A: F(-F(l2 * F(g1 - g2))) + 0, B: F(3 * F(l2 * g1)) + 0, C: F(-F(F(2 * F(l2 * g1)) + F(l2 * g2))) + 0 });
+        else if (LA === 3) { var lg1 = F(l2 * g1), lg2 = F(l2 * g2); rowc.push({ A: F(lg2 - lg1) + 0, B: F(3 * lg1) + 0, C: F(-F(F(2 * lg1) + lg2)) + 0 }); }
+        else rowc.push({ A: F(-F(l2 * F(g1 - g2))) + 0, B: F(F(3 * l2) * g1) + 0, C: F(-F(l2 * F(F(2 * g1) + g2))) + 0 });
       }
       out.push(rowc);
     }
@@ -377,13 +381,14 @@
     var getSup = function (i, j) { if (i <= 0 || i >= n) return { A: 0, B: 0, C: 0 }; var c = liA[i - 1][j]; return f32 ? { A: f(c.A), B: f(c.B), C: f(c.C) } : c; };
     return [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95].map(function (x0) {
       var cols = [], X = f(x0), U = f(1 - X), lf = f(l);
-      var lin = function (a, b) { return f(f(U * a) + f(X * b)); };
+      var LN = globalThis.PSIDP_LIN || 0, lin = LN === 1 ? function (a, b) { return f(a + f(X * f(b - a))); } : LN === 2 ? function (a, b) { return f(f(a - f(X * a)) + f(X * b)); } : function (a, b) { return f(f(U * a) + f(X * b)); };
       for (var j = 0; j < n; j++) {
         var g = getSup(t, j), d = getSup(t + 1, j);
         var cc = { A: lin(g.A, d.A), B: lin(g.B, d.B), C: lin(g.C, d.C), D: 0 };
         if (j === t) {
           // force à gauche de la section (x<x0) : iso = x l (1-x0) ; à droite : x0 l (1-x)
-          var G = { A: cc.A, B: cc.B, C: f(cc.C + f(lf * U)), D: 0 };
+          var LU = globalThis.PSIDP_LIU !== undefined ? globalThis.PSIDP_LIU : 1, lU = LU === 1 ? f(lf - f(lf * X)) : LU === 2 ? f(l * (1 - x0)) : f(lf * U); // v39 : l(1-x) = fround(l - fround(l.x)) (LIU = 1 défaut, +81/+14 ; 0 = l.fround(1-x))
+          var G = { A: cc.A, B: cc.B, C: f(cc.C + lU), D: 0 };
           var Dd = { A: cc.A, B: cc.B, C: f(cc.C - f(lf * X)), D: f(lf * X) };
           cols.push(G); cols.push(Dd);
         } else cols.push(cc);
@@ -525,6 +530,8 @@
       var tg = v.ETROG > 0 ? (KX ? mean(-half, xg) : KTR ? linMean(0, (xg + half) / h) : trap(0, idx(xg))) : null, td = v.ETROD > 0 ? (KX ? mean(xd, half) : KTR ? linMean((xd + half) / h, globalThis.PSIDP_KTOUT === 1 ? idx(half) : Math.round(W / h)) : trap(idx(xd), idx(half))) : null;
       out.trot = { un: Math.max(tg || 0, td || 0), deux: (tg !== null && td !== null) ? (tg * v.ETROG + td * v.ETROD) / (v.ETROG + v.ETROD) : (tg || td) };
     }
+    // v39 : crochet PSIDP_KQ (bits ; 0 = règles v38) — essais des quadratures PIPO t20 : trapèzes à n intervalles sur K EXACT
+    var KQ = globalThis.PSIDP_KQ || 0, tq = function (a, b, nq) { var s = 0; for (var q = 0; q <= nq; q++) s += (q === 0 || q === nq ? 0.5 : 1) * k.exact(a + (b - a) * q / nq); return s / nq; };
     var V = R.largeurVoie, best = { val: -1e9, nv: 1 }, KAM = globalThis.PSIDP_KAMODE !== undefined ? globalThis.PSIDP_KAMODE : 3; // v30 : 3 par défaut (voies une à une, bornes arrondies) ; 0 = ancienne fenêtre unique tronquée
     var nst = Math.round(V / h);
     for (var nvc = 1; nvc <= R.nv; nvc++) {
@@ -538,6 +545,7 @@
         for (var s0 = 0; s0 + nvc <= R.nv; s0++) { var mm3 = 0; for (var l3 = s0; l3 < s0 + nvc; l3++) { var la = (xc0 + half + l3 * V) / h, lb = (xc0 + half + (l3 + 1) * V) / h; mm3 += KAM === 4 ? linMean(la, lb) : trap(rnd(la), rnd(lb)); } m = Math.max(m, mm3 / nvc); }
       }
       else for (var i = idx(xc0); i + wst <= idx(xc1) + 1e-9; i++) m = Math.max(m, trap(i, i + wst));
+      if (KQ & 1) { m = -1e9; for (var s1 = 0; s1 + nvc <= R.nv; s1++) { var mq = 0; for (var l4 = s1; l4 < s1 + nvc; l4++) mq += tq(xc0 + l4 * V, xc0 + (l4 + 1) * V, 2); m = Math.max(m, mq / nvc); } } // v39 : essai règle PIPO t20 (trapèzes 2 intervalles par voie, K exact)
       var val = a1 * m * nvc / R.nv;
       if (val > best.val) best = { val: val, nv: nvc };
     }
@@ -568,6 +576,7 @@
     }
     var m4 = -1e9;
     for (i = idx(xc0); -half + (i + 34.4) * h <= xc1 + h - 1e-9; i++) m4 = Math.max(m4, (trap(i, i + 8) + trap(i + Math.round(3.3 / h), i + Math.round(4.3 / h))) / 2);
+    if (KQ & 2) m4 = Math.max.apply(null, [xc0, xc1 - 4.3].map(function (s5) { return (tq(s5, s5 + 1, 2) + tq(s5 + 3.3, s5 + 4.3, 2)) / 2; }));
     out.MC120 = m4;
     var xm = Math.min(xc0 + 3.5, (xc0 + xc1) / 2);
     var CEM = globalThis.PSIDP_CEMODE !== undefined ? globalThis.PSIDP_CEMODE : 1; // v29 : 1 par défaut
@@ -575,6 +584,7 @@
       // essai v29 : axe du convoi libre dans [bord chaussée + 3.5 ; bord chaussée opposé − 3.5], maximum
       var lo = xc0 + 3.5, hi = xc1 - 3.5; if (hi < lo) { lo = hi = (xc0 + xc1) / 2; }
       var meanAt = function (xa) {
+        if (KQ & 4) { var cw = globalThis.PSIDP_CEW || 3.3; return tq(xa - cw / 2, xa + cw / 2, globalThis.PSIDP_KQN || 2); }
         if (CEM === 2) { var i0 = idx(xa - 1.65), i1 = idx(xa + 1.65); return trap(i0, i1); }
         if (CEM === 3) { var j0 = Math.round((xa - 1.65 + half) / h), j1 = Math.round((xa + 1.65 + half) / h); return trap(j0, j1); }
         var ss = 0, N = 330; for (var q = 0; q < N; q++) { var x = xa - 1.65 + 3.3 * (q + 0.5) / N, u = (x + half) / h, ii = Math.floor(u), tt = u - ii; ss += K(ii) * (1 - tt) + K(ii + 1) * tt; } return ss / N; };
@@ -800,8 +810,12 @@
     // réactions d'appui
     var dA = R.dyn.appui;
     var ab = v.ABOUT || 0;
+    if (typeof globalThis.PSIDP_ABX === "number") ab += globalThis.PSIDP_ABX; // v39 banc : about prolongé (essai)
     var cfgR = { minor: false, noK: true, range: [-ab, X0[n] + ab], dyn: function () { return 1; } };
     R.reac = [];
+    var gridSave = R.grid, RG = globalThis.PSIDP_RGRID || 0; // v39 essai : grille de recherche raffinée pour les réactions (pas L/(20·RG))
+    if (RG) { R.grid = []; var e0r = L[0] / 20 / RG, e1r = L[n - 1] / 20 / RG; for (var kq = -40 * RG; kq < 0; kq++) R.grid.push(kq * e0r); for (var jq = 0; jq < n; jq++) for (kq = 0; kq < 20 * RG; kq++) R.grid.push(X0[jq] + kq * L[jq] / 20 / RG); for (kq = 0; kq <= 40 * RG; kq++) R.grid.push(X0[n] + kq * e1r); }
+    if (globalThis.PSIDP_RABG !== 0) { R.grid = R.grid.slice(); [0, 1.35, 1.5, 4.5, 6].forEach(function (o) { if (globalThis.PSIDP_RABG === 2) R.grid.push(-ab - o, -ab + o, X0[n] + ab - o, X0[n] + ab + o); else R.grid.push(-ab - o, X0[n] + ab - o); }); R.grid.sort(function (p, q) { return p - q; }); } // v39 (RABG, défaut ; 0 = grille seule) : positions avec un essieu au BOUT de l about (réactions culée BC/BT/convois)
     for (var a = 0; a <= n; a++) {
       var fr = reactionLI(R, a);
       var S3 = loadEffects(R, v, fr, cfgR);
@@ -810,6 +824,7 @@
       S3.comb = combine(S3, v, false);
       R.reac.push(S3);
     }
+    R.grid = gridSave;
     return res;
   }
   function sectionShearLI(R, t, gauche) {
@@ -2166,7 +2181,9 @@
       P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib));
       P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib));
       // allongement relatif de la fibre moyenne (x1e4) : instantané -F_moy/(Sn.Eij) ; total -(retrait + F_ES moy/(Sn.EF))
-      var fi = 0, fe = 0; gt.forEach(function (g) { fi += g.p.proba * nA; fe += g.d.esMoy * nA; }); fi /= gt.length; fe /= gt.length;
+      var fi = 0, fe = 0, EW = globalThis.PSIDP_EPSW || 0, sw = 0; // v39 essai : PSIDP_EPSW = 1 trapèzes, 2 Simpson (0 = moyenne arithmétique)
+      gt.forEach(function (g, ig) { var wq = EW === 1 ? ((ig === 0 || ig === gt.length - 1) ? 0.5 : 1) : EW === 2 ? ((ig === 0 || ig === gt.length - 1) ? 1 : (ig % 2 ? 4 : 2)) : 1; sw += wq; fi += wq * g.p.proba * nA; fe += wq * g.d.esMoy * nA; }); fi /= sw; fe /= sw;
+      var SnE = globalThis.PSIDP_EPSS === 0 ? Sn : R.section.S; fi *= Sn / SnE; fe *= Sn / SnE; // v39 : section BRUTE (réglage +30, contrôle +2) ; PSIDP_EPSS = 0 : section nette
       P.defl.eps.push([-fi / Sn / R.EI * 1e4, -(R.retrait + fe / Sn / R.EF) * 1e4]);
     }
     return P;
