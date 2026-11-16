@@ -274,7 +274,7 @@
     const p1 = press(tK1, hs1), p2 = press(tK2, hs2);
     const pRT = c => [-6 * c.Mc * sn * sn / B / B, 6 * c.Mc * sn * sn / B / B];
     const fPe = li.map(o => 0), semLIpe = liSem.map(s => s.pe), semLIpi = liSem.map(s => s.pi);
-    const envS = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), true);
+    const envS = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), true, globalThis.PIPO_PRFA === 0 ? undefined : LV.makeLI(xsLI, f, g.L, Ldt, fA));
     const pressions = {
       ext: { max: Math.max(p1[0], p2[0]), min: Math.min(p1[0], p2[0]), live: envS(semLIpe), ret: pRT(ret)[0], tem: pRT(tem)[0] },
       int: { max: Math.max(p1[1], p2[1]), min: Math.min(p1[1], p2[1]), live: envS(semLIpi), ret: pRT(ret)[1], tem: pRT(tem)[1] },
@@ -298,7 +298,8 @@
     const semT = [1, 0.75, 0.5, 0.25];
     const SEMELU = globalThis.PIPO_SEMELU !== 0;
     const patW = v.SPEC * (v.HAUTL + v.HSREMB) * aExt, patMp = patW * ((g.D - B / 2 - g.e2 / 2) / 2 - g.D); // terres du patin : poids et moment / centre
-    const envSD = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false);
+    // Tour 21 : semelles et pressions avec la LI de A majorée sur la DT (fA), comme le cadre (PIPO_SEMFA = 0 / PIPO_PRFA = 0 : ancien)
+    const envSD = f => LV.enveloppes(LV.makeLI(xsLI, f, g.L, Ldt), v, g, dyn, Kc, LV.makeLI(xsLI, f, g.L, 0), false, globalThis.PIPO_SEMFA === 0 ? undefined : LV.makeLI(xsLI, f, g.L, Ldt, fA));
     const semelleEff = {};
     for (const side of ['E', 'I']) {
       semelleEff[side] = semT.map(t => {
