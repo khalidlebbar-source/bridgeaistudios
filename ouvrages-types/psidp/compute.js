@@ -1706,6 +1706,14 @@
       //    bord sup imprimé de 0.013 à 0.023 m à 0.2 L de l'appui sur 2482–2488, 2764, 2765, 0015A (PSIDP_T1CHK = 0 : toutes les sections).
       var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
         var best = 0.05 * d, f0 = 0.36;
+        // v34, ACTIF par défaut (PSIDP_T1RIVE = 0 pour désactiver ; ε = 0,012 m retenu comme tolérance du programme, cf. T2TOL) : côté appui des travées de RIVE, inflexion à x = √(2/3)·L de la culée,
+        // corrigée d'une hauteur fixe : t2 = (1 − √(2/3))·L·(1 − ε/h), ε = PSIDP_T1EPS (0.012 m). Constat sur 25 raccords imprimés
+        // (NOTES v34) ; ε est une constante déduite des listings.
+        var rive9 = n > 1 && ((tt === 0 && side > 0) || (tt === n - 1 && side < 0));
+        if (rive9 && globalThis.PSIDP_T1RIVE !== 0 && h > 0) {
+          var eps9 = globalThis.PSIDP_T1EPS !== undefined ? globalThis.PSIDP_T1EPS : 0.012;
+          return { t2: Math.max(0.05 * d, Math.min(0.36 * d, (1 - Math.sqrt(2 / 3)) * L[tt] * (1 - eps9 / h))) };
+        }
         if (globalThis.PSIDP_T1CAP !== 0) f0 = Math.min(0.36, 0.18 * L[tt] / d);
         var t1ok = function (f) {
           var tr = traceFromPoints(R, P3, { side: function (t3, s3, d3) { return (t3 === tt && s3 === side) ? { t2: f * d3 } : { t2: 0.05 * d3 }; } }), ok = true;
