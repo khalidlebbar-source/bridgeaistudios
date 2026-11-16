@@ -815,10 +815,12 @@
     R.reac = [];
     var gridSave = R.grid, RG = globalThis.PSIDP_RGRID || 0; // v39 essai : grille de recherche raffinée pour les réactions (pas L/(20·RG))
     if (RG) { R.grid = []; var e0r = L[0] / 20 / RG, e1r = L[n - 1] / 20 / RG; for (var kq = -40 * RG; kq < 0; kq++) R.grid.push(kq * e0r); for (var jq = 0; jq < n; jq++) for (kq = 0; kq < 20 * RG; kq++) R.grid.push(X0[jq] + kq * L[jq] / 20 / RG); for (kq = 0; kq <= 40 * RG; kq++) R.grid.push(X0[n] + kq * e1r); }
-    if (globalThis.PSIDP_RABG !== 0) { R.grid = R.grid.slice(); [0, 1.35, 1.5, 4.5, 6].forEach(function (o) { if (globalThis.PSIDP_RABG === 2) R.grid.push(-ab - o, -ab + o, X0[n] + ab - o, X0[n] + ab + o); else R.grid.push(-ab - o, X0[n] + ab - o); }); R.grid.sort(function (p, q) { return p - q; }); } // v39 (RABG, défaut ; 0 = grille seule) : positions avec un essieu au BOUT de l about (réactions culée BC/BT/convois)
+    if (globalThis.PSIDP_RABG !== 0) { R.grid = R.grid.slice(); if (globalThis.PSIDP_RABG === 3 || globalThis.PSIDP_RABG === undefined) { R.grid.push(-ab); (globalThis.PSIDP_RABGR || [0, 1.35, 6, 16.5, 6.1, 11, 15]).forEach(function (o) { R.grid.push(X0[n] + ab - o); }); } else (globalThis.PSIDP_RABGO || [0, 1.35, 1.5, 4.5, 6]).forEach(function (o) { if (globalThis.PSIDP_RABG === 2) R.grid.push(-ab - o, -ab + o, X0[n] + ab - o, X0[n] + ab + o); else R.grid.push(-ab - o, X0[n] + ab - o); }); R.grid.sort(function (p, q) { return p - q; }); } // v39 (RABG, défaut ; 0 = grille seule) : positions avec un essieu au BOUT de l about (réactions culée BC/BT/convois)
     for (var a = 0; a <= n; a++) {
       var fr = reactionLI(R, a);
-      var S3 = loadEffects(R, v, fr, cfgR);
+      // v43 (info PSIDA v32, crochet PSIDP_RAB1 = 1) : seul l'about CONTIGU est chargeable pour la réaction d'un appui (culées) ; appuis intermédiaires : aucun about
+      var cfgRa = cfgR; if (globalThis.PSIDP_RAB1 === 1) { cfgRa = Object.assign({}, cfgR, { range: [a === 0 ? -ab : 0, a === n ? X0[n] + ab : X0[n]] }); }
+      var S3 = loadEffects(R, v, fr, cfgRa);
       var ar2 = R.liReacAires[a].total;
       S3.cp = [R.cp.tot[1] * ar2, R.cp.tot[2] * ar2];
       S3.comb = combine(S3, v, false);
@@ -980,7 +982,8 @@
   const A1T = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] };
   const BCT = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 1] };
   const tab = (t, n) => t[Math.min(n, t.length) - 1];
-  const r3In = x => Math.round(x * 1000 + 1e-9) / 1000;
+  // v43 (info PSIDA v32, crochet PSIDP_KNR : bits CP 1, A 2, Bc 4, Bt 8, Mc120 16 ; défaut 31 ; 0 = arrondis au millième) : coefficients NON arrondis dans les calculs
+  const r3In = (x, bit) => ((globalThis.PSIDP_KNR === undefined ? 31 : globalThis.PSIDP_KNR) & (bit || 0)) ? x : Math.round(x * 1000 + 1e-9) / 1000;
 
   /** p = { Na, esp, biais (grades, biais géométrique), Be (largeur équivalente droite), Lch (largeur chargeable),
    *        nvc (nombre de voies), classe (1|2|3), H (HDALLE1), hchau } */
@@ -1021,7 +1024,7 @@
       const f = o => 0.5 * (simp(o) + simp(o + E));
       MC = Na * Math.max(f(0), f(-E / 2));
     }
-    return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
+    return { s, CP: r3In(CP, 1), A: r3In(A, 2), BC: r3In(BCk, 4), BT: r3In(BTk, 8), MC120: r3In(MC, 16), CONVOIS: null };
   }
 
   // Section 34 (DIMENSIONNEMENT DES APPAREILS D'APPUI) — 2026-11-04 v6.
@@ -1113,7 +1116,7 @@
     var c0 = 0.6 * 1000 / 9.80665, ft28 = c0 + 0.06 * v.FC28, fe = v.FE1 || 50000, eta = v.ETA || 1.6;
     var sigS = Math.min(2 * fe / 3, Math.max(fe / 2, 110 * Math.sqrt(eta * ft28 * 0.00980665) / 0.00980665));
     var H = v.HDAL1, d = H - 0.04;
-    return R.reac.map(function (r, k) {
+    var outAp = R.reac.map(function (r, k) {
       var na = Math.max(1, v['NAP' + (k + 1)] || 2), typ = v['TYPAP' + (k + 1)]; if (typ === undefined || typ === null || typ === '') typ = 1;
       var esp = na > 1 ? Math.floor(Math.min(v.EDAL1 / (na - 0.6), R.Be / (na - 0.3)) / sb * 100 + 1e-6) / 100 : 0;
       var dy = R.dyn.appui[k], end = k === 0 || k === n;
@@ -1137,9 +1140,28 @@
       var ech = end ? (R.about || v.ABOUT || 0) * sb + esp / 3 : 2 * esp / 3, mch = ech > 0 ? cMax * esp / (12 * ech) : 0;
       var mres = function (A) { var x = -15 * A + Math.sqrt(225 * A * A + 30 * A * d); return A * sigS * (d - x / 3); };
       var lo = 0, hi = 0.05; for (var it = 0; it < 80; it++) { var md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
+      // v43 (PSIDP_CHEVZ = 0 : ancien ELS fissuré) : section de calcul des fers du chevêtre = M·k / (z·σs), bras de levier forfaitaire
+      // z = 0,9·d (BAEL), d = H − 0,04, σs = fe/2 (fissuration préjudiciable) ; k = sin φ (biais géométrique) pour des fers PARALLÈLES aux
+      // lignes d'appui (φ ≥ 70 gr, et toujours sur culées : « LE FERRAILLAGE DES CHEVETRES SUR PILES CULEES EST PARALLELE … »), k = 1 si
+      // perpendiculaires aux bords libres. Exact à l'arrondi sur 2481, 2482, 2483, 2549, 2764, 2766 (piles et culées), 0013, 0014, 0015 (piles).
+      if (globalThis.PSIDP_CHEVZ !== 0) { var parC = (v.BIAIS || 100) >= 70 || end; hi = mch * (parC ? sb : 1) / (0.9 * d * sigS); }
       return { typ: typ, na: na, esp: esp, larg: larg, long: long, K: K, cas: cas.map(function (c) { return c[0]; }), vMax: vMax, vMin: vMin, cMax: cMax, cMin: cMin,
-        sMin: cMin / (larg * long), sMax: cMax / (larg * long), ech: ech, mch: mch, ach: hi };
+        sMin: cMin / (larg * long), sMax: cMax / (larg * long), ech: ech, mch: mch, ach: hi, need: amin };
     });
+    // v43 (info PSIDA v32, règle du dossier PSI-DA 68 pièce 2.5 § 2.4.5 ; crochet PSIDP_DAPO = 0 : ancien) : largeur DAPO de la ligne la plus
+    // sollicitée = ⌈√(aire requise × 50/φ)⌉ au pas de 0,05 (φ biais géométrique en grades), même largeur pour toutes les lignes, réduite par pas
+    // de 5 cm si la longueur (multiple de 5 cm couvrant l'aire requise) lui serait inférieure.
+    if ((globalThis.PSIDP_DAPO === undefined ? 1 : globalThis.PSIDP_DAPO) && !globalThis.PSIDP_APPSIDA) {
+      var el = outAp.filter(function (a) { return a.typ !== 0; });
+      if (el.length) {
+        var up = function (x) { return Math.ceil(x / 0.05 - 1e-9) * 0.05; }, nmax = Math.max.apply(null, el.map(function (a) { return a.need; }));
+        var W0 = Math.max(0.05, up(Math.sqrt(nmax * 50 / (v.BIAIS || 100))));
+        el.forEach(function (a) { var w = W0, b = up(a.need / w);
+          while (b < w - 1e-9 && w > 0.05 + 1e-9) { w = Math.round((w - 0.05) * 100) / 100; b = up(a.need / w); }
+          a.larg = Math.round(w * 100) / 100; a.long = Math.round(b * 100) / 100; a.sMin = a.cMin / (a.larg * a.long); a.sMax = a.cMax / (a.larg * a.long); });
+      }
+    }
+    return outAp;
   }
 
   // Section 35 (REPARTITION DU FERRAILLAGE TRANSVERSAL, FERRAILLAGE LONGITUDINAL) — 2026-11-04 v6.
@@ -1866,7 +1888,8 @@
         Mat.push(row); Rv.push(-tot);
       }
       // tracé concordant : Mat.lambda = R, 0 <= lambda <= 1 (simplexe ; objectif : max somme des lambda)
-      var lam = null, Q2 = 50 * I / VP, Rmx = Math.max.apply(null, Rv.map(Math.abs)), R2v = Rv.map(function (r) { return Rmx > 0 ? Q2 * Math.abs(r) / Rmx : Q2; });
+      var lam = null, Q2 = 50 * I / VP, Rmx, R2v;
+      var solveLP = function () { Rmx = Math.max.apply(null, Rv.map(Math.abs)); R2v = Rv.map(function (r) { return Rmx > 0 ? Q2 * Math.abs(r) / Rmx : Q2; }); lam = null;
       if (globalThis.PSIDP_LPMODE !== 0) (function () {
         // RÈGLE (v12, 23 systèmes du corpus) : (N-1) doubles inéquations R - R2 <= Mat.λ <= R + R2, R2_j = 50 T/m² · I/V' · R_j / max R ;
         // 0 <= λ <= 1, λ symétriques si SYM = 1 ; solution = écart total Σ|Mat.λ - R| minimal (phase 1 du simplexe), puis max Σλ.
@@ -1888,8 +1911,27 @@
         if (v.SYM === 1) for (var k5 = 0; k5 < Math.floor(n / 2); k5++) { var e2 = new Array(n).fill(0); e2[k5] = 1; e2[n - 1 - k5] = -1; Aq.push(e2); bq.push(1e-9); Aq.push(e2.map(function (x) { return -x; })); bq.push(1e-9); }
         lam = lpMax(new Array(n).fill(1), Aq, bq);
       })();
+      };
+      solveLP();
+      // v43 (essai, PSIDP_FL) : « FUSEAU LIMITE » en travée intermédiaire (0015 : TRAVEE 2/3 « FL ») — tracés limites = bords du fuseau aux sections 0.1 L
+      var flSpans = null;
+      if (!lam && globalThis.PSIDP_FL) {
+        var tolF = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0.005, isFL = function (t) { return t > 0 && t < n - 1; };
+        var zfl = function (which) { return function (t, k) { if (k === 0) return P3.zs[t]; if (k === 10) return P3.zs[t + 1];
+          if (which === 2) return ginf(t, k); var z = gsup(t, k); if (k === 1) z = Math.min(z, P3.zs[t] - tolF); if (k === 9) z = Math.min(z, P3.zs[t + 1] - tolF); return z; }; };
+        var wrap = function (tr, which) { var f = zfl(which); return { spans: tr.spans, z: function (t, x) { if (!isFL(t)) return tr.z(t, x); var k = Math.round(x / L[t] * 10); return f(t, k); } }; };
+        var T1f = wrap(T1, 1), T2f = wrap(T2, 2), H1f = [], H2f = [];
+        for (t = 0; t < n; t++) { H1f.push(hypSpan(T1f, t)); H2f.push(hypSpan(T2f, t)); }
+        var Matp = Mat, Rvp = Rv; Mat = []; Rv = [];
+        for (j = 1; j < n; j++) { var rowf = [], totf = 0; for (t = 0; t < n; t++) { rowf.push(H2f[t][j - 1] - H1f[t][j - 1]); totf += H1f[t][j - 1]; } Mat.push(rowf); Rv.push(-totf); }
+        solveLP();
+        if (typeof globalThis.PSIDP_DBGFL === 'function') globalThis.PSIDP_DBGFL({ N: Nr, Mat: Mat, Rv: Rv, lam: lam, H1: H1f, H2: H2f, Q: Q2 });
+        if (lam) { flSpans = []; for (t = 0; t < n; t++) flSpans.push(isFL(t)); T1 = T1f; T2 = T2f; H1 = H1f; H2 = H2f; } else { Mat = Matp; Rv = Rvp; solveLP(); }
+      }
 
-      return { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: R2v, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz };
+      var res9 = { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: R2v, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz, fl: flSpans };
+      if (typeof globalThis.PSIDP_DBGATT === 'function') globalThis.PSIDP_DBGATT(res9, { zs: zs, zi: zi, L: L, n: n }); // banc (v43), absent en usage normal
+      return res9;
     };
     // itérations : décalage vers le haut des points sur appuis (pas 0.01 m jusqu'au bord sup du fuseau), puis +1 câble (max +4)
     // RÈGLE (v12, notice PSIDP « recherche du tracé » + listings 2481, 2482, 0013B, 2764, 2765) : en l'absence de solution, les 5 tentatives
@@ -2179,9 +2221,12 @@
     // --- déformées dues à la précontrainte (section 38) : courbure (F.e + M_hyp)/(E.IG), F et e linéaires entre
     // points de grille, double intégration par travée (flèche nulle sur appuis). Instantanée : F initiale moy., Eij ;
     // fluage : F en service moy. (E.S), EF. Vérifié à ±0.1 mm sur 2549 (forme légèrement différente : NON RÉSOLU).
-    var deflP = function (t, Mk, EI) {
+    var deflP = function (t, Mk, EI, Fk, Hk) {
       var l = L[t], N = ND[t], S = 2000, h = l / S, th = [0], w = [0], i;
-      var M = function (x) { var u = x / l * N, ii = Math.min(N - 1, Math.floor(u)), f = u - ii; return Mk[ii] * (1 - f) + Mk[ii + 1] * f; };
+      var lin = function (A, x) { var u = x / l * N, ii = Math.min(N - 1, Math.floor(u)), f = u - ii; return A[ii] * (1 - f) + A[ii + 1] * f; };
+      var M = function (x) { return lin(Mk, x); };
+      // v43 essai (PSIDP_DEFLE = 1) : excentrement continu du câble (équations) au lieu de l'interpolation linéaire entre points de grille
+      if (globalThis.PSIDP_DEFLE === 1 && Fk) M = function (x) { return lin(Fk, x) * cab.z(t, x) + lin(Hk, x); };
       for (i = 1; i <= S; i++) th.push(th[i - 1] + M((i - 0.5) * h) / EI * h);
       for (i = 1; i <= S; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * h);
       var cc = w[S] / l, out = [];
@@ -2192,8 +2237,8 @@
     P.defl = { inst: [], flu: [], eps: [] };
     for (t = 0; t < n; t++) {
       var gt = G.filter(function (g) { return g.t === t; });
-      P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib));
-      P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib));
+      P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib, gt.map(function (g) { return g.p.proba * nA; }), gt.map(function (g) { return at(HI.moy, g); })));
+      P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib, gt.map(function (g) { return g.d.esMoy * nA; }), gt.map(function (g) { return at(H.esMoy, g); })));
       // allongement relatif de la fibre moyenne (x1e4) : instantané -F_moy/(Sn.Eij) ; total -(retrait + F_ES moy/(Sn.EF))
       var fi = 0, fe = 0, EW = globalThis.PSIDP_EPSW || 0, sw = 0; // v39 essai : PSIDP_EPSW = 1 trapèzes, 2 Simpson (0 = moyenne arithmétique)
       gt.forEach(function (g, ig) { var wq = EW === 1 ? ((ig === 0 || ig === gt.length - 1) ? 0.5 : 1) : EW === 2 ? ((ig === 0 || ig === gt.length - 1) ? 1 : (ig % 2 ? 4 : 2)) : 1; sw += wq; fi += wq * g.p.proba * nA; fe += wq * g.d.esMoy * nA; }); fi /= sw; fe /= sw;
