@@ -208,9 +208,12 @@
     const Sbc = nbc * maxWeight(bcAxles, L, 0.25);
     const nbt = Math.min(nvoi, 2);
     const Sbt = nbt * 32;
+    // session u (RETENU, crochet PICF_SMC = 0 pour l'ancien 110 t) : masse Mc120 = charge de chenille (110 t sur 6.10 m) tenant sur la portée,
+    // 110·min(1, L/6.10) — même principe que S de Bc ; 2498 (L = 5.35) : MASSE 96.5 imprimée.
+    const Smc = (root.PICF_SMC ?? 1) ? 110 * Math.min(1, L / 6.10) : 110;
     const dyn = {
       BC: { S: Sbc, coef: bcCoef, d: delta(Sbc * bcCoef) }, BT: { S: Sbt, coef: btCoef, d: delta(Sbc * bcCoef) }, // SETRA applique à Bt le coefficient de Bc
-      MC: { S: 110, d: delta(110) }, ME: { S: 66, d: delta(110) }, E: { d: 1.0 }, EC: hasEC ? { d: 1.5 } : null,
+      MC: { S: Smc, d: delta(Smc) }, ME: { S: 66, d: delta(Smc) }, E: { d: 1.0 }, EC: hasEC ? { d: 1.5 } : null,
     };
     R.dyn = dyn;
 
@@ -411,14 +414,20 @@
         return tot / cs.length; };
       const veh = (k, sp, gap, a, mg, eb) => { let bb = 0; const wv = (k - 1) * sp + gap, stl = (KEDGE & eb) ? [c0 + mg, c1 - mg - wv] : null;
         for (let st = c0 + mg, i = 0; stl ? i < 2 : st + wv <= c1 - mg + 1e-9; st += 0.05, i++) { if (stl) st = stl[i];
-          let v = 0; for (let u = 0; u < k; u++) v += uni([st + u * sp, st + u * sp + gap], a); if (v > bb) bb = v; } return bb / (2 * b); };
+          let v = 0; if (root.PICF_KMRG) { const cs = []; for (let u = 0; u < k; u++) cs.push(st + u * sp, st + u * sp + gap); v = uni(cs, a) * k; } else for (let u = 0; u < k; u++) v += uni([st + u * sp, st + u * sp + gap], a); if (v > bb) bb = v; } return bb / (2 * b); };
       for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, MG + 0.25, 2));
       for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, MG + 0.5, 4));
-      for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) if (!(KEDGE & 8) || Math.abs(st - c0 - 0.5) < 1e-9 || st + 4.3 + 0.05 > c1 - 0.5 + 1e-9) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
-      for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) if (!(KEDGE & 16) || Math.abs(st - c0 - 0.5) < 1e-9 || st + 4 + 0.05 > c1 - 0.5 + 1e-9) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
+      // essai session u (crochet PICF_BTSEP, fascicule 61 II art. 5.41 : bandes de 3 m « contiguës ou séparées ») : entraxe libre ≥ 3 m
+      if (root.PICF_BTSEP && best.BT.length > 1) for (let sp = 3.05; sp <= c1 - c0 - 2 * (MG + 0.5) - 2 + 1e-9; sp += 0.05) best.BT[1] = Math.max(best.BT[1], veh(2, sp, 2, 0.6, MG + 0.5, 4));
+      if (root.PICF_BCSEP) for (let k = 2; k <= best.BC.length; k++) for (let sp = 2.55; sp <= (c1 - c0 - 2 * (MG + 0.25) - 2) / (k - 1) + 1e-9; sp += 0.05) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, sp, 2, 0.25, MG + 0.25, 2));
+      // essai session t (guide PICF-EL 1991 p.98, crochet PICF_MCMG = 1) : chenilles Mc / Me tenues au bord de la largeur chargeable
+      // avec la même marge MG que les roues (DAXEmin = demi-largeur d'encombrement) au lieu de 0.50 m fixe.
+      const MM = root.PICF_MM ? root.PICF_MM(d, MG) : root.PICF_MCMG ? MG : 0.5;
+      for (let st = c0 + MM; st + 4.3 <= c1 - MM + 1e-9; st += 0.05) if (!(KEDGE & 8) || Math.abs(st - c0 - MM) < 1e-9 || st + 4.3 + 0.05 > c1 - MM + 1e-9) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
+      for (let st = c0 + MM; st + 4 <= c1 - MM + 1e-9; st += 0.05) if (!(KEDGE & 16) || Math.abs(st - c0 - MM) < 1e-9 || st + 4 + 0.05 > c1 - MM + 1e-9) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
       // Règle PSIDP/PSIDA n° 3 (axe libre dans [bord + 3.50 ; bord − 3.50], maximum) : déjà la règle PICF. Crochet d'essai PICF_EK = 1 :
       // bande unique de 3.30 m sans diffusion (règle PIPO chaussée > 7 m) — session o : négatif, non retenu.
-      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, (root.PICF_EK === 1 ? uni([c], 3.3 - sD) : uni([c - 0.825, c + 0.825], 0)) / (2 * b));
+      for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, (root.PICF_EK === 1 ? uni([c], 3.3 - sD) : root.PICF_EK === 2 ? uni([c], 3.3) : root.PICF_EK === 3 ? uni([c - 0.825, c + 0.825], 1.65) : uni([c - 0.825, c + 0.825], 0)) / (2 * b));
     }
     const coefs = { AL: best.AL.map((c, i) => ({ n: i + 1, c, a1: a1tab[Math.min(i + 1, a1tab.length) - 1], a2 })),
       BC: best.BC.map((c, i) => ({ n: i + 1, c, bc: [1.2, 1.1, 0.95, 0.8][i] })), BT: best.BT.map((c, i) => ({ n: i + 1, c, bt: 1.0 })),
@@ -449,14 +458,22 @@
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
     function ilAvg(getter, x, a, nd) { if (root.PICF_WDA && a && (x < 0 || x > L) && ['BC', 'BT', 'ME'].includes(envConv) && (!root.PICF_WDAK || root.PICF_WDAK.includes(envKey))) a = root.PICF_WDA(a, d, envKey); // essai session r : empreinte des roues sur la dalle
+      // Session u (RETENU, crochets PICF_WSL = 7 [bits 1 Bc/Bt/Me, 2 engin, 4 Mc/E ; 0 = ancien calcul], PICF_WSLD = seuil) : une charge
+      // dont l'empreinte, PRIVÉE DE LA DIFFUSION DANS LE REMBLAI HSREM (pente 3/4 : a − 1.5·HSREM), est entièrement sur la dalle de
+      // transition DROITE est sans effet ; une charge à cheval sur l'angle compte avec toute son empreinte (dalle comprise). Dalle gauche :
+      // inchangée (PICF_WSLL = 1 : essai négatif). 2531 TS x = 0 Bc/Bt/Me 6/7/8 (au lieu de 11/12/14), note modèle du guide 4/5/4.
+      { const WSL = root.PICF_WSL ?? 7, WD = root.PICF_WSLD === 'h' ? L / Math.round(L / STP) : root.PICF_WSLD === 's' ? STP : typeof root.PICF_WSLD === 'function' ? root.PICF_WSLD(d, envKey, a) : (root.PICF_WSLD ?? 0.75 * d.hsrem), WLft = !!root.PICF_WSLL; if (WSL && a && Ld0 > 0 && (!root.PICF_WSLH || !(d.hsrem > 0)) && (WSL & 1 ? ['BC', 'BT', 'ME'] : []).concat(WSL & 2 ? ['EC'] : []).concat(WSL & 4 ? ['MC', 'E'] : []).includes(envConv)
+          && (!root.PICF_WSLK || root.PICF_WSLK.includes(envKey)) && (x - a / 2 > L + WD - 1e-9 || (WLft && x + a / 2 < -WD + 1e-9))) return 0; }
       if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
       const SPL = (root.PICF_VTSPL ?? 5) && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? (root.PICF_VTSPL ?? 5) : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
-      const Lg = getter.Ld || Ld0, e0 = getter.ends ? getter.ends[0] : getter(0), e1 = getter.ends ? getter.ends[1] : getter(xsTop.length - 1);
+      // session u (RETENU, PICF_VTSPLW = 1) : avec dalle de transition, les roues relèvent de la règle PICF_WSL (essieu à cheval sur l'angle
+      // compté avec toute son empreinte) ; la règle VTSPL ne garde que Mc (et les roues quand il n'y a pas de dalle : 2498).
+      const VTW = root.PICF_VTSPLW ?? 1, Lg = getter.Ld || Ld0, e0 = getter.ends ? getter.ends[0] : getter(0), e1 = getter.ends ? getter.ends[1] : getter(xsTop.length - 1);
       for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n;
         // essai PICF_VTSPL = 3 : charge dont le centre est sur une dalle de transition → toute l'empreinte sur la LI de la dalle (prolongée)
         // V TS (RETENU, défaut 5) : charge (essieu, chenille) dont le CENTRE est sur une dalle de transition → partie de l'empreinte hors
         // de la dalle perdue ; centre dans la travée → empreinte complète (Mc « dalle seule » jusqu'à x = λ/2)
-        if ((SPL === 5 || SPL === 6) && rg(u) !== r0 && r0 !== 0 && (root.PICF_VTSPLC || ['MC', 'BC', 'BT', 'ME']).includes(envConv)) { if (SPL === 6 && !nd) sm += r0 < 0 ? e0 : e1; continue; } // essai 5 : centre sur la dalle → partie hors dalle perdue
+        if ((SPL === 5 || SPL === 6) && rg(u) !== r0 && r0 !== 0 && (root.PICF_VTSPLC || (VTW && Ld0 > 0 ? ['MC'] : ['MC', 'BC', 'BT', 'ME'])).includes(envConv)) { if (SPL === 6 && !nd) sm += r0 < 0 ? e0 : e1; continue; } // essai 5 : centre sur la dalle → partie hors dalle perdue
         if (SPL === 3 && rg(u) !== r0 && r0 !== 0 && Lg > 0) { if (nd) continue; sm += r0 < 0 ? (u < -Lg ? 0 : e0 * (1 + u / Lg)) : (u > L + Lg ? 0 : e1 * (1 - (u - L) / Lg)); continue; }
         if (SPL >= 3 && rg(u) !== r0 && r0 === 0 && SPL === 4) { sm += r0 === 0 && u < 0 ? e0 * 0 : 0; continue; }
         if (SPL >= 3) { sm += ilVal(getter, u, nd); continue; }
@@ -470,6 +487,9 @@
     const nAc = coefs.AL.map(o => o.c * o.a1 * o.a2), nA = nAc.indexOf(Math.max(...nAc)) + 1;
     const fAD = root.PICF_FA === 1 ? (nA * Math.min(v, v0) + 2) / (nA * v) : root.PICF_FA === 2 ? (d.esurch + 2) / (nA * v) : typeof root.PICF_FA === 'number' && root.PICF_FA > 2 ? root.PICF_FA / 100 : 1;
     let envKey = null, envIdx = -1, envConv = null;
+    // session u (RETENU) : égalité de deux positions à 1e-9 près (bruit flottant) → on garde la PREMIÈRE trouvée (balayage DG puis GD,
+    // de gauche à droite) ; crochets PICF_TIE0 (boucle principale, défaut 1e-9 ; 0 = ancien) et PICF_TIE (paires de camions Bc).
+    const TIE = root.PICF_TIE ?? 1e-9, TIE0 = root.PICF_TIE0 ?? 1e-9;
     function envelope(getter, nd, nodyn, wnd) {
       const res = {};
       // AL : zones de même signe ; longueur chargée = somme des zones
@@ -520,7 +540,7 @@
           if (root.PICF_VONB && (root.PICF_VONBK || ['Vt']).includes(envKey) && (root.PICF_VONBC || ['BC', 'BT', 'ME']).includes(key)) { let off = false; // essai session q : véhicule entièrement sur l'ouvrage [−Ld, L + Ld]
             for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); if (x < -Ld - 1e-9 || x > L + Ld + 1e-9) off = true; } if (off) continue; }
           const sP = W ? smw : sm, sN = W && wnd === 1 ? smw : sm; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, nt, x0, sP);
-          if (sP > mx) { mx = sP; pmx = { dir, x0, nt }; } if (sN < mn) { mn = sN; pmn = { dir, x0, nt }; }
+          if (sP > mx + TIE0) { mx = sP; pmx = { dir, x0, nt }; } if (sN < mn - TIE0) { mn = sN; pmn = { dir, x0, nt }; }
         } }
         // Bc : distance entre camions d'une même file VARIABLE (≥ 4.50 m entre essieux extrêmes, fascicule 61 II) ; chaque camion
         // a son essieu le plus à droite sur la grille de pas 0.5 m (positions imprimées « DG -5.00 13.50 » : écart 18.5 m).
@@ -532,7 +552,7 @@
               if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; if (offB) sm = smw = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
             const gmin = Math.round(cv.gapTruck / STEP);
             for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < (root.PICF_BCGMAX ? Math.min(vs.length, i + Math.round(root.PICF_BCGMAX / STEP) + 1) : vs.length); j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j]; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, [ks[i], ks[j]], smP, vs[i], vs[j]);
-              if (root.PICF_BCTIE ? smP >= mx - 1e-9 : smP > mx + 1e-12) { mx = smP; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? smN <= mn + 1e-9 : smN < mn - 1e-12) { mn = smN; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
+              if (root.PICF_BCTIE ? smP >= mx - 1e-9 : smP > mx + TIE) { mx = smP; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? smN <= mn + 1e-9 : smN < mn - TIE) { mn = smN; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
         const kk = nodyn ? k / ({ BC: dyn.BC.d, BT: dyn.BT.d, MC: dyn.MC.d, ME: dyn.ME.d, E: 1, EC: 1.5 }[key]) : k;
         res[key + '+'] = { v: mx * G * kk, pos: pmx }; res[key + '-'] = { v: mn * G * kk, pos: pmn };
@@ -690,7 +710,7 @@
     }
     if (!r.groupMode) for (const k of ['TS', 'TI', 'PD']) {
       const A = r[k].Amin;
-      if (A <= Amin0) Object.assign(r[k], { A: Amin0, n: 1, phi: 1, esp: 0.333 });
+      if (A <= Amin0) Object.assign(r[k], { A: Amin0, n: 1, phi: 1, esp: (root.PICF_E13 ?? 1) ? 1 / 3 : 0.333 }); // session u : 1 PHI2 / (1/3) m exact (goussets 2/3 → 0.667 imprimé, 2531)
       else { const e1 = 2 * phiA[0] / A; const ph = e1 / 2 > 0.33 ? 1 : 0;
         // session l : barres PHI2 retenues → section minimale recalculée avec la hauteur utile des PHI2 (2531 TI 0.001160, et non 0.001172 avec d(PHI1))
         let Ar = A; if ((root.PICF_PH2D ?? 1) && ph === 1) { const o = r[k], dh = dd(o.h, d.phi[1]); Ar = Math.max(aU(o.key, dh, o.fac), asELS(o.MS / 1000, dh, R.mat.ssLim ? R.mat.ssLim[0] : 0)); o.Amin = Ar; }
@@ -725,7 +745,10 @@
     const need = (o, MU, MS, fac) => Math.max(asELU(MU * fac / 1000, o.d, fbu, R.mat.fsu[o.phi]), asELS(MS * fac / 1000, o.d, R.mat.ssLim ? R.mat.ssLim[o.phi] : 0));
     const tol = 1e-9;
     // essai PICF_EPLIN (règle PIPO tour 16) : seuil « moitié » linéarisé M(x)/M_ref ≤ ½·ρ, ρ = Q/A_nécessaire(M_ref)
-    const EPL = root.PICF_EPLIN || 0;
+    // session u (RETENU, crochet PICF_EPMR = 1 ; 0 = ancien) : en mode « groupes de 2 fers », la demi-nappe extérieure d'angle s'arrête côté
+    // traverse à la première section où les moments de calcul ELU ET ELS sont tombés à la moitié de ceux de l'angle (2551 AI 1.48 et AS 1.98,
+    // 2498 AS/AI 1.18) ; hors mode groupes le critère « besoin ≤ A adoptée / 2 » reste exact (2531 AS/AI 1.56, 2550 AI 1.48). Bit 2 : tous modes.
+    const EPL = root.PICF_EPLIN || 0, EPMR = root.PICF_EPMR ?? 1;
     const halfLin = (o, U, S, U0, S0, fac) => { const A0 = need(o, U0, S0, fac); const rho = o.A / A0; const r = Math.max(U0 > 0 ? U / U0 : 0, S0 > 0 ? S / S0 : 0); return r <= 0.5 * rho + tol; };
     // --- ferraillage intérieur des traverses : 2 familles, arrêt au pas des sections, décalage a = 0.8 h
     function travInt(o, env, h) {
@@ -755,9 +778,10 @@
       const aT = 0.8 * hT, aP = 0.8 * g.e2;
       let zero = null, half = null, lap = false;
       for (const r of envT) { if (zero === null && !(r.minU < 0 || r.minS < 0)) zero = r.x + aT;
-        if (half === null && (EPL & 4 ? halfLin(oT, -r.minU, -r.minS, -envT[0].minU, -envT[0].minS, 1) : need(oT, -r.minU, -r.minS, 1) <= oT.A / 2 + tol)) half = r.x + aT; }
+        if (half === null && ((EPMR & 1) && (grp || (EPMR & 2)) ? (-r.minU <= -envT[0].minU / 2 + tol && -r.minS <= -envT[0].minS / 2 + tol) : EPL & 4 ? halfLin(oT, -r.minU, -r.minS, -envT[0].minU, -envT[0].minS, 1) : need(oT, -r.minU, -r.minS, 1) <= oT.A / 2 + tol)) half = r.x + aT; }
       if (zero === null) { zero = L / 2 + ls(0) / 2; lap = true; }
       if (half === null || half > zero) half = zero;
+      if (root.PICF_EPDBG) root.PICF_EPDBG(sup ? 'AS' : 'AI', { AT: oT.A, AP: oP.A, aT, aP, T: envT.map(r => [r.x, r.minU, r.minS, need(oT, -r.minU, -r.minS, 1)]), P: envP.map(r => [r.x, r.minU, r.minS, need(oP, -r.minU, -r.minS, s)]) });
       const full = sup ? 2.5 - ls(0) : 2.5; let hp = null;
       const seq = sup ? envP.slice().reverse() : envP;
       for (const r of seq) if (EPL & 8 ? halfLin(oP, -r.minU, -r.minS, -seq[0].minU, -seq[0].minS, s) : need(oP, -r.minU, -r.minS, s) <= oP.A / 2 + tol) { hp = sup ? r.x - aP : r.x + aP; break; }
