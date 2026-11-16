@@ -381,7 +381,9 @@
     r.liR = LI.R.map((cs, k) => {
       const aires = L.map((l, s) => areaCub(cs[s], l));
       let ab = 0;
-      if (k === 0 || k === n) ab = aboutArea(LI, k, about, 0) + aboutArea(LI, k, about, 1);
+      // v32 : seul l'about CONTIGU entre dans l'aire (0063 ABOUT 0,510 / total 6,135 imprimés ; l'about opposé ajoutait 0,0021) et
+      // donc dans la réaction de charge permanente des culées (A VIDE 27,60 au lieu de 27,61). Crochet PSIDA_ABOUT2 = 1 : les deux abouts.
+      if (k === 0 || k === n) ab = G.PSIDA_ABOUT2 ? aboutArea(LI, k, about, 0) + aboutArea(LI, k, about, 1) : aboutArea(LI, k, about, k === 0 ? 0 : 1);
       return { coefs: LIP.R[k].map(c => c.slice(0, 3)), aires, about: ab, total: aires.reduce((p, q) => p + q, 0) + ab };
     });
 

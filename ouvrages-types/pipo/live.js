@@ -153,6 +153,14 @@
         for (let i = 0; i < grid.length; i++) { if (one[i] <= 5e-4) continue;
           for (let j = i + 1; j < grid.length; j++) { if (grid[j] - grid[i] < 10.5 - 1e-9 || one[j] <= 5e-4) continue; const s2 = one[i] + one[j];
             if (s2 > bBc.s + 5e-4) bBc = { s: s2, pos: [grid[i], grid[j]], sens }; } }
+        if (globalThis.PIPO_BCDIAG) globalThis.PIPO_BCDIAG({ sg, sens, grid, one });
+        // Tour 25 — ordre d'impression des deux camions (303/304 lignes du corpus) : camions à l'espacement minimal (10.50 m) :
+        // ordre croissant des abscisses ; espacement > 10.50 m : le camion dont l'effet propre est le plus fort en NO 1.
+        // Crochet PIPO_BCORD = 0 : ordre croissant (ancien) ; fonction (pos, e1, e2) → true pour permuter (essais).
+        const BO = globalThis.PIPO_BCORD;
+        if (BO !== 0 && bBc.sens === sens && bBc.pos[1] !== 0) { const ia = grid.indexOf(bBc.pos[0]), ib = grid.indexOf(bBc.pos[1]);
+          const sw = typeof BO === 'function' ? BO(bBc.pos, one[ia], one[ib]) : one[ia] < one[ib] && bBc.pos[1] - bBc.pos[0] > 10.5 + 1e-9;
+          if (sw) bBc = Object.assign({}, bBc, { pos: [bBc.pos[1], bBc.pos[0]] }); }
       }
       const axle = (P, D, dd) => { let b = { s: 0, x: 0 }; for (const x of grid) { const s = (P * avg(x, dd) + P * avg(x + D, dd)) * sg; if (s > b.s + 5e-6) b = { s, x }; } return b; };
       const bBt = axle(16, 1.35, dBt);

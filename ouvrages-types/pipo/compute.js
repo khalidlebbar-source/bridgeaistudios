@@ -334,6 +334,22 @@
             const uMin2 = aA.map((a, k) => 1.35 * a + (els[k] - a)), uMax2 = aA.map((a, k) => a + 1.35 * (els[k] - a));
             uMin = uMin2; if (j === 0) uMax = uMax2;
           }
+          // Tour 25 — côté INTÉRIEUR (moments ET efforts tranchants, 13/13 passages, 104/104 valeurs chacun) : groupes de charges
+          // permanentes à coefficient fixe. A = réaction des MOMENTS À LA BASE DU PIÉDROIT du cadre (−Mp[0]·sin²φ) et de la DT
+          // (−Mp[0]·sinφ), et réaction propre des terres du patin (N et moment physique / centre, HAUTL + HSREMB). Le moment de
+          // base = moment du ressort + N·DELTA : l'excentrement de la semelle n'entre pas dans A (c'est ce que les parts du tour 13
+          // « DT et piédroit de signe opposé » approchaient ; résidu des piédroits épais 1676 / 1825 / 1893 = N_cadre·DELTA).
+          // Moments : MAX = 1.35·A + reste, MIN = A + 1.35·reste.
+          // Efforts tranchants : en plus C = poids directs sur le talon (2.5·e1 + γ·HREMB) toujours × 1.35 et D = réaction
+          // uniforme du poids de semelle toujours × 1.0 : MAX = 1.35·A + B + 1.35·C + D ; MIN = A + 1.35·B + 1.35·C + D.
+          // Cas K pris séparément (max / min). Crochets : PIPO_SEMVI = 0 (ancienne loi des efforts tranchants), PIPO_SEMMI = 0
+          // (ancien découpage du tour 13 pour les moments).
+          if (SEMELU && side === 'I' && (j === 1 ? globalThis.PIPO_SEMVI !== 0 : globalThis.PIPO_SEMMI !== 0)) {
+            const ev = (p, w) => semEff(p[0], p[1], side, t, w)[j], pp = (N, Mm) => [N / B - 6 * Mm / B / B, N / B + 6 * Mm / B / B];
+            const a0 = ev(pp(0, -cp.Mp[0] * sn * sn), 0) + ev(pp(0, -dt.Mp[0] * sn), 0) + ev(pp(patW, patMp), 0);
+            const cC = j === 1 ? ev([0, 0], wSem.I) : 0, cD = j === 1 ? ev(pp(2.5 * g.e1 * B, 0), 0) : 0;
+            uMax = els.map(e => e + 0.35 * (a0 + cC)); uMin = els.map(e => 1.35 * e - 0.35 * (a0 + cD));
+          }
           return { elsMax: Math.max(...els), elsMin: Math.min(...els), eluMax: Math.max(...uMax), eluMin: Math.min(...uMin) };
         };
         const liM = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[0]), liV = liSem.map(s => semEff(s.pe, s.pi, side, t, 0)[1]);

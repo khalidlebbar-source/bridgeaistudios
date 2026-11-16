@@ -297,7 +297,9 @@
         return LV.combine({ Gels: G, Gelu: G, A: q[0], BC: q[1], BT: q[2], ME: q[3], MC: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[1], TP: s.tem[1] }, sg).elu; });
         const V = Math.max(Math.abs(vals[0]), Math.abs(vals[1])); // abscisse depuis l'axe du piédroit : e2/2 + (1 − t)·(débord + e2/2) (pas = quart de la distance axe–bord, pas du débord),
         // arrondi en simple précision (FORTRAN REAL : 0.325 imprimé 0.32, 1.275 → 1.27).
-        return [sgn * Math.fround(r.g.e2 / 2 + (1 - s.t) * (a + r.g.e2 / 2)), V, V / d]; });
+        const xa = r.g.e2 / 2 + (1 - s.t) * (a + r.g.e2 / 2);
+        // tour 25 : plus de Math.fround ici (abscisse en double ; les égalités sont tranchées par la règle de date de F) — PIPO_SEMXF = 1 : ancien
+        return [sgn * (G0.PIPO_SEMXF ? Math.fround(xa) : xa), V, V / d]; });
       const mx = Math.max(...rows.map(x => x[2])), lim = r.mat.tauSans;
       out.push(lab, mx < lim ? sp(60) + "PAS D'ETRIERS    (CONTRAINTE DE CISAILLEMENT <" + F(lim, 6, 2) + ' T/M2)' : '', sp(19) + 'ABSCISSE          EFFORT TRANCHANT        CISAILLEMENT', sp(21) + '(M)                   (T)                  (T/M2)');
       for (const [x, V, t] of rows) out.push(F(x, 25, 2) + F(V, 27, 2) + F(t, 19, 2));
