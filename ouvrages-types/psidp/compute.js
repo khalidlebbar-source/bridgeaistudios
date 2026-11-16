@@ -6,7 +6,7 @@
   var gr = function (x) { return x * PI / 200; };
   // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
   // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
-  var DEF26 = { PXC: 1, BLCURV: 1, NETS: 1, DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
+  var DEF26 = { DCHALF: 1, PXC: 1, BLCURV: 1, NETS: 1, DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
   // v28 : FM1 = force d'inscription à force unique au bloc 1 ; DCB = règle β exacte du ΔC au bloc 1 (activable maintenant que FM1 est juste).
   for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
@@ -1525,9 +1525,13 @@
       // v26 (PSIDP_DCMEAN = 1, blocs de rang ≥ 2 seulement) : règle BPEL du raccourcissement élastique, ΔC = β·Ep/(2·Eij)·σ̄,
       // σ̄ = contrainte du béton au câble moyennée le long du câble (Simpson pondéré par la longueur, grille 0.1 L), force FMJ constante,
       // tracé des lignes du bloc réajusté précédent (bloc réajusté : son tracé de base 2), M ossature, SANS moment hyperstatique (v25 : ±4 %)
-      if (dcm) { var sw = 0, sl = 0; G.forEach(function (g) { var w = (g.k === 0 || g.k === 10 ? 1 : (g.k % 2 ? 4 : 2)) * L[g.t] / 30, e = dcm.base.z(g.t, g.x);
-          sw += w * (dcm.F / S + dcm.F * e * e / I + Moss(g.t, g.x) * e / I); sl += w; });
-        dC = Math.max(0, 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * sw / sl); }
+      if (dcm) { var sw = 0, sl = 0, swp = 0; G.forEach(function (g) { var w = (g.k === 0 || g.k === 10 ? 1 : (g.k % 2 ? 4 : 2)) * L[g.t] / 30, e = dcm.base.z(g.t, g.x);
+          sw += w * (dcm.F / S + dcm.F * e * e / I + Moss(g.t, g.x) * e / I); swp += w * (dcm.F / S + dcm.F * e * e / I); sl += w; });
+        var sgm = sw / sl;
+        // v38 (PSIDP_DCHALF = 1) : constat v37 « σ' − ½(P + Q) constant dans un passage » : le premier bloc de rang ≥ 2 (bloc précédent = bloc 1)
+        // garde σ̄ (DCMEAN) et fixe C = σ̄ − ½·σP ; les blocs suivants prennent σ' = ½·σP(FMJ, tracé du bloc) + C (approximation, C non identifié)
+        if (globalThis.PSIDP_DCHALF === 1) { if (dcm.ref) dcHalfC = sgm - swp / sl / 2; else if (dcHalfC !== null) sgm = swp / sl / 2 + dcHalfC; }
+        dC = Math.max(0, 0.023703 * Math.sqrt(v.FCJ) * Ep / (2 * R.EI) * sgm); }
       // fluage approché : « CALCUL ITERATIF DU FLUAGE » aux sections clés (FM : NON RÉSOLU, point fixe N.A.T∞ moyen)
       var tab = function (fl) {
         G.forEach(function (g) {
@@ -1659,7 +1663,8 @@
     // v26 (PSIDP_DCMEAN = 1) : données du ΔC « contrainte moyenne » d'un bloc de rang ≥ 2 (Bp = bloc précédent) : force FMJ = N·A·T initiale
     // du tableau précédent à sa section critique, tracé = base du bloc réajusté précédent (bloc approché) ou base propre (bloc réajusté)
     var dcmOf = function (Bp, N, base, kind) { var c = Bp && Bp.nb && Bp.nb.crit; if (globalThis.PSIDP_DCMEAN !== 1 || !c) return null;
-      return { F: N * A * Bp.G[c.t * 11 + c.k].Ti, base: kind === 'REAJUSTEES' || Bp.kind !== 'REAJUSTEES' ? base : Bp.base }; };
+      return { F: N * A * Bp.G[c.t * 11 + c.k].Ti, base: kind === 'REAJUSTEES' || Bp.kind !== 'REAJUSTEES' ? base : Bp.base, ref: !(Bp.FMJ > 0) }; };
+    var dcHalfC = null; // v38 (PSIDP_DCHALF) : constante C du passage, fixée au premier bloc de rang ≥ 2
     var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var Nf = (FMPREV === 2 ? 0 : Nfm) || N, f = prevF(Bp, Nf), dm = dcmOf(Bp, Nf, base, kind);
       var NS = globalThis.PSIDP_NETS || 0; NETK = NS && Bp && Bp.FMJ > 0 ? (NS === 2 ? Nf : N) : 0;
       if (!f && !Bp && kind === 'APPROCHEES' && FM1on === 1) { if (FM1v === null) FM1v = pIns() || 0; if (FM1v > 0) return block(N, base, kind, keyE, FM1v, undefined, 'ins', undefined, null, dm); }
