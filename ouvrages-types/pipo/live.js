@@ -13,9 +13,11 @@
     const b = g.larg / 2, K = makeK(b, Lf);
     const c0 = v.ETROTG + v.EGAU - b, c1 = c0 + v.ESURCH;
     const ys = []; for (let i = 0; i <= 40; i++) ys.push(-b + 2 * b * i / 40);
-    const integ = (y, a, z) => { if (z <= a) return 0; const n = 40; let s = 0; for (let i = 0; i <= n; i++) { const e = a + (z - a) * i / n; s += K(y, e) * (i === 0 || i === n ? 1 : i % 2 ? 4 : 2); } return s * (z - a) / n / 3; };
+    const KN = globalThis.PIPO_KN || 40, KTRAP = globalThis.PIPO_KTRAP;
+    const integ = (y, a, z) => { if (z <= a) return 0; const n = KN; let s = 0; if (KTRAP) { for (let i = 0; i <= n; i++) s += K(y, a + (z - a) * i / n) * (i === 0 || i === n ? 0.5 : 1); return s * (z - a) / n; }
+      for (let i = 0; i <= n; i++) { const e = a + (z - a) * i / n; s += K(y, e) * (i === 0 || i === n ? 1 : i % 2 ? 4 : 2); } return s * (z - a) / n / 3; };
     const best = f => { let m = 0; for (const y of ys) m = Math.max(m, f(y)); return m; };
-    const slide = (w, f) => y => { let m = 0; for (let s = c0; s + w <= c1 + 1e-9; s += 0.05) m = Math.max(m, f(y, s)); return m; };
+    const KSTEP = globalThis.PIPO_KSTEP || 0.05; const slide = (w, f) => y => { let m = 0; for (let s = c0; s + w <= c1 + 1e-9; s += KSTEP) m = Math.max(m, f(y, s)); return m; };
     const pts = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].map(t => t * b);
     const cl = v.CLASSE || 1, nv = Math.max(1, v.PVOIE), V = v.ESURCH / nv;
     const out = { table: pts.map(y => pts.map(e => K(y, e))), b, Lf, theta: b / Lf, A: [], BC: [], BT: [], a1: [], a2: V0[cl] / V, bc: [], bt: BT[cl] || 1 };
@@ -24,23 +26,29 @@
     const Klin = (y, e) => { const u = (e + b) / (b / 4); const i = Math.min(7, Math.max(0, Math.floor(u))), f = u - i; return K(y, pts[i]) * (1 - f) + K(y, pts[i + 1]) * f; };
     const integLin = (y, a, z) => { const br = [a, ...pts.filter(p => p > a + 1e-12 && p < z - 1e-12), z]; let s = 0; for (let i = 1; i < br.length; i++) s += (br[i] - br[i - 1]) * (Klin(y, br[i - 1]) + Klin(y, br[i])) / 2; return s; };
     const best9 = f => Math.max(...pts.map(f));
+    // Tour 19 : Bc, Bt, Mc, Me, trottoir : maximum sur les 9 FIBRES de la table K (comme A et E), et non sur 41 fibres
+    // (+1178 réglage / +159 contrôle). Crochet PIPO_KLIN (bits) : 1 = Bc, 2 = Bt, 4 = Mc/Me, 8 = TR en K interpolé ; 16 = 9 fibres
+    // (défaut 16 ; PIPO_KLIN = 0 : ancienne règle).
+    const KV = globalThis.PIPO_KLIN != null ? globalThis.PIPO_KLIN : 16;
+    const Kb = m => (KV & m) ? Klin : K; const bestB = (KV & 16) ? best9 : best;
+    const integB = m => (KV & m) ? integLin : integ;
     for (let n = 1; n <= nv; n++) { out.A.push(best9(slide(n * V, (y, s) => integLin(y, s, s + n * V) / (2 * b)))); out.a1.push((A1[cl] || A1[1])[Math.min(n, 5) - 1]); }
     const nf = Math.min(nv, Math.floor(v.ESURCH / 2.5 + 1e-9));
     for (let n = 1; n <= Math.max(1, nf); n++) {
-      out.BC.push(best(slide(2.5 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += K(y, s + 2.5 * j + 0.25) + K(y, s + 2.5 * j + 2.25); return t / 2 / (2 * b); })));
+      out.BC.push(bestB(slide(2.5 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(1)(y, s + 2.5 * j + 0.25) + Kb(1)(y, s + 2.5 * j + 2.25); return t / 2 / (2 * b); })));
       out.bc.push((BC[cl] || BC[1])[Math.min(n, 5) - 1]);
     }
     for (let n = 1; n <= Math.min(2, Math.max(1, Math.floor(v.ESURCH / 3 + 1e-9))); n++)
-      out.BT.push(best(slide(3 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += K(y, s + 3 * j + 0.5) + K(y, s + 3 * j + 2.5); return t / 2 / (2 * b); })));
+      out.BT.push(bestB(slide(3 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(2)(y, s + 3 * j + 0.5) + Kb(2)(y, s + 3 * j + 2.5); return t / 2 / (2 * b); })));
     const mc = v.MC === 3 ? [0.85, 2.95] : [1.0, 3.3];
-    out.MC = v.MC ? best(slide(mc[0] + mc[1], (y, s) => (integ(y, s, s + mc[0]) + integ(y, s + mc[1], s + mc[1] + mc[0])) / 2 / (2 * b))) : 0;
+    out.MC = v.MC ? bestB(slide(mc[0] + mc[1], (y, s) => (integB(4)(y, s, s + mc[0]) + integB(4)(y, s + mc[1], s + mc[1] + mc[0])) / 2 / (2 * b))) : 0;
     const lme = v.ME === 3 ? 3.5 : 4.0;
-    out.ME = v.ME ? best(slide(lme, (y, s) => integ(y, s, s + lme) / lme / (2 * b))) : 0;
+    out.ME = v.ME ? bestB(slide(lme, (y, s) => integB(4)(y, s, s + lme) / lme / (2 * b))) : 0;
     if (v.ME === 5 && v.LARGENC > 0) { // charge généralisée « à essieux » (lignes S2/S3) : 2 roues à LARGES, centrées dans l'encombrement LARGENC
       const m0 = (v.LARGENC - v.LARGES) / 2;
       out.ME = best(slide(v.LARGENC, (y, s) => (K(y, s + m0) + K(y, s + m0 + v.LARGES)) / 2 / (2 * b)));
     }
-    out.TR = (v.ETROTG + v.ETROTD) > 0 ? best(y => (integ(y, -b, -b + v.ETROTG) + integ(y, b - v.ETROTD, b)) / (2 * b)) : 0;
+    out.TR = (v.ETROTG + v.ETROTD) > 0 ? bestB(y => (integB(8)(y, -b, -b + v.ETROTG) + integB(8)(y, b - v.ETROTD, b)) / (2 * b)) : 0;
     const wEx0 = globalThis.PIPO_EXW ? globalThis.PIPO_EXW(v, g) : 3.3 + 2 * v.HCHAU, wEx = Math.min(wEx0, v.ESURCH);
     // convoi exceptionnel : chaussée de plus de 7 m → axe du convoi à 3.50 m du bord de chaussée (1638, 1676, 1825, 1890, 1893 :
     // K à 1e-4) ; chaussée ≤ 7 m : position libre (1846 exact, 1847 +3 % non résolu). Maximum sur les 9 fibres.

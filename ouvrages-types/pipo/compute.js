@@ -112,7 +112,7 @@
 
     // ---- Charges permanentes
     const RHO = 2.525; // poids volumique béton reconstitué (2.5 × 1.01)
-    const qt = RHO * g.e3 + v.QSUP;
+    const qt = globalThis.PIPO_CPF ? Math.fround(Math.fround(RHO * g.e3) + v.QSUP) : RHO * g.e3 + v.QSUP; // tour 19 : PIPO_CPF = 1 (REAL*4, règle PSIDA v25) : essai négatif/neutre
     const barsT = q => { const o = {}; M.bt.forEach(b => o[b] = { q: [-q, -q] }); return o; };
     const cp = M.solve({ bars: barsT(qt) });
     const mom = (W, x) => -W * (x - g.D);

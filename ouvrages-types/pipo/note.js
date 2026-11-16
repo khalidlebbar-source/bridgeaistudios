@@ -5,8 +5,18 @@
   const P = req ? require('./parse.js') : root.PIPO_PARSE;
   const LV = req ? require('./live.js') : root.PIPO_LIVE;
 
-  const F = (x, w, d) => { const k = 10 ** d; x = Math.round(x * k + (x >= 0 ? 1e-7 : -1e-7)) / k; let s = x.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s.padStart(w); };
-  const E = (x, w) => (Math.round(x) + '.').padStart(w); // format "1836."
+  // Tour 19 (règle PSIDA v24 / PSIDP v31) : arrondi des égalités exactes selon la génération du programme, identifiée par la date
+  // du passage : avant 2010 en s'éloignant de zéro, à partir de 2010 au pair. Crochet PIPO_RNDDATE = 0 : ancienne règle partout.
+  let RND_EVEN = false, KCUR = 1;
+  const G0 = globalThis;
+  const rnd = (t, eps) => { const fl = Math.floor(t);
+    if (RND_EVEN && t - fl === 0.5 && Math.abs(t) < 1e15) {
+      // égalité en double : tranchée par la valeur simple précision (0,045 -> 0.0450000018 -> 0.05), sinon au pair
+      const f = G0.PIPO_RNDF32 === 0 ? t : Math.fround(t / KCUR) * KCUR;
+      return f > t ? fl + 1 : f < t ? fl : fl % 2 === 0 ? fl : fl + 1; }
+    return Math.round(t + eps); };
+  const F = (x, w, d) => { const k = 10 ** d; KCUR = k; if (G0.PIPO_RNDF) x = Math.fround(x); x = rnd(x * k, x >= 0 ? 1e-7 : -1e-7) / k; let s = x.toFixed(d); if (/^-0\.?0*$/.test(s)) s = s.slice(1); return s.padStart(w); };
+  const E = (x, w) => ((KCUR = 1, G0.PIPO_FDOT === 1 ? rnd(Math.fround(x), 0) : Math.round(x)) + '.').padStart(w); // format "1836."
   const sp = n => ' '.repeat(n);
 
   function controle(m, r) {
@@ -26,7 +36,7 @@
     L.push(sp(90) + 'HAUTEUR LIBRE    ' + F(v.HAUTL, 6, 2) + ' M');
     L.push(sp(90) + 'OUVERTURE DROITE ' + F(v.OUVER, 6, 2) + ' M');
     L.push(sp(90) + 'LARGEUR DROITE   ' + F(g.larg, 6, 2) + ' M');
-    L.push(sp(90) + 'DALLE TRANSITION ' + F(v.LDALT, 6, 2) + ' M', ' ');
+    L.push(sp(90) + 'DALLE TRANSITION ' + F(r.Ldt != null && globalThis.PIPO_LDTB !== 0 ? r.Ldt : v.LDALT, 6, 2) + ' M', ' '); // tour 19 : longueur biaise LDALT/sinφ
     L.push(' CARACTERISTIQUES OPTIMISEES');
     L.push(sp(29) + 'EPAISSEURS SEMELLES' + F(g.e1, 7, 2) + ' M         SEMELLES LARGEUR   ' + F(g.B, 8, 2) + ' M          PORTEE         ' + F(g.L, 8, 2) + ' M');
     L.push(sp(40) + 'PIEDROITS' + F(g.e2, 6, 2) + ' M                  EXCENTREMENT' + F(g.D, 6, 2) + ' M          HAUTEUR MOYENNE' + F(g.H, 8, 2) + ' M');
@@ -129,6 +139,17 @@
     L.push('                         ' + (v.MC === 4 ? 'CHAR STANAG 120' : v.MC === 3 ? 'CHAR STANAG 80' : 'LA SURCHARGE DE TYPE MC' + nc));
     L.push('                         ' + (v.ME === 4 ? 'ME   STANAG 120' : v.ME === 3 ? 'ME   STANAG 80' : 'LA SURCHARGE DE TYPE ME' + nc), ' ');
     L.push('           SURCHARGE EXCEPTIONNELLE DU FASCICULE 61 TITRE II  (1971)', '                         ' + (v.EXCEP === 2 ? 'TYPE E' : v.EXCEP === 1 ? 'TYPE D' : 'LA SURCHARGE EXCEPTIONNELLE' + nc), ' ');
+    if (v.ME === 5) { // tour 19 : description de la surcharge généralisée (cartes S2/S3), relevée sur 1677
+      const f3 = x => F(x || 0, 1, 3);
+      L.push(' SURCHARGE GENERALISEE MOBILE (VEHICULE MILITAIRE A ESSIEUX)',
+        '               NOMBRE DE VOIES DE CIRCULATION ' + (v.NVOI || 1), '               NOMBRE DE VEHICULES PAR VOIE    ' + (v.NCAM || 1),
+        '               NOMBRE D ESSIEUX PAR VEHICULE   ' + (v.NES || 1), '               TYPE DE L ESSIEU : ESSIEU A ROUES',
+        '               LONGUEUR D ENCOMBREMENT D UN VEHICULE    ' + f3(v.LONGENC) + ' M.', '               LARGEUR D ENCOMBREMENT D UN VEHICULE      ' + f3(v.LARGENC) + ' M.',
+        '               LARGEUR DE L ESSIEU      ' + f3(v.LARGES), '               COEFFICIENT DE MAJORATION DYNAMIQUE    ' + f3(v.DYNAB),
+        '                         DISTANCE DES ESSIEUX    POIDS DES ESSIEUX', '                         A L ESSIEU ORIGINE');
+      for (let j = 1; j <= Math.max(1, v.NES || 1); j++) L.push('               ESSIEU ' + j + '          ' + f3(v['ABESS' + j]) + '             ' + f3(v['POESS' + j]));
+      L.push(' ');
+    }
     return L;
   }
   const Z = n => Array(n).fill(0);
@@ -480,6 +501,8 @@
 
   function renderNote(m, r, opt) {
     opt = opt || {};
+    const yy = /(\d\d)\s*$/.exec(String(m.date || '')); const an = yy ? +yy[1] : null;
+    RND_EVEN = G0.PIPO_RNDDATE !== 0 && an != null && an >= 10 && an < 90;
     const out = [];
     out.push(P.formatBordereau(m), ' ', ' ', ' ', ' ', ' ');
     out.push(...controle(m, r), '\f');
