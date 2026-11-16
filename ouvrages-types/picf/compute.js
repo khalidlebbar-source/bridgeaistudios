@@ -388,8 +388,12 @@
     // Charges concentrées et convoi E (notice SETRA PICF/PIPO § 2.5.2 : « en examinant successivement 9 fibres
     // de la section médiane ») : lignes d'influence de K interpolées linéairement dans la table 9×9, charges
     // tenues à 0.50 m des bords de la chaussée chargeable (plus 0.25 m roue Bc / 0.50 m roue Bt dans leur file).
-    for (const R of Ktab) {
-      const Ki = y => { const t = (y / b + 1) / 0.25, j = Math.max(0, Math.min(7, Math.floor(t))); return R[j] + (R[j + 1] - R[j]) * (t - j); };
+    // essais session s (règles PIPO tour 20, inactifs) : PICF_KEX = 1 → K EXACT de Guyon-Massonnet au lieu de la table 9×9 interpolée ;
+    // PICF_KEDGE (bits 2 Bc, 4 Bt, 8 Mc, 16 Me) → charges calées contre l'un ou l'autre bord (pas de glissement continu).
+    const KEX = root.PICF_KEX, KEDGE = root.PICF_KEDGE | 0;
+    for (const [iR, R] of Ktab.entries()) {
+      const kc = new Map(), Kx = y => { const k = y.toFixed(5); if (!kc.has(k)) kc.set(k, guyonK(theta, [y / b], fib[iR])[0]); return kc.get(k); };
+      const Ki = KEX ? Kx : y => { const t = (y / b + 1) / 0.25, j = Math.max(0, Math.min(7, Math.floor(t))); return R[j] + (R[j + 1] - R[j]) * (t - j); };
       const integ = (a, c) => { const N = 100; let sm = 0; for (let k = 0; k < N; k++) sm += Ki(a + (k + 0.5) * (c - a) / N); return sm / N * (c - a) / (2 * b); };
       const pts = (ws, lo, hi) => { let bb = 0; for (let st = lo; st + ws[ws.length - 1] <= hi + 1e-9; st += 0.05) bb = Math.max(bb, ws.reduce((a, w) => a + Ki(st + w), 0) / ws.length); return bb / (2 * b); };
       // Diffusion transversale jusqu'au plan moyen de la traverse (45° chaussée, pente 3/4 dans le remblai H.SUP, + E3) ;
@@ -405,12 +409,13 @@
         let tot = 0; for (const [l0, l1, n] of cl) { const lo = Math.max(-b, l0), hi = Math.min(b, l1); if (hi <= lo) continue; const N = 60; let sm = 0;
           for (let k = 0; k < N; k++) sm += Ki(lo + (k + 0.5) * (hi - lo) / N); tot += n * sm / N * (hi - lo) / (l1 - l0); }
         return tot / cs.length; };
-      const veh = (k, sp, gap, a, mg) => { let bb = 0; for (let st = c0 + mg; st + (k - 1) * sp + gap <= c1 - mg + 1e-9; st += 0.05) {
+      const veh = (k, sp, gap, a, mg, eb) => { let bb = 0; const wv = (k - 1) * sp + gap, stl = (KEDGE & eb) ? [c0 + mg, c1 - mg - wv] : null;
+        for (let st = c0 + mg, i = 0; stl ? i < 2 : st + wv <= c1 - mg + 1e-9; st += 0.05, i++) { if (stl) st = stl[i];
           let v = 0; for (let u = 0; u < k; u++) v += uni([st + u * sp, st + u * sp + gap], a); if (v > bb) bb = v; } return bb / (2 * b); };
-      for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, MG + 0.25));
-      for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, MG + 0.5));
-      for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
-      for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
+      for (let k = 1; k <= best.BC.length; k++) best.BC[k - 1] = Math.max(best.BC[k - 1], veh(k, 2.5, 2, 0.25, MG + 0.25, 2));
+      for (let k = 1; k <= best.BT.length; k++) best.BT[k - 1] = Math.max(best.BT[k - 1], veh(k, 3, 2, 0.6, MG + 0.5, 4));
+      for (let st = c0 + 0.5; st + 4.3 <= c1 - 0.5 + 1e-9; st += 0.05) if (!(KEDGE & 8) || Math.abs(st - c0 - 0.5) < 1e-9 || st + 4.3 + 0.05 > c1 - 0.5 + 1e-9) best.MC = Math.max(best.MC, uni([st + 0.5, st + 3.8], 1) / (2 * b));
+      for (let st = c0 + 0.5; st + 4 <= c1 - 0.5 + 1e-9; st += 0.05) if (!(KEDGE & 16) || Math.abs(st - c0 - 0.5) < 1e-9 || st + 4 + 0.05 > c1 - 0.5 + 1e-9) best.ME = Math.max(best.ME, uni([st + 2], 4) / (2 * b));
       // Règle PSIDP/PSIDA n° 3 (axe libre dans [bord + 3.50 ; bord − 3.50], maximum) : déjà la règle PICF. Crochet d'essai PICF_EK = 1 :
       // bande unique de 3.30 m sans diffusion (règle PIPO chaussée > 7 m) — session o : négatif, non retenu.
       for (let c = c0 + 3.5; c <= c1 - 3.5 + 1e-9; c += 0.05) best.E = Math.max(best.E, (root.PICF_EK === 1 ? uni([c], 3.3 - sD) : uni([c - 0.825, c + 0.825], 0)) / (2 * b));
@@ -437,12 +442,14 @@
     function ilVal(getter, x, noDalle) {
       if (noDalle && (x < 0 || x > L)) return 0;
       const Ld = getter.Ld || Ld0;
-      if (x < 0) { if (x < -Ld) return 0; return (getter.ends ? getter.ends[0] : getter(0)) * (1 + x / Ld); }
-      if (x > L) { if (x > L + Ld) return 0; return (getter.ends ? getter.ends[1] : getter(xsTop.length - 1)) * (1 - (x - L) / Ld); }
+      const WDF = root.PICF_WDF && ['BC', 'BT', 'ME'].includes(envConv) && (!root.PICF_WDFK || root.PICF_WDFK.includes(envKey)) ? root.PICF_WDF : null; // essai session r : roues sur la dalle
+      if (x < 0) { if (x < -Ld) return 0; return (getter.ends ? getter.ends[0] : getter(0)) * (1 + x / Ld) * (WDF ? WDF(-x, Ld, d, -1) : 1); }
+      if (x > L) { if (x > L + Ld) return 0; return (getter.ends ? getter.ends[1] : getter(xsTop.length - 1)) * (1 - (x - L) / Ld) * (WDF ? WDF(x - L, Ld, d, 1) : 1); }
       let i = 0, hi = xsTop.length - 1; while (hi - i > 1) { const mid = (i + hi) >> 1; if (xsTop[mid] <= x) i = mid; else hi = mid; }
       const t = (x - xsTop[i]) / (xsTop[hi] - xsTop[i]); return getter(i) * (1 - t) + getter(hi) * t;
     }
-    function ilAvg(getter, x, a, nd) { if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
+    function ilAvg(getter, x, a, nd) { if (root.PICF_WDA && a && (x < 0 || x > L) && ['BC', 'BT', 'ME'].includes(envConv) && (!root.PICF_WDAK || root.PICF_WDAK.includes(envKey))) a = root.PICF_WDA(a, d, envKey); // essai session r : empreinte des roues sur la dalle
+      if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
       const SPL = (root.PICF_VTSPL ?? 5) && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? (root.PICF_VTSPL ?? 5) : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
       const Lg = getter.Ld || Ld0, e0 = getter.ends ? getter.ends[0] : getter(0), e1 = getter.ends ? getter.ends[1] : getter(xsTop.length - 1);
       for (let k = 0; k < n; k++) { const u = x - a / 2 + (k + 0.5) * a / n;
@@ -458,6 +465,10 @@
     const MCL = root.PICF_MCL;
     const mcl = MCL ? (getter, x, ax, nd) => { const lam = MCL.lam(d, ax), li = MCL.floor ? Math.floor(lam / STP + 1e-9) * STP : lam;
       const xc = MCL.align === 'start' ? x - lam / 2 + li / 2 : x; return ax.P / lam * li * ilAvg(getter, xc, li, nd); } : null;
+    // essai session s (règle PIPO tour 22, crochet PICF_FA) : ordonnée de A sur la dalle de transition majorée par
+    // fA = (nA·min(V, V0) + 2)/(nA·V) (largeur chargée sur la DT = nA voies de largeur min(V, V0) + 1 m de chaque côté).
+    const nAc = coefs.AL.map(o => o.c * o.a1 * o.a2), nA = nAc.indexOf(Math.max(...nAc)) + 1;
+    const fAD = root.PICF_FA === 1 ? (nA * Math.min(v, v0) + 2) / (nA * v) : root.PICF_FA === 2 ? (d.esurch + 2) / (nA * v) : typeof root.PICF_FA === 'number' && root.PICF_FA > 2 ? root.PICF_FA / 100 : 1;
     let envKey = null, envIdx = -1, envConv = null;
     function envelope(getter, nd, nodyn, wnd) {
       const res = {};
@@ -471,7 +482,7 @@
           const n = Math.max(4, Math.ceil((x1 - x0) / 0.01)); let cur = null;
           for (let k = 0; k < n; k++) {
             const a0 = x0 + (x1 - x0) * k / n, a1 = x0 + (x1 - x0) * (k + 1) / n;
-            const va = sg * ilVal(getter, a0 + 1e-9, nd), vb = sg * ilVal(getter, a1 - 1e-9, nd), h = a1 - a0;
+            const fz = (x1 <= 0 || x0 >= L) ? fAD : 1, va = fz * sg * ilVal(getter, a0 + 1e-9, nd), vb = fz * sg * ilVal(getter, a1 - 1e-9, nd), h = a1 - a0;
             let ar = 0, ln = 0;
             if (va >= 0 && vb >= 0) { ar = h * (va + vb) / 2; ln = (va > 0 || vb > 0) ? h : 0; }
             else if (va > 0 || vb > 0) { const z = va / (va - vb) * h; if (va > 0) { ar = va * z / 2; ln = z; } else { ar = vb * (h - z) / 2; ln = h - z; } }
@@ -489,7 +500,7 @@
       for (const key of ['BC', 'BT', 'MC', 'ME', 'E'].concat(hasEC ? ['EC'] : [])) {
         envConv = key; const cv = conv[key]; let mx = 0, mn = 0, pmx = null, pmn = null;
         // essai session q (PICF_WND) : roues Bc/Bt/Me sans effet sur la dalle de transition pour les clés listées
-        const nd0 = nd; nd = nd0 || (!!root.PICF_WND && (root.PICF_WND.k || []).includes(envKey) && (root.PICF_WND.c || ['BC', 'BT', 'ME']).includes(key));
+        const nd0 = nd; nd = nd0 || (!!root.PICF_WND && (root.PICF_WND.k || []).includes(envKey) && (root.PICF_WND.c || ['BC', 'BT', 'ME']).includes(key)) || (key === 'EC' && !!root.PICF_ECND);
         const span = cv.axles[cv.axles.length - 1].x + (cv.trucks > 1 ? cv.gapTruck : 0);
         // grille de déplacement : pas des tableaux (0.25 m si L ≤ 10 : 2498 Mc 14.75/18.75, Bc 14.25/15.75) ; balayage étendu de la
         // demi-empreinte diffusée (2498, H.SUP 15.70 m : Mc centré à 14.75 pour L = 5.35). Crochet PICF_CSTP = 0 : ancien (0.5, sans extension).

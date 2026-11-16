@@ -13,6 +13,12 @@
     const out = [];
     let page = 0;
     const newPage = () => { page++; out.push(`  ${pad(model.titreCourt, 85)}PICF-EL NO ${num}-   DU ${date} PAGE ${String(page).padStart(page < 10 ? 5 : 2)}`); out.push(SEP); };
+    // session s : tableaux par section (positions, moments extrêmes, efforts tranchants) limités à 17 sections par page ; la suite
+    // passe sur une page de continuation sans en-tête de colonnes (2550 / 2498 : piédroits sur 2 pages, coupure après x = 8.00).
+    // Crochet PICF_NSEC : nombre de sections par page (0 = pas de coupure).
+    const NSEC = globalThis.PICF_NSEC != null ? globalThis.PICF_NSEC : 17, brk = k => { if (NSEC && k > 0 && k % NSEC === 0) { newPage(); out.push(''); } };
+    // session s : convoi E — remorque imprimée = celle dont le centre est le plus proche du milieu de la travée (crochet PICF_EPR = 0 : remorque de droite)
+    const EPR = globalThis.PICF_EPR != null ? globalThis.PICF_EPR : 1;
     const L = R.geom.L, H = R.geom.H, hasEC = !!R.charges.chantier;
     const ecName = hasEC ? d.ec.nom : 'EC';
     // ------------------------------------------------ bordereau
@@ -197,12 +203,12 @@
       out.push(` ABSC.          ${pad(ecName, 13)}TROT       AL           BC                  BT                MC120               ME120                 E`);
       out.push('SECTION                      LONG.     LONG.', '          <- ABSCISSES ->   CHARGEE   CHARGEE   <- ABSCISSES ->    <- ABSCISSES ->    <- ABSCISSES ->     <- ABSCISSES ->     <- ABSCISSES ->', '');
       const env = R.env[el];
-      R.sections[el].forEach((x, k) => {
+      R.sections[el].forEach((x, k) => { brk(k);
         const e = env[k];
         const pos = key => {
           const p = e[key] && e[key].pos; if (!p || !e[key].v) return 'DG   0.00   0.00';
           const cv = R.conv[key.slice(0, -1)]; const xs = [];
-          for (let t = 0; t < p.nt; t++) { const ps = cv.axles.map(ax => (p.xs ? p.xs[t] : p.x0) + p.dir * (ax.x + (p.xs ? 0 : t * (cv.gapTruck || 0)))); xs.push(key[0] === 'E' && key[1] !== 'C' ? Math.max(...ps) : Math.min(...ps)); }
+          for (let t = 0; t < p.nt; t++) { const ps = cv.axles.map(ax => (p.xs ? p.xs[t] : p.x0) + p.dir * (ax.x + (p.xs ? 0 : t * (cv.gapTruck || 0)))); xs.push(key[0] === 'E' && key[1] !== 'C' ? (EPR ? ps.reduce((a, q) => (Math.abs(q - L / 2) < Math.abs(a - L / 2) - 1e-9 ? q : a)) : Math.max(...ps)) : Math.min(...ps)); }
           xs.sort((a, c) => a - c); while (xs.length < 2) xs.push(0);
           return `${p.dir > 0 ? 'DG' : 'GD'} ${F(xs[0], 2, 6)}   ${F(xs[1], 2)}`; };
         for (const sg of ['+', '-']) {
@@ -214,7 +220,7 @@
       out.push('', `                                        MOMENTS FLECHISSANTS EXTREMES (KN*M) DANS ${el === 'w' ? 'LES PIEDROITS' : 'LA ' + nm}`, `                                             (LES ABSCISSES SONT COMPTEES A PARTIR DE ${orig})`);
       out.push('             <- - - - - - CHANTIER - - - - - ->', ' ABS.                                     <- - - - - - - - - - - - - - - - SERVICE- - - - - - - - - - - - - - - - - ->      MOMENTS DE', 'SECTION                                                                                                                       CALCUL');
       out.push(`              CHARGE PERM    REMB   ${pad(ecName, 6)}TEMP   CHARGE PERM     REMB   TROT    AL      BC     BT   MC120   ME120    E`, '             E.L.S. E.L.U.                       E.L.S. E.L.U.                                                             E.L.S. E.L.U.', '');
-      R.cmp[el].forEach(c => { const rr = extremeRows(c); out.push(`${F(c.x, 2)}   ${rr[0]}`, `       ${rr[1]}`, ''); });
+      R.cmp[el].forEach((c, k) => { brk(k); const rr = extremeRows(c); out.push(`${F(c.x, 2)}   ${rr[0]}`, `       ${rr[1]}`, ''); });
     }
     // ------------------------------------------------ lignes d'influence du coefficient MU
     for (const fb of R.mu.fibres) {
@@ -266,7 +272,7 @@
       out.push('', `                                            EFFORTS TRANCHANTS EXTREMES DANS ${nm} (KN)`, '                                            ' + '='.repeat(55), `                                                 LES ABSCISSES SONT COMPTEES A PARTIR DE ${orig}`);
       out.push('             <- - - - - - CHANTIER - - - - - ->', ' ABS.                                     <- - - - - - - - - - - - - - - - SERVICE- - - - - - - - - - - - - - - - - ->          EFFORTS', 'SECTION                                                                                                                       TRANCHANTS');
       out.push(`             CHARGE PERM    REMB   ${pad(ecName, 7)}TEMP   CHARGE PERM   REMB   TROT     AL       BC     BT    MC120    ME120     E`, '               E.L.U.                               E.L.U.                                                                     E.L.U.', '');
-      R.cmp['V' + el].forEach(c => {
+      R.cmp['V' + el].forEach((c, k) => { brk(k);
         const p = c.perm, ch = p.ch, live = ['AL', 'BC', 'BT', 'MC', 'ME', 'E'];
         const rx = [ch ? ch.maxU : 0, 0, c.ec ? c.ec.mx : 0, c.tmax, p.maxU, c.lmax.REMB || 0, 0, ...live.map(l => c.lmax[l]), c.design.maxU];
         const rn = [ch ? ch.minU : 0, 0, c.ec ? c.ec.mn : 0, c.tmin, p.minU, c.lmin.REMB || 0, 0, ...live.map(l => c.lmin[l]), c.design.minU];
