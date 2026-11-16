@@ -1514,7 +1514,8 @@
     if (r.error) return esc(r.error);
     const li = (a) => '<ul>' + a.map((o) => `<li>${esc(o)}</li>`).join('') + '</ul>';
     if (r.ai) return (r.message ? `<div>${esc(r.message)}</div>` : '') + (r.changes && r.changes.length ? li(r.changes) : '');
-    return r.ok.length ? `<div>C’est fait :</div>${li(r.ok)}` : '<div>Je n’ai pas compris. Pouvez-vous reformuler ?</div>';
+    const why = r.why ? `<div class="aiw">Mode simplifié (mots-clés) — ${esc(r.why)}${/configur/.test(r.why) ? ' : la clé ANTHROPIC_API_KEY n’est pas renseignée sur le serveur' : ''}.</div>` : '';
+    return (r.ok.length ? `<div>C’est fait :</div>${li(r.ok)}` : '<div>Je n’ai pas compris. Pouvez-vous reformuler ?</div>') + why;
   }
   function renderChat(pending) {
     let h = '';
