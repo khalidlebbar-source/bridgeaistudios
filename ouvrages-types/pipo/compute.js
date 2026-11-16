@@ -242,7 +242,11 @@
     const Lf = Math.pow(384 * mat.Ev * g.e3 ** 3 / 12 * fl / 5, 0.25);
     const Kc = LV.coefficientsK(v, g, Lf);
     const Ldt = v.DALTRA ? v.LDALT / g.sn : 0;
-    const fA = (globalThis.PIPO_FDT != null ? globalThis.PIPO_FDT : (v.ESURCH + 2) / (Kc.nA * v.ESURCH / Math.max(1, v.PVOIE)));
+    // Tour 21 : ordonnée de A sur la DT majorée par fA = largeur chargée sur la DT / (nA·V). Tour 22 : largeur = nA voies de largeur
+    // min(V, V0) (V0 = largeur de la voie de référence de la classe, a2 = V0/V) + 1 m de chaque côté : fA = min(1, a2) + 2/(nA·V)
+    // (chaussées de 7 m et 1825 inchangés, 1676 V = 4 m : 9/8 au lieu de 10/8). Crochet PIPO_FA2 = 0 : ancienne largeur ESURCH + 2.
+    const nAV = Kc.nA * v.ESURCH / Math.max(1, v.PVOIE);
+    const fA = (globalThis.PIPO_FDT != null ? globalThis.PIPO_FDT : globalThis.PIPO_FA2 === 0 ? (v.ESURCH + 2) / nAV : Math.min(1, Kc.a2) + 2 / nAV);
     const rML = M.solve({ nodal: { [M.T[0]]: [0, 0, 1] } }), rMR = M.solve({ nodal: { [M.T[M.T.length - 1]]: [0, 0, -1] } });
     const aDT = globalThis.PIPO_ADT != null ? globalThis.PIPO_ADT * g.e2 : 0;
     const env = getf => { const f = li.map(o => getf(o.r)); let ends = [f[0] + aDT * getf(rML), f[f.length - 1] + aDT * getf(rMR)]; if (globalThis.PIPO_ENDS) ends = globalThis.PIPO_ENDS(ends);
