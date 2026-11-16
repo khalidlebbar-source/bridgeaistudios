@@ -6,7 +6,7 @@
   var gr = function (x) { return x * PI / 200; };
   // v26 : configuration par défaut des crochets du « CALCUL ITERATIF » (chaque crochet reste réglable : globalThis.PSIDP_X = 0 le neutralise ;
   // seules les valeurs non définies par l'appelant sont complétées). DCMEAN : ΔC des blocs de rang ≥ 2 par la contrainte moyenne au câble.
-  var DEF26 = { DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
+  var DEF26 = { BLCURV: 1, NETS: 1, DCMEAN: 1, BLEXT: 0.25, FMPREV: 1, T1INF: 1, T2MODE: 3, TB1RIVE: 2, FLE8: 1, FLKEYS: 1, FM1: 1, DCB: 1, NF: 1, FLROWS: 1, SMTA: 2 }; // v32 : NF, FLROWS, SMTA ajoutés
   // v28 : FM1 = force d'inscription à force unique au bloc 1 ; DCB = règle β exacte du ΔC au bloc 1 (activable maintenant que FM1 est juste).
   for (var kd in DEF26) if (globalThis['PSIDP_' + kd] === undefined) globalThis['PSIDP_' + kd] = DEF26[kd];
 
@@ -578,7 +578,7 @@
         if (CEM === 2) { var i0 = idx(xa - 1.65), i1 = idx(xa + 1.65); return trap(i0, i1); }
         if (CEM === 3) { var j0 = Math.round((xa - 1.65 + half) / h), j1 = Math.round((xa + 1.65 + half) / h); return trap(j0, j1); }
         var ss = 0, N = 330; for (var q = 0; q < N; q++) { var x = xa - 1.65 + 3.3 * (q + 0.5) / N, u = (x + half) / h, ii = Math.floor(u), tt = u - ii; ss += K(ii) * (1 - tt) + K(ii + 1) * tt; } return ss / N; };
-      var bestc = -1e9; for (var xa = lo; xa <= hi + 1e-9; xa += 0.0125) bestc = Math.max(bestc, meanAt(xa)); bestc = Math.max(bestc, meanAt(hi));
+      var bestc = -1e9; if (CEM === 4) bestc = Math.max(meanAt(lo), meanAt(hi)); else { for (var xa = lo; xa <= hi + 1e-9; xa += 0.0125) bestc = Math.max(bestc, meanAt(xa)); bestc = Math.max(bestc, meanAt(hi)); } // v35 : CEM = 4, axe FIXE à 3.50 m de chaque bord (F61 1971 art. 10.4), max des deux
       out.CE = bestc;
     } else
     out.CE = (function () { var ss = 0, N = 330; for (var q = 0; q < N; q++) { var x = xm - 1.65 + 3.3 * (q + 0.5) / N, u = (x + half) / h, ii = Math.floor(u), tt = u - ii; ss += K(ii) * (1 - tt) + K(ii + 1) * tt; } return ss / N; })();
@@ -1481,8 +1481,9 @@
     };
     // ---------------------------------------------------------------- un bloc « éléments de détermination du fuseau »
     var Lt = R.X0[n], FMCRIT = globalThis.PSIDP_FMCRIT === undefined ? 1 : globalThis.PSIDP_FMCRIT; // v18 : actif par défaut (règle v17), 0 = ancien calcul
+    var NETK = 0;
     var block = function (N, base, kind, keyE, FMin, FMJin, byIn, critIn, Eprev, dcm) {
-      var G = [], t, k;
+      var G = [], t, k, netk = NETK; NETK = 0;
       for (t = 0; t < n; t++) for (k = 0; k <= 10; k++) G.push({ t: t, k: k, x: k * L[t] / 10, X: R.X0[t] + k * L[t] / 10 });
       var segsAll = []; base.spans.forEach(function (S2, tt) { S2.forEach(function (sg) { segsAll.push({ a: sg.A, from: R.X0[tt] + sg.from, to: R.X0[tt] + sg.to }); }); });
       var angTo = function (X) { var a = 0; segsAll.forEach(function (sg) { var hi2 = Math.min(sg.to, X); if (hi2 > sg.from) a += 2 * Math.abs(sg.a) * (hi2 - sg.from); }); return a; };
@@ -1490,14 +1491,22 @@
       G.forEach(function (g) { g.aG = angTo(g.X) + r * g.X; g.aD = Atot - angTo(g.X) + r * (Lt - g.X); g.t0G = s0 * Math.exp(-v.F * g.aG); g.t0D = s0 * Math.exp(-v.F * g.aD); });
       var U = G.filter(function (g) { return !(g.k === 0 && g.t > 0); });
       var ip = function (key, X) { var q = 0; while (q < U.length - 2 && X > U[q + 1].X) q++; var u = (X - U[q].X) / (U[q + 1].X - U[q].X); return U[q][key] * (1 - u) + U[q + 1][key] * u; };
-      var BLEXT = globalThis.PSIDP_BLEXT || 0;
+      var BLEXT = globalThis.PSIDP_BLEXT || 0, BLCURV = globalThis.PSIDP_BLCURV || 0;
+      // v36 (PSIDP_BLCURV) : élément de longueur du câble ds = √(1 + z'²)·dx (1) ; 2 = en plus, T0 prolongé linéairement sur BLEXT
+      var curvW = function (X1, X2) {
+        if (!BLCURV || !base.slope) return 1;
+        var Xm = (X1 + X2) / 2, tt = 0; while (tt < n - 1 && Xm > R.X0[tt + 1]) tt++;
+        var sl = base.slope(tt, Xm - R.X0[tt]); return Math.sqrt(1 + sl * sl);
+      };
       var recul = function (key, left) {
         var lo = 0, hi = Lt;
         for (var it = 0; it < 60; it++) {
           var sg = (lo + hi) / 2, ts = ip(key, left ? sg : Lt - sg), pts = [0];
           U.forEach(function (g) { var xx = left ? g.X : Lt - g.X; if (xx > 0 && xx < sg) pts.push(xx); }); pts.push(sg); pts.sort(function (p, q) { return p - q; });
-          var sm = 0; for (var i = 0; i < pts.length - 1; i++) { var fa = ip(key, left ? pts[i] : Lt - pts[i]) - ts, fb = ip(key, left ? pts[i + 1] : Lt - pts[i + 1]) - ts; sm += (fa + fb) / 2 * (pts[i + 1] - pts[i]); }
-          if (2 * sm + 2 * (ip(key, left ? 0 : Lt) - ts) * BLEXT > v.RECUL * Ep) hi = sg; else lo = sg;
+          var sm = 0; for (var i = 0; i < pts.length - 1; i++) { var fa = ip(key, left ? pts[i] : Lt - pts[i]) - ts, fb = ip(key, left ? pts[i + 1] : Lt - pts[i + 1]) - ts; sm += (fa + fb) / 2 * (pts[i + 1] - pts[i]) * curvW(left ? pts[i] : Lt - pts[i + 1], left ? pts[i + 1] : Lt - pts[i]); }
+          var exA = (ip(key, left ? 0 : Lt) - ts) * BLEXT;
+          if (BLCURV === 2 && U.length > 1) { var p0 = Math.abs(ip(key, left ? 0 : Lt) - ip(key, left ? U[1].X : Lt - (Lt - U[U.length - 2].X))) / (left ? U[1].X : Lt - U[U.length - 2].X); exA += p0 * BLEXT * BLEXT / 2; }
+          if (2 * sm + 2 * exA > v.RECUL * Ep) hi = sg; else lo = sg;
         }
         return lo;
       };
@@ -1547,13 +1556,16 @@
           if (ke.abut && FMCRIT && curBy !== 'ouv' && !(FLR === 1 && curCrit)) return; // v17 : ligne d'about seulement si l'ouverture du fuseau est déterminante (0013, 0013B)
           if (ke.abut) { var a1c = FM / S * (1 - 0.8 * E / V); rows.push(a1c); if (rec) rec[ke.id] = { sb: a1c, K: 3, SBB: 0, E: E, XM: 0, SM: 0, CPTM: 0, CPPM: 0, A1: a1c, A2: 0, A3: 0 }; return; }
           var top = ke.app, vv = top ? V : -VP, XM = top ? s.cp[1] + tp[1] : s.cp[0] + tp[0];
-          var A1 = FM / S * (1 - 0.8 * E / vv);
+          // v36 (PSIDP_NETS) : section NETTE des lignes des blocs postérieurs au premier réajusté (Bp.FMJ > 0) : aire S − k·πφ²/4 et inertie
+          // I − k·πφ²/4·E² − (k·πφ²/4·E)²/S_n, k gaines au niveau E de la ligne (v, E bruts)
+          var Sl = S, Il = I; if (netk) { var ahk = netk * PI * v.DGAIN * v.DGAIN / 4; Sl = S - ahk; Il = I - ahk * E * E - ahk * ahk * E * E / Sl; }
+          var A1 = FM / Sl * (1 - 0.8 * E / vv);
           var ta = globalThis.PSIDP_SMTA ? tp[top ? 1 : 0] : 0; // v32 (PSIDP_SMTA = 1) : ligne K = 5, SETRA ajoute la dénivellation d'appui déjà comprise dans XM (0013A appui 2 : SM = −659.269 = C.E. + TROTT + TA)
           var tf = globalThis.PSIDP_SMTA === 2 ? ta : 0; // v32 (SMTA = 2) : idem sur les lignes K = 3 (combinaison fréquente ; 0015 appui 2 : SM = −374.572)
           var cand = top ? [[-ft28, s.comb[1].qlqcta + ta, 5]] : [[-ft28, s.comb[0].qlqcta + ta, 5], [0, s.comb[0].freq + tf, 3]], bst = null;
           if (top && FLR === 1 && globalThis.PSIDP_FLK3 !== 0) cand.push([0, s.comb[1].freq + tf, 3]); // 0013B, 2764 : lignes d'appui K = 3 (SBB = 0, combinaison fréquente)
-          cand.forEach(function (cd) { var sb = A1 + cd[0] * E / vv + (CPTM - cd[1]) * E / I; rows.push(sb);
-            if (!bst || sb > bst.sb) bst = { sb: sb, K: cd[2], SBB: cd[0], E: E, XM: XM, SM: cd[1] - XM, CPTM: CPTM, CPPM: CPTM * R.cp.sup[0] / R.cp.tot[0], A1: A1, A2: cd[0] * E / vv, A3: (CPTM - cd[1]) * E / I }; });
+          cand.forEach(function (cd) { var sb = A1 + cd[0] * E / vv + (CPTM - cd[1]) * E / Il; rows.push(sb);
+            if (!bst || sb > bst.sb) bst = { sb: sb, K: cd[2], SBB: cd[0], E: E, XM: XM, SM: cd[1] - XM, CPTM: CPTM, CPPM: CPTM * R.cp.sup[0] / R.cp.tot[0], A1: A1, A2: cd[0] * E / vv, A3: (CPTM - cd[1]) * E / Il }; });
           if (rec) rec[ke.id] = bst;
         });
         return kfl * Math.max.apply(null, rows);
@@ -1647,6 +1659,7 @@
     var dcmOf = function (Bp, N, base, kind) { var c = Bp && Bp.nb && Bp.nb.crit; if (globalThis.PSIDP_DCMEAN !== 1 || !c) return null;
       return { F: N * A * Bp.G[c.t * 11 + c.k].Ti, base: kind === 'REAJUSTEES' || Bp.kind !== 'REAJUSTEES' ? base : Bp.base }; };
     var blockP = function (N, base, kind, keyE, Bp, carryE, Nfm) { var Nf = (FMPREV === 2 ? 0 : Nfm) || N, f = prevF(Bp, Nf), dm = dcmOf(Bp, Nf, base, kind);
+      var NS = globalThis.PSIDP_NETS || 0; NETK = NS && Bp && Bp.FMJ > 0 ? (NS === 2 ? Nf : N) : 0;
       if (!f && !Bp && kind === 'APPROCHEES' && FM1on === 1) { if (FM1v === null) FM1v = pIns() || 0; if (FM1v > 0) return block(N, base, kind, keyE, FM1v, undefined, 'ins', undefined, null, dm); }
       return f ? block(N, base, kind, keyE, f[0], f[1], f[2], f[3], carryE ? Bp.rowsE : null, dm) : block(N, base, kind, keyE, undefined, undefined, undefined, undefined, null, dm); };
     var solveN = function (N, base, kind, keyE, Bp) {
@@ -1704,7 +1717,18 @@
       //    travées de rive t2 imprimé 0.164–0.179 L (PSIDP_T1CAP = 0 : ancien plafond 0.36 d seul) ;
       //  - le bord sup n'est contrôlé que sur la longueur du raccord (de l'inflexion à l'appui) : la parabole principale DÉPASSE le
       //    bord sup imprimé de 0.013 à 0.023 m à 0.2 L de l'appui sur 2482–2488, 2764, 2765, 0015A (PSIDP_T1CHK = 0 : toutes les sections).
-      var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) {
+      var t1rec = {};
+      var T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) { var o9 = t1side(tt, side, d, h); t1rec[tt + ':' + side] = { t2: o9.t2, d: d, h: h }; return o9; } });
+      // v35 (PSIDP_T1COMR = 1) : sur un appui encadré par deux travées INTERMÉDIAIRES, raccord de T1 commun (même rayon des deux côtés,
+      // parabole de sommet sur l'appui) : rayon = le plus petit des deux rayons admis côté gauche / côté droit (2766 appui 3 : R 48.7 / 48.7).
+      if (globalThis.PSIDP_T1COMR === 1 && n > 3) {
+        var fix9 = {}, chg9 = false;
+        for (var j9 = 2; j9 <= n - 2; j9++) { var lft = t1rec[(j9 - 1) + ':1'], rgt = t1rec[j9 + ':-1']; if (!lft || !rgt || !(lft.h > 0) || !(rgt.h > 0)) continue;
+          var Rl = lft.t2 * lft.d / (2 * lft.h), Rr9 = rgt.t2 * rgt.d / (2 * rgt.h), Rm = Math.min(Rl, Rr9);
+          fix9[(j9 - 1) + ':1'] = 2 * lft.h * Rm / lft.d; fix9[j9 + ':-1'] = 2 * rgt.h * Rm / rgt.d; chg9 = true; }
+        if (chg9) T1 = traceFromPoints(R, P3, { side: function (tt, side, d, h) { var k9 = tt + ':' + side; return fix9[k9] !== undefined ? { t2: fix9[k9] } : { t2: t1rec[k9].t2 }; } });
+      }
+      function t1side(tt, side, d, h) {
         var best = 0.05 * d, f0 = 0.36;
         // v34, ACTIF par défaut (PSIDP_T1RIVE = 0 pour désactiver ; ε = 0,012 m retenu comme tolérance du programme, cf. T2TOL) : côté appui des travées de RIVE, inflexion à x = √(2/3)·L de la culée,
         // corrigée d'une hauteur fixe : t2 = (1 − √(2/3))·L·(1 − ε/h), ε = PSIDP_T1EPS (0.012 m). Constat sur 25 raccords imprimés
@@ -1730,7 +1754,7 @@
               for (var it9 = 0; it9 < 12; it9++) { var m9 = (lo9 + hi9) / 2; if (t1ok(m9)) lo9 = m9; else hi9 = m9; } best = lo9 * d; } break; }
         }
         return { t2: best };
-      } });
+      }
       // T2 : rayon minimal sur appuis, point bas sur le bord inférieur relevé si nécessaire pour rester au-dessus du bord inf.
       var P4 = { xl: P3.xl.slice(), zl: P3.xl.map(function (x, tt) { return ginf(tt, P3.kl[tt]); }), zs: P3.zs.slice() };
       var rminSide = function () { return { R: v.RMIN || 8 }; };
