@@ -82,7 +82,8 @@
     };
     if (r.momentsFin && !G.PSIDA_ENV) { r.fer.long.sup.envF = env(true, r.momentsFin); r.fer.long.inf.envF = env(false, r.momentsFin); r.fer.long.SAF = r.momentsFin[0].map(s => s.a);
       const w = G.PSIDA_R1AVG != null ? G.PSIDA_R1AVG : 0, SA0 = r.moments[0].map(s => s.a), SF = r.fer.long.SAF;
-      r.fer.long.inf.envA = r.fer.long.inf.envF.map(v => v.map((x, j) => j > 0 && j < v.length - 1 && !SA0.some(a => Math.abs(a - SF[j]) < 1e-9) ? w * x + (1 - w) * (v[j - 1] + v[j + 1]) / 2 : x)); }
+      r.fer.long.inf.envA = r.fer.long.inf.envF.map(v => v.map((x, j) => j > 0 && j < v.length - 1 && !SA0.some(a => Math.abs(a - SF[j]) < 1e-9) ? w * x + (1 - w) * (v[j - 1] + v[j + 1]) / 2 : x));
+      if (r.momentsR1) r.fer.long.inf.envA = env(false, r.momentsR1); }
     r.fer.long.epure = epure(r, r.fer.long, H);
     r.fer.etriers = etriers(r, r.fer.long);
     r.fer.appareils = appareils(m, r);
@@ -216,11 +217,21 @@
       Rbt = Math.max(Rbt, maxR(parts, s));
     }
     const BTk = Na * Rbt / (2 * nt);
-    // Mc120 — EMPIRIQUE, NON RÉSOLU pour Na ≥ 4 (sous-estime de 0,018 à 0,036) : 2 chenilles d'entraxe 3,30 m,
-    // chacune discrétisée en 21 charges égales réparties (bornes incluses) sur 1 + H + hchau.
-    const w = 1 + p.H + (p.hchau || 0), mc = [];
-    for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w / 2 + w * i / 20, 0.5 / 21, 0]);
-    const MC = Na * maxR(mc, s);
+    // Mc120 — RÈGLE du dossier PSI-DA 68, pièce 2.5 « Méthode de calcul » § 2.4.2 (MAJCM) : chaque chenille est étalée
+    // transversalement sur λ = 1,00 + 2·HCHAU + HDALLE1 ; deux positions seulement (une chenille centrée sur l'appareil, ou les
+    // deux chenilles symétriques par rapport à l'appareil, entraxe 3,30 m) ; valeur moyenne de la réaction sur λ par la formule
+    // de SIMPSON (3 points). Exact sur les 27 lignes d'appui du corpus (PSIDA et PSIDP, Na = 2, 3, 4).
+    let MC;
+    if (globalThis.PSIDA_MCFREE) {                   // crochet : ancien modèle (21 points sur 1 + H + hchau, position libre)
+      const w0 = 1 + p.H + (p.hchau || 0), mc = [];
+      for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w0 / 2 + w0 * i / 20, 0.5 / 21, 0]);
+      MC = Na * maxR(mc, s);
+    } else {
+      const lam = (1 + 2 * (p.hchau || 0) + p.H) / s, E = 3.30 / s;
+      const simp = c => (etaIn(c - lam / 2) + 4 * etaIn(c) + etaIn(c + lam / 2)) / 6;
+      const f = o => 0.5 * (simp(o) + simp(o + E));
+      MC = Na * Math.max(f(0), f(-E / 2));
+    }
     return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
   }
 
@@ -271,8 +282,9 @@
       // about·sin ψ (grades) + esp/3 sur culée ; moment = R en charge max × esp / (12 × largeur) ;
       // section : ELS, section fissurée b = 1, n = 15, d = H − 0,04, σs = σ̄s (exact en fissuration préjudiciable ;
       // approché à ~1 % en peu préjudiciable, règle exacte non retrouvée).
-      const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + ap.esp / 3 : 2 * ap.esp / 3;
-      const mch = ech > 0 ? chMax * ap.esp / (12 * ech) : 0;
+      const eL = G.PSIDA_ESPU && ap.espU ? ap.espU : ap.esp;   // essai v30 : entraxe non tronqué
+      const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + eL / 3 : 2 * eL / 3;
+      const mch = ech > 0 ? chMax * eL / (12 * ech) : 0;
       // v23 : hauteur utile du chevêtre d = H − ENROBS − 0,6 φt (φt = plus gros diamètre des fers de zone 1 retenus au
       // FERRAILLAGE TRANSVERSAL PROPOSE ; 0,6 φ = φ/2 majoré de 20 %) : H − 0,0396 pour φt 16, H − 0,0492 pour 3639 (PHI1/PHI2 ALT, φ 32).
       // Ici d provisoire (H − 0,04) ; propose() recalcule ach(d) avec le diamètre choisi. Crochet PSIDA_DCH0 = 1 : H − 0,04 partout.
@@ -291,7 +303,7 @@
             cands[0][3] = cands[1][3] = cands[2][3] = 0; for (let j = 3; j < cands.length; j++) cands[j][3] = 1;
             const vu = Math.max(...cands.map(c => c[0] * c[2] * ku(c)));
             const chU = (1.35 * R.G.up * coef.CP + vu + 1.5975 * kT * l.T.max) / nap;
-            mchu = chU * ap.esp / (12 * ech);
+            mchu = chU * eL / (12 * ech);
             const fe = r.mat.fe[2] || r.mat.fe[0];
             ach = G.PSIDA.asELU(mchu, 1, dch, Object.assign({}, r.mat, { fe: [fe, fe, fe, fe] }));
           }
@@ -300,7 +312,10 @@
         return ach;
       };
       const ach = achOf((r.section.H || 0) - 0.04);
-      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach, achOf };
+      // v30 : réaction ELU par appareil (même combinaison que la section ELU des chevêtres), pour la page APPUIS CONCENTRES
+      const kuP = j => j >= 3 ? 1.35 : 1.5975 / 1.2;
+      const chU = (1.35 * R.G.up * coef.CP + Math.max(...cands.map((c, j) => c[0] * c[2] * kuP(j))) + 1.5975 * kT * l.T.max) / nap;
+      return { chU, Gup: R.G.up * coef.CP / nap, nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach, achOf };
     });
   }
 
@@ -320,9 +335,9 @@
     // 18/19 passages (familles φ1 32 / φ2 16 et φ1 25 / φ2 16, φ4 indifférent) ; 3639 (φ2 14) non expliqué. Crochet PSIDA_TAUD = 0 : d_sup.
     const cpd = typeof G.PSIDA_CPS === 'function' ? G.PSIDA_CPS(r) : undefined;
     const dTau = cpd !== undefined ? r.ferLong.H - r._A11.ENROBS - cpd : G.PSIDA_TAUD === 0 ? F.sup.d : r.ferLong.H - r._A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]);
-    const bd = r.section.Eeq * dTau;
+    const EqT = G.PSIDA_ETEQR ? Math.round(r.section.Eeq * 1000) / 1000 : r.section.Eeq, bd = EqT * dTau;   // essai v28 (ETEQR = 1 : E DALLE imprimée)
     // 0,4 MPa converti en t/m² (1 MPa = 1000/9,81 t/m²) : 3639 0,174 et 4015 0,289 exacts (40 t/m² donnait 0,178 / 0,295)
-    const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * r.section.Eeq));
+    const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * EqT));
     // espacement de l'épure : plus grande valeur de la série de Renard R10 ≤ smax (3639 0,174 → 0,16 ; 4015 0,289 → 0,25)
     const R10 = [0.40, 0.315, 0.25, 0.20, 0.16, 0.125, 0.10, 0.08, 0.063, 0.05];
     const sEp = G.PSIDA_EP_SMAX ? smax : (R10.find(v => v <= smax + 1e-9) || smax);
@@ -491,6 +506,16 @@
         if (F.inf.envA && G.PSIDA_R1AVG !== 1) { const ga = envAt(F.inf.envA, i, true), ga0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x);
           tR[1] = rampes(u => winMax(ga0, tp + u - e, tp + u + e), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1];
           tL[1] = rampes(u => winMax(ga0, tp - u - e, tp - u + e), tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1]; }
+        // crochet d'essai PSIDA_DSAMP (v29) : enveloppe décalée échantillonnée aux sections (grille fine) puis interpolée
+        if (G.PSIDA_DSAMP) { const SF = F.SAF || SA, mk = (gf, sg) => { const P0 = SF.map(a => a * Li), V = P0.map(x => winMax(gf, x - e, x + e));
+            const h = x => { if (x <= 0) return V[0] > 0 && x > -1e-9 ? V[0] : (x < 0 ? (gf(x + e) > 0 ? winMax(gf, x - e, x + e) : 0) : V[0]); if (x >= Li) return winMax(gf, x - e, x + e); let j = 1; while (P0[j] < x) j++; return V[j - 1] + (V[j] - V[j - 1]) * (x - P0[j - 1]) / (P0[j] - P0[j - 1]); };
+            return h; };
+          const ga = F.inf.envA && G.PSIDA_R1AVG !== 1 ? envAt(F.inf.envA, i, true) : g, ga0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x);
+          const h1 = mk(G.PSIDA_DSAMP === 3 ? g0 : ga0, 1), hA = mk(g0, 1);
+          const t1L = rampes(u => h1(tp - u), tp + ext, om, 1, nf.k, singles(1, nf.k), R0), t1R = rampes(u => h1(tp + u), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0);
+          if (G.PSIDA_DSAMP === 2) { const aL = rampes(u => hA(tp - u), tp + ext, om, 1, nf.k, singles(1, nf.k), R0), aR = rampes(u => hA(tp + u), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0); Object.assign(tL, aL); Object.assign(tR, aR); }
+          tL[1] = t1L[1]; tR[1] = t1R[1]; }
+        if (typeof G.PSIDA_DUMP === 'function') G.PSIDA_DUMP('LIT', i, { tp, Li, ls, e, tL: Object.assign({}, tL), tR: Object.assign({}, tR), om });
         const uL = regroupe(tL, 1, nf.k), uR = regroupe(tR, 1, nf.k);
         // v18 : dernier groupe (rangs les plus élevés, fers les plus courts près du maximum) prolongé par l'épure à rampes,
         // comme pour les LSA (crochet PSIDA_LITL = 0 : t_s sans rampe)

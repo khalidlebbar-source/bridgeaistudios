@@ -258,6 +258,7 @@
   // H DALLE 3 absorbent l'augmentation, encorbellements inchangés) tant que, en fissuration peu préjudiciable,
   // μ = |Mu min| / (Eeq (0,9 H)² fbu) > 0,186 (fbu = 0,85 fcj / 1,5, pivot A/B). Fissuration préjudiciable :
   // critère non identifié (3488 : seul l'arrondi au cm est observé).
+  if (typeof G.PSIDA_EXPOSE === 'function') G.PSIDA_EXPOSE({ Kline });   // diagnostic (v29)
   function compute(model) {
     const A3 = model.lignes.A3, A7 = model.lignes.A7;
     if (A3.LIGNINF !== 1 || model._noOpt) return compute1(model);
@@ -284,6 +285,11 @@
 
     // --- section
     const sec = section(A7); r.section = sec;
+    { const m = globalThis.PSIDA_SECRND | 0; // essai v28 : caractéristiques arrondies à l'impression
+      if (m & 1) sec.Eeq = Math.round(sec.Eeq * 1000) / 1000;
+      if (m & 2) sec.I = Math.round(sec.I * 1e6) / 1e6;
+      if (m & 4) sec.Eeq = 12 * sec.I / sec.H ** 3;
+      if (m & 8) sec.I = Math.fround(sec.I), sec.Eeq = Math.fround(sec.Eeq), sec.A = Math.fround(sec.A); }
     const W = A6.ETROTG + A6.EGAU + A6.ESURCH + A6.EDROI + A6.ETROTD; r.largeurTotale = W;
     r.profil = [A6.ETROTG, A6.EGAU, A6.ESURCH, A6.EDROI, A6.ETROTD];
 
@@ -329,7 +335,8 @@
     r.appuis = Array.from({ length: n + 1 }, (_, k) => {
       const nap = A13['NAP' + (k + 1)] || 0, typ = A13['TYPAP' + (k + 1)] || 0;
       const esp = nap > 1 ? Math.floor(100 * A7.EDALLE1 / (nap - 0.6) / Math.sin(biais * GR) + 1e-9) / 100 : 0;
-      return { nap, typ, esp };
+      const espU = nap > 1 ? A7.EDALLE1 / (nap - 0.6) / Math.sin(biais * GR) : 0;   // v30 : entraxe non tronqué (notice PSIDA-EL p. 49 : moment de chevêtre)
+      return { nap, typ, esp, espU };
     });
     // --- lignes d'influence
     const lisp = globalThis.PSIDA_LISP === undefined ? 5 : globalThis.PSIDA_LISP; // 0 : double partout ; 1 : appuis seuls ; 5 : appuis + V/R (v14)
@@ -709,7 +716,7 @@
     // l'épure d'arrêt des barres (constat v12 : l'interpolation linéaire sur les 13 sections imprimées raccourcit les fers
     // près du maximum). Non imprimées. Crochet PSIDA_FIN = 0 : épure sur les 13 sections.
     if (G.PSIDA_FIN !== 0) {
-      const S21 = Array.from({ length: 21 }, (_, k) => Math.round(k * 5) / 100);
+      const NF = G.PSIDA_NFIN || 20, S21 = Array.from({ length: NF + 1 }, (_, k) => Math.round(k / NF * 1e6) / 1e6);   // crochet d'essai PSIDA_NFIN : pas L/NF
       r.momentsFin = L.map((l, i) => S21.map(a => {
         const q = SECT.findIndex(b => Math.abs(b - a) < 1e-9); if (q >= 0) return r.moments[i][q];
         const f = mkMomentLI(r, i, a);
@@ -718,11 +725,30 @@
         const comb = combine(r, Gm, settlementEffect(r, tassM(i, a)), liveEffects(r, f, A6));
         return { a, x: r.LI.xs[i] + a * l, ...comb };
       }));
+      // crochet d'essai PSIDA_R1MODE (v29, rang 1 des LIT seulement) : variantes de calcul des sections internes
+      const RM = G.PSIDA_R1MODE;
+      if (RM) r.momentsR1 = L.map((l, i) => S21.map((a, j) => {
+        const q = SECT.findIndex(b => Math.abs(b - a) < 1e-9); if (q >= 0) return r.moments[i][q];
+        let qa = 0; while (SECT[qa + 1] < a) qa++; const a0 = SECT[qa], a1 = SECT[qa + 1], w = (a - a0) / (a1 - a0);
+        const xs = r.LI.xs, m0 = r.moments[i][qa], m1 = r.moments[i][qa + 1];
+        if (RM === 4) {   // composantes interpolées puis combinées
+          const li = (u, v) => (1 - w) * u + w * v, lv = (p, q) => ({ A: { pos: { v: li(p.A.pos.v, q.A.pos.v) }, neg: { v: li(p.A.neg.v, q.A.neg.v) } }, B: { max: { v: li(p.B.max.v, q.B.max.v) }, min: { v: li(p.B.min.v, q.B.min.v) } }, C: { max: { v: li(p.C.max.v, q.C.max.v) }, min: { v: li(p.C.min.v, q.C.min.v) } }, T: { max: li(p.T.max, q.T.max), min: li(p.T.min, q.T.min) } });
+          return { a, ...combine(r, { up: li(m0.G.up, m1.G.up), dn: li(m0.G.dn, m1.G.dn) }, li(m0.T, m1.T), lv(m0.live, m1.live)) };
+        }
+        const fe = mkMomentLI(r, i, a), f0 = mkMomentLI(r, i, a0), f1 = mkMomentLI(r, i, a1);
+        const f = RM === 1 ? (X => (1 - w) * f0(X) + w * f1(X)) : fe;
+        let I = 0, Ip = 0, In = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(f, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; Ip += pn.pos; In += pn.neg; }
+        let Gm = { up: Math.max(gMax * I, gMin * I), dn: Math.min(gMax * I, gMin * I) };
+        if (RM === 3) Gm = { up: gMax * Ip + gMin * In, dn: gMin * Ip + gMax * In };
+        let lvE = liveEffects(r, f, A6);
+        const Tm = settlementEffect(r, tassM(i, a)); return { a, G: Gm, T: Tm, live: lvE, ...combine(r, Gm, Tm, lvE) };
+      }));
     }
     // ouvrage symétrique : SETRA ne calcule que la première moitié des travées ; les suivantes sont l'image miroir
     if (L.every((l, i) => Math.abs(l - L[n - 1 - i]) < 1e-9)) for (let i = 0; i < n; i++) { const j = n - 1 - i; if (j >= i) continue;
       r.moments[i] = r.moments[i].map(sc => { const m = r.moments[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; });
-      if (r.momentsFin) r.momentsFin[i] = r.momentsFin[i].map(sc => { const m = r.momentsFin[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; }); }
+      if (r.momentsFin) r.momentsFin[i] = r.momentsFin[i].map(sc => { const m = r.momentsFin[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; });
+      if (r.momentsR1) r.momentsR1[i] = r.momentsR1[i].map(sc => { const m = r.momentsR1[j].find(t => Math.abs(t.a - (1 - sc.a)) < 1e-9); return m ? { ...m, a: sc.a, x: sc.x } : sc; }); }
     steelSections(r);
     shearsAndReactions(r, A6);
     deformations(r);
@@ -975,7 +1001,7 @@
     const c = Math.max(ph[0], ph[1] + ph[0] / 2) + ph[3] / 2;
     const yc = 0.3 * H, H3 = A7.HDALLE3;
     const bS = A7.EDALLE1 + (H3 > 0 ? A7.EDALLE3 * Math.min(yc, H3) / (2 * H3) : 0);
-    const mm = v => Math.round(v * 1000 + 1e-7) / 1000; // hauteurs utiles arrondies au mm (3607 : 0,7065 -> 0,707)
+    const mm = G.PSIDA_DNR ? (v => v + 1e-9) : (v => Math.round(v * 1000 + 1e-7) / 1000); // hauteurs utiles arrondies au mm (3607 : 0,7065 -> 0,707)
     return { H, dI: mm(H - A11.ENROBI - c), dS: mm(H - A11.ENROBS - c), bI: r.largeurTotale, bS };
   }
   function steelSections(r) {
@@ -1122,10 +1148,20 @@
         // de la LI (interpolée linéairement au pas 0,125 m depuis le bord d'extrados). cvk = 1 : bords de la largeur roulable
         // (EGAU + ESURCH + EDROI) ; 2 : bords de la largeur chargeable.
         const e0 = cvk === 2 ? xCh0 : xTG, e1 = cvk === 2 ? xCh1 : xCh1 + A6.EDROI;
-        let lo = e0 + 3.5, hi = e1 - 3.5; if (hi < lo) lo = hi = (e0 + e1) / 2;
+        const cd = G.PSIDA_CVD || 3.5; let lo = e0 + cd, hi = e1 - cd; if (hi < lo) lo = hi = (e0 + e1) / 2;
         const KL = y => { const u = (y - yL) / h, i = Math.floor(u), t = u - i; return K(yL + i * h) * (1 - t) + K(yL + (i + 1) * h) * t; };
-        const mA = xa => { let t = 0; const m = 330; for (let i = 0; i < m; i++) t += (G.PSIDA_CVKC ? K : KL)(xa - 1.65 + 3.3 * (i + 0.5) / m); return t / m; };
-        let bc = -1e9; for (let xa = lo; xa <= hi + 1e-9; xa += 0.0125) bc = Math.max(bc, mA(xa)); res.CV = Math.max(bc, mA(hi));
+        const cw = G.PSIDA_CVW || 3.3, mA = G.PSIDA_CVNOD >= 2 ? (xa => { const ys = []; if (G.PSIDA_CVNOD === 2) { for (let y = yL + h * Math.ceil((xa - cw / 2 - yL) / h - 1e-9); y <= xa + cw / 2 + 1e-9; y += h) ys.push(y); }
+          else { for (let k = 0; k * h <= cw + 1e-9; k++) ys.push(xa - cw / 2 + k * h); }
+          const v = ys.map(y => (G.PSIDA_CVKC ? K : KL)(y)); if (G.PSIDA_CVNOD === 3) return v.reduce((a, b) => a + b, 0) / v.length;
+          let t = 0; for (let i = 1; i < v.length; i++) t += (v[i] + v[i - 1]) / 2; return t / (v.length - 1); }) : G.PSIDA_CVNOD ? (xa => { let t = 0, c = 0; for (let y = yL + h * Math.ceil((xa - cw / 2 - yL) / h - 1e-9); y <= xa + cw / 2 + 1e-9; y += h) { t += K(y); c++; } return t / c; }) : (xa => { let t = 0; const m = 330; for (let i = 0; i < m; i++) t += (G.PSIDA_CVKC ? K : KL)(xa - cw / 2 + cw * (i + 0.5) / m); return t / m; });
+        let bc = -1e9;
+        if (G.PSIDA_CVGRID) { const off = G.PSIDA_CVGRID === 2 ? cw / 2 : G.PSIDA_CVGRID === 3 ? (G.PSIDA_CVW || 3.25) / 2 : 0; for (let xa = yL + off + h * Math.ceil((lo - off - yL) / h - 1e-9); xa <= hi + 1e-9; xa += h) bc = Math.max(bc, mA(xa)); if (bc < -1e8) bc = mA((lo + hi) / 2); res.CV = bc; }
+        else { for (let xa = lo; xa <= hi + 1e-9; xa += 0.0125) bc = Math.max(bc, mA(xa)); res.CV = Math.max(bc, mA(hi)); }
+        // essai v30 (dossier pilote PSIDA 68, pièce 2.3 p. 16, carte B4) : convoi D/E = « véhicule à action répartie » traité comme un
+        // char : LARGCHA = 2 × 3,50 m, deux « chenilles » de largeur W/2 et d'entraxe W/2 (W = 3,30 m), moyenne de chaque chenille comme Mc120
+        if (G.PSIDA_CVCH) { const m = G.PSIDA_CVCH, ent = m === 2 ? Math.round(1.65 / h) * h : 1.65, a0 = m === 3 ? sn(xTG) : g0, a1 = m === 3 ? sn(xCh1 + A6.EDROI) : g1;
+          let b2 = -1e9; for (let x = a0; x <= a1 - 7 + 1e-9; x += h) { const ax = x + 3.5; b2 = Math.max(b2, (meanW(ax - (ent + 1.65) / 2, 1.65) + meanW(ax + (ent - 1.65) / 2, 1.65)) / 2); }
+          if (b2 > -1e8) res.CV = b2; }
       } else
       res.CV = f.y === 0 ? meanC(-1.65, 1.65) : meanC(Math.sign(f.y) * 0.5 - 1.65, Math.sign(f.y) * 0.5 + 1.65);
       return res;

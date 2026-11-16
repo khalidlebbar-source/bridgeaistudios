@@ -1006,11 +1006,21 @@
       Rbt = Math.max(Rbt, maxR(parts, s));
     }
     const BTk = Na * Rbt / (2 * nt);
-    // Mc120 — EMPIRIQUE, NON RÉSOLU pour Na ≥ 4 (sous-estime de 0,018 à 0,036) : 2 chenilles d'entraxe 3,30 m,
-    // chacune discrétisée en 21 charges égales réparties (bornes incluses) sur 1 + H + hchau.
-    const w = 1 + p.H + (p.hchau || 0), mc = [];
-    for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w / 2 + w * i / 20, 0.5 / 21, 0]);
-    const MC = Na * maxR(mc, s);
+    // Mc120 — RÈGLE du dossier PSI-DA 68, pièce 2.5 « Méthode de calcul » § 2.4.2 (MAJCM) : chaque chenille est étalée
+    // transversalement sur λ = 1,00 + 2·HCHAU + HDALLE1 ; deux positions seulement (une chenille centrée sur l'appareil, ou les
+    // deux chenilles symétriques par rapport à l'appareil, entraxe 3,30 m) ; valeur moyenne de la réaction sur λ par la formule
+    // de SIMPSON (3 points). Exact sur les 27 lignes d'appui du corpus (PSIDA et PSIDP, Na = 2, 3, 4).
+    let MC;
+    if (globalThis.PSIDA_MCFREE) {                   // crochet : ancien modèle (21 points sur 1 + H + hchau, position libre)
+      const w0 = 1 + p.H + (p.hchau || 0), mc = [];
+      for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w0 / 2 + w0 * i / 20, 0.5 / 21, 0]);
+      MC = Na * maxR(mc, s);
+    } else {
+      const lam = (1 + 2 * (p.hchau || 0) + p.H) / s, E = 3.30 / s;
+      const simp = c => (etaIn(c - lam / 2) + 4 * etaIn(c) + etaIn(c + lam / 2)) / 6;
+      const f = o => 0.5 * (simp(o) + simp(o + E));
+      MC = Na * Math.max(f(0), f(-E / 2));
+    }
     return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
   }
 
@@ -1671,6 +1681,7 @@
       }
       return isFinite(best) ? best : null;
     };
+    if (typeof globalThis.PSIDP_DBGAUTO === 'function') globalThis.PSIDP_DBGAUTO({ boundsF: boundsF, sec: sec, zs: zs, zi: zi, n: n, R: R }); // banc (v40), absent en usage normal
     var FM1v = null, FM1on = globalThis.PSIDP_FM1 === undefined ? 1 : globalThis.PSIDP_FM1;
     var prevF = function (Bp, N) { var c = Bp && Bp.nb && Bp.nb.crit; if (!FMPREV || !c) return null; var g = Bp.G[c.t * 11 + c.k]; return [N * A * g.es, N * A * g.Ti, c.by, c]; };
     // N de FM : nombre de câbles courant AVANT la mise à jour par « NOMBRES DE CABLES » (0013 : tableau réajusté à 17 câbles, FM à 16 ;
@@ -2060,7 +2071,7 @@
       var ge = G.filter(function (g) { return g.t === js && g.k === 0; })[0].e;
       var sig = (FM / Sb) * (1 - 0.8 * ge / Vs) - ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib;
       dFl = v.KFL * v.EP / R.EI28 * sig;
-      P.flImp = { FM: FM, a: (1 - 0.8 * ge / Vs) / Sb, b: -ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib, ge: ge, js: js };
+      P.__EI = R.EI; P.__EI28 = R.EI28; P.flImp = { FM: FM, a: (1 - 0.8 * ge / Vs) / Sb, b: -ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib, ge: ge, js: js };
     }
     if (!imp && P.auto && P.auto.P3) {
       // fluage approché du câble retenu : « CALCUL ITERATIF DU FLUAGE » (σb max aux sections clés, FM = N.A.T∞ moyen : NON RÉSOLU)
@@ -2096,7 +2107,9 @@
         FMf = nA * mT; FMJ = nA * mI;
         // RÈGLE v17 : FM = N·A·E.S, FMJ = N·A·T initiale du dernier tableau « PERTES REAJUSTEES » à sa section critique
         var BRf = P.auto.blocks && P.auto.blocks[1], cf = BRf && BRf.nb && BRf.nb.crit;
-        if ((globalThis.PSIDP_FMCRIT === undefined || globalThis.PSIDP_FMCRIT === 1) && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti; }
+        if ((globalThis.PSIDP_FMCRIT === undefined || globalThis.PSIDP_FMCRIT === 1) && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti;
+          if (globalThis.PSIDP_FMNODC === 1) { var tq = gq.T0 - gq.bl, rq = 6 / 100 * v.RO * (tq / v.FPRG - v.MU0) * tq, flq = BRf.fl, rtq = R.retrait * v.EP;
+            FMf = nA * (tq - rq - rtq - flq + 2 * rq * (rtq + flq) / tq); FMJ = nA * tq; } }
         var nf = fl2(FMf);
         if (modeC === 3) dC = dcRule(nf) * FMJ / FMf;
         if (Math.abs(nf - dFl) < 0.01 && modeC !== 3) { dFl = nf; break; } dFl = nf;
@@ -2105,6 +2118,7 @@
     }
     // diagnostic (dev/ uniquement) : forcer ΔC / fluage approché pour isoler les pertes
     if (model.__diag) { if (model.__diag.dC != null) dC = model.__diag.dC; if (model.__diag.dFl != null) dFl = model.__diag.dFl; }
+    if (typeof globalThis.PSIDP_DIAG === 'function') { var dgx = globalThis.PSIDP_DIAG(v, P); if (dgx) { if (dgx.dC != null) dC = dgx.dC; if (dgx.dFl != null) dFl = dgx.dFl; } } // banc (v40)
     P.dC = dC; P.dFl = dFl;
     // --- section 24 : tensions initiales et première approximation à l'infini
     G.forEach(function (g) { var p = pt(g); g.dev = p.dev; g.T0 = p.T0; g.bl = p.blocage; g.p = los(g, dC, dFl); });
