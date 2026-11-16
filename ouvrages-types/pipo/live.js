@@ -17,7 +17,12 @@
     const integ = (y, a, z) => { if (z <= a) return 0; const n = KN; let s = 0; if (KTRAP) { for (let i = 0; i <= n; i++) s += K(y, a + (z - a) * i / n) * (i === 0 || i === n ? 0.5 : 1); return s * (z - a) / n; }
       for (let i = 0; i <= n; i++) { const e = a + (z - a) * i / n; s += K(y, e) * (i === 0 || i === n ? 1 : i % 2 ? 4 : 2); } return s * (z - a) / n / 3; };
     const best = f => { let m = 0; for (const y of ys) m = Math.max(m, f(y)); return m; };
-    const KSTEP = globalThis.PIPO_KSTEP || 0.05; const slide = (w, f) => y => { let m = 0; for (let s = c0; s + w <= c1 + 1e-9; s += KSTEP) m = Math.max(m, f(y, s)); return m; };
+    const KSTEP = globalThis.PIPO_KSTEP || 0.05; const slideC = (w, f) => y => { let m = 0; for (let s = c0; s + w <= c1 + 1e-9; s += KSTEP) m = Math.max(m, f(y, s)); return m; };
+    // Tour 20 : charges calées contre l'un ou l'autre BORD de la chaussée (s = c0 ou c1 − w), sans glissement continu.
+    // PIPO_KEDGE (bits) : 1 = A, 2 = Bc, 4 = Bt, 8 = Mc, 16 = Me, 32 = E (position libre).
+    const KEDGE = globalThis.PIPO_KEDGE != null ? globalThis.PIPO_KEDGE : 63; // défaut : toutes (seul Bt 2 voies change : +203 / +19)
+    const slideE = (w, f) => y => (w > c1 - c0 + 1e-9 ? 0 : Math.max(f(y, c0), f(y, c1 - w)));
+    const slideM = m => (KEDGE & m) ? slideE : slideC; const slide = slideC;
     const pts = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].map(t => t * b);
     const cl = v.CLASSE || 1, nv = Math.max(1, v.PVOIE), V = v.ESURCH / nv;
     const out = { table: pts.map(y => pts.map(e => K(y, e))), b, Lf, theta: b / Lf, A: [], BC: [], BT: [], a1: [], a2: V0[cl] / V, bc: [], bt: BT[cl] || 1 };
@@ -31,19 +36,27 @@
     // (défaut 16 ; PIPO_KLIN = 0 : ancienne règle).
     const KV = globalThis.PIPO_KLIN != null ? globalThis.PIPO_KLIN : 16;
     const Kb = m => (KV & m) ? Klin : K; const bestB = (KV & 16) ? best9 : best;
-    const integB = m => (KV & m) ? integLin : integ;
-    for (let n = 1; n <= nv; n++) { out.A.push(best9(slide(n * V, (y, s) => integLin(y, s, s + n * V) / (2 * b)))); out.a1.push((A1[cl] || A1[1])[Math.min(n, 5) - 1]); }
+    // Tour 20 : A = K EXACT par trapèzes à 2 intervalles par voie (bords et milieu de chaque voie) : 25/25 coefficients exacts
+    // (crochet PIPO_KA = 0 : ancienne intégrale de la ligne brisée des 9 ordonnées).
+    const KA = globalThis.PIPO_KA != null ? globalThis.PIPO_KA : 1;
+    const integA = (y, a, z, n) => { if (!KA) return integLin(y, a, z); const m = 2 * n; let t = 0; for (let i = 0; i <= m; i++) t += K(y, a + (z - a) * i / m) * (i === 0 || i === m ? 0.5 : 1); return t * (z - a) / m; };
+    for (let n = 1; n <= nv; n++) { out.A.push(best9(slideM(1)(n * V, (y, s) => integA(y, s, s + n * V, n) / (2 * b)))); out.a1.push((A1[cl] || A1[1])[Math.min(n, 5) - 1]); }
     const nf = Math.min(nv, Math.floor(v.ESURCH / 2.5 + 1e-9));
     for (let n = 1; n <= Math.max(1, nf); n++) {
-      out.BC.push(bestB(slide(2.5 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(1)(y, s + 2.5 * j + 0.25) + Kb(1)(y, s + 2.5 * j + 2.25); return t / 2 / (2 * b); })));
+      out.BC.push(bestB(slideM(2)(2.5 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(1)(y, s + 2.5 * j + 0.25) + Kb(1)(y, s + 2.5 * j + 2.25); return t / 2 / (2 * b); })));
       out.bc.push((BC[cl] || BC[1])[Math.min(n, 5) - 1]);
     }
     for (let n = 1; n <= Math.min(2, Math.max(1, Math.floor(v.ESURCH / 3 + 1e-9))); n++)
-      out.BT.push(bestB(slide(3 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(2)(y, s + 3 * j + 0.5) + Kb(2)(y, s + 3 * j + 2.5); return t / 2 / (2 * b); })));
+      out.BT.push(bestB(slideM(4)(3 * n, (y, s) => { let t = 0; for (let j = 0; j < n; j++) t += Kb(2)(y, s + 3 * j + 0.5) + Kb(2)(y, s + 3 * j + 2.5); return t / 2 / (2 * b); })));
     const mc = v.MC === 3 ? [0.85, 2.95] : [1.0, 3.3];
-    out.MC = v.MC ? bestB(slide(mc[0] + mc[1], (y, s) => (integB(4)(y, s, s + mc[0]) + integB(4)(y, s + mc[1], s + mc[1] + mc[0])) / 2 / (2 * b))) : 0;
+    // Tour 20 : Mc et Me en K EXACT par trapèzes : 2 intervalles par chenille Mc (12/12 exacts), 6 intervalles sur la largeur de Me
+    // (Me120, 10/10 exacts ; Me80 non présent au corpus, même règle). Crochet PIPO_KQ = 0 : anciennes quadratures de Simpson.
+    const KQ = globalThis.PIPO_KQ != null ? globalThis.PIPO_KQ : 1;
+    const trap = (y, a, z, n) => { let t = 0; for (let i = 0; i <= n; i++) t += K(y, a + (z - a) * i / n) * (i === 0 || i === n ? 0.5 : 1); return t * (z - a) / n; };
+    const integB = (m, n) => (KV & m) ? integLin : (KQ && n) ? (y, a, z) => trap(y, a, z, n) : integ;
+    out.MC = v.MC ? bestB(slideM(8)(mc[0] + mc[1], (y, s) => (integB(4, 2)(y, s, s + mc[0]) + integB(4, 2)(y, s + mc[1], s + mc[1] + mc[0])) / 2 / (2 * b))) : 0;
     const lme = v.ME === 3 ? 3.5 : 4.0;
-    out.ME = v.ME ? bestB(slide(lme, (y, s) => integB(4)(y, s, s + lme) / lme / (2 * b))) : 0;
+    out.ME = v.ME ? bestB(slideM(16)(lme, (y, s) => integB(4, 6)(y, s, s + lme) / lme / (2 * b))) : 0;
     if (v.ME === 5 && v.LARGENC > 0) { // charge généralisée « à essieux » (lignes S2/S3) : 2 roues à LARGES, centrées dans l'encombrement LARGENC
       const m0 = (v.LARGENC - v.LARGES) / 2;
       out.ME = best(slide(v.LARGENC, (y, s) => (K(y, s + m0) + K(y, s + m0 + v.LARGES)) / 2 / (2 * b)));
@@ -57,7 +70,7 @@
     // centrée à 3.50 m du bord ; la diffusion 2·HCHAU n'est gardée que pour la position libre (1846 exact).
     const exFix = (y, s) => integ(y, s, s + 3.3) / 3.3 / (2 * b);
     out.EX = !v.EXCEP ? 0 : v.ESURCH > (globalThis.PIPO_EX7 != null ? globalThis.PIPO_EX7 : 7 + 1e-9) ? Math.max(...pts.map(y => Math.max(exFix(y, c0 + 3.5 - 1.65), exFix(y, c1 - 3.5 - 1.65))))
-      : Math.max(...pts.map(slide(wEx, exAt)));
+      : Math.max(...pts.map(slideM(32)(wEx, exAt)));
     // Tour 18, règle PSIDP/PSIDA « axe du convoi libre entre bord + 3.50 et bord opposé − 3.50, maximum » (PIPO_EXK3 = 1 : bande 3.30
     // sans diffusion ; 2 : bande diffusée wEx). Chaussée < 7 m : intervalle vide → règle actuelle conservée.
     if (v.EXCEP && globalThis.PIPO_EXK3 && v.ESURCH >= 7 - 1e-9) {
