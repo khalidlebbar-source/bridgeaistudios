@@ -217,7 +217,7 @@
     // --- maillage et modèle de cadre (EI différé ; piédroits d'épaisseur biaise e2/sin)
     const Lh = L / 2;
     const STP = L > 10 ? 0.5 : 0.25; // pas des tableaux (0.25 m pour les petites portées, cf. 2498)
-    const xsTop = Array.from(new Set([...range(0, L, 0.05), ...sectionsList(Lh, STP), L - 0, Lh, L / 4].map(x => +x.toFixed(6)))).filter(x => x <= L + 1e-9).sort((a, b) => a - b);
+    const xsTop = Array.from(new Set([...range(0, L, 0.05), ...sectionsList(Lh, STP), ...(root.PICF_SYMG ? sectionsList(Lh, STP).map(x => L - x) : []), L - 0, Lh, L / 4].map(x => +x.toFixed(6)))).filter(x => x <= L + 1e-9).sort((a, b) => a - b);
     if (xsTop[xsTop.length - 1] < L - 1e-6) xsTop.push(L);
     const secB = sectionsList(Lh, STP);
     const xsBot = Array.from(new Set([...secB, L / 4, ...secB.map(x => L - x), L].map(x => +x.toFixed(6)))).sort((a, b) => a - b);
@@ -264,6 +264,8 @@
     }
     // LI (page 7) : abscisses tous les 0.5 m + L
     const ilAbs = range(0, L, STP).filter(x => x < L - 1e-6).concat([L]);
+    // essai session q (PICF_SYMG) : grille des LI symétrique par rapport à L/2 (demi-grille 0, STP, … + miroir L − x ; bit 8 : L/2 inclus)
+    const SYMG = root.PICF_SYMG || 0, ilAbsS = (() => { const h = range(0, Lh, STP).filter(x => x < Lh - 1e-6); const r = h.concat(SYMG & 8 ? [Lh] : [], h.slice().reverse().map(x => +(L - x).toFixed(6))); return r; })();
     R.ilPage = ilAbs.map(x => { const i = idx(xsTop, x); return [x, ...ilTop[i].det]; });
 
     // --- charges permanentes : cas élémentaires
@@ -486,10 +488,12 @@
       }
       for (const key of ['BC', 'BT', 'MC', 'ME', 'E'].concat(hasEC ? ['EC'] : [])) {
         envConv = key; const cv = conv[key]; let mx = 0, mn = 0, pmx = null, pmn = null;
+        // essai session q (PICF_WND) : roues Bc/Bt/Me sans effet sur la dalle de transition pour les clés listées
+        const nd0 = nd; nd = nd0 || (!!root.PICF_WND && (root.PICF_WND.k || []).includes(envKey) && (root.PICF_WND.c || ['BC', 'BT', 'ME']).includes(key));
         const span = cv.axles[cv.axles.length - 1].x + (cv.trucks > 1 ? cv.gapTruck : 0);
         // grille de déplacement : pas des tableaux (0.25 m si L ≤ 10 : 2498 Mc 14.75/18.75, Bc 14.25/15.75) ; balayage étendu de la
         // demi-empreinte diffusée (2498, H.SUP 15.70 m : Mc centré à 14.75 pour L = 5.35). Crochet PICF_CSTP = 0 : ancien (0.5, sans extension).
-        const CST = root.PICF_CSTP ?? 7, STEP = CST & 1 ? STP : 0.5, ext = (CST & 2) && !((CST & 4) && /^V/.test(envKey || '')) ? Math.ceil(Math.max(...cv.axles.map(a => a.a || 0)) / 2 / STEP) : 0;
+        const CST = root.PICF_CSTP ?? 7, STEP = (root.PICF_UGC === 1 || (root.PICF_UGC === 2 && key === 'E')) ? L / Math.round(L / STP) : CST & 1 ? STP : 0.5, ext = (CST & 2) && !((CST & 4) && /^V/.test(envKey || '')) ? Math.ceil(Math.max(...cv.axles.map(a => a.a || 0)) / 2 / STEP) : 0;
         for (const dir of [1, -1]) for (let nt = 1; nt <= cv.trucks; nt++) {
           // l'essieu le plus à droite parcourt la grille de pas 0.5 m (convention déduite des positions imprimées)
           const sp = cv.axles[cv.axles.length - 1].x + (nt - 1) * (cv.gapTruck || 0);
@@ -502,6 +506,8 @@
             return ax.x === 0 && dir > 0 ? Math.max(gLo, xr) : ax.x > 0 && dir < 0 ? Math.min(gHi, x0 - sp) : null; }) : null;
           for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const xe = exr ? exr(ax) : null; const x = xe != null ? xe : x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0;
             sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, aa, nd); if (W) smw += ax.P * ilAvg(getter, x, aa, true); }
+          if (root.PICF_VONB && (root.PICF_VONBK || ['Vt']).includes(envKey) && (root.PICF_VONBC || ['BC', 'BT', 'ME']).includes(key)) { let off = false; // essai session q : véhicule entièrement sur l'ouvrage [−Ld, L + Ld]
+            for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); if (x < -Ld - 1e-9 || x > L + Ld + 1e-9) off = true; } if (off) continue; }
           const sP = W ? smw : sm, sN = W && wnd === 1 ? smw : sm; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, nt, x0, sP);
           if (sP > mx) { mx = sP; pmx = { dir, x0, nt }; } if (sN < mn) { mn = sN; pmn = { dir, x0, nt }; }
         } }
@@ -510,14 +516,16 @@
         if (cv.trucks > 1 && !root.PICF_BCFIX) { const tl = cv.axles[cv.axles.length - 1].x;
           for (const dir of [1, -1]) { const ks = [], vs = [], vw = [];
             for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + tl + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - tl : kx * STEP; let sm = 0, smw = 0;
+              const offB = root.PICF_VONB && (root.PICF_VONBK || ['Vt']).includes(envKey) && (root.PICF_VONBC || ['BC', 'BT', 'ME']).includes(key) && cv.axles.some(ax => { const x = x0 + dir * ax.x; return x < -Ld - 1e-9 || x > L + Ld + 1e-9; });
               for (const ax of cv.axles) { const x = x0 + dir * ax.x, aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0; sm += ax.P * ilAvg(getter, x, aa, nd); if (wnd) smw += ax.P * ilAvg(getter, x, aa, true); }
-              if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
+              if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; if (offB) sm = smw = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
             const gmin = Math.round(cv.gapTruck / STEP);
             for (let i = 0; i < vs.length; i++) for (let j = i + gmin; j < (root.PICF_BCGMAX ? Math.min(vs.length, i + Math.round(root.PICF_BCGMAX / STEP) + 1) : vs.length); j++) { const smP = vw[i] + vw[j], smN = wnd === 1 ? smP : vs[i] + vs[j]; if (root.PICF_ENVDBG) root.PICF_ENVDBG(envKey, envIdx, key, dir, [ks[i], ks[j]], smP, vs[i], vs[j]);
               if (root.PICF_BCTIE ? smP >= mx - 1e-9 : smP > mx + 1e-12) { mx = smP; pmx = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } if (root.PICF_BCTIE ? smN <= mn + 1e-9 : smN < mn - 1e-12) { mn = smN; pmn = { dir, x0: ks[i], nt: 2, xs: [ks[i], ks[j]] }; } } } }
         const k = { BC: coefs.BCf * dyn.BC.d, BT: coefs.BTf * dyn.BT.d, MC: coefs.MC * dyn.MC.d, ME: coefs.ME * dyn.ME.d, E: coefs.E * dyn.E.d, EC: hasEC ? coefs.EC * 1.5 : 0 }[key];
         const kk = nodyn ? k / ({ BC: dyn.BC.d, BT: dyn.BT.d, MC: dyn.MC.d, ME: dyn.ME.d, E: 1, EC: 1.5 }[key]) : k;
         res[key + '+'] = { v: mx * G * kk, pos: pmx }; res[key + '-'] = { v: mn * G * kk, pos: pmn };
+        nd = nd0;
       }
       return res;
     }
@@ -529,10 +537,19 @@
     };
     // LI connues aux seuls points de la grille des tableaux (pas STP), interpolation linéaire entre eux ; effort tranchant des
     // traverses : pas de point dédoublé, ordonnée du côté gauche au droit de la section (règle PIPO tour 7, hook PICF_JV).
+    const ilAbs0 = ilAbs;
+    // session q : grille des LI = division de la portée en n = round(L/STP) intervalles égaux (pas L/n, symétrique)
+    const UG = root.PICF_UG ?? 7, ilAbsU = range(0, Math.round(L / STP), 1).map(j => +(j * L / Math.round(L / STP)).toFixed(6));
     const JV = root.PICF_JV != null ? root.PICF_JV : 2, JVS = root.PICF_JVS || 0;
-    const coarse = (raw, xk) => { const MID = root.PICF_VTMID && xk != null && Math.abs(xk - Lh) < 1e-6; // essai session p : section L/2, nœud ajouté, saut à mi-hauteur
+    const coarse = (raw, xk, sy, xin) => { const ilAbs0b = xin != null && !ilAbsU.some(g => Math.abs(g - xin) < 1e-6) ? ilAbsU.concat([xin]).sort((a, b) => a - b) : ilAbsU; // essai PICF_UGK : section ajoutée à la grille (moments)
+      const ilAbs = sy === 'U' ? ilAbs0b : sy ? ilAbsS : ilAbs0; const MID = root.PICF_VTMID && xk != null && Math.abs(xk - Lh) < 1e-6; // essai session p : section L/2, nœud ajouté, saut à mi-hauteur
       const abs = MID && !ilAbs.some(g => Math.abs(g - Lh) < 1e-6) ? ilAbs.concat([Lh]).sort((a, b) => a - b) : ilAbs;
       const gv = abs.map(g => { const i = idx(xsTop, g);
+        if (i < 0) { // point de grille hors maillage (grille L/n) : interpolation linéaire sur le maillage fin, du bon côté de la section
+          let j = 0; while (j < xsTop.length - 2 && xsTop[j + 1] < g) j++; const at = (a, b) => raw(a) + (raw(b) - raw(a)) * (g - xsTop[a]) / (xsTop[b] - xsTop[a]);
+          if (xk != null && Math.abs(xsTop[j] - xk) < 1e-6 && j + 2 < xsTop.length) return at(j + 1, j + 2);
+          if (xk != null && Math.abs(xsTop[j + 1] - xk) < 1e-6 && j >= 1) return at(j - 1, j);
+          return at(j, j + 1); }
         if (MID && Math.abs(g - xk) < 1e-6 && i >= 2) return ((2 * raw(i - 1) - raw(i - 2)) + (2 * raw(i + 1) - raw(i + 2))) / 2;
         if (xk != null && Math.abs(g - xk) < 1e-6) return JVS > 0 ? 2 * raw(i + 1) - raw(i + 2) : (i >= 2 ? (root.PICF_JVR ? raw(i) - Math.round(raw(i) - 2 * raw(i - 1) + raw(i - 2)) : 2 * raw(i - 1) - raw(i - 2)) : raw(i)); return raw(i); });
       const memo = xsTop.map(x => { let k = 0; while (k < abs.length - 2 && abs[k + 1] < x - 1e-9) k++; const t = (x - abs[k]) / (abs[k + 1] - abs[k]); return gv[k] * (1 - t) + gv[k + 1] * t; });
@@ -544,8 +561,8 @@
     if (root.PICF_VBD && Ld > 0) { const ex = nd => { const F = new Float64Array(m.n); F[nd * 3 + 1] = -1; return extract(solve(F)); };
       const bl = ex(m.bot[0]), br = ex(m.bot[m.bot.length - 1]), nT = xsTop.length - 1;
       getters.Vb = getters.Vb.map((g, k) => { const v0 = g(0) - bl.b[k].V, v1 = g(nT) - br.b[k].V; const f = i => g(i); f.ends = [v0, v1]; return f; }); }
-    if (JV) { for (const [key, sec] of [['Vt', secB], ['Vb', secB]]) getters[key] = getters[key].map((g, k) => coarse(g, sec[k]));
-      if (JV === 2) for (const key of ['t', 'b', 'w', 'Vw', 'p', 'det']) getters[key] = getters[key].map(g => coarse(g, null)); }
+    if (JV) { for (const [key, sec] of [['Vt', secB], ['Vb', secB]]) getters[key] = getters[key].map((g, k) => coarse(g, sec[k], key === 'Vt' ? (UG & 1 ? 'U' : SYMG & 1) : (UG & 2 ? 'U' : SYMG & 2)));
+      if (JV === 2) for (const key of ['t', 'b', 'w', 'Vw', 'p', 'det']) getters[key] = getters[key].map((g, k) => coarse(g, null, UG & 4 ? 'U' : SYMG & 4, root.PICF_UGK && root.PICF_UGK.includes(key) ? (key === 'det' ? [0, 0, Lh, Lh, L / 4, null][k] : secB[k]) : null)); }
     if (root.PICF_LDV) getters.Vb.forEach(g => { g.Ld = root.PICF_LDV(d, s, Ld); });
     if (root.PICF_GET) root.PICF_GET(getters, { L, Ld, xsTop, ilVal });
     R.env = {};
@@ -561,13 +578,14 @@
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
     // session l : ouvrages DROITS (2550, 2498) — V TS des surcharges imprimé à la section x_k avec la LI de la section x_(k−1)
     // (2550 x = 0.50 : AL/Bc/Bt/Mc/Me/E/EC = valeurs de x = 0 à 0.1 près). Crochet PICF_VTSH : 0 = sans décalage, 2 = aussi biais, 3 = après recopie.
-    const VTSH = root.PICF_VTSH ?? 1;
+    const VTSH = root.PICF_VTSH ?? (UG & 1 ? 0 : 1); // session q : le décalage des ouvrages droits n'est qu'un effet de la grille L/n (pas > STP)
     const symE = e0 => { const e = Object.assign({}, e0); for (const k of Object.keys(e)) if (k.endsWith('+') && e[k.slice(0, -1) + '-']) { const p = e[k], n = e[k.slice(0, -1) + '-'], h = (p.v - n.v) / 2;
       e[k] = Object.assign({}, p, { v: h }); e[k.slice(0, -1) + '-'] = Object.assign({}, n, { v: -h }); } return e; };
-    const VTSM = root.PICF_VTSM ?? 3, vtMid = R.env.Vt.length ? (root.PICF_VTMID ? R.env.Vt[R.env.Vt.length - 1] : symE(R.env.Vt[R.env.Vt.length - 1])) : null; // session p (RETENU) : section L/2 symétrisée MAX = −MIN = (MAX − MIN)/2 en dernière ligne ; biais : aussi la ligne précédente (listing 2531/2551 6.50)
+    const VTSM = root.PICF_VTSM ?? (UG & 1 ? 0 : 3), vtMid = R.env.Vt.length ? (root.PICF_VTMID ? R.env.Vt[R.env.Vt.length - 1] : symE(R.env.Vt[R.env.Vt.length - 1])) : null; // session p (RETENU) : section L/2 symétrisée MAX = −MIN = (MAX − MIN)/2 en dernière ligne ; biais : aussi la ligne précédente (listing 2531/2551 6.50)
     if (VTSH && VTSH !== 3 && (VTSH === 2 || Math.abs(s - 1) < 1e-9)) { const a = R.env.Vt; for (let k = a.length - 1; k >= 1; k--) a[k] = a[k - 1]; }
     const VBSYM = root.PICF_VBSYM != null ? root.PICF_VBSYM : 1;
-    for (const key of root.PICF_VBNC || VBSYM === 1 ? ['Vt'] : ['Vt', 'Vb']) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
+    const VTREC = root.PICF_VTREC ?? !(UG & 1); // session q : avec la grille L/n, plus de recopie de la section précédente à L/2 (2531 6.50 = 6.71 : même intervalle central)
+    for (const key of (root.PICF_VBNC || VBSYM === 1 ? ['Vt'] : ['Vt', 'Vb']).filter(k => k !== 'Vt' || VTREC)) { const a = R.env[key]; if (a.length > 1) a[a.length - 1] = a[a.length - 2]; }
     if (VTSM && vtMid) { const a = R.env.Vt, n = a.length, biais = Math.abs(s - 1) > 1e-9; if (VTSM & 1) a[n - 1] = vtMid; if ((VTSM & 2) && biais && n > 2) a[n - 2] = vtMid; if ((VTSM & 4) && !biais && n > 2) a[n - 2] = vtMid; }
     // session j : radier — à mi-portée SETRA imprime MAX = −MIN = (MAX − MIN)/2 (ordonnée du saut de la LI prise à mi-hauteur à x = L/2 :
     // moyenne de la section et de son symétrique) ; VBSYM 1 : section x = L/2 calculée, 2 : à partir de la section précédente recopiée, 0 : ancien
