@@ -149,7 +149,7 @@
     // Me120 : entraxe des essieux 1.80 m (fascicule 61 II) ; crochet de diagnostic PICF_MED (PIPO : 1.75 reproduit les listings).
     out.ME = { trucks: 1, axles: ax([{ x: 0, P: 33, a: 0.15 }, { x: (typeof root !== 'undefined' && root.PICF_MED) || 1.80, P: 33, a: 0.15 }], sW) };
     out.E = { trucks: 1, axles: ax([{ x: 0, P: 200, a: 15.0 }, { x: 33.0, P: 200, a: 15.0 }], sL) };
-    out.EC = { trucks: 1, axles: ax([{ x: 0, P: 50, a: 0.60 }, { x: 9.5, P: 50, a: 0.60 }], sEC) };
+    out.EC = { trucks: 1, axles: ax([{ x: 0, P: 50, a: 0.60 }, { x: 9.5, P: 50, a: 0.60 }], root.PICF_ECW != null ? root.PICF_ECW - 0.6 : sEC) }; // PICF_ECW : diagnostic (largeur imposée)
     return out;
   }
 
@@ -462,9 +462,10 @@
       // dont l'empreinte, PRIVÉE DE LA DIFFUSION DANS LE REMBLAI HSREM (pente 3/4 : a − 1.5·HSREM), est entièrement sur la dalle de
       // transition DROITE est sans effet ; une charge à cheval sur l'angle compte avec toute son empreinte (dalle comprise). Dalle gauche :
       // inchangée (PICF_WSLL = 1 : essai négatif). 2531 TS x = 0 Bc/Bt/Me 6/7/8 (au lieu de 11/12/14), note modèle du guide 4/5/4.
-      { const WSL = root.PICF_WSL ?? 7, WD = root.PICF_WSLD === 'h' ? L / Math.round(L / STP) : root.PICF_WSLD === 's' ? STP : typeof root.PICF_WSLD === 'function' ? root.PICF_WSLD(d, envKey, a) : (root.PICF_WSLD ?? 0.75 * d.hsrem), WLft = !!root.PICF_WSLL; if (WSL && a && Ld0 > 0 && (!root.PICF_WSLH || !(d.hsrem > 0)) && (WSL & 1 ? ['BC', 'BT', 'ME'] : []).concat(WSL & 2 ? ['EC'] : []).concat(WSL & 4 ? ['MC', 'E'] : []).includes(envConv)
+      { const WSL = root.PICF_WSL ?? 7, WD = root.PICF_WSLD === 'h' ? L / Math.round(L / STP) : root.PICF_WSLD === 's' ? STP : typeof root.PICF_WSLD === 'function' ? root.PICF_WSLD(d, envKey, a) : (root.PICF_WSLD ?? 0.75 * d.hsrem), WLft = !!root.PICF_WSLL || !!(root.PICF_WSLLK && root.PICF_WSLLK.includes(envKey)); if (WSL && a && Ld0 > 0 && (!root.PICF_WSLH || !(d.hsrem > 0)) && (WSL & 1 ? ['BC', 'BT', 'ME'] : []).concat(WSL & 2 ? ['EC'] : []).concat(WSL & 4 ? ['MC', 'E'] : []).includes(envConv)
           && (!root.PICF_WSLK || root.PICF_WSLK.includes(envKey)) && (x - a / 2 > L + WD - 1e-9 || (WLft && x + a / 2 < -WD + 1e-9))) return 0; }
-      if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd); const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
+      if (!a || (root.PICF_DTPT && Ld0 > 0 && (x < 0 || x > L))) return ilVal(getter, x, nd);
+      if (root.PICF_IQ && root.PICF_IQ(envKey, envConv)) { const q = root.PICF_IQ(envKey, envConv); if (q === 2) return (ilVal(getter, x - a / 2, nd) + ilVal(getter, x + a / 2, nd)) / 2; if (q === 3) return (ilVal(getter, x - a / 2, nd) + 4 * ilVal(getter, x, nd) + ilVal(getter, x + a / 2, nd)) / 6; if (q === 1) return ilVal(getter, x, nd); } /* essai session v : quadrature de l'empreinte */ const n = Math.max(2, Math.ceil(a / (root.PICF_IAN || 0.1))); let sm = 0;
       const SPL = (root.PICF_VTSPL ?? 5) && (root.PICF_VTSPLK || ['Vt']).includes(envKey) ? (root.PICF_VTSPL ?? 5) : 0, rg = u => (u < 0 ? -1 : u > L ? 1 : 0), r0 = rg(x);
       // session u (RETENU, PICF_VTSPLW = 1) : avec dalle de transition, les roues relèvent de la règle PICF_WSL (essieu à cheval sur l'angle
       // compté avec toute son empreinte) ; la règle VTSPL ne garde que Mc (et les roues quand il n'y a pas de dalle : 2498).
@@ -474,6 +475,7 @@
         // V TS (RETENU, défaut 5) : charge (essieu, chenille) dont le CENTRE est sur une dalle de transition → partie de l'empreinte hors
         // de la dalle perdue ; centre dans la travée → empreinte complète (Mc « dalle seule » jusqu'à x = λ/2)
         if ((SPL === 5 || SPL === 6) && rg(u) !== r0 && r0 !== 0 && (root.PICF_VTSPLC || (VTW && Ld0 > 0 ? ['MC'] : ['MC', 'BC', 'BT', 'ME'])).includes(envConv)) { if (SPL === 6 && !nd) sm += r0 < 0 ? e0 : e1; continue; } // essai 5 : centre sur la dalle → partie hors dalle perdue
+        if (root.PICF_VTSPLX && (root.PICF_VTSPLXK || ['Vt']).includes(envKey) && root.PICF_VTSPLX.includes(envConv) && rg(u) !== r0 && (r0 === 0 || !root.PICF_VTSPLX0)) continue; // essai session v : partie de l'empreinte de l'autre côté de l'angle perdue
         if (SPL === 3 && rg(u) !== r0 && r0 !== 0 && Lg > 0) { if (nd) continue; sm += r0 < 0 ? (u < -Lg ? 0 : e0 * (1 + u / Lg)) : (u > L + Lg ? 0 : e1 * (1 - (u - L) / Lg)); continue; }
         if (SPL >= 3 && rg(u) !== r0 && r0 === 0 && SPL === 4) { sm += r0 === 0 && u < 0 ? e0 * 0 : 0; continue; }
         if (SPL >= 3) { sm += ilVal(getter, u, nd); continue; }
@@ -524,18 +526,18 @@
         const span = cv.axles[cv.axles.length - 1].x + (cv.trucks > 1 ? cv.gapTruck : 0);
         // grille de déplacement : pas des tableaux (0.25 m si L ≤ 10 : 2498 Mc 14.75/18.75, Bc 14.25/15.75) ; balayage étendu de la
         // demi-empreinte diffusée (2498, H.SUP 15.70 m : Mc centré à 14.75 pour L = 5.35). Crochet PICF_CSTP = 0 : ancien (0.5, sans extension).
-        const CST = root.PICF_CSTP ?? 7, STEP = (root.PICF_UGC === 1 || (root.PICF_UGC === 2 && key === 'E')) ? L / Math.round(L / STP) : CST & 1 ? STP : 0.5, ext = (CST & 2) && !((CST & 4) && /^V/.test(envKey || '')) ? Math.ceil(Math.max(...cv.axles.map(a => a.a || 0)) / 2 / STEP) : 0;
+        const CST = root.PICF_CSTP ?? 7, STEP = (root.PICF_UGC === 1 || (root.PICF_UGC === 2 && key === 'E') || (root.PICF_UGCV && root.PICF_UGCV.k.includes(envKey) && root.PICF_UGCV.c.includes(key))) ? L / Math.round(L / STP) : root.PICF_VSTEP && root.PICF_VSTEP(envKey, key) ? root.PICF_VSTEP(envKey, key) : CST & 1 ? STP : 0.5, ext = (CST & 2) && !((CST & 4) && /^V/.test(envKey || '')) ? Math.ceil(Math.max(...cv.axles.map(a => a.a || 0)) / 2 / STEP) : 0;
         for (const dir of [1, -1]) for (let nt = 1; nt <= cv.trucks; nt++) {
           // l'essieu le plus à droite parcourt la grille de pas 0.5 m (convention déduite des positions imprimées)
           const sp = cv.axles[cv.axles.length - 1].x + (nt - 1) * (cv.gapTruck || 0);
-          for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + sp + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - sp : kx * STEP;
+          for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + sp + 1e-9 + ext * STEP; kx++) { const goff = root.PICF_GOFF ? root.PICF_GOFF(L, STEP, envKey, key) : 0; const x0 = (dir > 0 ? kx * STEP - sp : kx * STEP) + goff;
           let sm = 0, smw = 0; const W = wnd && (key === 'BC' || key === 'BT' || key === 'ME');
           // Règle PSIDP/PSIDA n° 1 (session o, crochet PICF_EXR = 1) : remorque avant sur la grille, arrière au point de grille le plus proche
           // de s1 − 33 m, la grille étant bornée à l'ouvrage [−Ld, L + Ld] (étendue de ext) : arrière ramenée sur l'ouvrage si elle en sort.
           const gLo = (Math.floor(-Ld / STEP) - 1 - ext) * STEP, gHi = (Math.ceil((L + Ld) / STEP) + ext) * STEP;
           const exr = root.PICF_EXR === 1 && key === 'E' ? (ax => { const xf = dir > 0 ? x0 + dir * sp : x0, xr = xf - dir * sp;
             return ax.x === 0 && dir > 0 ? Math.max(gLo, xr) : ax.x > 0 && dir < 0 ? Math.min(gHi, x0 - sp) : null; }) : null;
-          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const xe = exr ? exr(ax) : null; const x = xe != null ? xe : x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0;
+          for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const xe = exr ? exr(ax) : null; const x = xe != null ? xe : x0 + dir * (ax.x + t * (cv.gapTruck || 0)); const aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : key === 'EC' && (root.PICF_ECV ?? ['Vt']).includes(envKey) ? ax.a - 0.5 * (d.ec ? d.ec.hsrem : 0) : ax.a || 0;
             sm += mcl && (key === 'MC' || key === 'E') ? mcl(getter, x, ax, nd) : ax.P * ilAvg(getter, x, aa, nd); if (W) smw += ax.P * ilAvg(getter, x, aa, true); }
           if (root.PICF_VONB && (root.PICF_VONBK || ['Vt']).includes(envKey) && (root.PICF_VONBC || ['BC', 'BT', 'ME']).includes(key)) { let off = false; // essai session q : véhicule entièrement sur l'ouvrage [−Ld, L + Ld]
             for (let t = 0; t < nt; t++) for (const ax of cv.axles) { const x = x0 + dir * (ax.x + t * (cv.gapTruck || 0)); if (x < -Ld - 1e-9 || x > L + Ld + 1e-9) off = true; } if (off) continue; }
@@ -546,7 +548,7 @@
         // a son essieu le plus à droite sur la grille de pas 0.5 m (positions imprimées « DG -5.00 13.50 » : écart 18.5 m).
         if (cv.trucks > 1 && !root.PICF_BCFIX) { const tl = cv.axles[cv.axles.length - 1].x;
           for (const dir of [1, -1]) { const ks = [], vs = [], vw = [];
-            for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + tl + 1e-9 + ext * STEP; kx++) { const x0 = dir > 0 ? kx * STEP - tl : kx * STEP; let sm = 0, smw = 0;
+            for (let kx = Math.floor(-Ld / STEP) - 1 - ext; kx * STEP <= L + Ld + tl + 1e-9 + ext * STEP; kx++) { const x0 = (dir > 0 ? kx * STEP - tl : kx * STEP) + (root.PICF_GOFF ? root.PICF_GOFF(L, STEP, envKey, key) : 0); let sm = 0, smw = 0;
               const offB = root.PICF_VONB && (root.PICF_VONBK || ['Vt']).includes(envKey) && (root.PICF_VONBC || ['BC', 'BT', 'ME']).includes(key) && cv.axles.some(ax => { const x = x0 + dir * ax.x; return x < -Ld - 1e-9 || x > L + Ld + 1e-9; });
               for (const ax of cv.axles) { const x = x0 + dir * ax.x, aa = vNoA && (key === 'BC' || key === 'BT' || key === 'ME') ? vNoA(ax, d) : ax.a || 0; sm += ax.P * ilAvg(getter, x, aa, nd); if (wnd) smw += ax.P * ilAvg(getter, x, aa, true); }
               if (root.PICF_BCG && dir < 0 && x0 < -1e-9) sm = 0; if (offB) sm = smw = 0; ks.push(x0); vs.push(sm); vw.push(wnd ? smw : sm); }
@@ -603,7 +605,9 @@
     // longitudinale à pente 3/4 dans la chaussée et le remblai, a + 1.5·(HCHAU + HSREM) + E3 (même pente que les coefficients K et les
     // moments transversaux) ; traverse sup. : 45° (moments) et pente 1/2 dans le remblai (V TS) inchangés. Crochet PICF_VW34 = 0 : ancien calcul.
     const vW34 = (a, dd) => a.a - 0.5 * (dd.hchau + dd.hsrem);
-    const VW34 = (root.PICF_VW34 ?? 1) ? { Vw: vW34, b: vW34, w: vW34, Vb: vW34, p: vW34, det: vW34 } : {};
+    // session v (RETENU, crochet PICF_VTW34 = 0 pour l'ancienne pente 1/2 dans le remblai) : V TS aussi à pente 3/4 (chaussée et remblai) ;
+    // engin de chantier dans V TS : 0.60 + 1.5·HSREM(chantier) + E3 (crochet PICF_ECV = liste des clés, défaut ['Vt']).
+    const VW34 = (root.PICF_VW34 ?? 1) ? Object.assign({ Vw: vW34, b: vW34, w: vW34, Vb: vW34, p: vW34, det: vW34 }, (root.PICF_VTW34 ?? 1) ? { Vt: vW34 } : {}) : {};
     const VKEYS = root.PICF_VKEYS || ['Vt', ...Object.keys(VW34)];
     let vNoA = null; for (const key of Object.keys(getters)) R.env[key] = getters[key].map((gt, gi) => (envKey = key, envIdx = gi, vNoA = VKEYS.includes(key) ? ((root.PICF_VNOA && root.PICF_VNOA[key]) || (typeof root.PICF_VNOA === 'function' ? root.PICF_VNOA : (VW34[key] || vWheel))) : (key === 'Vb' && root.PICF_VBA != null ? (typeof root.PICF_VBA === 'function' ? root.PICF_VBA : (ax => ax.a + root.PICF_VBA)) : null), envelope(gt, (key === 'p' && !!root.PICF_PND) || (key === 'Vb' && !!root.PICF_VBND), key === 'p', (root.PICF_VBWK || ['Vb']).includes(key) ? (root.PICF_VBWD ?? 0) : 0)));
     // traverses : SETRA reprend à mi-portée les efforts tranchants des surcharges de la section précédente
@@ -906,7 +910,9 @@
     const NG = root.PICF_TRNG ? root.PICF_TRNG(bT, X.STP) : 8 * Math.ceil(2 * bT / (8 * X.STP) - 1e-9), hG = 2 * bT / NG;
     const muG = HM.map(m => { const a = []; for (let i = 0; i <= NG; i++) a.push(guyonMu(m * thT, 0, (-bT + i * hG) / bT)); return a; });
     const trapG = (k, y0, y1) => { y0 = Math.max(-bT, y0); y1 = Math.min(bT, y1); if (!(y1 > y0)) return 0;
-      if (root.PICF_TRS) { let t = 0; for (let i = 0; i <= NG; i++) { const y = -bT + i * hG, w = (i == 0 || i == NG) ? 0.5 : 1; const inb = y > y0 + 1e-9 && y < y1 - 1e-9 ? 1 : (Math.abs(y - y0) < 1e-9 || Math.abs(y - y1) < 1e-9 ? 0.5 : 0); t += w * inb * muG[k][i]; } return t * hG; } const f = y => guyonMu(HM[k] * thT, 0, y / bT);
+      if (root.PICF_TRS) { let t = 0; for (let i = 0; i <= NG; i++) { const y = -bT + i * hG, w = (i == 0 || i == NG) ? 0.5 : 1; const inb = y > y0 + 1e-9 && y < y1 - 1e-9 ? 1 : (Math.abs(y - y0) < 1e-9 || Math.abs(y - y1) < 1e-9 ? 0.5 : 0); t += w * inb * muG[k][i]; } return t * hG; } const f = (root.PICF_TRLI ?? 1) ? (y => { const t = (y + bT) / hG, i = Math.max(0, Math.min(NG - 1, Math.floor(t + 1e-12))); return muG[k][i] + (muG[k][i + 1] - muG[k][i]) * (t - i); }) : (y => guyonMu(HM[k] * thT, 0, y / bT));
+      // session v (RETENU, crochet PICF_TRLI = 0 pour l'ancien calcul) : μ n'est connu qu'aux nœuds de la grille ; aux bornes de la bande
+      // chargée il est interpolé linéairement dans la maille (2550 AL voie 1 : F3 m = 3/5 −0.1484/−0.0454 exacts).
       const xs = [y0], fs = [f(y0)]; for (let i = 0; i <= NG; i++) { const y = -bT + i * hG; if (y > y0 + 1e-9 && y < y1 - 1e-9) { xs.push(y); fs.push(muG[k][i]); } } xs.push(y1); fs.push(f(y1));
       let t = 0; for (let i = 0; i < xs.length - 1; i++) t += (fs[i] + fs[i + 1]) / 2 * (xs[i + 1] - xs[i]); return t; };
     const Lsp = TRG ? R.geom.L : l;

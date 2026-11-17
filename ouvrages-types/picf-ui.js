@@ -417,8 +417,428 @@
     return m;
   }
 
+
+  /* ═════════════ planches de croquis intercalées dans la note (affichage seulement) ═════════════
+     figures(model, results, pages) → [{ after: indice de page, html }] ; la note texte SETRA n'est pas modifiée.
+     Toutes les grandeurs tracées viennent de results (R.donnees, R.geom, R.cmp, R.env, R.conv, R.fer, R.det…). */
+  const FG = (() => {
+    const esc = s => G.OTUI.esc(s);
+    const f2 = v => fmt(v, 2), f1 = v => fmt(v, 1), f0 = v => fmt(v, 0);
+    const P = (x, y) => `${+x.toFixed(4)},${+(-y).toFixed(4)}`;
+    // primitives stylées (unités = m, y vers le haut, même repère que OTUI.svg)
+    const sPoly = (d, pts, st) => d.raw(`<polygon points="${pts.map(p => P(p[0], p[1])).join(' ')}" style="${st}"/>`);
+    const sLine = (d, pts, st) => d.raw(`<polyline points="${pts.map(p => P(p[0], p[1])).join(' ')}" fill="none" style="vector-effect:non-scaling-stroke;${st}"/>`);
+    const sText = (d, x, y, s, o) => { o = o || {}; const fs = (o.size || 1) * d.u * 2; const rot = o.rot ? ` transform="rotate(${-o.rot} ${P(x, y).replace(',', ' ')})"` : '';
+      d.raw(`<text x="${+x.toFixed(4)}" y="${+(-y).toFixed(4)}" font-size="${+fs.toFixed(4)}" text-anchor="${o.a || 'middle'}" dominant-baseline="${o.base || 'middle'}" style="font-family:${o.mono ? "'Courier New',monospace" : "'Outfit',sans-serif"};fill:${o.c || '#3c3f4d'};${o.b ? 'font-weight:700;' : ''}${o.i ? 'font-style:italic;' : ''}"${rot}>${esc(s)}</text>`); };
+    // flèche (pointe en x,y, direction ux,uy)
+    const arrow = (d, x, y, ux, uy, sz, c) => { const L = Math.hypot(ux, uy) || 1; ux /= L; uy /= L; const a = sz, b = sz * 0.38;
+      sPoly(d, [[x, y], [x - ux * a - uy * b, y - uy * a + ux * b], [x - ux * a + uy * b, y - uy * a - ux * b]], `fill:${c || '#3c3f4d'};stroke:none`); };
+    // échelle graphique
+    const scaleBar = (d, x, y, len) => { const u = d.u, n = len >= 5 ? 5 : len;
+      for (let i = 0; i < n; i++) sPoly(d, [[x + i * len / n, y], [x + (i + 1) * len / n, y], [x + (i + 1) * len / n, y + u * 0.6], [x + i * len / n, y + u * 0.6]], `fill:${i % 2 ? '#fff' : '#3c3f4d'};stroke:#3c3f4d;stroke-width:.8px;vector-effect:non-scaling-stroke`);
+      sText(d, x, y + u * 1.6, '0', { size: 0.7 }); sText(d, x + len, y + u * 1.6, fmt(len, 0) + ' m', { size: 0.7 }); };
+    const zig = (d, x1, x2, y) => { const w = x2 - x1, h = d.u * 0.9, m = (x1 + x2) / 2; sLine(d, [[x1, y], [m - h, y], [m - h * 0.4, y + h], [m + h * 0.4, y - h], [m + h, y], [x2, y]], 'stroke:#3c3f4d;stroke-width:1px'); void w; };
+    const fit = (s, mh) => s.replace('<svg ', `<svg style="max-height:${mh}px;width:100%;margin:0 auto" `);
+    const fig = (t, inner, wide) => `<div${wide ? ' class="wide"' : ''}>${t ? `<h5>${esc(t)}</h5>` : ''}${inner}</div>`;
+    const tab = (head, rows, al) => `<table style="border-collapse:collapse;font:10.5px/1.35 'Courier New',monospace;width:100%;color:#222">`
+      + `<tr>${head.map((h, i) => `<th style="text-align:${i ? 'right' : 'left'};border-bottom:1px solid #222;padding:2px 6px;font-weight:700">${esc(h)}</th>`).join('')}</tr>`
+      + rows.map(r => `<tr>${r.map((c, i) => `<td style="text-align:${(al && al[i]) || (i ? 'right' : 'left')};padding:2px 6px;border-bottom:1px solid #eee">${esc(c)}</td>`).join('')}</tr>`).join('') + '</table>';
+    const RED = '#c0392b', BLUE = '#1a4fd6', GREY = '#3c3f4d', GOLD = '#a07828';
+    const ticks = xs => { const a = Math.min(...xs), b = Math.max(...xs), st = b - a > 12 ? 2 : b - a > 4 ? 1 : 0.5, t = [];
+      for (let v = Math.ceil(a / st) * st; v < b - 0.45 * st; v += st) t.push(+v.toFixed(3)); t.push(b); return t; };
+    const legend = items => `<div style="display:flex;flex-wrap:wrap;gap:4px 16px;font:11px 'Outfit',sans-serif;color:#3c3f4d;margin:0 0 2px 64px">${items.map(([n, c, dash]) =>
+      `<span style="display:inline-flex;align-items:center;gap:5px"><svg width="24" height="8"><line x1="0" y1="4" x2="24" y2="4" stroke="${c}" stroke-width="2"${dash ? ' stroke-dasharray="6 4"' : ''}/></svg>${esc(n)}</span>`).join('')}</div>`;
+    const noPermLab = s => s.replace(/<text[^>]*class="vl perm"[^>]*>[^<]*<\/text>/g, '');
+
+    /* ---------- coupe A-A (perpendiculaire aux piédroits), à l'échelle ---------- */
+    function coupeAA(d, R) {
+      const o = d.ouver, h = d.hautl, e1 = d.e1, e2 = d.e2, e3 = d.e3, hr = Math.min(d.hremb, h), ld = d.ldalt, hs = d.hsrem, hc = d.hchau;
+      const hcap = Math.max(1.5, 0.3 * (h + e1 + e3)), brk = hs > hcap * 1.15, hsD = brk ? hcap : hs;
+      const top = h + e3, road = top + hsD + hc;
+      const side = Math.max(ld + 1.5, 2.5, o * 0.2), xl = -e2 - side, xr = o + e2 + side;
+      const d_ = G.OTUI.svg({ x0: xl, y0: -e1 - 1.4, x1: xr + 2.6, y1: road + 1.6 }, { pad: 0.03 }), u = d_.u;
+      const D = d_;
+      D.soil([[xl, -e1], [xr, -e1]], 0.8);
+      D.fill([[xl, -e1], [-e2, -e1], [-e2, top], [o + e2, top], [o + e2, -e1], [xr, -e1], [xr, road - hc], [xl, road - hc]]);
+      if (hr > 0) D.fill([[0, 0], [o, 0], [o, hr], [0, hr]]);
+      D.rect(xl, road - hc, xr - xl, Math.max(hc, u * 0.45), 'road');
+      if (ld > 0) { const t = Math.min(0.3, Math.max(hsD, 0.3)); D.rect(-e2 - ld, road - hc - t, ld, t, 'b2'); D.rect(o + e2, road - hc - t, ld, t, 'b2');
+        sText(D, -e2 - ld / 2, road - hc - t - u * 1.2, 'dalle de transition', { size: 0.65, i: 1, c: '#7a7e8e' }); sText(D, o + e2 + ld / 2, road - hc - t - u * 1.2, 'dalle de transition', { size: 0.65, i: 1, c: '#7a7e8e' }); }
+      D.rect(-e2, -e1, o + 2 * e2, e1, 'b'); D.rect(-e2, 0, e2, h, 'b'); D.rect(o, 0, e2, h, 'b'); D.rect(-e2, h, o + 2 * e2, e3, 'b');
+      // lignes moyennes (cadre de calcul)
+      sLine(D, [[-e2 / 2, -e1 / 2], [o + e2 / 2, -e1 / 2], [o + e2 / 2, h + e3 / 2], [-e2 / 2, h + e3 / 2], [-e2 / 2, -e1 / 2]], `stroke:${BLUE};stroke-width:.8px;stroke-dasharray:8 3 2 3;opacity:.75`);
+      D.line(o / 2, -e1 - 0.5, o / 2, road + 0.5, 'ax');
+      sText(D, o / 2 + u * 0.8, road + 0.35, 'axe', { a: 'start', size: 0.65, c: BLUE, i: 1 });
+      if (brk) { zig(D, xl, xr, top + hsD * 0.55); sText(D, xl + u, top + hsD * 0.55 + u * 1.6, `remblai coupé (HSREM = ${f2(hs)} m)`, { a: 'start', size: 0.7, i: 1 }); }
+      sText(D, o / 2, h + e3 / 2, 'TRAVERSE SUPÉRIEURE', { size: Math.min(0.75, e3 / u / 2.6), c: '#5d5545' });
+      sText(D, o / 2, -e1 / 2, 'TRAVERSE INFÉRIEURE', { size: Math.min(0.75, e1 / u / 2.6), c: '#5d5545' });
+      sText(D, -e2 / 2, h * 0.72, 'PIÉDROIT G', { size: Math.min(0.7, e2 / u / 2.6), rot: 90, c: '#5d5545' });
+      sText(D, o + e2 / 2, h * 0.72, 'PIÉDROIT D', { size: Math.min(0.7, e2 / u / 2.6), rot: 90, c: '#5d5545' });
+      // cotes
+      D.dim(0, h * 0.42, o, h * 0.42, 'OUVER ' + f2(o), 0.01, null, { size: 0.9 });
+      D.dim(o, 0, o, h, 'HAUTL ' + f2(h), Math.min(1.1, o * 0.1), null, { size: 0.9 });
+      D.dim(-e2, h * 0.3, 0, h * 0.3, '', 0.01); sText(D, -e2 - u * 0.6, h * 0.3 + u * 1.5, 'E2 ' + f2(e2), { a: 'end', size: 0.75, c: BLUE });
+      D.dim(o, h * 0.3, o + e2, h * 0.3, '', 0.01); sText(D, o + e2 + u * 0.6, h * 0.3 + u * 1.5, 'E2 ' + f2(e2), { a: 'start', size: 0.75, c: BLUE });
+      const c1 = xr + 0.5, c2 = xr + 1.7;
+      D.dim(c1, -e1, c1, 0, 'E1 ' + f2(e1), 0.01, null, { size: 0.75 });
+      D.dim(c1, h, c1, top, 'E3 ' + f2(e3), 0.01, null, { size: 0.75 });
+      if (hs > 0) D.dim(c1, top, c1, top + hsD, 'HSREM ' + f2(hs), -0.01, null, { size: 0.75 });
+      if (hc > 0) sText(D, c2, road + u * 1.4, 'HCHAU ' + f2(hc), { size: 0.7, c: BLUE });
+      D.dim(c2, -e1, c2, road - hc, brk ? 'hauteur totale ' + f2(e1 + h + e3 + hs) : f2(e1 + h + e3 + hs), -0.01, null, { size: 0.8 });
+      if (hr > 0) D.dim(o * 0.1, 0, o * 0.1, hr, 'HREMB ' + f2(d.hremb), -0.01, null, { size: 0.7 });
+      D.dim(-e2, road + 0.15, o + e2, road + 0.15, f2(o + 2 * e2) + ' hors tout', 0.5, null, { size: 0.8 });
+      if (ld > 0) { D.dim(-e2 - ld, road + 0.15, -e2, road + 0.15, 'LDALT ' + f2(ld), 0.5, null, { size: 0.75 }); D.dim(o + e2, road + 0.15, o + e2 + ld, road + 0.15, 'LDALT ' + f2(ld), 0.5, null, { size: 0.75 }); }
+      sText(D, -e2 / 2 - u * 0.5, -e1 / 2 - u * 2.2, 'lignes moyennes', { a: 'end', size: 0.6, c: BLUE, i: 1 });
+      scaleBar(D, xl + 0.3, -e1 - 1.25, o >= 6 ? 5 : 2);
+      return D.toString();
+    }
+
+    /* ---------- vue en plan : biais, axe de la voie portée, piédroits, dalles, traits de coupe ---------- */
+    function plan(d) {
+      const o = d.ouver, e2 = d.e2, W = d.large || 10, ld = d.ldalt, g = d.biais || 100;
+      const b = g * Math.PI / 200, s = Math.sin(b);
+      const ob = o / s, eb = e2 / s, lb = ld / s, dx = W / Math.tan(b);
+      const C = [(ob + dx) / 2, W / 2];                                  // centre de l'ouverture sur l'axe
+      const n = [s, -Math.cos(b)], v = [Math.cos(b), s];                // ⟂ piédroits, // piédroits
+      const ha = o / 2 + e2 + Math.max(ld, 0) + 1.6;                      // demi-longueur du trait A-A
+      const A1 = [C[0] - n[0] * ha, C[1] - n[1] * ha], A2 = [C[0] + n[0] * ha, C[1] + n[1] * ha];
+      const xmin = Math.min(0, dx, A1[0], A2[0]) - eb - lb - 1.5, xmax = Math.max(ob, ob + dx, A1[0], A2[0]) + eb + lb + 1.5;
+      const ymin = Math.min(-2.4, A1[1] - 0.8, A2[1] - 0.8), ymax = Math.max(W + 2.2, A1[1] + 1.2, A2[1] + 1.2);
+      const D = G.OTUI.svg({ x0: xmin, y0: ymin, x1: xmax + 1.6, y1: ymax }, { pad: 0.03 }), u = D.u;
+      // profil en travers (y = W : bord gauche, vu dans le sens de la voie portée →)
+      const ws = [d.etrotg, d.egau, d.esurch, d.edroi, d.etrotd], sum = ws.reduce((a, c) => a + c, 0), y0 = W - (W - sum) / 2;
+      const yb = [y0]; for (const w of ws) yb.push(yb[yb.length - 1] - w);
+      sPoly(D, [[xmin, 0], [xmax, 0], [xmax, W], [xmin, W]], 'fill:#f3f0ea;stroke:none');
+      sPoly(D, [[xmin, yb[4]], [xmax, yb[4]], [xmax, yb[1]], [xmin, yb[1]]], 'fill:#dcdad5;stroke:none');
+      sPoly(D, [[xmin, yb[3]], [xmax, yb[3]], [xmax, yb[2]], [xmin, yb[2]]], 'fill:#cfccc5;stroke:none');
+      for (const y of [0, W]) sLine(D, [[xmin, y], [xmax, y]], 'stroke:#5d5545;stroke-width:1.2px');
+      for (const y of [yb[1], yb[4]]) if (y > 0.01 && y < W - 0.01) sLine(D, [[xmin, y], [xmax, y]], 'stroke:#7a7e8e;stroke-width:.8px');
+      const nv = Math.max(1, Math.round(d.nvoi) || 1);
+      for (let i = 1; i < nv; i++) { const y = yb[2] - d.esurch * i / nv; sLine(D, [[xmin, y], [xmax, y]], 'stroke:#fff;stroke-width:1.2px;stroke-dasharray:10 8'); }
+      const band = (x1, x2, st) => sPoly(D, [[x1, 0], [x2, 0], [x2 + dx, W], [x1 + dx, W]], st);
+      if (ld > 0) { band(-eb - lb, -eb, 'fill:#d9d1c0;fill-opacity:.85;stroke:#5d5545;stroke-width:.8px;vector-effect:non-scaling-stroke');
+        band(ob + eb, ob + eb + lb, 'fill:#d9d1c0;fill-opacity:.85;stroke:#5d5545;stroke-width:.8px;vector-effect:non-scaling-stroke'); }
+      band(-eb, ob + eb, 'fill:#e9e3d6;fill-opacity:.55;stroke:#5d5545;stroke-width:1.2px;vector-effect:non-scaling-stroke');
+      band(-eb, 0, 'fill:#cbbf9f;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke');
+      band(ob, ob + eb, 'fill:#cbbf9f;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke');
+      // axe de la voie portée, axe de l'ouverture
+      D.line(xmin + 0.3, W / 2, xmax - 0.3, W / 2, 'ax');
+      arrow(D, xmax - 0.3, W / 2, 1, 0, u * 1.6, BLUE);
+      sText(D, xmin + 0.4, W / 2 + u * 3.4, 'axe de la voie portée →', { a: 'start', size: 0.9, c: BLUE, i: 1 });
+      const ho = W / s / 2 + 1.2; sLine(D, [[C[0] - v[0] * ho, C[1] - v[1] * ho], [C[0] + v[0] * ho, C[1] + v[1] * ho]], 'stroke:#7a7e8e;stroke-width:.8px;stroke-dasharray:8 3 2 3');
+      sText(D, C[0] + v[0] * ho, C[1] + v[1] * ho + u * 1.4, "axe de l'ouverture", { size: 0.85, c: '#7a7e8e', i: 1 });
+      // piédroits repérés
+      sText(D, -eb - lb - u * 2, W * 0.12, 'G', { b: 1, size: 1.1 }); sText(D, ob + eb + lb + dx * 0.12 + u * 2, W * 0.12, 'D', { b: 1, size: 1.1 });
+      // angle de biais (entre l'axe de la voie portée et le piédroit D)
+      const I = [ob + dx / 2, W / 2], r = Math.min(W * 0.28, 3.2), arc = [];
+      if (Math.abs(g - 100) > 0.05) { for (let i = 0; i <= 20; i++) { const t = b * i / 20; arc.push([I[0] + r * Math.cos(t), I[1] + r * Math.sin(t)]); }
+        sLine(D, arc, `stroke:${GOLD};stroke-width:1.2px`); }
+      sText(D, I[0] + r * 1.25 * Math.cos(b / 2), I[1] + r * 1.25 * Math.sin(b / 2), 'biais ' + fmt(g, 2) + ' gr', { size: 1.0, c: GOLD, b: 1, a: 'start' });
+      // traits de coupe
+      const cut = (p1, p2, look, lab) => {
+        sLine(D, [p1, p2], `stroke:${RED};stroke-width:.9px;stroke-dasharray:12 4 2 4`);
+        for (const [p, q] of [[p1, p2], [p2, p1]]) { const L = Math.hypot(q[0] - p[0], q[1] - p[1]), t = [(q[0] - p[0]) / L, (q[1] - p[1]) / L], k = u * 2.2;
+          sLine(D, [p, [p[0] + t[0] * k, p[1] + t[1] * k]], `stroke:${RED};stroke-width:3px`);
+          const a = [p[0] + look[0] * u * 3, p[1] + look[1] * u * 3]; sLine(D, [p, a], `stroke:${RED};stroke-width:1.2px`); arrow(D, a[0], a[1], look[0], look[1], u * 1.3, RED);
+          sText(D, p[0] - t[0] * u * 1.8, p[1] - t[1] * u * 1.8, lab, { b: 1, c: RED, size: 1.0 }); } };
+      cut(A1, A2, v, 'A');
+      const xB = C[0], B1 = [xB, -1.4], B2 = [xB, W + 1.4]; cut(B1, B2, [1, 0], 'B');
+      // cotes
+      D.dim(0, 0, ob, 0, 'ouverture biaise ' + f2(ob), -1.0, null, { size: 0.9 });
+      D.dim(xmax + 0.6, 0, xmax + 0.6, W, 'LARGE ' + f2(W), -0.01, null, { size: 0.9 });
+      sText(D, xmin + 0.4, W + 0.9, 'bord gauche', { a: 'start', size: 0.85, i: 1 }); sText(D, xmin + 0.4, -0.9, 'bord droit', { a: 'start', size: 0.85, i: 1 });
+      return D.toString();
+    }
+
+    /* ---------- coupe B-B (transversale, vue dans le sens de la voie portée) ---------- */
+    function coupeBB(d, R, conv) {
+      const ws = [d.etrotg, d.egau, d.esurch, d.edroi, d.etrotd];
+      let W = d.large; const sum = ws.reduce((a, b) => a + b, 0); if (!(W > 0)) W = sum || 10;
+      const hReal = d.hautl, e1 = d.e1, e3 = d.e3, hc = d.hchau, hs = d.hsrem;
+      const h = conv ? 0 : Math.min(hReal, Math.max(1.5, W * 0.14));
+      const hcap = Math.max(1.0, W * 0.1), brk = hs > hcap * 1.15, hsD = brk ? hcap : hs;
+      const top = conv ? e3 : h + e3, rd = top + hsD + hc;
+      const x0 = (W - sum) / 2, xs = [x0]; for (const w of ws) xs.push(xs[xs.length - 1] + w);
+      const yTop = rd + (conv ? 2.3 : 3.2);
+      const D = G.OTUI.svg({ x0: -1.4, y0: conv ? -1.2 : -e1 - 0.9, x1: W + 1.6, y1: yTop }, { pad: 0.03 }), u = D.u;
+      if (!conv) { D.soil([[-1.4, -e1], [W + 1.6, -e1]], 0.6); D.rect(0, -e1, W, e1, 'b'); if (d.hremb > 0) D.fill([[0, 0], [W, 0], [W, Math.min(d.hremb, h * 0.9)], [0, Math.min(d.hremb, h * 0.9)]]);
+        sText(D, W / 2, h * 0.55, 'ouverture — hauteur libre ' + f2(hReal) + ' m' + (hReal > h ? ' (hauteur réduite sur le dessin)' : ''), { size: 0.85, i: 1, c: '#7a7e8e' });
+        if (hReal > h) for (const x of [-0.5, W + 0.5]) zig(D, x - 0.4, x + 0.4, h * 0.5); }
+      D.rect(0, top - e3, W, e3, 'b');
+      if (hsD > 0) D.fill([[0, top], [W, top], [W, top + hsD], [0, top + hsD]]);
+      if (brk) { zig(D, -0.6, W + 0.6, top + hsD * 0.5); }
+      D.rect(xs[1], top + hsD, xs[4] - xs[1], Math.max(hc, u * 0.45), 'road');
+      if (ws[0] > 0) D.rect(xs[0], top + hsD, ws[0], hc + 0.18, 'b2');
+      if (ws[4] > 0) D.rect(xs[4], top + hsD, ws[4], hc + 0.18, 'b2');
+      // dispositifs (de principe) en rive
+      for (const x of [xs[0] + 0.1, xs[5] - 0.1]) { sLine(D, [[x, rd + (ws[0] > 0 || ws[4] > 0 ? 0.18 : 0)], [x, rd + 0.9]], 'stroke:#5d5545;stroke-width:2px'); sLine(D, [[x - 0.12, rd + 0.9], [x + 0.12, rd + 0.9]], 'stroke:#5d5545;stroke-width:2px'); }
+      const nv = Math.max(1, Math.round(d.nvoi) || 1), lw = ws[2] / nv;
+      for (let i = 1; i < nv; i++) { const xx = xs[2] + lw * i; sLine(D, [[xx, rd + 0.01], [xx, rd + 0.01 + u * 0.4]], 'stroke:#fff;stroke-width:2px'); }
+      if (conv) { for (let i = 0; i < nv; i++) { D.dim(xs[2] + lw * i, -0.5, xs[2] + lw * (i + 1), -0.5, 'voie ' + (i + 1) + ' : ' + f2(lw), 0.01, null, { size: 0.75 }); } }
+      if (!conv) {
+        const names = ['ETROTG', 'EGAU', 'ESURCH', 'EDROI', 'ETROTD'], yy = rd + 1.25;
+        names.forEach((k, i) => { if (ws[i] > 0) { D.dim(xs[i], yy, xs[i + 1], yy, f2(ws[i]), 0.01, null, { size: ws[i] < 1 ? 0.8 : 1.0 }); sText(D, (xs[i] + xs[i + 1]) / 2, yy + u * 3.4, k, { size: ws[i] < 1 ? 0.7 : 0.85, mono: 1, b: 1, c: GOLD }); } });
+        D.dim(0, rd + 2.45, W, rd + 2.45, 'LARGE ' + f2(W), 0.01, null, { size: 1.0 });
+        sText(D, xs[2] + ws[2] / 2, rd + 0.45, nv + ' voie' + (nv > 1 ? 's' : '') + ' de ' + f2(lw) + ' m', { size: 0.85, i: 1, c: '#7a7e8e' });
+        if (hs > 0) D.dim(W + 0.7, top, W + 0.7, top + hsD, 'HSREM ' + f2(hs), -0.01, null, { size: 0.8 });
+        D.dim(-0.7, top - e3, -0.7, top, 'E3 ' + f2(e3), 0.01, null, { size: 0.8 });
+        sText(D, -1.2, rd + 0.5, 'G', { b: 1, size: 0.9 }); sText(D, W + 1.4, rd + 0.5, 'D', { b: 1, size: 0.9 });
+      }
+      return { D, xs, rd, W, nv, lw, u };
+    }
+
+    /* ---------- charges d'exploitation placées sur la coupe B-B (principe Fasc. 61 titre II) ---------- */
+    function convois(d, R) {
+      const out = [];
+      const truck = (D, c, y, enc, ent, wt, lab) => { const u = D.u; D.rect(c - enc / 2, y + 0.42, enc, 0.95, 'car'); for (const s of [-1, 1]) D.rect(c + s * ent / 2 - wt / 2, y, wt, 0.42, 'wheel'); sText(D, c, y + 0.9, lab, { size: 0.75, b: 1 }); void u; };
+      const mk = (title, draw, note) => { const g = coupeBB(d, R, true); draw(g); return fig(title, fit(g.D.toString(), 230) + (note ? `<div style="font:10.5px 'Courier New',monospace;color:#3c3f4d;margin-top:2px">${esc(note)}</div>` : '')); };
+      const dyn = R.dyn || {}, cv = R.conv || {};
+      const axl = k => (cv[k] && cv[k].axles || []).map(a => fmt(a.P, 0)).join('-') + ' t';
+      if (d.bc && cv.BC) out.push(mk(`SYSTÈME Bc — ${Math.max(1, Math.round(d.nvoi))} FILE(S)`, g => { for (let i = 0; i < g.nv; i++) { const c = g.xs[2] + g.lw * (i + 0.5); truck(g.D, c, g.rd, 2.5, 2.0, 0.25, 'Bc'); } },
+        `essieux ${axl('BC')} · ${cv.BC.trucks || 2} camions par file · δ = ${fmt(dyn.BC && dyn.BC.d, 3)}`));
+      if (d.mc && cv.MC) out.push(mk('CHAR Mc120', g => { const c = (g.xs[2] + g.xs[3]) / 2; g.D.rect(c - 1.65, g.rd, 1.0, 0.3, 'wheel'); g.D.rect(c + 0.65, g.rd, 1.0, 0.3, 'wheel'); g.D.rect(c - 1.65, g.rd + 0.3, 3.3, 1.05, 'car'); sText(g.D, c, g.rd + 0.82, 'Mc120', { size: 0.75, b: 1 });
+        g.D.dim(c - 1.65, g.rd + 1.35, c + 1.65, g.rd + 1.35, '3.30', 0.5, null, { size: 0.7 }); },
+        `${fmt(cv.MC.axles[0].P, 0)} t · 2 chenilles de 1.00 m · δ = ${fmt(dyn.MC && dyn.MC.d, 3)} · position transversale de principe`));
+      if (d.ex && cv.E) out.push(mk('CONVOI EXCEPTIONNEL E', g => { const c = g.xs[2] + 3.5; g.D.rect(c - 3.5, g.rd + 0.3, 7.0, 1.05, 'car'); g.D.rect(c - 3.5, g.rd, 7.0, 0.3, 'wheel'); sText(g.D, c, g.rd + 0.82, 'E', { size: 0.8, b: 1 });
+        g.D.dim(c - 3.5, g.rd + 1.37, c + 3.5, g.rd + 1.37, '7.00', 0.5, null, { size: 0.7 }); },
+        `2 × ${fmt(cv.E.axles[0].P, 0)} t à ${fmt(cv.E.axles[1] ? cv.E.axles[1].x : 0, 2)} m · encombrement 7.00 m · axe à 3.50 m du bord gauche de ESURCH · δ = 1.000`));
+      if (R.charges && R.charges.chantier && cv.EC && d.ec) out.push(mk(`ENGIN DE CHANTIER ${d.ec.nom} (PHASE DE CHANTIER)`, g => { const xg = (g.W - (d.etrotg + d.egau + d.esurch + d.edroi + d.etrotd)) / 2, c = xg + d.ec.egau + 3.0; truck(g.D, c, g.rd, 4.0, 2.4, 0.6, d.ec.nom);
+        g.D.dim(xg, g.rd + 1.75, xg + d.ec.egau, g.rd + 1.75, 'EGAU ' + f2(d.ec.egau), 0.01, null, { size: 0.65 }); g.D.dim(xg + d.ec.egau, g.rd + 1.75, xg + d.ec.egau + d.ec.esurch, g.rd + 1.75, 'ESURCH ' + f2(d.ec.esurch), 0.01, null, { size: 0.65 }); },
+        `essieux ${axl('EC')} · encombrement 4.00 m · axe à 3.00 m du bord gauche de ESURCH (chantier)`));
+      return out;
+    }
+
+    /* ---------- position longitudinale des convois (moment max à mi-portée de la traverse supérieure) ---------- */
+    function positions(d, R) {
+      const L = R.geom.L, Ld = R.geom.Ld || 0, H = 0, e = R.env.t[R.env.t.length - 1];
+      const keys = [['EC', 'ENGIN ' + (d.ec && d.ec.nom || 'EC')], ['BC', 'Bc'], ['BT', 'Bt'], ['MC', 'Mc120'], ['ME', 'Me120'], ['E', 'E']]
+        .filter(([k]) => e[k + '+'] && e[k + '+'].pos && e[k + '+'].v && R.conv[k]);
+      if (!keys.length) return '';
+      const rowH = 2.3, n = keys.length, xa = -Ld - 2.5, xb = L + Ld + 1.5;
+      const D = G.OTUI.svg({ x0: xa - 3.2, y0: -n * rowH - 0.6, x1: xb, y1: 1.4 }, { pad: 0.02 }), u = D.u;
+      keys.forEach(([k, nm], j) => {
+        const y = -j * rowH - 1.6, p = e[k + '+'].pos, cv = R.conv[k];
+        sPoly(D, [[0, y - 0.18], [L, y - 0.18], [L, y], [0, y]], 'fill:#e9e3d6;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke');
+        if (Ld > 0) for (const [a, b2] of [[-Ld, 0], [L, L + Ld]]) sPoly(D, [[a, y - 0.12], [b2, y - 0.12], [b2, y], [a, y]], 'fill:#d9d1c0;stroke:#5d5545;stroke-width:.6px;vector-effect:non-scaling-stroke');
+        for (const x of [0, L]) sLine(D, [[x, y - 0.18], [x, y - 0.5]], 'stroke:#5d5545;stroke-width:1.4px');
+        sLine(D, [[L / 2, y + 0.2], [L / 2, y - 0.6]], `stroke:${RED};stroke-width:.8px;stroke-dasharray:3 2`);
+        sText(D, xa - 3.0, y + 0.45, nm, { a: 'start', size: 0.8, b: 1 });
+        sText(D, xa - 3.0, y - 0.35, 'M = ' + f1(e[k + '+'].v) + ' kN·m', { a: 'start', size: 0.62, c: RED });
+        for (let t = 0; t < p.nt; t++) for (const ax of cv.axles) {
+          const x = (p.xs ? p.xs[t] : p.x0) + p.dir * (ax.x + (p.xs ? 0 : t * (cv.gapTruck || 0)));
+          if (x < xa || x > xb) continue;
+          const a = ax.a || 0;
+          if (a > 2) sPoly(D, [[x - a / 2, y + 0.02], [x + a / 2, y + 0.02], [x + a / 2, y + 0.35], [x - a / 2, y + 0.35]], 'fill:#a07828;fill-opacity:.25;stroke:#a07828;stroke-width:.8px;vector-effect:non-scaling-stroke');
+          sLine(D, [[x, y + 1.05], [x, y + 0.08]], `stroke:${GOLD};stroke-width:1.6px`); arrow(D, x, y + 0.02, 0, -1, u * 1.1, GOLD);
+          sText(D, x, y + 1.32, fmt(ax.P, 0), { size: 0.6, c: GOLD, b: 1 });
+        }
+      });
+      sText(D, L / 2, 1.0, 'mi-portée', { size: 0.65, c: RED, i: 1 });
+      sText(D, 0, 1.0, 'angle', { size: 0.65, i: 1 }); sText(D, L, 1.0, 'angle', { size: 0.65, i: 1 });
+      void H;
+      return D.toString();
+    }
+
+    /* ---------- croquis de repérage d'un élément (abscisses du listing) ---------- */
+    function key(R, el) {
+      const L = R.geom.L, H = R.geom.H;
+      const D = G.OTUI.svg({ x0: -1.2, y0: -1.2, x1: L + 1.2, y1: H + 1.2 }, { pad: 0.04 }), u = D.u;
+      sLine(D, [[0, 0], [L, 0], [L, H], [0, H], [0, 0]], 'stroke:#b9ad92;stroke-width:5px');
+      const seg = el === 't' ? [[0, H], [L, H]] : el === 'b' ? [[0, 0], [L, 0]] : [[0, 0], [0, H]];
+      sLine(D, seg, `stroke:${RED};stroke-width:6px`);
+      if (el === 'w') sLine(D, [[L, 0], [L, H]], `stroke:${RED};stroke-width:6px;opacity:.35`);
+      const o = seg[0], dir = el === 'w' ? [0, 1] : [1, 0], m = el === 'w' ? H / 2 : L / 2;
+      D.circle(o[0], o[1], u * 0.9, 'b');
+      const off = el === 't' ? [0, 0.6] : el === 'b' ? [0, -0.6] : [-0.6, 0];
+      sLine(D, [[o[0] + off[0], o[1] + off[1]], [o[0] + off[0] + dir[0] * m, o[1] + off[1] + dir[1] * m]], `stroke:${GREY};stroke-width:1px`);
+      arrow(D, o[0] + off[0] + dir[0] * m, o[1] + off[1] + dir[1] * m, dir[0], dir[1], u * 2, GREY);
+      sText(D, o[0] + off[0] * 1.8 + dir[0] * m / 2, o[1] + off[1] * 1.8 + dir[1] * m / 2, 'x', { size: 1.6, i: 1 });
+      sText(D, L / 2, H / 2, el === 'w' ? 'piédroits' : el === 't' ? 'traverse supérieure' : 'traverse inférieure', { size: 1.7, c: RED });
+      sText(D, o[0] + (el === 'w' ? -u * 2 : 0), o[1] + (el === 'b' ? -u * 4 : el === 't' ? u * 4 : -u * 2), 'origine', { size: 1.3, i: 1, a: el === 'w' ? 'end' : 'middle' });
+      return D.toString();
+    }
+
+    /* ---------- diagrammes sur le cadre (côté fibre tendue) ---------- */
+    function frameDiagram(R, lim) {
+      const L = R.geom.L, H = R.geom.H, C = R.cmp;
+      const mx = lim === 'U' ? 'maxU' : 'maxS', mn = lim === 'U' ? 'minU' : 'minS';
+      const half = arr => { const a = arr.map(c => [c.x, c.design[mx], c.design[mn]]), r = a.slice(0, -1).reverse().map(([x, p, q]) => [2 * a[a.length - 1][0] - x, p, q]); return a.concat(r); };
+      const T = half(C.t), B = half(C.b), Wl = C.w.map(c => [c.x, c.design[mx], c.design[mn]]);
+      let M = 1e-9; for (const a of [T, B, Wl]) for (const r of a) M = Math.max(M, Math.abs(r[1]), Math.abs(r[2]));
+      const k = 0.2 * Math.min(L, H) / M;
+      const els = [
+        { pts: T, base: x => [x, H], n: [0, -1] }, { pts: B, base: x => [x, 0], n: [0, 1] },
+        { pts: Wl, base: y => [0, y], n: [1, 0] }, { pts: Wl, base: y => [L, y], n: [-1, 0] }];
+      const pad = 0.2 * Math.min(L, H) + 1.0;
+      const D = G.OTUI.svg({ x0: -pad, y0: -pad, x1: L + pad, y1: H + pad }, { pad: 0.03 }), u = D.u;
+      sLine(D, [[0, 0], [L, 0], [L, H], [0, H], [0, 0]], 'stroke:#5d5545;stroke-width:2px');
+      for (const E of els) for (const [j, col] of [[1, RED], [2, BLUE]]) {
+        const cur = E.pts.map(r => { const b = E.base(r[0]); return [b[0] + E.n[0] * k * r[j], b[1] + E.n[1] * k * r[j]]; });
+        const b0 = E.base(E.pts[0][0]), b1 = E.base(E.pts[E.pts.length - 1][0]);
+        sPoly(D, [b0].concat(cur, [b1]), `fill:${col};fill-opacity:.07;stroke:none`);
+        sLine(D, cur, `stroke:${col};stroke-width:1.6px`);
+      }
+      // valeurs aux sections déterminantes
+      const lab = (E, r, j, col, al) => { const b = E.base(r[0]); const v = r[j]; const p = [b[0] + E.n[0] * k * v, b[1] + E.n[1] * k * v];
+        const close = Math.abs(k * (r[1] - r[2])) < u * 3.5, t = [Math.abs(E.n[1]), Math.abs(E.n[0])], sh = close ? (j === 1 ? 1 : -1) * u * 2.6 : 0;
+        const o = Math.sign(v || 1); sText(D, p[0] + E.n[0] * o * u * 2.2 + t[0] * sh, p[1] + E.n[1] * o * u * 1.6 + t[1] * sh, f0(v), { size: 0.8, c: col, b: 1, a: al || 'middle' }); };
+      const mid = a => a[Math.floor(a.length / 2)];
+      for (const [E, i] of [[els[0], 0], [els[0], -1], [els[1], 0], [els[1], -1], [els[2], 'm']]) {
+        const r = i === 0 ? E.pts[0] : i === -1 ? mid(E.pts) : E.pts[Math.floor(E.pts.length / 2)];
+        lab(E, r, 1, RED); lab(E, r, 2, BLUE);
+      }
+      sText(D, L / 2, H / 2 + u * 1.5, 'M > 0 : fibre intérieure tendue', { size: 0.7, i: 1, c: '#7a7e8e' });
+      sText(D, L / 2, H / 2 - u * 1.5, 'tracé côté fibre tendue', { size: 0.7, i: 1, c: '#7a7e8e' });
+      return D.toString();
+    }
+
+    /* ---------- pressions sous la traverse inférieure ---------- */
+    function pressions(R) {
+      const L = R.geom.L, e1 = R.geom.e1, p = R.cmp.p, xs = [0, L / 4, L / 2, 3 * L / 4, L], id = [0, 1, 2, 1, 0];
+      const smx = id.map(i => p[i].design.maxS), smn = id.map(i => p[i].design.minS), spm = id.map(i => p[i].perm.maxS);
+      const M = Math.max(1e-9, ...smx.map(Math.abs), ...smn.map(Math.abs)), k = 0.28 * L / M;
+      const D = G.OTUI.svg({ x0: -1.5, y0: -0.28 * L - 1.6, x1: L + 1.5, y1: e1 + 1.6 }, { pad: 0.03 }), u = D.u;
+      D.rect(0, 0, L, e1, 'b'); sText(D, L / 2, e1 / 2, 'TRAVERSE INFÉRIEURE', { size: Math.min(0.75, e1 / u / 2.6), c: '#5d5545' });
+      const cur = v => xs.map((x, i) => [x, -k * v[i]]);
+      sPoly(D, [[0, 0]].concat(cur(smx), [[L, 0]]), `fill:${RED};fill-opacity:.08;stroke:none`);
+      sLine(D, cur(smx), `stroke:${RED};stroke-width:1.8px`); sLine(D, cur(smn), `stroke:${BLUE};stroke-width:1.8px`);
+      sLine(D, cur(spm), `stroke:${GREY};stroke-width:1.2px;stroke-dasharray:6 4`);
+      xs.forEach((x, i) => { sLine(D, [[x, 0], [x, -k * smx[i]]], 'stroke:#b9ad92;stroke-width:.8px');
+        if (Math.abs(smx[i]) > M * 0.04) arrow(D, x, -0.02, 0, 1, u * 1.1, '#7a7e8e');
+        sText(D, x, -k * smx[i] - u * 1.6, f1(smx[i]), { size: 0.75, c: RED, b: 1 });
+        sText(D, x + (i === 4 ? -u * 2.5 : u * 2.5), -k * smn[i] + u * 1.3, f1(smn[i]), { size: 0.7, c: BLUE, b: 1 });
+        sText(D, x, e1 + u * 1.6, ['0', 'L/4', 'L/2', '3L/4', 'L'][i], { size: 0.7, mono: 1 }); });
+      D.dim(0, e1 + u * 3.2, L, e1 + u * 3.2, 'L = ' + f2(L) + ' m (portée de calcul, abscisses du listing)', 0.01, null, { size: 0.7 });
+      return D.toString();
+    }
+
+    /* ---------- ferraillage longitudinal et épure d'arrêt des barres ---------- */
+    function ferraillage(d, R) {
+      const L = R.geom.L, H = R.geom.H, s = R.geom.s || 1, e1 = d.e1, e3 = d.e3, e2s = d.e2 / s, ep = R.det && R.det.epure;
+      if (!ep) return '';
+      const D = G.OTUI.svg({ x0: -e2s / 2 - 1.4, y0: -e1 / 2 - 1.2, x1: L + e2s / 2 + 1.4, y1: H + e3 / 2 + 1.2 }, { pad: 0.03 }), u = D.u;
+      sPoly(D, [[-e2s / 2, -e1 / 2], [L + e2s / 2, -e1 / 2], [L + e2s / 2, H + e3 / 2], [-e2s / 2, H + e3 / 2]], 'fill:#e9e3d6;stroke:#5d5545;stroke-width:1.2px;vector-effect:non-scaling-stroke');
+      sPoly(D, [[e2s / 2, e1 / 2], [L - e2s / 2, e1 / 2], [L - e2s / 2, H - e3 / 2], [e2s / 2, H - e3 / 2]], 'fill:#fff;stroke:#5d5545;stroke-width:1.2px;vector-effect:non-scaling-stroke');
+      const c = Math.max(0.07, u * 0.9), gap = Math.max(0.06, u * 0.8);
+      const bar = (pts, col, fam) => sLine(D, pts, `stroke:${col};stroke-width:${fam ? 1.6 : 2}px;${fam ? 'stroke-dasharray:7 3;' : ''}stroke-linecap:round`);
+      const tag = (x, y, t, col, a) => sText(D, x, y, t, { size: 0.62, c: col, b: 1, a: a || 'middle', mono: 1 });
+      const mir = pts => pts.map(([x, y]) => [L - x, y]);
+      // intérieur
+      (ep.TS.bars || []).forEach((b, i) => { const y = H - e3 / 2 + c + i * gap; bar([[b[0], y], [b[1], y]], RED, i); if (i === 0) tag((b[0] + b[1]) / 2, y + gap * 2.4, 'TS-I', RED); });
+      (ep.TI.bars || []).forEach((b, i) => { const y = e1 / 2 - c - i * gap; bar([[b[0], y], [b[1], y]], RED, i); if (i === 0) tag((b[0] + b[1]) / 2, y - gap * 2.6, 'TI-I', RED); });
+      (ep.PD.bars || []).forEach((b, i) => { const x = e2s / 2 - c - i * gap; bar([[x, b[0]], [x, b[1]]], RED, i); bar(mir([[x, b[0]], [x, b[1]]]), RED, i); if (i === 0) tag(x + gap * 4, (b[0] + b[1]) / 2, 'P-I', RED, 'start'); });
+      // extérieur
+      (ep.AS.bars || []).forEach((b, i) => { const x = -e2s / 2 + c + i * gap, y = H + e3 / 2 - c - i * gap; const pts = [[x, b[0]], [x, y], [b[1], y]]; bar(pts, BLUE, i); bar(mir(pts), BLUE, i); if (i === 0) tag(b[1] + u, y + gap * 2.6, 'AS-E', BLUE, 'start'); });
+      (ep.AI.bars || []).forEach((b, i) => { const x = -e2s / 2 + c + i * gap, y = -e1 / 2 + c + i * gap; const pts = [[x, b[0]], [x, y], [b[1], y]]; bar(pts, BLUE, i); bar(mir(pts), BLUE, i); if (i === 0) tag(b[1] + u, y - gap * 2.8, 'AI-E', BLUE, 'start'); });
+      D.dim(0, -e1 / 2 - 0.7, L, -e1 / 2 - 0.7, 'L = ' + f2(L) + ' (entre lignes moyennes, selon l\'axe de la voie portée)', 0.01, null, { size: 0.7 });
+      D.dim(L + e2s / 2 + 0.7, 0, L + e2s / 2 + 0.7, H, 'H = ' + f2(H), -0.01, null, { size: 0.7 });
+      return D.toString();
+    }
+
+    /* ---------- assemblage ---------- */
+    function figures(model, R, pages) {
+      if (!R || !R.geom || !R.cmp || !Array.isArray(pages)) return [];
+      const d = R.donnees || {}, L = R.geom.L, H = R.geom.H, list = [];
+      const find = re => pages.findIndex(p => re.test(p));
+      const isCont = p => { const l = String(p).split('\n').slice(2).map(x => x.trim()).filter(Boolean); return l.length > 0 && /^-?\d/.test(l[0]); };
+      const last = i => { if (i < 0) return i; while (i + 1 < pages.length && isCont(pages[i + 1])) i++; return i; };
+      const add = (i, mk) => { if (i >= 0) list.push({ after: i, mk }); };
+      const cap = s => s;
+      const hasEC = !!(R.charges && R.charges.chantier);
+
+      // 1. ouvrage à l'échelle
+      add(find(/HAUTEUR LIBRE/), n => G.OTUI.figPage(`PLANCHE ${n} — OUVRAGE À L'ÉCHELLE (COUPE A-A, VUE EN PLAN, COUPE TRANSVERSALE B-B)`,
+        `biais ${fmt(d.biais, 2)} gr · cotes en m`,
+        fig("COUPE A-A — PERPENDICULAIRE AUX PIÉDROITS (COUPE DROITE)", fit(coupeAA(d, R), 430), true)
+        + fig('VUE EN PLAN — BIAIS, AXE DE LA VOIE PORTÉE, PIÉDROITS' + (d.ldalt > 0 ? ', DALLES DE TRANSITION' : '') + ', TRAITS DE COUPE', fit(plan(d), 360))
+        + fig('COUPE B-B — TRANSVERSALE (VUE DANS LE SENS DE LA VOIE PORTÉE)', fit(coupeBB(d, R, false).D.toString(), 360)),
+        cap(`A-A est une coupe droite (perpendiculaire aux piédroits) : l'ouverture OUVER = ${f2(d.ouver)} m et les épaisseurs y sont vraies. `
+          + `Le calcul est mené selon l'axe de la voie portée : portée biaise L = (OUVER + E2)/sin(biais) = ${f2(L)} m, hauteur moyenne H = ${f2(H)} m (lignes moyennes en tireté). `
+          + `B-B est perpendiculaire à l'axe de la voie portée ; profil vu dans le sens de la voie portée (gauche à gauche). Dalles de transition : épaisseur de principe.`)));
+
+      // 2. convois sur la coupe transversale
+      const cv = convois(d, R);
+      if (cv.length) add(find(/COEFFICIENTS DE MAJORATION DYNAMIQUE/), n => G.OTUI.figPage(`PLANCHE ${n} — CHARGES D'EXPLOITATION SUR LA COUPE TRANSVERSALE B-B`,
+        `${Math.round(d.nvoi)} voie(s) de ${f2(d.esurch / Math.max(1, Math.round(d.nvoi)))} m sur ESURCH = ${f2(d.esurch)} m`, cv.join(''),
+        'Disposition transversale de principe des convois du fascicule 61 titre II retenus au bordereau ; essieux et coefficients de majoration dynamique δ du calcul. La position la plus défavorable est recherchée par le programme (coefficients de répartition transversale).'));
+
+      // 3. position des convois pour le moment max à mi-portée de la traverse supérieure
+      const ps = positions(d, R);
+      if (ps) add(last(find(/POSITION DES SURCHARGES CORRESPONDANT AUX MOMENTS EXTREMES DANS LA TRAVERSE SUPERIEURE/)), n => G.OTUI.figPage(
+        `PLANCHE ${n} — POSITION DES CONVOIS : MOMENT MAXIMAL À MI-PORTÉE DE LA TRAVERSE SUPÉRIEURE`, 'charges en t · abscisses comptées à partir de l\'angle',
+        fig('', fit(ps, 420), true), `Essieux placés aux positions trouvées par le calcul (lignes d'influence de la traverse supérieure, portée L = ${f2(L)} m${R.geom.Ld > 0 ? `, dalles de transition de ${f2(R.geom.Ld)} m en biais` : ''}). M : moment longitudinal correspondant (sans pondération), repris du tableau des moments extrêmes.`));
+
+      // 4. enveloppes des moments par élément
+      const DETL = ['ANGLE SUP.', 'ANGLE INF.', '1/2 TR SUP', '1/2 TR INF', '1/4 TR INF', '1/2 PIEDR.'];
+      const envM = (el, re, nm, marks, detIdx, xlab, down) => add(last(find(re)), n => {
+        const C = R.cmp[el], x = C.map(c => c.x);
+        const ser = [
+          { y: C.map(c => c.design.maxU), cls: 'mx' }, { y: C.map(c => c.design.minU), cls: 'mn' },
+          { y: C.map(c => c.design.maxS), cls: 'mx', dash: 1 }, { y: C.map(c => c.design.minS), cls: 'mn', dash: 1 },
+          { y: C.map(c => c.perm.maxS), cls: 'perm' }, { y: C.map(c => c.perm.minS), cls: 'perm', dash: 1 }];
+        const ch = legend([['ELU max', RED], ['ELU min', BLUE], ['ELS max', RED, 1], ['ELS min', BLUE, 1], ['permanent ELS max', GREY], ['permanent ELS min', GREY, 1]])
+          + G.OTUI.chart({ x, series: ser, fill: [[0, 1]], down, xlab, ylab: 'M (kN·m)', marks, xticks: ticks(x), w: 900, h: 330, labels: 'none' });
+        const rows = detIdx.map(k => { const c = R.cmp.det[k]; return c ? [DETL[k], f0(c.design.maxS), f0(c.design.minS), f0(c.design.maxU), f0(c.design.minU)] : [DETL[k], '', '', '', '']; });
+        const ext = ['maxU', 'minU'].map(q => { let im = 0; C.forEach((c, i) => { if (q === 'maxU' ? c.design[q] > C[im].design[q] : c.design[q] < C[im].design[q]) im = i; }); return [q === 'maxU' ? 'ELU max' : 'ELU min', f2(C[im].x), f0(C[im].design[q])]; });
+        return G.OTUI.figPage(`PLANCHE ${n} — ENVELOPPE DES MOMENTS FLÉCHISSANTS — ${nm}`, `moments de calcul (kN·m) · ${down ? 'M > 0 vers le bas' : 'M > 0 vers le haut'} = fibre intérieure tendue`,
+          fig('', ch, true)
+          + fig('REPÉRAGE DE L\'ÉLÉMENT ET DES ABSCISSES', fit(key(R, el), 200))
+          + fig('SECTIONS DÉTERMINANTES (kN·m)', tab(['section', 'ELS max', 'ELS min', 'ELU max', 'ELU min'], rows) + '<div style="height:8px"></div>' + tab(['extremum', 'abscisse (m)', 'M (kN·m)'], ext)),
+          'Courbes reprises des colonnes « MOMENTS DE CALCUL E.L.S. / E.L.U. » et « CHARGE PERM. E.L.S. » du tableau précédent'
+          + (el === 'w' ? '.' : ` (demi-traverse : le cadre est symétrique, abscisses de 0 à L/2 = ${f2(L / 2)} m).`));
+      });
+      envM('b', /MOMENTS FLECHISSANTS EXTREMES \(KN\*M\) DANS LA TRAVERSE INFERIEURE/, 'TRAVERSE INFÉRIEURE',
+        [{ x: 0, label: 'angle' }, { x: L / 4, label: '1/4' }, { x: L / 2, label: '1/2' }], [1, 4, 3], "abscisse à partir de l'angle (m)", false);
+      envM('t', /MOMENTS FLECHISSANTS EXTREMES \(KN\*M\) DANS LA TRAVERSE SUPERIEURE/, 'TRAVERSE SUPÉRIEURE',
+        [{ x: 0, label: 'angle' }, { x: L / 2, label: '1/2' }], [0, 2], "abscisse à partir de l'angle (m)", true);
+      envM('w', /MOMENTS FLECHISSANTS EXTREMES \(KN\*M\) DANS LES PIEDROITS/, 'PIÉDROITS',
+        [{ x: 0, label: 'base' }, { x: H / 2, label: '1/2' }, { x: H, label: 'tête' }], [5], 'abscisse à partir de la base (m)', false);
+
+      // 5. synthèse : moments sur le cadre
+      add(last(find(/MOMENTS FLECHISSANTS EXTREMES \(KN\*M\) DANS LES PIEDROITS/)), n => G.OTUI.figPage(`PLANCHE ${n} — SYNTHÈSE : MOMENTS DE CALCUL SUR LE CADRE`,
+        `kN·m · cadre de calcul L = ${f2(L)} m × H = ${f2(H)} m (lignes moyennes)`,
+        fig('ÉTAT LIMITE ULTIME — ENVELOPPES MAX / MIN', fit(frameDiagram(R, 'U'), 380)) + fig('ÉTAT LIMITE DE SERVICE — ENVELOPPES MAX / MIN', fit(frameDiagram(R, 'S'), 380)),
+        'Rouge : moments maximaux ; bleu : moments minimaux. Diagrammes tracés côté fibre tendue (M > 0 vers l\'intérieur du cadre). Traverses complétées par symétrie ; piédroit droit symétrique du piédroit gauche. Valeurs aux angles, à mi-traverse et à mi-hauteur des piédroits.'));
+
+      // 6. enveloppes des efforts tranchants
+      const vch = (el, nm, xlab) => { const C = R.cmp['V' + el]; if (!C || !C.length) return '';
+        return fig(nm, G.OTUI.chart({ x: C.map(c => c.x), series: [{ y: C.map(c => c.design.maxU), name: 'ELU max', cls: 'mx' }, { y: C.map(c => c.design.minU), name: 'ELU min', cls: 'mn' },
+          { y: C.map(c => c.perm.maxU), name: 'permanent ELU max', cls: 'perm' }, { y: C.map(c => c.perm.minU), name: 'permanent ELU min', cls: 'perm', dash: 1 }], fill: [[0, 1, 'b']], xlab, ylab: 'V (kN)', xticks: ticks(C.map(c => c.x)), w: 900, h: 250 }).replace(/(<svg[^>]*>)/, '$1').replace(/<text[^>]*class="vl perm"[^>]*>[^<]*<\/text>/g, ''), true); };
+      add(last(find(/EFFORTS TRANCHANTS EXTREMES DANS LES PIEDROITS/)), n => G.OTUI.figPage(`PLANCHE ${n} — ENVELOPPES DES EFFORTS TRANCHANTS (E.L.U.)`, 'kN · abscisses comme le listing',
+        vch('b', 'TRAVERSE INFÉRIEURE', "abscisse à partir de l'angle (m)") + vch('t', 'TRAVERSE SUPÉRIEURE', "abscisse à partir de l'angle (m)") + vch('w', 'PIÉDROITS', 'abscisse à partir de la base (m)'),
+        'Courbes reprises des colonnes « EFFORTS TRANCHANTS E.L.U. » et « CHARGE PERM. E.L.U. » des trois tableaux précédents.'));
+
+      // 7. pressions sur le sol
+      if (R.cmp.p && R.cmp.p.length >= 3) add(find(/PRESSION SUR LE SOL/), n => G.OTUI.figPage(`PLANCHE ${n} — PRESSIONS SUR LE SOL SOUS LA TRAVERSE INFÉRIEURE (E.L.S.)`,
+        `MPa/1000 (kPa) · module du sol ESOL = ${f2(d.esol)} MPa`, fig('', fit(pressions(R), 380), true)
+        + fig('VALEURS DU LISTING (MPa/1000)', tab(['section', 'abscisse (m)', 'perm. max', 'perm. min', 'max E.L.S.', 'min E.L.S.'], ['0.', '1/4', '1/2'].map((s, i) => { const c = R.cmp.p[i]; return [s, f2([0, L / 4, L / 2][i]), f1(c.perm.maxS), f1(c.perm.minS), f1(c.design.maxS), f1(c.design.minS)]; }))),
+        'Rouge : pression maximale ; bleu : pression minimale ; tireté : charges permanentes (max). Calcul sur appui élastique ; valeurs du listing aux sections 0, L/4, L/2, complétées par symétrie.'));
+
+      // 8. ferraillage et épure d'arrêt des barres
+      const fr = R.fer, ep = R.det && R.det.epure;
+      if (fr && ep) add(find(/EPURE D'ARRET DES BARRES/), n => {
+        const ph = i => fmt(d.phi[i], 0);
+        const frow = (nm, o) => o ? [nm, fmt(o.Amin * 1e4, 2), fmt(o.A * 1e4, 2), (o.n === 2 ? '2 ' : '') + 'HA' + ph(o.phi), (o.n === 2 ? '2×' : '') + fmt(o.esp, 3), f1(o.ss), f1(o.sb)] : [nm, '', '', '', '', '', ''];
+        const rowsF = [['angle sup. — traverse', fr.AS_T], ['angle sup. — piédroit', fr.AS_P], ['angle inf. — traverse', fr.AI_T], ['angle inf. — piédroit', fr.AI_P], ['traverse sup. (int.)', fr.TS], ['traverse inf. (int.)', fr.TI], ['piédroit (int.)', fr.PD]].map(([a, b]) => frow(a, b));
+        const rowsE = [];
+        for (const [k, nm] of [['TS', 'TS-I'], ['TI', 'TI-I'], ['PD', 'P-I']]) (ep[k].bars || []).forEach((b, i) => rowsE.push([`${nm} (${i + 1})`, 'HA' + ph(ep[k].phi), fmt(ep[k].esp, 3), f2(b[0]), f2(b[1]), f2(b[1] - b[0])]));
+        for (const [k, nm] of [['AS', 'AS-E'], ['AI', 'AI-E']]) (ep[k].bars || []).forEach((b, i) => rowsE.push([`${nm} (${i + 1})`, 'HA' + ph(ep[k].phi), Math.abs((R.geom.s || 1) - 1) > 1e-6 ? `${fmt(ep[k].espP, 3)}-${fmt(ep[k].espT, 3)}` : fmt(ep[k].espT, 3), 'P ' + f2(b[0]), 'T ' + f2(b[1]), f2(b[2])]));
+        return G.OTUI.figPage(`PLANCHE ${n} — FERRAILLAGE LONGITUDINAL ET ÉPURE D'ARRÊT DES BARRES`, 'cadre de calcul selon l\'axe de la voie portée · abscisses du listing',
+          fig('', fit(ferraillage(d, R), 440), true)
+          + fig('SECTIONS DÉTERMINANTES', tab(['section', 'A min cm²/m', 'A adoptée', 'barres', 'esp. (m)', 'σs MPa', 'σb MPa'], rowsF))
+          + fig("ARRÊTS DES BARRES", tab(['barre', 'Ø', 'esp. (m)', 'origine', 'extrémité', 'longueur'], rowsE)),
+          'Rouge : ferraillage intérieur (TS-I traverse supérieure, TI-I traverse inférieure, P-I piédroits) ; bleu : ferraillage extérieur des angles (AS-E, AI-E). Trait plein : famille (1) ; tireté : famille (2). '
+          + 'Abscisses comptées à partir de l\'angle sur les traverses et de la base sur les piédroits ; pour les angles, P = abscisse d\'arrêt sur le piédroit, T = abscisse d\'arrêt sur la traverse. Enrobages et écartement des familles amplifiés pour la lisibilité.');
+      });
+
+      list.sort((a, b) => a.after - b.after);
+      return list.map((f, i) => ({ after: f.after, html: f.mk(i + 1) }));
+    }
+    return { figures };
+  })();
+
   G.PICF_UI = {
-    prog: 'PICF-EL', engine: E, steps, get, set, checks, summary, blank,
+    prog: 'PICF-EL', engine: E, steps, get, set, checks, summary, blank, figures: FG.figures,
     numero: m => m.num || m.numero || '0001',
     examples: [{ label: 'Passage inférieur 10 m, biais droit', text: EX1 }, { label: 'Ouvrage hydraulique 5,35 m sous 15 m de remblai', text: EX2 }],
     views: [
