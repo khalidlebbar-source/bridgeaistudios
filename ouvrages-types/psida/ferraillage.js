@@ -112,8 +112,12 @@
       let env, M, Mu;
       if (!sup) { const i = k / 2; env = Math.max(...G.env[i]); M = Math.max(...r.moments[i].map(s => s.els.max)); Mu = Math.max(...r.moments[i].map(s => s.elu.max)); }
       else { const i = (k - 1) / 2; env = Math.max(G.env[i][G.env[i].length - 1], G.env[i + 1][0]);
-        M = -Math.min(...r.moments[i].map(s => s.els.min), ...r.moments[i + 1].map(s => s.els.min));
-        Mu = -Math.min(...r.moments[i].map(s => s.elu.min), ...r.moments[i + 1].map(s => s.elu.min)); }
+        // v33 : moment de la SECTION SUR APPUI (dernière section de la travée i, première de la travée i + 1) et non le
+        // minimum des travées entières, qui prenait le moment de l'appui suivant (3603 / 3607 APPUI2 : σs 36523 / 32387) ;
+        // crochet PSIDA_VERALL = 1 : ancien calcul
+        const si = G.PSIDA_VERALL ? r.moments[i] : [r.moments[i][r.moments[i].length - 1]], sj = G.PSIDA_VERALL ? r.moments[i + 1] : [r.moments[i + 1][0]];
+        M = -Math.min(...si.map(s => s.els.min), ...sj.map(s => s.els.min));
+        Mu = -Math.min(...si.map(s => s.elu.min), ...sj.map(s => s.elu.min)); }
       const As = pick(G, env).om, As2 = O.gamme.cols[0].om, b = G.b, d = G.d, d2 = H - O.d, ne = 15;
       // ELS : section fissurée avec aciers comprimés
       const B = ne * (As + As2), C = -ne * (As * d + As2 * d2), y = (-B + Math.sqrt(B * B - 2 * b * C)) / b;
@@ -606,6 +610,11 @@
           tL[1] = t1L[1]; tR[1] = t1R[1]; }
         if (typeof G.PSIDA_DUMP === 'function') G.PSIDA_DUMP('LIT', i, { tp, Li, ls, e, tL: Object.assign({}, tL), tR: Object.assign({}, tR), om });
         const uL = regroupe(tL, 1, nf.k), uR = regroupe(tR, 1, nf.k);
+        // crochet d'essai PSIDA_R1RAMP (v33) : segment du dossier PSI-DA 68 (pièce 2.5 § 3.1.4.2, 4°) appliqué au groupe du rang 1
+        if (G.PSIDA_R1RAMP) { const K = nf.k, fix1 = (u, envS, Lu) => { let j = 1; while (j < K && Math.abs(u[j + 1] - u[1]) < 1e-9) j++;
+            const g = Array.from({ length: j }, (_, q) => q + 1), ue = {}; for (let q = j + 1; q <= K; q++) ue[q] = 1e9; const w = rampes(envS, Lu, om, 1, K, [g], ls, ue)[1]; if (w > u[1]) for (const q of g) u[q] = w; };
+          const gR = G.PSIDA_R1RAMP === 2 && F.inf.envA ? (() => { const ga = envAt(F.inf.envA, i, true); return x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x); })() : g0;
+          fix1(uR, u => winMax(gR, tp + u - e, tp + u + e), Li - tp + ext); fix1(uL, u => winMax(gR, tp - u - e, tp - u + e), tp + ext); }
         // v18 : dernier groupe (rangs les plus élevés, fers les plus courts près du maximum) prolongé par l'épure à rampes,
         // comme pour les LSA (crochet PSIDA_LITL = 0 : t_s sans rampe)
         if (G.PSIDA_LITL !== 0) { const K = nf.k, fix = (u, envS, Lu) => { let s0 = K; while (s0 > 1 && Math.abs(u[s0 - 1] - u[K]) < 1e-9) s0--; if (s0 <= 1) return;

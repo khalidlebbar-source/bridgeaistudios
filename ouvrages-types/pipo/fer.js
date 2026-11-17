@@ -51,7 +51,10 @@
     const inf = totaux(D.inf.M, -1, D.inf.ret, D.inf.tem, r.liveDet.inf);
     let pdU = 0, pdS = 0;
     r.secP.forEach((s, i) => { const t = totaux(s.M, 1, s.ret, s.tem, r.liveP[i].M); pdU = Math.max(pdU, t.elu); pdS = Math.max(pdS, t.els); });
-    const semTot = k => { const s = r.semelleEff[k][0]; return totaux(s.M, -1, s.ret[0], s.tem[0], s.liveM); };
+    // tour 26 (PIPO_SEMREF = 0 : ancien) : REMB rémanent des sections déterminantes (angle sup.) dans le moment de calcul des semelles
+    const semTot = k => { const s = r.semelleEff[k][0];
+      if (globalThis.PIPO_SEMREF !== 0 && s.liveM.min.RE) { const lv = { max: s.liveM.max, min: Object.assign({}, s.liveM.min, { RE: r.liveDet.sup.min.RE }) }; return totaux(s.M, -1, s.ret[0], s.tem[0], lv); }
+      return totaux(s.M, -1, s.ret[0], s.tem[0], s.liveM); };
     const sE = semTot('E'), sI = semTot('I');
     const dT = dd(g.e3, 0.025, v.PHI1), dTs = dd(g.e3, 0.035, v.PHI1), dP1 = dd(g.e2, 0.025, v.PHI1), dP2 = dd(g.e2, 0.025, v.PHI2), dS2 = dd(g.e1, 0.025, v.PHI2);
     const min = {
@@ -87,7 +90,7 @@
     const rc = globalThis.PIPO_PDB !== 0 ? chooseRe(L3, pdU / sn, pdS / sn, [1, g.e2 / sn]) : chooseRe(L3, pdU, pdS), rb = globalThis.PIPO_PDB !== 0 && globalThis.PIPO_FMBASE == null ? chooseRe(L4, -inf.elu, -inf.els, [sn, g.e2 / sn]) : chooseRe(L4, -inf.elu * fb, -inf.els * fb);
     min.kCour = 1; min.kBase = 0;
     if (rc) { min.pdCour = rc.Am; min.kCour = rc.k; } if (rb) { min.pdBase = rb.Am; min.kBase = rb.k; }
-    ad.pdCour = Object.assign(rc ? rc.o : choose(L3, min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU } });
+    ad.pdCour = Object.assign(rc ? rc.o : choose(L3, min.pdCour), { h: g.e2, M: { els: pdS, elu: pdU }, Amin: min.pdCour });
     // nappe 4 (base du piédroit, prolongée dans la semelle intérieure) : φ2 à d, φ1 à 2d, φ1 à d
     ad.pdBase = Object.assign(rb ? rb.o : choose(L4, min.pdBase), { h: g.e2, M: { els: -inf.els * sn, elu: -inf.elu * sn } });
     // semelle intérieure : nappe 4 + nappe 5 filante si insuffisante ; extérieure : φ2 à d (fers solidarisant) + filante
@@ -171,7 +174,20 @@
     const seuil = (order, ref, neg) => [0.75, 0.5, 0.25, 0].map(k => { for (const o of order) if (ratio(o, ref, neg) <= k + 1e-9) return o.x; return order[order.length - 1].x; });
     const aT = 0.8 * g.e3, aP = 0.8 * g.e2, r2 = x => Math.round(x * 100) / 100;
     // intérieur traverse (abscisses depuis l'angle, portée biaise L)
-    const ti = seuil([...T].reverse(), T[T.length - 1], false).map(x => x - aT); // [x34, x12, x14, x0]
+    let ti = seuil([...T].reverse(), T[T.length - 1], false).map(x => x - aT); // [x34, x12, x14, x0]
+    const EPTI = globalThis.PIPO_EPTI != null ? globalThis.PIPO_EPTI : 2;
+    if (EPTI) {
+      const mat = r.mat, Ms = ad.trInt.M, dT = ad.trInt.d;
+      const Areq = Math.max(asELU(Ms.elu, dT, mat.fbu, mat.ssElu[0]), asELS(Ms.els, dT, v.FIP ? mat.ssEls[0] : 0, v.SIGMAF));
+      const rho = ad.trInt.A / Areq, Tr = [...T].reverse(), R = T[T.length - 1];
+      let ok = (o, k) => ratio(o, R, false) <= k * rho + 1e-9;
+      if (EPTI === 2) {
+        const Q = ad.trInt.A, aU = asELU(Ms.elu, dT, mat.fbu, mat.ssElu[0]), MRu = aU > 0 ? Q / aU * Ms.elu : Infinity;
+        const ab = 15 * v.SIGMAF / (15 * v.SIGMAF + mat.ssEls[0]), MRs = v.FIP ? Q * mat.ssEls[0] * dT * (1 - ab / 3) : Infinity;
+        ok = (o, k) => k === 0 ? ratio(o, R, false) <= 1e-9 : o.maxU <= k * MRu + 1e-9 && o.maxS <= k * MRs + 1e-9;
+      }
+      ti = [0.75, 0.5, 0.25, 0].map(k => { for (const o of Tr) if (ok(o, k)) return o.x - aT; return Tr[Tr.length - 1].x - aT; });
+    }
     const trav = [[ti[3], L - ti[0]], [ti[0], L - ti[3]], [ti[2], L - ti[1]], [ti[1], L - ti[2]]];
     // extérieur, angle supérieur : côté traverse (depuis l'angle), côté piédroit (depuis la base)
     let te = seuil(T, T[0], true).map(x => x + aT);
@@ -190,7 +206,13 @@
       let rho = Q / Areq, Rr = R0;
       if (globalThis.PIPO_EPV) { const o = globalThis.PIPO_EPV({ ad, T0, db, mat, v, asELU, asELS, Q, Areq, sn }); rho = o.rho; Rr = o.R0 || T0; }
       const ks = (globalThis.PIPO_EPK || [0.75, 0.5, 0.25, -1]).map(k => k < 0 ? -k * Aaux / Q : k); epInfo = { rho, ks, Rr, off, Q, Aaux, Areq };
-      tp = ks.map(k => { for (const o of Pd) if (Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * rho + 1e-9) return o.x - off; return Pd[Pd.length - 1].x - off; });
+      let okP = (o, k) => Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * rho + 1e-9;
+      if ((globalThis.PIPO_EPZ || 0) & 1) {
+        const aU = asELU(Ms.elu, db, mat.fbu, mat.ssElu[0]), MRu = aU > 0 ? Q / aU * Ms.elu : Infinity;
+        const ab = 15 * v.SIGMAF / (15 * v.SIGMAF + mat.ssEls[0]), MRs = v.FIP ? Q * mat.ssEls[0] * db * (1 - ab / 3) : Infinity;
+        okP = (o, k) => -o.minU <= k * MRu + 1e-9 && -o.minS <= k * MRs + 1e-9;
+      }
+      tp = ks.map(k => { for (const o of Pd) if (okP(o, k)) return o.x - off; return Pd[Pd.length - 1].x - off; });
     }
     // Tour 23 (essai) — côté traverse : même règle que le piédroit (moment rapporté au moment résistant de la nappe adoptée)
     const EPTR = globalThis.PIPO_EPTR || 0;
@@ -203,19 +225,43 @@
       te = ks.map(k => { for (const o of T) if (Math.max(o.minU / Rr.minU, o.minS / Rr.minS) <= k * (EPTR & 16 ? 1 : rho) + 1e-9) return o.x + off; return T[T.length - 1].x + off; });
     }
     const pairs = [[tp[1], te[2]], [tp[3], te[0]], [tp[0], te[3]], [tp[2], te[1]]]; // barres 1..4 (cf. 1638)
-    const ang = pairs.map(([p, b]) => [p, b, H - p + b + (g.e2 + g.e3) / 2]);
+    // tour 26 : longueur dans l'angle avec l'épaisseur BIAISE du piédroit (e2/sinφ) : 1890, 1893 (+0.06/0.07) — PIPO_EPLB = 0 : ancien
+    const e2L = globalThis.PIPO_EPLB === 0 ? g.e2 : g.e2 / g.sn;
+    const ang = pairs.map(([p, b]) => [p, b, H - p + b + (e2L + g.e3) / 2]);
     // intérieur piédroit (nappe 3) : épure de la moitié des aciers (seuil 3/4 de part et d'autre du maximum)
     let iMax = 0; P.forEach((o, i) => { if (o.maxU > P[iMax].maxU) iMax = i; });
     const dn = P.slice(0, iMax + 1).reverse(), up = P.slice(iMax);
-    const s34 = (order) => { for (const o of order) if (ratio(o, P[iMax], false) <= 0.75 + 1e-9) return o.x; return order[order.length - 1].x; };
-    const deux = ad.pdCour.esp < 1.5 * eP;
-    const pied = deux ? [[s34(dn) - aP, H], [-0.25, s34(up) + aP]] : [[g.e1 / 2, H]];
+    const EPPK = globalThis.PIPO_EPPK || 0, rP = ad.pdCour.A / ad.pdCour.Amin;
+    const s34 = (order, up) => { const k = (up ? EPPK & 1 : EPPK & 2) ? 0.5 * rP : 0.75; for (const o of order) if (ratio(o, P[iMax], false) <= k + 1e-9) return o.x; return order[order.length - 1].x; };
+    // Tour 26 (PIPO_EPPI, bits ; défaut 7, 0 = ancien) : 1 = deux moitiés sauf pour la disposition minimale « φ2 à 2d » de la
+    // nappe 3 (1796/1799/1815/1825 en φ1 à 2d : deux moitiés) ; 2 = origine de la moitié 1 bornée à e1/2 (1680, 1825) ;
+    // 4 = décalage 0.8·e2/sinφ (épaisseur biaise, comme les barres d'angle : 1677).
+    const EPPI = globalThis.PIPO_EPPI != null ? globalThis.PIPO_EPPI : 7;
+    const deux = EPPI & 1 ? !(ad.pdCour.k === 1 && ad.pdCour.esp > 1.5 * eP) : ad.pdCour.esp < 1.5 * eP;
+    const aPi = EPPI & 4 ? 0.8 * g.e2 / g.sn : aP, o1 = EPPI & 2 ? g.e1 / 2 : -Infinity;
+    const pied = deux ? [[Math.max(o1, s34(dn) - aPi), H], [-0.25, s34(up, true) + aPi]] : [[g.e1 / 2, H]];
     // semelles : fers solidarisant (abscisses sur le piédroit depuis la base, extrémité au bord de la semelle)
     if (globalThis.PIPO_EPDBG) globalThis.PIPO_EPDBG({ epInfo, P, Pd, T, tp, tp0, te, ad, eP, g, v, r });
     const E5SI = g.D + g.B / 2, E5SE = -(r.aExt + g.e2 / 2), A5S = g.e1 / 2 + 0.6;
-    const p5 = [Math.max(A5S, tp0[2] - 0.6), Math.max(A5S, tp0[1])]; // (approché, ancienne règle : nappe 4 non reconstituée)
+    let p5 = [Math.max(A5S, tp0[2] - 0.6), Math.max(A5S, tp0[1])]; // (approché, ancienne règle : nappe 4 non reconstituée)
+    // Tour 26 (PIPO_EP5 = 0 : ancien) — fers solidarisant, nappe 4 en φ1 : seuils sur le moment négatif depuis la base
+    // (rapport au moment de base, max ELU/ELS). Si ce moment change de signe le long du piédroit : une seule ligne (BEPCAS 11),
+    // origine = x(1/4) + 0.8·e2/sinφ + ls/2 (1679, 1796, 1815, 1846) ; sinon deux moitiés (BEPCAS 12), MOITIE1 = x(1/2) + 0.8·e2/sinφ + ls
+    // (1638 exact ; 1799 non) ; MOITIE2 : ancienne règle.
+    let bep = null, p6 = null;
+    if (globalThis.PIPO_EP5 !== 0 && ad.pdBase.k === 0) {
+      const R0 = P[0], rn = o => Math.max(o.minU / R0.minU, o.minS / R0.minS), cross = P.some(o => rn(o) <= 1e-9);
+      const xk = k => { for (const o of P) if (rn(o) <= k + 1e-9) return o.x; return P[P.length - 1].x; };
+      const lsB = ad.pdBase.phi * v.SIGMA1 / 1.15 / (4 * r.mat.tauSu), aPb = 0.8 * g.e2 / g.sn;
+      bep = cross ? 11 : 12;
+      p5 = cross ? [xk(0.25) + aPb + lsB / 2] : [xk(0.5) + aPb + lsB, p5[1]];
+      // barre « P I E D R O I T » de la face extérieure (φ2, section A(φ2)/(2·eP)) entre les fers solidarisant et les barres
+      // d'angle : P6S = P5S1 − ls2/2, P7S = P1S + ls2 (ls2 = scellement du φ2) — 1679, 1796, 1815, 1846.
+      if (cross) { const ls2 = v.PHI2 * v.SIGMA2 / 1.15 / (4 * r.mat.tauSu), a6 = r2(p5[0] - ls2 / 2), b6 = r2(tp[3] + ls2);
+        p6 = { A: aire(v.PHI2) / (2 * eP), phi: v.PHI2, seg: [a6, b6, r2(b6 - a6)] }; }
+    }
     return { trav: trav.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]), ang: ang.map(x => x.map(r2)), pied: pied.map(([a, b]) => [r2(a), r2(b), r2(b) - r2(a)]),
-      semI: p5.map(p => [r2(p), r2(E5SI), r2(p + E5SI + g.e1)]), semE: [r2(A5S), r2(E5SE), r2(A5S - E5SE + g.e1)] };
+      semI: p5.map(p => [r2(p), r2(E5SI), r2(p + E5SI + g.e1)]), bep, p6, semE: [r2(A5S), r2(E5SE), r2(A5S - E5SE + g.e1)] };
   }
 
   // ---- Lignes d'influence du coefficient μ (point (0,0), plaque équivalente LARGEUR = larg/sinφ, LONGUEUR = OUVER + E2)

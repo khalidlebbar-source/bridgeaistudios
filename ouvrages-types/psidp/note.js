@@ -861,8 +861,17 @@
       });
     });
     D.push(' NOTA');
-    var tr = ''; for (var t = 0; t < n; t++) tr += (t ? ' ' : '') + (t + 1 < 10 ? ' ' : '') + (t + 1) + ',';
-    D.push('           DANS LES TRAVEES' + tr);
+    var trs = function (ts) { var o = ''; ts.forEach(function (t, i) { o += (i ? ' ' : '') + (t + 1 < 10 ? ' ' : '') + (t + 1) + ','; }); return o; };
+    var all = []; for (var t = 0; t < n; t++) all.push(t);
+    var fl = m.values.CABL !== 4 && P.auto && P.auto.fl;
+    if (fl) { // v44 : travées FL (câble défini par points) puis travées paraboliques
+      D.push('           DANS LES TRAVEES' + trs(all.filter(function (t) { return fl[t]; })));
+      D.push('           OU LE CABLE EST DEFINI PAR POINTS, LES EQUATIONS CI DESSUS NE DONNENT PAS EXACTEMENT');
+      D.push('           LES EXCENTREMENTS DU CABLE PAR RAPPORT A LA FIBRE MOYENNE');
+      D.push('           DANS LES TRAVEES' + trs(all.filter(function (t) { return !fl[t]; })));
+      D.push('           LES EQUATIONS SONT CELLES DU CABLE'); if (P.flBlock) fluageBlock(D, R, P.flBlock, 1); return;
+    }
+    D.push('           DANS LES TRAVEES' + trs(all));
     if (m.values.CABL !== 4) { D.push('           LES EQUATIONS SONT CELLES DU CABLE'); if (P.flBlock) fluageBlock(D, R, P.flBlock, 1); return; }
     D.push('           OU LE CABLE EST DEFINI PAR POINTS, LES EQUATIONS CI DESSUS NE DONNENT PAS EXACTEMENT');
     D.push('           LES EXCENTREMENTS DU CABLE PAR RAPPORT A LA FIBRE MOYENNE');
@@ -1058,8 +1067,9 @@
     });
     return h.s;
   }
-  function eqBlock(D, R, spans) {
+  function eqBlock(D, R, spans, fl, lam) {
     spans.forEach(function (segs, t) {
+      if (fl && fl[t]) { var sF = 'TRAVEE ' + (t + 1); sF += pad(28 - sF.length, 'FUSEAU LIMITE  RAPPORT'); var vF = fx(lam[t], 4); D.push(sF + pad(65 - sF.length - vF.length, vF)); return; }
       D.push(parSegsHeader(segs, 10, 22));
       ['A', 'B', 'C'].forEach(function (key) {
         var l = L(key === 'A' ? 'TRAVEE ' + (t + 1) + ' A' : pad(9, key));
@@ -1078,6 +1088,8 @@
     D.push('                                     PARABOLES DE LA FORME  Z = A*X**2 + B*X + C');
     D.push('              RAPPORTEES AUX AXES OX = FIBRE MOYENNE DE LA SECTION BRUTE, OZ = APPUI DE GAUCHE DE LA TRAVEE');
     for (t = 0; t < n; t++) [au.T1, au.T2].forEach(function (T, k) {
+      // v44 : travée en « FUSEAU LIMITE » (câble défini par points) : une ligne « FL » au lieu des deux tracés
+      if (au.fl && au.fl[t]) { if (k === 0) { var sF = '          TRAVEE ' + (t + 1); D.push(sF + pad(73 - sF.length, 'FL')); } return; }
       var segs = T.spans[t];
       D.push(parSegsHeader(segs, 50, 20));
       ['A', 'B', 'C'].forEach(function (key) {
@@ -1158,12 +1170,12 @@
     D.push('                                EQUATIONS PARABOLIQUES DU CABLE  AVANT TRANSFORMATION LINEAIRE');
     D.push('                                                       *     *');
     D.push('                                                          *');
-    eqBlock(D, R, au.before.spans);
+    eqBlock(D, R, au.before.spans, au.fl, au.lambda);
     D.newPage();
     D.push('                                EQUATIONS PARABOLIQUES DU CABLE  APRES TRANSFORMATION LINEAIRE');
     D.push('                                                       *     *');
     D.push('                                                          *');
-    eqBlock(D, R, au.after.spans);
+    eqBlock(D, R, au.after.spans, au.fl, au.lambda);
   }
 
 

@@ -329,6 +329,11 @@
   // Moments et efforts tranchants dans la semelle (colonnes A BC BT ME CM EX TR REMBLAI RETRAIT TEMPERA)
   const SORD = ['A', 'BC', 'BT', 'MC', 'ME', 'EX', 'TR']; // en-tête « ME CM » mais colonnes Mc puis Me (comme les autres tableaux)
   const SLAB = [['SECTION 1      ', '(ENCASTREMENT) '], ['SECTION 3/4    ', sp(15)], ['SECTION 1/2    ', sp(15)], ['SECTION 1/4    ', sp(15)]];
+  function semReStale(r, sg, i) {
+    const k = sg > 0 ? 'max' : 'min';
+    if (i < 3) return REm(r.liveDet[['sup', 'inf', 'mid'][i]][k]);
+    const lp = r.liveP[r.liveP.length - 1]; return lp && lp.V ? REm(lp.V[k]) : 0;
+  }
   function semelleMoments(r) {
     const L = [sp(46) + 'M O M E N T S       D A N S        L A     S E M E L L E', ' ', ' ', ' '];
     for (const [lab, k] of [[' COTE EXTERIEUR', 'E'], ['  COTE   INTERIEUR', 'I']]) {
@@ -338,7 +343,13 @@
         for (const sg of [1, -1]) {
           const e = s.liveM[sg > 0 ? 'max' : 'min'], q = SORD.map(x => e[x].eff);
           const els = sg > 0 ? s.M.elsMax : s.M.elsMin, elu = sg > 0 ? s.M.eluMax : s.M.eluMin;
-          const t = LV.combine({ Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[0], TP: s.tem[0] }, sg);
+          // Tour 26 — totaux : le REMBLAI cumulé n'est PAS celui de la colonne imprimée mais une valeur rémanente du programme
+          // (1890, 1893 : 32/32 lignes) : sections 1, 3/4, 1/2 → colonne REMB des sections déterminantes (angle sup., angle inf.,
+          // milieu de traverse ; ligne MAX ou MIN), section 1/4 → REMB de l'effort tranchant du piédroit à la dernière section
+          // (sommet). Pris s'il est défavorable (règle générale). PIPO_SEMRE = 0 : colonne imprimée (ancien).
+          const c0 = { Gels: els, Gelu: elu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE: REm(e), RT: s.ret[0], TP: s.tem[0] };
+          if (globalThis.PIPO_SEMRE !== 0) c0.RE = semReStale(r, sg, i);
+          const t = LV.combine(c0, sg);
           L.push(SLAB[i][sg > 0 ? 0 : 1] + (sg > 0 ? 'MAX' : 'MIN') + F(els, 9, 2) + F(elu, 8, 2) + q.map(x => F(x, 8, 2)).join('') + F(REm(e), 9, 2) + F(s.ret[0], 8, 2) + F(s.tem[0], 8, 2) + F(t.els, 9, 2) + F(t.elu, 9, 2));
         }
         L.push(' ');
@@ -433,14 +444,17 @@
     L.push(' ', 'P I E D R O I T', "     SECTION D'ACIER " + a.pdCour.A.toFixed(6) + ' M2', '     ACIER PHI =' + F(a.pdCour.phi, 6, 3) + ' M');
     ep.pied.forEach(([o, e, l], i) => L.push(sp(13) + 'MOITIE ' + (i + 1) + sp(22) + 'A' + (i + 1) + 'P =' + F2(o, 8) + sp(17) + 'E' + (i + 1) + 'P =' + F2(e, 8) + '     A' + (i + 1) + 'PI =' + F2(l, 8)));
     L.push('\f', tit, sp(46) + '*             *            *', sp(34) + 'F E R R A I L L A G E            E X T E R I E U R',
-      sp(31) + 'LES ABSCISSES SONT COMPTEES SUR LE PIEDROIT A PARTIR DE LA BASE' + (BEPC & 1 ? sp(22) + 'BEPCAS = ' + F(a.pdBase.k === 1 ? 2 : 11, 2, 0) + '   0' : ''), ' ', 'A N G L E   S U P E R I E U R',
+      sp(31) + 'LES ABSCISSES SONT COMPTEES SUR LE PIEDROIT A PARTIR DE LA BASE' + (BEPC & 1 ? sp(22) + 'BEPCAS = ' + F(a.pdBase.k === 1 ? 2 : ep.bep || 11, 2, 0) + (ep.bep === 12 && a.pdBase.k !== 1 ? '   3' : '   0') : ''), ' ', 'A N G L E   S U P E R I E U R',
       '      SECTION ' + a.trSup.A.toFixed(6) + ' M2                  ABSCISSE ORIGINE            ABSCISSE EXTREMITE    LONGUEUR',
       '      ACIER PHI =' + F(a.trSup.phi, 6, 3) + ' M                   SUR LE PIEDROIT              SUR LA TRAVERSE');
     const na = [3, 1, 4, 2];
     ep.ang.forEach(([p, b, l], i) => L.push(sp(24) + 'BARRE ' + (i + 1) + '             P' + na[i] + 'S =' + F2(p, 8) + '               B' + na[i] + 'S =' + F2(b, 8) + '        B' + na[i] + 'SE =' + F2(l, 7)));
+    if (ep.p6) L.push(' ', 'P I E D R O I T', '   SECTION  ' + ep.p6.A.toFixed(6) + ' M2                    ABSCISSES SUR LE PIEDROIT                   LONGUEUR',
+      '   ACIER PHI =' + F(ep.p6.phi, 6, 3) + ' M                    ORIGINE        EXTREMITE', ' ',
+      sp(40) + 'P6S =' + F2(ep.p6.seg[0], 6) + '         P7S =' + F2(ep.p6.seg[1], 6) + '                P6SE =' + F2(ep.p6.seg[2], 6));
     L.push(' ', 'BASE DU PIEDROIT ET SEMELLE', '    SEMELLE INTERIEURE                     ABSCISSE ORIGINE           ABSCISSE EXTREMITE        LONGUEUR',
       '       SECTION = ' + a.pdBase.A.toFixed(6) + ' M2                SUR LE PIEDROIT             DANS LA SEMELLE', '       ACIER PHI =' + F(a.pdBase.phi, 6, 3) + ' M');
-    (BEPC & 2 && a.pdBase.k === 1 ? ep.semI.slice(0, 1) : ep.semI).forEach(([p, e, l], i, arr) => arr.length === 1 ? L.push('                FERS SOLIDARISANT     P5S1 =' + F2(p, 13) + '            E5SI =' + F2(e, 7) + '       L5SI1 =' + F2(l, 11)) : L.push((i ? '                SEMELLE ET PIEDROIT   MOITIE2' : '                FERS SOLIDARISANT     MOITIE1') + ' P5S' + (i + 1) + ' =' + F2(p, 13) + '            E5SI =' + F2(e, 7) + '       L5SI' + (i + 1) + ' =' + F2(l, 11)));
+    (BEPC & 2 && (a.pdBase.k === 1 || ep.bep === 11) ? ep.semI.slice(0, 1) : ep.semI).forEach(([p, e, l], i, arr) => arr.length === 1 ? L.push('                FERS SOLIDARISANT     P5S1 =' + F2(p, 13) + '            E5SI =' + F2(e, 7) + '       L5SI1 =' + F2(l, 11)) : L.push((i ? '                SEMELLE ET PIEDROIT   MOITIE2' : '                FERS SOLIDARISANT     MOITIE1') + ' P5S' + (i + 1) + ' =' + F2(p, 13) + '            E5SI =' + F2(e, 7) + '       L5SI' + (i + 1) + ' =' + F2(l, 11)));
     const s = ep.semE;
     L.push('    SEMELLE EXTERIEURE', '       SECTION = ' + a.semE.sol.A.toFixed(6) + ' M2', '       ACIER PHI =' + F(a.semE.sol.phi, 6, 3) + ' M', '                FERS SOLIDARISANT',
       '                SEMELLE ET PIEDROIT               A5S =' + F2(s[0], 7) + '              E5SE =' + F2(s[1], 6) + '        L5SE =' + F2(s[2], 10));

@@ -737,6 +737,14 @@
           const li = (u, v) => (1 - w) * u + w * v, lv = (p, q) => ({ A: { pos: { v: li(p.A.pos.v, q.A.pos.v) }, neg: { v: li(p.A.neg.v, q.A.neg.v) } }, B: { max: { v: li(p.B.max.v, q.B.max.v) }, min: { v: li(p.B.min.v, q.B.min.v) } }, C: { max: { v: li(p.C.max.v, q.C.max.v) }, min: { v: li(p.C.min.v, q.C.min.v) } }, T: { max: li(p.T.max, q.T.max), min: li(p.T.min, q.T.min) } });
           return { a, ...combine(r, { up: li(m0.G.up, m1.G.up), dn: li(m0.G.dn, m1.G.dn) }, li(m0.T, m1.T), lv(m0.live, m1.live)) };
         }
+        if (RM >= 5 && RM <= 8) {   // v33 : composantes mixtes (5 : G exact, T et surcharges interpolées ; 6 : G et T exacts ; 7 : T seul interpolé ; 8 : G seul interpolé)
+          const li = (u, v) => (1 - w) * u + w * v, lv = (p, q) => ({ A: { pos: { v: li(p.A.pos.v, q.A.pos.v) }, neg: { v: li(p.A.neg.v, q.A.neg.v) } }, B: { max: { v: li(p.B.max.v, q.B.max.v) }, min: { v: li(p.B.min.v, q.B.min.v) } }, C: { max: { v: li(p.C.max.v, q.C.max.v) }, min: { v: li(p.C.min.v, q.C.min.v) } }, T: { max: li(p.T.max, q.T.max), min: li(p.T.min, q.T.min) } });
+          const fe = mkMomentLI(r, i, a), xs = r.LI.xs; let I = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(fe, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; }
+          const Ge = { up: Math.max(gMax * I, gMin * I), dn: Math.min(gMax * I, gMin * I) }, Gi = { up: li(m0.G.up, m1.G.up), dn: li(m0.G.dn, m1.G.dn) };
+          const Te = settlementEffect(r, tassM(i, a)), Ti = li(m0.T, m1.T);
+          const Le = RM === 7 || RM === 8 ? liveEffects(r, fe, A6) : lv(m0.live, m1.live);
+          return { a, ...combine(r, RM === 8 ? Gi : Ge, RM === 5 || RM === 7 ? Ti : Te, Le) };
+        }
         const fe = mkMomentLI(r, i, a), f0 = mkMomentLI(r, i, a0), f1 = mkMomentLI(r, i, a1);
         const f = RM === 1 ? (X => (1 - w) * f0(X) + w * f1(X)) : fe;
         let I = 0, Ip = 0, In = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(f, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; Ip += pn.pos; In += pn.neg; }

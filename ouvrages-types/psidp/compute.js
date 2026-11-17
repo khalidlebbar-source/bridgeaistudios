@@ -1799,7 +1799,11 @@
           var xt9 = side < 0 ? f * d : L[tt] - f * d, chk = globalThis.PSIDP_T1CHK !== undefined ? globalThis.PSIDP_T1CHK : 1;
           // RÈGLE v19 : le point d'inflexion (jonction parabole principale / raccord) reste sous le bord sup interpolé linéairement
           // entre les sections 0.1 L voisines (PSIDP_T1INF = 1 ; défaut 0 : non contrôlé, voir NOTES v19)
-          if (globalThis.PSIDP_T1INF === 1) { var ui = xt9 / L[tt] * 10, ki = Math.min(9, Math.max(0, Math.floor(ui))), si = gsup(tt, ki) + (gsup(tt, ki + 1) - gsup(tt, ki)) * (ui - ki);
+          // v44 (PSIDP_T1LAST, défaut 1) : inflexion dans le dernier intervalle 0.1 L contre l'appui (0013B N = 14 : 0.904 L) → pas de
+          // contrôle de l'inflexion, mais la section à 0.1 L de l'appui (sur la parabole principale) reste sous le bord sup.
+          var tlast = globalThis.PSIDP_T1LAST !== undefined ? globalThis.PSIDP_T1LAST : 1, uiL = xt9 / L[tt] * 10, inLast = side > 0 ? uiL > 9 + 1e-9 : uiL < 1 - 1e-9;
+          if (tlast >= 1 && inLast) { var kL = side > 0 ? 9 : 1; if (tr.z(tt, kL * L[tt] / 10) > gsup(tt, kL) + 1e-9) ok = false; }
+          if (globalThis.PSIDP_T1INF === 1 && !(tlast === 1 && inLast)) { var ui = xt9 / L[tt] * 10, ki = Math.min(9, Math.max(0, Math.floor(ui))), si = gsup(tt, ki) + (gsup(tt, ki + 1) - gsup(tt, ki)) * (ui - ki);
             if (tr.z(tt, xt9) > si + 1e-9) ok = false; }
           for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if (chk === 1 && (side < 0 ? xx > xt9 + 1e-9 : xx < xt9 - 1e-9)) continue; if (chk === 3 && (side < 0 ? xx > xt9 + 1e-9 && xx < xt9 + 0.1 * L[tt] - 1e-9 : xx < xt9 - 1e-9 && xx > xt9 - 0.1 * L[tt] + 1e-9)) continue; if (chk === 2 && Math.abs(xx - (side < 0 ? 0 : L[tt])) > 0.1 * L[tt] + 1e-9) continue; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
           return ok;
@@ -1870,6 +1874,7 @@
           ks.forEach(function (kk) { var x8 = kk * L[t] / 10; if ((x8 - P4.xl[t]) * side > 1e-9 && tr8.z(t, x8) < ginf(t, kk) - tolT2 - 1e-9) ok8 = false; });
           if (ok8) break;
         }
+        if (typeof globalThis.PSIDP_DBGRT2 === 'function') globalThis.PSIDP_DBGRT2({ N: Nr, t: t, side: side, R: rT2[key], k: (rT2[key] - (v.RMIN || 8)) / 2 }); // banc v44
       });
       var T2 = traceFromPoints(R, P4, { side: rminSide });
       // ---------------------------------------------------------------- hyperstatiques des tracés limites (Simpson, F moyen de service)
@@ -1915,7 +1920,8 @@
       solveLP();
       // v43 (essai, PSIDP_FL) : « FUSEAU LIMITE » en travée intermédiaire (0015 : TRAVEE 2/3 « FL ») — tracés limites = bords du fuseau aux sections 0.1 L
       var flSpans = null;
-      if (!lam && globalThis.PSIDP_FL) {
+      // v44 : repli FL déclenché par la limite d'emploi de la notice (§ 2.4 : biais géométrique < 50 gr ; 0015 45.6 gr) — PSIDP_FLB = 1
+      if (!lam && (globalThis.PSIDP_FL || (globalThis.PSIDP_FLB !== 0 && (v.BIAIS || 100) < 50))) {
         var tolF = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0.005, isFL = function (t) { return t > 0 && t < n - 1; };
         var zfl = function (which) { return function (t, k) { if (k === 0) return P3.zs[t]; if (k === 10) return P3.zs[t + 1];
           if (which === 2) return ginf(t, k); var z = gsup(t, k); if (k === 1) z = Math.min(z, P3.zs[t] - tolF); if (k === 9) z = Math.min(z, P3.zs[t + 1] - tolF); return z; }; };
@@ -1977,6 +1983,12 @@
       combo.push(sgs);
     }
     var before = mkCable(combo);
+    // v44 : travées « FUSEAU LIMITE » (st.fl) — câble défini par points T1 + λ(T2 − T1) aux sections 0.1 L (bords du fuseau)
+    var flS = st.fl && globalThis.PSIDP_FLCAB !== 0 ? st.fl : null, ptsB = null;
+    if (flS) {
+      ptsB = []; for (t = 0; t < n; t++) { if (!flS[t]) { ptsB.push(null); continue; } var pk = []; for (var k5 = 0; k5 <= 10; k5++) { var x5 = k5 * L[t] / 10, a5 = T1.z(t, x5); pk.push(a5 + lam[t] * (T2.z(t, x5) - a5)); } ptsB.push(pk); }
+      var bz0 = before.z; before = { spans: before.spans, slope: before.slope, z: function (t, x) { if (!ptsB[t]) return bz0(t, x); var u = x / L[t] * 10, k = Math.max(0, Math.min(9, Math.floor(u + 1e-9))); return ptsB[t][k] + (ptsB[t][k + 1] - ptsB[t][k]) * (u - k); } };
+    }
     // transformation linéaire : décalages d_j sur appuis intermédiaires maximisant la plus petite marge
     // (appuis : zs - e ; points bas : e - zi)
     var nd = n - 1, cons = [], bb = [];
@@ -1993,6 +2005,24 @@
     var sol = lpMax(cobj, cons, bb), dj = [0];
     for (j = 1; j < n; j++) dj.push(sol ? sol[j - 1] - sol[nd + j - 1] : 0);
     dj.push(0);
+    // v44 : SETRA amène TOUS les appuis intermédiaires à l'excentrement limite zs (16 listings automatiques)
+    // v44 : SETRA amène TOUS les appuis intermédiaires à une MÊME cote Z (16 listings automatiques : 2766 appuis 2–5 à
+    // 0.261106) ; Z maximise la plus petite marge (zs - Z sur appuis, e - zi aux points bas) — fonction concave de Z.
+    if ((globalThis.PSIDP_TRZS !== undefined ? globalThis.PSIDP_TRZS : 1) === 1 && n > 1) {
+      var zsup = [0]; for (j = 1; j < n; j++) zsup.push(before.z(j - 1, L[j - 1])); zsup.push(0);
+      var margZ = function (Z) {
+        var m = zs - Z;
+        for (var t7 = 0; t7 < n; t7++) {
+          var xr7 = P3.xl[t7] / L[t7], d0 = t7 > 0 ? Z - zsup[t7] : 0, d1 = t7 < n - 1 ? Z - zsup[t7 + 1] : 0;
+          m = Math.min(m, before.z(t7, P3.xl[t7]) + (1 - xr7) * d0 + xr7 * d1 - zi);
+        }
+        return m;
+      };
+      var za = -5, zb = 5;
+      for (var it7 = 0; it7 < 200; it7++) { var z1 = za + (zb - za) / 3, z2 = zb - (zb - za) / 3; if (margZ(z1) < margZ(z2)) za = z1; else zb = z2; }
+      var Zc = (za + zb) / 2;
+      for (j = 1; j < n; j++) dj[j] = Zc - zsup[j];
+    }
     var after = mkCable(combo.map(function (sgs, t5) {
       var l = L[t5], a0 = dj[t5], a1 = dj[t5 + 1], sl = (a1 - a0) / l;
       return sgs.map(function (sg) { return { from: sg.from, to: sg.to, A: sg.A, B: sg.B + sl, C: sg.C + a0 }; });
@@ -2019,10 +2049,23 @@
       out6.sort(function (p, q) { return p.from - q.from; });
       loss.push(out6);
     }
-    var cable = mkCable(loss); cable.ecart = 0;
+    var ePts = null;
+    if (flS) {
+      // RÈGLE v44 (0015, travées 2/3) : points transformés, puis paraboles ajustées comme un câble imposé (sommet au point le plus bas,
+      // raccords sur appuis de rayon ENTIER ≥ RMIN par moindres carrés : 0015 R 27 / 14 m, bornes 3.803 / 25.028 retrouvées) ; ces
+      // paraboles ne servent qu'aux pertes (NOTA « LE CABLE EST DEFINI PAR POINTS ») : excentrements = points.
+      ePts = [];
+      for (t = 0; t < n; t++) {
+        if (!flS[t]) { ePts.push(null); continue; }
+        var pa = ptsB[t].map(function (z, k) { return z + dj[t] + (dj[t + 1] - dj[t]) * k / 10; }); ePts.push(pa);
+        var fc = fitCableImpose([1, L[t], 1], [[0, 0], pa, [0, 0]], 0, v.RMIN || 0);
+        loss[t] = fc.spans[1].map(function (g) { return { A: g.A, B: g.B, C: g.C, from: g.from, to: g.to }; });
+      }
+    }
+    var cable = mkCable(loss); cable.ecart = 0; if (ePts) { cable.ePts = ePts; cable.fl = flS; }
     var Hs = function (HH) { var o = []; for (var jj = 0; jj < n - 1; jj++) { var sm2 = 0; HH.forEach(function (h) { sm2 += h[jj]; }); o.push(sm2); } return o; };
     return { N: Nr, cable: cable, blocks: [BA, BR], cycles: cycles, P2: P2, H1tot: Hs(H1), H2tot: Hs(H2), keyFl: function (e) { return null; }, T1: T1, T2: T2, P3: P3, P4: P4, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: st.R2v, lambda: lam, concordant: concordant,
-      before: before, after: after, dj: dj, zs: zs, zi: zi, Fm: Fm, d2: d2 };
+      before: before, after: after, dj: dj, zs: zs, zi: zi, Fm: Fm, d2: d2, fl: flS };
   }
 
   // intégrale de Simpson (composite ; dernier intervalle par Simpson 3/8 si nombre impair)
@@ -2066,7 +2109,7 @@
     var Lt = R.X0[n], sym = v.SYM === 1;
     for (t = 0; t < n; t++) for (k = 0; k <= ND[t]; k++) {
       var x = k * L[t] / ND[t], c = imp ? model.cotes.values[t] : null;
-      var e = (imp && c && c.length - 1 === ND[t]) ? c[k] - VP : cab.z(t, x);
+      var e = (imp && c && c.length - 1 === ND[t]) ? c[k] - VP : (cab.ePts && cab.ePts[t] && ND[t] === 10 ? cab.ePts[t][k] : cab.z(t, x));
       var q = off[t] + k, X = R.X0[t] + x;
       // ouvrage symétrique : tensions de la moitié gauche reportées par symétrie
       var qs = (sym && X > Lt / 2 + 1e-9) ? off[n] - q : q;
@@ -2203,14 +2246,14 @@
       var gs = G.filter(function (g) { return g.t === t; }), Nd = ND[t], l = L[t];
       var lin = function (f, x) { var u = x / l * Nd, i = Math.min(Nd - 1, Math.floor(u)), w = u - i; return f(gs[i]) * (1 - w) + f(gs[i + 1]) * w; };
       var sgx = function (x) {
-        var e = cab.z(t, x), In = Ib - P.coefI * e * e, F = lin(function (g) { return g.p.proba; }, x) * nA, Fx = lin(function (g) { return g.p.maxi; }, x) * nA;
+        var e = (cab.ePts && cab.ePts[t] && Nd === 10 && globalThis.PSIDP_FLEX === 1) ? lin(function (g) { return g.e; }, x) : cab.z(t, x), In = Ib - P.coefI * e * e, F = lin(function (g) { return g.p.proba; }, x) * nA, Fx = lin(function (g) { return g.p.maxi; }, x) * nA;
         var mh = HI.moy[t] * (1 - x / l) + HI.moy[t + 1] * x / l, mhx = HI.max[t] * (1 - x / l) + HI.max[t + 1] * x / l;
         var mo = R.cp.oss[0] * x * (l - x) / 2 + MuO2[t] * (1 - x / l) + MuO2[t + 1] * x / l;
         var zz = [Vs, -VP], sm2 = function (M) { return zz.map(function (z) { return M * z / In; }); };
         var spp = function (FF, Mh2) { return zz.map(function (z) { return FF / Sn + (FF * e + Mh2) * z / In; }); };
         return { MO: sm2(mo), MOx: sm2(Math.max(mo * v.OSSAX, mo * v.OSSAN)), MOn: sm2(Math.min(mo * v.OSSAX, mo * v.OSSAN)), Pi: spp(F, mh), Px: spp(Fx, mhx) };
       };
-      var zones = []; if (t > 0) zones.push([0, 0.09 * l]); if (t < n - 1) zones.push([0.91 * l, l]);
+      var bnd = globalThis.PSIDP_MTBAND !== undefined ? globalThis.PSIDP_MTBAND : 0.09, zones = []; if (t > 0) zones.push([0, bnd * l]); if (t < n - 1) zones.push([(1 - bnd) * l, l]);
       zones.forEach(function (zn) {
         var M2 = 400, best = null, vals = [];
         for (var i = 0; i <= M2; i++) { var x = zn[0] + (zn[1] - zn[0]) * i / M2, o2 = sgx(x); vals.push([x, o2.MO[1] + o2.Pi[1]]); }
