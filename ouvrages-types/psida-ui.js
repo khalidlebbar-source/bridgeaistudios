@@ -212,15 +212,13 @@
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
           { k: 'A12.KTP', code: 'KTP', label: 'fraction ELS', dec: 3, def: '1', help: 'Fraction des tassements probables prise en compte dans l\'étude ELS (combinaison quasi permanente).' },
         ] },
-        { title: 'Appareils d\'appui (A13) — compressions admissibles en t/m²', alt: true, flex: 5, cols: 5, fields: [
+        { title: 'Appareils d\'appui en élastomère fretté (A13) — compressions admissibles en t/m²', alt: true, flex: 3, cols: 3, fields: [
           { k: 'A13.COMPRENV', code: 'COMPRENV', label: 'élast. min', dec: 0, def: '200', help: 'Contrainte minimale admissible de compression moyenne des appareils en élastomère (risque de cheminement), t/m². Conseillé 200.' },
           { k: 'A13.COMPRENS', code: 'COMPRENS', label: 'élast. max', dec: 0, def: '1200', help: 'Contrainte maximale admissible de compression moyenne des appareils en élastomère, t/m². Conseillé 1200.' },
-          { k: 'A13.COMPREBV', code: 'COMPREBV', label: 'béton min', dec: 0, def: '2000', help: 'Contrainte minimale admissible de compression moyenne des appareils en section rétrécie de béton, t/m². Conseillé 2000.' },
-          { k: 'A13.COMPREBS', code: 'COMPREBS', label: 'béton max', dec: 0, def: '3500', help: 'Contrainte maximale admissible de compression moyenne des appareils en section rétrécie de béton, t/m². Conseillé 3500.' },
           { k: 'A13.SYMAP', code: 'SYMAP', label: 'symétrie', type: 'sel', opts: [[1, '1 — longit.'], [0, '0 — aucune'], [2, '2 — interm. id.']], help: 'Symétrie longitudinale des appareils : 0 aucune ; 1 symétrie longitudinale ; 2 appareils des appuis intermédiaires tous identiques.' },
         ] },
       ] },
-      { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [typ(i), nap(i)] })) },
+      { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
     ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
   ];
 
@@ -1083,6 +1081,7 @@
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
+    const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;   // appareils toujours en élastomère fretté
     for (const c of ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1, ...A3G2]) A4[c] = 1;
   }
   /* moteur : la note attend une date {j, m, a} */
