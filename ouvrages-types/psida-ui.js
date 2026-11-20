@@ -63,11 +63,10 @@
   const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
-    { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1, A2) et calculs demandés (A3) ou imprimés en détail (A4).', pages: [
+    { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1), méthode et calculs demandés (A3) ou imprimés en détail (A4). Répartition transversale toujours par Guyon-Massonnet.', pages: [
       { label: 'Titre', groups: [
         { title: 'Titre de la note (lignes A1 et A2)', flex: 5, cols: 2, fields: [
           { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
-          { k: 'TITRE2', code: 'A2', label: 'ligne 2', type: 'txt', help: 'Seconde ligne d\'identification (ligne A2) : localisation, nature de l\'ouvrage…' },
         ] },
         { title: 'Passage', alt: true, flex: 1, cols: 1, fields: [
           { k: 'NUM', code: 'NUM', label: 'numéro', type: 'txt', w: 52, help: 'Numéro du passage, rappelé en tête de chaque page (PSIDAEL nnnn).' },
@@ -76,8 +75,6 @@
       { label: 'Calculs demandés (A3)', groups: [
         { title: 'Méthode (A3)', flex: 5, cols: 3, fields: [
           { k: 'A3.LIGNINF', code: 'LIGNINF', label: LBL.LIGNINF, type: 'sel', opts: [[2, '2 — conservée'], [1, '1 — optimisée']], help: 'Calcul des lignes d\'influence. 2 : l\'épaisseur HDALLE1 est conservée ; 1 : elle est optimisée par le programme (option non reconstituée ici : l\'épaisseur saisie est conservée).' },
-          { k: 'A3.EXCENTR', code: 'EXCENTR', label: LBL.EXCENTR, type: 'sel', opts: [[1, '1 — Guyon'], [0, '0 — K en A8']], help: 'Coefficients de répartition transversale : 1 calculés par la méthode de Guyon-Massonnet ; 0 lus à la ligne A8 (KA, KBC, KBT, KCM, KTR).' },
-          { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
         ] },
         { title: 'Efforts (A3)', mtx: 'A34', short: 'calculé (A3)', alt: true, flex: 4, cols: 3, fields: A3G1.map(c => ck(c, LBL[c])) },
         { title: 'Ferraillage et sorties (A3)', mtx: 'A34', short: 'calculé (A3)', flex: 6, cols: 4, fields: A3G2.map(c => ck(c, LBL[c])) },
@@ -165,15 +162,6 @@
           { k: 'A8.PSTROT', code: 'PSTROT', label: 'charge', unit: 't/m²', dec: 3, help: 'Charge générale des trottoirs : 0 pour une plateforme autoroutière, 0,150 t/m² pour une voirie ordinaire.' },
         ] },
       ] },
-      { label: 'Coefficients K imposés', groups: [
-        { title: 'Coefficients correctifs de répartition transversale — seulement si EXCENTR = 0', flex: 5, cols: 5, fields: [
-          { k: 'A8.XKA', code: 'KA', label: 'charge A', dec: 3, help: 'Coefficient de répartition transversale imposé pour A(l), incluant a1 : de la forme a1(NVOIE)·(1 + ε). Seulement si EXCENTR = 0.' },
-          { k: 'A8.XKBC', code: 'KBC', label: 'Bc', dec: 3, help: 'Coefficient imposé pour Bc, incluant bc : de la forme bc(NVOIE)·(1 + ε). Seulement si EXCENTR = 0.' },
-          { k: 'A8.XKBT', code: 'KBT', label: 'Bt', dec: 3, help: 'Coefficient imposé pour Bt. Seulement si EXCENTR = 0.' },
-          { k: 'A8.XKCM', code: 'KCM', label: 'char', dec: 3, help: 'Coefficient imposé pour le char militaire. Seulement si EXCENTR = 0.' },
-          { k: 'A8.XKTR', code: 'KTR', label: 'trottoirs', dec: 3, help: 'Coefficient imposé pour la charge des trottoirs. Seulement si EXCENTR = 0.' },
-        ] },
-      ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
 
     { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
@@ -232,7 +220,8 @@
     { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13 — appuis numérotés de gauche à droite', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
       { label: 'Tassements par appui (A12)', caption: 'ligne A12 — tassements des appuis', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
-        { title: 'Tassements (A12)', flex: 2, cols: 2, fields: [
+        { title: 'Tassements (A12)', flex: 3, cols: 3, fields: [
+          { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
           { k: 'A12.KTP', code: 'KTP', label: 'fraction ELS', dec: 3, def: '1', help: 'Fraction des tassements probables prise en compte dans l\'étude ELS (combinaison quasi permanente).' },
         ] },
@@ -638,7 +627,7 @@
     const tas = V(m, 'A3.TASMENT');
     let anyT = false; for (let i = 1; i <= n + 1; i++) { if (V(m, 'A12.TP' + i) < 0 || V(m, 'A12.DTP' + i) < 0) E_('app', 'A12.TP' + i, `tassements de l'appui ${i} négatifs`); if (V(m, 'A12.TP' + i) || V(m, 'A12.DTP' + i)) anyT = true; }
     if (tas === 2 && !anyT) W_('app', 'A12.DTP1', 'TASMENT = 2 mais aucun tassement n\'est donné en ligne A12');
-    if (tas !== 2 && anyT) W_('id', 'A3.TASMENT', 'tassements saisis en ligne A12 mais TASMENT ≠ 2 : ils ne sont pas étudiés');
+    if (tas !== 2 && anyT) W_('app', 'A3.TASMENT', 'tassements saisis en ligne A12 mais TASMENT ≠ 2 : ils ne sont pas étudiés');
     for (let i = 1; i <= n + 1; i++) {
       const a = V(m, 'A13.NAP' + i);
       if (!(a >= 1)) (V(m, 'A3.DIMAP') ? E_ : W_)('app', 'A13.NAP' + i, `ligne d'appui ${i} : nombre d'appareils NAP${i} nul`);
@@ -1099,7 +1088,7 @@
 
   function blank() {
     const m = E.parseBordereau(EX1);
-    m.titre = ['', '']; m.numero = '0001'; m.date = null;
+    m.titre = ['', '']; m.numero = '0001'; m.lignes.A3.EXCENTR = 1; m.date = null;
     delete m.source; delete m.version;
     return m;
   }
@@ -1108,7 +1097,7 @@
   const engine = {
     parseBordereau: t => E.parseBordereau(t),
     formatBordereau: m => E.formatBordereau(m),
-    compute: m => E.compute(m),
+    compute: m => { m.lignes.A3.EXCENTR = 1; return E.compute(m); },   // répartition transversale : toujours Guyon-Massonnet (EXCENTR = 1)
     renderNote: (m, r, o) => {
       o = Object.assign({}, o);
       if (typeof o.date === 'string') { const p = o.date.split(/[-/.]/); o.date = { j: p[0], m: p[1], a: p[2] }; }
