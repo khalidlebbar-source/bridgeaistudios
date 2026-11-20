@@ -13,6 +13,7 @@
     if (k === 'TITRE1') return (m.titre || [])[0] || '';
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
+    if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
     if (k.startsWith('FIX.')) {                                           // charges A(l), Bc, Bt (codes A et B, extension 000 / 002 / 003)
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
@@ -31,6 +32,10 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k === 'FC28') {                                                   // fc28 (MPa) → FCJ, et FTJ = 60 + 0,06 FCJ (t/m²)
+      m.lignes = m.lignes || {}; if (!m.lignes.A9) m.lignes.A9 = emptyLine('A9');
+      const fc = num(v) * 100; m.lignes.A9.FCJ = fc; m.lignes.A9.FTJ = Math.round((60 + 0.06 * fc) * 10) / 10; return;
+    }
     if (k.startsWith('FIX.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
       const A8 = m.lignes.A8, on = num(v) === 1;
@@ -185,22 +190,11 @@
 
     { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
-        { title: 'Fissuration', flex: 3, cols: 3, fields: [
-          { k: 'A9.GENRE', code: 'GENRE', label: 'fissuration', type: 'sel', opts: [['100', '100 — peu préjudiciable'], ['200', '200 — préjudiciable'], ['300', '300 — très préjudiciable'], ['101', '101 — peu préj. + C1'], ['201', '201 — préj. + C1'], ['301', '301 — très préj. + C1']], help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
-          { k: 'A9.BA', code: 'BA', label: 'coef. BA', type: 'sel', opts: [['000', '000 — réglementaires'], ['001', '001 — lignes C2/C3'], ['100', '100 — lignes C2/C3']], help: 'Une valeur non nulle du chiffre des unités ou des centaines provoque la lecture des lignes C2 et C3 (coefficients extra-réglementaires). Normalement 000.' },
-          { k: 'A9.XKI', code: 'ψ1', label: 'combin. fréquente', dec: 3, help: 'XKI : fraction ψ1 des charges d\'exploitation sans caractère particulier pour la combinaison fréquente à l\'ELS.' },
-        ] },
-        { title: 'Caractéristiques du béton', alt: true, flex: 4, cols: 4, fields: [
-          { k: 'A9.FCJ', code: 'FCJ', label: 'compression', unit: 't/m²', dec: 0, help: 'Résistance caractéristique à la compression à j = 28 jours, en t/m² (3000 t/m² ≈ 30 MPa).', def: '3000' },
-          { k: 'A9.FTJ', code: 'FTJ', label: 'traction', unit: 't/m²', dec: 0, help: 'Résistance caractéristique à la traction à 28 jours, en t/m² : ftj = 60 + 0,06 fcj (240 t/m² pour 3000).', def: '240' },
-          { k: 'A9.POISSON', code: 'POISSON', label: 'coef. Poisson', dec: 3, help: 'Coefficient de Poisson du béton (flexion transversale). Valeur conseillée 0,20.', def: '0,20' },
-          { k: 'A9.RETRAI', code: 'RETRAIT', label: 'retrait', dec: 5, help: 'Raccourcissement relatif final du retrait du béton (BAEL A.2.1,22), ex. 0,00040.', def: '0,00040' },
-        ] },
-      ] },
-      { label: 'Contraintes limites (C1)', groups: [
-        { title: 'Classe extra-réglementaire — seulement si GENRE = i01', flex: 5, cols: 5, fields: [
-          { k: 'C1.XB', code: 'XB', label: 'xb', dec: 2, help: 'Ligne C1, coefficient xb de la classe extra-réglementaire (seulement si GENRE = 101, 201 ou 301).' },
-          ...[1, 2, 3, 4].map(i => ({ k: 'C1.SS' + i, code: 'ss' + i, label: `σs PHI${i}`, unit: 't/m²', dec: 0, help: `Contrainte limite de traction des aciers de diamètre PHI${i} à l'ELS, en t/m² (seulement si GENRE = i01).` })),
+        { title: 'Béton (BAEL 91 mod. 99)', short: '', flex: 4, cols: 4, fields: [
+          { k: 'FC28', code: 'fc28', label: 'compression', unit: 'MPa', dec: 1, help: 'Résistance caractéristique à la compression à 28 jours (MPa). ft28 = 0,6 + 0,06 fc28 en est déduite (BAEL A.2.1,12).' },
+          { k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
+          { k: 'A9.POISSON', code: 'Poisson', label: 'coef. Poisson', dec: 3, help: 'Coefficient de Poisson du béton (flexion transversale). Valeur conseillée 0,20.', def: '0,20' },
+          { k: 'A9.RETRAI', code: 'Retrait', label: 'retrait', dec: 5, help: 'Raccourcissement relatif final du retrait du béton (BAEL A.2.1,22), ex. 0,00040.', def: '0,00040' },
         ] },
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'mat') },
@@ -457,7 +451,7 @@
       d.text(xp[2] + ws[2] / 2, top + 0.3, sch ? 'NVOIE voies' : nv + ' voie' + (nv > 1 ? 's' : '') + (nvR > 0 ? '' : ' (F61)'), { size: 0.75, cls: sch ? 'tc' : 'ts', k: 'A6.NVOIE', base: 'auto' });
       if (hc > 0 || sch) d.text(xp[4] - 0.15, top + 0.3, (sch ? 'HCHAU' : 'chaussée ' + fmt(hc, 3)) + ' ▾', { size: 0.7, a: 'end', base: 'auto', cls: sch ? 'tc' : 'dv', k: 'A6.HCHAU' });
     }
-    if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'GENRE · FCJ · FTJ · POISSON · RETRAIT' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
+    if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
     // cotes de la section
     const DET = mode !== 'loads' && mode !== 'mat';
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
@@ -610,9 +604,9 @@
     if (!/^[123]0[01]$/.test(ge)) E_('mat', 'A9.GENRE', 'GENRE : 100, 200, 300 (ou 101, 201, 301 avec la ligne C1)');
     else if (ge[2] === '1' && !(L.C1 && [1, 2, 3, 4].every(i => L.C1['SS' + i] > 0))) E_('mat', 'C1.SS1', `GENRE = ${ge} : contraintes limites ss1 à ss4 de la ligne C1 à renseigner`);
     const fc = V(m, 'A9.FCJ'), ft = V(m, 'A9.FTJ');
-    if (!(fc > 0)) E_('mat', 'A9.FCJ', 'la résistance du béton FCJ doit être positive (t/m²)');
-    else if (fc < 1000) E_('mat', 'A9.FCJ', `FCJ = ${fmt(fc, 0)} : la donnée est en t/m² (ex. 3000 pour 30 MPa)`);
-    else if (fc < 2000 || fc > 6000) W_('mat', 'A9.FCJ', `résistance ${fmt(fc / 100, 0)} MPa inhabituelle (25 à 40 MPa)`);
+    if (!(fc > 0)) E_('mat', 'FC28', 'la résistance fc28 doit être positive (MPa)');
+    else if (fc < 1000) E_('mat', 'FC28', `fc28 = ${fmt(fc / 100, 1)} MPa : trop faible`);
+    else if (fc < 2000 || fc > 6000) W_('mat', 'FC28', `résistance ${fmt(fc / 100, 0)} MPa inhabituelle (25 à 40 MPa)`);
     if (fc >= 1000) { const ftr = 60 + 0.06 * fc; if (!(ft > 0)) E_('mat', 'A9.FTJ', 'la résistance à la traction FTJ doit être positive'); else if (Math.abs(ft - ftr) > 0.06 * ftr) W_('mat', 'A9.FTJ', `BAEL : ftj = 0,6 + 0,06 fcj = ${fmt(ftr, 0)} t/m² (saisi ${fmt(ft, 0)})`); }
     const nu = V(m, 'A9.POISSON'); if (nu < 0 || nu > 0.3) E_('mat', 'A9.POISSON', 'coefficient de Poisson compris entre 0 et 0,3');
     const re = V(m, 'A9.RETRAI'); if (re < 0 || re > 0.001) W_('mat', 'A9.RETRAI', `retrait ${fmt(re, 5)} inhabituel (≈ 0,0003 à 0,0005)`);
@@ -661,7 +655,7 @@
     let h = card('Géométrie de calcul',
       kv('Travées', r.L.map(x => fmt(x, 2)).join(' + ') + ' m')
       + kv('Longueur totale (abouts compris)', fmt(r.longueurTotale, 2) + ' m')
-      + kv('Largeur droite de la dalle', fmt(A7.EDALLE1 + A7.EDALLE2 + A7.EDALLE3, 2) + ' m')
+      + kv('Largeur droite de la dalle', fmt(A7.EDALLE1 + A7.EDALLE2, 2) + ' m')
       + kv('Biais', fmt(r.biais, 1) + ' gr')
       + kv('Aire de la section', fmt(sec.A, 3) + ' m²') + kv('Inertie', fmt(sec.I, 4) + ' m⁴')
       + kv('Élancement HDALLE1 / Dmax', '1/' + Math.round(Lmax / sec.H))
@@ -1108,6 +1102,7 @@
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
+    if (m.lignes.A9) { m.lignes.A9.BA = '000'; m.lignes.A9.XKI = 0; }   // coefficients BAEL réglementaires, ψ1 = 0
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
     // cases masquées au-delà de NT (portées) et de NT + 1 (appuis) : 0, comme le demande le bordereau
