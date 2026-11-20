@@ -57,10 +57,10 @@
   const A3G2 = ['FERLON', 'FERTRAN', 'ETRIERS', 'POINCON', 'DEFORM', 'AVMETRE', 'PP', 'DESSIN'];
   const LBL = { LIGNINF: 'lignes d\'influence', EXCENTR: 'répartition transv.', TASMENT: 'tassements', MOMENT: 'moments', EFTRAN: 'efforts tranchants', REAPPUI: 'réactions d\'appui', MOTRAN: 'flexion transv.', DIMAP: 'appareils d\'appui', FERLON: 'ferr. longitudinal', FERTRAN: 'ferr. transversal', ETRIERS: 'étriers', POINCON: 'poinçonnement', DEFORM: 'déformations', AVMETRE: 'avant-métré', PP: 'tableau P.P.', DESSIN: 'dessin' };
   const sp = i => ({ k: 'A5.D' + i, code: 'D' + i, label: 'travée ' + i, unit: 'm', dec: 3, help: `Portée biaise de la travée ${i}, mesurée suivant l'axe de l'ouvrage entre lignes d'appui. Les remplir toutes, même si l'ouvrage est symétrique ; 0 au-delà de NT.` });
-  const tp = i => ({ k: 'A12.TP' + i, code: 'TP' + i, label: '', unit: 'm', dec: 3, help: `Tassement probable de l'appui ${i} (m). Pris en compte si TASMENT = 2 (ligne A3).` });
-  const dtp = i => ({ k: 'A12.DTP' + i, code: 'DTP' + i, label: '', unit: 'm', dec: 3, help: `Tassement supplémentaire aléatoire de l'appui ${i} (m).` });
-  const typ = i => ({ k: 'A13.TYPAP' + i, code: 'TYPAP' + i, label: '', type: 'sel', opts: [[1, 'élast.'], [0, 'Freys.'], [2, 'autre']], help: `Type d'appareil d'appui de la ligne d'appui ${i} : 0 articulation Freyssinet, 1 élastomère fretté, 2 autre type.` });
-  const nap = i => ({ k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
+  const tp = i => ({ rowLabel: 'TP', k: 'A12.TP' + i, code: 'TP' + i, label: '', unit: 'm', dec: 3, help: `Tassement probable de l'appui ${i} (m). Pris en compte si TASMENT = 2 (ligne A3).` });
+  const dtp = i => ({ rowLabel: 'DTP', k: 'A12.DTP' + i, code: 'DTP' + i, label: '', unit: 'm', dec: 3, help: `Tassement supplémentaire aléatoire de l'appui ${i} (m).` });
+  const typ = i => ({ rowLabel: 'TYPAP', k: 'A13.TYPAP' + i, code: 'TYPAP' + i, label: '', type: 'sel', opts: [[1, 'élast.'], [0, 'Freys.'], [2, 'autre']], help: `Type d'appareil d'appui de la ligne d'appui ${i} : 0 articulation Freyssinet, 1 élastomère fretté, 2 autre type.` });
+  const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
     { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1, A2) et calculs demandés (A3) ou imprimés en détail (A4).', pages: [
@@ -70,7 +70,7 @@
           { k: 'TITRE2', code: 'A2', label: 'ligne 2', type: 'txt', help: 'Seconde ligne d\'identification (ligne A2) : localisation, nature de l\'ouvrage…' },
         ] },
         { title: 'Passage', alt: true, flex: 1, cols: 1, fields: [
-          { k: 'NUM', code: 'NUM', label: 'numéro', type: 'txt', help: 'Numéro du passage, rappelé en tête de chaque page (PSIDAEL nnnn).' },
+          { k: 'NUM', code: 'NUM', label: 'numéro', type: 'txt', w: 52, help: 'Numéro du passage, rappelé en tête de chaque page (PSIDAEL nnnn).' },
         ] },
       ] },
       { label: 'Calculs demandés (A3)', groups: [
@@ -79,16 +79,16 @@
           { k: 'A3.EXCENTR', code: 'EXCENTR', label: LBL.EXCENTR, type: 'sel', opts: [[1, '1 — Guyon'], [0, '0 — K en A8']], help: 'Coefficients de répartition transversale : 1 calculés par la méthode de Guyon-Massonnet ; 0 lus à la ligne A8 (KA, KBC, KBT, KCM, KTR).' },
           { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
         ] },
-        { title: 'Efforts (A3)', alt: true, flex: 4, cols: 3, fields: A3G1.map(c => ck(c, LBL[c])) },
-        { title: 'Ferraillage et sorties (A3)', flex: 6, cols: 4, fields: A3G2.map(c => ck(c, LBL[c])) },
+        { title: 'Efforts (A3)', mtx: 'A34', short: 'calculé (A3)', alt: true, flex: 4, cols: 3, fields: A3G1.map(c => ck(c, LBL[c])) },
+        { title: 'Ferraillage et sorties (A3)', mtx: 'A34', short: 'calculé (A3)', flex: 6, cols: 4, fields: A3G2.map(c => ck(c, LBL[c])) },
       ] },
       { label: 'Impressions détaillées (A4)', groups: [
-        { title: 'Efforts : résultats intermédiaires imprimés (A4)', flex: 8, cols: 4, fields: ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1].map(c => imp(c, LBL[c])) },
-        { title: 'Ferraillage : résultats intermédiaires imprimés (A4)', alt: true, flex: 8, cols: 4, fields: A3G2.map(c => imp(c, LBL[c])) },
+        { title: 'Efforts : résultats intermédiaires imprimés (A4)', mtx: 'A34', short: 'imprimé (A4)', flex: 8, cols: 4, fields: ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1].map(c => imp(c, LBL[c])) },
+        { title: 'Ferraillage : résultats intermédiaires imprimés (A4)', mtx: 'A34', short: 'imprimé (A4)', alt: true, flex: 8, cols: 4, fields: A3G2.map(c => imp(c, LBL[c])) },
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'long', label: 'Profil en long', view: 'elev', caption: 'ligne A5 — portées biaises', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
+    { id: 'long', col: 0, label: 'Profil en long', view: 'elev', caption: 'ligne A5 — portées biaises', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
       { label: 'Travées', groups: [
         { title: 'Ouvrage', flex: 3, cols: 3, fields: [
           { k: 'A5.NT', code: 'NT', label: 'nb de travées', type: 'sel', opts: [1, 2, 3, 4, 5, 6].map(i => [i, String(i)]), help: 'Nombre de travées (1 à 6).' },
@@ -99,7 +99,7 @@
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'trav', label: 'Coupe transversale', view: 'coupe', caption: 'lignes A6 et A7', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
+    { id: 'trav', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'lignes A6 et A7', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
       { label: 'Profil en travers (A6)', caption: 'ligne A6 — profil en travers de gauche à droite', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
@@ -138,7 +138,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
-    { id: 'charg', label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, charges d\'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
+    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, charges d\'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
       { label: 'Permanentes', groups: [
         { title: 'Ossature', flex: 3, cols: 3, fields: [
           { k: 'A8.MASVOL', code: 'MASVOL', label: 'masse vol.', unit: 't/m³', dec: 3, def: '2,5 (0 = 2,5)', help: 'Valeur probable de la masse volumique du béton armé (2,5 t/m³ du BAEL si 0).' },
@@ -176,7 +176,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
 
-    { id: 'mat', label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
+    { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
         { title: 'Fissuration', flex: 3, cols: 3, fields: [
           { k: 'A9.GENRE', code: 'GENRE', label: 'fissuration', type: 'sel', opts: [['100', '100 — peu préjudiciable'], ['200', '200 — préjudiciable'], ['300', '300 — très préjudiciable'], ['101', '101 — peu préj. + C1'], ['201', '201 — préj. + C1'], ['301', '301 — très préj. + C1']], help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
@@ -198,7 +198,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'mat') },
 
-    { id: 'acier', label: 'Armatures', view: 'arm', caption: 'lignes A10 et A11', hint: 'Diamètres, nuances et disposition des armatures (diamètres saisis en mm, écrits en m dans le bordereau).', pages: [
+    { id: 'acier', col: 1, label: 'Armatures', view: 'arm', caption: 'lignes A10 et A11', hint: 'Diamètres, nuances et disposition des armatures (diamètres saisis en mm, écrits en m dans le bordereau).', pages: [
       { label: 'Diamètres et limites', groups: [
         { title: 'Diamètres', flex: 4, cols: 4, fields: [
           { k: 'A10.PHI1', code: 'PHI1', label: 'longit. princ.', unit: 'mm', dec: 0, help: 'Diamètre des aciers longitudinaux principaux (et éventuellement des chevêtres incorporés).' },
@@ -229,8 +229,8 @@
       ] },
     ], draw: (svg, m, sch) => drawArm(svg, m, sch) },
 
-    { id: 'app', label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13 — appuis numérotés de gauche à droite', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
-      { label: 'Tassements par appui (A12)', caption: 'ligne A12 — tassements des appuis', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
+    { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13 — appuis numérotés de gauche à droite', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
+      { label: 'Tassements par appui (A12)', caption: 'ligne A12 — tassements des appuis', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
         { title: 'Tassements (A12)', flex: 2, cols: 2, fields: [
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
@@ -244,7 +244,7 @@
           { k: 'A13.SYMAP', code: 'SYMAP', label: 'symétrie', type: 'sel', opts: [[1, '1 — longit.'], [0, '0 — aucune'], [2, '2 — interm. id.']], help: 'Symétrie longitudinale des appareils : 0 aucune ; 1 symétrie longitudinale ; 2 appareils des appuis intermédiaires tous identiques.' },
         ] },
       ] },
-      { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, alt: i % 2 === 0, flex: 2, cols: 2, fields: [typ(i), nap(i)] })) },
+      { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [typ(i), nap(i)] })) },
     ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
   ];
 
@@ -1118,7 +1118,7 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
-    pairs: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
+    pairs: true, onePage: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],
     views: [

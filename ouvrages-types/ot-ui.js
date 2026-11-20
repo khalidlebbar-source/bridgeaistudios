@@ -166,6 +166,44 @@
 .ot-pan-h h3{margin:0;font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
 .ot-views{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px}
 .ot-views:empty{display:none}
+/* mode « une page » (def.onePage) : tout le bordereau sur un écran ; dessins (SETRA / ouvrage) à gauche, cases compactes à droite */
+.ot.one [data-r=guide]{display:grid;grid-template-columns:minmax(0,31fr) minmax(0,69fr);grid-template-rows:minmax(0,1fr);gap:10px}
+.ot.one .ot-steps,.ot.one .ot-pages{display:none}
+.ot.one .ot-main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0}
+.ot.one .ot-fields{min-height:0;overflow:hidden}
+.ot.one .ot-groups{height:100%;display:flex;gap:6px;align-items:flex-start}
+.ot.one .ot-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
+.ot-blk{border:1px solid var(--border);border-radius:9px;background:var(--white);padding:3px 6px 4px;min-width:0;}
+.ot-blk.wide{grid-column:1/-1}
+.ot-blk.on{border-color:var(--gold2);box-shadow:0 0 0 2px var(--gold-bg)}
+.ot-blk>h4{margin:0 0 2px;font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;display:flex;gap:8px;align-items:baseline}
+.ot-blk>h4 small{font-size:9px;letter-spacing:.04em;text-transform:none;color:var(--ink3)}
+.ot-blk .row{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:flex-end}
+.ot-blk .sg{display:flex;flex-direction:column;flex:0 1 auto;max-width:100%;padding:1px 3px 2px;border-radius:6px;min-width:0}
+.ot-blk .sg.full{flex:1 1 100%}
+.ot-blk .sg>.fs{display:flex;flex-wrap:wrap;gap:2px 4px;align-items:flex-end}
+.ot-blk .sg.alt{background:var(--gold-bg)}
+.ot-blk .sg>i{font-style:normal;font-size:8.5px;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0;min-width:100%}
+.ot.one .ot-f{width:var(--w,62px);gap:0}
+.ot.one .ot-f label{font-size:9px}
+.ot.one .ot-f label code{font-size:9.5px}
+.ot.one .ot-f label span,.ot.one .ot-f label em{display:none}
+.ot.one .ot-f input,.ot.one .ot-f select{height:22px;font-size:11.5px;padding:0 4px;border-radius:5px}
+.ot.one .ot-f select{padding:0 1px}
+.ot.one .ot-f.ck{width:auto;height:20px;margin:0;gap:3px}
+.ot.one .ot-f.ck input{width:13px;height:13px}
+.ot.one .ot-f.wtxt{width:100%;flex:1 1 200px}
+.ot.one .ot-tbl{border-collapse:collapse;font-size:9.5px}
+.ot.one .ot-tbl th{font-weight:500;color:var(--ink3);padding:0 3px;text-align:left}
+.ot.one .ot-tbl td{padding:1px 2px}
+.ot.one .ot-tbl .ot-f{width:40px}
+.ot.one .ot-tbl .ot-f select{font-size:10.5px}
+.ot.one .ot-tbl .ot-f label{display:none}
+@media (max-width:980px){.ot.one [data-r=guide]{grid-template-columns:1fr}.ot.one .ot-main{grid-template-rows:300px 300px}.ot.one .ot-groups{flex-direction:column}.ot.one .ot-col{width:100%}}
+.ot.one .ot-mx th span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Courier New',monospace;font-size:9px;color:var(--gold);font-weight:600;line-height:1}
+.ot.one .ot-mx th{vertical-align:bottom;padding:0 1px}
+.ot.one .ot-mx td{text-align:center;padding:0}
+.ot.one .ot-mx .ot-f.ck{width:15px;justify-content:center}
 .ot-views button{border:none;background:transparent;border-radius:5px;padding:3px 10px;font-size:11.5px;color:var(--ink3);cursor:pointer}
 .ot-views button.on{background:var(--white);color:var(--ink);box-shadow:var(--shadow)}
 .ot-fig{flex:1;min-height:0;padding:6px 10px 10px;display:flex}
@@ -303,7 +341,7 @@
       results: null, note: null, noteFor: null, issues: [],
     };
 
-    root.classList.add('ot');
+    root.classList.add('ot'); if (def.onePage) root.classList.add('one');
     root.style.position = 'relative';
     root.innerHTML = `
 <div class="ot-bar">
@@ -383,7 +421,45 @@
       const shown = f.type === 'txt' ? (v == null ? '' : v) : fmt(v, f.dec);
       return `<div class="ot-f${ch ? ' chg' : ''}" data-k="${esc(f.k)}">${lab}<input id="${id}" ${f.type === 'txt' ? '' : 'inputmode="decimal"'} value="${esc(shown)}" autocomplete="off"></div>`;
     }
+    function renderOne() {
+      // blocs = étapes ; sous-groupes = groupes des pages ; groupes « par appui » (g.appui) regroupés en tableau
+      const W = f => f.type === 'txt' ? (f.w ? `--w:${f.w}px;flex:0 0 auto` : '') : f.type === 'sel' ? `--w:${f.w || 84}px` : `--w:${f.w || 52}px`;
+      const fh = f => fieldHTML(f).replace('class="ot-f', `style="${W(f)}" class="ot-f${f.type === 'txt' ? ' wtxt' : ''}`);
+      const blk = steps.map((st, si) => {
+        const gs = st.pages.flatMap(p => p.groups);
+        const tabs = gs.filter(g => g.appui), mx = gs.filter(g => g.mtx), plain = gs.filter(g => !g.appui && !g.mtx);
+        let h = plain.map(g => `<div class="sg${g.alt ? ' alt' : ''}${g.fields.some(f => f.type === 'txt' && !f.w) ? ' full' : ''}" title="${esc(g.title)}"><i>${esc(g.short || g.title)}</i><div class="fs">${g.fields.map(fh).join('')}</div></div>`).join('');
+        if (mx.length) {   // matrice de cases à cocher : colonnes = codes, lignes = groupes (ex. A3 calculé / A4 imprimé)
+          const rws = [...new Set(mx.map(g => g.short || g.title))].map(rw => mx.filter(g => (g.short || g.title) === rw).flatMap(g => g.fields));
+          const cols = []; [...rws].sort((a, b) => b.length - a.length).forEach(fs => fs.forEach(f => { if (!cols.includes(f.code)) cols.push(f.code); }));
+          h += `<table class="ot-tbl ot-mx"><tr><th></th>${cols.map(c => `<th><span>${esc(c)}</span></th>`).join('')}</tr>` +
+            [...new Set(mx.map(g => g.short || g.title))].map(rw => { const gg = mx.filter(g => (g.short || g.title) === rw).flatMap(g => g.fields);
+              return `<tr><th>${esc(rw)}</th>${cols.map(c => { const f = gg.find(x => x.code === c); return `<td>${f ? fieldHTML(f) : ''}</td>`; }).join('')}</tr>`; }).join('') + '</table>';
+        }
+        if (tabs.length) {
+          const kinds = [...new Set(tabs.map(g => g.appui))], cols = tabs.filter(g => g.appui === kinds[0]);
+          let rws = '';
+          for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { rws += `<tr><th>${esc(f0.rowLabel || f0.code)}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
+          h += `<table class="ot-tbl"><tr><th></th>${cols.map(g => `<th>${esc(g.title)}</th>`).join('')}</tr>${rws}</table>`;
+        }
+        return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}<small>${esc(st.caption || '')}</small></h4><div class="row">${h}</div></section>`;
+      });
+      const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
+      R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
+      markBad();
+    }
+    function locate(k) {   // étape / page qui portent la case k
+      for (let si = 0; si < steps.length; si++) { const pi = steps[si].pages.findIndex(pg => pg.groups.some(g => g.fields.some(f => f.k === k))); if (pi >= 0) return [si, pi]; }
+      return null;
+    }
+    function followField(k) {   // mode une page : le dessin suit la case survolée ou active
+      const L = locate(k); if (!L) return;
+      const before = pairOf(); const os = S.step; S.step = L[0]; S.page = L[1];
+      if (os !== S.step) $$(R.groups, '.ot-blk').forEach(b => b.classList.toggle('on', +b.dataset.si === S.step));
+      if (pairOf() !== before) { renderSchema(); renderLive(); }
+    }
     function renderFields() {
+      if (def.onePage) return renderOne();
       const st = steps[S.step];
       if (S.page >= st.pages.length) S.page = 0;
       R.pages.innerHTML = st.pages.map((p, i) => `<button class="ot-pg${i === S.page ? ' on' : ''}" data-p="${i}"><b>${i + 1}</b>${esc(p.label)}</button>`).join('')
@@ -495,8 +571,8 @@
     }
     R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) onEdit(e.target); });
     R.groups.addEventListener('change', e => { if (e.target.matches('select,input[type=checkbox]')) { onEdit(e.target); const f = fieldByKey(e.target.closest('.ot-f').dataset.k); if (f && f.relayout) setTimeout(renderFields, 130); } });
-    R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
-    R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; hl(R.sch, S.hover); hl(R.live, S.hover); R.msg.innerHTML = helpFor(S.hover); } });
+    R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; if (def.onePage) followField(S.focus); hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
+    R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; if (def.onePage) followField(S.hover); hl(R.sch, S.hover); hl(R.live, S.hover); R.msg.innerHTML = helpFor(S.hover); } });
     R.groups.addEventListener('mouseleave', () => { S.hover = null; hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); });
     R.groups.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
@@ -511,7 +587,7 @@
       for (let si = 0; si < steps.length; si++) {
         const pi = steps[si].pages.findIndex(pg => pg.groups.some(g => g.fields.some(f => f.k === k)));
         if (pi >= 0) {
-          if (si !== S.step || pi !== S.page) { S.step = si; S.page = pi; renderGuide(); }
+          if (def.onePage) followField(k); else if (si !== S.step || pi !== S.page) { S.step = si; S.page = pi; renderGuide(); }
           const inp = R.groups.querySelector(`[data-k="${CSS.escape(k)}"] input, [data-k="${CSS.escape(k)}"] select`);
           if (inp) { inp.focus(); if (inp.select) inp.select(); }
           return;
