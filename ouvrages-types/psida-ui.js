@@ -1139,7 +1139,7 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
-    pairs: true, onePage: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
+    pairs: true, onePage: true, simpleBar: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],
     views: [

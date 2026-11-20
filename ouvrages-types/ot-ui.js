@@ -166,6 +166,8 @@
 .ot-pan-h h3{margin:0;font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
 .ot-views{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px}
 .ot-views:empty{display:none}
+.ot-flow .go{background:var(--gold);color:#fff;border-radius:6px;margin:0 4px;font-weight:500}
+.ot-flow .go:hover{opacity:.9}
 /* mode « une page » (def.onePage) : tout le bordereau sur un écran ; dessins (SETRA / ouvrage) à gauche, cases compactes à droite */
 .ot.one [data-r=guide]{display:grid;grid-template-columns:minmax(0,31fr) minmax(0,69fr);grid-template-rows:minmax(0,1fr);gap:10px}
 .ot.one .ot-steps,.ot.one .ot-pages{display:none}
@@ -344,7 +346,19 @@
     root.classList.add('ot'); if (def.onePage) root.classList.add('one');
     root.style.position = 'relative';
     root.innerHTML = `
-<div class="ot-bar">
+${def.simpleBar ? `<div class="ot-bar">
+  <div class="ot-tabs ot-flow" data-r="tabs">
+    <button data-t="bord" class="on"><i style="background:var(--gold)"></i>Données</button>
+    <button class="go" data-a="run">Lancer le calcul ›</button>
+    <button data-t="note"><i style="background:var(--blue)"></i>Sorties</button>
+  </div>
+  <div hidden data-r="mode"><button data-m="guide" class="on"></button><button data-m="texte"></button></div>
+  <select hidden data-r="ex"><option value=""></option></select>
+  <div class="ot-sp"></div>
+  <input type="file" accept=".txt,.ndc,.don,.dat" hidden data-r="file">
+  <button class="ot-btn" data-a="import" title="Ouvrir un bordereau ${esc(def.prog)} (.txt)">Ouvrir</button>
+  <button class="ot-btn" data-a="saveas" title="Enregistrer le bordereau au format SETRA">Enregistrer sous</button>
+` : `<div class="ot-bar">
   <div class="ot-tabs" data-r="tabs">
     <button data-t="bord" class="on"><i style="background:var(--gold)"></i>1 · Bordereau</button>
     <button data-t="res"><i style="background:var(--teal)"></i>2 · Résultats</button>
@@ -358,7 +372,7 @@
   <button class="ot-btn" data-a="new">Nouveau</button>
   <button class="ot-btn" data-a="save" title="Télécharger le bordereau au format SETRA">Enregistrer</button>
   <button class="ot-btn pri" data-a="run">Lancer le calcul</button>
-</div>
+`}</div>
 <div class="ot-sec" data-s="bord">
   <div class="ot-sec" data-r="guide">
     <div class="ot-steps"><button class="arw" data-a="prev" aria-label="Étape précédente">‹</button><div class="list" data-r="steps"></div><button class="arw" data-a="next" aria-label="Étape suivante">›</button></div>
@@ -629,7 +643,7 @@
       $$(root, '[data-s]').forEach(s => { s.hidden = s.dataset.s !== t; });
       if (t === 'res') renderResults(); if (t === 'note') renderNote();
     }
-    R.tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
+    R.tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.t) setTab(b.dataset.t); });
 
     /* calcul */
     function run() {
@@ -644,7 +658,7 @@
           const d = new Date(), p = n => String(n).padStart(2, '0');
           const note = E.renderNote(m, r, { numero: def.numero ? def.numero(S.model) : '0001', date: `${p(d.getDate())}-${p(d.getMonth() + 1)}-${String(d.getFullYear()).slice(2)}` });
           S.results = r; S.note = note;
-          setTab('res');
+          setTab(def.simpleBar ? 'note' : 'res');
         } catch (e) { console.error(e); toast('Le calcul a échoué : ' + e.message); }
         busy.remove();
       }, 30);
@@ -697,6 +711,14 @@
       a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
       a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
+    async function saveAs(name, text) {   // « Enregistrer sous » : choix du fichier quand le navigateur le permet, sinon téléchargement
+      if (window.showSaveFilePicker) {
+        try { const h = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Bordereau ' + def.prog, accept: { 'text/plain': ['.txt'] } }] });
+          const w = await h.createWritable(); await w.write(text); await w.close(); toast('Bordereau enregistré : ' + h.name); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      download(name, text);
+    }
     root.addEventListener('click', e => {
       const b = e.target.closest('[data-a]'); if (!b) return;
       const a = b.dataset.a;
@@ -705,6 +727,7 @@
       else if (a === 'next') next();
       else if (a === 'new') { if (confirmNew()) { setModel(def.blank(), null); S.step = 0; S.page = 0; renderAll(); toast('Nouveau bordereau'); } }
       else if (a === 'save') download(`${def.prog}-bordereau.txt`, safeText());
+      else if (a === 'saveas') saveAs(`${def.prog}-bordereau.txt`, safeText());
       else if (a === 'import') R.file.click();
       else if (a === 'copy') { if (S.note && navigator.clipboard) navigator.clipboard.writeText(S.note).then(() => toast('Note copiée')); }
       else if (a === 'dl') { if (S.note) download(`${def.prog}-note.txt`, S.note); }
