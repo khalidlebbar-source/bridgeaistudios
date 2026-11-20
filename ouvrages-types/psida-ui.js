@@ -419,8 +419,9 @@
     const half = Math.max(xc, Ws / 2);
     const top = H1 + hc;
     const HALF = mode === 'half';
-    const yTop = top + (mode === 'loads' ? 2.6 : HALF ? 0.9 : 2.3);
-    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
+    const nLoads = mode === 'loads' ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => sch || num(get(m, k)) === 1).length : 0;
+    const yTop = top + (mode === 'loads' ? 0.18 + 1.05 + nLoads * 0.95 + 0.6 : HALF ? 0.9 : 2.3);
+    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : mode === 'loads' ? svg({ x0: -half - 1.9, y0: -1.95, x1: half + (sch ? 0.9 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
     const u = d.u, Z = HALF ? 0.75 : 1;                       // tailles de texte relatives
     // section
     const R = [[xa, 0], ...(xb > xa ? [[xb, H3]] : [[xa, H3]]), ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
@@ -446,16 +447,39 @@
     for (let i = 1; i < nv; i++) { const x = xp[2] + ws[2] * i / nv; d.line(x, top + 0.02, x, top + 0.22, 'l', 'A6.NVOIE'); }
     const L = k => lab(m, k, sch, 3);
     if (mode === 'loads') {
-      if (ws[2] > 0) {
-        const cx = xp[2] + ws[2] / 2, tw = Math.min(ws[2] * 0.62, 3.6), th = 0.7, y = top + 0.3;
-        const k = 'A8.B A8.A A8.CE A8.STATUT';
-        d.rect(cx - tw / 2, y, tw * 0.74, th, 'car', k); d.rect(cx - tw / 2 + tw * 0.77, y, tw * 0.23, th * 1.25, 'car', k);
-        for (const f of [0.1, 0.5, 0.88]) d.circle(cx - tw / 2 + tw * f, top + 0.15, 0.15, 'wheel', k);
-        d.text(cx - tw / 2 + tw * 0.37, y + th / 2, sch ? 'STATUT · A · B · CE' : `classe ${String(get(m, 'A8.STATUT'))[0] === '0' ? 'F61-1960' : String(get(m, 'A8.STATUT'))[0]} · A(l) · Bc · Bt` + (String(get(m, 'A8.CE')) !== '000' ? ' · CE ' + get(m, 'A8.CE') : ''), { size: 0.72, cls: 'ts', k });
-      }
-      for (const [x0, w] of [[xp[0], ws[0]], [xp[4], ws[4]]]) if (w > 0) { for (const f of [0.25, 0.75]) arrow(d, x0 + w * f, top + ht + 0.7, top + ht + 0.05, 'A8.PSTROT'); d.text(x0 + w / 2, top + ht + 0.95, sch ? 'PSTROT' : fmt(V(m, 'A8.PSTROT'), 3) + ' t/m²', { size: 0.75, cls: sch ? 'tc' : 'dv', k: 'A8.PSTROT' }); }
-      d.text(0, top + 1.95, sch ? 'superstructures QSUPTM · QSUPTm (t/m) : chaussée, trottoirs, corniches, dispositifs de retenue' : `superstructures ${fmt(V(m, 'A8.QSUPMIN'), 3)} à ${fmt(V(m, 'A8.QSUPMAX'), 3)} t/m`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A8.QSUPMAX A8.QSUPMIN' });
-      d.text(0, H1 * 0.45, sch ? 'ossature : MASVOL × aire × OSSAM / OSSAm' : `ossature ${fmt(V(m, 'A8.MASVOL') || 2.5, 2)} t/m³`, { size: 0.75, cls: sch ? 'tc' : 'dv', k: 'A8.MASVOL A8.OSMAX A8.OSMIN' });
+      // Plan de chargement EN TRAVERS : chaque charge est vue de l'arrière (elle circule perpendiculairement au dessin),
+      // une charge par rangée au-dessus du tablier, à l'échelle transversale ; rangées alignées sur la largeur chargeable.
+      const x0 = xp[2], wc = ws[2], cx = x0 + wc / 2;
+      const on = k => sch || num(get(m, k)) === 1;
+      const nf = Math.max(1, Math.min(nv, Math.floor(wc / 2.5 + 1e-9))), ntd = Math.max(1, Math.min(2, nv, Math.floor(wc / 3 + 1e-9)));
+      const rows = [
+        { k: 'FIX.A', c: 'A(l)', v: `${nv} voie${nv > 1 ? 's' : ''} chargée${nv > 1 ? 's' : ''}`, draw: (y) => { d.rect(x0, y, wc, 0.32, 'la', 'FIX.A'); for (let i = 1; i < nv; i++) d.line(x0 + wc * i / nv, y, x0 + wc * i / nv, y + 0.32, 'lane', 'FIX.A'); } },
+        { k: 'FIX.BC', c: 'Bc', v: `${nf} file${nf > 1 ? 's' : ''} de camions de 30 t`, draw: (y) => { for (let f = 0; f < nf; f++) { const a = x0 + f * 2.5; d.rect(a + 0.12, y + 0.16, 2.26, 0.42, 'veh', 'FIX.BC'); for (const w of [0.25, 2.25]) d.rect(a + w - 0.15, y, 0.3, 0.2, 'tyre', 'FIX.BC'); } } },
+        { k: 'FIX.BT', c: 'Bt', v: `${ntd} tandem${ntd > 1 ? 's' : ''} de 32 t`, draw: (y) => { for (let f = 0; f < ntd; f++) { const a = x0 + f * 3; d.rect(a + 0.3, y + 0.16, 2.4, 0.42, 'veh', 'FIX.BT'); for (const w of [0.5, 2.5]) d.rect(a + w - 0.3, y, 0.6, 0.2, 'tyre', 'FIX.BT'); } } },
+        { k: 'MIL.MC80', c: 'Mc80', v: 'char de 72 t', draw: (y) => tank(y, 0.85, 2.80, 'MIL.MC80') },
+        { k: 'MIL.MC120', c: 'Mc120', v: 'char de 110 t', draw: (y) => tank(y, 1.00, 3.30, 'MIL.MC120') },
+        { k: 'MIL.ME80', c: 'Me80', v: '2 essieux de 22 t', draw: (y) => axle(y, 3.50, 'MIL.ME80') },
+        { k: 'MIL.ME120', c: 'Me120', v: '2 essieux de 33 t', draw: (y) => axle(y, 4.00, 'MIL.ME120') },
+        { k: 'CE.D', c: 'Convoi D', v: 'remorque de 140 t', draw: (y) => conv(y, 'CE.D') },
+        { k: 'CE.E', c: 'Convoi E', v: 'remorque de 200 t', draw: (y) => conv(y, 'CE.E') },
+      ].filter(r => on(r.k));
+      function tank(y, cw, ent, k) { const a = cx - ent / 2; d.rect(a - cw / 2 - 0.1, y + 0.2, ent + cw + 0.2, 0.42, 'veh', k); d.rect(a + ent / 2 - 0.5, y + 0.62, 1.0, 0.18, 'veh', k); for (const t of [a, a + ent]) d.rect(t - cw / 2, y, cw, 0.24, 'tyre', k); }
+      function axle(y, w, k) { d.rect(cx - w / 2, y, w, 0.12, 'tyre', k); d.rect(cx - w / 2 + 0.2, y + 0.12, w - 0.4, 0.36, 'veh', k); }
+      function conv(y, k) { const w = 3.3; d.rect(cx - w / 2, y + 0.18, w, 0.3, 'veh', k); for (let i = 0; i < 8; i++) d.rect(cx - w / 2 + 0.1 + i * (w - 0.3) / 7, y, 0.1, 0.18, 'tyre', k); }
+      const rowH = 0.95, y0 = top + ht + 1.05;
+      for (const xx of [x0, x0 + wc]) d.line(xx, top, xx, y0 + rows.length * rowH, 'lane');
+      rows.forEach((r, i) => {
+        const y = y0 + (rows.length - 1 - i) * rowH;
+        d.line(x0, y, x0 + wc, y, 'hl-line'); r.draw(y);
+        d.text(-half - 0.2, y + 0.25, r.c, { size: 0.8, a: 'end', cls: sch ? 'tc' : 't', k: r.k });
+        if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: 'ts', k: r.k });
+      });
+      if (!rows.length && !sch) d.text(cx, y0 + 0.3, 'aucune charge routière cochée', { size: 0.8, cls: 'ts' });
+      const yS = y0 + rows.length * rowH + 0.15;
+      if (wc > 0) d.dim(x0, top + ht, x0 + wc, top + ht, sch ? 'ESURCH chargeable' : 'largeur chargeable ' + fmt(wc, 2) + ' m', 0.25, 'A6.ESURCH', { size: 0.75 });
+      for (const [xa0, w] of [[xp[0], ws[0]], [xp[4], ws[4]]]) if (w > 0) { for (const f of [0.3, 0.7]) arrow(d, xa0 + w * f, top + ht + 0.55, top + ht + 0.05, 'A8.PSTROT'); d.text(xa0 + w / 2, top + ht + 0.68, sch ? 'PSTROT' : fmt(V(m, 'A8.PSTROT'), 3) + ' t/m²', { size: 0.65, cls: sch ? 'tc' : 'vl', k: 'A8.PSTROT' }); }
+      d.text(0, yS + 0.2, sch ? 'superstructures QSUPTM · QSUPTm (t/m)' : `superstructures ${fmt(V(m, 'A8.QSUPMIN'), 3)} à ${fmt(V(m, 'A8.QSUPMAX'), 3)} t/m`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.QSUPMAX A8.QSUPMIN' });
+      d.text(0, H1 * 0.45, sch ? 'ossature : MASVOL × aire × OSSAM / OSSAm' : `ossature ${fmt(V(m, 'A8.MASVOL') || 2.5, 2)} t/m³`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.MASVOL A8.OSMAX A8.OSMIN' });
     } else if (!HALF) {
       const yy = top + ht;
       const keys = ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'];

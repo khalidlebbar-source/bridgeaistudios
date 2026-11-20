@@ -309,6 +309,13 @@
 .ot svg .ax{stroke:#1a4fd6;stroke-width:1px;stroke-dasharray:7 4 2 4;vector-effect:non-scaling-stroke;opacity:.7}
 .ot svg .car{fill:#fff;stroke:#7a7e8e;stroke-width:1px;vector-effect:non-scaling-stroke}
 .ot svg .wheel{fill:#7a7e8e}
+.ot svg .la{fill:#1a4fd6;fill-opacity:.10;stroke:#1a4fd6;stroke-width:.8px;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.ot svg .veh{fill:#f4efe4;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke}
+.ot svg .tyre{fill:#3c3f4d}
+.ot svg .lane{stroke:#b9ad92;stroke-width:1px;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.ot svg .vl{fill:#1a4fd6;font-family:'Outfit',sans-serif}
+.ot svg.sch .vl{fill:#a07828;font-family:'Courier New',monospace;font-weight:700}
+.ot svg .hl.veh,.ot svg .hl.la{fill:#f6e3b0;fill-opacity:1;stroke:#a07828}
 .ot svg .t{fill:#3c3f4d;font-family:'Outfit',sans-serif}
 .ot svg .tc{fill:#a07828;font-family:'Courier New',monospace;font-weight:700}
 .ot svg .ts{fill:#7a7e8e;font-family:'Outfit',sans-serif;font-style:italic}
