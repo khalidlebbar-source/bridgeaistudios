@@ -246,9 +246,9 @@
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
           { k: 'A12.KTP', code: 'KTP', label: 'fraction ELS', dec: 3, def: '1', help: 'Fraction des tassements probables prise en compte dans l\'étude ELS (combinaison quasi permanente).' },
         ] },
-        { title: 'Appareils d\'appui en élastomère fretté (A13) — compressions admissibles en t/m²', short: 'Appareils d\'appui — t/m²', alt: true, flex: 3, cols: 3, fields: [
-          { k: 'A13.COMPRENV', code: 'COMPRENV', label: 'élast. min', dec: 0, def: '200', help: 'Contrainte minimale admissible de compression moyenne des appareils en élastomère (risque de cheminement), t/m². Conseillé 200.' },
-          { k: 'A13.COMPRENS', code: 'COMPRENS', label: 'élast. max', dec: 0, def: '1200', help: 'Contrainte maximale admissible de compression moyenne des appareils en élastomère, t/m². Conseillé 1200.' },
+        { title: 'Appareils d\'appui en élastomère fretté (A13) — compressions admissibles en t/m²', short: 'Appareils d\'appui', alt: true, flex: 3, cols: 3, fields: [
+          { k: 'A13.COMPRENV', code: 'COMPRENV', label: 'élast. min', unit: 't/m²', dec: 0, def: '200', help: 'Contrainte minimale admissible de compression moyenne des appareils en élastomère (risque de cheminement), t/m². Conseillé 200.' },
+          { k: 'A13.COMPRENS', code: 'COMPRENS', label: 'élast. max', unit: 't/m²', dec: 0, def: '1200', help: 'Contrainte maximale admissible de compression moyenne des appareils en élastomère, t/m². Conseillé 1200.' },
           { k: 'A13.SYMAP', code: 'SYMAP', label: 'symétrie', type: 'sel', opts: [[1, '1 — longit.'], [0, '0 — aucune'], [2, '2 — interm. id.']], help: 'Symétrie longitudinale des appareils : 0 aucune ; 1 symétrie longitudinale ; 2 appareils des appuis intermédiaires tous identiques.' },
         ] },
       ] },

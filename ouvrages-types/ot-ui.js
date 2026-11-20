@@ -201,7 +201,9 @@
 .ot.one .ot-f{width:var(--w,62px);gap:0}
 .ot.one .ot-f label{font-size:9px}
 .ot.one .ot-f label code{font-size:9.5px}
-.ot.one .ot-f label span,.ot.one .ot-f label em{display:none}
+.ot.one .ot-f label span{display:none}
+.ot.one .ot-f label{white-space:nowrap}
+.ot.one .ot-f label em{display:inline;font-style:normal;font-family:'Outfit',sans-serif;font-size:8.5px;font-weight:400;color:var(--ink3);margin-left:4px;letter-spacing:0;text-transform:none}
 .ot.one .ot-f input,.ot.one .ot-f select{height:22px;font-size:11.5px;padding:0 4px;border-radius:5px}
 .ot.one .ot-f select{padding:0 1px}
 .ot.one .ot-f.ck{width:auto;height:20px;margin:0 10px 0 0;gap:4px}
@@ -473,7 +475,7 @@ ${def.simpleBar ? `<div class="ot-bar">
         if (tabs.length) {
           const kinds = [...new Set(tabs.map(g => g.appui))], cols = tabs.filter(g => g.appui === kinds[0]);
           let rws = '';
-          for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { rws += `<tr><th>${esc(f0.rowLabel || f0.code)}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
+          for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { rws += `<tr><th>${esc(f0.rowLabel || f0.code)}${f0.unit ? ` <small style="font-size:8.5px;color:var(--ink3)">${esc(f0.unit)}</small>` : ''}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
           h += `<table class="ot-tbl"><tr><th></th>${cols.map(g => `<th>${esc(g.title)}</th>`).join('')}</tr>${rws}</table>`;
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
@@ -492,7 +494,8 @@ ${def.simpleBar ? `<div class="ot-bar">
         const txt = el.tagName === 'SELECT' ? ((el.options[el.selectedIndex] || {}).text || '') : el.value;
         const need = Math.ceil(meas.measureText(txt).width + (el.tagName === 'SELECT' ? 30 : 14));
         if (!box.dataset.w0) box.dataset.w0 = box.getBoundingClientRect().width / (parseFloat((R.groups.querySelector('.ot-fit') || {}).style?.zoom) || 1);
-        const w = Math.max(+box.dataset.w0, need); box.style.width = w + 'px'; box.style.setProperty('--w', w + 'px');
+        const lb = box.querySelector('label'), lw = lb && lb.offsetParent !== null ? lb.scrollWidth + 2 : 0;   // le libellé (code + unité) doit tenir aussi
+        const w = Math.max(+box.dataset.w0, need, lw); box.style.width = w + 'px'; box.style.setProperty('--w', w + 'px');
       }
     }
     function fitRows() {   // pas de scroll : la grille des données est réduite au besoin pour tenir dans la hauteur disponible
