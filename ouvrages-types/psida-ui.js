@@ -141,14 +141,6 @@
         ] },
       ] },
       { label: 'Fibres et symétrie (A6)', caption: 'ligne A6 — symétrie, fibres et axe mécanique', groups: [
-        { title: 'Symétrie et fibres', flex: 2, cols: 2, fields: [
-          { k: 'A6.SYMTAB', code: 'SYMTAB', label: 'symétrie', type: 'sel', opts: [[1, '1 — symétrique'], [0, '0 — asymétrique']], help: 'Symétrie transversale du profil en travers : 1 si ETROTG = ETROTD et EGAU = EDROI, 0 dans les autres cas.' },
-          { k: 'A6.NF', code: 'NF', label: 'fibres flex. transv.', type: 'sel', opts: [[1, '1 — axe'], [2, '2 — ±E/4'], [3, '3 — ±3E/8']], help: 'Fibres étudiées en flexion transversale : 1 axe mécanique ; 2 axe et fibres à ±EDALLE/4 ; 3 en plus fibres à ±3 EDALLE/8. Normalement 3.' },
-        ] },
-        { title: 'Axe mécanique', alt: true, flex: 2, cols: 2, fields: [
-          { k: 'A6.DISEXT', code: 'DISEXT', label: 'extrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'extrados de la dalle (0 si confondus).' },
-          { k: 'A6.DISINT', code: 'DISINT', label: 'intrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'intrados de la dalle (0 si confondus).' },
-        ] },
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
@@ -615,7 +607,6 @@
     if (nv < 0) E_('trav', 'A6.NVOIE', 'nombre de voies négatif');
     else if (nv > 0 && es > 0 && nv !== nvF61(es)) W_('trav', 'A6.NVOIE', `NVOIE = ${nv} imposé ; le fascicule 61 donne ${nvF61(es)} voie${nvF61(es) > 1 ? 's' : ''} pour ESURCH = ${fmt(es, 2)} m (laisser 0 sauf cas particulier)`);
     const sym = Math.abs(ws[0] - ws[4]) < 1e-6 && Math.abs(ws[1] - ws[3]) < 1e-6;
-    if (V(m, 'A6.SYMTAB') === 1 && !sym) W_('trav', 'A6.SYMTAB', 'SYMTAB = 1 alors que le profil n\'est pas symétrique (ETROTG ≠ ETROTD ou EGAU ≠ EDROI)');
     const hc = V(m, 'A6.HCHAU'); if (hc < 0 || hc > 0.4) W_('trav', 'A6.HCHAU', `épaisseur de chaussée HCHAU inhabituelle (${fmt(hc, 3)} m)`);
     // charges
     const st = String(get(m, 'A8.STATUT') || '');
@@ -1142,7 +1133,9 @@
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
-    if (m.lignes.A6) for (let i = 2; i <= 5; i++) m.lignes.A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
+    if (m.lignes.A6) { const A6 = m.lignes.A6; for (let i = 2; i <= 5; i++) A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
+      A6.NF = 3; A6.DISEXT = 0; A6.DISINT = 0;                                                     // toutes les fibres ; axe mécanique = axe géométrique
+      A6.SYMTAB = Math.abs((A6.ETROTG || 0) - (A6.ETROTD || 0)) < 1e-6 && Math.abs((A6.EGAU || 0) - (A6.EDROI || 0)) < 1e-6 ? 1 : 0; }   // symétrie déduite du profil
     if (m.lignes.A9) { m.lignes.A9.BA = '000'; m.lignes.A9.XKI = 0; }   // coefficients BAEL réglementaires, ψ1 = 0
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
