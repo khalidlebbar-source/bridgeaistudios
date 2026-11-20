@@ -413,8 +413,8 @@
     let dimOff = null;
     const ONE = mode === 'loads1', LOADS = mode === 'loads' || ONE;   // loads1 : schéma unique (toutes les charges, cochées en couleur)
     const nLoads = LOADS ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => ONE || sch || num(get(m, k)) === 1).length : 0;
-    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * 0.95 + 0.6 : HALF ? 0.9 : 2.3);
-    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.2 : 1.9), y0: -1.95, x1: half + (sch ? 0.9 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
+    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * (ONE ? 1.3 : 0.95) + 0.6 : HALF ? 0.9 : 2.3);
+    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.4 : 1.9), y0: -1.95, x1: half + (sch || ONE ? 0.5 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
     const u = d.u, Z = HALF ? 0.75 : 1;                       // tailles de texte relatives
     // section
     const R = [[xa, 0], ...(xb > xa ? [[xb, H3]] : [[xa, H3]]), ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
@@ -459,14 +459,16 @@
       function tank(y, cw, ent, k) { const a = cx - ent / 2; d.rect(a - cw / 2 - 0.1, y + 0.2, ent + cw + 0.2, 0.42, 'veh', k); d.rect(a + ent / 2 - 0.5, y + 0.62, 1.0, 0.18, 'veh', k); for (const t of [a, a + ent]) d.rect(t - cw / 2, y, cw, 0.24, 'tyre', k); }
       function axle(y, w, k) { d.rect(cx - w / 2, y, w, 0.12, 'tyre', k); d.rect(cx - w / 2 + 0.2, y + 0.12, w - 0.4, 0.36, 'veh', k); }
       function conv(y, k) { const w = 3.3; d.rect(cx - w / 2, y + 0.18, w, 0.3, 'veh', k); for (let i = 0; i < 8; i++) d.rect(cx - w / 2 + 0.1 + i * (w - 0.3) / 7, y, 0.1, 0.18, 'tyre', k); }
-      const rowH = 0.95, y0 = top + ht + 1.05, offRow = [];
+      const rowH = ONE ? 1.3 : 0.95, y0 = top + ht + 1.05, offRow = [];
       for (const xx of [x0, x0 + wc]) d.line(xx, top, xx, y0 + rows.length * rowH, 'lane');
       rows.forEach((r, i) => {
         const y = y0 + (rows.length - 1 - i) * rowH, act = !ONE || isOn(r.k);
-        if (ONE) d.rect(-half - 3.1, y - 0.12, 2 * half + 6.6, rowH - 0.1, act ? 'rowon' : 'rowoff', r.k);   // bande cliquable : coche / décoche
+        if (ONE) d.rect(-half - 3.3, y - 0.12, 2 * half + 3.75, rowH - 0.1, act ? 'rowon' : 'rowoff', r.k);   // bande cliquable : coche / décoche
         d.line(x0, y, x0 + wc, y, 'hl-line'); r.draw(y);
-        d.text(-half - 0.2, y + 0.25, (ONE ? (act ? '☑ ' : '☐ ') : '') + r.c, { size: ONE ? 0.95 : 0.8, a: 'end', cls: sch ? 'tc' : ONE ? (act ? 'tc' : 'ts') : 't', k: r.k });
-        if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: ONE && !act ? 'ts off' : 'ts', k: r.k });
+        if (ONE) { d.text(-half - 3.1, y + 0.62, (act ? '☑ ' : '☐ ') + r.c, { size: 1.05, a: 'start', cls: act ? 'tc' : 'ts', k: r.k });
+          d.text(-half - 3.1, y + 0.08, r.v, { size: 0.62, a: 'start', cls: 'ts', k: r.k }); }
+        else { d.text(-half - 0.2, y + 0.25, r.c, { size: 0.8, a: 'end', cls: sch ? 'tc' : 't', k: r.k });
+          if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: 'ts', k: r.k }); }
         if (ONE && !act) offRow.push(r.k);
       });
       if (!rows.length && !sch) d.text(cx, y0 + 0.3, 'aucune charge routière cochée', { size: 0.8, cls: 'ts' });
