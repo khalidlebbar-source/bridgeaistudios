@@ -63,13 +63,10 @@
   const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
-    { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1) et numéro du passage. La note donne systématiquement tous les calculs et toutes les impressions détaillées ; répartition transversale par Guyon-Massonnet.', pages: [
+    { id: 'id', noCap: true, label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1) et numéro du passage. La note donne systématiquement tous les calculs et toutes les impressions détaillées ; répartition transversale par Guyon-Massonnet.', pages: [
       { label: 'Titre', groups: [
-        { title: 'Titre de la note (lignes A1 et A2)', flex: 5, cols: 2, fields: [
-          { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
-        ] },
-        { title: 'Passage', alt: true, flex: 1, cols: 1, fields: [
-          { k: 'NUM', code: 'NUM', label: 'numéro', type: 'txt', w: 52, help: 'Numéro du passage, rappelé en tête de chaque page (PSIDAEL nnnn).' },
+        { title: 'Titre de la note (ligne A1)', short: '', flex: 5, cols: 2, fields: [
+          { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', bare: true, help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
         ] },
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
