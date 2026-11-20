@@ -113,7 +113,7 @@
   const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
-    { id: 'id', noCap: true, label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Survolez une case : sa définition s\'affiche ici et la cote correspondante s\'allume sur les dessins.', pages: [
+    { id: 'id', noCap: true, label: 'Identification', view: 'elev', caption: '', hint: 'Survolez une case : sa définition s\'affiche ici et la cote correspondante s\'allume sur les dessins.', pages: [
       { label: 'Titre', groups: [
         { title: 'Titre de la note (ligne A1)', short: '', flex: 5, cols: 2, fields: [
           { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', bare: true, help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
@@ -121,7 +121,7 @@
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'long', col: 0, label: 'Profil en long', view: 'elev', caption: 'ligne A5', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
+    { id: 'long', col: 0, label: 'Profil en long', view: 'elev', caption: '', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
       { label: 'Travées', groups: [
         { title: 'Ouvrage', flex: 3, cols: 3, fields: [
           { k: 'A5.NT', code: 'NT', label: 'nb de travées', type: 'sel', relayout: true, opts: [1, 2, 3, 4, 5, 6].map(i => [i, String(i)]), help: 'Nombre de travées (1 à 6).' },
@@ -132,8 +132,8 @@
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'trav', col: 1, label: 'Profil en travers', view: 'coupe', caption: 'ligne A6', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
-      { label: 'Profil en travers (A6)', caption: 'ligne A6', groups: [
+    { id: 'trav', col: 1, label: 'Profil en travers', view: 'coupe', caption: '', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
+      { label: 'Profil en travers (A6)', caption: '', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
           { k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
@@ -146,12 +146,12 @@
           { k: 'A6.NVOIE', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation. 0 : calculé selon l\'article 2.2 du fascicule 61 titre II ; à remplir seulement s\'il en diffère (chaussée de 9 m à deux voies…).' },
         ] },
       ] },
-      { label: 'Fibres et symétrie (A6)', caption: 'ligne A6', groups: [
+      { label: 'Fibres et symétrie (A6)', caption: '', groups: [
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
-    { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'ligne A7', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
-      { label: 'Structure porteuse (A7)', caption: 'ligne A7', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
+    { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
+      { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
@@ -165,7 +165,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half') },
 
-    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.', pages: [
+    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: '', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.', pages: [
       { label: 'Permanentes', groups: [
         { title: 'Ossature', flex: 3, cols: 3, fields: [
           { k: 'A8.MASVOL', code: 'MASVOL', label: 'masse vol.', unit: 't/m³', dec: 3, def: '2,5 (0 = 2,5)', help: 'Valeur probable de la masse volumique du béton armé (2,5 t/m³ du BAEL si 0).' },
@@ -204,7 +204,7 @@
       ] },
     ], one: (svg, m) => drawCoupe(svg, m, false, 'loads1'), draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
 
-    { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
+    { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: '', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
         { title: 'Béton (BAEL 91 mod. 99)', short: '', flex: 4, cols: 4, fields: [
           { k: 'FC28', code: 'fc28', label: 'compression', unit: 'MPa', dec: 1, help: 'Résistance caractéristique à la compression à 28 jours (MPa). ft28 = 0,6 + 0,06 fc28 en est déduite (BAEL A.2.1,12).' },
@@ -215,7 +215,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'mat') },
 
-    { id: 'acier', col: 1, label: 'Armatures', view: 'arm', caption: 'lignes A10 et A11', hint: 'Diamètres, nuances et disposition des armatures (diamètres saisis en mm, écrits en m dans le bordereau).', pages: [
+    { id: 'acier', col: 1, label: 'Armatures', view: 'arm', caption: '', hint: 'Diamètres, nuances et disposition des armatures (diamètres saisis en mm, écrits en m dans le bordereau).', pages: [
       { label: 'Diamètres et limites', groups: [
         { title: 'Diamètres', flex: 4, cols: 4, fields: [
           { k: 'A10.PHI1', code: 'PHI1', label: 'longit. princ.', unit: 'mm', dec: 0, help: 'Diamètre des aciers longitudinaux principaux (et éventuellement des chevêtres incorporés).' },
@@ -239,8 +239,8 @@
       ] },
     ], draw: (svg, m, sch) => drawArm(svg, m, sch) },
 
-    { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
-      { label: 'Tassements par appui (A12)', caption: 'ligne A12', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
+    { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: '', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
+      { label: 'Tassements par appui (A12)', caption: '', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
         { title: 'Tassements (A12)', flex: 3, cols: 3, fields: [
           { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
@@ -484,7 +484,7 @@
       const yy = top + ht;
       const keys = ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'];
       keys.forEach((k, i) => { if (ws[i] > 0 || sch) d.dim(xp[i], yy, xp[i + 1], yy, lab(m, k, sch, 2), 0.55, k, { size: ws[i] < 0.9 ? 0.75 : 1.0 }); });
-      d.dim(xp[0], yy, xp[5], yy, sch ? 'ETROTG + EGAU + ESURCH + EDROI + ETROTD' : 'profil utile (A6) ' + fmt(Ws, 2) + ' m', 1.35, null, { size: 0.9 });
+      d.dim(xp[0], yy, xp[5], yy, sch ? 'ETROTG + EGAU + ESURCH + EDROI + ETROTD' : 'profil utile ' + fmt(Ws, 2) + ' m', 1.35, null, { size: 0.9 });
       // rives hors profil utile (corniches, dispositifs) : dalle EDALLE1+2+3 plus large que le profil A6, cas courant des listings SETRA
       if (!sch && S.W > Ws + 0.01) for (const [a, b] of [[-xc, xp[0]], [xp[5], xc]]) if (b - a > 0.01) {
         d.dim(a, yy, b, yy, fmt(b - a, 2), 0.55, null, { size: 0.75 });
@@ -501,7 +501,7 @@
     if (HALF) d.dim(0, 0, xa, 0, sch ? 'EDALLE1/2' : fmt(xa, 2), -0.5, 'A7.EDALLE1', { size: Z });
     else if (DET) d.dim(-xa, 0, xa, 0, sch ? 'EDALLE1' : fmt(S.E1, 2), -0.5, 'A7.EDALLE1', { size: 1.05 });
     if (xb > xa) for (const sg of sides) d.dim(sg < 0 ? -xb : xa, 0, sg < 0 ? -xa : xb, 0, sch ? 'EDALLE3/2' : fmt(xb - xa, 2), -0.5, 'A7.EDALLE3', { size: 0.8 * Z });
-    if (!HALF) d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2' : 'largeur droite de la dalle (A7) ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
+    if (!HALF) d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2' : 'largeur droite de la dalle ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
     const xh = HALF ? xa * 0.45 : -xa + Math.min(0.5, xa * 0.3);
     if (DET) d.dim(xh, 0, xh, H1, L('A7.HDALLE1'), -0.05, 'A7.HDALLE1', { size: 0.85 * Z, inside: true });
     if (DET && xc > xb && H2 > 0) d.dim(xc, H1 - H2, xc, H1, L('A7.HDALLE2'), -0.2 * Z, 'A7.HDALLE2', { size: 0.85 * Z });
