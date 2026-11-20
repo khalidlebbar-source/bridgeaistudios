@@ -174,7 +174,8 @@
 .ot.one .ot-main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0}
 .ot.one .ot-fields{min-height:0;overflow:hidden}
 .ot.one .ot-groups{height:100%;display:flex;gap:6px;align-items:flex-start}
-.ot.one.rows .ot-groups{flex-direction:column;gap:5px;overflow:auto;align-items:stretch}
+.ot.one.rows .ot-groups{display:block;overflow:hidden;height:100%}
+.ot.one.rows .ot-fit{display:flex;flex-direction:column;gap:5px}
 .ot.one.rows .ot-blk{display:flex;gap:10px;align-items:center;padding:4px 8px}
 .ot.one.rows .ot-blk>h4{flex:0 0 118px;margin:0;font-size:10px}
 .ot.one.rows .ot-blk>.row{flex:1;min-width:0;gap:3px 8px}
@@ -463,10 +464,15 @@ ${def.simpleBar ? `<div class="ot-bar">
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
       });
-      if (def.rows) { R.groups.innerHTML = blk.join(''); markBad(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
+      if (def.rows) { R.groups.innerHTML = `<div class="ot-fit">${blk.join('')}</div>`; markBad(); fitRows(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
       const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
       R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
       markBad();
+    }
+    function fitRows() {   // pas de scroll : la grille des données est réduite au besoin pour tenir dans la hauteur disponible
+      const w = R.groups.querySelector('.ot-fit'); if (!w) return;
+      w.style.zoom = 1;
+      requestAnimationFrame(() => { const H = R.groups.clientHeight, h = w.scrollHeight; if (H > 50 && h > H) w.style.zoom = Math.max(0.6, (H - 2) / h).toFixed(3); });
     }
     function locate(k) {   // étape / page qui portent la case k
       for (let si = 0; si < steps.length; si++) { const pi = steps[si].pages.findIndex(pg => pg.groups.some(g => g.fields.some(f => f.k === k))); if (pi >= 0) return [si, pi]; }
@@ -646,7 +652,7 @@ ${def.simpleBar ? `<div class="ot-bar">
       S.tab = t;
       $$(R.tabs, 'button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
       $$(root, '[data-s]').forEach(s => { s.hidden = s.dataset.s !== t; });
-      if (t === 'res') renderResults(); if (t === 'note') renderNote();
+      if (t === 'res') renderResults(); if (t === 'note') renderNote(); if (t === 'bord' && def.rows) fitRows();
     }
     R.tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.t) setTab(b.dataset.t); });
 
@@ -770,7 +776,7 @@ ${def.simpleBar ? `<div class="ot-bar">
     for (const st of steps) for (const pg of st.pages) for (const g of pg.groups) { const c = g.cols || Math.min(6, g.fields.length); rows = Math.max(rows, Math.ceil(g.fields.length / c)); }
     root.style.setProperty('--fh', (34 + rows * 52) + 'px');
     renderAll();
-    window.addEventListener('resize', () => { if (S.tab === 'bord' && S.mode === 'guide') { renderSchema(); renderLive(); } });
+    window.addEventListener('resize', () => { if (S.tab === 'bord' && S.mode === 'guide') { renderSchema(); renderLive(); if (def.rows) fitRows(); } });
     return { get model() { return S.model; }, run, setTab, go };
   }
 
