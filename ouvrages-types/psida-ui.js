@@ -330,7 +330,7 @@
       for (let i = 0; i < n; i++) d.dim(xs[i] + yb * ct, Y(yb), xs[i + 1] + yb * ct, Y(yb), sch ? 'D' + (i + 1) : fmt(V(m, 'A5.D' + (i + 1)), 2), -6.4 * s, 'A5.D' + (i + 1));
     }
     const xr = Lt + ex + 1.6 * s;
-    d.dim(xr, Y(-W / 2), xr, Y(W / 2), sch ? 'EDALLE1+2+3' : fmt(W, 2), -0.01, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.8 });
+    d.dim(xr, Y(-W / 2), xr, Y(W / 2), sch ? 'EDALLE1+EDALLE2' : fmt(W, 2), -0.01, 'A7.EDALLE1 A7.EDALLE2', { size: 0.8 });
     // angle de biais, sous l'arête inférieure, à l'appui 1
     const r = Math.min(W * 0.4, 4.2 * s), xi = xs[0] - W / 2 * ct, yi = Y(-W / 2);
     d.line(xi - r * 1.25, yi, xi, yi, 'l', 'A5.BIAIS');
