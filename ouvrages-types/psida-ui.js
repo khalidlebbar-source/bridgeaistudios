@@ -152,9 +152,8 @@
 
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'ligne A7', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
       { label: 'Structure porteuse (A7)', caption: 'ligne A7 — demi-coupe de la dalle', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
-        { title: 'Épaisseurs', flex: 4, cols: 4, fields: [
+        { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
-          { k: 'A3.LIGNINF', code: 'LIGNINF', label: 'épaisseur', type: 'sel', opts: [[2, '2 — HDALLE1 conservée'], [1, '1 — optimisée']], help: 'Ligne A3 : 2 = épaisseur HDALLE1 conservée ; 1 = épaisseur optimisée par le programme (arrondie au cm puis augmentée tant que le moment ultime l\'exige). Les lignes d\'influence sont toujours calculées.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
           { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
         ] },
@@ -1145,7 +1144,7 @@
   /* la note donne tout systématiquement : tous les calculs (A3) et toutes les impressions détaillées (A4) ; répartition par Guyon (EXCENTR = 1) */
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
-    A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
+    A3.EXCENTR = 1; A3.LIGNINF = 2; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;   // épaisseur HDALLE1 toujours conservée (pas d'optimisation)
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
     if (m.lignes.A6) { const A6 = m.lignes.A6; for (let i = 2; i <= 5; i++) A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
