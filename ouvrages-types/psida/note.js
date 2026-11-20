@@ -128,7 +128,8 @@
     page("ETAT-LIMITE D'OUVERTURE DES FISSURES", p4, { sub: '************************************' });
     // ---------------------------------------------------------- page 5 : LI moments sur appuis
     const hdrT = '             FORCE DANS LA    ' + L.map((_, s) => pad(T(s), 17)).join('');
-    const p5 = [...STAR, '', hdrT, 'SECTION SUR', ''];
+    const TX = !G.PSIDA_TXT0;   // v34 : textes explicatifs SETRA des pages de lignes d'influence (PSIDA_TXT0 = 1 : sans)
+    const p5 = [...(TX ? ["                                           X ETANT L'ABSCISSE RELATIVE DE LA FORCE DANS LA TRAVEE", ''] : []), ...STAR, '', hdrT, 'SECTION SUR', ''];
     for (const a of r.liAppuis) ['A', 'B', 'C'].forEach((c, k) => p5.push((k === 1 ? padR('      APPUI ' + (a.k + 1), 26) : ' '.repeat(26)) + c + a.coefs.map((cc, s) => f(cc[k], s ? 17 : 14, 6)).join(''), ...(k === 2 ? [''] : [])));
     p5.push('', '                           AIRES DES LIGNES D INFLUENCE DES MOMENTS FLECHISSANTS SUR APPUIS', '',
       '             AIRE TOTALE      ' + L.map((_, s) => pad(T(s), 17)).join(''), 'SECTION SUR', '');
@@ -141,7 +142,9 @@
     // ---------------------------------------------------------- LI en travée
     for (let i = 0; i < n; i++) {
       const cols = []; for (let s = 0; s < n; s++) { if (s === i) cols.push(T(s) + 'G', T(s) + 'D'); else cols.push(T(s)); }
-      const pl = [...STAR, '', '           ABSCISSE', '  SECTION   CUMULEE     ' + cols.map(c => pad(c, 14)).join(''), ''];
+      const pl = [...(TX ? ['                                                X ETANT L ABSCISSE RELATIVE DE LA FORCE DANS LA TRAVEE', '', '                                DANS LA COLONNE ' + T(i) + 'D,LA FORCE ET LA SECTION SONT DANS LA MEME TRAVEE ET L ABSCISSE',
+        '                              DE LA FORCE EST SUPERIEURE A CELLE DE LA SECTION.D EST ALORS EGAL A L ABSCISSE DE LA SECTION.',
+        '                              D EST NUL DANS TOUS LES AUTRES CAS', ''] : []), ...STAR, '', '           ABSCISSE', '  SECTION   CUMULEE     ' + cols.map(c => pad(c, 14)).join(''), ''];
       for (const sct of r.liTravee[i]) {
         const vals = []; for (const c of sct.cols) { if (c.s === i) vals.push(c.G, c.D); else vals.push(c.c); }
         ['A', 'B', 'C'].forEach((c, k) => pl.push((k === 1 ? '     ' + fx(sct.a, 2) + 'L' + f(sct.x, 7, 3) + '   ' : ' '.repeat(20)) + c + vals.map((v, j) => f(v[k], j ? 14 : 13, 6)).join('')));
@@ -156,7 +159,7 @@
       page('ZEROS DES LIGNES D INFLUENCE ET AIRES PARTIELLES EN ' + T(i), pz);
     }
     // ---------------------------------------------------------- LI efforts tranchants
-    const pv = [...STAR, '', hdrT, '', 'SECTION DANS LA', ''];
+    const pv = [...(TX ? ['                               D=1 QUAND LA FORCE EST DANS LA MEME TRAVEE QUE LA SECTION ET A DROITE DE CELLE-CI', '                               D=0 DANS TOUS LES AUTRES CAS'] : []), ...STAR, '', hdrT, '', 'SECTION DANS LA', ''];
     r.liV.forEach((v, i) => ['A', 'B', 'C'].forEach((c, k) => pv.push((k === 1 ? padR('     ' + T(i), 26) : ' '.repeat(26)) + c + v.coefs.map((cc, s) => f(cc[k], s ? 17 : 14, 6)).join(''), ...(k === 2 ? [''] : []))));
     pv.push('', '                              AIRES DES LIGNES D INFLUENCE DES EFFORTS TRANCHANTS SUR APPUIS', '',
       '                    AIRE TOTALE ' + L.map((_, s) => pad(T(s), 17)).join(''), '');
@@ -164,14 +167,14 @@
       pv.push(padR(T(i) + ' COTE GAUCHE', 22) + f(sum(v.airesG), 10, 3) + v.airesG.map(x => f(x, 10, 3)).join(''));
       pv.push(padR('         COTE DROIT', 22) + f(sum(v.airesD), 10, 3) + v.airesD.map(x => f(x, 10, 3)).join(''), '');
     });
-    page('EQUATIONS DES LIGNES D INFLUENCE DES EFFORTS TRANCHANTS', pv, { sub: 'CUBIQUE DE LA FORME  A*X**3 + B*X**2 + C*X + D' });
+    page('EQUATIONS DES LIGNES D INFLUENCE DES EFFORTS TRANCHANTS', pv, { sub: 'CUBIQUE DE LA FORME  A*X**3 + B*X**2 + C*X + D', sub2: TX ? 'X ETANT L ABSCISSE RELATIVE DE LA FORCE DANS LA TRAVEE' : '' });
     // ---------------------------------------------------------- LI réactions
-    const pr = [...STAR, '', hdrT, ''];
+    const pr = [...(TX ? ['                                    D=1 QUAND LA FORCE EST DANS LA TRAVEE DE MEME NUMERO QUE L APPUI ETUDIE', '                                    D=0 DANS LES AUTRES CAS'] : []), ...STAR, '', hdrT, ''];
     r.liR.forEach((v, k) => ['A', 'B', 'C'].forEach((c, j) => pr.push((j === 1 ? padR('      APPUI ' + (k + 1), 26) : ' '.repeat(26)) + c + v.coefs.map((cc, s) => f(cc[j], s ? 17 : 14, 6)).join(''), ...(j === 2 ? [''] : []))));
     pr.push('', '                                  AIRES DES LIGNES D INFLUENCE DES REACTIONS D\'APPUIS', '',
       '           AIRE TOTALE          ABOUT  ' + L.map((_, s) => pad(T(s), 15)).join(''), '');
     r.liR.forEach((v, k) => pr.push(padR('APPUI ' + (k + 1), 9) + f(v.total, 14, 3) + (k === 0 || k === n ? f(v.about, 15, 3) : ' '.repeat(15)) + v.aires.map(x => f(x, 15, 3)).join(''), ''));
-    page('EQUATIONS DES LIGNES D INFLUENCE DES REACTIONS D APPUIS', pr, { sub: 'CUBIQUE DE LA FORME  A*X**3 + B*X**2 + C*X +  D' });
+    page('EQUATIONS DES LIGNES D INFLUENCE DES REACTIONS D APPUIS', pr, { sub: 'CUBIQUE DE LA FORME  A*X**3 + B*X**2 + C*X +  D', sub2: TX ? 'X ETANT L ABSCISSE RELATIVE DE LA FORCE DANS LA TRAVEE' : '' });
     // ---------------------------------------------------------- dénivellations
     const pt = ['', '                      ' + Array.from({ length: n + 1 }, (_, k) => pad('APPUI ' + pad(k + 1, 3), 15)).join(''), '  MOMENTS SUR APPUIS', ''];
     for (let j = 1; j < n; j++) pt.push(padR('            APPUI ' + pad(j + 1, 3), 22) + r.tass.M.map(Mk => f(Mk[j], 15, 2)).join(''), '');
@@ -217,7 +220,7 @@
       page('COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE EN ' + T(s), pg,
         { sub2: '               PORTEE EQUIVALENTE' + f(g.Leq, 7, 3) + '                              PARAMETRE D ENTRETOISEMENT ' + f(g.theta, 5, 2) });
     }
-    const prc = [...STAR, '', '                        TROTTOIRS           A            BC             ' + r.nomBt + r.chargesC.map(c => pad(c, 14)).join(''), ''];
+    const prc = [...STAR, ...(TX ? ['', "                           L'EFFET DES COEFFICIENTS REDUCTEURS,FONCTIONS DU NOMBRE DE VOIES CHARGEES", '                   EST PRIS EN COMPTE DANS LE CALCUL DES COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE', ''] : []), '', '                        TROTTOIRS           A            BC             ' + r.nomBt + r.chargesC.map(c => pad(c, 14)).join(''), ''];
     r.gm.forEach((g, s) => prc.push('         ' + T(s) + '   ' + [g.coef.trot, g.coef.A, g.coef.Bc, g.coef.Bt].map(v => f(v, 14, 3)).join('') + r.chargesC.map(c => f(/CVOI/.test(c) ? g.coef.CV : g.coef.Mc, 14, 3)).join(''), ''));
     page('RECAPITULATION DES COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE', prc);
     // ---------------------------------------------------------- moments fléchissants
@@ -249,6 +252,47 @@
       }
       page('POSITIONS DES SURCHARGES CORRESPONDANT AUX MOMENTS FLECHISSANTS EXTREMES EN TRAVEE ' + (i + 1), pp);
     }
+    // v34 (20/11) : ordre SETRA de tous les listings du corpus : efforts tranchants / réactions AVANT la flexion transversale,
+    // déformations APRÈS la page APPUIS CONCENTRES (fin du ferraillage). PSIDA_ORD0 = 1 : ancien ordre.
+    const pgDef = () => {
+    if (r.deformations) for (let sp = 0; sp < n; sp++) {
+      const D = r.deformations[sp];
+      const pd = ['                                                             *   *                               EV =' + pad(Math.floor(mt.Ev + 1e-6) + '.', 8) + ' T/M2', '                                                               * ', '',
+        '                               DEFORMEES DU TABLIER POUR LES DIFFERENTS CAS DE CHARGE (EN MILLIMETRES)', '', '',
+        '       SECTION  CHARGE PERMANENTE                  SURCHARGES DANS CHAQUE TRAVEE (DEFORMEES INSTANTANEES)', '',
+        '                INSTANT  FINALE   ' + L.map((_, j) => pad(T(j), 15)).join(''), '                                 ' + L.map(() => '    A      48T  ').join(''), ''];
+      for (const row of D.fl) pd.push('        ' + fx(row[0], 2) + 'L' + f(row[1], 8, 1) + f(row[2], 9, 1) + row.slice(3).map((v, j) => f(v, j % 2 ? 6 : 10, 1)).join(''), '');
+      pd.push('', '', '              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4)', '', '',
+        '         ' + D.eps.map(v => f(v, 8, 1)).join(''), '', '', '',
+        '              ROTATIONS SUR APPUIS DU TABLIER SOUS L\'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)', '', '',
+        '       APP G' + D.rotG.map(v => f(v, 8, 1)).join(''), '', '', '       APP D' + D.rotD.map(v => f(v, 8, 1)).join(''));
+      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad((G.PSIDA_FDOT0 ? Math.round(mt.Ei + 1e-3) : fx(mt.Ei, 0)) + '.', 8) + ' T/M2', ...pd]);
+    }
+    };
+    const pgET = () => {
+    if (r.effortsTranchants) {
+      const pv2 = [...STAR, '', '', '                                      CHARGE      CHARGE A      CHARGE B       CHARGE C      TROTTOIRS        ETATS-LIMITES',
+        '                                    PERMANENTE                                                              SERVICE    ULTIME', ''];
+      for (let i = 0; i < nPrint; i++) r.effortsTranchants[i].forEach((v, j) => {
+        const l = v.live;
+        pv2.push((j === 0 ? '             ' + T(i) + ' COTE GAUCHE' : '                      COTE DROIT ') + f(v.G.up, 11, 1) + [l.A.pos.v, l.B.max.v, l.C.max.v, l.T.max].map(x => f(x, 14, 1)).join('') + f(v.els.max, 14, 1) + f(v.elu.max, 11, 1));
+        pv2.push(' '.repeat(33) + f(v.G.dn, 11, 1) + [l.A.neg.v, l.B.min.v, l.C.min.v, l.T.min].map(x => f(x, 14, 1)).join('') + f(v.els.min, 14, 1) + f(v.elu.min, 11, 1), '');
+      });
+      page('EFFORTS TRANCHANTS SUR APPUIS', pv2, { sub2: 'SOUS LA CHARGE PERMANENTE ET LES DIFFERENTS CAS DE SURCHARGE POUR LA LARGEUR TOTALE' });
+      const slots = ['CVOI.D', 'CVOI.E', 'MC.120', 'MC.80'].filter(c => r.chargesC.includes(c));
+      const pr2 = [...STAR, "              CHARGES  TROTTOIRS   A ( L )       C H A R G E S   B                 C H A R G E S   C                ETATS-LIMITES",
+        '               PERM.                           BC        ' + r.nomBt + '                ' + slots.map(c => padR(c, 10)).join('') + '              SERVICE   ULTIME', ''];
+      const nR = sym(r) ? Math.ceil((n + 1) / 2) : n + 1;
+      for (let k = 0; k < nR; k++) {
+        const R = r.reactions[k], l = R.live;
+        const cv = (mx) => { const o = slots.map(c => { const e = l.CE.find(x => x.nom === c); return e ? (mx ? e.max.v : e.min.v) : 0; }); while (o.length < 4) o.push(0); return o; };
+        pr2.push(padR('  APPUI ' + (k + 1), 9) + f(R.G.up, 12, 1) + [l.T.max, l.A.pos.v, l.Bc.max, l.Bt.max, 0, ...cv(true)].map(x => f(x, 10, 1)).join('') + f(R.els.max, 9, 1) + f(R.elu.max, 10, 1));
+        pr2.push(' '.repeat(9) + f(R.G.dn, 12, 1) + [l.T.min, l.A.neg.v, l.Bc.min, l.Bt.min, 0, ...cv(false)].map(x => f(x, 10, 1)).join('') + f(R.els.min, 9, 1) + f(R.elu.min, 10, 1), '');
+      }
+      page('REACTIONS D APPUIS', pr2, { sub2: 'SOUS LA CHARGE PERMANENTE ET LES DIFFERENTS CAS DE SURCHARGE POUR LA LARGEUR TOTALE' });
+    }
+    };
+    const pgFlex = () => {
     if (r.flexT) for (let sp = 0; sp < nPrint; sp++) {
       const F = r.flexT[sp];
       const variantes = [[mt.poisson, F.fibres, F.my]]; if (F.fibres0) variantes.push([0, F.fibres0, F.my0]);
@@ -285,42 +329,11 @@
       }
       }
     }
-    if (r.deformations) for (let sp = 0; sp < n; sp++) {
-      const D = r.deformations[sp];
-      const pd = ['                                                             *   *                               EV =' + pad(Math.floor(mt.Ev + 1e-6) + '.', 8) + ' T/M2', '                                                               * ', '',
-        '                               DEFORMEES DU TABLIER POUR LES DIFFERENTS CAS DE CHARGE (EN MILLIMETRES)', '', '',
-        '       SECTION  CHARGE PERMANENTE                  SURCHARGES DANS CHAQUE TRAVEE (DEFORMEES INSTANTANEES)', '',
-        '                INSTANT  FINALE   ' + L.map((_, j) => pad(T(j), 15)).join(''), '                                 ' + L.map(() => '    A      48T  ').join(''), ''];
-      for (const row of D.fl) pd.push('        ' + fx(row[0], 2) + 'L' + f(row[1], 8, 1) + f(row[2], 9, 1) + row.slice(3).map((v, j) => f(v, j % 2 ? 6 : 10, 1)).join(''), '');
-      pd.push('', '', '              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4)', '', '',
-        '         ' + D.eps.map(v => f(v, 8, 1)).join(''), '', '', '',
-        '              ROTATIONS SUR APPUIS DU TABLIER SOUS L\'EFFET DES DIFFERENTS CAS DE CHARGE (EN RADIANS X 10**3)', '', '',
-        '       APP G' + D.rotG.map(v => f(v, 8, 1)).join(''), '', '', '       APP D' + D.rotD.map(v => f(v, 8, 1)).join(''));
-      page('', ['                                                DEFORMATION DU TABLIER - ' + T(sp) + '                EI =' + pad((G.PSIDA_FDOT0 ? Math.round(mt.Ei + 1e-3) : fx(mt.Ei, 0)) + '.', 8) + ' T/M2', ...pd]);
-    }
-    if (r.effortsTranchants) {
-      const pv2 = [...STAR, '', '', '                                      CHARGE      CHARGE A      CHARGE B       CHARGE C      TROTTOIRS        ETATS-LIMITES',
-        '                                    PERMANENTE                                                              SERVICE    ULTIME', ''];
-      for (let i = 0; i < nPrint; i++) r.effortsTranchants[i].forEach((v, j) => {
-        const l = v.live;
-        pv2.push((j === 0 ? '             ' + T(i) + ' COTE GAUCHE' : '                      COTE DROIT ') + f(v.G.up, 11, 1) + [l.A.pos.v, l.B.max.v, l.C.max.v, l.T.max].map(x => f(x, 14, 1)).join('') + f(v.els.max, 14, 1) + f(v.elu.max, 11, 1));
-        pv2.push(' '.repeat(33) + f(v.G.dn, 11, 1) + [l.A.neg.v, l.B.min.v, l.C.min.v, l.T.min].map(x => f(x, 14, 1)).join('') + f(v.els.min, 14, 1) + f(v.elu.min, 11, 1), '');
-      });
-      page('EFFORTS TRANCHANTS SUR APPUIS', pv2, { sub2: 'SOUS LA CHARGE PERMANENTE ET LES DIFFERENTS CAS DE SURCHARGE POUR LA LARGEUR TOTALE' });
-      const slots = ['CVOI.D', 'CVOI.E', 'MC.120', 'MC.80'].filter(c => r.chargesC.includes(c));
-      const pr2 = [...STAR, "              CHARGES  TROTTOIRS   A ( L )       C H A R G E S   B                 C H A R G E S   C                ETATS-LIMITES",
-        '               PERM.                           BC        ' + r.nomBt + '                ' + slots.map(c => padR(c, 10)).join('') + '              SERVICE   ULTIME', ''];
-      const nR = sym(r) ? Math.ceil((n + 1) / 2) : n + 1;
-      for (let k = 0; k < nR; k++) {
-        const R = r.reactions[k], l = R.live;
-        const cv = (mx) => { const o = slots.map(c => { const e = l.CE.find(x => x.nom === c); return e ? (mx ? e.max.v : e.min.v) : 0; }); while (o.length < 4) o.push(0); return o; };
-        pr2.push(padR('  APPUI ' + (k + 1), 9) + f(R.G.up, 12, 1) + [l.T.max, l.A.pos.v, l.Bc.max, l.Bt.max, 0, ...cv(true)].map(x => f(x, 10, 1)).join('') + f(R.els.max, 9, 1) + f(R.elu.max, 10, 1));
-        pr2.push(' '.repeat(9) + f(R.G.dn, 12, 1) + [l.T.min, l.A.neg.v, l.Bc.min, l.Bt.min, 0, ...cv(false)].map(x => f(x, 10, 1)).join('') + f(R.els.min, 9, 1) + f(R.elu.min, 10, 1), '');
-      }
-      page('REACTIONS D APPUIS', pr2, { sub2: 'SOUS LA CHARGE PERMANENTE ET LES DIFFERENTS CAS DE SURCHARGE POUR LA LARGEUR TOTALE' });
-    }
+    };
+    if (G.PSIDA_ORD0) { pgFlex(); pgDef(); pgET(); } else { pgET(); pgFlex(); }
     // ---------------------------------------------------------- ferraillage (ferraillage.js)
     if (G.PSIDA.renderFer && r.fer) G.PSIDA.renderFer(m, r, { page, f, fx, pad, padR, STAR, num, dstr });
+    if (!G.PSIDA_ORD0) pgDef();
     // ---------------------------------------------------------- résumé + résultats PP73 (partiel)
     const t0 = m.titre[0] || '';
     const ps = ['                                    *** RAPPEL DES CARACTERISTIQUES PRINCIPALES DE L\'OUVRAGE *** ', '',
