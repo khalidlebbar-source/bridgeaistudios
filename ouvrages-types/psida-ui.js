@@ -516,7 +516,6 @@
     const r = Math.min(W * 0.4, 4.2 * s);
     const d = svg({ x0: -ex - 1.2 * r - 9 * s, y0: -W / 2 - 11 * s, x1: Lt + ex + 3.5 * s, y1: W / 2 + 3.5 * s }, { pad: 0.035 });
     planInto(d, m, sch, 0, s, { dims: true, nums: true });
-    d.text(Lt / 2, -W / 2 - 10 * s, 'appareils d\'appui répartis sous la nervure, espacement EDALLE1 / (NAP − 0,6) mesuré suivant la ligne d\'appui', { size: 0.72, cls: 'ts' });
     return d.toString();
   }
 
