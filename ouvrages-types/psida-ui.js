@@ -103,7 +103,7 @@
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
           { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
         ] },
-        { title: 'Largeurs droites', alt: true, flex: 2, cols: 2, fields: [
+        { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
           { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
           { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
           { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
@@ -183,13 +183,6 @@
         ] },
         { title: 'Limites d\'élasticité', alt: true, flex: 4, cols: 4, fields: [1, 2, 3, 4].map(i => ({ k: 'A10.FE' + i, code: 'FE' + i, unit: 't/m²', dec: 0, def: '50000', help: `Limite d'élasticité garantie des aciers PHI${i}, en t/m² (50 000 t/m² = FeE500 ; 40 000 = FeE400).` })) },
       ] },
-      { label: 'Nuances et adhérence', groups: [
-        { title: 'Nuances (BAEL A.2.2)', flex: 4, cols: 4, fields: [1, 2, 3, 4].map(i => ({ k: 'A10.NA' + i, code: 'NA' + i, type: 'sel', opts: [[0, '0 — palier fe'], [1, '1 — écrouissage']], help: `Nuance des aciers PHI${i} : 0 contrainte plafonnée à fe ; 1 contrainte croissant linéairement jusqu'à 1,1 fe à 10 ‰.` })) },
-        { title: 'Fissuration et scellement', alt: true, flex: 5, cols: 5, fields: [
-          ...[1, 2, 3, 4].map(i => ({ k: 'A10.ETA' + i, code: 'ETA' + i, dec: 2, def: '1,60', help: `Coefficient de fissuration η des aciers PHI${i} (BAEL A.4.5,3) : 1,6 pour les HA.` })),
-          { k: 'A10.PSID', code: 'PSID', label: 'ψs', dec: 2, def: '1,50', help: 'Coefficient de scellement ψs caractérisant l\'adhérence des barres (BAEL A.6.1,21) : 1,5 pour les HA.' },
-        ] },
-      ] },
       { label: 'Disposition (A11)', groups: [
         { title: 'Groupes de barres longitudinales', flex: 4, cols: 4, fields: [
           { k: 'A11.N1', code: 'N1', label: 'barres / groupe', type: 'int', def: '3', help: 'Nombre de barres dans un groupe d\'armatures longitudinales (valeur conseillée 3).' },
@@ -215,6 +208,7 @@
         { title: 'Appareils d\'appui en élastomère fretté (A13) — compressions admissibles en t/m²', alt: true, flex: 3, cols: 3, fields: [
           { k: 'A13.COMPRENV', code: 'COMPRENV', label: 'élast. min', dec: 0, def: '200', help: 'Contrainte minimale admissible de compression moyenne des appareils en élastomère (risque de cheminement), t/m². Conseillé 200.' },
           { k: 'A13.COMPRENS', code: 'COMPRENS', label: 'élast. max', dec: 0, def: '1200', help: 'Contrainte maximale admissible de compression moyenne des appareils en élastomère, t/m². Conseillé 1200.' },
+          { k: 'A13.SYMAP', code: 'SYMAP', label: 'symétrie', type: 'sel', opts: [[1, '1 — longit.'], [0, '0 — aucune'], [2, '2 — interm. id.']], help: 'Symétrie longitudinale des appareils : 0 aucune ; 1 symétrie longitudinale ; 2 appareils des appuis intermédiaires tous identiques.' },
         ] },
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
@@ -1080,7 +1074,7 @@
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
-    if (m.lignes.A13) m.lignes.A13.SYMAP = 1;   // ouvrages symétriques seulement : appareils symétriques
+    const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
     // cases masquées au-delà de NT (portées) et de NT + 1 (appuis) : 0, comme le demande le bordereau
     for (let i = nt + 1; i <= 6; i++) if (m.lignes.A5) m.lignes.A5['D' + i] = 0;
