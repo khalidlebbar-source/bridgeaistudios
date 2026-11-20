@@ -234,9 +234,9 @@
 .ot-f.ck{flex-direction:row;align-items:center;gap:7px;height:30px;margin-top:15px}
 .ot-f.ck input{width:16px;height:16px;accent-color:var(--gold)}
 .ot-f.ck label{white-space:normal}
-.ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden}
+.ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden;min-width:0}
 .ot-help code{font-family:'Courier New',monospace;color:var(--gold);font-weight:600}
-.ot-help .msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ot-help .msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ot-help .chk{flex:0 0 auto;font-size:11.5px;padding:2px 9px;border-radius:99px;cursor:pointer;border:1px solid}
 .ot-help .chk.ok{color:var(--teal);border-color:#bfe3dc;background:#eef8f6}
 .ot-help .chk.w{color:var(--orange);border-color:#efd9b0;background:#fdf7ee}
