@@ -160,7 +160,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half') },
 
-    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
+    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.', pages: [
       { label: 'Permanentes', groups: [
         { title: 'Ossature', flex: 3, cols: 3, fields: [
           { k: 'A8.MASVOL', code: 'MASVOL', label: 'masse vol.', unit: 't/m³', dec: 3, def: '2,5 (0 = 2,5)', help: 'Valeur probable de la masse volumique du béton armé (2,5 t/m³ du BAEL si 0).' },
