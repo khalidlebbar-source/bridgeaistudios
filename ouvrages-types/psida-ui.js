@@ -63,7 +63,7 @@
   const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
   const steps = [
-    { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1), méthode et calculs demandés (A3) ou imprimés en détail (A4). Répartition transversale toujours par Guyon-Massonnet.', pages: [
+    { id: 'id', label: 'Identification', view: 'elev', caption: 'lignes A1 à A4', hint: 'Titre de la note (A1) et numéro du passage. La note donne systématiquement tous les calculs et toutes les impressions détaillées ; répartition transversale par Guyon-Massonnet.', pages: [
       { label: 'Titre', groups: [
         { title: 'Titre de la note (lignes A1 et A2)', flex: 5, cols: 2, fields: [
           { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
@@ -74,14 +74,8 @@
       ] },
       { label: 'Calculs demandés (A3)', groups: [
         { title: 'Méthode (A3)', flex: 5, cols: 3, fields: [
-          { k: 'A3.LIGNINF', code: 'LIGNINF', label: LBL.LIGNINF, type: 'sel', opts: [[2, '2 — conservée'], [1, '1 — optimisée']], help: 'Calcul des lignes d\'influence. 2 : l\'épaisseur HDALLE1 est conservée ; 1 : elle est optimisée par le programme (option non reconstituée ici : l\'épaisseur saisie est conservée).' },
+          { k: 'A3.LIGNINF', code: 'LIGNINF', label: 'épaisseur', type: 'sel', opts: [[2, '2 — HDALLE1 conservée'], [1, '1 — optimisée']], help: 'Colonne LIGNINF de la ligne A3 (notice SETRA) : les lignes d\'influence sont toujours calculées ; le chiffre choisit l\'épaisseur de la dalle. 2 : l\'épaisseur HDALLE1 saisie en A7 est conservée. 1 : le programme optimise l\'épaisseur (arrondie au cm supérieur puis augmentée de 1 cm tant que le moment ultime l\'exige ; la note l\'annonce).' },
         ] },
-        { title: 'Efforts (A3)', mtx: 'A34', short: 'calculé (A3)', alt: true, flex: 4, cols: 3, fields: A3G1.map(c => ck(c, LBL[c])) },
-        { title: 'Ferraillage et sorties (A3)', mtx: 'A34', short: 'calculé (A3)', flex: 6, cols: 4, fields: A3G2.map(c => ck(c, LBL[c])) },
-      ] },
-      { label: 'Impressions détaillées (A4)', groups: [
-        { title: 'Efforts : résultats intermédiaires imprimés (A4)', mtx: 'A34', short: 'imprimé (A4)', flex: 8, cols: 4, fields: ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1].map(c => imp(c, LBL[c])) },
-        { title: 'Ferraillage : résultats intermédiaires imprimés (A4)', mtx: 'A34', short: 'imprimé (A4)', alt: true, flex: 8, cols: 4, fields: A3G2.map(c => imp(c, LBL[c])) },
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
@@ -638,7 +632,6 @@
     if (V(m, 'A13.COMPRENV') >= V(m, 'A13.COMPRENS')) E_('app', 'A13.COMPRENV', 'élastomère : la compression minimale admissible doit être inférieure à la maximale');
     if (V(m, 'A13.COMPREBV') >= V(m, 'A13.COMPREBS')) E_('app', 'A13.COMPREBV', 'béton : la compression minimale admissible doit être inférieure à la maximale');
     // options
-    if (V(m, 'A3.LIGNINF') === 1) W_('id', 'A3.LIGNINF', 'LIGNINF = 1 (épaisseur optimisée) : règle d\'optimisation non reconstituée, l\'épaisseur HDALLE1 saisie est conservée');
     if (!V(m, 'A3.MOMENT')) W_('id', 'A3.MOMENT', 'MOMENT = 0 : les enveloppes des moments sont néanmoins nécessaires au ferraillage');
     return out;
   }
@@ -1088,16 +1081,22 @@
 
   function blank() {
     const m = E.parseBordereau(EX1);
-    m.titre = ['', '']; m.numero = '0001'; m.lignes.A3.EXCENTR = 1; m.date = null;
+    m.titre = ['', '']; m.numero = '0001'; allOn(m); m.date = null;
     delete m.source; delete m.version;
     return m;
   }
 
+  /* la note donne tout systématiquement : tous les calculs (A3) et toutes les impressions détaillées (A4) ; répartition par Guyon (EXCENTR = 1) */
+  function allOn(m) {
+    const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
+    A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
+    for (const c of ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1, ...A3G2]) A4[c] = 1;
+  }
   /* moteur : la note attend une date {j, m, a} */
   const engine = {
     parseBordereau: t => E.parseBordereau(t),
     formatBordereau: m => E.formatBordereau(m),
-    compute: m => { m.lignes.A3.EXCENTR = 1; return E.compute(m); },   // répartition transversale : toujours Guyon-Massonnet (EXCENTR = 1)
+    compute: m => { allOn(m); return E.compute(m); },   // répartition transversale : toujours Guyon-Massonnet (EXCENTR = 1)
     renderNote: (m, r, o) => {
       o = Object.assign({}, o);
       if (typeof o.date === 'string') { const p = o.date.split(/[-/.]/); o.date = { j: p[0], m: p[1], a: p[2] }; }
