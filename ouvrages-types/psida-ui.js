@@ -338,7 +338,6 @@
     d.path(arc, 'l', 'A5.BIAIS');
     const tm = Math.PI + b / 2;
     d.text(xi + r * 1.5 * Math.cos(tm), yi + r * 1.35 * Math.sin(tm), sch ? 'BIAIS' : fmt(bg, 1) + ' gr', { size: 0.8, cls: sch ? 'tc' : 'dv', a: 'end', k: 'A5.BIAIS' });
-    d.text(Lt + ex + 1.0 * s, Y(1.3 * s), 'axe →', { size: 0.7, cls: 'ts', a: 'end' });
     return { top: Y(W / 2), bottom: yi - r * 1.5 };
   }
 
@@ -356,7 +355,7 @@
     const yb = yc - W / 2 - Math.min(W * 0.4, 4.2 * s) * 1.6 - 1.5 * s;
     const ex = W / 2 * Math.abs(Math.cos(bc) / Math.sin(bc));
     const rr = Math.min(W * 0.4, 4.2 * s);
-    const d = svg({ x0: -Math.max(3.5 * s, ex + 1.2 * rr + 9 * s), y0: yb, x1: Lt + Math.max(3.5 * s, ex + 3.5 * s), y1: top + 9.5 * s }, { pad: 0.03 });
+    const d = svg({ x0: -Math.max(3.5 * s, ex + 1.2 * rr + 9 * s), y0: yb, x1: Lt + Math.max(3.5 * s, ex + 3.5 * s), y1: top + 11.2 * s }, { pad: 0.03 });
     const u = d.u;
     // terrain, culées, piles
     const xg0 = -3.5 * s, xg1 = Lt + 3.5 * s;
@@ -396,7 +395,7 @@
       d.text(-0.7 * s, top + 3.0 * s + 1.4 * u, sch ? 'ABOUT' : fmt(ab, 2), { size: 0.8, a: 'end', cls: sch ? 'tc' : 'dv', k: 'A5.ABOUT' });
       d.text(Lt + 0.7 * s, top + 3.0 * s + 1.4 * u, sch ? 'ABOUT' : fmt(ab, 2), { size: 0.8, a: 'start', cls: sch ? 'tc' : 'dv', k: 'A5.ABOUT' });
     }
-    if (!sch) d.dim(0, top, Lt, top, 'longueur totale ' + fmt(Lt, 2) + ' m', 6.6 * s, null, { size: 1.05 });
+    if (!sch) d.dim(0, top, Lt, top, 'longueur totale ' + fmt(Lt, 2) + ' m', 8.6 * s, null, { size: 1.05 });
     // légende
     const Lmax = Math.max(...D, 0);
     planInto(d, m, sch, yc, s, { nums: NUMS });
