@@ -103,7 +103,7 @@
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
           { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
         ] },
-        { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
+        { title: 'Largeurs droites', alt: true, flex: 2, cols: 2, fields: [
           { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
           { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
           { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
@@ -215,7 +215,6 @@
         { title: 'Appareils d\'appui en élastomère fretté (A13) — compressions admissibles en t/m²', alt: true, flex: 3, cols: 3, fields: [
           { k: 'A13.COMPRENV', code: 'COMPRENV', label: 'élast. min', dec: 0, def: '200', help: 'Contrainte minimale admissible de compression moyenne des appareils en élastomère (risque de cheminement), t/m². Conseillé 200.' },
           { k: 'A13.COMPRENS', code: 'COMPRENS', label: 'élast. max', dec: 0, def: '1200', help: 'Contrainte maximale admissible de compression moyenne des appareils en élastomère, t/m². Conseillé 1200.' },
-          { k: 'A13.SYMAP', code: 'SYMAP', label: 'symétrie', type: 'sel', opts: [[1, '1 — longit.'], [0, '0 — aucune'], [2, '2 — interm. id.']], help: 'Symétrie longitudinale des appareils : 0 aucune ; 1 symétrie longitudinale ; 2 appareils des appuis intermédiaires tous identiques.' },
         ] },
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
@@ -1081,6 +1080,7 @@
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
+    if (m.lignes.A13) m.lignes.A13.SYMAP = 1;   // ouvrages symétriques seulement : appareils symétriques
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
     // cases masquées au-delà de NT (portées) et de NT + 1 (appuis) : 0, comme le demande le bordereau
     for (let i = nt + 1; i <= 6; i++) if (m.lignes.A5) m.lignes.A5['D' + i] = 0;
