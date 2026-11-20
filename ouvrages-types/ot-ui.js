@@ -429,7 +429,7 @@
         const vis = x => !x.show || x.show(S.model);   // cases et groupes conditionnels (ex. portées D1…DNT, appuis 1…NT + 1)
         const gs = st.pages.flatMap(p => p.groups).filter(vis).map(g => g.fields.every(vis) ? g : Object.assign({}, g, { fields: g.fields.filter(vis) })).filter(g => g.fields.length);
         const tabs = gs.filter(g => g.appui), mx = gs.filter(g => g.mtx), plain = gs.filter(g => !g.appui && !g.mtx);
-        let h = plain.map(g => `<div class="sg${g.alt ? ' alt' : ''}${g.fields.some(f => f.type === 'txt' && !f.w) ? ' full' : ''}" title="${esc(g.title)}">${g.short === '' ? '' : `<i>${esc(g.short || g.title)}</i>`}<div class="fs">${g.fields.map(fh).join('')}</div></div>`).join('');
+        let h = plain.map(g => `<div class="sg${g.alt ? ' alt' : ''}${g.fields.some(f => f.type === 'txt' && !f.w) ? ' full' : ''}" title="${esc(g.title)}">${g.short === '' ? '' : `<i>${esc((g.short || g.title).replace(/\s*\((?:lignes? )?A\d+[^)]*\)/g, ''))}</i>`}<div class="fs">${g.fields.map(fh).join('')}</div></div>`).join('');
         if (mx.length) {   // matrice de cases à cocher : colonnes = codes, lignes = groupes (ex. A3 calculé / A4 imprimé)
           const rws = [...new Set(mx.map(g => g.short || g.title))].map(rw => mx.filter(g => (g.short || g.title) === rw).flatMap(g => g.fields));
           const cols = []; [...rws].sort((a, b) => b.length - a.length).forEach(fs => fs.forEach(f => { if (!cols.includes(f.code)) cols.push(f.code); }));
@@ -443,7 +443,7 @@
           for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { rws += `<tr><th>${esc(f0.rowLabel || f0.code)}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
           h += `<table class="ot-tbl"><tr><th></th>${cols.map(g => `<th>${esc(g.title)}</th>`).join('')}</tr>${rws}</table>`;
         }
-        return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}${st.caption && !st.noCap ? `<small>${esc(st.caption)}</small>` : ''}</h4><div class="row">${h}</div></section>`;
+        return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
       });
       const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
       R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
