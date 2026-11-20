@@ -18,7 +18,8 @@
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
     }
-    if (k.startsWith('MIL.')) return milGet(m)[k.slice(4)];                // militaires cochés un à un (ligne d'extension C9)
+    if (k.startsWith('MIL.')) return milGet(m)[k.slice(4)];
+    if (k === 'TRT.G' || k === 'TRT.D') { const t = milGet(m).TROTX; return k === 'TRT.G' ? +(t === 0 || t === 1) : +(t === 0 || t === 2); }   // trottoirs chargés                // militaires cochés un à un (ligne d'extension C9)
     if (k.startsWith('CE.')) {                                            // cases à cocher du code CE = i m j
       const ce = String(((m.lignes || {}).A8 || {}).CE || '000').padStart(3, '0'), w = k.slice(3);
       return w === 'D' ? +(+ce[1] >= 1) : w === 'E' ? +(+ce[1] === 2) : w === 'MC80' ? +(ce[2] === '3') : +(ce[2] === '4');
@@ -46,6 +47,11 @@
       if (k === 'FIX.BC') bc = on; else bt = on;
       A8.B = bc && bt ? '001' : bc ? '002' : bt ? '003' : '000'; return;
     }
+    if (k === 'TRT.G' || k === 'TRT.D') {
+      m.lignes = m.lignes || {}; const o = milGet(m), t = o.TROTX;
+      let g = t === 0 || t === 1, d = t === 0 || t === 2; if (k === 'TRT.G') g = num(v) === 1; else d = num(v) === 1;
+      o.TROTX = g && d ? 0 : g ? 1 : d ? 2 : 3; m.lignes.C9 = o; return;
+    }
     if (k.startsWith('MIL.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
       const o = milGet(m); o[k.slice(4)] = num(v) === 1 ? 1 : 0; m.lignes.C9 = o;
@@ -70,9 +76,9 @@
   };
   function milGet(m) {
     const L = m.lignes || {};
-    if (L.C9) return { MC80: +!!L.C9.MC80, MC120: +!!L.C9.MC120, ME80: +!!L.C9.ME80, ME120: +!!L.C9.ME120 };
+    if (L.C9) return { MC80: +!!L.C9.MC80, MC120: +!!L.C9.MC120, ME80: +!!L.C9.ME80, ME120: +!!L.C9.ME120, TROTX: +L.C9.TROTX || 0 };
     const j = String((L.A8 || {}).CE || '000').padStart(3, '0')[2];
-    return { MC80: +(j === '3'), MC120: +(j === '4'), ME80: 0, ME120: 0 };
+    return { MC80: +(j === '3'), MC120: +(j === '4'), ME80: 0, ME120: 0, TROTX: 0 };
   }
   const V = (m, k) => { const x = num(get(m, k)); return isFinite(x) ? x : 0; };
   const code = k => (k.split('.')[1] || k);
@@ -193,6 +199,8 @@
         ] },
         { title: 'Trottoirs', alt: true, flex: 1, cols: 1, fields: [
           { k: 'A8.PSTROT', code: 'PSTROT', label: 'charge', unit: 't/m²', dec: 3, help: 'Charge générale des trottoirs : 0 pour une plateforme autoroutière, 0,150 t/m² pour une voirie ordinaire.' },
+          { k: 'TRT.G', code: 'gauche', type: 'chk', help: 'Trottoir de gauche chargé par PSTROT (décocher pour ne pas le charger).' },
+          { k: 'TRT.D', code: 'droit', type: 'chk', help: 'Trottoir de droite chargé par PSTROT (décocher pour ne pas le charger).' },
         ] },
       ] },
     ], one: (svg, m) => drawCoupe(svg, m, false, 'loads1'), draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
@@ -474,7 +482,7 @@
       if (!rows.length && !sch) d.text(cx, y0 + 0.3, 'aucune charge routière cochée', { size: 0.8, cls: 'ts' });
       const yS = y0 + rows.length * rowH + 0.15;
       if (wc > 0) d.dim(x0, top + ht, x0 + wc, top + ht, sch ? 'ESURCH chargeable' : 'largeur chargeable ' + fmt(wc, 2) + ' m', 0.25, 'A6.ESURCH', { size: 0.75 });
-      for (const [xa0, w] of [[xp[0], ws[0]], [xp[4], ws[4]]]) if (w > 0) { for (const f of [0.3, 0.7]) arrow(d, xa0 + w * f, top + ht + 0.55, top + ht + 0.05, 'A8.PSTROT'); d.text(xa0 + w / 2, top + ht + 0.68, sch ? 'PSTROT' : fmt(V(m, 'A8.PSTROT'), 3) + ' t/m²', { size: 0.65, cls: sch ? 'tc' : 'vl', k: 'A8.PSTROT' }); }
+      for (const [xa0, w, tk] of [[xp[0], ws[0], 'TRT.G'], [xp[4], ws[4], 'TRT.D']]) if (w > 0 && (sch || num(get(m, tk)) === 1)) { for (const f of [0.3, 0.7]) arrow(d, xa0 + w * f, top + ht + 0.55, top + ht + 0.05, 'A8.PSTROT'); d.text(xa0 + w / 2, top + ht + 0.68, sch ? 'PSTROT' : fmt(V(m, 'A8.PSTROT'), 3) + ' t/m²', { size: 0.65, cls: sch ? 'tc' : 'vl', k: 'A8.PSTROT' }); }
       d.text(0, yS + 0.2, sch ? 'superstructures QSUPTM · QSUPTm (t/m)' : `superstructures ${fmt(V(m, 'A8.QSUPMIN'), 3)} à ${fmt(V(m, 'A8.QSUPMAX'), 3)} t/m`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.QSUPMAX A8.QSUPMIN' });
       d.text(0, H1 * 0.45, sch ? 'ossature : MASVOL × aire × OSSAM / OSSAm' : `ossature ${fmt(V(m, 'A8.MASVOL') || 2.5, 2)} t/m³`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.MASVOL A8.OSMAX A8.OSMIN' });
       if (ONE && offRow.length) dimOff = out => out.replace(/<(rect|line|text|circle|path|polygon)([^>]*?)data-k="([^"]*)"/g, (mm, t, a, k) => offRow.includes(k) && !/rowoff/.test(a) ? `<${t}${a}data-k="${k}" opacity=".28"` : mm);

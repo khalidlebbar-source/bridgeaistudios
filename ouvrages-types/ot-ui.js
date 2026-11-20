@@ -202,7 +202,7 @@
 .ot.one .ot-f label span,.ot.one .ot-f label em{display:none}
 .ot.one .ot-f input,.ot.one .ot-f select{height:22px;font-size:11.5px;padding:0 4px;border-radius:5px}
 .ot.one .ot-f select{padding:0 1px}
-.ot.one .ot-f.ck{width:auto;height:20px;margin:0;gap:3px}
+.ot.one .ot-f.ck{width:auto;height:20px;margin:0 10px 0 0;gap:4px}
 .ot.one .ot-f.ck input{width:13px;height:13px}
 .ot.one .ot-f.wtxt{width:100%;flex:1 1 200px}
 .ot.one .ot-tbl{border-collapse:collapse;font-size:9.5px}

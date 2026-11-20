@@ -336,6 +336,7 @@
     const cA = String(A8.A).padStart(3, '0'), cB = String(A8.B).padStart(3, '0');
     r.off = { A: cA === '000', Bc: cB === '000' || cB === '003', Bt: cB === '000' || cB === '002' };
     r.pstrot = A8.PSTROT;
+    { const tx = model.lignes.C9 ? (model.lignes.C9.TROTX || 0) : 0; r.trotG = tx === 0 || tx === 1; r.trotD = tx === 0 || tx === 2; }   // extension C9 : trottoirs chargés
 
     // --- lignes d'appui (A13) : espacement = trunc2(EDALLE1/(NAP-0,6)/sin(biais))
     r.appuis = Array.from({ length: n + 1 }, (_, k) => {
@@ -640,7 +641,7 @@
     const kA = s => (kOne ? (G.PSIDA_REAC_NOA1 ? 1 : a1Coef(r.classe, r.nvoies)) : r.gm[s].coef.A) * r.a2 * r.Lch;
     out.A = r.off && r.off.A ? { pos: { v: 0, segs: [] }, neg: { v: 0, segs: [] } } : aLoadSegments(r, signSegments(r, fa).concat(extraSegs || []), kA);
     // trottoirs (toutes travées de même signe)
-    const wt = r.pstrot * (A6.ETROTG + A6.ETROTD);
+    const wt = r.pstrot * ((r.trotG === false ? 0 : A6.ETROTG) + (r.trotD === false ? 0 : A6.ETROTD));
     const kT = s => kOne ? 1 : r.gm[s].coef.trot, ex = extraSegs || [];
     out.T = { max: ar.reduce((p, a, s) => p + a.pos * wt * kT(s), 0) + ex.reduce((p, g) => p + Math.max(0, g.area) * wt, 0),
       min: ar.reduce((p, a, s) => p + a.neg * wt * kT(s), 0) + ex.reduce((p, g) => p + Math.min(0, g.area) * wt, 0) };
@@ -871,8 +872,8 @@
       // trottoirs (3 × PSTROT)
       const tr = [];
       const trv = G.PSIDA_MYTRV || 0, tI = trv ? (a, b) => intPL(Zr, a, b) : (a, b) => trap(Zr, a, b);
-      if (A6.ETROTG > 0) tr.push(3 * r.pstrot * A1 * tI(-W / 2, trv === 2 ? -W / 2 + A6.ETROTG : sn(-W / 2 + A6.ETROTG)));
-      if (A6.ETROTD > 0) tr.push(3 * r.pstrot * A1 * tI(trv === 2 ? W / 2 - A6.ETROTD : sn(W / 2 - A6.ETROTD), trv === 3 ? W / 2 : wrT));
+      if (A6.ETROTG > 0 && r.trotG !== false) tr.push(3 * r.pstrot * A1 * tI(-W / 2, trv === 2 ? -W / 2 + A6.ETROTG : sn(-W / 2 + A6.ETROTG)));
+      if (A6.ETROTD > 0 && r.trotD !== false) tr.push(3 * r.pstrot * A1 * tI(trv === 2 ? W / 2 - A6.ETROTD : sn(W / 2 - A6.ETROTD), trv === 3 ? W / 2 : wrT));
       res.T = { max: tr.filter(x => x > 0).reduce((a, b) => a + b, 0), min: tr.filter(x => x < 0).reduce((a, b) => a + b, 0) };
       // systèmes B : groupes de véhicules accolés
       const groups = (Zb, nMax, wV, wheels, coef, P, d) => {
@@ -1150,7 +1151,8 @@
       // crochet PSIDA_KTOUT = 1 : ancienne troncature (floor)
       const yOut = yL + (G.PSIDA_KTOUT ? Math.floor(W / h + 1e-9) : Math.round(W / h)) * h;
       const tg = A6.ETROTG > 0 ? (KTR ? meanL(yL, xTG) : meanC(yL, xTG)) : null, td = A6.ETROTD > 0 ? (KTR ? meanL(xCh1 + A6.EDROI, yOut) : meanC(xCh1 + A6.EDROI, -yL)) : null;
-      res.trot = tg != null && td != null ? (tg + td) / 2 : (tg ?? td ?? 0);
+      const tgL = r.trotG === false ? null : tg, tdL = r.trotD === false ? null : td;   // trottoir non chargé : exclu
+      res.trot = tgL != null && tdL != null ? (tgL + tdL) / 2 : (tgL ?? tdL ?? 0);
       // charge A : meilleure combinaison de voies adjacentes (i voies de largeur v), coefficient a1
       const v = Lch / nv; let bestA = { v: 0 };
       for (let k = 1; k <= nv; k++) for (let p = 0; p + k <= nv; p++) {

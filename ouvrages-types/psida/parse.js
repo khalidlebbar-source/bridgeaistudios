@@ -43,7 +43,7 @@
       I('SYMAP', 6)].concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [I('TYPAP' + i, 5), I('NAP' + i, 3)])) },
     C1: { lab: 2, f: [F('XB', 7, 2), F('SS1', 8, 0), F('SS2', 8, 0), F('SS3', 8, 0), F('SS4', 8, 0)] },
     // extension BridgeAI (ligne absente des bordereaux SETRA) : charges militaires cochées une à une (1 = appliquée)
-    C9: { lab: 2, f: [I('MC80', 5), I('MC120', 5), I('ME80', 5), I('ME120', 5)] },
+    C9: { lab: 2, f: [I('MC80', 5), I('MC120', 5), I('ME80', 5), I('ME120', 5), I('TROTX', 5)] },   // TROTX : 0 deux trottoirs chargés, 1 gauche seul, 2 droit seul, 3 aucun
   };
   // Variante de mise en page (listings 2006 : A6 EDROI F6.3 / HCHAU F8.3)
   const A6_2006 = { lab: 2, f: LAYOUT.A6.f.map(x => x[0] === 'EDROI' ? F('EDROI', 6, 3) : x[0] === 'HCHAU' ? F('HCHAU', 8, 3) : x) };
