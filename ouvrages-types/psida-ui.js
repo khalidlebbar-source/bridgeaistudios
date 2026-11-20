@@ -148,10 +148,10 @@
       ] },
       { label: 'Fibres et symétrie (A6)', caption: '', groups: [
       ] },
-    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'prof') },
 
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
-      { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
+      { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab'), groups: [
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
@@ -163,7 +163,7 @@
           { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
         ] },
       ] },
-    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half') },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab') },
 
     { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: '', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.', pages: [
       { label: 'Permanentes', groups: [
@@ -415,8 +415,8 @@
     let dimOff = null;
     const ONE = mode === 'loads1', LOADS = mode === 'loads' || ONE;   // loads1 : schéma unique (toutes les charges, cochées en couleur)
     const nLoads = LOADS ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => ONE || sch || num(get(m, k)) === 1).length : 0;
-    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * (ONE ? 1.3 : 0.95) + 0.6 : HALF ? 0.9 : 2.3);
-    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.4 : 1.9), y0: -1.95, x1: half + (sch || ONE ? 0.5 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
+    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * (ONE ? 1.3 : 0.95) + 0.6 : HALF || mode === 'slab' ? 0.9 : 2.3);
+    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.4 : 1.9), y0: -1.95, x1: half + (sch || ONE ? 0.5 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: mode === 'prof' ? -0.4 : -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
     const u = d.u, Z = HALF ? 0.75 : 1;                       // tailles de texte relatives
     // section
     const R = [[xa, 0], ...(xb > xa ? [[xb, H3]] : [[xa, H3]]), ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
@@ -480,7 +480,7 @@
       d.text(0, yS + 0.2, sch ? 'superstructures QSUPTM · QSUPTm (t/m)' : `superstructures ${fmt(V(m, 'A8.QSUPMIN'), 3)} à ${fmt(V(m, 'A8.QSUPMAX'), 3)} t/m`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.QSUPMAX A8.QSUPMIN' });
       d.text(0, H1 * 0.45, sch ? 'ossature : MASVOL × aire × OSSAM / OSSAm' : `ossature ${fmt(V(m, 'A8.MASVOL') || 2.5, 2)} t/m³`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.MASVOL A8.OSMAX A8.OSMIN' });
       if (ONE && offRow.length) dimOff = out => out.replace(/<(rect|line|text|circle|path|polygon)([^>]*?)data-k="([^"]*)"/g, (mm, t, a, k) => offRow.includes(k) && !/rowoff/.test(a) ? `<${t}${a}data-k="${k}" opacity=".28"` : mm);
-    } else if (!HALF) {
+    } else if (!HALF && mode !== 'slab') {   // profil en travers : cotes de la ligne A6
       const yy = top + ht;
       const keys = ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'];
       keys.forEach((k, i) => { if (ws[i] > 0 || sch) d.dim(xp[i], yy, xp[i + 1], yy, lab(m, k, sch, 2), 0.55, k, { size: ws[i] < 0.9 ? 0.75 : 1.0 }); });
@@ -495,13 +495,13 @@
     }
     if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
     // cotes de la section
-    const DET = !LOADS && mode !== 'mat';
+    const DET = !LOADS && mode !== 'mat' && mode !== 'prof';   // 'prof' : seules les cotes du profil en travers ; 'slab' : seules celles de la dalle
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
     if (xc > xb) for (const sg of sides) d.dim(sg < 0 ? -xc : xa, 0, sg < 0 ? -xa : xc, 0, sch ? 'EDALLE2/2' : fmt(xc - xa, 2), -1.0, 'A7.EDALLE2', { size: 0.9 * Z });
     if (HALF) d.dim(0, 0, xa, 0, sch ? 'EDALLE1/2' : fmt(xa, 2), -0.5, 'A7.EDALLE1', { size: Z });
     else if (DET) d.dim(-xa, 0, xa, 0, sch ? 'EDALLE1' : fmt(S.E1, 2), -0.5, 'A7.EDALLE1', { size: 1.05 });
     if (xb > xa) for (const sg of sides) d.dim(sg < 0 ? -xb : xa, 0, sg < 0 ? -xa : xb, 0, sch ? 'EDALLE3/2' : fmt(xb - xa, 2), -0.5, 'A7.EDALLE3', { size: 0.8 * Z });
-    if (!HALF) d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2' : 'largeur droite de la dalle ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
+    if (!HALF && mode !== 'prof') d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2' : 'largeur droite de la dalle ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
     const xh = HALF ? xa * 0.45 : -xa + Math.min(0.5, xa * 0.3);
     if (DET) d.dim(xh, 0, xh, H1, L('A7.HDALLE1'), -0.05, 'A7.HDALLE1', { size: 0.85 * Z, inside: true });
     if (DET && xc > xb && H2 > 0) d.dim(xc, H1 - H2, xc, H1, L('A7.HDALLE2'), -0.2 * Z, 'A7.HDALLE2', { size: 0.85 * Z });
