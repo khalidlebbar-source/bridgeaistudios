@@ -82,10 +82,12 @@
     };
     if (r.momentsFin && !G.PSIDA_ENV) { r.fer.long.sup.envF = env(true, r.momentsFin); r.fer.long.inf.envF = env(false, r.momentsFin); r.fer.long.SAF = r.momentsFin[0].map(s => s.a);
       const w = G.PSIDA_R1AVG != null ? G.PSIDA_R1AVG : 0, SA0 = r.moments[0].map(s => s.a), SF = r.fer.long.SAF;
-      r.fer.long.inf.envA = r.fer.long.inf.envF.map(v => v.map((x, j) => j > 0 && j < v.length - 1 && !SA0.some(a => Math.abs(a - SF[j]) < 1e-9) ? w * x + (1 - w) * (v[j - 1] + v[j + 1]) / 2 : x)); }
+      r.fer.long.inf.envA = r.fer.long.inf.envF.map(v => v.map((x, j) => j > 0 && j < v.length - 1 && !SA0.some(a => Math.abs(a - SF[j]) < 1e-9) ? w * x + (1 - w) * (v[j - 1] + v[j + 1]) / 2 : x));
+      if (r.momentsR1) r.fer.long.inf.envA = env(false, r.momentsR1); }
     r.fer.long.epure = epure(r, r.fer.long, H);
     r.fer.etriers = etriers(r, r.fer.long);
     r.fer.appareils = appareils(m, r);
+    r.fer.poincon = G.PSIDA_NOPOINC ? null : poincon(r);
     r.fer.transv = transversal(r);
     r.fer.propose = propose(r);
     r.fer.metre = metre(r);
@@ -110,8 +112,12 @@
       let env, M, Mu;
       if (!sup) { const i = k / 2; env = Math.max(...G.env[i]); M = Math.max(...r.moments[i].map(s => s.els.max)); Mu = Math.max(...r.moments[i].map(s => s.elu.max)); }
       else { const i = (k - 1) / 2; env = Math.max(G.env[i][G.env[i].length - 1], G.env[i + 1][0]);
-        M = -Math.min(...r.moments[i].map(s => s.els.min), ...r.moments[i + 1].map(s => s.els.min));
-        Mu = -Math.min(...r.moments[i].map(s => s.elu.min), ...r.moments[i + 1].map(s => s.elu.min)); }
+        // v33 : moment de la SECTION SUR APPUI (dernière section de la travée i, première de la travée i + 1) et non le
+        // minimum des travées entières, qui prenait le moment de l'appui suivant (3603 / 3607 APPUI2 : σs 36523 / 32387) ;
+        // crochet PSIDA_VERALL = 1 : ancien calcul
+        const si = G.PSIDA_VERALL ? r.moments[i] : [r.moments[i][r.moments[i].length - 1]], sj = G.PSIDA_VERALL ? r.moments[i + 1] : [r.moments[i + 1][0]];
+        M = -Math.min(...si.map(s => s.els.min), ...sj.map(s => s.els.min));
+        Mu = -Math.min(...si.map(s => s.elu.min), ...sj.map(s => s.elu.min)); }
       const As = pick(G, env).om, As2 = O.gamme.cols[0].om, b = G.b, d = G.d, d2 = H - O.d, ne = 15;
       // ELS : section fissurée avec aciers comprimés
       const B = ne * (As + As2), C = -ne * (As * d + As2 * d2), y = (-B + Math.sqrt(B * B - 2 * b * C)) / b;
@@ -190,7 +196,10 @@
   const A1T = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] };
   const BCT = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 1] };
   const tab = (t, n) => t[Math.min(n, t.length) - 1];
-  const r3In = x => Math.round(x * 1000 + 1e-9) / 1000;
+  // v32 : les coefficients d'inégalité entrent NON ARRONDIS dans les réactions par appareil (imprimés à 3 décimales seulement) :
+  // 3603 / 3604 EN CHARGE pile 224,98 / 225,00 (coefficients 1,31983 / 1,32018) ⇒ 0,30 × 0,55 retrouvé sur 3604–3606.
+  // Crochet PSIDA_KNR (bits CP 1, A 2, Bc 4, Bt 8, Mc120 16 ; défaut 31 = tous non arrondis ; 0 = arrondis au millième, v31).
+  const r3In = (x, bit) => ((G.PSIDA_KNR ?? 31) & (bit || 0)) ? x : Math.round(x * 1000 + 1e-9) / 1000;
 
   /** p = { Na, esp, biais (grades, biais géométrique), Be (largeur équivalente droite), Lch (largeur chargeable),
    *        nvc (nombre de voies), classe (1|2|3), H (HDALLE1), hchau } */
@@ -216,12 +225,22 @@
       Rbt = Math.max(Rbt, maxR(parts, s));
     }
     const BTk = Na * Rbt / (2 * nt);
-    // Mc120 — EMPIRIQUE, NON RÉSOLU pour Na ≥ 4 (sous-estime de 0,018 à 0,036) : 2 chenilles d'entraxe 3,30 m,
-    // chacune discrétisée en 21 charges égales réparties (bornes incluses) sur 1 + H + hchau.
-    const w = 1 + p.H + (p.hchau || 0), mc = [];
-    for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w / 2 + w * i / 20, 0.5 / 21, 0]);
-    const MC = Na * maxR(mc, s);
-    return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
+    // Mc120 — RÈGLE du dossier PSI-DA 68, pièce 2.5 « Méthode de calcul » § 2.4.2 (MAJCM) : chaque chenille est étalée
+    // transversalement sur λ = 1,00 + 2·HCHAU + HDALLE1 ; deux positions seulement (une chenille centrée sur l'appareil, ou les
+    // deux chenilles symétriques par rapport à l'appareil, entraxe 3,30 m) ; valeur moyenne de la réaction sur λ par la formule
+    // de SIMPSON (3 points). Exact sur les 27 lignes d'appui du corpus (PSIDA et PSIDP, Na = 2, 3, 4).
+    let MC;
+    if (globalThis.PSIDA_MCFREE) {                   // crochet : ancien modèle (21 points sur 1 + H + hchau, position libre)
+      const w0 = 1 + p.H + (p.hchau || 0), mc = [];
+      for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w0 / 2 + w0 * i / 20, 0.5 / 21, 0]);
+      MC = Na * maxR(mc, s);
+    } else {
+      const lam = (1 + 2 * (p.hchau || 0) + p.H) / s, E = 3.30 / s;
+      const simp = c => (etaIn(c - lam / 2) + 4 * etaIn(c) + etaIn(c + lam / 2)) / 6;
+      const f = o => 0.5 * (simp(o) + simp(o + E));
+      MC = Na * Math.max(f(0), f(-E / 2));
+    }
+    return { s, CP: r3In(CP, 1), A: r3In(A, 2), BC: r3In(BCk, 4), BT: r3In(BTk, 8), MC120: r3In(MC, 16), CONVOIS: null };
   }
 
   // ------------------------------------------------------------------ appareils d'appui (DIMENSIONNEMENT …)
@@ -234,7 +253,7 @@
     if (!r.reactions || !r.appuis) return null;
     const A13 = m.lignes.A13 || {}, n = r.n;
     const cas = ['CP', 'A', 'BC', r.nomBt || 'BT', ...((r.chargesC || []).filter(c => /CVOI|MC/.test(c)))];
-    return r.appuis.map((ap, k) => {
+    const out = r.appuis.map((ap, k) => {
       const R = r.reactions[k], nap = Math.max(1, ap.nap), l = R.live;
       const coef = {}; for (const c of cas) coef[c] = 1;
       // coefficients d'inégalité (règle 2026-11-04) : CP pour tous règlements ; A, Bc, Bt, Mc120 au F61 1971 ;
@@ -271,8 +290,9 @@
       // about·sin ψ (grades) + esp/3 sur culée ; moment = R en charge max × esp / (12 × largeur) ;
       // section : ELS, section fissurée b = 1, n = 15, d = H − 0,04, σs = σ̄s (exact en fissuration préjudiciable ;
       // approché à ~1 % en peu préjudiciable, règle exacte non retrouvée).
-      const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + ap.esp / 3 : 2 * ap.esp / 3;
-      const mch = ech > 0 ? chMax * ap.esp / (12 * ech) : 0;
+      const eL = G.PSIDA_ESPU && ap.espU ? ap.espU : ap.esp;   // essai v30 : entraxe non tronqué
+      const ech = end ? (r.about || 0) * Math.sin((r.biais || 100) * Math.PI / 200) + eL / 3 : 2 * eL / 3;
+      const mch = ech > 0 ? chMax * eL / (12 * ech) : 0;
       // v23 : hauteur utile du chevêtre d = H − ENROBS − 0,6 φt (φt = plus gros diamètre des fers de zone 1 retenus au
       // FERRAILLAGE TRANSVERSAL PROPOSE ; 0,6 φ = φ/2 majoré de 20 %) : H − 0,0396 pour φt 16, H − 0,0492 pour 3639 (PHI1/PHI2 ALT, φ 32).
       // Ici d provisoire (H − 0,04) ; propose() recalcule ach(d) avec le diamètre choisi. Crochet PSIDA_DCH0 = 1 : H − 0,04 partout.
@@ -291,7 +311,7 @@
             cands[0][3] = cands[1][3] = cands[2][3] = 0; for (let j = 3; j < cands.length; j++) cands[j][3] = 1;
             const vu = Math.max(...cands.map(c => c[0] * c[2] * ku(c)));
             const chU = (1.35 * R.G.up * coef.CP + vu + 1.5975 * kT * l.T.max) / nap;
-            mchu = chU * ap.esp / (12 * ech);
+            mchu = chU * eL / (12 * ech);
             const fe = r.mat.fe[2] || r.mat.fe[0];
             ach = G.PSIDA.asELU(mchu, 1, dch, Object.assign({}, r.mat, { fe: [fe, fe, fe, fe] }));
           }
@@ -300,8 +320,96 @@
         return ach;
       };
       const ach = achOf((r.section.H || 0) - 0.04);
-      return { nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach, achOf };
+      // v30 : réaction ELU par appareil (même combinaison que la section ELU des chevêtres), pour la page APPUIS CONCENTRES
+      const kuP = j => j >= 3 ? 1.35 : 1.5975 / 1.2;
+      const chU = (1.35 * R.G.up * coef.CP + Math.max(...cands.map((c, j) => c[0] * c[2] * kuP(j))) + 1.5975 * kT * l.T.max) / nap;
+      return { chU, Gup: R.G.up * coef.CP / nap, nap: ap.nap, typ: ap.typ, esp: ap.esp, larg, long, coef, cas, videMax, videMin, chMax, chMin, cMin: chMin / (larg * long), cMax: chMax / (larg * long), ech, mch, mchu, ach, achOf, adm };
     });
+    // v32 — RÈGLE du dossier PSI-DA 68, pièce 2.5 § 2.4.5 (géométrie des appareils en élastomère) : largeur DAPO calculée pour la
+    // ligne d'appui la plus sollicitée, multiple de 5 cm, « la forme se rapproche d'autant plus du carré que l'ouvrage est biais » :
+    // DAPO = ⌈√(aire requise × 50/φ)⌉ au pas de 0,05 (φ biais géométrique en grades : rapport longueur/largeur ≈ φ/50, 2 pour un
+    // ouvrage droit) — exact sur les 13 lignes les plus sollicitées du corpus PSIDA (biais 70–100, dont 3603 0,35 / 3607 0,30 à 85 gr)
+    // et 13/15 PSIDP (0015 à 45,6 gr : 0,45 au lieu de 0,50). Même largeur pour toutes les lignes ; longueur = multiple de 5 cm
+    // couvrant l'aire requise ; si elle est inférieure à la largeur, la largeur est réduite par pas de 5 cm (3607 culée 0,30 × 0,30,
+    // 3603 culée 0,25 × 0,30, culées PSIDP). Crochet PSIDA_AP_V31 = 1 : règle v10 ligne par ligne.
+    if (!G.PSIDA_AP_V9 && !G.PSIDA_AP_V31) {
+      const el = out.filter(a => a.typ !== 0);
+      if (el.length) {
+        const need = a => a.chMax / a.adm, nmax = Math.max(...el.map(need));
+        const up = x => Math.ceil(x / 0.05 - 1e-9) * 0.05, phi = r.biais || 100;
+        const W0 = Math.max(0.05, up(Math.sqrt(nmax * 50 / phi)));
+        for (const a of el) {
+          let w = W0, b = up(need(a) / w);
+          while (b < w - 1e-9 && w > 0.05 + 1e-9) { w = Math.round((w - 0.05) * 100) / 100; b = up(need(a) / w); }
+          a.larg = w; a.long = Math.round(b * 100) / 100; a.cMin = a.chMin / (a.larg * a.long); a.cMax = a.chMax / (a.larg * a.long);
+        }
+      }
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ poinçonnement autour des appuis concentrés (v32)
+  // Page « REPARTITION DES ARMATURES DE CISAILLEMENT … AUX ENVIRONS DES POINTS D'APPUI CONCENTRES » (pièce 2.5 du dossier
+  // PSI-DA 68, § 3.3.2 ; étude SSA d'août 1966). RÈGLES (v32, exactes sur tous les passages à réactions exactes) :
+  // - DENCHA = Σ (NAP × réaction ELU par appareil) / (Σ portées × largeur totale) : densité de charge et surcharge
+  //   « uniformément répartie sur l'ensemble du tablier » (3603–3606, 3639, 0063, OA26, 3488 à 1e-3) ;
+  // - cisaillement maximal τ = 1,5 (Qu − DENCHA·S) / (u·H) sur le premier contour C1 : appui intermédiaire
+  //   S = (a + H)(b + H), u = 2(a + b) + 4H ; appui d'extrémité, contour ouvert prolongé jusqu'à l'about :
+  //   e = a/2 + H/2 + ABOUT, S = (b + H)·e, u = (b + H) + 2e (a = largeur, b = longueur de l'appareil, Qu = réaction ELU) ;
+  // - espacement au voisinage immédiat (v27) s = 0,9 At fe / (γs DENCHA (τ − 0,3 ftj)), tronqué à 0,01, plafond 0,40 ;
+  // - contours : pour chaque espacement s de la gamme ≥ espacement immédiat, τs = 0,3 ftj + 0,9 At fe/(γs DENCHA s) et
+  //   rectangle (a + 2r)(b + 2r) (culée : ouvert, e = a/2 + r + ABOUT) tel que τ(r) = τs (2nd degré) ; distances
+  //   a/2 + r (longitudinal) et b/2 + r (transversal) arrondies au cm SUPÉRIEUR (3639 : 35/36 exactes). Tableau imprimé
+  //   seulement si un espacement immédiat est inférieur au plafond. Crochet PSIDA_NOPOINC = 1 : page non imprimée.
+  function poincon(r) {
+    const A = r.fer.appareils, E = r.fer.etriers;
+    if (!A || !E || !E.length || A.some(a => !(a.nap >= 1) || !(a.larg > 0))) return null;
+    const H = r.section.H, ab = r.about || 0, W = r.largeurTotale, Ls = r.L.reduce((s, l) => s + l, 0);
+    const D = A.reduce((s, a) => s + a.nap * a.chU, 0) / (Ls * W);
+    const At = E[0].At, fe = r.mat.fe[3] || r.mat.fe[0], t0 = 0.3 * r.mat.ftj, k = 0.9 * At * fe / (1.15 * D);
+    const SMAX = 0.40, GAM = [0.06, 0.08, 0.10, 0.12, 0.16, 0.20, 0.25, 0.32, 0.40];
+    const n = A.length;
+    const ap = A.map((a, j) => {
+      const end = j === 0 || j === n - 1, la = a.larg, lb = a.long;
+      const tauR = q => { let S, u; if (end) { const e = la / 2 + q + ab; S = (lb + 2 * q) * e; u = (lb + 2 * q) + 2 * e; } else { S = (la + 2 * q) * (lb + 2 * q); u = 2 * (la + lb) + 8 * q; } return 1.5 * (a.chU - D * S) / (u * H); };
+      const tau = tauR(H / 2);
+      const s = tau > t0 ? Math.min(SMAX, Math.floor(100 * k / (tau - t0) + 1e-6) / 100) : SMAX;
+      const dist = GAM.map(g => {
+        if (g < s - 1e-9) return null;
+        const ts = t0 + k / g; let lo = 0, hi = 50;
+        if (!(tauR(0) > ts)) return [la / 2, lb / 2];
+        for (let it = 0; it < 100; it++) { const md = (lo + hi) / 2; if (tauR(md) > ts) lo = md; else hi = md; }
+        const up = v => Math.ceil(v * 100 - 1e-6) / 100;
+        return [up(la / 2 + lo), up(lb / 2 + lo)];
+      });
+      return { tau, s, dist };
+    });
+    const table = ap.some(a => a.s < SMAX - 1e-9);
+    return { D, ap, gam: GAM, table };
+  }
+  function renderPoincon(m, r, T) {
+    const { page, f, pad } = T, Pc = r.fer && r.fer.poincon;
+    if (!Pc) return;
+    const col = (v, d, w) => v == null ? ' '.repeat(w) : f(v, w, d);
+    const pl = ['                             REPARTITION DES ARMATURES DE CISAILLEMENT SUIVANT LES ACIERS LONGITUDINAUX ', ' ',
+      "                                             AUX ENVIRONS DES POINTS D'APPUI CONCENTRES ", ' ',
+      '                                                               *   *                                     DENCHA =' + f(Pc.D, 9, 3) + ' ',
+      '                                                                 * ', ' ',
+      "                                            AU VOISINAGE IMMEDIAT DES APPAREILS D'APPUI ", ' ', ' ',
+      '                                               ' + Pc.ap.map((_, j) => '    APPUI ' + pad(j + 1, 1)).join('') + ' ', ' ',
+      '         CISAILLEMENT MAXIMAL' + Pc.ap.map((a, j) => f(a.tau, j ? 11 : 29, 2)).join('') + ' ', ' ',
+      '         ESPACEMENT DES ETRIERS' + Pc.ap.map((a, j) => f(a.s, j ? 11 : 27, 2)).join('') + ' '];
+    if (Pc.table) {
+      pl.push(' ', '                                                                 * ', ' ', "                                                    AUTOUR DES APPAREILS D'APPUI ", ' ', ' ',
+        "         DISTANCES AU CENTRE DE L'APPAREIL D'APPUI EN FONCTION DE L'ESPACEMENT MAXIMAL DES COURS D'ETRIERS ", ' ',
+        '                                    ESPACEMENT ', ' ');
+      Pc.gam.forEach((g, i) => {
+        if (!Pc.ap.some(a => a.dist[i])) return;
+        pl.push('         SENS LONGITUDINAL' + f(g, 17, 2) + Pc.ap.map((a, j) => col(a.dist[i] && a.dist[i][0], 2, j ? 11 : 15)).join('').replace(/\s+$/, ''),
+          '         SENS TRANSVERSAL ' + ' '.repeat(17) + Pc.ap.map((a, j) => col(a.dist[i] && a.dist[i][1], 2, j ? 11 : 15)).join('').replace(/\s+$/, ''), ' ');
+      });
+    }
+    page('', pl);
   }
 
   // ------------------------------------------------------------------ étriers (pages ETRIERS DE LA TRAVEE i)
@@ -320,9 +428,9 @@
     // 18/19 passages (familles φ1 32 / φ2 16 et φ1 25 / φ2 16, φ4 indifférent) ; 3639 (φ2 14) non expliqué. Crochet PSIDA_TAUD = 0 : d_sup.
     const cpd = typeof G.PSIDA_CPS === 'function' ? G.PSIDA_CPS(r) : undefined;
     const dTau = cpd !== undefined ? r.ferLong.H - r._A11.ENROBS - cpd : G.PSIDA_TAUD === 0 ? F.sup.d : r.ferLong.H - r._A11.ENROBS - (ph[1] + ph[0] / 2) - 0.1 * (ph[0] + ph[1]);
-    const bd = r.section.Eeq * dTau;
+    const EqT = G.PSIDA_ETEQR ? Math.round(r.section.Eeq * 1000) / 1000 : r.section.Eeq, bd = EqT * dTau;   // essai v28 (ETEQR = 1 : E DALLE imprimée)
     // 0,4 MPa converti en t/m² (1 MPa = 1000/9,81 t/m²) : 3639 0,174 et 4015 0,289 exacts (40 t/m² donnait 0,178 / 0,295)
-    const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * r.section.Eeq));
+    const smax = Math.min(0.40, At * mat.fe[3] / ((G.PSIDA_TAU40 ? 40 : 400 / 9.81) * EqT));
     // espacement de l'épure : plus grande valeur de la série de Renard R10 ≤ smax (3639 0,174 → 0,16 ; 4015 0,289 → 0,25)
     const R10 = [0.40, 0.315, 0.25, 0.20, 0.16, 0.125, 0.10, 0.08, 0.063, 0.05];
     const sEp = G.PSIDA_EP_SMAX ? smax : (R10.find(v => v <= smax + 1e-9) || smax);
@@ -491,7 +599,22 @@
         if (F.inf.envA && G.PSIDA_R1AVG !== 1) { const ga = envAt(F.inf.envA, i, true), ga0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x);
           tR[1] = rampes(u => winMax(ga0, tp + u - e, tp + u + e), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1];
           tL[1] = rampes(u => winMax(ga0, tp - u - e, tp - u + e), tp + ext, om, 1, nf.k, singles(1, nf.k), R0)[1]; }
+        // crochet d'essai PSIDA_DSAMP (v29) : enveloppe décalée échantillonnée aux sections (grille fine) puis interpolée
+        if (G.PSIDA_DSAMP) { const SF = F.SAF || SA, mk = (gf, sg) => { const P0 = SF.map(a => a * Li), V = P0.map(x => winMax(gf, x - e, x + e));
+            const h = x => { if (x <= 0) return V[0] > 0 && x > -1e-9 ? V[0] : (x < 0 ? (gf(x + e) > 0 ? winMax(gf, x - e, x + e) : 0) : V[0]); if (x >= Li) return winMax(gf, x - e, x + e); let j = 1; while (P0[j] < x) j++; return V[j - 1] + (V[j] - V[j - 1]) * (x - P0[j - 1]) / (P0[j] - P0[j - 1]); };
+            return h; };
+          const ga = F.inf.envA && G.PSIDA_R1AVG !== 1 ? envAt(F.inf.envA, i, true) : g, ga0 = x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x);
+          const h1 = mk(G.PSIDA_DSAMP === 3 ? g0 : ga0, 1), hA = mk(g0, 1);
+          const t1L = rampes(u => h1(tp - u), tp + ext, om, 1, nf.k, singles(1, nf.k), R0), t1R = rampes(u => h1(tp + u), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0);
+          if (G.PSIDA_DSAMP === 2) { const aL = rampes(u => hA(tp - u), tp + ext, om, 1, nf.k, singles(1, nf.k), R0), aR = rampes(u => hA(tp + u), Li - tp + ext, om, 1, nf.k, singles(1, nf.k), R0); Object.assign(tL, aL); Object.assign(tR, aR); }
+          tL[1] = t1L[1]; tR[1] = t1R[1]; }
+        if (typeof G.PSIDA_DUMP === 'function') G.PSIDA_DUMP('LIT', i, { tp, Li, ls, e, tL: Object.assign({}, tL), tR: Object.assign({}, tR), om });
         const uL = regroupe(tL, 1, nf.k), uR = regroupe(tR, 1, nf.k);
+        // crochet d'essai PSIDA_R1RAMP (v33) : segment du dossier PSI-DA 68 (pièce 2.5 § 3.1.4.2, 4°) appliqué au groupe du rang 1
+        if (G.PSIDA_R1RAMP) { const K = nf.k, fix1 = (u, envS, Lu) => { let j = 1; while (j < K && Math.abs(u[j + 1] - u[1]) < 1e-9) j++;
+            const g = Array.from({ length: j }, (_, q) => q + 1), ue = {}; for (let q = j + 1; q <= K; q++) ue[q] = 1e9; const w = rampes(envS, Lu, om, 1, K, [g], ls, ue)[1]; if (w > u[1]) for (const q of g) u[q] = w; };
+          const gR = G.PSIDA_R1RAMP === 2 && F.inf.envA ? (() => { const ga = envAt(F.inf.envA, i, true); return x => (x < -1e-9 || x > Li + 1e-9) ? 0 : ga(x); })() : g0;
+          fix1(uR, u => winMax(gR, tp + u - e, tp + u + e), Li - tp + ext); fix1(uL, u => winMax(gR, tp - u - e, tp - u + e), tp + ext); }
         // v18 : dernier groupe (rangs les plus élevés, fers les plus courts près du maximum) prolongé par l'épure à rampes,
         // comme pour les LSA (crochet PSIDA_LITL = 0 : t_s sans rampe)
         if (G.PSIDA_LITL !== 0) { const K = nf.k, fix = (u, envS, Lu) => { let s0 = K; while (s0 > 1 && Math.abs(u[s0 - 1] - u[K]) < 1e-9) s0--; if (s0 <= 1) return;
@@ -640,6 +763,7 @@
     renderTransv(m, r, T);
     renderPropose(m, r, T);
     renderEtriers(m, r, T);
+    renderPoincon(m, r, T);
   }
   function renderAppareils(m, r, T) {
     const { page, f, pad } = T, AP = r.fer && r.fer.appareils, A13 = m.lignes.A13 || {};

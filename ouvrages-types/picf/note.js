@@ -125,7 +125,7 @@
     const Y = R.dyn, co = R.coefs, gy = R.guyon;
     out.push('', '                                               COEFFICIENTS DE MAJORATION DYNAMIQUE', '                                               =======================================', '');
     out.push(`                      ${pad(ecName, 21)}BC                  BT                  MC120                ME120                E`);
-    out.push(`MASSE (T)                              ${F(Y.BC.S, 1)}*(${F(Y.BC.coef, 3)})        ${F(Y.BT.S, 1)}*(${F(Y.BT.coef, 3)})           ${F(110, 1)}                 ${F(66, 1)}`);
+    out.push(`MASSE (T)                              ${F(Y.BC.S, 1)}*(${F(Y.BC.coef, 3)})        ${F(Y.BT.S, 1)}*(${F(Y.BT.coef, 3)})           ${F(Y.MC.S, 1, 5)}                 ${F(66, 1)}`);
     out.push(`COEFFICIENTS         ${hasEC ? F(1.5, 3) : '     '}                ${F(Y.BC.d, 3)}               ${F(Y.BT.d, 3)}                ${F(Y.MC.d, 3)}                ${F(Y.ME.d, 3)}                ${F(1, 3)}`);
     out.push('', '', '', '', '                                COEFFICIENTS DE REPARTITION TRANSVERSALE DES MOMENTS LONGITUDINAUX', '                                ' + '='.repeat(66), '');
     out.push(`PORTEE FICTIVE   ${F(gy.Lf, 2, 5)}       LARGEUR DROITE   ${F(d.large, 2)}    PARAMETRE D'ENTRETOISEMENT (TETA LONGITUDINAL)   ${F(gy.theta, 2)}`, '', '');

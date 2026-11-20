@@ -92,6 +92,44 @@
     return api;
   }
 
+  /* ───────────── courbes (enveloppes, lignes d'influence, diagrammes) ─────────────
+     OTUI.chart({ w, h, x:[...], series:[{ y:[...], name, cls:'mx'|'mn'|'s1'..'s4'|'perm', dash }], fill:[[iA,iB,'cls']],
+                  xlab, ylab, unit, down:true (valeurs positives vers le BAS, convention des moments), xticks:[...], marks:[{x,label}],
+                  labels:'ends'|'extremes' }) → chaîne <svg> (unités écran, texte lisible à l'impression). */
+  function chart(o) {
+    const W = o.w || 900, H = o.h || 300, ml = o.ml || 64, mr = o.mr || 18, mt = o.mt || 26, mb = o.mb || 40;
+    const xs = o.x, all = [];
+    for (const s of o.series) for (const v of s.y) if (isFinite(v)) all.push(v);
+    let y0 = Math.min(0, ...all), y1 = Math.max(0, ...all); if (y1 - y0 < 1e-9) { y0 -= 1; y1 += 1; }
+    const nice = (r) => { const p = Math.pow(10, Math.floor(Math.log10(r))); const f = r / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+    const st = nice((y1 - y0) / 5); y0 = Math.floor(y0 / st) * st; y1 = Math.ceil(y1 / st) * st;
+    const xa = Math.min(...xs), xb = Math.max(...xs);
+    const PX = x => ml + (x - xa) / ((xb - xa) || 1) * (W - ml - mr);
+    const PY = v => o.down ? mt + (v - y0) / (y1 - y0) * (H - mt - mb) : H - mb - (v - y0) / (y1 - y0) * (H - mt - mb);
+    const f2 = v => +v.toFixed(2), out = [];
+    out.push(`<svg class="ot-chart" viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">`);
+    for (let v = y0; v <= y1 + st / 2; v += st) { const y = f2(PY(v)); out.push(`<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" class="g"/><text x="${ml - 6}" y="${y}" class="yl">${esc(fmt(v, st < 1 ? (st < 0.1 ? 2 : 1) : 0))}</text>`); }
+    const xt = o.xticks || xs; for (const x of xt) out.push(`<line x1="${f2(PX(x))}" x2="${f2(PX(x))}" y1="${mt}" y2="${H - mb}" class="g2"/><text x="${f2(PX(x))}" y="${H - mb + 15}" class="xl">${esc(fmt(x, 2))}</text>`);
+    out.push(`<line x1="${ml}" x2="${W - mr}" y1="${f2(PY(0))}" y2="${f2(PY(0))}" class="z"/>`);
+    for (const [a, b, c] of (o.fill || [])) { const A = o.series[a].y, B = o.series[b].y;
+      const pts = xs.map((x, i) => `${f2(PX(x))},${f2(PY(A[i]))}`).concat(xs.map((x, i) => `${f2(PX(x))},${f2(PY(B[i]))}`).reverse());
+      out.push(`<polygon points="${pts.join(' ')}" class="fz ${c || ''}"/>`); }
+    for (const s of o.series) { const pts = xs.map((x, i) => isFinite(s.y[i]) ? `${f2(PX(x))},${f2(PY(s.y[i]))}` : null).filter(Boolean);
+      out.push(`<polyline points="${pts.join(' ')}" class="c ${s.cls || 's1'}"${s.dash ? ' stroke-dasharray="6 4"' : ''}/>`);
+      if (o.labels !== 'none') { let im = 0; s.y.forEach((v, i) => { if (Math.abs(v) > Math.abs(s.y[im])) im = i; });
+        const v = s.y[im]; if (isFinite(v) && Math.abs(v) > 1e-9) out.push(`<text x="${f2(PX(xs[im]))}" y="${f2(PY(v) + ((v >= 0) === !o.down ? -7 : 13))}" class="vl ${s.cls || 's1'}">${esc(fmt(v, Math.abs(v) < 10 ? 2 : 1))}</text>`); } }
+    for (const m of (o.marks || [])) out.push(`<line x1="${f2(PX(m.x))}" x2="${f2(PX(m.x))}" y1="${mt - 6}" y2="${H - mb}" class="mk"/><text x="${f2(PX(m.x))}" y="${mt - 10}" class="mkl">${esc(m.label)}</text>`);
+    if (o.ylab) out.push(`<text x="12" y="${mt + (H - mt - mb) / 2}" class="al" transform="rotate(-90 12 ${mt + (H - mt - mb) / 2})">${esc(o.ylab)}</text>`);
+    if (o.xlab) out.push(`<text x="${(W + ml - mr) / 2}" y="${H - 6}" class="al">${esc(o.xlab)}</text>`);
+    const leg = o.series.filter(s => s.name); let lx = ml + 6;
+    for (const s of leg) { out.push(`<line x1="${lx}" x2="${lx + 22}" y1="${mt - 14}" y2="${mt - 14}" class="c ${s.cls || 's1'}"${s.dash ? ' stroke-dasharray="6 4"' : ''}/><text x="${lx + 27}" y="${mt - 14}" class="lg">${esc(s.name)}</text>`); lx += 34 + 7.2 * s.name.length; }
+    out.push('</svg>'); return out.join('');
+  }
+  /* page de croquis intercalée dans la note : OTUI.figPage(titre, sous-titre, corps HTML (svg…), légende) */
+  function figPage(title, sub, body, cap) {
+    return `<section class="ot-figpg"><header><b>${esc(title)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</header><div class="ot-figbody">${body}</div>${cap ? `<p class="ot-figcap">${esc(cap)}</p>` : ''}</section>`;
+  }
+
   /* ───────────── styles ───────────── */
   const CSS = `
 .ot{--bg:#f9f8f5;--bg2:#f0ede8;--white:#fff;--ink:#18191f;--ink2:#3c3f4d;--ink3:#7a7e8e;--gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;--blue:#1a4fd6;--teal:#0a8a78;--red:#c0392b;--orange:#b86a14;--border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);
@@ -184,6 +222,30 @@
 .ot-note{flex:1;min-height:0;overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px}
 .ot-note pre{font-family:'Courier New',monospace;font-size:10.5px;line-height:1.3;margin:0 0 14px;padding-bottom:14px;border-bottom:1px dashed var(--border);white-space:pre;color:#222}
 .ot-note pre mark{background:#fbe7b5;color:inherit}
+.ot-figpg{margin:0 0 14px;padding:12px 4px 16px;border-bottom:1px dashed var(--border);break-inside:avoid}
+.ot-figpg>header{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-family:'Courier New',monospace;font-size:11px;color:#222;border-bottom:1px solid #222;padding-bottom:4px;margin-bottom:10px}
+.ot-figpg>header b{font-weight:700;letter-spacing:.04em}
+.ot-figpg>header span{color:var(--ink3)}
+.ot-figbody{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px 22px;align-items:start}
+.ot-figbody>.wide{grid-column:1/-1}
+.ot-figbody h5{font-family:'Courier New',monospace;font-size:10.5px;font-weight:700;margin:0 0 4px;color:#222}
+.ot-figbody svg{max-width:100%;height:auto;display:block}
+.ot-figcap{font-size:11.5px;color:var(--ink3);margin-top:8px}
+.ot-chart .g{stroke:#ece8e0;stroke-width:1}.ot-chart .g2{stroke:#f3f0ea;stroke-width:1}.ot-chart .z{stroke:#3c3f4d;stroke-width:1.2}
+.ot-chart text{font-family:'Courier New',monospace;font-size:11px;fill:#3c3f4d}
+.ot-chart .yl{text-anchor:end;dominant-baseline:middle}.ot-chart .xl{text-anchor:middle}.ot-chart .al{text-anchor:middle;fill:#7a7e8e;font-family:'Outfit',sans-serif}
+.ot-chart .lg{dominant-baseline:middle;font-family:'Outfit',sans-serif}
+.ot-chart .vl{text-anchor:middle;font-weight:700;font-size:10.5px}
+.ot-chart .c{fill:none;stroke-width:2;stroke-linejoin:round}
+.ot-chart .mx{stroke:#c0392b}.ot-chart text.mx{fill:#c0392b;stroke:none}
+.ot-chart .mn{stroke:#1a4fd6}.ot-chart text.mn{fill:#1a4fd6;stroke:none}
+.ot-chart .perm{stroke:#3c3f4d}.ot-chart text.perm{fill:#3c3f4d;stroke:none}
+.ot-chart .s1{stroke:#a07828}.ot-chart text.s1{fill:#a07828;stroke:none}
+.ot-chart .s2{stroke:#0a8a78}.ot-chart text.s2{fill:#0a8a78;stroke:none}
+.ot-chart .s3{stroke:#7b4fb0}.ot-chart text.s3{fill:#7b4fb0;stroke:none}
+.ot-chart .s4{stroke:#b86a14}.ot-chart text.s4{fill:#b86a14;stroke:none}
+.ot-chart .fz{fill:#c0392b;opacity:.08}.ot-chart .fz.b{fill:#1a4fd6}.ot-chart .fz.y{fill:#a07828}
+.ot-chart .mk{stroke:#7a7e8e;stroke-dasharray:3 3}.ot-chart .mkl{text-anchor:middle;font-size:10px;fill:#7a7e8e}
 .ot-empty{margin:auto;color:var(--ink3);font-size:13px;text-align:center;padding:30px}
 .ot-busy{position:absolute;inset:0;background:rgba(249,248,245,.7);display:grid;place-items:center;font-size:13px;color:var(--ink2);z-index:30}
 .ot-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12.5px;padding:8px 16px;border-radius:99px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50}
@@ -224,6 +286,7 @@
  body.ot-print .ot-note,body.ot-print .ot-note *{visibility:visible}
  body.ot-print .ot-note{position:absolute;left:0;top:0;border:none;overflow:visible;padding:0}
  body.ot-print .ot-note pre{font-size:7.4px;line-height:1.22;border:none;page-break-after:always;margin:0;padding:0}
+ body.ot-print .ot-figpg{page-break-after:always;border:none}
  @page{size:A4 landscape;margin:8mm}
 }`;
 
@@ -528,12 +591,14 @@
       const q = R.find.value.trim();
       const pgs = pagesOf(S.note);
       let hits = 0;
-      R.note.innerHTML = pgs.map(p => {
+      // croquis intercalés (def.figures : [{ after: indice de page (0 = première), html }]), séquence SETRA conservée
+      let figs = []; try { figs = (def.figures && S.results) ? (def.figures(S.model, S.results, pgs) || []) : []; } catch (e) { console.error(e); figs = []; }
+      R.note.innerHTML = pgs.map((p, i) => {
         let t = esc(p);
         if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); t = t.replace(re, m => { hits++; return `<mark>${m}</mark>`; }); }
-        return `<pre>${t}</pre>`;
-      }).join('');
-      R.nfo.textContent = `${pgs.length} pages${q ? ` · ${hits} occurrence${hits > 1 ? 's' : ''}` : ''}`;
+        return `<pre>${t}</pre>` + figs.filter(f => f.after === i).map(f => f.html).join('');
+      }).join('') + figs.filter(f => f.after == null || f.after >= pgs.length).map(f => f.html).join('');
+      R.nfo.textContent = `${pgs.length} pages${figs.length ? ` + ${figs.length} planche${figs.length > 1 ? 's' : ''}` : ''}${q ? ` · ${hits} occurrence${hits > 1 ? 's' : ''}` : ''}`;
       if (q) { const mk = R.note.querySelector('mark'); if (mk) mk.scrollIntoView({ block: 'center' }); }
     }
     let fT; R.find.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(renderNote, 250); });
@@ -589,5 +654,5 @@
     return { get model() { return S.model; }, run, setTab, go };
   }
 
-  G.OTUI = { mount, svg, esc, fmt, num };
+  G.OTUI = { mount, svg, chart, figPage, esc, fmt, num };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

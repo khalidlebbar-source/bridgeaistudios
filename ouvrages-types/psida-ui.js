@@ -342,7 +342,7 @@
   }
 
   /* élévation longitudinale + vue en plan alignée */
-  function drawElev(svg, m, sch, mode) {
+  function drawElev(svg, m, sch, mode, hook) {
     const { n, D, Dd, ab, xs, Lt } = spans(m);
     const S = sectionOf(m), H = S.H1, hc = Math.max(0, V(m, 'A6.HCHAU'));
     const s = Lt / 100, hp = Math.max(2.5, Lt * 0.09), bh = Math.max(0.15, s * 0.45);
@@ -402,6 +402,7 @@
     d.text(Lt / 2, yt, sch ? 'HDALLE1 — élancement HDALLE1 / Dmax' : `épaisseur ${fmt(H, 3)} m — élancement 1/${Lmax > 0 ? Math.round(Lmax / H) : '—'}`, { size: 0.9, cls: sch ? 'tc' : 'ts', k: 'A7.HDALLE1' });
     d.text(Lt, yt, sch ? 'vue en plan ↓' : 'vue en plan ↓', { size: 0.9, a: 'end', cls: 'ts' });
     planInto(d, m, sch, yc, s, { nums: NUMS });
+    if (hook) hook(d, { n, xs, Lt, W, yc, s, ex, b: bc, H, top, hp, yt, yb });
     return d.toString();
   }
 
@@ -700,6 +701,360 @@
     return h;
   }
 
+  /* ═════════════ planches de croquis intercalées dans la note (affichage seulement : la note texte est inchangée) ═════════════
+     figures(m, r, pages) → [{ after, html }] ; toutes les valeurs tracées viennent de r (résultats du moteur). */
+  const COL = { mx: '#c0392b', mn: '#1a4fd6', perm: '#3c3f4d', s1: '#a07828', s2: '#0a8a78', s3: '#7b4fb0', s4: '#b86a14' };
+  const CYC = ['s1', 's2', 's3', 's4', 'mx', 'mn'];
+  const STY = '<style>.psf-t{border-collapse:collapse;font-family:\'Courier New\',monospace;font-size:10.5px;color:#222;margin-top:6px}'
+    + '.psf-t th,.psf-t td{border:1px solid #d8d3ca;padding:2px 7px;text-align:right;white-space:nowrap}.psf-t th{background:#f3f0ea;font-weight:700;text-align:center}'
+    + '.psf-t td:first-child{text-align:left}.psf-n{font-size:11px;color:#7a7e8e;margin:4px 0 0;line-height:1.4}.psf-w{overflow-x:auto}</style>';
+  const tbl = (head, rows) => `<div class="psf-w"><table class="psf-t"><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${rows.map(rw => `<tr>${rw.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  const box = (title, body, wide, note) => `<div${wide ? ' class="wide"' : ''}><h5>${esc(title)}</h5>${body}${note ? `<p class="psf-n">${esc(note)}</p>` : ''}</div>`;
+  const pair = (...b) => `<div class="wide" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:14px 22px;align-items:start">${b.join('')}</div>`;
+  const fsz = (str, k) => String(str).replace(/font-size="([\d.]+)"/g, (_, v) => `font-size="${+(v * k).toFixed(4)}"`);
+  /* OTUI.chart à la largeur d'affichage, légende remontée au-dessus des repères d'appui */
+  function chartW(o, half) {
+    const mt = 46, w = o.w || (half ? 660 : 1300);
+    let sv = G.OTUI.chart(Object.assign({ mt, h: half ? 300 : 320 }, o, { w }));
+    sv = sv.replace(new RegExp(`(<line [^>]*?)y1="${mt - 14}" y2="${mt - 14}"([^>]*class="c )`, 'g'), `$1y1="${mt - 32}" y2="${mt - 32}"$2`)
+      .replace(new RegExp(`(<text [^>]*?)y="${mt - 14}"( class="lg")`, 'g'), `$1y="${mt - 32}"$2`);
+    return sv;
+  }
+  const pick = (a, b) => (Math.abs(a) >= Math.abs(b) ? a : b);     // valeur extrême (en module) parmi deux valeurs imprimées
+  const nf = (v, d) => (isFinite(v) ? fmt(v, d == null ? 2 : d) : '—');
+  const niceStep = r0 => { const p = Math.pow(10, Math.floor(Math.log10(r0))); const f = r0 / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+
+  /* diagramme en barres groupées (unités écran, même charte que OTUI.chart) */
+  function bars(o) {
+    const W = o.w || 1300, H = o.h || 280, ml = 64, mr = 16, mt = 30, mb = 34;
+    const all = [0]; for (const s of o.series) for (const v of s.v) if (isFinite(v)) all.push(v);
+    let y0 = Math.min(...all), y1 = Math.max(...all); if (y1 - y0 < 1e-9) y1 = y0 + 1;
+    const st = niceStep((y1 - y0) / 5); y0 = Math.floor(y0 / st) * st; y1 = Math.ceil(y1 / st) * st;
+    const ng = o.groups.length, ns = o.series.length, gw = (W - ml - mr) / ng, bw = Math.min(30, gw * 0.84 / ns);
+    const PY = v => H - mb - (v - y0) / (y1 - y0) * (H - mt - mb), f2 = v => +v.toFixed(2), out = [];
+    out.push(`<svg class="ot-chart" viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">`);
+    for (let v = y0; v <= y1 + st / 2; v += st) { const y = f2(PY(v)); out.push(`<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" class="g"/><text x="${ml - 6}" y="${y}" class="yl">${esc(fmt(v, st < 1 ? (st < 0.1 ? 2 : 1) : 0))}</text>`); }
+    o.groups.forEach((g, i) => {
+      const cx = ml + gw * (i + 0.5);
+      if (i) out.push(`<line x1="${f2(ml + gw * i)}" x2="${f2(ml + gw * i)}" y1="${mt}" y2="${H - mb}" class="g2"/>`);
+      out.push(`<text x="${f2(cx)}" y="${H - mb + 15}" class="xl">${esc(g)}</text>`);
+      o.series.forEach((s, j) => {
+        const v = s.v[i]; if (!isFinite(v)) return;
+        const x = cx - ns * bw / 2 + j * bw, ya = PY(Math.max(v, 0)), yb = PY(Math.min(v, 0));
+        out.push(`<rect x="${f2(x + 1)}" y="${f2(ya)}" width="${f2(bw - 2)}" height="${f2(Math.max(0.6, yb - ya))}" fill="${COL[s.cls] || '#a07828'}" opacity=".82"/>`);
+        if (o.vals !== false && Math.abs(v) > 1e-9) {
+          const tx = f2(x + bw / 2 + 3.5), ty = f2(v >= 0 ? ya - 3 : yb + 3);
+          out.push(`<text x="${tx}" y="${ty}" style="font-size:9px;text-anchor:${v >= 0 ? 'start' : 'end'}" transform="rotate(-90 ${tx} ${ty})" class="${s.cls}">${esc(fmt(v, Math.abs(v) < 10 ? 2 : 1))}</text>`);
+        }
+      });
+    });
+    out.push(`<line x1="${ml}" x2="${W - mr}" y1="${f2(PY(0))}" y2="${f2(PY(0))}" class="z"/>`);
+    if (o.ylab) out.push(`<text x="12" y="${mt + (H - mt - mb) / 2}" class="al" transform="rotate(-90 12 ${mt + (H - mt - mb) / 2})">${esc(o.ylab)}</text>`);
+    let lx = ml + 6;
+    for (const s of o.series) { out.push(`<rect x="${lx}" y="${mt - 19}" width="14" height="9" fill="${COL[s.cls]}" opacity=".82"/><text x="${lx + 19}" y="${mt - 14}" class="lg">${esc(s.name)}</text>`); lx += 30 + 6.6 * s.name.length; }
+    out.push('</svg>'); return out.join('');
+  }
+
+  /* éléments rouges de repérage des coupes (trait épais, flèche de sens de vue, lettre) */
+  const RED = 'stroke:#c0392b;fill:#c0392b';
+  const rline = (d, x1, y1, x2, y2, w) => d.raw(`<line x1="${+x1.toFixed(4)}" y1="${+(-y1).toFixed(4)}" x2="${+x2.toFixed(4)}" y2="${+(-y2).toFixed(4)}" style="${RED};stroke-width:${w || 2.4}px" vector-effect="non-scaling-stroke"/>`);
+  function rarrow(d, x0, y0, dx, dy, len, lab) {         // flèche de sens de vue depuis (x0, y0), direction (dx, dy) unitaire
+    const x1 = x0 + dx * len, y1 = y0 + dy * len, h = len * 0.42, w = len * 0.2;
+    rline(d, x0, y0, x1 - dx * h * 0.6, y1 - dy * h * 0.6, 1.6);
+    d.raw(`<polygon points="${P(x1, y1)} ${P(x1 - dx * h - dy * w, y1 - dy * h + dx * w)} ${P(x1 - dx * h + dy * w, y1 - dy * h - dx * w)}" style="${RED};stroke-width:0"/>`);
+    if (lab) d.text(x1 + dx * len * 0.55, y1 + dy * len * 0.55, lab, { size: 1.15, cls: 'tc hl' });
+  }
+  function cutMarks(d, g) {
+    const { n, xs, Lt, W, yc, s, ex, b, H, top } = g, ct = Math.cos(b) / Math.sin(b);
+    const L = []; for (let i = 0; i < n; i++) L.push(xs[i + 1] - xs[i]);
+    // A-A : suivant l'axe de l'ouvrage (portées biaises), vue vers la gauche de la voie (+y) : la coupe se lit appui 1 à gauche
+    const xa0 = -ex - 1.5 * s, xa1 = Lt + ex + 1.5 * s;
+    rline(d, xa0, yc, xa0 + 2.4 * s, yc); rline(d, xa1 - 2.4 * s, yc, xa1, yc);
+    rarrow(d, xa0, yc, 0, 1, 2.6 * s, 'A'); rarrow(d, xa1, yc, 0, 1, 2.6 * s, 'A');
+    // B-B : coupe droite (perpendiculaire à l'axe) au milieu de la plus grande travée, vue dans le sens de l'axe (+x)
+    let ib = 0; L.forEach((l, i) => { if (l > L[ib] + 1e-9) ib = i; });
+    const xB = xs[ib] + L[ib] / 2, yT = yc + W / 2, yBt = yc - W / 2;
+    d.line(xB, yBt - 0.6 * s, xB, yT + 0.6 * s, 'ax');
+    rline(d, xB, yT + 0.6 * s, xB, yT + 2.6 * s); rline(d, xB, yBt - 0.6 * s, xB, yBt - 2.6 * s);
+    rarrow(d, xB, yT + 2.6 * s, 1, 0, 2.6 * s, 'B'); rarrow(d, xB, yBt - 2.6 * s, 1, 0, 2.6 * s, 'B');
+    // rappel de B-B sur l'élévation
+    rline(d, xB, top + 0.4 * s, xB, top + 2.0 * s); rline(d, xB, -0.4 * s, xB, -2.0 * s);
+    rarrow(d, xB, top + 2.0 * s, 1, 0, 2.0 * s, 'B'); rarrow(d, xB, -2.0 * s, 1, 0, 2.0 * s, 'B');
+    // biais de chaque ligne d'appui (biais géométrique unique du PSIDA-EL)
+    const bg = b / GR;
+    for (let k = 1; k <= n; k++) d.text(xs[k] - (W / 2 + 0.9 * s) * ct, yBt - 0.9 * s, `${k + 1} · ${fmt(bg, 1)} gr`, { size: 0.68, cls: 'dv', a: 'middle' });
+    d.text(xs[0] - (W / 2 + 0.9 * s) * ct + 1.2 * s, yBt - 0.9 * s, '1', { size: 0.68, cls: 'dv', a: 'start' });
+    return ib;
+  }
+
+  /* schéma des lits longitudinaux (épure d'arrêt de barres) sur l'élévation, abscisses horizontales à l'échelle */
+  function drawLits(r) {
+    const n = r.n, X = r.LI.xs, ab = r.about, E = r.fer.long.epure, phi1 = r.mat.phi[0];
+    const xmin = -ab - 1.2, xmax = X[n] + ab + 1.2, W = 1000, ml = 16, mr = 16;
+    const K = (W - ml - mr) / (xmax - xmin), PX = x => ml + (x - xmin) * K, f2 = v => +v.toFixed(2);
+    const bars0 = sens => {
+      const out = [];
+      for (const ent of (E[sens] || [])) for (const gr of ent.groupes) {
+        const mT = /TRAVEE\s+(\d+)/.exec(gr.lab), mA = /APPUI\s+(\d+)/.exec(gr.lab);
+        for (const f of gr.fers) {
+          let x0, x1;
+          if (mA) { const k = +mA[1]; x0 = X[k - 2] + f.o; x1 = X[k - 1] + f.x; } else if (mT) { const i = +mT[1] - 1; x0 = X[i] + f.o; x1 = X[i] + f.x; } else continue;
+          const lab = `${f.nom} ${f.j}`, det = `${f.nb} HA${Math.round(f.phi * 1000)} L=${fmt(f.len, 2)}`;
+          const cw = 5.6, full = (lab.length + det.length + 1) * cw, short = lab.length * cw, px0 = PX(x0), px1 = PX(x1);
+          const txt = (px1 - px0) >= full + 6 ? lab + ' ' + det : lab, tw = txt.length * cw, cx = (px0 + px1) / 2;
+          out.push({ x0, x1, px0, px1, oStar: f.oStar, xStar: f.xStar, princ: Math.abs(f.phi - phi1) < 1e-6, txt, l: Math.min(px0, cx - tw / 2) - 4, r: Math.max(px1, cx + tw / 2) + 4, cx });
+          void short;
+        }
+      }
+      out.sort((a, b) => a.l - b.l);
+      const rows = [];
+      for (const bb of out) { let k = rows.findIndex(e => e <= bb.l); if (k < 0) { rows.push(0); k = rows.length - 1; } rows[k] = bb.r; bb.row = k; }
+      return { list: out, nr: rows.length };
+    };
+    const S = bars0('sup'), I = bars0('inf'), RH = 17, band = 16;
+    const yS0 = 30 + S.nr * RH, yBand = yS0 + 10, yI0 = yBand + band + 14, H = yI0 + I.nr * RH + 46;
+    const o = [`<svg class="ot-chart" viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">`];
+    // tablier (épaisseur non à l'échelle) et appuis
+    o.push(`<rect x="${f2(PX(-ab))}" y="${yBand}" width="${f2((X[n] + 2 * ab) * K)}" height="${band}" fill="#e9e3d6" stroke="#5d5545" stroke-width="1"/>`);
+    for (let k = 0; k <= n; k++) {
+      const x = f2(PX(X[k]));
+      o.push(`<line x1="${x}" x2="${x}" y1="${18}" y2="${H - 30}" class="mk"/>`);
+      o.push(`<polygon points="${x},${yBand + band} ${x - 7},${yBand + band + 10} ${x + 7},${yBand + band + 10}" fill="#d9d1c0" stroke="#5d5545" stroke-width="1"/>`);
+      o.push(`<text x="${x}" y="${12}" class="mkl">APPUI ${k + 1}</text>`);
+    }
+    for (let i = 0; i < n; i++) o.push(`<text x="${f2(PX((X[i] + X[i + 1]) / 2))}" y="${f2(yBand + band / 2 + 1)}" style="font-size:10px;text-anchor:middle;dominant-baseline:middle">TRAVEE ${i + 1} — ${fmt(r.L[i], 2)} M</text>`);
+    const draw = (B, y0, dir, colP) => {
+      for (const bb of B.list) {
+        const y = f2(y0 - dir * bb.row * RH), c = bb.princ ? colP : '#7a7e8e', w = bb.princ ? 2.4 : 1.4;
+        o.push(`<line x1="${f2(bb.px0)}" x2="${f2(bb.px1)}" y1="${y}" y2="${y}" stroke="${c}" stroke-width="${w}"/>`);
+        for (const [px, st] of [[bb.px0, bb.oStar], [bb.px1, bb.xStar]]) o.push(`<line x1="${f2(px)}" x2="${f2(px)}" y1="${f2(y - 3)}" y2="${f2(y + 3)}" stroke="${c}" stroke-width="${st ? 2.4 : 1}"/>`);
+        o.push(`<text x="${f2(bb.cx)}" y="${f2(y - 4)}" style="font-size:9.5px;text-anchor:middle;fill:${c}">${esc(bb.txt)}</text>`);
+      }
+    };
+    draw(S, yS0, 1, '#c0392b'); draw(I, yI0 + 10, -1, '#1a4fd6');
+    o.push(`<text x="${ml}" y="${f2(yS0 - S.nr * RH + 2)}" style="font-size:10px;font-weight:700">NAPPE SUPERIEURE</text>`);
+    o.push(`<text x="${ml}" y="${f2(yI0 + 10 + (I.nr - 1) * RH + 16)}" style="font-size:10px;font-weight:700">NAPPE INFERIEURE</text>`);
+    // échelle des abscisses
+    const yA = H - 20; o.push(`<line x1="${f2(PX(X[0]))}" x2="${f2(PX(X[n]))}" y1="${yA}" y2="${yA}" class="z"/>`);
+    for (let x = 0; x <= X[n] + 1e-6; x += (X[n] > 60 ? 10 : 5)) o.push(`<line x1="${f2(PX(x))}" x2="${f2(PX(x))}" y1="${yA - 3}" y2="${yA + 3}" class="z"/><text x="${f2(PX(x))}" y="${yA + 13}" class="xl">${fmt(x, 0)}</text>`);
+    o.push('</svg>'); return o.join('');
+  }
+
+  /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
+  function drawApp(r, k) {
+    const a = r.fer.appareils[k], pc = r.fer.poincon, P0 = pc.ap[k], g = pc.gam;
+    const la = a.larg / 2, lo = a.long / 2;
+    let RL = la, RT = lo; P0.dist.forEach(dd => { if (dd) { RL = Math.max(RL, dd[0]); RT = Math.max(RT, dd[1]); } });
+    const d = G.OTUI.svg({ x0: -RL - 0.25, y0: -RT - 0.22, x1: RL + 0.45, y1: RT + 0.22 }, { pad: 0.05 });
+    const ring = (hx, hy, rr, cls, sty) => d.raw(`<rect x="${+(-hx).toFixed(4)}" y="${+(-hy).toFixed(4)}" width="${+(2 * hx).toFixed(4)}" height="${+(2 * hy).toFixed(4)}" rx="${+rr.toFixed(4)}" fill="none" class="${cls}"${sty ? ` style="${sty}"` : ''} vector-effect="non-scaling-stroke"/>`);
+    let alt = 0;
+    P0.dist.forEach((dd, j) => {
+      if (!dd) return;
+      const off = Math.max(0, Math.min(dd[0] - la, dd[1] - lo));
+      ring(dd[0], dd[1], off, 'l', 'stroke:#1a4fd6;stroke-dasharray:4 3');
+      const side = (alt++) % 2 ? -1 : 1;
+      d.text(dd[0] - 0.012, side * lo * 0.55, fmt(g[j], 2), { size: 0.6, cls: 'dv', rot: 90, base: 'auto' });
+    });
+    d.rect(-la, -lo, 2 * la, 2 * lo, 'b2');
+    d.line(-RL - 0.2, 0, RL + 0.2, 0, 'ax'); d.line(0, -RT - 0.15, 0, RT + 0.15, 'ax');
+    d.dim(-la, -lo, la, -lo, fmt(a.larg, 2), -0.06, null, { size: 0.65 });
+    d.dim(-la, lo, -la, -lo, fmt(a.long, 2), -0.06, null, { size: 0.65 });
+    d.text(RL + 0.42, -RT - 0.12, 'sens longitudinal (axe) →', { size: 0.6, cls: 'ts', a: 'end' });
+    d.text(-RL - 0.22, RT + 0.1, '↑ sens transversal (ligne d\'appui)', { size: 0.6, cls: 'ts', a: 'start' });
+    return d.toString();
+  }
+
+  /* section transversale avec les fibres étudiées en flexion transversale */
+  function drawFibres(m, F) {
+    const S = sectionOf(m), { H1, H2, H3, xa, xb, xc } = S;
+    const d = G.OTUI.svg({ x0: -xc - 0.3, y0: -0.95, x1: xc + 0.3, y1: H1 + 0.45 }, { pad: 0.03 });
+    const R = [[xa, 0], [xb > xa ? xb : xa, H3], ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
+    const full = [...R.slice().reverse().map(p => [-p[0], p[1]]), ...R];
+    d.poly(full, 'b'); d.line(0, -0.5, 0, H1 + 0.4, 'ax');
+    let j = 0;
+    for (const fb of F) {
+      const x = fb.y; rline(d, x, -0.1, x, H1 + 0.18, 1.4);
+      d.text(x, H1 + 0.32, 'F' + fb.n, { size: 0.8, cls: 'tc hl' });
+      if (Math.abs(x) > 1e-6) { const yy = -0.12 - 0.22 * j++; d.dim(0, yy, x, yy, fmt(Math.abs(x), 2), 0, null, { size: 0.7 }); }
+    }
+    d.text(0, -0.85, 'largeur droite ' + fmt(S.W, 2) + ' m — fibres repérées par rapport à l\'axe mécanique', { size: 0.7, cls: 'ts' });
+    return d.toString();
+  }
+
+  const FCACHE = new WeakMap();
+  function figures(m, r, pages) {
+    const c = FCACHE.get(r); if (c && c.np === pages.length && c.m === m) return c.out;
+    let out = []; try { out = buildFigures(m, r, pages); } catch (e) { console.error(e); out = []; }
+    FCACHE.set(r, { np: pages.length, m, out }); return out;
+  }
+
+  function buildFigures(m, r, pages) {
+    const N = pages.length, O = G.OTUI;
+    const isHead = p => /^\s*PSIDAEL\b/.test(p);
+    const endOf = i => { let j = i; while (j + 1 < N && !isHead(pages[j + 1])) j++; return j; };
+    const first = re => pages.findIndex(p => re.test(p));
+    const last = re => { for (let i = N - 1; i >= 0; i--) if (re.test(pages[i])) return i; return -1; };
+    const pl = [];
+    const add = (i, title, sub, body, cap) => { if (i >= 0 && body) pl.push({ i: endOf(i), title, sub, body, cap }); };
+    const n = r.n, L = r.L, X = r.LI ? r.LI.xs : [0].concat(L.map((_, i) => L.slice(0, i + 1).reduce((p, q) => p + q, 0)));
+    const marks = X.map((x, k) => ({ x, label: 'A' + (k + 1) }));
+    const xlab = 'abscisse cumulée depuis l\'appui 1 (m)';
+    const symL = L.every((l, i) => Math.abs(l - L[n - 1 - i]) < 1e-9), nPrint = symL ? Math.ceil(n / 2) : n;
+    const pageNo = i => { const mm = /PAGE\s+(\d+)/.exec(pages[endOf(i)]) || /PAGE\s+(\d+)/.exec(pages[i]); return mm ? +mm[1] : null; };
+    const bg = r.biais;
+
+    /* 1 — ouvrage à l'échelle */
+    {
+      const i = first(/CARACTERISTIQUES PRINCIPALES DE L'OUVRAGE/);
+      let ib = 0;
+      const elev = drawElev(O.svg, m, false, 'app', (d, g) => { ib = cutMarks(d, g); });
+      const pr = r.profil || [];
+      const t = tbl(['Largeurs (m)', 'valeur'], [
+        ['trottoir gauche ETROTG', nf(pr[0], 3)], ['bande dérasée G  EGAU', nf(pr[1], 3)], ['largeur chargeable ESURCH', nf(pr[2], 3)],
+        ['bande dérasée D  EDROI', nf(pr[3], 3)], ['trottoir droit ETROTD', nf(pr[4], 3)], ['largeur roulable', nf((pr[1] || 0) + (pr[2] || 0) + (pr[3] || 0), 3)],
+        ['largeur chargeable retenue', nf(r.Lch, 3)], ['voies × largeur', `${r.nvoies} × ${nf(r.v, 3)}`],
+        ['largeur totale du profil', nf(r.largeurTotale, 3)], ['largeur droite de la dalle', nf(r._A7 ? r._A7.EDALLE1 + r._A7.EDALLE2 + r._A7.EDALLE3 : NaN, 3)], ['dalle équivalente H × E', `${nf(r.section.H, 3)} × ${nf(r.section.Eeq, 3)}`], ['inertie (m4)', nf(r.section.I, 6)]]);
+      add(i, 'OUVRAGE À L\'ÉCHELLE (COUPE LONGITUDINALE, VUE EN PLAN, COUPE TRANSVERSALE)',
+        `${n} travée${n > 1 ? 's' : ''} ${L.map(x => fmt(x, 2)).join(' + ')} m · longueur totale ${fmt(r.longueurTotale, 2)} m · biais ${fmt(bg, 1)} gr`,
+        box('COUPE A-A SUIVANT L\'AXE DE L\'OUVRAGE (PORTÉES BIAISES) ET VUE EN PLAN', fsz(elev, 0.62), true,
+          `A-A : coupe longitudinale suivant l'axe de la voie portée, vue depuis la droite de la voie (appui 1 à gauche). B-B : coupe droite perpendiculaire à l'axe, au milieu de la travée ${ib + 1}, vue dans le sens de l'axe (appui 1 → appui ${n + 1}). ${bg < 99.999 ? `Toutes les lignes d'appui sont parallèles (biais géométrique ${fmt(bg, 1)} gr).` : 'Pont droit (100 gr).'} Hauteur des appuis non fournie par le bordereau : représentée schématiquement.`)
+        + pair(box('COUPE B-B — PROFIL EN TRAVERS ET SECTION DE LA DALLE', drawCoupe(O.svg, m, false), false, 'Vue dans le sens de l\'axe : le trottoir gauche (ETROTG) est à gauche. Largeurs droites (perpendiculaires à l\'axe).'),
+          box('COUPE B-B — CHARGES APPLIQUÉES ET VOIES', drawCoupe(O.svg, m, false, 'loads') + t, false)),
+        'Dessins à l\'échelle (cotes en m) établis à partir des données de la page ' + (pageNo(i) || 1) + '.');
+    }
+
+    /* 2 — lignes d'influence */
+    if (r.LI && r.LI.momentLI) {
+      const i = first(/EQUATIONS DES LIGNES D INFLUENCE DES REACTIONS D APPUIS/);
+      const NS = 40, xg = [], loc = [];
+      for (let s = 0; s < n; s++) for (let j = 0; j <= NS; j++) { xg.push(X[s] + L[s] * j / NS); loc.push([s, j / NS]); }
+      const cub = (c, x) => ((c[0] * x + c[1]) * x + c[2]) * x;
+      const sM = [];
+      for (let t = 0; t < n; t++) { const cols = r.LI.momentLI(t, 0.5); sM.push({ name: `0.50L T${t + 1}`, cls: CYC[t % 6], y: loc.map(([s, x]) => r.LI.evalM(cols, t, 0.5, s, x)) }); }
+      const sA = [];
+      for (let k = 1; k < n; k++) sA.push({ name: `appui ${k + 1}`, cls: CYC[(k - 1) % 6], y: loc.map(([s, x]) => cub(r.LI.SL[k][s], x) + (r.LI.SL[k][s][3] || 0)) });
+      const sR = [];
+      for (let k = 0; k <= n; k++) sR.push({ name: `R${k + 1}`, cls: CYC[k % 6], y: loc.map(([s, x]) => { const c = r.LI.R[k][s]; return cub(c, x) + (c[3] || 0); }) });
+      let body = box('MOMENT FLÉCHISSANT À MI-TRAVÉE (0.50 L) — ORDONNÉES EN T·M POUR UNE FORCE DE 1 T', chartW({ x: xg, series: sM, down: true, xticks: X, marks, xlab, ylab: 'M (t·m / t)', h: 300 }), true);
+      body += pair(sA.length ? box('MOMENTS SUR APPUIS', chartW({ x: xg, series: sA, down: true, xticks: X, marks, xlab, ylab: 'M (t·m / t)' }, true), false) : '',
+        box('RÉACTIONS D\'APPUI', chartW({ x: xg, series: sR, xticks: X, marks, xlab, ylab: 'R (t / t)' }, true), false));
+      add(i, 'LIGNES D\'INFLUENCE (POUTRE CONTINUE À INERTIE CONSTANTE)', 'convention : moments positifs (fibre inférieure tendue) portés vers le bas', body,
+        'Ordonnées des lignes d\'influence évaluées à partir des cubiques imprimées (force unitaire se déplaçant sur les travées, abouts non représentés).');
+    }
+
+    /* 3 — enveloppes des moments longitudinaux */
+    if (r.moments) {
+      const i = Math.max(last(/POSITIONS DES SURCHARGES CORRESPONDANT AUX MOMENTS/), last(/MOMENTS FLECHISSANTS ET SECTIONS D'ACIER/));
+      const S = []; r.moments.forEach((ss, t) => ss.forEach(s => S.push({ X: s.x, s, t })));   // abscisses cumulées du listing
+      const x = S.map(p => p.X), g = k => S.map(p => k(p.s));
+      const els = chartW({ x, xticks: X, marks, xlab, ylab: 'M (t·m)', down: true, fill: [[0, 1]],
+        series: [{ y: g(s => s.els.max), name: 'ELS max', cls: 'mx' }, { y: g(s => s.els.min), name: 'ELS min', cls: 'mn' },
+          { y: g(s => pick(s.G.up, s.G.dn)), name: 'charge permanente', cls: 'perm', dash: true }] });
+      const elu = chartW({ x, xticks: X, marks, xlab, ylab: 'M (t·m)', down: true, h: 300, fill: [[0, 1]],
+        series: [{ y: g(s => s.elu.max), name: 'ELU max', cls: 'mx' }, { y: g(s => s.elu.min), name: 'ELU min', cls: 'mn' }] });
+      const rows = [];
+      const rowOf = (lab, xx, s) => [lab, nf(xx, 3), nf(pick(s.G.up, s.G.dn), 2), nf(s.els.max, 2), nf(s.els.min, 2), nf(s.elu.max, 2), nf(s.elu.min, 2)];
+      for (let t = 0; t < n; t++) {
+        const ss = r.moments[t];
+        if (t === 0) rows.push(rowOf('APPUI 1', ss[0].x, ss[0]));
+        const mid = ss.find(s => Math.abs(s.a - 0.5) < 1e-9); if (mid) rows.push(rowOf(`TRAVEE ${t + 1}  0.50L`, mid.x, mid));
+        let im = 0; ss.forEach((s, j) => { if (s.elu.max > ss[im].elu.max) im = j; });
+        if (Math.abs(ss[im].a - 0.5) > 1e-9) rows.push(rowOf(`TRAVEE ${t + 1}  ${fmt(ss[im].a, 2)}L (max ELU)`, ss[im].x, ss[im]));
+        rows.push(rowOf(`APPUI ${t + 2}`, ss[ss.length - 1].x, ss[ss.length - 1]));
+      }
+      add(i, 'ENVELOPPES DES MOMENTS FLÉCHISSANTS LONGITUDINAUX (TOUTES TRAVÉES)', 'moments pour la largeur totale (t·m) — positifs vers le bas',
+        box('E.L.S. — ENVELOPPE MAX / MIN ET PART PERMANENTE', els, true) + box('E.L.U. — ENVELOPPE MAX / MIN', elu, true)
+        + box('SECTIONS REMARQUABLES (T·M)', tbl(['section', 'abscisse', 'charge perm.', 'ELS max', 'ELS min', 'ELU max', 'ELU min'], rows), true),
+        'Valeurs des tableaux « MOMENTS FLECHISSANTS ET SECTIONS D\'ACIER » (sections 0 à 1.00 L de chaque travée)' + (nPrint < n ? ' ; les travées symétriques non imprimées sont tracées d\'après le calcul.' : '.'));
+    }
+
+    /* 4 — déformations */
+    if (r.deformations) {
+      const i = last(/DEFORMATION DU TABLIER - TRAVEE/);
+      const x = [], fi = [], ff = [];
+      r.deformations.forEach((D, t) => D.fl.forEach(row => { x.push(X[t] + row[0] * L[t]); fi.push(row[1]); ff.push(row[2]); }));
+      add(i, 'DÉFORMÉE DU TABLIER SOUS CHARGE PERMANENTE', 'flèches en millimètres',
+        box('FLÈCHES INSTANTANÉE ET FINALE (MM)', chartW({ x, xticks: X, marks, xlab, ylab: 'flèche (mm)', h: 260,
+          series: [{ y: fi, name: 'instantanée (EI)', cls: 's2' }, { y: ff, name: 'finale (EV)', cls: 'mx' }] }), true), 'Colonnes « CHARGE PERMANENTE INSTANT / FINALE » des pages DEFORMATION DU TABLIER.');
+    }
+
+    /* 5 — efforts tranchants */
+    if (r.effortsTranchants) {
+      const i = first(/PSIDAEL\s+\S+\s+EFFORTS TRANCHANTS SUR APPUIS/);
+      const A = [0, 0.25, 0.5, 0.75, 1], x = [], V = [];
+      for (let t = 0; t < n; t++) for (const a of A) {
+        const v = a === 0 ? r.effortsTranchants[t][0] : a === 1 ? r.effortsTranchants[t][1] : (r.shearAt ? r.shearAt(t, a) : null);
+        if (v) { x.push(X[t] + a * L[t]); V.push(v); }
+      }
+      const g = k => V.map(k);
+      const rows = [];
+      for (let t = 0; t < n; t++) r.effortsTranchants[t].forEach((v, j) => rows.push([`TRAVEE ${t + 1} ${j ? 'côté droit' : 'côté gauche'}`, nf(pick(v.G.up, v.G.dn), 1), nf(v.els.max, 1), nf(v.els.min, 1), nf(v.elu.max, 1), nf(v.elu.min, 1)]));
+      add(i, 'ENVELOPPE DES EFFORTS TRANCHANTS', 'efforts tranchants pour la largeur totale (t)',
+        box('E.L.S. ET E.L.U. — ENVELOPPES MAX / MIN', chartW({ x, xticks: X, marks, xlab, ylab: 'V (t)', fill: [[0, 1]],
+          series: [{ y: g(v => v.elu.max), name: 'ELU max', cls: 'mx' }, { y: g(v => v.elu.min), name: 'ELU min', cls: 'mn' },
+            { y: g(v => v.els.max), name: 'ELS max', cls: 'mx', dash: true }, { y: g(v => v.els.min), name: 'ELS min', cls: 'mn', dash: true },
+            { y: g(v => pick(v.G.up, v.G.dn)), name: 'charge permanente', cls: 'perm', dash: true }] }), true)
+        + box('VALEURS SUR APPUIS (T)', tbl(['section', 'charge perm.', 'ELS max', 'ELS min', 'ELU max', 'ELU min'], rows), true),
+        'Valeurs sur appuis : page EFFORTS TRANCHANTS SUR APPUIS ; valeurs intermédiaires (0.25 L, 0.50 L, 0.75 L) calculées par le moteur avec les mêmes lignes d\'influence et combinaisons.');
+    }
+
+    /* 6 — réactions d'appui */
+    if (r.reactions) {
+      const i = first(/PSIDAEL\s+\S+\s+REACTIONS D APPUIS/);
+      const R = r.reactions, grp = R.map(x => 'APPUI ' + (x.k + 1));
+      add(i, 'RÉACTIONS D\'APPUI PAR LIGNE D\'APPUI', 'réactions globales pour la largeur totale (t), sans majoration dynamique ni tassements',
+        box('RÉACTIONS EXTRÊMES (T)', bars({ groups: grp, ylab: 'R (t)', h: 320, series: [
+          { name: 'charge perm. max', cls: 'perm', v: R.map(x => x.G.up) }, { name: 'ELS max', cls: 's1', v: R.map(x => x.els.max) }, { name: 'ELS min', cls: 's2', v: R.map(x => x.els.min) },
+          { name: 'ELU max', cls: 'mx', v: R.map(x => x.elu.max) }, { name: 'ELU min', cls: 'mn', v: R.map(x => x.elu.min) }] }), true),
+        'Valeurs de la page REACTIONS D APPUIS' + (symL ? ' (ouvrage symétrique : appuis symétriques complétés)' : '') + '.');
+    }
+
+    /* 7 — flexion transversale */
+    if (r.flexT && r.flexT.some(F => F.my)) {
+      const i = last(/MOMENTS PRINCIPAUX DE FLEXION TRANSVERSALE/);
+      const parts = [];
+      const F0 = r.flexT.find(F => F.my);
+      parts.push(box('POSITION DES FIBRES ÉTUDIÉES (PAR RAPPORT À L\'AXE MÉCANIQUE)', fsz(drawFibres(m, F0.my.map(y => ({ n: y.n, y: (F0.fibres.find(f => f.n === y.n) || {}).y || 0 }))), 1.3), false));
+      for (let t = 0; t < Math.min(nPrint, r.flexT.length); t++) {
+        const F = r.flexT[t]; if (!F.my) continue;
+        const pos = F.my.map(y => (F.fibres.find(f => f.n === y.n) || {}).y);
+        parts.push(box(`TRAVÉE ${t + 1} — MY À MI-TRAVÉE (T·M/M), POISSON ${fmt(r.mat.poisson, 2)}`, bars({ w: 660, groups: F.my.map((y, j) => `F${y.n} (${isFinite(pos[j]) ? fmt(pos[j], 2) : '?'} m)`), ylab: 'My (t·m/m)', h: 300, series: [
+          { name: 'CP max', cls: 'perm', v: F.my.map(y => y.cp.max) }, { name: 'ELS max', cls: 's1', v: F.my.map(y => y.els.max) }, { name: 'ELS min', cls: 's2', v: F.my.map(y => y.els.min) },
+          { name: 'ELU max', cls: 'mx', v: F.my.map(y => y.elu.max) }, { name: 'ELU min', cls: 'mn', v: F.my.map(y => y.elu.min) }] }), false));
+      }
+      const body = pair(...parts);
+      add(i, 'MOMENTS DE FLEXION TRANSVERSALE EN SECTION MÉDIANE', 'moments principaux My par mètre de largeur (positifs : fibre inférieure tendue)', body,
+        'Valeurs des tableaux « MOMENTS PRINCIPAUX DE FLEXION TRANSVERSALE » (coefficient de Poisson des données)' + (nPrint < n ? ' ; travées symétriques non répétées.' : '.'));
+    }
+
+    /* 8 — ferraillage longitudinal (lits et arrêts de barres) */
+    if (r.fer && r.fer.long && r.fer.long.epure) {
+      const i = last(/FERRAILLAGE LONGITUDINAL RETENU/);
+      const F = r.fer.long;
+      add(i, 'FERRAILLAGE LONGITUDINAL — LITS ET ARRÊTS DE BARRES SUR L\'ÉLÉVATION', `groupes de ${F.N1} barres HA${Math.round(r.mat.phi[0] * 1000)} espacés de ${fmt(F.s, 3)} m · recouvrement ${fmt(F.ls, 2)} m`,
+        box('ÉPURE RETENUE (UNE POUTRE ÉLÉMENTAIRE DE ' + (r._A11 && r._A11.N2 ? r._A11.N2 : 3) + ' GROUPES)', drawLits(r), true),
+        'Abscisses horizontales à l\'échelle (appui 1 = 0) ; épaisseur de la dalle et écartement des lits non à l\'échelle. Trait épais : diamètre principal PHI1 (rouge : nappe supérieure, bleu : nappe inférieure) ; gris : autres diamètres. Repère, nombre de barres et longueur comme dans les tableaux ; tiret épais d\'extrémité : fer ancré hors de la travée (abscisse marquée *).');
+    }
+
+    /* 9 — appareils d'appui et étriers aux environs des appuis concentrés */
+    if (r.fer && r.fer.poincon && r.fer.appareils && r.fer.poincon.ap) {
+      const i = first(/POINTS D'APPUI CONCENTRES/);
+      const AP = r.fer.appareils, PC = r.fer.poincon;
+      const ks = [0]; let kmax = -1; for (let k = 1; k < n; k++) if (kmax < 0 || PC.ap[k].tau > PC.ap[kmax].tau) kmax = k; if (kmax > 0) ks.push(kmax);
+      const parts = [];
+      for (const k of ks) parts.push(box(`APPUI ${k + 1} — APPAREIL ${fmt(AP[k].larg, 2)} × ${fmt(AP[k].long, 2)} M ET CONTOURS D'ESPACEMENT MAXIMAL DES ÉTRIERS`, fsz(drawApp(r, k), 0.95), false,
+        `Au voisinage immédiat : cisaillement ${fmt(PC.ap[k].tau, 2)} t/m², espacement ${fmt(PC.ap[k].s, 2)} m. Contours (tirets) : distance au centre de l'appareil au-delà de laquelle l'espacement indiqué suffit (chiffres : espacement maximal des cours d'étriers, m).`));
+      let body = pair(...parts);
+      body += box('APPAREILS D\'APPUI PAR LIGNE', tbl(['appui', 'nombre', 'espacement (m)', 'largeur × longueur (m)', 'R max / appareil (t)', 'σ max (t/m²)', 'τ max (t/m²)', 'esp. étriers (m)'],
+        AP.map((a, k) => [`APPUI ${k + 1}`, a.nap, nf(a.esp, 3), `${nf(a.larg, 3)} × ${nf(a.long, 3)}`, nf(a.chMax, 2), nf(a.cMax, 2), nf(PC.ap[k] && PC.ap[k].tau, 2), nf(PC.ap[k] && PC.ap[k].s, 2)])), true);
+      add(i, 'APPAREILS D\'APPUI — ÉTRIERS AUX ENVIRONS DES APPUIS CONCENTRÉS', `DENCHA = ${fmt(PC.D, 3)}`, body,
+        'Appareils dessinés à l\'échelle, largeur suivant l\'axe de l\'ouvrage, longueur suivant la ligne d\'appui. Distances de la page « REPARTITION DES ARMATURES DE CISAILLEMENT … AUX ENVIRONS DES POINTS D\'APPUI CONCENTRES ».');
+    }
+
+    pl.sort((a, b) => a.i - b.i);
+    return pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
+  }
+
   /* ───── exemples (bordereaux du corpus, titres génériques) et nouveau ───── */
   const HEAD = (t1, t2) => ['PSIDAEL 0001                                        *************************** ',
     '04  11  26                                          *  BORDEREAU DES DONNEES  * ',
@@ -773,6 +1128,7 @@
       { id: 'plan', label: 'Vue en plan', draw: (svg, m) => drawPlan(svg, m, false) },
       { id: 'arm', label: 'Armatures', draw: (svg, m) => drawArm(svg, m, false) },
     ],
+    figures,
     _draw: { drawElev, drawCoupe, drawPlan, drawArm },
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

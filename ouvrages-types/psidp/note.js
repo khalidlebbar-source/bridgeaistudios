@@ -715,12 +715,19 @@
     D.push("                 1  SYMBOLISE UNE PLAQUE D'APPUI SEMI-MOBILE A BASE D'ELASTOMERES (APPUI NEOPRENE)");
     D.push("                 2  SYMBOLISE TOUT AUTRE TYPE D'APPUI QUE L'UTILISATEUR DEVRA DIMENSIONNER");
     var one = z.map(function () { return 1; });
-    ['    CHARGE PERMANENTE                   (MAJCP)', '    CHARGE  A                           (MAJA )', '    CHARGE   BC                         (MAJBC)', '    MC.120                              (MAJCM)'].forEach(function (lb) { vrow(lb, one, 3, 63, 11); });
+    // v43 (PSIDP_MAJK = 0 : ancien 1.000) : lignes MAJCP / MAJA / MAJBC / MAJCM = coefficients d'inégalité des appareils de chaque ligne
+    // d'appui (section 34), mêmes valeurs que dans les cartes 6, 8, 10… (2549 : 1.000 / 1.099 / 1.346 / 1.176 ; 0015 : 1.042 / 1.239 / 1.422 / 1.546)
+    var majK = function (c) { return globalThis.PSIDP_MAJK === 0 || !AP ? one : AP.map(function (a) { return a && a.K && a.K[c] !== undefined ? a.K[c] : 1; }); };
+    [['    CHARGE PERMANENTE                   (MAJCP)', 'CP'], ['    CHARGE  A                           (MAJA )', 'A'], ['    CHARGE   BC                         (MAJBC)', 'BC'], ['    MC.120                              (MAJCM)', 'MC.120']].forEach(function (q) { vrow(q[0], majK(q[1]), 3, 63, 11); });
     D.push('              VARIATIONS RELATIVES DE LONGUEUR DE LA FIBRE INFERIEURE POUR LES DIFFERENTS CAS DE CHARGE (X 10**4 )');
-    var eps = R.L.map(function (_, t) { return Pp && Pp.defl && Pp.defl.eps ? Pp.defl.eps[t][1] : 0; });
+    // v43 (PSIDP_EPSPP = 0 : ancien) : EPSCP = raccourcissement INSTANTANÉ + DIFFÉRÉ (retrait + fluage) de la fibre moyenne de la section 38
+    // (les deux colonnes « ALLONGEMENT RELATIF » additionnées) ; KCP = part instantanée / EPSCP. Exact sur les travées intermédiaires
+    // (2483 −7.54, 0013 −9.06, 2549 −6.32 …) ; travées de rive 0.3–1.3 % trop fortes (NON RÉSOLU).
+    var EPP = globalThis.PSIDP_EPSPP === undefined ? 1 : globalThis.PSIDP_EPSPP;
+    var eps = R.L.map(function (_, t) { var e = Pp && Pp.defl && Pp.defl.eps ? Pp.defl.eps[t] : [0, 0]; return EPP ? e[0] + e[1] : e[1]; });
+    var kcp = R.L.map(function (_, t) { var e = Pp && Pp.defl && Pp.defl.eps ? Pp.defl.eps[t] : [0, 0]; return EPP && e[0] + e[1] !== 0 ? e[0] / (e[0] + e[1]) : 0; });
     vrow('    SOUS CHARGE PERMANENTE              (EPSCP)', eps, 2, 62, 11);
-    // KCP : varie de 0.17 à 0.22 selon le passage (ni F, ni constante) — règle NON RETROUVÉE, imprimé 0.00 (non calculé).
-    vrow('    K C P                               ( KCP )', R.L.map(function () { return 0; }), 2, 62, 11);
+    vrow('    K C P                               ( KCP )', kcp, 2, 62, 11);
     // rotations maximales (provisoire) : somme des rotations de même signe sous A travée par travée
     var rot = [], Qd = R.deformQ || [];
     for (i = 0; i <= n; i++) { var sp = 0, sn = 0; Qd.forEach(function (q) { var x = i < n ? q.A[i].rg : q.A[n - 1].rd; if (x > 0) sp += x; else sn += x; }); rot.push(Math.max(sp, -sn)); }
@@ -741,7 +748,7 @@
     D.push('                                                              CARTE 26');
     var c26 = L(rp(fx(v.BIAIS, 3), 8)); R.L.forEach(function (l, k) { c26.at(16 + 8 * k, fx(l, 3)); }); c26.at(65, fx(v.EDAL1, 2)); c26.at(72, fx((R.a1 || 1) * R.nv * R.v0, 2)); c26.at(80, '**.**'); c26.at(87, '**.**'); D.push(c26.s);
     D.push('                                                              CARTE 27');
-    var c27 = L('  *.***'); eps.forEach(function (e, k) { c27.at(14 + 7 * k, fx(e, 3)); }); c27.at(55, fx(0.2, 2)); c27.at(62, fx(0, 3)); rot.forEach(function (x, k) { c27.at(68 + 6 * k, fx(x, 2)); }); D.push(c27.s);
+    var c27 = L('  *.***'); eps.forEach(function (e, k) { c27.at(14 + 7 * k, fx(e, 3)); }); c27.at(55, fx(EPP ? kcp[0] : 0.2, 2)); c27.at(62, fx(0, 3)); rot.forEach(function (x, k) { c27.at(68 + 6 * k, fx(x, 2)); }); D.push(c27.s);
   }
   // --------------------------------------------------------------- précontrainte
   function cotesTable(D, m, R) {
@@ -854,8 +861,17 @@
       });
     });
     D.push(' NOTA');
-    var tr = ''; for (var t = 0; t < n; t++) tr += (t ? ' ' : '') + (t + 1 < 10 ? ' ' : '') + (t + 1) + ',';
-    D.push('           DANS LES TRAVEES' + tr);
+    var trs = function (ts) { var o = ''; ts.forEach(function (t, i) { o += (i ? ' ' : '') + (t + 1 < 10 ? ' ' : '') + (t + 1) + ','; }); return o; };
+    var all = []; for (var t = 0; t < n; t++) all.push(t);
+    var fl = m.values.CABL !== 4 && P.auto && P.auto.fl;
+    if (fl) { // v44 : travées FL (câble défini par points) puis travées paraboliques
+      D.push('           DANS LES TRAVEES' + trs(all.filter(function (t) { return fl[t]; })));
+      D.push('           OU LE CABLE EST DEFINI PAR POINTS, LES EQUATIONS CI DESSUS NE DONNENT PAS EXACTEMENT');
+      D.push('           LES EXCENTREMENTS DU CABLE PAR RAPPORT A LA FIBRE MOYENNE');
+      D.push('           DANS LES TRAVEES' + trs(all.filter(function (t) { return !fl[t]; })));
+      D.push('           LES EQUATIONS SONT CELLES DU CABLE'); if (P.flBlock) fluageBlock(D, R, P.flBlock, 1); return;
+    }
+    D.push('           DANS LES TRAVEES' + trs(all));
     if (m.values.CABL !== 4) { D.push('           LES EQUATIONS SONT CELLES DU CABLE'); if (P.flBlock) fluageBlock(D, R, P.flBlock, 1); return; }
     D.push('           OU LE CABLE EST DEFINI PAR POINTS, LES EQUATIONS CI DESSUS NE DONNENT PAS EXACTEMENT');
     D.push('           LES EXCENTREMENTS DU CABLE PAR RAPPORT A LA FIBRE MOYENNE');
@@ -1051,8 +1067,9 @@
     });
     return h.s;
   }
-  function eqBlock(D, R, spans) {
+  function eqBlock(D, R, spans, fl, lam) {
     spans.forEach(function (segs, t) {
+      if (fl && fl[t]) { var sF = 'TRAVEE ' + (t + 1); sF += pad(28 - sF.length, 'FUSEAU LIMITE  RAPPORT'); var vF = fx(lam[t], 4); D.push(sF + pad(65 - sF.length - vF.length, vF)); return; }
       D.push(parSegsHeader(segs, 10, 22));
       ['A', 'B', 'C'].forEach(function (key) {
         var l = L(key === 'A' ? 'TRAVEE ' + (t + 1) + ' A' : pad(9, key));
@@ -1071,6 +1088,8 @@
     D.push('                                     PARABOLES DE LA FORME  Z = A*X**2 + B*X + C');
     D.push('              RAPPORTEES AUX AXES OX = FIBRE MOYENNE DE LA SECTION BRUTE, OZ = APPUI DE GAUCHE DE LA TRAVEE');
     for (t = 0; t < n; t++) [au.T1, au.T2].forEach(function (T, k) {
+      // v44 : travée en « FUSEAU LIMITE » (câble défini par points) : une ligne « FL » au lieu des deux tracés
+      if (au.fl && au.fl[t]) { if (k === 0) { var sF = '          TRAVEE ' + (t + 1); D.push(sF + pad(73 - sF.length, 'FL')); } return; }
       var segs = T.spans[t];
       D.push(parSegsHeader(segs, 50, 20));
       ['A', 'B', 'C'].forEach(function (key) {
@@ -1151,12 +1170,12 @@
     D.push('                                EQUATIONS PARABOLIQUES DU CABLE  AVANT TRANSFORMATION LINEAIRE');
     D.push('                                                       *     *');
     D.push('                                                          *');
-    eqBlock(D, R, au.before.spans);
+    eqBlock(D, R, au.before.spans, au.fl, au.lambda);
     D.newPage();
     D.push('                                EQUATIONS PARABOLIQUES DU CABLE  APRES TRANSFORMATION LINEAIRE');
     D.push('                                                       *     *');
     D.push('                                                          *');
-    eqBlock(D, R, au.after.spans);
+    eqBlock(D, R, au.after.spans, au.fl, au.lambda);
   }
 
 
@@ -1307,6 +1326,15 @@
       D.push('TRAVEE ' + (t + 1) + ' ');
       z.forEach(zl);
     }
+    // v43 (PSIDP_LONGELU = 0 : ancien minimum seul) : section par face = max(minimum longitudinal ; « SECTION D'ACIER » de la section 30
+    // (peau, peau renforcée sur appuis intermédiaires, non-fragilité)) — 2549 : 0.002044, 0.003180 … 0.004367, 0.007254 exacts.
+    var longiAt = function (t, i) {
+      var r0 = [FP.longi.sup, FP.longi.inf], E9 = R.elu && R.elu.spans && R.elu.spans[t];
+      if (globalThis.PSIDP_LONGELU === 0 || !E9) return r0;
+      var nd = R.prec && R.prec.ND ? R.prec.ND[t] : 10, kk = i * nd / 10, row = null;
+      if (Math.abs(kk - Math.round(kk)) < 1e-9) row = E9.filter(function (q) { return q.k === Math.round(kk); })[0];
+      return row ? [Math.max(r0[0], row.asS), Math.max(r0[1], row.asI)] : r0;
+    };
     D.newPage(); D.push('  ');
     D.push(pad(56, 'FERRAILLAGE LONGITUDINAL '));
     D.push(pad(45, 'A PREVOIR POUR TOUTE LA LARGEUR DE LA DALLE '));
@@ -1314,7 +1342,7 @@
     var h = L('           SECTION'); for (t = 0; t < nt; t++) h.at(51 + 15 * t, 'TRAVEE ' + (t + 1)); D.push(h.s + ' ');
     D.push('  ');
     for (i = 0; i <= 10; i++) {
-      var a = L(pad(13, fx(i / 10, 2) + 'L')), b = L(); for (t = 0; t < nt; t++) { a.at(51 + 15 * t, fx(FP.longi.sup, 6)); b.at(51 + 15 * t, fx(FP.longi.inf, 6)); }
+      var a = L(pad(13, fx(i / 10, 2) + 'L')), b = L(); for (t = 0; t < nt; t++) { var lq = longiAt(t, i); a.at(51 + 15 * t, fx(lq[0], 6)); b.at(51 + 15 * t, fx(lq[1], 6)); }
       D.push(a.s + ' '); D.push(b.s + ' ');
     }
   }

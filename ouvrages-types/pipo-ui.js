@@ -10,7 +10,29 @@
     st.textContent = '.ot svg text.dv{fill:#1a4fd6;font-family:Outfit,sans-serif}.ot svg .ah{fill:#5d5545}.ot svg .hl.ah{fill:#c0392b}.ot svg .lane{fill:#fff}'
       + '.ot svg .reb{fill:none;stroke:#2f3542;stroke-width:2.2px;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}'
       + '.ot svg .reb3{fill:none;stroke:#2f3542;stroke-width:1.2px;vector-effect:non-scaling-stroke}.ot svg .bar{fill:#2f3542}'
-      + '.ot svg .hl.reb,.ot svg .hl.reb3{stroke:#c0392b}.ot svg .hl.bar,.ot svg .hl.wheel{fill:#c0392b}';
+      + '.ot svg .hl.reb,.ot svg .hl.reb3{stroke:#c0392b}.ot svg .hl.bar,.ot svg .hl.wheel{fill:#c0392b}'
+      // planches intercalées dans la note (croquis, enveloppes, semelle, épure)
+      + '.ot svg .cut{stroke:#c0392b;stroke-width:1.6px;stroke-dasharray:14 4 3 4;vector-effect:non-scaling-stroke;fill:none}.ot svg .cuta{fill:#c0392b}'
+      + '.ot svg text.cutt{fill:#c0392b;font-family:\'Courier New\',monospace;font-weight:700}'
+      + '.ot svg .ghost{fill:#f3efe6;stroke:#b9ad92;stroke-width:1px;vector-effect:non-scaling-stroke}'
+      + '.ot svg .mxz{fill:#c0392b;fill-opacity:.12;stroke:#c0392b;stroke-width:1.5px;vector-effect:non-scaling-stroke}'
+      + '.ot svg .mnz{fill:#1a4fd6;fill-opacity:.12;stroke:#1a4fd6;stroke-width:1.5px;vector-effect:non-scaling-stroke}'
+      + '.ot svg .pz{fill:#e09a2c;fill-opacity:.22;stroke:#a07828;stroke-width:1.3px;vector-effect:non-scaling-stroke}'
+      + '.ot svg .lmx{fill:none;stroke:#c0392b;stroke-width:1.1px;stroke-dasharray:5 3;vector-effect:non-scaling-stroke}'
+      + '.ot svg .lmn{fill:none;stroke:#1a4fd6;stroke-width:1.1px;stroke-dasharray:5 3;vector-effect:non-scaling-stroke}'
+      + '.ot svg .lpm{fill:none;stroke:#7b4fb0;stroke-width:1.2px;stroke-dasharray:8 4;vector-effect:non-scaling-stroke}'
+      + '.ot svg .base{stroke:#3c3f4d;stroke-width:1.1px;vector-effect:non-scaling-stroke}'
+      + '.ot svg .bar1{fill:none;stroke:#2f3542;stroke-width:2px;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}'
+      + '.ot svg .bar2{fill:none;stroke:#0a8a78;stroke-width:2px;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}'
+      + '.ot svg .bar3{fill:none;stroke:#b86a14;stroke-width:2px;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}'
+      + '.ot svg text.vmx{fill:#c0392b;font-family:\'Courier New\',monospace;font-weight:700}.ot svg text.vmn{fill:#1a4fd6;font-family:\'Courier New\',monospace;font-weight:700}'
+      + '.ot svg text.vpm{fill:#7b4fb0;font-family:\'Courier New\',monospace;font-weight:700}.ot svg text.vg{fill:#3c3f4d;font-family:\'Courier New\',monospace}'
+      + '.ot-figbody .two{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 22px;align-items:start}'
+      + '.ot-figbody .sv svg{max-height:430px;margin:0 auto}.ot-figbody .sv.tall svg{max-height:560px}'
+      + '.ot-figbody table.pf{border-collapse:collapse;font-family:\'Courier New\',monospace;font-size:10.5px;width:100%;margin-top:6px}'
+      + '.ot-figbody table.pf th,.ot-figbody table.pf td{border-bottom:1px solid #ece8e0;padding:2px 6px;text-align:right;white-space:nowrap}'
+      + '.ot-figbody table.pf th{font-weight:700;color:#3c3f4d;border-bottom:1px solid #3c3f4d}.ot-figbody table.pf td:first-child,.ot-figbody table.pf th:first-child{text-align:left}'
+      + '.ot-figbody .pfk{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:11px;color:#3c3f4d;margin:4px 0 0}.ot-figbody .pfk i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}';
     document.head.appendChild(st);
   }
 
@@ -771,8 +793,382 @@
     return m;
   }
 
+  /* ═════════════ planches intercalées dans la note (affichage seulement ; la note texte n'est pas modifiée) ═════════════
+     Toutes les grandeurs tracées viennent de `results` (géométrie optimisée r.g, sections r.secT / r.secP / r.det,
+     surcharges r.liveT / r.liveP / r.liveDet, semelle r.pressions / r.semelleEff, épure r.fer.ep) ; les totaux pondérés sont
+     recombinés par PIPO_LIVE.combine exactement comme dans note.js, de sorte que les valeurs lues sur les croquis sont celles du listing. */
+  const LIVE7 = ['A', 'BC', 'BT', 'MC', 'ME', 'EX', 'TR'];
+  const REm = e => (e && e.RE ? e.RE.eff : 0);
+  const qOf = e => LIVE7.map(k => (e && e[k] ? e[k].eff : 0));
+  const comb = (Gels, Gelu, e, RE, RT, TP, sg) => { const q = qOf(e);
+    return G.PIPO_LIVE.combine({ Gels, Gelu, A: q[0], BC: q[1], BT: q[2], MC: q[3], ME: q[4], EX: q[5], TR: q[6], RE, RT, TP }, sg); };
+  // moments totaux d'une section (lignes MAX / MIN du listing) + parts permanentes
+  function totM(M, ret, tem, lv) {
+    const e1 = lv ? lv.max : null, e2 = lv ? lv.min : null;
+    const a = comb(M.elsMax, M.eluMax, e1, REm(e1), ret, tem, 1), b = comb(M.elsMin, M.eluMin, e2, REm(e2), ret, tem, -1);
+    return { mxS: a.els, mxU: a.elu, mnS: b.els, mnU: b.elu, gSx: M.elsMax, gSn: M.elsMin, gUx: M.eluMax, gUn: M.eluMin };
+  }
+  // efforts tranchants totaux ELU (traverse : retrait et température non comptés, comme le listing)
+  function totV(s, lv, tr) {
+    const out = {};
+    for (const sg of [1, -1]) { const e = lv[sg > 0 ? 'max' : 'min'], G0 = sg > 0 ? s.V.eluMax : s.V.eluMin;
+      out[sg > 0 ? 'mx' : 'mn'] = comb(G0, G0, e, REm(e), tr ? 0 : Math.abs(s.vret), tr ? 0 : Math.abs(s.vtem), sg).elu;
+      out[sg > 0 ? 'gx' : 'gn'] = G0; }
+    return out;
+  }
+  // enveloppes le long de la traverse (portée biaise L ; le listing donne la demi-traverse, l'autre moitié par symétrie)
+  function envTraverse(r) {
+    const L = r.g.L, half = r.secT.map((s, i) => Object.assign({ x: s.x }, totM(s.M, s.ret, s.tem, r.liveT[i].M)));
+    if (half[half.length - 1].x < L / 2 - 1e-6 && r.det && r.det.mid) half.push(Object.assign({ x: L / 2, mid: true }, totM(r.det.mid.M, r.det.mid.ret, r.det.mid.tem, r.liveDet.mid)));
+    const mir = half.filter(o => Math.abs(o.x - L / 2) > 1e-6).reverse().map(o => Object.assign({}, o, { x: L - o.x }));
+    return half.concat(mir);
+  }
+  function envPiedroit(r) { return r.secP.map((s, i) => Object.assign({ x: s.x }, totM(s.M, s.ret, s.tem, r.liveP[i].M))); }
+  function vTraverse(r) {
+    const L = r.g.L, half = r.secT.map((s, i) => Object.assign({ x: s.x }, totV(s, r.liveT[i].V, true)));
+    // antisymétrie : V(L − x) = − V(x), MAX et MIN échangés
+    const mir = half.filter(o => Math.abs(o.x - L / 2) > 1e-6).reverse().map(o => ({ x: L - o.x, mx: -o.mn, mn: -o.mx, gx: -o.gn, gn: -o.gx }));
+    return half.concat(mir);
+  }
+  function vPiedroit(r) { return r.secP.map((s, i) => Object.assign({ x: s.x }, totV(s, r.liveP[i].V, false))); }
+  // pressions totales ELS sous les bords (lignes « PRESSION TOTALE » du listing)
+  function totP(P) {
+    const a = comb(P.max, P.max, P.live.max, REm(P.live.max), P.ret, P.tem, 1).els, b = comb(P.min, P.min, P.live.min, REm(P.live.min), P.ret, P.tem, -1).els;
+    return { mx: a, mn: b, gx: P.max, gn: P.min };
+  }
+  // semelle : moments et efforts tranchants aux sections 1 (encastrement), 3/4, 1/2, 1/4 (même règle REMBLAI que note.js)
+  function semStale(r, sg, i) {
+    const k = sg > 0 ? 'max' : 'min';
+    if (i < 3) return REm(r.liveDet[['sup', 'inf', 'mid'][i]][k]);
+    const lp = r.liveP[r.liveP.length - 1]; return lp && lp.V ? REm(lp.V[k]) : 0;
+  }
+  function semTot(r, k) {
+    return r.semelleEff[k].map((s, i) => {
+      const o = { t: s.t };
+      for (const sg of [1, -1]) {
+        const e = s.liveM[sg > 0 ? 'max' : 'min'], RE = G.PIPO_SEMRE !== 0 ? semStale(r, sg, i) : REm(e);
+        const t = comb(sg > 0 ? s.M.elsMax : s.M.elsMin, sg > 0 ? s.M.eluMax : s.M.eluMin, e, RE, s.ret[0], s.tem[0], sg);
+        o[sg > 0 ? 'mxS' : 'mnS'] = t.els; o[sg > 0 ? 'mxU' : 'mnU'] = t.elu;
+        const ev = s.liveV[sg > 0 ? 'max' : 'min'], gv = sg > 0 ? s.V.eluMax : s.V.eluMin;
+        o[sg > 0 ? 'vx' : 'vn'] = comb(gv, gv, ev, REm(ev), s.ret[1], s.tem[1], sg).elu;
+      }
+      return o;
+    });
+  }
+
+  /* — aides de dessin — */
+  // capture l'objet de dessin créé par une fonction drawXxx(svg, …) pour pouvoir le compléter (traits de coupe, échelle…)
+  function grab(draw, grow) {
+    let d = null;
+    draw((box, opt) => { const b = grow ? grow(Object.assign({}, box)) : box; d = G.OTUI.svg(b, opt); d.box = b; return d; });
+    return d;
+  }
+  const niceStep = r => { const p = Math.pow(10, Math.floor(Math.log10(r))), f = r / p; return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * p; };
+  function scaleBar(d, x, y, span) {
+    const s = niceStep(span / 5), n = 4, h = d.u * 0.55;
+    for (let i = 0; i < n; i++) d.rect(x + i * s / 2, y, s / 2, h, i % 2 ? 'b' : 'road');
+    d.text(x, y + h + d.u * 1.2, '0', { cls: 'ts', size: 0.7 });
+    d.text(x + n * s / 2, y + h + d.u * 1.2, fmt(n * s / 2, 0) + ' m', { cls: 'ts', size: 0.7 });
+    return d;
+  }
+  function arrowC(d, x0, y0, x1, y1) {
+    const L = Math.hypot(x1 - x0, y1 - y0) || 1, ux = (x1 - x0) / L, uy = (y1 - y0) / L, a = d.u * 1.3, b = d.u * 0.6;
+    d.line(x0, y0, x1 - ux * a * 0.7, y1 - uy * a * 0.7, 'cut');
+    d.poly([[x1, y1], [x1 - ux * a - uy * b, y1 - uy * a + ux * b], [x1 - ux * a + uy * b, y1 - uy * a - ux * b]], 'cuta');
+  }
+  const ticksFor = (a, b, n) => { const st = niceStep((b - a) / (n || 8)), t = []; for (let x = Math.ceil(a / st) * st; x <= b + 1e-9; x += st) t.push(+x.toFixed(6)); if (b - t[t.length - 1] > st * 0.35) t.push(+b.toFixed(3)); return t; };
+  const legend = items => `<div class="pfk">${items.map(([c, l, dash]) => `<span><i style="border-top-color:${c}${dash ? ';border-top-style:dashed' : ''}"></i>${G.OTUI.esc(l)}</span>`).join('')}</div>`;
+  // modèle « tel que calculé » : épaisseurs et semelle optimisées (LIBDIM, FIXSEM) de r.g
+  function effModel(m, r) {
+    const e = JSON.parse(JSON.stringify(m)), g = r.g;
+    set(e, 'A2.E2', g.e2); set(e, 'A2.E3', g.e3);
+    if (V(e, 'A2.GENRE') === 2 || !V(e, 'A2.GENRE')) { set(e, 'A2.W', g.B); set(e, 'A2.DELTA', g.D); }
+    return e;
+  }
+
+  /* PLANCHE — ouvrage à l'échelle : coupe A-A, vue en plan (biais, traits de coupe), coupe B-B */
+  function figOuvrage(m, r) {
+    const me = effModel(m, r), g = r.g;
+    // coupe A-A (section droite, perpendiculaire aux piédroits)
+    const dc = grab(f => drawCoupe(f, me, false));
+    const bx = dc.box;
+    scaleBar(dc, bx.x0 + 0.2, bx.y0 + 0.15, bx.x1 - bx.x0);
+    dc.text(bx.x0 + 0.2, bx.y1 - 0.3, 'A', { cls: 'cutt', size: 1.4, a: 'start' });
+    dc.text(bx.x1 - 0.2, bx.y1 - 0.3, 'A', { cls: 'cutt', size: 1.4, a: 'end' });
+    // vue en plan
+    const o = V(me, 'A2.OUVER') || 1, e2 = V(me, 'A2.E2'), W = larg(me) || 10, ld = V(me, 'A3.LDALT');
+    const Ws = g.B || 0, D = g.D || 0;
+    const bg = Math.max(30, Math.min(100, V(me, 'A2.BIAIS') || 100)), b = bg * Math.PI / 200, sn = Math.sin(b), cs = Math.cos(b);
+    const dx = W / Math.tan(b), C0 = [(o / 2) / sn + dx / 2, W / 2];
+    // A-A décalé de l'axe de la voie (lisibilité), le long des piédroits, en restant dans la largeur de l'ouvrage
+    const sh = Math.min(W * 0.25, Math.max(0, (W / 2 - 0.6 - (o / 2 + e2) * cs) / sn)), C = [C0[0] - cs * sh, C0[1] - sn * sh];
+    const xB = C0[0] + 0.22 * o / sn;                                            // B-B entre l'axe de l'ouverture et le piédroit D
+    const hl = o / 2 + e2 + Math.max(ld, Ws / 2 - D, 0) + 1.6;                 // demi-longueur du trait A-A (distance droite)
+    const nA = [sn, -cs], vA = [cs, sn];                                         // A-A ⟂ piédroits ; regard le long des piédroits
+    const A1 = [C[0] - nA[0] * hl, C[1] - nA[1] * hl], A2 = [C[0] + nA[0] * hl, C[1] + nA[1] * hl];
+    const yB0 = -1.3, yB1 = W + 1.3;
+    const dp = grab(f => drawPlan(f, me, false), bb => {
+      bb.x0 = Math.min(bb.x0, A1[0] - 1, A2[0] - 1); bb.x1 = Math.max(bb.x1, A1[0] + 2.5, A2[0] + 2.5);
+      bb.y0 = Math.min(bb.y0, A1[1] - 1.5, A2[1] - 1.5) - 1.0; bb.y1 = Math.max(bb.y1, A1[1] + 2.6, A2[1] + 2.6, yB1 + 1.6); return bb; });
+    const ah = Math.max(1.2, dp.u * 6);
+    dp.line(A1[0], A1[1], A2[0], A2[1], 'cut');
+    for (const P of [A1, A2]) { arrowC(dp, P[0], P[1], P[0] + vA[0] * ah, P[1] + vA[1] * ah);
+      dp.text(P[0] + vA[0] * (ah + dp.u * 2.2), P[1] + vA[1] * (ah + dp.u * 2.2), 'A', { cls: 'cutt', size: 1.3 }); }
+    dp.line(xB, yB0, xB, yB1, 'cut');
+    for (const y of [yB0, yB1]) { arrowC(dp, xB, y, xB + ah, y); dp.text(xB + ah + dp.u * 2.2, y, 'B', { cls: 'cutt', size: 1.3 }); }
+    dp.text(dp.box.x0 + 0.3, W / 2 + dp.u * 1.6, 'axe de la voie portée', { cls: 'ts', size: 0.75, a: 'start' });
+    dp.text(B0x(o, sn, -e2) + dx + 0.2, W + 0.35, 'piédroit G', { cls: 'ts', size: 0.7, a: 'end' });
+    dp.text(B0x(o, sn, o + e2) + dx + 0.2, W + 0.35, 'piédroit D', { cls: 'ts', size: 0.7, a: 'start' });
+    scaleBar(dp, dp.box.x0 + 0.3, dp.box.y0 + 0.2, dp.box.x1 - dp.box.x0);
+    // coupe B-B (profil en travers de la voie portée)
+    const dt = grab(f => drawTravers(f, me, false, false));
+    scaleBar(dt, dt.box.x0 + 0.1, dt.box.y0 + 0.05, dt.box.x1 - dt.box.x0);
+    const ES = V(me, 'A3.ESURCH'), nv = Math.max(1, Math.round(V(me, 'A3.PVOIE')) || 1);
+    const body = `<div class="wide sv"><h5>COUPE A-A — SECTION DROITE, PERPENDICULAIRE AUX PIÉDROITS</h5>${dc.toString()}</div><div class="two">`
+      + `<div class="sv"><h5>VUE EN PLAN — BIAIS ${fmt(bg, 2)} GR</h5>${dp.toString()}</div>`
+      + `<div class="sv"><h5>COUPE B-B — PROFIL EN TRAVERS DE LA VOIE PORTÉE (VU DANS LE SENS DE LA VOIE)</h5>${dt.toString()}`
+      + `<table class="pf"><tr><th>largeurs droites</th><th>ETROTG</th><th>EGAU</th><th>ESURCH</th><th>EDROI</th><th>ETROTD</th><th>total</th></tr>`
+      + `<tr><td>m</td>${['A3.ETROTG', 'A3.EGAU', 'A3.ESURCH', 'A3.EDROI', 'A3.ETROTD'].map(k => `<td>${fmt(V(me, k), 2)}</td>`).join('')}<td>${fmt(g.larg, 2)}</td></tr>`
+      + `<tr><td>largeur chargeable</td><td colspan="6">${fmt(ES, 2)} m · ${nv} voie${nv > 1 ? 's' : ''} de ${fmt(ES / nv, 2)} m · ${V(me, 'A3.SENS') === 1 ? 'unidirectionnel' : 'bidirectionnel'}</td></tr></table></div></div>`;
+    const cap = `Dessins à l'échelle (barre d'échelle sur chaque vue), épaisseurs et semelles « telles que calculées » : semelle ${fmt(g.e1, 2)} m, piédroits ${fmt(g.e2, 2)} m, traverse ${fmt(g.e3, 2)} m, `
+      + `semelles ${fmt(g.B, 2)} m excentrées de ${fmt(g.D, 2)} m (positif vers l'intérieur). Portée biaise de calcul ${fmt(g.L, 2)} m, hauteur moyenne de calcul ${fmt(g.H, 2)} m. `
+      + `A-A : coupe droite perpendiculaire aux piédroits (repère du calcul) ; B-B : coupe perpendiculaire à l'axe de la voie portée, vue dans le sens de circulation (gauche à gauche). Les flèches indiquent le sens de vue.`;
+    return { body, cap };
+  }
+  const B0x = (o, sn, x) => x / sn;
+
+  /* enveloppes : deux graphiques (ELS, ELU) */
+  function envCharts(rows, o) {
+    const xs = rows.map(q => q.x), C = chartC;
+    const mk = (lim) => C({ w: 940, h: 270, x: xs, down: true, xticks: o.ticks, marks: o.marks, xlab: o.xlab, ylab: 'M (t·m/m)', fill: [[0, 1]],
+      series: [{ y: rows.map(q => q['mx' + lim]), cls: 'mx' }, { y: rows.map(q => q['mn' + lim]), cls: 'mn' },
+        { y: rows.map(q => q['g' + lim + 'x']), cls: 'perm', dash: true }, { y: rows.map(q => q['g' + lim + 'n']), cls: 's3', dash: true }] });
+    return `<div class="wide"><h5>${o.title} — E.L.S.</h5>${LEG_M('E.L.S.')}${mk('S')}</div><div class="wide"><h5>${o.title} — E.L.U.</h5>${LEG_M('E.L.U.')}${mk('U')}</div>`;
+  }
+  function valTable(rows, picks, lab) {
+    const f1 = v => fmt(v, 2);
+    return `<table class="pf"><tr><th>${lab}</th><th>abscisse</th><th>perm. ELS max / min</th><th>MAX ELS</th><th>MIN ELS</th><th>MAX ELU</th><th>MIN ELU</th></tr>`
+      + picks.map(([n, q]) => q ? `<tr><td>${n}</td><td>${fmt(q.x, 2)}</td><td>${f1(q.gSx)} / ${f1(q.gSn)}</td><td>${f1(q.mxS)}</td><td>${f1(q.mnS)}</td><td>${f1(q.mxU)}</td><td>${f1(q.mnU)}</td></tr>` : '').join('') + '</table>';
+  }
+  // OTUI.chart sans légende interne (remplacée par une légende HTML) ni étiquettes sur les courbes permanentes
+  const chartC = o => G.OTUI.chart(o).replace(/<text[^>]*class="vl (?:perm|s3)"[^>]*>[^<]*<\/text>/g, '');
+  const LEG_M = lim => legend([['#c0392b', 'MAX ' + lim], ['#1a4fd6', 'MIN ' + lim], ['#3c3f4d', 'charge permanente (ligne MAX)', true], ['#7b4fb0', 'charge permanente (ligne MIN)', true]]);
+  const near = (rows, x) => rows.reduce((a, q) => Math.abs(q.x - x) < Math.abs(a.x - x) ? q : a, rows[0]);
+
+  function figMomTraverse(r) {
+    const rows = envTraverse(r), L = r.g.L;
+    const marks = [{ x: 0, label: 'angle' }, { x: L / 2, label: 'mi-traverse' }, { x: L, label: 'angle' }];
+    const body = envCharts(rows, { title: 'TRAVERSE SUPÉRIEURE — ENVELOPPES DES MOMENTS', ticks: ticksFor(0, L, 10), marks, xlab: 'abscisse depuis l\'angle (m) — portée biaise de calcul L = ' + fmt(L, 2) + ' m' })
+      + `<div class="wide">${valTable(rows, [['angle supérieur', rows[0]], ['quart de portée', near(rows, L / 4)], ['mi-traverse', near(rows, L / 2)]], 'section')}</div>`;
+    return { body, cap: 'Moments fléchissants en t·m par mètre, positifs = fibre inférieure (intérieure) tendue, portés vers le bas. Totaux pondérés recombinés comme au listing (surcharges, remblai, retrait, température). Le listing donne la demi-traverse ; la seconde moitié est tracée par symétrie.' };
+  }
+  function figMomPiedroit(r) {
+    const rows = envPiedroit(r), H = r.g.H, xa = rows[rows.length - 1].x;
+    const marks = [{ x: 0, label: 'base' }, { x: xa, label: 'tête' }];
+    const body = envCharts(rows, { title: 'PIÉDROIT — ENVELOPPES DES MOMENTS (OUVRAGE FINI)', ticks: ticksFor(0, xa, 10), marks, xlab: 'abscisse depuis la base (m) — hauteur moyenne de calcul H = ' + fmt(H, 2) + ' m' })
+      + `<div class="wide">${valTable(rows, [['base du piédroit', rows[0]], ['mi-hauteur', near(rows, xa / 2)], ['tête (angle)', rows[rows.length - 1]]], 'section')}</div>`;
+    return { body, cap: 'Moments en t·m par mètre, positifs = fibre intérieure tendue (côté ouverture), portés vers le bas. Abscisses comptées depuis la base, comme au listing.' };
+  }
+
+  /* synthèse : portique (repère de calcul L × H) avec les moments tracés côté fibre tendue */
+  function drawFrameM(r, lim) {
+    const g = r.g, L = g.L, H = g.H, T = envTraverse(r), P = envPiedroit(r);
+    const kx = 'mx' + lim, kn = 'mn' + lim;
+    const all = T.concat(P).flatMap(q => [q[kx], q[kn]]).map(Math.abs);
+    const mA = Math.max(...all, 1e-6), k = 0.26 * Math.min(L, H * 1.3) / mA;
+    const negT = Math.max(0, ...T.map(q => -Math.min(q[kx], q[kn]))) * k, negP = Math.max(0, ...P.map(q => -Math.min(q[kx], q[kn]))) * k;
+    const sl = g.D - g.B / 2, x0 = Math.min(sl, -g.e2 / 2 - negP) - 0.9, x1 = L - x0;
+    const d = G.OTUI.svg({ x0, y0: -g.e1 / 2 - 0.9, x1, y1: H + g.e3 / 2 + negT + 0.9 }, { pad: 0.04 });
+    // béton (estompé) et axes de calcul
+    d.rect(-g.e2 / 2, H - g.e3 / 2, L + g.e2, g.e3, 'ghost');
+    for (const xa of [0, L]) { d.rect(xa - g.e2 / 2, g.e1 / 2, g.e2, H - g.e3 / 2 - g.e1 / 2, 'ghost'); }
+    d.rect(sl, -g.e1 / 2, g.B, g.e1, 'ghost'); d.rect(L - sl - g.B, -g.e1 / 2, g.B, g.e1, 'ghost');
+    d.path([[0, 0], [0, H], [L, H], [L, 0]], 'base');
+    // diagrammes : traverse (positif vers le bas = intérieur), piédroits (positif vers l'intérieur)
+    const memb = [
+      { rows: T, p: x => [x, H], n: [0, -1] },
+      { rows: P, p: z => [0, z], n: [1, 0] },
+      { rows: P, p: z => [L, z], n: [-1, 0] }];
+    for (const mb of memb) for (const [key, cls] of [[kx, 'mxz'], [kn, 'mnz']]) {
+      const base = mb.rows.map(q => mb.p(q.x)), crv = mb.rows.map(q => { const b = mb.p(q.x); return [b[0] + mb.n[0] * k * q[key], b[1] + mb.n[1] * k * q[key]]; });
+      d.poly(base.concat(crv.reverse()), cls);
+    }
+    // valeurs aux sections déterminantes
+    const put = (q, mb, key, cls, side) => { const b = mb.p(q.x), v = q[key]; if (!isFinite(v)) return;
+      const off = k * v + Math.sign(v || 1) * d.u * 1.6;
+      d.text(b[0] + mb.n[0] * off + (mb.n[0] ? 0 : side * d.u * 2.5), b[1] + mb.n[1] * off + (mb.n[1] ? 0 : side * d.u * 1.2), fmt(v, 1), { cls, size: 0.85, a: mb.n[0] ? (mb.n[0] * Math.sign(v || 1) > 0 ? 'start' : 'end') : 'middle' }); };
+    const midT = near(T, L / 2), t0 = T[0];
+    put(midT, memb[0], kx, 'vmx', 1); put(midT, memb[0], kn, 'vmn', -1);
+    put(t0, memb[0], kx, 'vmx', 1); put(t0, memb[0], kn, 'vmn', 1);
+    put(P[0], memb[1], kx, 'vmx', 1.2); put(P[0], memb[1], kn, 'vmn', -0.4);
+    put(P[P.length - 1], memb[1], kx, 'vmx', -1.6); put(P[P.length - 1], memb[1], kn, 'vmn', 0.4);
+    d.text(L / 2, -g.e1 / 2 - 0.5, 'portée biaise L = ' + fmt(L, 2) + ' m · H = ' + fmt(H, 2) + ' m', { cls: 'ts', size: 0.8 });
+    return d.toString();
+  }
+  function figSynthese(r) {
+    const body = `<div class="two"><div class="sv tall"><h5>MOMENTS E.L.S. — ENVELOPPES MAX / MIN</h5>${drawFrameM(r, 'S')}</div><div class="sv tall"><h5>MOMENTS E.L.U. — ENVELOPPES MAX / MIN</h5>${drawFrameM(r, 'U')}</div></div>`
+      + `<div class="wide">${legend([['#c0392b', 'enveloppe MAX'], ['#1a4fd6', 'enveloppe MIN']])}</div>`;
+    return { body, cap: 'Portique dessiné sur ses axes de calcul (portée biaise L, hauteur moyenne H), béton estompé. Diagrammes portés du côté de la fibre tendue : moment positif = fibre intérieure tendue (vers l\'ouverture), négatif = fibre extérieure tendue. Valeurs en t·m/m aux angles, à mi-traverse et en pied de piédroit ; échelle des moments commune aux deux éléments.' };
+  }
+
+  function figTranchants(r) {
+    const C = chartC, T = vTraverse(r), P = vPiedroit(r), L = r.g.L, xa = P[P.length - 1].x;
+    const ch = (rows, o) => C({ w: 940, h: 250, x: rows.map(q => q.x), xticks: o.ticks, marks: o.marks, xlab: o.xlab, ylab: 'V (t/m)', fill: [[0, 1]],
+      series: [{ y: rows.map(q => q.mx), cls: 'mx' }, { y: rows.map(q => q.mn), cls: 'mn' },
+        { y: rows.map(q => q.gx), cls: 'perm', dash: true }, { y: rows.map(q => q.gn), cls: 's3', dash: true }] });
+    const LG = legend([['#c0392b', 'MAX E.L.U.'], ['#1a4fd6', 'MIN E.L.U.'], ['#3c3f4d', 'charge permanente E.L.U. (ligne MAX)', true], ['#7b4fb0', 'charge permanente E.L.U. (ligne MIN)', true]]);
+    const body = `<div class="wide"><h5>TRAVERSE SUPÉRIEURE — ENVELOPPE DES EFFORTS TRANCHANTS</h5>${LG}${ch(T, { ticks: ticksFor(0, L, 10), marks: [{ x: 0, label: 'angle' }, { x: L / 2, label: 'mi-traverse' }, { x: L, label: 'angle' }], xlab: 'abscisse depuis l\'angle (m) — L = ' + fmt(L, 2) + ' m' })}</div>`
+      + `<div class="wide"><h5>PIÉDROIT — ENVELOPPE DES EFFORTS TRANCHANTS</h5>${LG}${ch(P, { ticks: ticksFor(0, xa, 10), marks: [{ x: 0, label: 'base' }, { x: xa, label: 'tête' }], xlab: 'abscisse depuis la base (m)' })}</div>`;
+    return { body, cap: 'Efforts tranchants pondérés E.L.U. en t par mètre (colonne « EFFORT TOTAL » du listing) ; traverse : seconde moitié par antisymétrie de la demi-traverse calculée.' };
+  }
+
+  /* semelle : coupe à l'échelle, pressions sur le sol, moments et efforts tranchants (côtés extérieur et intérieur) */
+  function figSemelle(r) {
+    const g = r.g, B = g.B, e1 = g.e1, e2 = g.e2, aE = r.aExt, aI = r.aInt, v = r.v;
+    const pe = totP(r.pressions.ext), pi = totP(r.pressions.int), pm = v.PREMAX;
+    const SE = semTot(r, 'E'), SI = semTot(r, 'I');
+    const xf1 = aE, xf2 = aE + e2;                                   // nus du piédroit (abscisses depuis le bord extérieur)
+    const hP = 0.36 * B, hM = 0.26 * B, gap = 0.12 * B, stub = 0.40 * B, xl = -0.34 * B, xr = 1.34 * B;
+    const pMax = Math.max(pe.mx, pi.mx, pe.gx, pi.gx, Math.abs(Math.min(pe.mn, pi.mn, 0)), pm > 0 && pm < 3 * Math.max(pe.mx, pi.mx) ? pm : 0, 1e-6), kp = hP / pMax;
+    const yP = -e1;
+    // (a) coupe de la semelle et du pied de piédroit, pressions sur le sol (portées vers le bas sous la semelle)
+    const d = G.OTUI.svg({ x0: xl, y0: yP - hP - 0.16 * B, x1: xr, y1: stub + 0.08 * B }, { pad: 0.03 });
+    let u = d.u;
+    d.fill([[xl, 0], [xf1, 0], [xf1, stub], [xl, stub]]);
+    const hr = Math.min(stub, v.HREMB || 0.01);
+    d.fill([[xf2, 0], [xr, 0], [xr, hr], [xf2, hr]]);
+    d.rect(0, -e1, B, e1, 'b'); d.rect(xf1, 0, e2, stub, 'b');
+    d.line(xf1 + e2 / 2, -e1 - 0.04 * B, xf1 + e2 / 2, stub + 0.04 * B, 'ax');
+    d.text(xl + u, stub - u * 1.5, 'extérieur (remblai)', { cls: 'ts', size: 0.85, a: 'start' });
+    d.text(xr - u, stub - u * 1.5, 'intérieur (ouverture)', { cls: 'ts', size: 0.85, a: 'end' });
+    d.dim(0, 0, xf1, 0, fmt(aE, 2), u * 3.2); d.dim(xf1, stub, xf2, stub, fmt(e2, 2), u * 1.5);
+    d.dim(xf2, 0, B, 0, fmt(aI, 2), u * 3.2); d.dim(B, -e1, B, 0, fmt(e1, 2), -u * 2.4);
+    const pp = (a, b) => [[0, yP], [B, yP], [B, yP - kp * b], [0, yP - kp * a]];
+    d.poly(pp(pe.gx, pi.gx), 'pz');
+    for (let i = 0; i <= 8; i++) { const x = B * i / 8, pv = pe.gx + (pi.gx - pe.gx) * i / 8; if (kp * pv > u * 2.2) arrow(d, x, yP - kp * pv + u * 0.3, x, yP - u * 0.15); }
+    d.path([[0, yP - kp * pe.mx], [B, yP - kp * pi.mx]], 'lmx'); d.path([[0, yP - kp * pe.mn], [B, yP - kp * pi.mn]], 'lmn');
+    if (pm > 0 && pm * kp <= hP * 1.05) { d.line(-0.06 * B, yP - kp * pm, B + 0.06 * B, yP - kp * pm, 'lpm'); d.text(B / 2, yP - kp * pm - u * 1.3, 'PREMAX = ' + fmt(pm, 2) + ' t/m²', { cls: 'vpm', size: 0.85 }); }
+    else if (pm > 0) d.text(B / 2, yP - hP - u * 1.5, 'PREMAX = ' + fmt(pm, 2) + ' t/m² (hors cadre)', { cls: 'vpm', size: 0.85 });
+    // étiquettes des bords, empilées sans chevauchement
+    const stack = (x, a, items) => { const ys = items.map(([val]) => yP - kp * val).slice(); const ord = items.map((it, i) => i).sort((i, j) => ys[j] - ys[i]);
+      let prev = Infinity; for (const i of ord) { let y = ys[i]; if (prev - y < u * 2.1) y = prev - u * 2.1; prev = y; d.text(x, y, fmt(items[i][0], 2), { cls: items[i][1], size: 0.9, a }); } };
+    stack(-u * 0.8, 'end', [[pe.gx, 'vg'], [pe.mx, 'vmx'], [pe.mn, 'vmn']]);
+    stack(B + u * 0.8, 'start', [[pi.gx, 'vg'], [pi.mx, 'vmx'], [pi.mn, 'vmn']]);
+    if (Math.min(pe.mn, pi.mn) < 0) d.text(B / 2, yP + u * 1.4, 'pression minimale négative : décollement partiel', { cls: 'ts', size: 0.75 });
+    d.text(xl + u, yP - u * 1.5, 'p (t/m²)', { cls: 'ts', size: 0.9, a: 'start' });
+    scaleBar(d, xl + u, yP - hP - 0.12 * B, B * 1.6);
+    // (b) moments et efforts tranchants dans la semelle (mêmes abscisses que (a))
+    const mvals = SE.concat(SI).flatMap(s => [s.mxS, s.mnS, s.mxU, s.mnU]), mA = Math.max(...mvals.map(Math.abs), 1e-6), km = hM / mA;
+    const mUp = Math.max(0, ...mvals.map(x => -x)) * km, mDn = Math.max(0, ...mvals) * km;
+    const yM = -e1 - 0.12 * B - mUp, yMb = yM - mDn;
+    const vvals = SE.concat(SI).flatMap(s => [s.vx, s.vn]), vA = Math.max(...vvals.map(Math.abs), 1e-6), kv = hM / vA;
+    const vUp = Math.max(0, ...vvals) * kv, vDn = Math.max(0, ...vvals.map(x => -x)) * kv;
+    const yV = yMb - gap - 0.06 * B - vUp, yVb = yV - vDn;
+    const d2 = G.OTUI.svg({ x0: xl, y0: yVb - 0.08 * B, x1: xr, y1: 0.12 * B }, { pad: 0.03 });
+    u = d2.u;
+    d2.rect(0, -e1, B, e1, 'ghost'); d2.rect(xf1, 0, e2, 0.1 * B, 'ghost');
+    const xsE = SE.map(s => s.t * aE), xsI = SI.map(s => B - s.t * aI);
+    const seg = (xs, edge, vals, y0, kk, cls, sgnDown, path) => {
+      const ord = xs.map((x, i) => [x, vals[i]]).concat([[edge, 0]]).sort((a, b) => a[0] - b[0]);
+      const crv = ord.map(([x, w]) => [x, y0 - sgnDown * kk * w]);
+      if (path) d2.path(crv, cls); else d2.poly([[ord[0][0], y0]].concat(crv, [[ord[ord.length - 1][0], y0]]), cls);
+    };
+    for (const x of [xf1, xf2]) d2.line(x, yVb - 0.03 * B, x, 0.1 * B, 'ax');
+    for (const [y0, top, lab] of [[yM, yM + mUp, 'M (t·m/m)'], [yV, yV + vUp, 'V (t/m)']]) { d2.line(0, y0, B, y0, 'base'); d2.text(xl + u, Math.max(top, y0 + u * 2), lab, { cls: 'ts', size: 0.9, a: 'start' }); }
+    for (const [k, cls, p] of [['mxU', 'mxz', 0], ['mnU', 'mnz', 0], ['mxS', 'lmx', 1], ['mnS', 'lmn', 1]]) { seg(xsE, 0, SE.map(s => s[k]), yM, km, cls, 1, p); seg(xsI, B, SI.map(s => s[k]), yM, km, cls, 1, p); }
+    for (const [k, cls] of [['vx', 'mxz'], ['vn', 'mnz']]) { seg(xsE, 0, SE.map(s => s[k]), yV, kv, cls, -1); seg(xsI, B, SI.map(s => s[k]), yV, kv, cls, -1); }
+    for (const x of xsE.concat(xsI)) d2.line(x, yM - u * 0.5, x, yM + u * 0.5, 'base');
+    // valeurs à l'encastrement (section 1, au nu du piédroit)
+    const lab1 = (x, y0, kk, sgnDown, w, cls, a) => d2.text(x, y0 - sgnDown * kk * w + (w * sgnDown > 0 ? -u * 1.3 : u * 1.3), fmt(w, 2), { cls, size: 0.9, a });
+    const e0 = SE[0], i0 = SI[0];
+    lab1(xf1 - u * 0.6, yM, km, 1, e0.mnU, 'vmn', 'end'); if (Math.abs(e0.mxU) > mA * 0.04) lab1(xf1 - u * 0.6, yM, km, 1, e0.mxU, 'vmx', 'end');
+    lab1(xf2 + u * 0.6, yM, km, 1, i0.mnU, 'vmn', 'start'); if (Math.abs(i0.mxU) > mA * 0.04) lab1(xf2 + u * 0.6, yM, km, 1, i0.mxU, 'vmx', 'start');
+    for (const [s0, x, a] of [[e0, xf1 - u * 0.6, 'end'], [i0, xf2 + u * 0.6, 'start']]) {
+      if (Math.abs(s0.vx) > vA * 0.04) lab1(x, yV, kv, -1, s0.vx, 'vmx', a);
+      if (Math.abs(s0.vn) > vA * 0.04) lab1(x, yV, kv, -1, s0.vn, 'vmn', a); }
+    const tb = (lab, S, a) => S.map((s, i) => `<tr><td>${i ? '' : lab}</td><td>${['1 (encastrement)', '3/4', '1/2', '1/4'][i] || fmt(s.t, 2)}</td><td>${fmt((1 - s.t) * a, 2)}</td><td>${fmt(s.mxS, 2)}</td><td>${fmt(s.mnS, 2)}</td><td>${fmt(s.mxU, 2)}</td><td>${fmt(s.mnU, 2)}</td><td>${fmt(s.vx, 2)}</td><td>${fmt(s.vn, 2)}</td></tr>`).join('');
+    const body = `<div class="two"><div class="sv tall"><h5>COUPE DE LA SEMELLE ET PRESSIONS SUR LE SOL (E.L.S.)</h5>${d.toString()}</div>`
+      + `<div class="sv tall"><h5>MOMENTS ET EFFORTS TRANCHANTS DANS LA SEMELLE (CÔTÉS EXTÉRIEUR ET INTÉRIEUR)</h5>${d2.toString()}</div></div><div class="wide">`
+      + legend([['#a07828', 'pression permanente (max)'], ['#c0392b', 'pression totale ELS MAX', true], ['#1a4fd6', 'pression totale ELS MIN', true], ['#c0392b', 'M / V : MAX E.L.U. (plein), E.L.S. (tireté)'], ['#1a4fd6', 'M / V : MIN E.L.U. (plein), E.L.S. (tireté)']])
+      + `<table class="pf"><tr><th>côté</th><th>section</th><th>dist. au nu (m)</th><th>M MAX ELS</th><th>M MIN ELS</th><th>M MAX ELU</th><th>M MIN ELU</th><th>V MAX ELU</th><th>V MIN ELU</th></tr>${tb('extérieur', SE, aE)}${tb('intérieur', SI, aI)}</table>`
+      + `<table class="pf"><tr><th>pressions (t/m²)</th><th>perm. max</th><th>perm. min</th><th>totale ELS MAX</th><th>totale ELS MIN</th><th>PREMAX</th></tr>`
+      + `<tr><td>bord extérieur</td><td>${fmt(pe.gx, 2)}</td><td>${fmt(pe.gn, 2)}</td><td>${fmt(pe.mx, 2)}</td><td>${fmt(pe.mn, 2)}</td><td>${fmt(pm, 2)}</td></tr>`
+      + `<tr><td>bord intérieur</td><td>${fmt(pi.gx, 2)}</td><td>${fmt(pi.gn, 2)}</td><td>${fmt(pi.mx, 2)}</td><td>${fmt(pi.mn, 2)}</td><td>${fmt(pm, 2)}</td></tr></table></div>`;
+    return { body, cap: `Semelle de ${fmt(B, 2)} m × ${fmt(e1, 2)} m dessinée à l'échelle (piédroit gauche ; le droit est symétrique), débords extérieur ${fmt(aE, 2)} m (talon, sous le remblai) et intérieur ${fmt(aI, 2)} m (patin, côté ouverture). Les deux vues ont les mêmes abscisses (depuis le bord extérieur). Pressions réparties linéairement entre les bords (diagramme trapézoïdal, triangulaire si une valeur s'annule). Moments et efforts tranchants aux sections 1 (encastrement au nu du piédroit), 3/4, 1/2, 1/4 du débord, nuls au bord libre ; moments positifs portés vers le bas, comme sur les autres planches.` };
+  }
+
+  /* épure d'arrêt des barres : repère de calcul, barres décalées hors du béton pour la lisibilité */
+  function figFerraillage(r) {
+    const g = r.g, L = g.L, H = g.H, ep = r.fer.ep, a = r.fer.ad, e1 = g.e1, e2 = g.e2, e3 = g.e3;
+    const sl = g.D - g.B / 2;
+    const d0 = G.OTUI.svg({ x0: Math.min(sl, -e2 / 2) - 1.6, y0: -e1 / 2 - 1.6, x1: L - sl + 0.4, y1: H + e3 / 2 + 1.6 }, { pad: 0.04 });
+    const d = d0, u = d.u, gp = u * 1.15, tk = u * 0.6;
+    d.rect(-e2 / 2, H - e3 / 2, L + e2, e3, 'ghost');
+    for (const xa of [0, L]) d.rect(xa - e2 / 2, e1 / 2, e2, H - e3 / 2 - e1 / 2, 'ghost');
+    d.rect(sl, -e1 / 2, g.B, e1, 'ghost'); d.rect(L - sl - g.B, -e1 / 2, g.B, e1, 'ghost');
+    d.path([[0, 0], [0, H], [L, H], [L, 0]], 'ax');
+    const tick = (x, y, vert) => vert ? d.line(x - tk, y, x + tk, y, 'base') : d.line(x, y - tk, x, y + tk, 'base');
+    const rows = [];
+    // traverse : nappe intérieure (barres 1 à 4), sous la traverse
+    ep.trav.forEach(([o, e, l], i) => { const y = H - e3 / 2 - (i + 1) * gp; d.path([[o, y], [e, y]], 'bar1'); tick(o, y); tick(e, y);
+      d.text(e + u * 0.8, y, 'T' + (i + 1), { cls: 'tc', size: 0.7, a: 'start' });
+      rows.push(['T' + (i + 1), 'traverse, nappe intérieure', a.trInt.phi, a.trInt.A, `x = ${fmt(o, 2)} → ${fmt(e, 2)} (depuis l'angle)`, l]); });
+    // angle supérieur (gauche ; le droit est symétrique) : piédroit depuis P, traverse jusqu'à B
+    ep.ang.forEach(([p, b, l], i) => { const xo = -e2 / 2 - (i + 1) * gp, yt = H + e3 / 2 + (i + 1) * gp;
+      d.path([[xo, p], [xo, yt], [b, yt]], 'bar2'); tick(xo, p, true); tick(b, yt);
+      d.text(b + u * 0.8, yt, 'A' + (i + 1), { cls: 'tc', size: 0.7, a: 'start' });
+      rows.push(['A' + (i + 1), 'angle supérieur, nappe extérieure', a.trSup.phi, a.trSup.A, `piédroit z = ${fmt(p, 2)} → traverse x = ${fmt(b, 2)}`, l]); });
+    // piédroit : nappe intérieure
+    ep.pied.forEach(([o, e, l], i) => { const x = e2 / 2 + (i + 1) * gp; d.path([[x, o], [x, e]], 'bar1'); tick(x, o, true); tick(x, e, true);
+      d.text(x + u * 0.6, (o + e) / 2, 'P' + (i + 1), { cls: 'tc', size: 0.7, a: 'start' });
+      rows.push(['P' + (i + 1), 'piédroit, nappe intérieure', a.pdCour.phi, a.pdCour.A, `z = ${fmt(o, 2)} → ${fmt(e, 2)} (depuis la base)`, l]); });
+    if (ep.p6) { const x = -e2 / 2 - 5 * gp, s = ep.p6.seg; d.path([[x, s[0]], [x, s[1]]], 'bar3'); tick(x, s[0], true); tick(x, s[1], true);
+      d.text(x - u * 0.6, (s[0] + s[1]) / 2, 'P6', { cls: 'tc', size: 0.7, a: 'end' });
+      rows.push(['P6', 'piédroit, face extérieure (Ø2)', ep.p6.phi, ep.p6.A, `z = ${fmt(s[0], 2)} → ${fmt(s[1], 2)}`, s[2]]); }
+    // fers solidarisant semelle et piédroit
+    ep.semI.forEach(([p, ex, l], i) => { const x = e2 / 2 + (ep.pied.length + 1 + i) * gp, yb = -e1 / 2 - (i + 1) * gp;
+      d.path([[x, p], [x, yb], [ex, yb]], 'bar3'); tick(x, p, true); tick(ex, yb);
+      d.text(ex + u * 0.6, yb, 'S' + (i + 1), { cls: 'tc', size: 0.7, a: 'start' });
+      rows.push(['S' + (i + 1), 'semelle intérieure (solidarisant)', a.pdBase.phi, a.pdBase.A, `piédroit z = ${fmt(p, 2)} → semelle ${fmt(ex, 2)} (depuis l'axe)`, l]); });
+    { const [p, ex, l] = ep.semE, x = -e2 / 2 - (ep.p6 ? 6 : 5) * gp, yb = -e1 / 2 - gp;
+      d.path([[x, p], [x, yb], [ex, yb]], 'bar3'); tick(x, p, true); tick(ex, yb);
+      d.text(ex - u * 0.6, yb, 'SE', { cls: 'tc', size: 0.7, a: 'end' });
+      rows.push(['SE', 'semelle extérieure (solidarisant)', a.semE.sol.phi, a.semE.sol.A, `piédroit z = ${fmt(p, 2)} → semelle ${fmt(ex, 2)} (depuis l'axe)`, l]); }
+    d.text(L, H + e3 / 2 + 2 * gp, 'angle et piédroit droits symétriques', { cls: 'ts', size: 0.8, a: 'end' });
+    scaleBar(d, L * 0.62, -e1 / 2 - 1.3, L);
+    const tab = `<table class="pf"><tr><th>repère</th><th style="text-align:left">nappe</th><th>Ø (mm)</th><th>section (m²/m)</th><th style="text-align:left">origine → extrémité (m)</th><th>longueur (m)</th></tr>`
+      + rows.map(([n, w, phi, A, s, l]) => `<tr><td>${n}</td><td style="text-align:left">${w}</td><td>${fmt(phi * 1000, 0)}</td><td>${fmt(A, 6)}</td><td style="text-align:left">${s}</td><td>${fmt(l, 2)}</td></tr>`).join('') + '</table>';
+    const body = `<div class="wide sv tall"><h5>SCHÉMA DU FERRAILLAGE PRINCIPAL ET ARRÊTS DE BARRES (REPÈRE DE CALCUL)</h5>${d.toString()}${legend([['#2f3542', 'nappes intérieures (moments positifs)'], ['#0a8a78', 'nappe extérieure de l\'angle'], ['#b86a14', 'fers solidarisant / Ø2']])}${tab}</div>`;
+    return { body, cap: `Abscisses de l'épure du listing : traverse depuis l'angle sur la portée biaise L = ${fmt(L, 2)} m, piédroit depuis la base (axe de la semelle), semelle depuis l'axe du piédroit (négatif vers l'extérieur). Barres dessinées décalées hors du béton (comme une épure), extrémités à l'échelle ; schéma de principe, sans crochets ni recouvrements.` };
+  }
+
+  function figures(m, r, pages) {
+    if (!r || !r.g || !G.PIPO_LIVE) return [];
+    const nz = pages.map(p => String(p).replace(/\s+/g, ''));
+    const first = re => nz.findIndex(p => re.test(p));
+    const last = re => { let k = -1; nz.forEach((p, i) => { if (re.test(p)) k = i; }); return k; };
+    const pn = i => ((pages[i] || '').match(/PAGE\s+(\d+)/) || [])[1] || String(i + 1);
+    const out = []; let n = 0;
+    const add = (after, title, fn) => {
+      if (after < 0) return;
+      try { const f = fn(); if (!f) return; n++;
+        out.push({ after, html: G.OTUI.figPage(`PLANCHE ${n} — ${title}`, `PIPO-EL · s'insère après la page ${pn(after)} de la note`, f.body, f.cap) });
+      } catch (e) { console.error('PIPO planche', title, e); }
+    };
+    add(first(/^GEOMETRIE/), 'OUVRAGE À L\'ÉCHELLE (COUPE A-A, VUE EN PLAN, COUPE TRANSVERSALE B-B)', () => figOuvrage(m, r));
+    add(first(/MOMENTSFLECHISSANTSEXTREMESSURLATRAVERSESUPERIEURE/), 'TRAVERSE SUPÉRIEURE : ENVELOPPES DES MOMENTS FLÉCHISSANTS', () => figMomTraverse(r));
+    const ip = first(/MOMENTSFLECHISSANTSEXTREMESSURLEPIEDROIT/);
+    add(ip, 'PIÉDROIT : ENVELOPPES DES MOMENTS FLÉCHISSANTS', () => figMomPiedroit(r));
+    add(ip, 'SYNTHÈSE : MOMENTS DANS LE PORTIQUE (CÔTÉ FIBRE TENDUE)', () => figSynthese(r));
+    add(last(/CALCULDESEFFORTSTRANCHANTSEXTREMES/), 'ENVELOPPES DES EFFORTS TRANCHANTS (TRAVERSE, PIÉDROIT)', () => figTranchants(r));
+    add(Math.max(last(/REPARTITIONDELAPRESSIONSURLESOL/), last(/MOMENTSDANSLASEMELLE/), last(/EFFORTSTRANCHANTSDANSLASEMELLE/)),
+      'SEMELLE : PRESSIONS SUR LE SOL, MOMENTS ET EFFORTS TRANCHANTS', () => r.pressions && r.semelleEff ? figSemelle(r) : null);
+    add(Math.max(last(/EPUREDARRETDESBARRES/), last(/NOMENCLATUREDESACIERS/)), 'FERRAILLAGE : NAPPES ET ARRÊTS DE BARRES', () => r.fer && r.fer.ep ? figFerraillage(r) : null);
+    return out;
+  }
+
   G.PIPO_UI = {
-    prog: 'PIPO-EL', engine: E, steps, get, set, onChange, checks, summary, blank,
+    prog: 'PIPO-EL', engine: E, steps, get, set, onChange, checks, summary, blank, figures,
     numero: m => m.numero || '0001',
     examples: [{ label: 'Portique 10 m sur semelles, dalles de transition', text: EX1 }, { label: 'Portique biais 65 gr sous 2,50 m de remblai', text: EX2 }],
     views: [

@@ -815,10 +815,12 @@
     R.reac = [];
     var gridSave = R.grid, RG = globalThis.PSIDP_RGRID || 0; // v39 essai : grille de recherche raffinée pour les réactions (pas L/(20·RG))
     if (RG) { R.grid = []; var e0r = L[0] / 20 / RG, e1r = L[n - 1] / 20 / RG; for (var kq = -40 * RG; kq < 0; kq++) R.grid.push(kq * e0r); for (var jq = 0; jq < n; jq++) for (kq = 0; kq < 20 * RG; kq++) R.grid.push(X0[jq] + kq * L[jq] / 20 / RG); for (kq = 0; kq <= 40 * RG; kq++) R.grid.push(X0[n] + kq * e1r); }
-    if (globalThis.PSIDP_RABG !== 0) { R.grid = R.grid.slice(); [0, 1.35, 1.5, 4.5, 6].forEach(function (o) { if (globalThis.PSIDP_RABG === 2) R.grid.push(-ab - o, -ab + o, X0[n] + ab - o, X0[n] + ab + o); else R.grid.push(-ab - o, X0[n] + ab - o); }); R.grid.sort(function (p, q) { return p - q; }); } // v39 (RABG, défaut ; 0 = grille seule) : positions avec un essieu au BOUT de l about (réactions culée BC/BT/convois)
+    if (globalThis.PSIDP_RABG !== 0) { R.grid = R.grid.slice(); if (globalThis.PSIDP_RABG === 3 || globalThis.PSIDP_RABG === undefined) { R.grid.push(-ab); (globalThis.PSIDP_RABGR || [0, 1.35, 6, 16.5, 6.1, 11, 15]).forEach(function (o) { R.grid.push(X0[n] + ab - o); }); } else (globalThis.PSIDP_RABGO || [0, 1.35, 1.5, 4.5, 6]).forEach(function (o) { if (globalThis.PSIDP_RABG === 2) R.grid.push(-ab - o, -ab + o, X0[n] + ab - o, X0[n] + ab + o); else R.grid.push(-ab - o, X0[n] + ab - o); }); R.grid.sort(function (p, q) { return p - q; }); } // v39 (RABG, défaut ; 0 = grille seule) : positions avec un essieu au BOUT de l about (réactions culée BC/BT/convois)
     for (var a = 0; a <= n; a++) {
       var fr = reactionLI(R, a);
-      var S3 = loadEffects(R, v, fr, cfgR);
+      // v43 (info PSIDA v32, crochet PSIDP_RAB1 = 1) : seul l'about CONTIGU est chargeable pour la réaction d'un appui (culées) ; appuis intermédiaires : aucun about
+      var cfgRa = cfgR; if (globalThis.PSIDP_RAB1 === 1) { cfgRa = Object.assign({}, cfgR, { range: [a === 0 ? -ab : 0, a === n ? X0[n] + ab : X0[n]] }); }
+      var S3 = loadEffects(R, v, fr, cfgRa);
       var ar2 = R.liReacAires[a].total;
       S3.cp = [R.cp.tot[1] * ar2, R.cp.tot[2] * ar2];
       S3.comb = combine(S3, v, false);
@@ -980,7 +982,8 @@
   const A1T = { 1: [1, 1, 0.9, 0.75, 0.7], 2: [1, 0.9], 3: [0.9, 0.8] };
   const BCT = { 1: [1.2, 1.1, 0.95, 0.8, 0.7], 2: [1, 1], 3: [1, 1] };
   const tab = (t, n) => t[Math.min(n, t.length) - 1];
-  const r3In = x => Math.round(x * 1000 + 1e-9) / 1000;
+  // v43 (info PSIDA v32, crochet PSIDP_KNR : bits CP 1, A 2, Bc 4, Bt 8, Mc120 16 ; défaut 31 ; 0 = arrondis au millième) : coefficients NON arrondis dans les calculs
+  const r3In = (x, bit) => ((globalThis.PSIDP_KNR === undefined ? 31 : globalThis.PSIDP_KNR) & (bit || 0)) ? x : Math.round(x * 1000 + 1e-9) / 1000;
 
   /** p = { Na, esp, biais (grades, biais géométrique), Be (largeur équivalente droite), Lch (largeur chargeable),
    *        nvc (nombre de voies), classe (1|2|3), H (HDALLE1), hchau } */
@@ -1006,12 +1009,22 @@
       Rbt = Math.max(Rbt, maxR(parts, s));
     }
     const BTk = Na * Rbt / (2 * nt);
-    // Mc120 — EMPIRIQUE, NON RÉSOLU pour Na ≥ 4 (sous-estime de 0,018 à 0,036) : 2 chenilles d'entraxe 3,30 m,
-    // chacune discrétisée en 21 charges égales réparties (bornes incluses) sur 1 + H + hchau.
-    const w = 1 + p.H + (p.hchau || 0), mc = [];
-    for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w / 2 + w * i / 20, 0.5 / 21, 0]);
-    const MC = Na * maxR(mc, s);
-    return { s, CP: r3In(CP), A: r3In(A), BC: r3In(BCk), BT: r3In(BTk), MC120: r3In(MC), CONVOIS: null };
+    // Mc120 — RÈGLE du dossier PSI-DA 68, pièce 2.5 « Méthode de calcul » § 2.4.2 (MAJCM) : chaque chenille est étalée
+    // transversalement sur λ = 1,00 + 2·HCHAU + HDALLE1 ; deux positions seulement (une chenille centrée sur l'appareil, ou les
+    // deux chenilles symétriques par rapport à l'appareil, entraxe 3,30 m) ; valeur moyenne de la réaction sur λ par la formule
+    // de SIMPSON (3 points). Exact sur les 27 lignes d'appui du corpus (PSIDA et PSIDP, Na = 2, 3, 4).
+    let MC;
+    if (globalThis.PSIDA_MCFREE) {                   // crochet : ancien modèle (21 points sur 1 + H + hchau, position libre)
+      const w0 = 1 + p.H + (p.hchau || 0), mc = [];
+      for (const x0 of [0, 3.30]) for (let i = 0; i < 21; i++) mc.push([x0 - w0 / 2 + w0 * i / 20, 0.5 / 21, 0]);
+      MC = Na * maxR(mc, s);
+    } else {
+      const lam = (1 + 2 * (p.hchau || 0) + p.H) / s, E = 3.30 / s;
+      const simp = c => (etaIn(c - lam / 2) + 4 * etaIn(c) + etaIn(c + lam / 2)) / 6;
+      const f = o => 0.5 * (simp(o) + simp(o + E));
+      MC = Na * Math.max(f(0), f(-E / 2));
+    }
+    return { s, CP: r3In(CP, 1), A: r3In(A, 2), BC: r3In(BCk, 4), BT: r3In(BTk, 8), MC120: r3In(MC, 16), CONVOIS: null };
   }
 
   // Section 34 (DIMENSIONNEMENT DES APPAREILS D'APPUI) — 2026-11-04 v6.
@@ -1103,7 +1116,7 @@
     var c0 = 0.6 * 1000 / 9.80665, ft28 = c0 + 0.06 * v.FC28, fe = v.FE1 || 50000, eta = v.ETA || 1.6;
     var sigS = Math.min(2 * fe / 3, Math.max(fe / 2, 110 * Math.sqrt(eta * ft28 * 0.00980665) / 0.00980665));
     var H = v.HDAL1, d = H - 0.04;
-    return R.reac.map(function (r, k) {
+    var outAp = R.reac.map(function (r, k) {
       var na = Math.max(1, v['NAP' + (k + 1)] || 2), typ = v['TYPAP' + (k + 1)]; if (typ === undefined || typ === null || typ === '') typ = 1;
       var esp = na > 1 ? Math.floor(Math.min(v.EDAL1 / (na - 0.6), R.Be / (na - 0.3)) / sb * 100 + 1e-6) / 100 : 0;
       var dy = R.dyn.appui[k], end = k === 0 || k === n;
@@ -1127,9 +1140,28 @@
       var ech = end ? (R.about || v.ABOUT || 0) * sb + esp / 3 : 2 * esp / 3, mch = ech > 0 ? cMax * esp / (12 * ech) : 0;
       var mres = function (A) { var x = -15 * A + Math.sqrt(225 * A * A + 30 * A * d); return A * sigS * (d - x / 3); };
       var lo = 0, hi = 0.05; for (var it = 0; it < 80; it++) { var md = (lo + hi) / 2; if (mres(md) < mch) lo = md; else hi = md; }
+      // v43 (PSIDP_CHEVZ = 0 : ancien ELS fissuré) : section de calcul des fers du chevêtre = M·k / (z·σs), bras de levier forfaitaire
+      // z = 0,9·d (BAEL), d = H − 0,04, σs = fe/2 (fissuration préjudiciable) ; k = sin φ (biais géométrique) pour des fers PARALLÈLES aux
+      // lignes d'appui (φ ≥ 70 gr, et toujours sur culées : « LE FERRAILLAGE DES CHEVETRES SUR PILES CULEES EST PARALLELE … »), k = 1 si
+      // perpendiculaires aux bords libres. Exact à l'arrondi sur 2481, 2482, 2483, 2549, 2764, 2766 (piles et culées), 0013, 0014, 0015 (piles).
+      if (globalThis.PSIDP_CHEVZ !== 0) { var parC = (v.BIAIS || 100) >= 70 || end; hi = mch * (parC ? sb : 1) / (0.9 * d * sigS); }
       return { typ: typ, na: na, esp: esp, larg: larg, long: long, K: K, cas: cas.map(function (c) { return c[0]; }), vMax: vMax, vMin: vMin, cMax: cMax, cMin: cMin,
-        sMin: cMin / (larg * long), sMax: cMax / (larg * long), ech: ech, mch: mch, ach: hi };
+        sMin: cMin / (larg * long), sMax: cMax / (larg * long), ech: ech, mch: mch, ach: hi, need: amin };
     });
+    // v43 (info PSIDA v32, règle du dossier PSI-DA 68 pièce 2.5 § 2.4.5 ; crochet PSIDP_DAPO = 0 : ancien) : largeur DAPO de la ligne la plus
+    // sollicitée = ⌈√(aire requise × 50/φ)⌉ au pas de 0,05 (φ biais géométrique en grades), même largeur pour toutes les lignes, réduite par pas
+    // de 5 cm si la longueur (multiple de 5 cm couvrant l'aire requise) lui serait inférieure.
+    if ((globalThis.PSIDP_DAPO === undefined ? 1 : globalThis.PSIDP_DAPO) && !globalThis.PSIDP_APPSIDA) {
+      var el = outAp.filter(function (a) { return a.typ !== 0; });
+      if (el.length) {
+        var up = function (x) { return Math.ceil(x / 0.05 - 1e-9) * 0.05; }, nmax = Math.max.apply(null, el.map(function (a) { return a.need; }));
+        var W0 = Math.max(0.05, up(Math.sqrt(nmax * 50 / (v.BIAIS || 100))));
+        el.forEach(function (a) { var w = W0, b = up(a.need / w);
+          while (b < w - 1e-9 && w > 0.05 + 1e-9) { w = Math.round((w - 0.05) * 100) / 100; b = up(a.need / w); }
+          a.larg = Math.round(w * 100) / 100; a.long = Math.round(b * 100) / 100; a.sMin = a.cMin / (a.larg * a.long); a.sMax = a.cMax / (a.larg * a.long); });
+      }
+    }
+    return outAp;
   }
 
   // Section 35 (REPARTITION DU FERRAILLAGE TRANSVERSAL, FERRAILLAGE LONGITUDINAL) — 2026-11-04 v6.
@@ -1671,6 +1703,7 @@
       }
       return isFinite(best) ? best : null;
     };
+    if (typeof globalThis.PSIDP_DBGAUTO === 'function') globalThis.PSIDP_DBGAUTO({ boundsF: boundsF, sec: sec, zs: zs, zi: zi, n: n, R: R }); // banc (v40), absent en usage normal
     var FM1v = null, FM1on = globalThis.PSIDP_FM1 === undefined ? 1 : globalThis.PSIDP_FM1;
     var prevF = function (Bp, N) { var c = Bp && Bp.nb && Bp.nb.crit; if (!FMPREV || !c) return null; var g = Bp.G[c.t * 11 + c.k]; return [N * A * g.es, N * A * g.Ti, c.by, c]; };
     // N de FM : nombre de câbles courant AVANT la mise à jour par « NOMBRES DE CABLES » (0013 : tableau réajusté à 17 câbles, FM à 16 ;
@@ -1766,7 +1799,11 @@
           var xt9 = side < 0 ? f * d : L[tt] - f * d, chk = globalThis.PSIDP_T1CHK !== undefined ? globalThis.PSIDP_T1CHK : 1;
           // RÈGLE v19 : le point d'inflexion (jonction parabole principale / raccord) reste sous le bord sup interpolé linéairement
           // entre les sections 0.1 L voisines (PSIDP_T1INF = 1 ; défaut 0 : non contrôlé, voir NOTES v19)
-          if (globalThis.PSIDP_T1INF === 1) { var ui = xt9 / L[tt] * 10, ki = Math.min(9, Math.max(0, Math.floor(ui))), si = gsup(tt, ki) + (gsup(tt, ki + 1) - gsup(tt, ki)) * (ui - ki);
+          // v44 (PSIDP_T1LAST, défaut 1) : inflexion dans le dernier intervalle 0.1 L contre l'appui (0013B N = 14 : 0.904 L) → pas de
+          // contrôle de l'inflexion, mais la section à 0.1 L de l'appui (sur la parabole principale) reste sous le bord sup.
+          var tlast = globalThis.PSIDP_T1LAST !== undefined ? globalThis.PSIDP_T1LAST : 1, uiL = xt9 / L[tt] * 10, inLast = side > 0 ? uiL > 9 + 1e-9 : uiL < 1 - 1e-9;
+          if (tlast >= 1 && inLast) { var kL = side > 0 ? 9 : 1; if (tr.z(tt, kL * L[tt] / 10) > gsup(tt, kL) + 1e-9) ok = false; }
+          if (globalThis.PSIDP_T1INF === 1 && !(tlast === 1 && inLast)) { var ui = xt9 / L[tt] * 10, ki = Math.min(9, Math.max(0, Math.floor(ui))), si = gsup(tt, ki) + (gsup(tt, ki + 1) - gsup(tt, ki)) * (ui - ki);
             if (tr.z(tt, xt9) > si + 1e-9) ok = false; }
           for (var kk = 1; kk < 10; kk++) { var xx = kk * L[tt] / 10; if (chk === 1 && (side < 0 ? xx > xt9 + 1e-9 : xx < xt9 - 1e-9)) continue; if (chk === 3 && (side < 0 ? xx > xt9 + 1e-9 && xx < xt9 + 0.1 * L[tt] - 1e-9 : xx < xt9 - 1e-9 && xx > xt9 - 0.1 * L[tt] + 1e-9)) continue; if (chk === 2 && Math.abs(xx - (side < 0 ? 0 : L[tt])) > 0.1 * L[tt] + 1e-9) continue; if ((side < 0 ? xx < P3.xl[tt] : xx > P3.xl[tt]) && tr.z(tt, xx) > gsup(tt, kk) + 1e-9) ok = false; }
           return ok;
@@ -1837,6 +1874,7 @@
           ks.forEach(function (kk) { var x8 = kk * L[t] / 10; if ((x8 - P4.xl[t]) * side > 1e-9 && tr8.z(t, x8) < ginf(t, kk) - tolT2 - 1e-9) ok8 = false; });
           if (ok8) break;
         }
+        if (typeof globalThis.PSIDP_DBGRT2 === 'function') globalThis.PSIDP_DBGRT2({ N: Nr, t: t, side: side, R: rT2[key], k: (rT2[key] - (v.RMIN || 8)) / 2 }); // banc v44
       });
       var T2 = traceFromPoints(R, P4, { side: rminSide });
       // ---------------------------------------------------------------- hyperstatiques des tracés limites (Simpson, F moyen de service)
@@ -1855,7 +1893,8 @@
         Mat.push(row); Rv.push(-tot);
       }
       // tracé concordant : Mat.lambda = R, 0 <= lambda <= 1 (simplexe ; objectif : max somme des lambda)
-      var lam = null, Q2 = 50 * I / VP, Rmx = Math.max.apply(null, Rv.map(Math.abs)), R2v = Rv.map(function (r) { return Rmx > 0 ? Q2 * Math.abs(r) / Rmx : Q2; });
+      var lam = null, Q2 = 50 * I / VP, Rmx, R2v;
+      var solveLP = function () { Rmx = Math.max.apply(null, Rv.map(Math.abs)); R2v = Rv.map(function (r) { return Rmx > 0 ? Q2 * Math.abs(r) / Rmx : Q2; }); lam = null;
       if (globalThis.PSIDP_LPMODE !== 0) (function () {
         // RÈGLE (v12, 23 systèmes du corpus) : (N-1) doubles inéquations R - R2 <= Mat.λ <= R + R2, R2_j = 50 T/m² · I/V' · R_j / max R ;
         // 0 <= λ <= 1, λ symétriques si SYM = 1 ; solution = écart total Σ|Mat.λ - R| minimal (phase 1 du simplexe), puis max Σλ.
@@ -1877,8 +1916,28 @@
         if (v.SYM === 1) for (var k5 = 0; k5 < Math.floor(n / 2); k5++) { var e2 = new Array(n).fill(0); e2[k5] = 1; e2[n - 1 - k5] = -1; Aq.push(e2); bq.push(1e-9); Aq.push(e2.map(function (x) { return -x; })); bq.push(1e-9); }
         lam = lpMax(new Array(n).fill(1), Aq, bq);
       })();
+      };
+      solveLP();
+      // v43 (essai, PSIDP_FL) : « FUSEAU LIMITE » en travée intermédiaire (0015 : TRAVEE 2/3 « FL ») — tracés limites = bords du fuseau aux sections 0.1 L
+      var flSpans = null;
+      // v44 : repli FL déclenché par la limite d'emploi de la notice (§ 2.4 : biais géométrique < 50 gr ; 0015 45.6 gr) — PSIDP_FLB = 1
+      if (!lam && (globalThis.PSIDP_FL || (globalThis.PSIDP_FLB !== 0 && (v.BIAIS || 100) < 50))) {
+        var tolF = globalThis.PSIDP_T2TOL !== undefined ? globalThis.PSIDP_T2TOL : 0.005, isFL = function (t) { return t > 0 && t < n - 1; };
+        var zfl = function (which) { return function (t, k) { if (k === 0) return P3.zs[t]; if (k === 10) return P3.zs[t + 1];
+          if (which === 2) return ginf(t, k); var z = gsup(t, k); if (k === 1) z = Math.min(z, P3.zs[t] - tolF); if (k === 9) z = Math.min(z, P3.zs[t + 1] - tolF); return z; }; };
+        var wrap = function (tr, which) { var f = zfl(which); return { spans: tr.spans, z: function (t, x) { if (!isFL(t)) return tr.z(t, x); var k = Math.round(x / L[t] * 10); return f(t, k); } }; };
+        var T1f = wrap(T1, 1), T2f = wrap(T2, 2), H1f = [], H2f = [];
+        for (t = 0; t < n; t++) { H1f.push(hypSpan(T1f, t)); H2f.push(hypSpan(T2f, t)); }
+        var Matp = Mat, Rvp = Rv; Mat = []; Rv = [];
+        for (j = 1; j < n; j++) { var rowf = [], totf = 0; for (t = 0; t < n; t++) { rowf.push(H2f[t][j - 1] - H1f[t][j - 1]); totf += H1f[t][j - 1]; } Mat.push(rowf); Rv.push(-totf); }
+        solveLP();
+        if (typeof globalThis.PSIDP_DBGFL === 'function') globalThis.PSIDP_DBGFL({ N: Nr, Mat: Mat, Rv: Rv, lam: lam, H1: H1f, H2: H2f, Q: Q2 });
+        if (lam) { flSpans = []; for (t = 0; t < n; t++) flSpans.push(isFL(t)); T1 = T1f; T2 = T2f; H1 = H1f; H2 = H2f; } else { Mat = Matp; Rv = Rvp; solveLP(); }
+      }
 
-      return { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: R2v, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz };
+      var res9 = { P3: P3, P4: P4, T1: T1, T2: T2, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: R2v, lam: lam, Fm: Fm, d2: d2, BR: BR, N: Nr, dz: dz, fl: flSpans };
+      if (typeof globalThis.PSIDP_DBGATT === 'function') globalThis.PSIDP_DBGATT(res9, { zs: zs, zi: zi, L: L, n: n }); // banc (v43), absent en usage normal
+      return res9;
     };
     // itérations : décalage vers le haut des points sur appuis (pas 0.01 m jusqu'au bord sup du fuseau), puis +1 câble (max +4)
     // RÈGLE (v12, notice PSIDP « recherche du tracé » + listings 2481, 2482, 0013B, 2764, 2765) : en l'absence de solution, les 5 tentatives
@@ -1924,6 +1983,12 @@
       combo.push(sgs);
     }
     var before = mkCable(combo);
+    // v44 : travées « FUSEAU LIMITE » (st.fl) — câble défini par points T1 + λ(T2 − T1) aux sections 0.1 L (bords du fuseau)
+    var flS = st.fl && globalThis.PSIDP_FLCAB !== 0 ? st.fl : null, ptsB = null;
+    if (flS) {
+      ptsB = []; for (t = 0; t < n; t++) { if (!flS[t]) { ptsB.push(null); continue; } var pk = []; for (var k5 = 0; k5 <= 10; k5++) { var x5 = k5 * L[t] / 10, a5 = T1.z(t, x5); pk.push(a5 + lam[t] * (T2.z(t, x5) - a5)); } ptsB.push(pk); }
+      var bz0 = before.z; before = { spans: before.spans, slope: before.slope, z: function (t, x) { if (!ptsB[t]) return bz0(t, x); var u = x / L[t] * 10, k = Math.max(0, Math.min(9, Math.floor(u + 1e-9))); return ptsB[t][k] + (ptsB[t][k + 1] - ptsB[t][k]) * (u - k); } };
+    }
     // transformation linéaire : décalages d_j sur appuis intermédiaires maximisant la plus petite marge
     // (appuis : zs - e ; points bas : e - zi)
     var nd = n - 1, cons = [], bb = [];
@@ -1940,6 +2005,24 @@
     var sol = lpMax(cobj, cons, bb), dj = [0];
     for (j = 1; j < n; j++) dj.push(sol ? sol[j - 1] - sol[nd + j - 1] : 0);
     dj.push(0);
+    // v44 : SETRA amène TOUS les appuis intermédiaires à l'excentrement limite zs (16 listings automatiques)
+    // v44 : SETRA amène TOUS les appuis intermédiaires à une MÊME cote Z (16 listings automatiques : 2766 appuis 2–5 à
+    // 0.261106) ; Z maximise la plus petite marge (zs - Z sur appuis, e - zi aux points bas) — fonction concave de Z.
+    if ((globalThis.PSIDP_TRZS !== undefined ? globalThis.PSIDP_TRZS : 1) === 1 && n > 1) {
+      var zsup = [0]; for (j = 1; j < n; j++) zsup.push(before.z(j - 1, L[j - 1])); zsup.push(0);
+      var margZ = function (Z) {
+        var m = zs - Z;
+        for (var t7 = 0; t7 < n; t7++) {
+          var xr7 = P3.xl[t7] / L[t7], d0 = t7 > 0 ? Z - zsup[t7] : 0, d1 = t7 < n - 1 ? Z - zsup[t7 + 1] : 0;
+          m = Math.min(m, before.z(t7, P3.xl[t7]) + (1 - xr7) * d0 + xr7 * d1 - zi);
+        }
+        return m;
+      };
+      var za = -5, zb = 5;
+      for (var it7 = 0; it7 < 200; it7++) { var z1 = za + (zb - za) / 3, z2 = zb - (zb - za) / 3; if (margZ(z1) < margZ(z2)) za = z1; else zb = z2; }
+      var Zc = (za + zb) / 2;
+      for (j = 1; j < n; j++) dj[j] = Zc - zsup[j];
+    }
     var after = mkCable(combo.map(function (sgs, t5) {
       var l = L[t5], a0 = dj[t5], a1 = dj[t5 + 1], sl = (a1 - a0) / l;
       return sgs.map(function (sg) { return { from: sg.from, to: sg.to, A: sg.A, B: sg.B + sl, C: sg.C + a0 }; });
@@ -1966,10 +2049,23 @@
       out6.sort(function (p, q) { return p.from - q.from; });
       loss.push(out6);
     }
-    var cable = mkCable(loss); cable.ecart = 0;
+    var ePts = null;
+    if (flS) {
+      // RÈGLE v44 (0015, travées 2/3) : points transformés, puis paraboles ajustées comme un câble imposé (sommet au point le plus bas,
+      // raccords sur appuis de rayon ENTIER ≥ RMIN par moindres carrés : 0015 R 27 / 14 m, bornes 3.803 / 25.028 retrouvées) ; ces
+      // paraboles ne servent qu'aux pertes (NOTA « LE CABLE EST DEFINI PAR POINTS ») : excentrements = points.
+      ePts = [];
+      for (t = 0; t < n; t++) {
+        if (!flS[t]) { ePts.push(null); continue; }
+        var pa = ptsB[t].map(function (z, k) { return z + dj[t] + (dj[t + 1] - dj[t]) * k / 10; }); ePts.push(pa);
+        var fc = fitCableImpose([1, L[t], 1], [[0, 0], pa, [0, 0]], 0, v.RMIN || 0);
+        loss[t] = fc.spans[1].map(function (g) { return { A: g.A, B: g.B, C: g.C, from: g.from, to: g.to }; });
+      }
+    }
+    var cable = mkCable(loss); cable.ecart = 0; if (ePts) { cable.ePts = ePts; cable.fl = flS; }
     var Hs = function (HH) { var o = []; for (var jj = 0; jj < n - 1; jj++) { var sm2 = 0; HH.forEach(function (h) { sm2 += h[jj]; }); o.push(sm2); } return o; };
     return { N: Nr, cable: cable, blocks: [BA, BR], cycles: cycles, P2: P2, H1tot: Hs(H1), H2tot: Hs(H2), keyFl: function (e) { return null; }, T1: T1, T2: T2, P3: P3, P4: P4, H1: H1, H2: H2, Mat: Mat, Rv: Rv, R2v: st.R2v, lambda: lam, concordant: concordant,
-      before: before, after: after, dj: dj, zs: zs, zi: zi, Fm: Fm, d2: d2 };
+      before: before, after: after, dj: dj, zs: zs, zi: zi, Fm: Fm, d2: d2, fl: flS };
   }
 
   // intégrale de Simpson (composite ; dernier intervalle par Simpson 3/8 si nombre impair)
@@ -2013,7 +2109,7 @@
     var Lt = R.X0[n], sym = v.SYM === 1;
     for (t = 0; t < n; t++) for (k = 0; k <= ND[t]; k++) {
       var x = k * L[t] / ND[t], c = imp ? model.cotes.values[t] : null;
-      var e = (imp && c && c.length - 1 === ND[t]) ? c[k] - VP : cab.z(t, x);
+      var e = (imp && c && c.length - 1 === ND[t]) ? c[k] - VP : (cab.ePts && cab.ePts[t] && ND[t] === 10 ? cab.ePts[t][k] : cab.z(t, x));
       var q = off[t] + k, X = R.X0[t] + x;
       // ouvrage symétrique : tensions de la moitié gauche reportées par symétrie
       var qs = (sym && X > Lt / 2 + 1e-9) ? off[n] - q : q;
@@ -2060,7 +2156,7 @@
       var ge = G.filter(function (g) { return g.t === js && g.k === 0; })[0].e;
       var sig = (FM / Sb) * (1 - 0.8 * ge / Vs) - ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib;
       dFl = v.KFL * v.EP / R.EI28 * sig;
-      P.flImp = { FM: FM, a: (1 - 0.8 * ge / Vs) / Sb, b: -ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib, ge: ge, js: js };
+      P.__EI = R.EI; P.__EI28 = R.EI28; P.flImp = { FM: FM, a: (1 - 0.8 * ge / Vs) / Sb, b: -ft28 * ge / Vs + (s0.cp[1] * rG - s0.comb[1].qlqcta) * ge / Ib, ge: ge, js: js };
     }
     if (!imp && P.auto && P.auto.P3) {
       // fluage approché du câble retenu : « CALCUL ITERATIF DU FLUAGE » (σb max aux sections clés, FM = N.A.T∞ moyen : NON RÉSOLU)
@@ -2096,7 +2192,9 @@
         FMf = nA * mT; FMJ = nA * mI;
         // RÈGLE v17 : FM = N·A·E.S, FMJ = N·A·T initiale du dernier tableau « PERTES REAJUSTEES » à sa section critique
         var BRf = P.auto.blocks && P.auto.blocks[1], cf = BRf && BRf.nb && BRf.nb.crit;
-        if ((globalThis.PSIDP_FMCRIT === undefined || globalThis.PSIDP_FMCRIT === 1) && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti; }
+        if ((globalThis.PSIDP_FMCRIT === undefined || globalThis.PSIDP_FMCRIT === 1) && cf) { var gq = BRf.G[cf.t * 11 + cf.k]; FMf = nA * gq.es; FMJ = nA * gq.Ti;
+          if (globalThis.PSIDP_FMNODC === 1) { var tq = gq.T0 - gq.bl, rq = 6 / 100 * v.RO * (tq / v.FPRG - v.MU0) * tq, flq = BRf.fl, rtq = R.retrait * v.EP;
+            FMf = nA * (tq - rq - rtq - flq + 2 * rq * (rtq + flq) / tq); FMJ = nA * tq; } }
         var nf = fl2(FMf);
         if (modeC === 3) dC = dcRule(nf) * FMJ / FMf;
         if (Math.abs(nf - dFl) < 0.01 && modeC !== 3) { dFl = nf; break; } dFl = nf;
@@ -2105,6 +2203,7 @@
     }
     // diagnostic (dev/ uniquement) : forcer ΔC / fluage approché pour isoler les pertes
     if (model.__diag) { if (model.__diag.dC != null) dC = model.__diag.dC; if (model.__diag.dFl != null) dFl = model.__diag.dFl; }
+    if (typeof globalThis.PSIDP_DIAG === 'function') { var dgx = globalThis.PSIDP_DIAG(v, P); if (dgx) { if (dgx.dC != null) dC = dgx.dC; if (dgx.dFl != null) dFl = dgx.dFl; } } // banc (v40)
     P.dC = dC; P.dFl = dFl;
     // --- section 24 : tensions initiales et première approximation à l'infini
     G.forEach(function (g) { var p = pt(g); g.dev = p.dev; g.T0 = p.T0; g.bl = p.blocage; g.p = los(g, dC, dFl); });
@@ -2147,14 +2246,14 @@
       var gs = G.filter(function (g) { return g.t === t; }), Nd = ND[t], l = L[t];
       var lin = function (f, x) { var u = x / l * Nd, i = Math.min(Nd - 1, Math.floor(u)), w = u - i; return f(gs[i]) * (1 - w) + f(gs[i + 1]) * w; };
       var sgx = function (x) {
-        var e = cab.z(t, x), In = Ib - P.coefI * e * e, F = lin(function (g) { return g.p.proba; }, x) * nA, Fx = lin(function (g) { return g.p.maxi; }, x) * nA;
+        var e = (cab.ePts && cab.ePts[t] && Nd === 10 && globalThis.PSIDP_FLEX === 1) ? lin(function (g) { return g.e; }, x) : cab.z(t, x), In = Ib - P.coefI * e * e, F = lin(function (g) { return g.p.proba; }, x) * nA, Fx = lin(function (g) { return g.p.maxi; }, x) * nA;
         var mh = HI.moy[t] * (1 - x / l) + HI.moy[t + 1] * x / l, mhx = HI.max[t] * (1 - x / l) + HI.max[t + 1] * x / l;
         var mo = R.cp.oss[0] * x * (l - x) / 2 + MuO2[t] * (1 - x / l) + MuO2[t + 1] * x / l;
         var zz = [Vs, -VP], sm2 = function (M) { return zz.map(function (z) { return M * z / In; }); };
         var spp = function (FF, Mh2) { return zz.map(function (z) { return FF / Sn + (FF * e + Mh2) * z / In; }); };
         return { MO: sm2(mo), MOx: sm2(Math.max(mo * v.OSSAX, mo * v.OSSAN)), MOn: sm2(Math.min(mo * v.OSSAX, mo * v.OSSAN)), Pi: spp(F, mh), Px: spp(Fx, mhx) };
       };
-      var zones = []; if (t > 0) zones.push([0, 0.09 * l]); if (t < n - 1) zones.push([0.91 * l, l]);
+      var bnd = globalThis.PSIDP_MTBAND !== undefined ? globalThis.PSIDP_MTBAND : 0.09, zones = []; if (t > 0) zones.push([0, bnd * l]); if (t < n - 1) zones.push([(1 - bnd) * l, l]);
       zones.forEach(function (zn) {
         var M2 = 400, best = null, vals = [];
         for (var i = 0; i <= M2; i++) { var x = zn[0] + (zn[1] - zn[0]) * i / M2, o2 = sgx(x); vals.push([x, o2.MO[1] + o2.Pi[1]]); }
@@ -2165,9 +2264,12 @@
     // --- déformées dues à la précontrainte (section 38) : courbure (F.e + M_hyp)/(E.IG), F et e linéaires entre
     // points de grille, double intégration par travée (flèche nulle sur appuis). Instantanée : F initiale moy., Eij ;
     // fluage : F en service moy. (E.S), EF. Vérifié à ±0.1 mm sur 2549 (forme légèrement différente : NON RÉSOLU).
-    var deflP = function (t, Mk, EI) {
+    var deflP = function (t, Mk, EI, Fk, Hk) {
       var l = L[t], N = ND[t], S = 2000, h = l / S, th = [0], w = [0], i;
-      var M = function (x) { var u = x / l * N, ii = Math.min(N - 1, Math.floor(u)), f = u - ii; return Mk[ii] * (1 - f) + Mk[ii + 1] * f; };
+      var lin = function (A, x) { var u = x / l * N, ii = Math.min(N - 1, Math.floor(u)), f = u - ii; return A[ii] * (1 - f) + A[ii + 1] * f; };
+      var M = function (x) { return lin(Mk, x); };
+      // v43 essai (PSIDP_DEFLE = 1) : excentrement continu du câble (équations) au lieu de l'interpolation linéaire entre points de grille
+      if (globalThis.PSIDP_DEFLE === 1 && Fk) M = function (x) { return lin(Fk, x) * cab.z(t, x) + lin(Hk, x); };
       for (i = 1; i <= S; i++) th.push(th[i - 1] + M((i - 0.5) * h) / EI * h);
       for (i = 1; i <= S; i++) w.push(w[i - 1] + (th[i - 1] + th[i]) / 2 * h);
       var cc = w[S] / l, out = [];
@@ -2178,8 +2280,8 @@
     P.defl = { inst: [], flu: [], eps: [] };
     for (t = 0; t < n; t++) {
       var gt = G.filter(function (g) { return g.t === t; });
-      P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib));
-      P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib));
+      P.defl.inst.push(deflP(t, gt.map(function (g) { return g.p.proba * nA * g.e + at(HI.moy, g); }), R.EI * Ib, gt.map(function (g) { return g.p.proba * nA; }), gt.map(function (g) { return at(HI.moy, g); })));
+      P.defl.flu.push(deflP(t, gt.map(function (g) { return g.d.esMoy * nA * g.e + at(H.esMoy, g); }), R.EF * Ib, gt.map(function (g) { return g.d.esMoy * nA; }), gt.map(function (g) { return at(H.esMoy, g); })));
       // allongement relatif de la fibre moyenne (x1e4) : instantané -F_moy/(Sn.Eij) ; total -(retrait + F_ES moy/(Sn.EF))
       var fi = 0, fe = 0, EW = globalThis.PSIDP_EPSW || 0, sw = 0; // v39 essai : PSIDP_EPSW = 1 trapèzes, 2 Simpson (0 = moyenne arithmétique)
       gt.forEach(function (g, ig) { var wq = EW === 1 ? ((ig === 0 || ig === gt.length - 1) ? 0.5 : 1) : EW === 2 ? ((ig === 0 || ig === gt.length - 1) ? 1 : (ig % 2 ? 4 : 2)) : 1; sw += wq; fi += wq * g.p.proba * nA; fe += wq * g.d.esMoy * nA; }); fi /= sw; fe /= sw;

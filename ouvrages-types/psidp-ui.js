@@ -30,7 +30,27 @@
 .ot svg .hl.cabpt{stroke:#c0392b;fill:#f6e3b0}
 .ot svg .hl.load{stroke:#c0392b;fill:rgba(192,57,43,.1)}
 .ot svg .hl.arw,.ot svg .hl.arr{stroke:#c0392b;stroke-width:2.4px}
-.ot svg .hl.lane{stroke:#f6e3b0}`;
+.ot svg .hl.lane{stroke:#f6e3b0}
+.ot svg .cut{stroke:#c0392b;stroke-width:3px;vector-effect:non-scaling-stroke}
+.ot svg .cutl{stroke:#c0392b;stroke-width:.9px;stroke-dasharray:10 3 2 3;vector-effect:non-scaling-stroke}
+.ot svg .cutl2{stroke:#c0392b;stroke-width:1.3px;vector-effect:non-scaling-stroke}
+.ot svg .cuta{fill:#c0392b;stroke:none}
+.ot svg .cutt{fill:#c0392b;font-family:'Courier New',monospace;font-weight:700}
+.ot svg .fus{fill:rgba(10,138,120,.10);stroke:none}
+.ot svg .fusS{fill:none;stroke:#c0392b;stroke-width:1.1px;stroke-dasharray:5 3;vector-effect:non-scaling-stroke}
+.ot svg .fusI{fill:none;stroke:#1a4fd6;stroke-width:1.1px;stroke-dasharray:5 3;vector-effect:non-scaling-stroke}
+.ot svg .infl{fill:#fff;stroke:#c0392b;stroke-width:1.2px;vector-effect:non-scaling-stroke}
+.ot svg .junc{stroke:#0a8a78;stroke-width:1px;vector-effect:non-scaling-stroke}
+.ot svg .anc{fill:#3c3f4d;stroke:none}
+.ot svg .brk{fill:none;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke}
+.ot svg .zone{fill:#f3efe6;stroke:#5d5545;stroke-width:.8px;vector-effect:non-scaling-stroke}
+.ot svg .zone.c{fill:#e6dcc4}
+.ot-figbody svg .dv{fill:#1a4fd6;font-family:'Outfit',sans-serif}
+.ot-chart .hln{stroke-width:1.2;fill:none}.ot-chart .hll{font-size:10px;text-anchor:end}
+.ot-chart .bx{stroke-width:1}.ot-chart .bx.mx{fill:rgba(192,57,43,.16)}.ot-chart .bx.mn{fill:rgba(26,79,214,.16)}.ot-chart .bx.perm{fill:rgba(60,63,77,.22)}.ot-chart .bx.s4{fill:rgba(184,106,20,.12)}.ot-chart .bx.s2{fill:rgba(10,138,120,.16)}
+.ot-chart .dt{stroke-width:1.4;fill:#fff}
+.ot-chart .dl{font-size:10px;text-anchor:middle;font-weight:700}
+.ot-chart .lgb{stroke-width:1}`;
     document.head.appendChild(st);
   }
 
@@ -561,7 +581,7 @@
   /* coupe transversale ; mode : 'sect' | 'loads' | 'mat' | undefined
      vue à l'échelle de toute la dalle + détail agrandi de l'encorbellement et des premiers câbles */
   let CLIPN = 0;
-  function drawCoupe(svg, m, sch, mode) {
+  function drawCoupe(svg, m, sch, mode, ex) {
     const H1 = V(m, 'HDAL1') || 0.8, H2 = Math.min(V(m, 'HDAL2'), H1), H3 = Math.min(V(m, 'HDAL3'), H1);
     const E1 = V(m, 'EDAL1') || 5, E2 = Math.max(0, V(m, 'EDAL2')), E3 = Math.min(Math.max(0, V(m, 'EDAL3')), E2);
     const a = E1 / 2, c = E2 / 2, Wd = E1 + E2;
@@ -579,8 +599,8 @@
     const xd0 = -a - c - 0.12, xd1 = -a + Math.max(1.3, mg + sp * 2.4);
     const kd = Math.max(1.5, Math.min(6, W * 0.9 / (xd1 - xd0)));
     const ox = -kd * (xd0 + xd1) / 2, oy = -1.45 - kd * (yT + 0.05);
-    const y0 = detail ? oy - 1.05 : -1.15, y1 = yT + (loads ? 4.3 : 1.55);
-    const d = svg({ x0: -W / 2 - 0.9, y0, x1: W / 2 + 1.35, y1 }, { pad: 0.03 });
+    const y0 = detail ? oy - 1.05 : -1.15, y1 = yT + (loads ? 4.3 : 1.55) + (ex ? 1.3 : 0);
+    const d = svg({ x0: -W / 2 - 0.9, y0, x1: W / 2 + 1.35 + (ex ? 0.6 : 0), y1 }, { pad: 0.03 });
     const u = d.u;
     const kSec = 'HDAL1 HDAL2 HDAL3 EDAL1 EDAL2 EDAL3 S I';
     const P = E2 > 0 ? [[-a, 0], [a, 0], [a + E3 / 2, H3], [a + c, H1 - H2], [a + c, H1], [-a - c, H1], [-a - c, H1 - H2], [-a - E3 / 2, H3]] : [[-a, 0], [a, 0], [a, H1], [-a, H1]];
@@ -623,6 +643,11 @@
     const yy = yT + 0.38;
     ['ETROG', 'EGAU', 'ESURCH', 'EDROI', 'ETROD'].forEach((k, i) => { if (ws[i] > 0 || sch) d.dim(xs[i], yy, xs[i + 1], yy, L_(m, k, sch, 2), 0.001, k, { size: ws[i] < 0.8 && !sch ? 0.65 : 0.8 }); });
     if (!loads && !mat) d.dim(-Wp / 2, yy + 0.62, Wp / 2, yy + 0.62, sch ? 'ETROG + EGAU + ESURCH + EDROI + ETROD' : 'largeur ' + fmt(Wp, 2) + ' m · ' + nv + ' voie' + (nv > 1 ? 's' : ''), 0.001, 'ETROG EGAU ESURCH EDROI ETROD NV');
+    if (ex && !loads && !mat) {          // planche : largeurs roulable et chargeable (résultats du programme)
+      const r0 = xs[1], r1 = xs[4], Lr = ex.Lr > 0 ? ex.Lr : r1 - r0, Lc = ex.Lc > 0 ? ex.Lc : Lr, cr = (r0 + r1) / 2;
+      d.dim(cr - Lr / 2, yy + 1.24, cr + Lr / 2, yy + 1.24, 'largeur roulable ' + fmt(Lr, 2) + ' m', 0.001, null, { size: 0.8 });
+      d.dim(cr - Lc / 2, yy + 1.86, cr + Lc / 2, yy + 1.86, 'largeur chargeable ' + fmt(Lc, 2) + ' m · ' + ex.nv + ' voie' + (ex.nv > 1 ? 's' : '') + ' de ' + fmt(ex.lv, 2) + ' m', 0.001, null, { size: 0.8 });
+    }
     if (loads) {
       const yr = yy + 0.45;
       for (let i = 0; i < nv; i++) {
@@ -639,10 +664,10 @@
       d.dim(-a, -0.25, a, -0.25, L_(m, 'EDAL1', sch, 2), 0.001, 'EDAL1');
     }
     if (detail) {
-      d.dim(-a, -0.25, a, -0.25, L_(m, 'EDAL1', sch, 2), 0.001, 'EDAL1');
+      d.dim(-a, -0.25, a, -0.25, L_(m, 'EDAL1', sch, 2), ex ? -0.001 : 0.001, 'EDAL1');
       d.dim(a + c + 0.3, 0, a + c + 0.3, H1, L_(m, 'HDAL1', sch, 3), -0.001, 'HDAL1', { size: 0.75 });
       d.dim(a + c + 0.85, 0, a + c + 0.85, VP, sch ? 'V\'' : fmt(VP, 3), -0.001, 'VP', { size: 0.65 });
-      d.dim(a + c + 0.85, VP, a + c + 0.85, H1, sch ? 'V' : fmt(H1 - VP, 3), -0.001, 'V', { size: 0.65 });
+      d.dim(a + c + (ex ? 1.4 : 0.85), VP, a + c + (ex ? 1.4 : 0.85), H1, sch ? 'V' : fmt(H1 - VP, 3), -0.001, 'V', { size: 0.65 });
       const lab = sch ? (mode === 'sect' ? 'S · I · V · V\'' : 'NCA câbles · DGAINE') : ghost ? 'NCA = 0 : nombre de câbles calculé par le programme' : n + ' câbles ' + (m.values.UNITE || '') + ' — en travée ● · sur appui ○';
       d.text(0, -0.85, lab, { size: 0.75, cls: sch ? 'tc' : 'ts', k: sch && mode === 'sect' ? 'S I V VP' : 'NCA' });
       if (!sch && mode === 'sect') d.text(0, H1 * 0.5, 'S = ' + fmt(V(m, 'S') || sc.S, 4) + ' m² · I = ' + fmt(V(m, 'I') || sc.I, 5) + ' m⁴', { size: 0.75, cls: 'dv', k: 'S I' });
@@ -674,22 +699,27 @@
     return d.toString();
   }
 
-  /* vue en plan biaise */
-  function drawPlan(svg, m, sch) {
+  /* vue en plan biaise ; cut = { t } (planche de la note) : textes réduits, traits de coupe A-A / B-B repérés */
+  function drawPlan(svg, m, sch, cut) {
     const g = geo(m);
     const W = (V(m, 'EDAL1') + V(m, 'EDAL2')) || 10;
     const b = Math.max(30, Math.min(100, V(m, 'BIAIS') || 100)) * Math.PI / 200;
     const dx = W / Math.tan(b);
     const xa = -g.ab, xb = g.Lt + g.ab;
     const rA = Math.min(W * 0.5, g.L[0] * 0.4);
-    const d = svg({ x0: Math.min(xa - Math.abs(dx) / 2, -W * 0.5 / Math.tan(b) - rA * 1.7) - g.Lt * 0.03, y0: -W * 0.75, x1: xb + Math.abs(dx) / 2 + g.Lt * 0.06, y1: W * 1.45 }, { pad: 0.03 });
+    const fs = cut ? 0.62 : 1;
+    let X0 = Math.min(xa - Math.abs(dx) / 2, -W * 0.5 / Math.tan(b) - rA * 1.7) - g.Lt * 0.03, X1 = xb + Math.abs(dx) / 2 + g.Lt * 0.06, Y0 = -W * 0.75;
+    const u0 = (X1 - X0 + g.Lt * 0.1) * 1.06 / 100;
+    if (cut) { X0 -= 4 * u0; X1 += 7 * u0; Y0 = Math.min(Y0, -W * 0.03 - 10 * u0); }
+    const d = svg({ x0: X0, y0: Y0, x1: X1, y1: W * 1.45 }, { pad: 0.03 });
     const u = d.u;
     const at = (x, y) => [x + (y - W / 2) / Math.tan(b), y];        // point d'une ligne parallèle aux appuis passant par (x, W/2)
     d.poly([at(xa, 0), at(xb, 0), at(xb, W), at(xa, W)], 'b', 'EDAL1 EDAL2 ABOUT NT');
     const ws = ['ETROG', 'EGAU', 'ESURCH', 'EDROI', 'ETROD'].map(k => Math.max(0, V(m, k))), Wp = ws.reduce((x, y) => x + y, 0) || W;
     const y1 = W / 2 + Wp / 2 - ws[0] - ws[1], y0 = W / 2 - Wp / 2 + ws[4] + ws[3];
     if (y1 > y0) d.poly([at(xa, y0), at(xb, y0), at(xb, y1), at(xa, y1)], 'road', 'ESURCH');
-    d.line(xa - g.Lt * 0.02, W / 2, xb + g.Lt * 0.02, W / 2, 'ax');
+    const xL = Math.min(at(xa, 0)[0], at(xa, W)[0]), xR = Math.max(at(xb, 0)[0], at(xb, W)[0]);
+    if (cut) d.line(xL - u * 4.6, W / 2, xR + u * 4.6, W / 2, 'ax'); else d.line(xa - g.Lt * 0.02, W / 2, xb + g.Lt * 0.02, W / 2, 'ax');
     for (let i = 0; i <= g.n; i++) {
       const x = g.X[i], k = supK(i) + ' SYMAP';
       const p0 = at(x, -W * 0.08), p1 = at(x, W * 1.08);
@@ -697,18 +727,36 @@
       const nap = Math.max(1, Math.round(V(m, 'NAP' + (i + 1))) || 1), sz = Math.min(W / (nap * 2.4), 0.9);
       for (let j = 0; j < nap; j++) { const y = W * (j + 0.5) / nap, p = at(x, y); d.rect(p[0] - sz / 2, p[1] - sz / 2, sz, sz, V(m, 'TYPAP' + (i + 1)) === 0 ? 'b' : 'b2', k); }
       const q = at(x, W * 1.08);
-      d.text(q[0], q[1] + u * 1.6, sch ? `NAP${i + 1} · TYPAP${i + 1}` : 'A' + (i + 1) + ' · ' + nap + ' app.', { size: 0.7, cls: sch ? 'tc' : 'ts', k });
+      d.text(q[0], q[1] + u * 1.6 * fs, sch ? `NAP${i + 1} · TYPAP${i + 1}` : 'A' + (i + 1) + ' · ' + nap + ' app.', { size: 0.7 * fs, cls: sch ? 'tc' : 'ts', k });
     }
-    for (let t = 0; t < g.n; t++) d.dim(g.X[t], -W * 0.42, g.X[t + 1], -W * 0.42, L_(m, 'D' + (t + 1), sch, 2), 0.001, 'D' + (t + 1));
-    const xr = Math.max(at(xb, 0)[0], at(xb, W)[0]) + g.Lt * 0.025;
-    d.dim(xr, 0, xr, W, sch ? 'EDAL1 + EDAL2' : fmt(W, 2), -0.001, 'EDAL1 EDAL2', { size: 0.8 });
+    const yDm = cut ? -W * 0.03 - 4.4 * u : -W * 0.42;
+    for (let t = 0; t < g.n; t++) d.dim(g.X[t], yDm, g.X[t + 1], yDm, L_(m, 'D' + (t + 1), sch, 2), cut ? -0.001 : 0.001, 'D' + (t + 1), { size: fs });
+    const xr = xR + (cut ? 7 * u : g.Lt * 0.025);
+    d.dim(xr, 0, xr, W, sch ? 'EDAL1 + EDAL2' : fmt(W, 2), -0.001, 'EDAL1 EDAL2', { size: 0.8 * fs });
     // angle de biais au premier appui
     const o = at(0, 0), r = rA, arc = [];
     const pe = at(0, -W * 0.48); d.line(o[0], o[1], pe[0], pe[1], 'l', 'BIAIS'); d.line(o[0], o[1], o[0] - r * 1.25, o[1], 'l', 'BIAIS');
     for (let i = 0; i <= 18; i++) { const t = Math.PI + b * i / 18; arc.push([o[0] + r * Math.cos(t), o[1] + r * Math.sin(t)]); }
     d.path(arc, 'l', 'BIAIS');
-    d.text(o[0] + r * 1.3 * Math.cos(Math.PI + b / 2), o[1] + r * 1.3 * Math.sin(Math.PI + b / 2), sch ? 'BIAIS' : fmt(V(m, 'BIAIS'), 2) + ' gr', { k: 'BIAIS', cls: sch ? 'tc' : 'dv', size: 0.9, a: 'end' });
-    d.text((xa + xb) / 2, -W * 0.68, sch ? 'portées biaises D1 … D' + g.n + ' mesurées sur l\'axe' : 'portées biaises sur l\'axe · portée droite max ' + fmt(Math.max(...g.L) * Math.sin(b), 2) + ' m', { size: 0.75, cls: 'ts', k: 'BIAIS' });
+    d.text(o[0] + r * 1.3 * Math.cos(Math.PI + b / 2), o[1] + r * 1.3 * Math.sin(Math.PI + b / 2), sch ? 'BIAIS' : fmt(V(m, 'BIAIS'), cut ? 3 : 2) + ' gr', { k: 'BIAIS', cls: sch ? 'tc' : 'dv', size: 0.9 * fs, a: 'end' });
+    d.text((xa + xb) / 2, cut ? yDm - 3.6 * u : -W * 0.68, sch ? 'portées biaises D1 … D' + g.n + ' mesurées sur l\'axe' : 'portées biaises sur l\'axe · portée droite max ' + fmt(Math.max(...g.L) * Math.sin(b), 2) + ' m', { size: 0.75 * fs, cls: 'ts', k: 'BIAIS' });
+    /* planche : traits de coupe repérés (A-A selon l'axe de la voie portée, B-B perpendiculaire à l'axe), flèches = sens de vue */
+    if (cut) {
+      const arw = (x, y, ux, uy, lab, side) => {        // flèche de sens de vue depuis (x, y)
+        const L2 = u * 2.2, hx = x + ux * L2, hy = y + uy * L2, h = u * 0.8;
+        d.line(x, y, hx, hy, 'cutl2');
+        d.poly([[hx + ux * h, hy + uy * h], [hx - uy * h * 0.5, hy + ux * h * 0.5], [hx + uy * h * 0.5, hy - ux * h * 0.5]], 'cuta');
+        d.text(hx + ux * h * 2.2 + (side || 0) * u * 1.4, hy + uy * h * 2.2, lab, { size: 0.8, cls: 'cutt' });
+      };
+      // A-A : traits épais aux deux bouts de l'axe (au-delà des angles biais), vue vers +y : l'élévation est regardée depuis le bord droit
+      const ya = W / 2;
+      for (const [x1, x2] of [[xL - u * 4.4, xL - u * 2.2], [xR + u * 2.2, xR + u * 4.4]]) { d.line(x1, ya, x2, ya, 'cut'); arw((x1 + x2) / 2, ya, 0, 1, 'A'); }
+      // B-B : à mi-portée de la travée cut.t, perpendiculaire à l'axe, vue vers les abscisses croissantes
+      const xB = g.X[cut.t] + g.L[cut.t] / 2;
+      d.line(xB, -W * 0.02, xB, W * 1.02, 'cutl');
+      d.line(xB, W * 1.03, xB, W * 1.03 + 1.8 * u, 'cut'); arw(xB, W * 1.03 + 1.8 * u, 1, 0, 'B');
+      d.line(xB, -W * 0.03, xB, -W * 0.03 - 1.8 * u, 'cut'); arw(xB, -W * 0.03 - 1.8 * u, 1, 0, 'B');
+    }
     return d.toString();
   }
 
@@ -1092,8 +1140,354 @@
     if (k === 'CABL' && V(m, 'CABL') === 4) ensureCotes(m);
   }
 
+  /* ═════════ planches intercalées dans la note SETRA (affichage seulement : la note texte reste inchangée) ═════════
+     figures(model, results, pages) → [{ after, html }] ; toutes les valeurs tracées proviennent de results (ou du bordereau). */
+
+  /* courbes : variante locale d'OTUI.chart (échelle sans zéro imposé, lignes de référence, barres, points cotés) */
+  function lchart(o) {
+    const W = o.w || 1000, H = o.h || 280, ml = o.ml || 66, mr = o.mr || 30, mb = o.mb || 38;
+    const xs = o.x, S = o.series || [], all = [];
+    for (const s of S) for (const v of s.y) if (isFinite(v)) all.push(v);
+    for (const h of o.hlines || []) if (isFinite(h.v)) all.push(h.v);
+    for (const b of o.bars || []) all.push(b.v0, b.v1);
+    for (const p of o.dots || []) if (isFinite(p.v)) all.push(p.v);
+    if (!all.length) return '';
+    let y0 = Math.min(...all), y1 = Math.max(...all);
+    if (o.zero !== false) { y0 = Math.min(0, y0); y1 = Math.max(0, y1); }
+    if (y1 - y0 < 1e-9) { y0 -= 1; y1 += 1; }
+    const pad = (y1 - y0) * 0.04; if (o.zero === false || y0 < 0) y0 -= pad; y1 += pad;
+    const nice = r => { const p = Math.pow(10, Math.floor(Math.log10(r))); const f = r / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; };
+    const st = nice((y1 - y0) / (o.nt || 5)); y0 = Math.floor(y0 / st + 1e-9) * st; y1 = Math.ceil(y1 / st - 1e-9) * st;
+    const leg = S.filter(s => s.name).map(s => ({ name: s.name, cls: s.cls, dash: s.dash, kind: 'line' })).concat(o.legend || []);
+    const rows = []; let lx = ml, row = [];
+    for (const it of leg) { const wI = 34 + 6.3 * it.name.length; if (row.length && lx + wI > W - mr) { rows.push(row); row = []; lx = ml; } row.push([lx, it]); lx += wI + 10; }
+    if (row.length) rows.push(row);
+    const mt = (o.mt || 6) + rows.length * 16 + ((o.marks && o.marks.length) ? 18 : 8);
+    const xa = o.xr ? o.xr[0] : Math.min(...xs), xb = o.xr ? o.xr[1] : Math.max(...xs);
+    const PX = x => ml + (x - xa) / ((xb - xa) || 1) * (W - ml - mr);
+    const PY = v => o.down ? mt + (v - y0) / (y1 - y0) * (H - mt - mb) : H - mb - (v - y0) / (y1 - y0) * (H - mt - mb);
+    const f2 = v => +v.toFixed(2), out = [], dec = st < 1 ? (st < 0.1 ? 2 : 1) : 0;
+    out.push(`<svg class="ot-chart" viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">`);
+    for (let v = y0; v <= y1 + st / 2; v += st) { const y = f2(PY(v)); out.push(`<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" class="g"/><text x="${ml - 6}" y="${y}" class="yl">${esc(fmt(Math.abs(v) < st * 1e-6 ? 0 : v, dec))}</text>`); }
+    let lastX = -1e9;
+    for (const x of (o.xticks || xs)) { const px = PX(x); out.push(`<line x1="${f2(px)}" x2="${f2(px)}" y1="${mt}" y2="${H - mb}" class="g2"/>`); if (px - lastX > 40) { out.push(`<text x="${f2(px)}" y="${H - mb + 15}" class="xl">${esc(o.xfmt ? o.xfmt(x) : fmt(x, 2))}</text>`); lastX = px; } }
+    if (y0 <= 0 && y1 >= 0) out.push(`<line x1="${ml}" x2="${W - mr}" y1="${f2(PY(0))}" y2="${f2(PY(0))}" class="z"/>`);
+    for (const h of o.hlines || []) { if (!isFinite(h.v)) continue; const y = f2(PY(h.v)); out.push(`<line x1="${ml}" x2="${W - mr}" y1="${y}" y2="${y}" class="hln ${h.cls || 'perm'}"${h.dash ? ` stroke-dasharray="${h.dash}"` : ''}/><text x="${W - mr - 4}" y="${f2(y + (h.below ? 12 : -4))}" class="hll ${h.cls || 'perm'}">${esc(h.label)}</text>`); }
+    for (const [a, b, c] of (o.fill || [])) { const A = S[a].y, B = S[b].y;
+      const pts = xs.map((x, i) => `${f2(PX(x))},${f2(PY(A[i]))}`).concat(xs.map((x, i) => `${f2(PX(x))},${f2(PY(B[i]))}`).reverse());
+      out.push(`<polygon points="${pts.join(' ')}" class="fz ${c || ''}"/>`); }
+    for (const b of o.bars || []) { const x = PX(b.x) + (b.dx || 0), w = b.w || 8, ya = PY(b.v0), yb = PY(b.v1);
+      out.push(`<rect x="${f2(x - w / 2)}" y="${f2(Math.min(ya, yb))}" width="${w}" height="${f2(Math.max(1, Math.abs(yb - ya)))}" class="bx ${b.cls || 'mx'}"/>`); }
+    for (const s of S) {
+      const segs = []; let cur = [];
+      xs.forEach((x, i) => { if (isFinite(s.y[i])) cur.push(`${f2(PX(x))},${f2(PY(s.y[i]))}`); else if (cur.length) { segs.push(cur); cur = []; } });
+      if (cur.length) segs.push(cur);
+      for (const g of segs) out.push(`<polyline points="${g.join(' ')}" class="c ${s.cls || 's1'}"${s.dash ? ` stroke-dasharray="${s.dash === true ? '6 4' : s.dash}"` : ''}${s.thin ? ' style="stroke-width:1.3"' : ''}/>`);
+      if (s.lab !== false) {
+        const lab = i => { const v = s.y[i]; if (!isFinite(v) || Math.abs(v) < 1e-9) return; const up = ((v >= 0) === !o.down) !== !!s.lin; out.push(`<text x="${f2(PX(xs[i]) + (s.ldx || 0))}" y="${f2(PY(v) + (up ? -7 : 13))}" class="vl ${s.cls || 's1'}">${esc(fmt(v, s.dec != null ? s.dec : (Math.abs(v) < 10 ? 2 : Math.abs(v) < 1000 ? 1 : 0)))}</text>`); };
+        let im = -1, iM = -1; s.y.forEach((v, i) => { if (!isFinite(v)) return; if (im < 0 || v < s.y[im]) im = i; if (iM < 0 || v > s.y[iM]) iM = i; });
+        if (s.lab === 'max') lab(iM); else if (s.lab === 'min') lab(im); else if (s.lab === 'both') { lab(iM); if (im !== iM) lab(im); }
+        else { let ia = 0; s.y.forEach((v, i) => { if (isFinite(v) && Math.abs(v) > Math.abs(s.y[ia] || 0)) ia = i; }); lab(ia); }
+      }
+    }
+    for (const p of o.dots || []) { if (!isFinite(p.v)) continue; const x = PX(p.x) + (p.dx || 0), y = PY(p.v);
+      out.push(`<circle cx="${f2(x)}" cy="${f2(y)}" r="${p.r || 3.2}" class="dt ${p.cls || 'mx'}"/>`);
+      if (p.label != null) { const up = p.pos ? p.pos === 'a' : ((p.v >= 0) === !o.down); out.push(`<text x="${f2(x + (p.lx || 0))}" y="${f2(y + (up ? -8 : 15))}" class="dl ${p.cls || 'mx'}"${p.anchor ? ` style="text-anchor:${p.anchor}"` : ''}>${esc(p.label)}</text>`); } }
+    for (const t of o.texts || []) out.push(`<text x="${f2(PX(t.x))}" y="${f2(PY(t.v) + (t.dy || 0))}" class="mkl"${t.anchor ? ` style="text-anchor:${t.anchor}"` : ''}>${esc(t.label)}</text>`);
+    for (const m of (o.marks || [])) out.push(`<line x1="${f2(PX(m.x))}" x2="${f2(PX(m.x))}" y1="${mt - 4}" y2="${H - mb}" class="mk"/><text x="${f2(PX(m.x))}" y="${mt - 8}" class="mkl">${esc(m.label)}</text>`);
+    if (o.ylab) out.push(`<text x="12" y="${mt + (H - mt - mb) / 2}" class="al" transform="rotate(-90 12 ${mt + (H - mt - mb) / 2})">${esc(o.ylab)}</text>`);
+    if (o.xlab) out.push(`<text x="${(W + ml - mr) / 2}" y="${H - 6}" class="al">${esc(o.xlab)}</text>`);
+    rows.forEach((rw, j) => { const y = (o.mt || 6) + 8 + j * 16; for (const [x, it] of rw) {
+      if (it.kind === 'bar') out.push(`<rect x="${x}" y="${y - 5}" width="22" height="10" class="bx ${it.cls}"/>`);
+      else if (it.kind === 'dot') out.push(`<circle cx="${x + 11}" cy="${y}" r="3.2" class="dt ${it.cls}"/>`);
+      else out.push(`<line x1="${x}" x2="${x + 22}" y1="${y}" y2="${y}" class="${it.kind === 'hl' ? 'hln' : 'c'} ${it.cls || 's1'}"${it.dash ? ` stroke-dasharray="${it.dash === true ? '6 4' : it.dash}"` : ''}/>`);
+      out.push(`<text x="${x + 27}" y="${y}" class="lg">${esc(it.name)}</text>`); } });
+    out.push('</svg>'); return out.join('');
+  }
+
+  const FIGSVG = (box, opt) => G.OTUI.svg(box, opt);
+  const supMarks = r => r.X0.map((x, i) => ({ x, label: 'A' + (i + 1) }));
+  const fig = (title, body, wide) => `<div${wide === false ? '' : ' class="wide"'}><h5>${esc(title)}</h5>${body}</div>`;
+
+  /* coupe longitudinale A-A à l'échelle (H = V) */
+  function figElev(m, r) {
+    const n = r.n, X = r.X0, Lt = X[n], ab = Math.max(0, V(m, 'ABOUT')), H = V(m, 'HDAL1') || 0.8, hc = Math.max(0, V(m, 'HCHAU'));
+    const xa = -ab, xb = Lt + ab, k = (xb - xa) / 100;
+    const hp = Math.max(6 * k, 4 * H), hb = 0.45 * k, yD = H + hc + 3.4 * k;
+    const d = FIGSVG({ x0: xa - 4 * k, y0: -hp - 6.5 * k, x1: xb + 4 * k, y1: yD + 5.5 * k }, { pad: 0.015 });
+    const pw = Math.max(0.6, 1.3 * k);
+    for (let i = 0; i <= n; i++) {
+      const x = X[i];
+      if (i === 0 || i === n) {
+        const s = i === 0 ? -1 : 1, xe = i === 0 ? xa : xb;
+        d.poly([[xe + s * 0.25 * k, H + hc], [xe + s * 1.6 * k, H + hc], [xe + s * 1.6 * k, -hp], [x - s * 1.4 * k, -hp], [x - s * 1.4 * k, -hb], [xe + s * 0.25 * k, -hb]], 'b2');
+      } else d.rect(x - pw / 2, -hp, pw, hp - hb, 'b2');
+      d.path([[x - 2.2 * k, -hp], [x - 0.6 * k, -hp + 0.6 * k], [x + 0.6 * k, -hp - 0.6 * k], [x + 2.2 * k, -hp]], 'brk');
+      d.rect(x - 0.7 * k, -hb, 1.4 * k, hb, 'b');
+      d.line(x, -hp - 1.2 * k, x, yD - 0.8 * k, 'ax');
+      d.text(x, -hp - 2.4 * k, 'A' + (i + 1), { size: 0.62, cls: 'tc' });
+    }
+    d.rect(xa, 0, xb - xa, H, 'b');
+    d.rect(xa, H, xb - xa, Math.max(hc, 0.12 * k), 'road');
+    for (let t = 0; t < n; t++) d.dim(X[t], yD, X[t + 1], yD, fmt(r.L[t], 2), 0.001, null, { size: 0.6 });
+    if (ab > 0) { d.dim(xa, yD, 0, yD, '', 0.001); d.dim(Lt, yD, xb, yD, '', 0.001); d.text(xa - 0.4 * k, yD + 1.3 * k, fmt(ab, 2), { size: 0.5, a: 'end', cls: 'dv' }); d.text(xb + 0.4 * k, yD + 1.3 * k, fmt(ab, 2), { size: 0.5, a: 'start', cls: 'dv' }); }
+    d.dim(xa, yD + 3 * k, xb, yD + 3 * k, 'longueur totale ' + fmt(xb - xa, 2) + ' m (' + n + ' travée' + (n > 1 ? 's' : '') + ', abouts compris)', 0.001, null, { size: 0.6 });
+    let tl = 0; r.L.forEach((l, t) => { if (l > r.L[tl] + 1e-9) tl = t; });
+    const xm = X[tl] + r.L[tl] * 0.3;
+    d.line(xm, H * 0.5, xm, -2.2 * k, 'l');
+    d.text(xm + 0.5 * k, -2.6 * k, 'dalle h = ' + fmt(H, 3) + ' m · revêtement ' + fmt(hc, 3) + ' m', { size: 0.55, a: 'start', cls: 'dv' });
+    // échelle graphique
+    const sb = [1, 2, 5, 10, 20, 50].find(s => s >= Lt / 10) || 50, ys = -hp - 4.6 * k;
+    d.line(xa, ys, xa + sb, ys, 'l'); for (const q of [0, sb / 2, sb]) d.line(xa + q, ys - 0.4 * k, xa + q, ys + 0.4 * k, 'l');
+    d.text(xa + sb + 0.8 * k, ys, sb + ' m — échelle unique H = V', { size: 0.52, a: 'start', cls: 'ts' });
+    d.text(xb, ys, 'appuis schématiques (hauteurs non définies par les données)', { size: 0.5, a: 'end', cls: 'ts' });
+    return d.toString();
+  }
+
+  /* tracé du câble moyen dans l'élévation (hauteurs dilatées), fuseau limite, raccordements, ancrages */
+  function figCable(m, r) {
+    const P = r.prec, n = r.n, X = r.X0, Lt = X[n], ab = Math.max(0, V(m, 'ABOUT')), H = V(m, 'HDAL1') || 0.8, VP = r.section.VP;
+    let ex = Lt / (9 * H); ex = ex > 10 ? Math.round(ex / 5) * 5 : Math.max(1, Math.round(ex));
+    const Z = c => c * ex, Hd = H * ex;
+    const xa = -ab, xb = Lt + ab, k = (xb - xa) / 100;
+    const d = FIGSVG({ x0: xa - 3 * k, y0: -6 * k, x1: xb + 9 * k, y1: Hd + 7.5 * k }, { pad: 0.015 });
+    d.rect(xa, 0, xb - xa, Hd, 'b');
+    d.line(xa - 1 * k, Z(VP), xb + 1 * k, Z(VP), 'ax');
+    d.text(xa - 1.4 * k, Z(VP), 'G', { size: 0.6, a: 'end', cls: 'ts' });
+    const au = P.auto, BR = au && ((au.cycles && au.cycles.length && au.cycles[au.cycles.length - 1].BR) || (au.blocks && au.blocks[1]));
+    let fus = false;
+    if (m.values.CABL !== 4 && BR && BR.G && BR.G.length) {
+      const Gs = BR.G.slice().sort((a, b) => a.X - b.X || a.t - b.t);
+      const sup = Gs.map(g => [g.X, Z(VP + g.sup)]), inf = Gs.map(g => [g.X, Z(VP + g.inf)]);
+      d.poly(sup.concat(inf.slice().reverse()), 'fus'); d.path(sup, 'fusS'); d.path(inf, 'fusI'); fus = true;
+    }
+    const z = (t, x) => P.cable.z(t, x), pts = [];
+    for (let t = 0; t < n; t++) for (let i = t ? 1 : 0; i <= 160; i++) { const x = r.L[t] * i / 160; pts.push([X[t] + x, Z(VP + z(t, x))]); }
+    const h = 1e-3, s0 = (z(0, h) - z(0, 0)) / h, sn = (z(n - 1, r.L[n - 1]) - z(n - 1, r.L[n - 1] - h)) / h;
+    const ea = z(0, 0) - s0 * ab, eb = z(n - 1, r.L[n - 1]) + sn * ab;
+    pts.unshift([xa, Z(VP + ea)]); pts.push([xb, Z(VP + eb)]);
+    d.path(pts, 'cab');
+    // raccordements des paraboles et points d'inflexion
+    const fl = au && au.fl;
+    let ninf = 0;
+    (P.cable.spans || []).forEach((segs, t) => {
+      if (!segs || (fl && fl[t])) return;
+      for (let s = 1; s < segs.length; s++) {
+        const x = segs[s].from, y = Z(VP + z(t, x)), xx = X[t] + x;
+        if (Math.sign(segs[s].A) !== Math.sign(segs[s - 1].A)) { d.circle(xx, y, 0.5 * k, 'infl'); ninf++; }
+        else d.line(xx, y - 0.7 * k, xx, y + 0.7 * k, 'junc');
+      }
+    });
+    // points imposés (CABL = 4)
+    if (m.values.CABL === 4 && m.cotes && m.cotes.values) m.cotes.values.forEach((row, t) => { if (t < n && row) row.forEach((c, j) => { if (isFinite(num(c))) d.circle(X[t] + r.L[t] * j / 10, Z(num(c)), 0.32 * k, 'cabpt'); }); });
+    // cotes des points bas (en travée) et hauts (sur appuis), en m au-dessus de l'intrados
+    for (let t = 0; t < n; t++) {
+      let bx = 0, bz = Infinity; for (let i = 0; i <= 200; i++) { const x = r.L[t] * i / 200, c = VP + z(t, x); if (c < bz) { bz = c; bx = x; } }
+      d.text(X[t] + bx, Z(bz) - 1.7 * k, fmt(bz, 3), { size: 0.55, cls: 'dv' });
+    }
+    for (let j = 0; j <= n; j++) {
+      const c = VP + (j < n ? z(j, 0) : z(n - 1, r.L[n - 1]));
+      const yl = j === 0 || j === n ? Z(c) + 1.6 * k : Math.min(Z(c) + 1.6 * k, Hd + 1.4 * k);
+      d.text(X[j] + (j === 0 ? 0.6 * k : j === n ? -0.6 * k : 0), yl, fmt(c, 3), { size: 0.55, cls: 'dv', a: j === 0 ? 'start' : j === n ? 'end' : 'middle' });
+    }
+    // ancrages
+    const mod = Math.round(V(m, 'MOD')), act = [mod !== 2, mod !== 1];
+    [[xa, ea, 0], [xb, eb, 1]].forEach(([x, e, s]) => {
+      const hh = Math.min(Hd * 0.45, Math.max(Z(0.22), 1.2 * k));
+      d.rect(s ? x - 0.55 * k : x, Z(VP + e) - hh / 2, 0.55 * k, hh, 'anc');
+      d.text(s ? x : x, Hd + 2.2 * k, 'ancrage ' + (mod === 4 ? 'actif/passif (alterné)' : act[s] ? 'actif' : 'passif'), { size: 0.55, a: s ? 'end' : 'start', cls: 'ts' });
+    });
+    // appuis, cotes des travées, échelle des hauteurs
+    for (let i = 0; i <= n; i++) { const x = X[i]; d.poly([[x, 0], [x - 0.8 * k, -1.3 * k], [x + 0.8 * k, -1.3 * k]], 'b2'); d.text(x, -2.6 * k, 'A' + (i + 1), { size: 0.6, cls: 'tc' }); }
+    for (let t = 0; t < n; t++) d.dim(X[t], Hd + 4.8 * k, X[t + 1], Hd + 4.8 * k, fmt(r.L[t], 2), 0.001, null, { size: 0.58 });
+    const xr = xb + 2.5 * k, q = H >= 1 ? 0.5 : 0.25;
+    d.line(xr, 0, xr, Z(q), 'l'); d.line(xr - 0.4 * k, 0, xr + 0.4 * k, 0, 'l'); d.line(xr - 0.4 * k, Z(q), xr + 0.4 * k, Z(q), 'l');
+    d.text(xr + 0.8 * k, Z(q) / 2, fmt(q, 2) + ' m', { size: 0.55, a: 'start', cls: 'ts' });
+    d.text(xa, -4.6 * k, 'hauteurs dilatées × ' + ex + ' (longueurs à l\'échelle) · cotes de l\'axe du câble en m au-dessus de l\'intrados', { size: 0.55, a: 'start', cls: 'ts' });
+    return { svg: d.toString(), fus, ex, ninf };
+  }
+
+  function figures(m, r, pages) {
+    if (!r || !r.X0 || !pages || !pages.length) return [];
+    const n = r.n, X = r.X0, P = r.prec, out = [];
+    const s0 = Math.max(0, pages.findIndex(p => /CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE/.test(p)));
+    const find = (re, last) => { let k = -1; for (let i = s0; i < pages.length; i++) if (re.test(pages[i])) { k = i; if (!last) break; } return k; };
+    const pno = i => { const mm = /PAGE\s+(\d+)/.exec(pages[i] || ''); return mm ? mm[1] : String(i + 1); };
+    const num0 = (m.numeroRaw2 || m.numero || '');
+    const add = (after, title, body, cap, unit) => { if (after < 0 || !body) return; out.push({ after, title, body, cap, unit }); };
+    const safe = f => { try { f(); } catch (e) { if (typeof console !== 'undefined') console.warn('PSIDP planche :', e && e.message); } };
+    const marks = supMarks(r), xfmt = x => fmt(x, 2);
+    const mm = Object.assign({}, m, { values: Object.assign({}, m.values, { NCA: (P && P.N) || V(m, 'NCA') }) });
+
+    /* 1 — ouvrage à l'échelle : coupe A-A, vue en plan */
+    safe(() => {
+      const gI = find(/CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE/);
+      const tB = n > 1 ? 1 : 0, bi = V(m, 'BIAIS') || 100;
+      add(gI, "OUVRAGE À L'ÉCHELLE (COUPE LONGITUDINALE A-A, VUE EN PLAN)",
+        fig("COUPE A-A — SELON L'AXE DE LA VOIE PORTÉE (PORTÉES BIAISES MESURÉES SUR L'AXE), ÉCHELLE UNIQUE", figElev(m, r)) +
+        fig('VUE EN PLAN — BIAIS GÉOMÉTRIQUE ' + fmt(bi, 3) + ' GR, LIGNES D\'APPUI, TRAITS DE COUPE A-A ET B-B', drawPlan(FIGSVG, m, false, { t: tB })),
+        `Cotes en mètres, conformes au bordereau (portées D, about, épaisseur HDAL1, revêtement HCHAU). A-A : coupe verticale selon l'axe de la voie portée, vue depuis le bord droit (flèches) ; B-B : coupe perpendiculaire à l'axe à mi-portée de la travée ${tB + 1}, vue vers les abscisses croissantes (planche suivante). Biais ${fmt(bi, 3)} gr : angle entre l'axe de la voie portée et les lignes d'appui.`);
+    });
+    /* 2 — coupe transversale B-B : largeurs, câbles */
+    safe(() => {
+      const gI = find(/CARACTERISTIQUES GEOMETRIQUES DE L'OUVRAGE/);
+      const tB = n > 1 ? 1 : 0;
+      add(gI, 'COUPE TRANSVERSALE B-B : LARGEURS ET POSITION DES CÂBLES',
+        fig('COUPE B-B À MI-PORTÉE DE LA TRAVÉE ' + (tB + 1) + ' — VUE VERS LES ABSCISSES CROISSANTES (GAUCHE À GAUCHE)', drawCoupe(FIGSVG, mm, false, undefined, { Lr: r.Lr, Lc: r.Lc, nv: r.nv, lv: r.largeurVoie }), false) +
+        fig('DÉTAIL D\'UN CÂBLE — GAINE, TORONS, ENROBAGES', drawCable(FIGSVG, mm, false), false),
+        `Largeurs du profil en travers (ETROG, EGAU, ESURCH, EDROI, ETROD), largeurs roulable et chargeable et nombre de voies calculés par le programme. ${(P && P.N) || '?'} câbles ${m.values.UNITE || ''} ${m.values.CABL === 4 ? '(câblage imposé)' : '(nombre retenu par le programme)'} : ● position en travée (point bas), ○ position sur appui (point haut) ; leur répartition transversale à entraxe régulier sur la largeur EDAL1 est schématique (le programme raisonne sur le câble moyen).`);
+    });
+    /* 3 — moments fléchissants */
+    safe(() => {
+      if (!r.sol) return;
+      const at = Math.max(find(/POSITIONS DES SURCHARGES CORRESPONDANT AUX MOMENTS/, true), find(/MOMENTS FLECHISSANTS EN TRAVEE/, true));
+      const S = []; r.sol.forEach(sec => sec.forEach(s => S.push(s)));
+      const x = S.map(s => s.abs), g = f => S.map(f);
+      const c1 = lchart({ x, down: true, xticks: X, xfmt, marks, h: 300, ylab: 't·m', series: [
+        { y: g(s => s.cp[0]), name: 'charges permanentes max', cls: 'perm', lin: true, ldx: 30 }, { y: g(s => s.cp[1]), name: 'charges permanentes min', cls: 'perm', dash: true, lab: false },
+        { y: g(s => s.comb[0].qlqc), name: 'E.L.S. QL+QC max', cls: 'mx', lin: true }, { y: g(s => s.comb[1].qlqc), name: 'E.L.S. QL+QC min', cls: 'mn', lin: true },
+        { y: g(s => s.comb[0].elu), name: 'E.L.U. max', cls: 'mx', dash: '3 3', thin: true }, { y: g(s => s.comb[1].elu), name: 'E.L.U. min', cls: 'mn', dash: '3 3', thin: true }], fill: [[2, 3, '']] });
+      const ld = [['A', 'charge A(l)', 's1', -34], ['B', 'charges B', 's2', 34], ['C', 'charges particulières', 's3', 0], ['trot', 'trottoirs', 'perm', 0]].filter(([kk]) => S.some(s => s[kk] && (Math.abs(s[kk][0]) > 1e-6 || Math.abs(s[kk][1]) > 1e-6)));
+      const ser = []; ld.forEach(([kk, nm, c, dx]) => { const tr = kk === 'trot'; ser.push({ y: g(s => s[kk][0]), name: nm, cls: c, ldx: dx, lab: tr ? false : undefined, thin: tr }); ser.push({ y: g(s => s[kk][1]), cls: c, dash: true, ldx: dx, lab: tr ? false : undefined, thin: tr }); });
+      const c2 = ld.length ? lchart({ x, down: true, xticks: X, xfmt, marks, h: 250, ylab: 't·m', series: ser }) : '';
+      let c3 = '';
+      if (P && P.hypServ && P.hypInit) c3 = lchart({ x: X, down: true, xticks: X, xfmt, marks, h: 220, ylab: 't·m', series: [
+        { y: P.hypInit.moy, name: 'mise en tension (moy.)', cls: 's3', ldx: -44 }, { y: P.hypServ.msMoy, name: 'mise en service (moy.)', cls: 's2', dash: true }, { y: P.hypServ.esMoy, name: 'en service (moy.)', cls: 's4', ldx: 44 }] });
+      add(at, 'ENVELOPPES DES MOMENTS FLÉCHISSANTS (LARGEUR TOTALE)',
+        fig('MOMENTS EXTRÊMES — CHARGES PERMANENTES, E.L.S. (QL + QC) ET E.L.U. (QL + QC + TA)', c1) + (c2 ? fig('MOMENTS DUS AUX CHARGES D\'EXPLOITATION SEULES (MAX trait plein, MIN tirets)', c2) : '') +
+        (c3 ? fig('MOMENTS HYPERSTATIQUES DE PRÉCONTRAINTE (linéaires entre appuis, valeurs aux appuis du calcul de précontrainte)', c3) : ''),
+        'Moments en t·m, positifs vers le bas (fibre inférieure tendue). Abscisses cumulées en m depuis l\'appui 1, aux sections 0,0L … 1,0L de chaque travée, comme le listing ; ouvrage complet tracé même lorsque la note n\'imprime que la moitié symétrique.');
+    });
+    /* 4 — efforts tranchants et réactions d'appui */
+    safe(() => {
+      if (!r.shear || !r.reac) return;
+      const at = find(/\n\s*REACTIONS D'APPUIS\s*\n/);
+      const xs = [], cpx = [], cpn = [], bars = [], dots = [];
+      r.shear.forEach((sh, t) => {
+        [['gauche', X[t], 11], ['droite', X[t + 1], -11]].forEach(([side, x, dx]) => {
+          const q = sh[side]; xs.push(x); cpx.push(q.cp[0]); cpn.push(q.cp[1]);
+          bars.push({ x, dx, w: 9, v0: q.comb[1].qlqc, v1: q.comb[0].qlqc, cls: 'mx' });
+          dots.push({ x, dx, v: q.comb[0].elu, cls: 's4', label: fmt(q.comb[0].elu, 1), pos: 'a', anchor: dx > 0 ? 'start' : 'end', lx: dx > 0 ? -4 : 4 });
+          dots.push({ x, dx, v: q.comb[1].elu, cls: 's4', label: fmt(q.comb[1].elu, 1), pos: 'b', anchor: dx > 0 ? 'start' : 'end', lx: dx > 0 ? -4 : 4 });
+        });
+      });
+      const xr = [X[0] - (X[n] - X[0]) * 0.025, X[n] + (X[n] - X[0]) * 0.025];
+      const c1 = lchart({ x: xs, xr, xticks: X, xfmt, marks, h: 290, ylab: 't', bars, dots, series: [{ y: cpx, name: 'charges permanentes max', cls: 'perm', lab: false }, { y: cpn, name: 'charges permanentes min', cls: 'perm', dash: true, lab: false }],
+        legend: [{ name: 'E.L.S. QL+QC (min → max)', cls: 'mx', kind: 'bar' }, { name: 'E.L.U. extrêmes', cls: 's4', kind: 'dot' }] });
+      const R = r.reac, rb = [], rd = [];
+      R.forEach((q, i) => {
+        rb.push({ x: X[i], w: 22, v0: 0, v1: q.comb[0].qlqc, cls: 'mx' }); rb.push({ x: X[i], w: 10, v0: 0, v1: q.cp[0], cls: 'perm' });
+        rd.push({ x: X[i], v: q.comb[0].elu, cls: 's4', label: fmt(q.comb[0].elu, 1), pos: 'a' });
+        rd.push({ x: X[i], dx: 15, v: q.comb[0].qlqc, cls: 'mx', r: 2.4, label: fmt(q.comb[0].qlqc, 1), pos: 'b', anchor: 'start', lx: 4 });
+        rd.push({ x: X[i], v: q.comb[1].qlqc, cls: 'mn', label: fmt(q.comb[1].qlqc, 1), pos: 'a', anchor: 'end', lx: -14 });
+      });
+      const c2 = lchart({ x: X, xr, xticks: X, xfmt, marks, h: 260, mr: 54, ylab: 't', bars: rb, dots: rd, series: [],
+        legend: [{ name: 'E.L.S. QL+QC max', cls: 'mx', kind: 'bar' }, { name: 'charges permanentes max', cls: 'perm', kind: 'bar' }, { name: 'E.L.S. min', cls: 'mn', kind: 'dot' }, { name: 'E.L.U. max', cls: 's4', kind: 'dot' }] });
+      add(at, 'EFFORTS TRANCHANTS SUR APPUIS ET RÉACTIONS D\'APPUI',
+        fig('EFFORTS TRANCHANTS AUX EXTRÉMITÉS DES TRAVÉES — CHARGE PERMANENTE (linéaire) ET ENVELOPPES AUX SECTIONS D\'APPUI', c1) + fig('RÉACTIONS D\'APPUI (LARGEUR TOTALE)', c2),
+        'Efforts en t pour toute la largeur. Les enveloppes des charges d\'exploitation ne sont connues qu\'aux sections d\'appui (côtés gauche et droit de chaque travée) : elles sont portées en barres (E.L.S.) et points (E.L.U.) sans interpolation en travée.');
+    });
+    /* 5 — tracé du câble et fuseau limite */
+    safe(() => {
+      if (!P || !P.cable || !P.cable.z) return;
+      let at = find(/EQUATIONS PARABOLIQUES DU CABLE UTILISEES/);
+      if (at < 0) at = find(/APRES TRANSFORMATION LINEAIRE|FUSEAU LIMITE|COTES DE L'AXE DU CABLE/, true);
+      const C = figCable(m, r);
+      add(at, 'TRACÉ DU CÂBLE MOYEN' + (C.fus ? ' ET FUSEAU LIMITE' : ''),
+        fig('ÉLÉVATION — CÂBLE MOYEN (' + ((P && P.N) || '') + ' × ' + (m.values.UNITE || '') + ')' + (C.fus ? ', FUSEAU LIMITE' : '') + ', RACCORDEMENTS DES PARABOLES ET ANCRAGES', C.svg),
+        (C.fus ? 'Fuseau limite (pertes réajustées) : bord supérieur en tirets rouges, bord inférieur en tirets bleus, rapportés à la fibre moyenne G. ' : (m.values.CABL === 4 ? 'Câblage imposé (CABL = 4) : pas de fuseau limite ; ○ cotes données au bordereau, trait plein = paraboles utilisées pour le calcul des pertes. ' : '')) +
+        `○ rouge : point d'inflexion (raccordement de paraboles de courbures opposées)${C.ninf ? '' : ' — aucun'} ; | vert : raccordement de paraboles de même sens. Cotes en m au-dessus de l'intrados (points bas en travée, sur appuis et aux abouts). Câble prolongé jusqu'aux abouts selon sa tangente sur appui d'extrémité.`);
+    });
+    /* 6 — tensions le long du câble */
+    safe(() => {
+      if (!P || !P.G || !P.G.length) return;
+      const at = find(/PHASES MISE EN SERVICE \(M\.S\)/, true);
+      const Gs = P.G.slice().sort((a, b) => a.X - b.X || a.t - b.t), x = Gs.map(g => g.X);
+      const mk = marks.slice(); if (isFinite(P.SG)) mk.push({ x: P.SG, label: 'SG' }); if (P.SD != null && isFinite(P.SD)) mk.push({ x: P.SD, label: 'SD' });
+      const c = lchart({ x, zero: false, xticks: X, xfmt, marks: mk, h: 300, ylab: 't/m²', hlines: [{ v: V(m, 'SIGMAP0'), label: 'σp0 = ' + fmt(V(m, 'SIGMAP0'), 0), cls: 'perm', dash: '4 3' }], series: [
+        { y: Gs.map(g => g.T0), name: 'après frottement (T0)', cls: 's3', lab: 'min', dec: 0 },
+        { y: Gs.map(g => g.p.proba), name: 'initiale probable (pertes instantanées)', cls: 'mx', lab: 'min', dec: 0, lin: true },
+        { y: Gs.map(g => g.d.msMoy), name: 'mise en service (moy.)', cls: 's2', dash: true, lab: false },
+        { y: Gs.map(g => g.d.esMoy), name: 'en service — finale (moy.)', cls: 'mn', lab: 'min', dec: 0 }] });
+      add(at, 'TENSIONS LE LONG DU CÂBLE',
+        fig('TENSION PROBABLE DANS L\'ACIER DE PRÉCONTRAINTE — PHASES INITIALE, MISE EN SERVICE, SERVICE DÉFINITIF', c),
+        `Tensions en t/m² aux sections de calcul (abscisses cumulées). SG / SD : limites d'influence du recul d'ancrage (${fmt(P.SG, 3)} m${P.SD != null ? ' ; ' + fmt(P.SD, 3) + ' m' : ''}). Pertes différées : retrait ${fmt(r.retrait * V(m, 'EP'), 0)} t/m², relaxation et fluage calculés par section.`);
+    });
+    /* 7 — contraintes normales du béton */
+    safe(() => {
+      if (!P || !P.G) return;
+      const at = find(/CONTRAINTES NORMALES DU BETON \(EN T\/M2\) DE L'OUVRAGE EN SERVICE DEFINITIF/, true);
+      const Gs = P.G.filter(g => g.sig && g.sig.QLx).sort((a, b) => a.X - b.X || a.t - b.t); if (!Gs.length) return;
+      const x = Gs.map(g => g.X), Lm = r.limites;
+      const A = (a, b, f) => a[f] + b[f];
+      const ch = f => {
+        const mt = Gs.map(g => { const o = g.sig; return [A(o.MO, o.Pi, f), A(o.MOx, o.Px, f), A(o.MOn, o.Px, f)]; });
+        const vd = Gs.map(g => { const o = g.sig; return [A(o.QLx, o.PesN, f), A(o.QLn, o.PesN, f)]; });
+        const cg = Gs.map(g => { const o = g.sig; return [A(o.qcx, o.PesN, f), A(o.qcn, o.PesN, f), A(o.tax, o.PesN, f), A(o.tan, o.PesN, f)]; });
+        const mx = a => a.map(q => Math.max(...q)), mn = a => a.map(q => Math.min(...q));
+        return lchart({ x, xticks: X, xfmt, marks, h: 290, ylab: 't/m²', series: [
+          { y: mx(mt), name: 'mise en tension', cls: 's3', dash: '5 3', thin: true, lab: false }, { y: mn(mt), cls: 's3', dash: '5 3', thin: true, lab: false },
+          { y: mx(vd), name: 'service — à vide (QL)', cls: 's2', lab: false }, { y: mn(vd), cls: 's2', lab: false },
+          { y: mx(cg), name: 'service — en charge max', cls: 'mx', lab: 'max', dec: 0 }, { y: mn(cg), name: 'en charge min', cls: 'mn', lab: 'min', dec: 0 }],
+          hlines: [{ v: Lm.comp, label: 'σ̄c service ' + fmt(Lm.comp, 0), cls: 'mx', dash: '7 3' }, { v: Lm.compInit, label: 'σ̄c mise en tension ' + fmt(Lm.compInit, 0), cls: 's3', dash: '2 3', below: true },
+            { v: Lm.trHorsQC, label: 'σ̄t QL+QC ' + fmt(Lm.trHorsQC, 0), cls: 'mn', dash: '7 3', below: true }, { v: Lm.trHorsInit, label: 'σ̄t mise en tension ' + fmt(Lm.trHorsInit, 0), cls: 's3', dash: '2 3' }] });
+      };
+      add(at, 'CONTRAINTES NORMALES DU BÉTON — FIBRES SUPÉRIEURE ET INFÉRIEURE',
+        fig('FIBRE SUPÉRIEURE', ch(0)) + fig('FIBRE INFÉRIEURE', ch(1)),
+        `Contraintes en t/m², compressions positives. Service définitif sous précontrainte minimale ; à vide : QL = CP + TP ; en charge : QL + QC (avec et sans TA). Limites tracées : compression ${fmt(Lm.comp, 0)} (service) et ${fmt(Lm.compInit, 0)} (mise en tension) ; traction hors section d'enrobage ${fmt(Lm.trHorsQC, 0)} (QL + QC), ${fmt(Lm.trHors, 0)} (QL) et ${fmt(Lm.trHorsInit, 0)} (mise en tension). En section d'enrobage : ${fmt(Lm.trEnrQC, 0)} (QL + QC), 0 (QL), ${fmt(Lm.trEnrInit, 0)} (mise en tension) — voir la page des contraintes extrêmes.`);
+    });
+    /* 8 — ferraillage passif */
+    safe(() => {
+      const FP = r.ferPassif; if (!FP) return;
+      const at = find(/^\s+FERRAILLAGE LONGITUDINAL\s*$/m);
+      const xs = [], aS = [], aI = [];
+      for (let t = 0; t < n; t++) {
+        const E9 = r.elu && r.elu.spans && r.elu.spans[t], nd = P && P.ND ? P.ND[t] : 10;
+        for (let i = 0; i <= 10; i++) {
+          let v0 = [FP.longi.sup, FP.longi.inf]; const kk = i * nd / 10;
+          if (E9 && Math.abs(kk - Math.round(kk)) < 1e-9) { const rw = E9.filter(q => q.k === Math.round(kk))[0]; if (rw) v0 = [Math.max(v0[0], rw.asS), Math.max(v0[1], rw.asI)]; }
+          xs.push(X[t] + r.L[t] * i / 10); aS.push(v0[0] * 1e4); aI.push(v0[1] * 1e4);
+        }
+      }
+      const c1 = lchart({ x: xs, xticks: X, xfmt, marks, h: 250, ylab: 'cm²', series: [{ y: aS, name: 'face supérieure', cls: 's1', lab: 'max', dec: 1 }, { y: aI, name: 'face inférieure', cls: 's2', lab: 'max', dec: 1 }],
+        dots: xs.map((x, i) => ({ x, v: aS[i], cls: 's1', r: 2 })).concat(xs.map((x, i) => ({ x, v: aI[i], cls: 's2', r: 2 }))) });
+      let c2 = '';
+      if (FP.travees && FP.travees.length) {
+        const zx = [], zs = [], zi = [], tx = []; let cur = null;
+        FP.travees.forEach((zz, t) => { if (t >= n) return; let x = X[t]; zz.forEach((z, j) => {
+          if (t === 0 && j === 0 && z.nom === 'ABOUT') x = X[0] - z.lg;
+          const x2 = x + z.lg; zx.push(x, x2); zs.push(z.sup.sec * 1e4, z.sup.sec * 1e4); zi.push(z.inf.sec * 1e4, z.inf.sec * 1e4);
+          tx.push({ x: (x + x2) / 2, nom: z.nom, lg: z.lg }); x = x2; cur = x2; }); });
+        void cur;
+        const top = Math.max(...zs, ...zi);
+        c2 = lchart({ x: zx, xticks: X, xfmt, marks, h: 240, ylab: 'cm²/m', zero: true, series: [{ y: zs, name: 'section minimale face supérieure', cls: 's1', lab: false }, { y: zi, name: 'face inférieure', cls: 's2', dash: true, lab: false }],
+          texts: tx.filter(q => q.lg >= (X[n] - X[0]) / 14).map(q => ({ x: q.x, v: top, dy: -10, label: q.nom.replace('CHEV APP', 'chevêtre').replace('EXT CHEV', 'ext. chev.').replace('TRAVEE', 'travée').replace('ABOUT', 'about').replace(/ ([GD])$/, ' $1') + ' ' + fmt(q.lg, 2) })) });
+      }
+      add(at, 'FERRAILLAGE PASSIF — LONGITUDINAL ET TRANSVERSAL MINIMAL',
+        fig('FERRAILLAGE LONGITUDINAL À PRÉVOIR POUR TOUTE LA LARGEUR DE LA DALLE', c1) + (c2 ? fig('FERRAILLAGE TRANSVERSAL — SECTIONS MINIMALES PAR ZONE (' + (FP.par ? 'parallèle aux lignes d\'appui' : 'perpendiculaire aux bords libres') + ')', c2) : ''),
+        'Sections d\'acier en cm² (listing : m²) : longitudinal pour toute la largeur aux sections 0,0L … 1,0L ; transversal en cm² par mètre linéaire, par zone (about, chevêtres sur appuis, extensions des chevêtres, travée) ; espacements par diamètre : voir la page « RÉPARTITION DU FERRAILLAGE TRANSVERSAL ».');
+    });
+    /* 9 — déformées */
+    safe(() => {
+      const D = r.deform, Pd = P && P.defl; if (!D || !D.cpi) return;
+      const at = find(/DEFORMATION DU TABLIER/, true);
+      const xs = [], a = [], b = [], c = [];
+      for (let t = 0; t < n; t++) for (let q = 0; q <= 10; q++) {
+        xs.push(X[t] + r.L[t] * q / 10); a.push(D.cpi[t][q]);
+        if (Pd) { b.push(D.cpi[t][q] + Pd.inst[t][q]); c.push(D.cpt[t][q] + Pd.inst[t][q] + Pd.flu[t][q]); }
+      }
+      const ser = [{ y: a, name: 'charge permanente totale (instantanée)', cls: 'perm', dash: true, lab: 'min', dec: 1 }];
+      if (Pd) ser.push({ y: b, name: 'CP + précontrainte à la mise en précontrainte', cls: 's2', lab: 'both', dec: 1 }, { y: c, name: 'CP + précontrainte en service, après fluage', cls: 'mx', lab: 'both', dec: 1 });
+      add(at, 'DÉFORMÉES DU TABLIER', fig('FLÈCHES SOUS CHARGES PERMANENTES ET PRÉCONTRAINTE (mm, positives vers le haut)', lchart({ x: xs, xticks: X, xfmt, marks, h: 260, ylab: 'mm', series: ser })),
+        'Déformées en millimètres aux sections 0,0L … 1,0L de chaque travée (pages « DEFORMATION DU TABLIER »).');
+    });
+
+    out.sort((p, q) => p.after - q.after);
+    return out.map((f, i) => ({ after: f.after, html: G.OTUI.figPage('PLANCHE ' + (i + 1) + ' — ' + f.title, 'PSIDP ' + num0 + ' · insérée après la page ' + pno(f.after), f.body, f.cap) }));
+  }
+
   G.PSIDP_UI = {
-    prog: 'PSIDP-EL', engine: E, steps, get, set, checks, summary, blank, onChange,
+    prog: 'PSIDP-EL', engine: E, steps, get, set, checks, summary, blank, onChange, figures,
     numero: m => (m.numeroRaw2 || ((m.numero || '0001') + '-')),
     examples: [{ label: 'Passage supérieur 4 travées 14-20-20-14 m, droit', text: EX1 }, { label: 'Pont-dalle biais 75 gr, câblage imposé', text: EX2 }],
     views: [
@@ -1103,6 +1497,6 @@
       { id: 'cable', label: 'Câble', draw: (svg, m) => drawCable(svg, m, false) },
       { id: 'tension', label: 'Tensions', draw: (svg, m) => drawTension(svg, m, false) },
     ],
-    _draw: { drawElev, drawCoupe, drawPlan, drawCable, drawTension, cableAuto, tensionCurve, section },
+    _draw: { drawElev, drawCoupe, drawPlan, drawCable, drawTension, cableAuto, tensionCurve, section, figElev, figCable, lchart },
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
