@@ -329,6 +329,9 @@
     if (r.ce.exc >= 1) r.chargesC.push('CVOI.D'); if (r.ce.exc >= 2) r.chargesC.push('CVOI.E');
     if (r.ce.mil === 3) r.chargesC.push('MC.80'); if (r.ce.mil === 4) r.chargesC.push('MC.120');
     r.nomBt = r.f61_1960 ? 'BE' : 'BT';
+    // extension BridgeAI (cases à cocher de l'interface) : A = 000 sans charge A ; B = 000 sans B, 002 Bc seul, 003 Bt seul
+    const cA = String(A8.A).padStart(3, '0'), cB = String(A8.B).padStart(3, '0');
+    r.off = { A: cA === '000', Bc: cB === '000' || cB === '003', Bt: cB === '000' || cB === '002' };
     r.pstrot = A8.PSTROT;
 
     // --- lignes d'appui (A13) : espacement = trunc2(EDALLE1/(NAP-0,6)/sin(biais))
@@ -627,7 +630,7 @@
     // charge A
     // réactions (kOne) : a1(classe, nombre de voies) inclus (3639 classe 2 : 96,3 / 49,6 = 0,9 × LI ; v11)
     const kA = s => (kOne ? (G.PSIDA_REAC_NOA1 ? 1 : a1Coef(r.classe, r.nvoies)) : r.gm[s].coef.A) * r.a2 * r.Lch;
-    out.A = aLoadSegments(r, signSegments(r, fa).concat(extraSegs || []), kA);
+    out.A = r.off && r.off.A ? { pos: { v: 0, segs: [] }, neg: { v: 0, segs: [] } } : aLoadSegments(r, signSegments(r, fa).concat(extraSegs || []), kA);
     // trottoirs (toutes travées de même signe)
     const wt = r.pstrot * (A6.ETROTG + A6.ETROTD);
     const kT = s => kOne ? 1 : r.gm[s].coef.trot, ex = extraSegs || [];
@@ -646,11 +649,14 @@
     let bt = vehicleScan(r, f, BTX, btF, step, 1, 0, [0]);
     if (kOne) { const b2 = vehicleScan(r, f, BTX, btF, step, 1, 0, [r.f61_1960 ? 0 : 1.35]);
       bt = { max: b2.max.v > bt.max.v ? b2.max : bt.max, min: b2.min.v < bt.min.v ? b2.min : bt.min }; }
+    const OF = r.off || {};
+    if (OF.Bc) { bcMax.v = 0; bcMin.v = 0; } if (OF.Bt) bt = { max: { ...bt.max, v: 0 }, min: { ...bt.min, v: 0 } };
     const Bc = { max: nf * bcMax.v, min: nf * bcMin.v }, Bt = { max: ntMax * bt.max.v, min: ntMax * bt.min.v };
     out.B = {
       max: Bc.max >= Bt.max ? { v: Bc.max, typ: 'BC', sens: dMax, pos: bcMax.pos } : { v: Bt.max, typ: r.nomBt, sens: 'DG', pos: bt.max.pos },
       min: Bc.min <= Bt.min ? { v: Bc.min, typ: 'BC', sens: dMin, pos: bcMin.pos } : { v: Bt.min, typ: r.nomBt, sens: 'DG', pos: bt.min.pos },
     };
+    if (OF.Bc && OF.Bt) { out.B.max.typ = ''; out.B.min.typ = ''; }
     // charges particulières
     const ce = [];
     const mcDef = r.ce.mil === 4 ? (r.f61_1960 ? MC1960 : MC120) : r.ce.mil === 3 ? MC80 : null;
@@ -843,6 +849,7 @@
       let aMax = { v: 0, n: 0 }, aMin = { v: 0, n: 0 };
       for (let msk = 1; msk < (1 << nv); msk++) { let t = 0, n = 0; for (let k = 0; k < nv; k++) if (msk & (1 << k)) { t += lanes[k]; n++; }
         const val = a1Coef(cl, n) * t; if (val > aMax.v + 1e-12) aMax = { v: val, n }; if (val < aMin.v - 1e-12) aMin = { v: val, n }; }
+      if (r.off && r.off.A) { aMax = { v: 0, n: 0 }; aMin = { v: 0, n: 0 }; }
       res.A = { max: aMax, min: aMin };
       // trottoirs (3 × PSTROT)
       const tr = [];
@@ -868,6 +875,8 @@
       const f60 = r.f61_1960, wT = f60 ? 2.5 : 3, sT = f60 ? 1.5 : 2;
       const ntMax = Math.max(1, Math.min(2, nv, Math.floor((Lch + (f60 ? 2.5 - sT - 1 : 0) + 1e-9) / wT)));
       const bt = groups(Z(term(r.nomBt)), ntMax, wT, [0.5, 0.5 + sT], () => (cl === 2 && !f60 ? 0.9 : 1), f60 ? BE_P / 2 : 16, dyn.bt || 1);   // Be (1960) : étalement d'un seul essieu imprimé → P = 8 t (HYPOTHÈSE)
+      if (r.off && r.off.Bc) { bc.max = { v: 0, n: 0 }; bc.min = { v: 0, n: 0 }; }
+      if (r.off && r.off.Bt) { bt.max = { v: 0, n: 0 }; bt.min = { v: 0, n: 0 }; }
       res._bc = bc; res._bt = bt;
       res.B = { max: bc.max.v >= bt.max.v ? { ...bc.max, typ: 'BC' } : { ...bt.max, typ: r.nomBt },
         min: bc.min.v <= bt.min.v ? { ...bc.min, typ: 'BC' } : { ...bt.min, typ: r.nomBt } };

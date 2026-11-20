@@ -13,7 +13,10 @@
     if (k === 'TITRE1') return (m.titre || [])[0] || '';
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
-    if (k.startsWith('FIX.')) return 1;                                   // charges A(l), Bc, Bt : toujours appliquées
+    if (k.startsWith('FIX.')) {                                           // charges A(l), Bc, Bt (codes A et B, extension 000 / 002 / 003)
+      const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
+      return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
+    }
     if (k.startsWith('CE.')) {                                            // cases à cocher du code CE = i m j
       const ce = String(((m.lignes || {}).A8 || {}).CE || '000').padStart(3, '0'), w = k.slice(3);
       return w === 'D' ? +(+ce[1] >= 1) : w === 'E' ? +(+ce[1] === 2) : w === 'MC80' ? +(ce[2] === '3') : +(ce[2] === '4');
@@ -28,7 +31,15 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
-    if (k.startsWith('FIX.')) return;
+    if (k.startsWith('FIX.')) {
+      m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
+      const A8 = m.lignes.A8, on = num(v) === 1;
+      if (k === 'FIX.A') { A8.A = on ? '001' : '000'; return; }
+      const b = String(A8.B || '001').padStart(3, '0');
+      let bc = b !== '000' && b !== '003', bt = b !== '000' && b !== '002';
+      if (k === 'FIX.BC') bc = on; else bt = on;
+      A8.B = bc && bt ? '001' : bc ? '002' : bt ? '003' : '000'; return;
+    }
     if (k.startsWith('CE.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
       const c = String(m.lignes.A8.CE || '000').padStart(3, '0').split(''), w = k.slice(3), on = num(v) === 1;
@@ -158,9 +169,9 @@
           { k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3) : 1re classe si la largeur roulable est ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà.' },
         ] },
         { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 7, cols: 7, fields: [
-          { k: 'FIX.A', code: 'A(l)', type: 'chk', locked: true, help: 'Charge A(l) du fascicule 61 titre II : toujours appliquée.' },
-          { k: 'FIX.BC', code: 'Bc', type: 'chk', locked: true, help: 'Camions Bc : toujours appliqués.' },
-          { k: 'FIX.BT', code: 'Bt', type: 'chk', locked: true, help: 'Tandems Bt : toujours appliqués (ponts de 1re et 2e classe).' },
+          { k: 'FIX.A', code: 'A(l)', type: 'chk', help: 'Charge A(l) du fascicule 61 titre II : cochée = appliquée.' },
+          { k: 'FIX.BC', code: 'Bc', type: 'chk', help: 'Camions Bc : cochés = appliqués.' },
+          { k: 'FIX.BT', code: 'Bt', type: 'chk', help: 'Tandems Bt : cochés = appliqués.' },
           { k: 'CE.MC80', code: 'Mc80', type: 'chk', relayout: true, help: 'Char militaire Mc80 (un seul char militaire : Mc80 ou Mc120).' },
           { k: 'CE.MC120', code: 'Mc120', type: 'chk', relayout: true, help: 'Char militaire Mc120 (un seul char militaire : Mc80 ou Mc120).' },
           { k: 'CE.D', code: 'Convoi D', type: 'chk', relayout: true, help: 'Convoi exceptionnel type D (circulaire R/DR, 1973).' },
@@ -1095,7 +1106,8 @@
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
-    if (m.lignes.A8) { m.lignes.A8.A = '001'; m.lignes.A8.B = '001'; }   // A(l) réglementaire, Bc et Bt
+    if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
+      if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
     // cases masquées au-delà de NT (portées) et de NT + 1 (appuis) : 0, comme le demande le bordereau
