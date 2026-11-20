@@ -399,9 +399,6 @@
     d.dim(0, top, Lt, top, sch ? 'longueur totale = 2 ABOUT + ΣD' : 'longueur totale ' + fmt(Lt, 2) + ' m', 6.6 * s, null, { size: 1.05 });
     // légende
     const Lmax = Math.max(...D, 0);
-    d.text(0, yt, sch ? 'NT travées' : `${n} travée${n > 1 ? 's' : ''}`, { size: 0.9, a: 'start', cls: sch ? 'tc' : 'ts', k: 'A5.NT' });
-    d.text(Lt / 2, yt, sch ? 'HDALLE1 — élancement HDALLE1 / Dmax' : `épaisseur ${fmt(H, 3)} m — élancement 1/${Lmax > 0 ? Math.round(Lmax / H) : '—'}`, { size: 0.9, cls: sch ? 'tc' : 'ts', k: 'A7.HDALLE1' });
-    d.text(Lt, yt, sch ? 'vue en plan ↓' : 'vue en plan ↓', { size: 0.9, a: 'end', cls: 'ts' });
     planInto(d, m, sch, yc, s, { nums: NUMS });
     if (hook) hook(d, { n, xs, Lt, W, yc, s, ex, b: bc, H, top, hp, yt, yb });
     return d.toString();
