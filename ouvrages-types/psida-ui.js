@@ -139,8 +139,8 @@
         ] },
         { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
           { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
-          { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit).' },
-          { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale).' },
+          { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
+          { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
         ] },
       ] },
     ], schema: (svg) => drawCoupe(svg, gen(), true, 'half') },
@@ -288,7 +288,7 @@
     let H1 = V(m, 'A7.HDALLE1'), H2 = V(m, 'A7.HDALLE2'), H3 = V(m, 'A7.HDALLE3');
     const E1 = Math.max(V(m, 'A7.EDALLE1'), 0.5), E2 = Math.max(V(m, 'A7.EDALLE2'), 0), E3 = Math.max(V(m, 'A7.EDALLE3'), 0);
     if (!(H1 > 0)) H1 = 0.5; H2 = Math.min(Math.max(H2, 0), H1); H3 = Math.min(Math.max(H3, 0), H1);
-    const xa = E1 / 2, xb = E1 / 2 + E3 / 2, xc = (E1 + E2 + E3) / 2;
+    const xa = E1 / 2, xb = E1 / 2 + Math.min(E3, E2) / 2, xc = (E1 + E2) / 2;   // notice SETRA : EDALLE2 mesuré depuis les arêtes inférieures, flancs (EDALLE3) compris ; largeur totale = EDALLE1 + EDALLE2
     return { H1, H2, H3, E1, E2, E3, xa, xb, xc, W: 2 * xc };
   }
   const fmtL = x => fmt(x, 2);
@@ -469,11 +469,11 @@
     // cotes de la section
     const DET = mode !== 'loads' && mode !== 'mat';
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
-    if (xc > xb) for (const sg of sides) d.dim(sg < 0 ? -xc : xb, 0, sg < 0 ? -xb : xc, 0, sch ? 'EDALLE2/2' : fmt(xc - xb, 2), -0.5, 'A7.EDALLE2', { size: 0.9 * Z });
+    if (xc > xb) for (const sg of sides) d.dim(sg < 0 ? -xc : xa, 0, sg < 0 ? -xa : xc, 0, sch ? 'EDALLE2/2' : fmt(xc - xa, 2), -1.0, 'A7.EDALLE2', { size: 0.9 * Z });
     if (HALF) d.dim(0, 0, xa, 0, sch ? 'EDALLE1/2' : fmt(xa, 2), -0.5, 'A7.EDALLE1', { size: Z });
     else if (DET) d.dim(-xa, 0, xa, 0, sch ? 'EDALLE1' : fmt(S.E1, 2), -0.5, 'A7.EDALLE1', { size: 1.05 });
-    if (xb > xa) for (const sg of sides) d.dim(sg < 0 ? -xb : xa, 0, sg < 0 ? -xa : xb, 0, sch ? 'EDALLE3/2' : fmt(xb - xa, 2), -1.0, 'A7.EDALLE3', { size: 0.8 * Z });
-    if (!HALF) d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2 + EDALLE3' : 'largeur droite de la dalle (A7) ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
+    if (xb > xa) for (const sg of sides) d.dim(sg < 0 ? -xb : xa, 0, sg < 0 ? -xa : xb, 0, sch ? 'EDALLE3/2' : fmt(xb - xa, 2), -0.5, 'A7.EDALLE3', { size: 0.8 * Z });
+    if (!HALF) d.dim(-xc, 0, xc, 0, sch ? 'EDALLE1 + EDALLE2' : 'largeur droite de la dalle (A7) ' + fmt(S.W, 2) + ' m', -1.5, 'A7.EDALLE1 A7.EDALLE2 A7.EDALLE3', { size: 0.95 });
     const xh = HALF ? xa * 0.45 : -xa + Math.min(0.5, xa * 0.3);
     if (DET) d.dim(xh, 0, xh, H1, L('A7.HDALLE1'), -0.05, 'A7.HDALLE1', { size: 0.85 * Z, inside: true });
     if (DET && xc > xb && H2 > 0) d.dim(xc, H1 - H2, xc, H1, L('A7.HDALLE2'), -0.2 * Z, 'A7.HDALLE2', { size: 0.85 * Z });
@@ -578,11 +578,11 @@
     if (Lmax > 25) W_('long', 'A5.D' + (D.indexOf(Lmax) + 1), `portée de ${fmt(Lmax, 2)} m : au-delà de 20 à 25 m le pont-dalle en béton armé devient peu économique (PSI-DP)`);
     // profil en travers
     const ws = ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'].map(k => V(m, k));
-    const Ws = ws.reduce((a, b) => a + b, 0), Wd = E1 + E2 + E3;
+    const Ws = ws.reduce((a, b) => a + b, 0), Wd = E1 + E2;
     ws.forEach((w, i) => { if (w < 0) E_('trav', ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'][i], 'les largeurs du profil en travers ne peuvent pas être négatives'); });
     const es = ws[2];
     if (!(es > 0)) E_('trav', 'A6.ESURCH', 'la largeur chargeable ESURCH doit être positive');
-    if (Wd > 0 && Ws > Wd + 0.01) W_('trav', 'A6.ESURCH', `profil en travers (${fmt(Ws, 2)} m) plus large que la dalle EDALLE1 + EDALLE2 + EDALLE3 (${fmt(Wd, 2)} m)`);
+    if (Wd > 0 && Ws > Wd + 0.01) W_('trav', 'A6.ESURCH', `profil en travers (${fmt(Ws, 2)} m) plus large que la dalle EDALLE1 + EDALLE2 (${fmt(Wd, 2)} m)`);
     else if (Wd > 0 && Wd - Ws > 1.5) W_('trav', 'A6.ESURCH', `la dalle (${fmt(Wd, 2)} m) dépasse le profil en travers (${fmt(Ws, 2)} m) de plus de 1,5 m`);
     const nv = Math.round(V(m, 'A6.NVOIE'));
     if (nv < 0) E_('trav', 'A6.NVOIE', 'nombre de voies négatif');
