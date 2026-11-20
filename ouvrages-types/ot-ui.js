@@ -166,6 +166,12 @@
 .ot-pan-h h3{margin:0;font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
 .ot-views{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px}
 .ot-views:empty{display:none}
+.ot-main.single{grid-template-rows:minmax(0,1fr)!important}
+.ot.one.wide-fig [data-r=guide]{grid-template-columns:minmax(0,46fr) minmax(0,54fr)}
+.ot-main.single>.ot-pan:last-child{display:none}
+.ot svg .rowon{fill:#fdf8ee;stroke:#e8d5a0;stroke-width:1px;vector-effect:non-scaling-stroke;cursor:pointer}
+.ot svg .rowoff{fill:#fff;fill-opacity:0;stroke:#ece8e0;stroke-width:1px;stroke-dasharray:3 3;vector-effect:non-scaling-stroke;cursor:pointer}
+.ot svg .rowoff:hover,.ot svg .rowon:hover{stroke:#a07828}
 .ot-flow .go{background:var(--gold);color:#fff;border-radius:6px;margin:0 4px;font-weight:500}
 .ot-flow .go:hover{opacity:.9}
 /* mode « une page » (def.onePage) : tout le bordereau sur un écran ; dessins (SETRA / ouvrage) à gauche, cases compactes à droite */
@@ -487,9 +493,9 @@ ${def.simpleBar ? `<div class="ot-bar">
     }
     function followField(k) {   // mode une page : le dessin suit la case survolée ou active
       const L = locate(k); if (!L) return;
-      const before = pairOf(); const os = S.step; S.step = L[0]; S.page = L[1];
+      const before = pairOf(), ob = steps[S.step].one; const os = S.step; S.step = L[0]; S.page = L[1];
       if (os !== S.step) $$(R.groups, '.ot-blk').forEach(b => b.classList.toggle('on', +b.dataset.si === S.step));
-      if (pairOf() !== before) { renderSchema(); renderLive(); }
+      if (pairOf() !== before || steps[S.step].one !== ob) { renderSchema(); renderLive(); }
     }
     function renderFields() {
       if (def.onePage) return renderOne();
@@ -522,6 +528,10 @@ ${def.simpleBar ? `<div class="ot-bar">
     function renderSchema() {
       const st = steps[S.step];
       let h = '';
+      const one = def.pairs && steps[S.step].one;   // étape à schéma unique (ex. charges) : un seul grand dessin, cliquable
+      R.sch.closest('.ot-main').classList.toggle('single', !!one);
+      root.classList.toggle('wide-fig', !!one);   // schéma unique : la colonne des dessins s'élargit
+      if (one) { R.schcap.textContent = 'cliquez une charge pour la cocher ou la décocher'; let h1 = ''; try { h1 = one(svg, S.model); } catch (e) { console.error(e); } R.sch.innerHTML = h1; const s1 = R.sch.querySelector('svg'); if (s1) s1.style.cursor = 'pointer'; hl(R.sch, S.focus); return; }
       const dp = pairOf(); const pc = dp && (steps[S.step].pages[S.page] || {}).caption;
       try { h = dp ? dp(svg, def.schemaModel ? def.schemaModel() : S.model, true) : st.schema ? st.schema(svg, S.model) : ''; } catch (e) { h = `<div class="ot-empty">Schéma indisponible.</div>`; console.error(e); }
       R.sch.innerHTML = h; const s = R.sch.querySelector('svg'); if (s) s.classList.add('sch');
@@ -529,6 +539,7 @@ ${def.simpleBar ? `<div class="ot-bar">
       hl(R.sch, S.focus);
     }
     function renderLive() {
+      if (def.pairs && steps[S.step].one) { R.live.innerHTML = ''; return; }
       const dp = pairOf();
       if (dp) {
         R.views.innerHTML = ''; let h = '';
@@ -571,7 +582,7 @@ ${def.simpleBar ? `<div class="ot-bar">
         const si = steps.findIndex(s => s.id === x.step);
         if (si >= 0) { S.step = si; S.page = 0; if (x.k) { const pi = steps[si].pages.findIndex(pg => pg.groups.some(g => g.fields.some(f => f.k === x.k))); if (pi >= 0) S.page = pi; } }
         p.remove(); S.focus = x.k || null; renderGuide();
-        if (x.k) { const inp = R.groups.querySelector(`[data-k="${CSS.escape(x.k)}"] input, [data-k="${CSS.escape(x.k)}"] select`); if (inp) inp.focus(); }
+        if (x.k) { const inp = R.groups.querySelector(`[data-k="${window.CSS.escape(x.k)}"] input, [data-k="${window.CSS.escape(x.k)}"] select`); if (inp) inp.focus(); }
       });
       root.appendChild(p);
     }
@@ -621,7 +632,8 @@ ${def.simpleBar ? `<div class="ot-bar">
         const pi = steps[si].pages.findIndex(pg => pg.groups.some(g => g.fields.some(f => f.k === k)));
         if (pi >= 0) {
           if (def.onePage) followField(k); else if (si !== S.step || pi !== S.page) { S.step = si; S.page = pi; renderGuide(); }
-          const inp = R.groups.querySelector(`[data-k="${CSS.escape(k)}"] input, [data-k="${CSS.escape(k)}"] select`);
+          const inp = R.groups.querySelector(`[data-k="${window.CSS.escape(k)}"] input, [data-k="${window.CSS.escape(k)}"] select`);
+          if (inp && inp.type === 'checkbox') { if (!inp.disabled) inp.click(); return; }   // clic sur une charge du dessin : coche / décoche
           if (inp) { inp.focus(); if (inp.select) inp.select(); }
           return;
         }

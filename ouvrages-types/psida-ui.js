@@ -160,7 +160,7 @@
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half') },
 
-    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, charges d\'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
+    { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, gradient, classe du pont et charges d\'exploitation : cliquez une charge sur le dessin pour la cocher ou la décocher.'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
       { label: 'Permanentes', groups: [
         { title: 'Ossature', flex: 3, cols: 3, fields: [
           { k: 'A8.MASVOL', code: 'MASVOL', label: 'masse vol.', unit: 't/m³', dec: 3, def: '2,5 (0 = 2,5)', help: 'Valeur probable de la masse volumique du béton armé (2,5 t/m³ du BAEL si 0).' },
@@ -195,7 +195,7 @@
           { k: 'A8.PSTROT', code: 'PSTROT', label: 'charge', unit: 't/m²', dec: 3, help: 'Charge générale des trottoirs : 0 pour une plateforme autoroutière, 0,150 t/m² pour une voirie ordinaire.' },
         ] },
       ] },
-    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
+    ], one: (svg, m) => drawCoupe(svg, m, false, 'loads1'), draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
 
     { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
@@ -410,9 +410,11 @@
     const half = Math.max(xc, Ws / 2);
     const top = H1 + hc;
     const HALF = mode === 'half';
-    const nLoads = mode === 'loads' ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => sch || num(get(m, k)) === 1).length : 0;
-    const yTop = top + (mode === 'loads' ? 0.18 + 1.05 + nLoads * 0.95 + 0.6 : HALF ? 0.9 : 2.3);
-    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : mode === 'loads' ? svg({ x0: -half - 1.9, y0: -1.95, x1: half + (sch ? 0.9 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
+    let dimOff = null;
+    const ONE = mode === 'loads1', LOADS = mode === 'loads' || ONE;   // loads1 : schéma unique (toutes les charges, cochées en couleur)
+    const nLoads = LOADS ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => ONE || sch || num(get(m, k)) === 1).length : 0;
+    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * 0.95 + 0.6 : HALF ? 0.9 : 2.3);
+    const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.2 : 1.9), y0: -1.95, x1: half + (sch ? 0.9 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
     const u = d.u, Z = HALF ? 0.75 : 1;                       // tailles de texte relatives
     // section
     const R = [[xa, 0], ...(xb > xa ? [[xb, H3]] : [[xa, H3]]), ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
@@ -437,11 +439,11 @@
     const nvR = Math.round(V(m, 'A6.NVOIE')), nv = nvR > 0 ? nvR : nvF61(ws[2]);
     for (let i = 1; i < nv; i++) { const x = xp[2] + ws[2] * i / nv; d.line(x, top + 0.02, x, top + 0.22, 'l', 'A6.NVOIE'); }
     const L = k => lab(m, k, sch, 3);
-    if (mode === 'loads') {
+    if (LOADS) {
       // Plan de chargement EN TRAVERS : chaque charge est vue de l'arrière (elle circule perpendiculairement au dessin),
       // une charge par rangée au-dessus du tablier, à l'échelle transversale ; rangées alignées sur la largeur chargeable.
       const x0 = xp[2], wc = ws[2], cx = x0 + wc / 2;
-      const on = k => sch || num(get(m, k)) === 1;
+      const isOn = k => num(get(m, k)) === 1, on = k => ONE || sch || isOn(k);
       const nf = Math.max(1, Math.min(nv, Math.floor(wc / 2.5 + 1e-9))), ntd = Math.max(1, Math.min(2, nv, Math.floor(wc / 3 + 1e-9)));
       const rows = [
         { k: 'FIX.A', c: 'A(l)', v: `${nv} voie${nv > 1 ? 's' : ''} chargée${nv > 1 ? 's' : ''}`, draw: (y) => { d.rect(x0, y, wc, 0.32, 'la', 'FIX.A'); for (let i = 1; i < nv; i++) d.line(x0 + wc * i / nv, y, x0 + wc * i / nv, y + 0.32, 'lane', 'FIX.A'); } },
@@ -457,13 +459,15 @@
       function tank(y, cw, ent, k) { const a = cx - ent / 2; d.rect(a - cw / 2 - 0.1, y + 0.2, ent + cw + 0.2, 0.42, 'veh', k); d.rect(a + ent / 2 - 0.5, y + 0.62, 1.0, 0.18, 'veh', k); for (const t of [a, a + ent]) d.rect(t - cw / 2, y, cw, 0.24, 'tyre', k); }
       function axle(y, w, k) { d.rect(cx - w / 2, y, w, 0.12, 'tyre', k); d.rect(cx - w / 2 + 0.2, y + 0.12, w - 0.4, 0.36, 'veh', k); }
       function conv(y, k) { const w = 3.3; d.rect(cx - w / 2, y + 0.18, w, 0.3, 'veh', k); for (let i = 0; i < 8; i++) d.rect(cx - w / 2 + 0.1 + i * (w - 0.3) / 7, y, 0.1, 0.18, 'tyre', k); }
-      const rowH = 0.95, y0 = top + ht + 1.05;
+      const rowH = 0.95, y0 = top + ht + 1.05, offRow = [];
       for (const xx of [x0, x0 + wc]) d.line(xx, top, xx, y0 + rows.length * rowH, 'lane');
       rows.forEach((r, i) => {
-        const y = y0 + (rows.length - 1 - i) * rowH;
+        const y = y0 + (rows.length - 1 - i) * rowH, act = !ONE || isOn(r.k);
+        if (ONE) d.rect(-half - 3.1, y - 0.12, 2 * half + 6.6, rowH - 0.1, act ? 'rowon' : 'rowoff', r.k);   // bande cliquable : coche / décoche
         d.line(x0, y, x0 + wc, y, 'hl-line'); r.draw(y);
-        d.text(-half - 0.2, y + 0.25, r.c, { size: 0.8, a: 'end', cls: sch ? 'tc' : 't', k: r.k });
-        if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: 'ts', k: r.k });
+        d.text(-half - 0.2, y + 0.25, (ONE ? (act ? '☑ ' : '☐ ') : '') + r.c, { size: ONE ? 0.95 : 0.8, a: 'end', cls: sch ? 'tc' : ONE ? (act ? 'tc' : 'ts') : 't', k: r.k });
+        if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: ONE && !act ? 'ts off' : 'ts', k: r.k });
+        if (ONE && !act) offRow.push(r.k);
       });
       if (!rows.length && !sch) d.text(cx, y0 + 0.3, 'aucune charge routière cochée', { size: 0.8, cls: 'ts' });
       const yS = y0 + rows.length * rowH + 0.15;
@@ -471,6 +475,7 @@
       for (const [xa0, w] of [[xp[0], ws[0]], [xp[4], ws[4]]]) if (w > 0) { for (const f of [0.3, 0.7]) arrow(d, xa0 + w * f, top + ht + 0.55, top + ht + 0.05, 'A8.PSTROT'); d.text(xa0 + w / 2, top + ht + 0.68, sch ? 'PSTROT' : fmt(V(m, 'A8.PSTROT'), 3) + ' t/m²', { size: 0.65, cls: sch ? 'tc' : 'vl', k: 'A8.PSTROT' }); }
       d.text(0, yS + 0.2, sch ? 'superstructures QSUPTM · QSUPTm (t/m)' : `superstructures ${fmt(V(m, 'A8.QSUPMIN'), 3)} à ${fmt(V(m, 'A8.QSUPMAX'), 3)} t/m`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.QSUPMAX A8.QSUPMIN' });
       d.text(0, H1 * 0.45, sch ? 'ossature : MASVOL × aire × OSSAM / OSSAm' : `ossature ${fmt(V(m, 'A8.MASVOL') || 2.5, 2)} t/m³`, { size: 0.72, cls: sch ? 'tc' : 'vl', k: 'A8.MASVOL A8.OSMAX A8.OSMIN' });
+      if (ONE && offRow.length) dimOff = out => out.replace(/<(rect|line|text|circle|path|polygon)([^>]*?)data-k="([^"]*)"/g, (mm, t, a, k) => offRow.includes(k) && !/rowoff/.test(a) ? `<${t}${a}data-k="${k}" opacity=".28"` : mm);
     } else if (!HALF) {
       const yy = top + ht;
       const keys = ['A6.ETROTG', 'A6.EGAU', 'A6.ESURCH', 'A6.EDROI', 'A6.ETROTD'];
@@ -486,7 +491,7 @@
     }
     if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
     // cotes de la section
-    const DET = mode !== 'loads' && mode !== 'mat';
+    const DET = !LOADS && mode !== 'mat';
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
     if (xc > xb) for (const sg of sides) d.dim(sg < 0 ? -xc : xa, 0, sg < 0 ? -xa : xc, 0, sch ? 'EDALLE2/2' : fmt(xc - xa, 2), -1.0, 'A7.EDALLE2', { size: 0.9 * Z });
     if (HALF) d.dim(0, 0, xa, 0, sch ? 'EDALLE1/2' : fmt(xa, 2), -0.5, 'A7.EDALLE1', { size: Z });
@@ -499,7 +504,7 @@
     if (DET && H3 > 0 && xb > xa) d.dim(xb, 0, xb, H3, L('A7.HDALLE3'), -0.2 * Z, 'A7.HDALLE3', { size: 0.85 * Z });
     if (HALF) d.text(xc + 0.6, top + 0.62, sch ? 'cas courant : HDALLE2 = ½ (h1 + h2), HDALLE3 = H − HDALLE2' : '', { size: 0.7, a: 'end', cls: 'ts' });
     if (!sch && Ws > S.W + 0.01) d.text(0, -1.85, 'le profil en travers déborde la largeur de la dalle', { size: 0.8, cls: 'ts' });
-    return d.toString();
+    return dimOff ? dimOff(d.toString()) : d.toString();
   }
 
   /* vue en plan seule (avec portées) */
