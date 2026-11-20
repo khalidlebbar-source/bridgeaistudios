@@ -530,7 +530,7 @@
     const ng = 3, Bw = (ng - 1) * s + 2 * Math.max(0.2, s * 0.55);
     const x0 = Bw / 2 - (ng - 1) * s / 2;
     const xR = Bw + 0.06;
-    const d = svg({ x0: -0.36 * H - 0.08, y0: -0.3 * H, x1: xR + 0.62 * H, y1: H * 1.24 }, { pad: 0.03 });
+    const d = svg({ x0: -0.42 * H - 0.08, y0: -0.34 * H, x1: xR + 0.86 * H, y1: H * 1.28 }, { pad: 0.03, font: 1.4 });   // textes agrandis
     d.rect(0, 0, Bw, H, 'b', 'A7.HDALLE1');
     const zz = x => { const a = H / 8; const p = [[x, -a * 0.2]]; for (let i = 1; i <= 8; i++) p.push([x + (i % 2 ? a * 0.12 : -a * 0.12), H * i / 8]); p.push([x, H + a * 0.2]); d.path(p, 'l'); };
     zz(0); zz(Bw);
@@ -557,11 +557,11 @@
     const mm = x => Math.round(x * 1000);
     const tag = (px, py, ty, sTxt, vTxt, k) => { d.path([[px, py], [xR, ty], [xR + 0.03, ty]], 'l', k); d.text(xR + 0.05, ty, sch ? sTxt : vTxt, { size: 0.85, a: 'start', cls: sch ? 'tc' : 'dv', k }); };
     tag(Bw - 0.05, H - es - ph[2] / 2, H + 0.12 * H, 'PHI3 transv. sup.', `HA${mm(ph[2])} transv. sup.`, 'A10.PHI3');
-    tag(bx(2, N1 - 1) + ph[0] / 2, yS, yS - 0.14 * H, 'N1 × PHI1 (nappe sup.)', `${N1} HA${mm(ph[0])} par groupe`, 'A10.PHI1 A11.N1');
+    tag(bx(2, N1 - 1) + ph[0] / 2, yS, yS - 0.14 * H, 'N1 × PHI1 sup.', `${N1} HA${mm(ph[0])} par groupe`, 'A10.PHI1 A11.N1');
     tag(bx(1, N1 - 1) + ph[0] / 2 + t, (yI + yS) / 2, H * 0.5, 'PHI4 étriers', `étriers HA${mm(ph[3])}`, 'A10.PHI4');
-    tag(bx(2, N1 - 1) + ph[0] / 2, yI, yI + 0.14 * H, 'N1 × PHI1 (nappe inf.)', `${N1} HA${mm(ph[0])} par groupe`, 'A10.PHI1 A11.N1');
+    tag(bx(2, N1 - 1) + ph[0] / 2, yI, yI + 0.14 * H, 'N1 × PHI1 inf.', `${N1} HA${mm(ph[0])} par groupe`, 'A10.PHI1 A11.N1');
     tag(Bw - 0.05, ei + ph[1] / 2, -0.12 * H, 'PHI2 transv. inf.', `HA${mm(ph[1])} transv. inf.`, 'A10.PHI2');
-    d.text(Bw / 2, -0.22 * H, sch ? 'tranche de dalle en coupe transversale : groupes de N1 barres tous les ESPAC1' : `groupes de ${N1} barres tous les ${fmt(V(m, 'A11.ESPAC1'), 3)} m — fe ${fmt(V(m, 'A10.FE1') / 100, 0)} MPa`, { size: 0.85, cls: 'ts', k: 'A11.ESPAC1 A11.N1' });
+    d.text(Bw / 2, -0.27 * H, sch ? 'groupes de N1 barres tous les ESPAC1' : `groupes de ${N1} barres tous les ${fmt(V(m, 'A11.ESPAC1'), 3)} m — fe ${fmt(V(m, 'A10.FE1') / 100, 0)} MPa`, { size: 0.85, cls: 'ts', k: 'A11.ESPAC1 A11.N1' });
     return d.toString();
   }
 
