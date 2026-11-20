@@ -255,7 +255,7 @@
     const m = E.parseBordereau(EX1);
     const L = m.lignes;
     Object.assign(L.A5, { NT: 3, BIAIS: 80, ABOUT: 0.8, D1: 11, D2: 15, D3: 11 });
-    Object.assign(L.A6, { ETROTG: 1.25, EGAU: 0.75, ESURCH: 7, EDROI: 0.75, ETROTD: 1.25, HCHAU: 0.12, NVOIE: 2 });
+    Object.assign(L.A6, { ETROTG: 1.25, EGAU: 0.5, ESURCH: 6.5, EDROI: 0.5, ETROTD: 1.25, HCHAU: 0.12, NVOIE: 2 });
     Object.assign(L.A7, { HDALLE1: 0.8, HDALLE2: 0.35, HDALLE3: 0.45, EDALLE1: 6, EDALLE2: 4, EDALLE3: 1.4 });
     Object.assign(L.A10, { PHI1: 0.032, PHI2: 0.016, PHI3: 0.012, PHI4: 0.010 });
     Object.assign(L.A11, { ESPAC1: 0.30, ENROBS: 0.04, ENROBI: 0.04, N1: 3 });
