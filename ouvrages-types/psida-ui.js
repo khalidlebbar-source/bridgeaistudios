@@ -149,7 +149,6 @@
           { k: 'A6.DISEXT', code: 'DISEXT', label: 'extrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'extrados de la dalle (0 si confondus).' },
           { k: 'A6.DISINT', code: 'DISINT', label: 'intrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'intrados de la dalle (0 si confondus).' },
         ] },
-        { title: 'Largeur exceptionnelle (normalement 0)', flex: 4, cols: 4, fields: [2, 3, 4, 5].map(i => ({ k: 'A6.YY' + i, code: `YY(${i})`, label: 'fibre ' + i, unit: 'm', dec: 3, help: `Ouvrages exceptionnels seulement : distance au bord gauche du trottoir gauche de la fibre ${i} étudiée pour les coefficients K. Normalement 0.` })) },
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
@@ -618,7 +617,6 @@
     const sym = Math.abs(ws[0] - ws[4]) < 1e-6 && Math.abs(ws[1] - ws[3]) < 1e-6;
     if (V(m, 'A6.SYMTAB') === 1 && !sym) W_('trav', 'A6.SYMTAB', 'SYMTAB = 1 alors que le profil n\'est pas symétrique (ETROTG ≠ ETROTD ou EGAU ≠ EDROI)');
     const hc = V(m, 'A6.HCHAU'); if (hc < 0 || hc > 0.4) W_('trav', 'A6.HCHAU', `épaisseur de chaussée HCHAU inhabituelle (${fmt(hc, 3)} m)`);
-    if ([2, 3, 4, 5].some(i => V(m, 'A6.YY' + i) !== 0)) W_('trav', 'A6.YY2', 'fibres YY non nulles : réservé aux ouvrages de largeur exceptionnelle');
     // charges
     const st = String(get(m, 'A8.STATUT') || '');
     if (st.slice(0, 1) === '0') E_('charg', 'A8.STATUT', 'STATUT 000 (fascicule 61 de 1960) : règlement non pris en charge, choisir la classe 100, 200 ou 300 (fascicule 61 de 1971)');
@@ -1144,6 +1142,7 @@
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
+    if (m.lignes.A6) for (let i = 2; i <= 5; i++) m.lignes.A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
     if (m.lignes.A9) { m.lignes.A9.BA = '000'; m.lignes.A9.XKI = 0; }   // coefficients BAEL réglementaires, ψ1 = 0
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
