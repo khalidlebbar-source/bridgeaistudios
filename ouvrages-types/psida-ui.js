@@ -121,7 +121,7 @@
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'long', col: 0, label: 'Profil en long', view: 'elev', caption: 'ligne A5 — portées biaises', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
+    { id: 'long', col: 0, label: 'Profil en long', view: 'elev', caption: 'ligne A5', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
       { label: 'Travées', groups: [
         { title: 'Ouvrage', flex: 3, cols: 3, fields: [
           { k: 'A5.NT', code: 'NT', label: 'nb de travées', type: 'sel', relayout: true, opts: [1, 2, 3, 4, 5, 6].map(i => [i, String(i)]), help: 'Nombre de travées (1 à 6).' },
@@ -133,7 +133,7 @@
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
     { id: 'trav', col: 1, label: 'Profil en travers', view: 'coupe', caption: 'ligne A6', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
-      { label: 'Profil en travers (A6)', caption: 'ligne A6 — profil en travers de gauche à droite', groups: [
+      { label: 'Profil en travers (A6)', caption: 'ligne A6', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
           { k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
@@ -146,12 +146,12 @@
           { k: 'A6.NVOIE', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation. 0 : calculé selon l\'article 2.2 du fascicule 61 titre II ; à remplir seulement s\'il en diffère (chaussée de 9 m à deux voies…).' },
         ] },
       ] },
-      { label: 'Fibres et symétrie (A6)', caption: 'ligne A6 — symétrie, fibres et axe mécanique', groups: [
+      { label: 'Fibres et symétrie (A6)', caption: 'ligne A6', groups: [
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'ligne A7', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
-      { label: 'Structure porteuse (A7)', caption: 'ligne A7 — demi-coupe de la dalle', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
+      { label: 'Structure porteuse (A7)', caption: 'ligne A7', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
@@ -239,8 +239,8 @@
       ] },
     ], draw: (svg, m, sch) => drawArm(svg, m, sch) },
 
-    { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13 — appuis numérotés de gauche à droite', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
-      { label: 'Tassements par appui (A12)', caption: 'ligne A12 — tassements des appuis', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
+    { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
+      { label: 'Tassements par appui (A12)', caption: 'ligne A12', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
         { title: 'Tassements (A12)', flex: 3, cols: 3, fields: [
           { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
@@ -329,7 +329,7 @@
       for (let i = 0; i < n; i++) d.dim(xs[i] + yb * ct, Y(yb), xs[i + 1] + yb * ct, Y(yb), sch ? 'D' + (i + 1) : fmt(V(m, 'A5.D' + (i + 1)), 2), -6.4 * s, 'A5.D' + (i + 1));
     }
     const xr = Lt + ex + 1.6 * s;
-    d.dim(xr, Y(-W / 2), xr, Y(W / 2), sch ? 'EDALLE1+EDALLE2' : fmt(W, 2), -0.01, 'A7.EDALLE1 A7.EDALLE2', { size: 0.8 });
+    if (!sch) d.dim(xr, Y(-W / 2), xr, Y(W / 2), fmt(W, 2), -0.01, 'A7.EDALLE1 A7.EDALLE2', { size: 0.8 });
     // angle de biais, sous l'arête inférieure, à l'appui 1
     const r = Math.min(W * 0.4, 4.2 * s), xi = xs[0] - W / 2 * ct, yi = Y(-W / 2);
     d.line(xi - r * 1.25, yi, xi, yi, 'l', 'A5.BIAIS');
@@ -396,7 +396,7 @@
       d.text(-0.7 * s, top + 3.0 * s + 1.4 * u, sch ? 'ABOUT' : fmt(ab, 2), { size: 0.8, a: 'end', cls: sch ? 'tc' : 'dv', k: 'A5.ABOUT' });
       d.text(Lt + 0.7 * s, top + 3.0 * s + 1.4 * u, sch ? 'ABOUT' : fmt(ab, 2), { size: 0.8, a: 'start', cls: sch ? 'tc' : 'dv', k: 'A5.ABOUT' });
     }
-    d.dim(0, top, Lt, top, sch ? 'longueur totale = 2 ABOUT + ΣD' : 'longueur totale ' + fmt(Lt, 2) + ' m', 6.6 * s, null, { size: 1.05 });
+    if (!sch) d.dim(0, top, Lt, top, 'longueur totale ' + fmt(Lt, 2) + ' m', 6.6 * s, null, { size: 1.05 });
     // légende
     const Lmax = Math.max(...D, 0);
     planInto(d, m, sch, yc, s, { nums: NUMS });

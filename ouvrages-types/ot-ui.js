@@ -44,7 +44,7 @@
       circle(x, y, r, cls, k) { out.push(`<circle cx="${X(x)}" cy="${Y(y)}" r="${X(r)}" class="${cls || 'b'}"${kAttr(k)}/>`); return api; },
       text(x, y, s, o) {
         o = o || {};
-        const fs = (o.size || 1) * u * 2.0;
+        const fs = (o.size || 1) * u * 2.0 * (globalThis.OT_FONT || 1);   // OT_FONT : agrandissement des textes propre à la page
         const anchor = o.a || 'middle';
         const rot = o.rot ? ` transform="rotate(${-o.rot} ${X(x)} ${Y(y)})"` : '';
         out.push(`<text x="${X(x)}" y="${Y(y)}" font-size="${+fs.toFixed(4)}" text-anchor="${anchor}" dominant-baseline="${o.base || 'middle'}" class="${o.cls || 't'}"${kAttr(o.k)}${rot}>${esc(s)}</text>`);
@@ -67,7 +67,7 @@
           const rot = Math.abs(ang) > 90 ? ang + 180 : ang;
           const g = (o.inside ? -1 : 1) * u * 1.5 * Math.sign(off || 1);
           const mx = (a1[0] + a2[0]) / 2 + nx * g, my = (a1[1] + a2[1]) / 2 + ny * g;
-          out.push(`<text x="${X(mx)}" y="${Y(my)}" font-size="${+(u * 1.9 * (o.size || 1)).toFixed(4)}" text-anchor="middle" dominant-baseline="middle" class="dv" transform="rotate(${+(-rot).toFixed(2)} ${X(mx)} ${Y(my)})">${esc(lab)}</text>`);
+          out.push(`<text x="${X(mx)}" y="${Y(my)}" font-size="${+(u * 1.9 * (o.size || 1) * (globalThis.OT_FONT || 1)).toFixed(4)}" text-anchor="middle" dominant-baseline="middle" class="dv" transform="rotate(${+(-rot).toFixed(2)} ${X(mx)} ${Y(my)})">${esc(lab)}</text>`);
         }
         out.push('</g>');
         return api;
