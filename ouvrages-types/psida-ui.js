@@ -507,7 +507,6 @@
     if (DET && xc > xb && H2 > 0) d.dim(xc, H1 - H2, xc, H1, L('A7.HDALLE2'), -0.2 * Z, 'A7.HDALLE2', { size: 0.85 * Z });
     if (DET && H3 > 0 && xb > xa) d.dim(xb, 0, xb, H3, L('A7.HDALLE3'), -0.2 * Z, 'A7.HDALLE3', { size: 0.85 * Z });
     if (HALF) d.text(xc + 0.6, top + 0.62, sch ? 'cas courant : HDALLE2 = ½ (h1 + h2), HDALLE3 = H − HDALLE2' : '', { size: 0.7, a: 'end', cls: 'ts' });
-    if (!sch && Ws > S.W + 0.01) d.text(0, -1.85, 'le profil en travers déborde la largeur de la dalle', { size: 0.8, cls: 'ts' });
     return dimOff ? dimOff(d.toString()) : d.toString();
   }
 
