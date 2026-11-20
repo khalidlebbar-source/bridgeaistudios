@@ -313,7 +313,6 @@
     if (ws[4] > 0) strip(ys[5], ys[4], 'b2', 'A6.ETROTD');
     for (const yy of [ys[2], ys[3]]) d.line(yy * ct, Y(yy), Lt + yy * ct, Y(yy), 'l', 'A6.ESURCH');
     const nvR = Math.round(V(m, 'A6.NVOIE')), nv = nvR > 0 ? nvR : nvF61(ws[2]);
-    for (let i = 1; i < nv; i++) { const yy = ys[2] - ws[2] * i / nv; for (let x = 0.5; x < Lt - 1; x += 3) d.line(x + yy * ct, Y(yy), x + 1.5 + yy * ct, Y(yy), 'l', 'A6.NVOIE'); }
     d.line(-ex - 1.5 * s, Y(0), Lt + ex + 1.5 * s, Y(0), 'ax');
     // lignes d'appui et appareils
     for (let k = 0; k <= n; k++) {
