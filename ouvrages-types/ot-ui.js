@@ -165,6 +165,7 @@
 .ot-pan-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 0;min-height:32px}
 .ot-pan-h h3{margin:0;font-size:9.5px;font-weight:500;color:var(--gold);letter-spacing:.16em;text-transform:uppercase}
 .ot-views{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:2px}
+.ot-views:empty{display:none}
 .ot-views button{border:none;background:transparent;border-radius:5px;padding:3px 10px;font-size:11.5px;color:var(--ink3);cursor:pointer}
 .ot-views button.on{background:var(--white);color:var(--ink);box-shadow:var(--shadow)}
 .ot-fig{flex:1;min-height:0;padding:6px 10px 10px;display:flex}
@@ -393,7 +394,11 @@
         return `<fieldset class="ot-grp${g.alt ? ' alt' : ''}" style="flex:${g.flex || c} 1 0"><legend>${esc(g.title)}</legend><div class="ot-grid" style="--c:${c}">${g.fields.map(fieldHTML).join('')}</div></fieldset>`;
       }).join('');
       markBad();
+      if (pairOf() && S._pk !== S.step + '.' + S.page) { S._pk = S.step + '.' + S.page; renderSchema(); renderLive(); }
     }
+    /* mode « paire » (def.pairs) : chaque page (ou étape) porte draw(svg, modèle, sch) ; à gauche le schéma SETRA coté par les
+       noms des paramètres, à droite le même dessin de l'ouvrage saisi, à l'échelle — pas de boutons de vue. */
+    function pairOf() { if (!def.pairs) return null; const st = steps[S.step]; const pg = st.pages[S.page] || {}; return pg.draw || st.draw || null; }
     function markBad() {
       const bad = new Set(S.issues.filter(x => x.level === 'e' && x.k).map(x => x.k));
       $$(R.groups, '.ot-f').forEach(el => el.classList.toggle('bad', bad.has(el.dataset.k)));
@@ -408,12 +413,19 @@
     function renderSchema() {
       const st = steps[S.step];
       let h = '';
-      try { h = st.schema ? st.schema(svg, S.model) : ''; } catch (e) { h = `<div class="ot-empty">Schéma indisponible.</div>`; console.error(e); }
+      const dp = pairOf(); const pc = dp && (steps[S.step].pages[S.page] || {}).caption;
+      try { h = dp ? dp(svg, def.schemaModel ? def.schemaModel() : S.model, true) : st.schema ? st.schema(svg, S.model) : ''; } catch (e) { h = `<div class="ot-empty">Schéma indisponible.</div>`; console.error(e); }
       R.sch.innerHTML = h; const s = R.sch.querySelector('svg'); if (s) s.classList.add('sch');
-      R.schcap.textContent = st.caption || '';
+      R.schcap.textContent = pc || st.caption || '';
       hl(R.sch, S.focus);
     }
     function renderLive() {
+      const dp = pairOf();
+      if (dp) {
+        R.views.innerHTML = ''; let h = '';
+        try { h = dp(svg, S.model, false); } catch (e) { h = `<div class="ot-empty">Dessin impossible avec ces valeurs.</div>`; console.error(e); }
+        R.live.innerHTML = h; hl(R.live, S.focus); return;
+      }
       const views = def.views;
       const st = steps[S.step];
       if (!S.view || !views.some(v => v.id === S.view)) S.view = st.view || views[0].id;

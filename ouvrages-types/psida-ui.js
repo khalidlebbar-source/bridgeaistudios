@@ -73,24 +73,20 @@
           { k: 'NUM', code: 'NUM', label: 'numéro', type: 'txt', help: 'Numéro du passage, rappelé en tête de chaque page (PSIDAEL nnnn).' },
         ] },
       ] },
-      { label: 'Calculs : efforts', groups: [
-        { title: 'Méthode (A3)', flex: 3, cols: 3, fields: [
+      { label: 'Calculs demandés (A3)', groups: [
+        { title: 'Méthode (A3)', flex: 5, cols: 3, fields: [
           { k: 'A3.LIGNINF', code: 'LIGNINF', label: LBL.LIGNINF, type: 'sel', opts: [[2, '2 — conservée'], [1, '1 — optimisée']], help: 'Calcul des lignes d\'influence. 2 : l\'épaisseur HDALLE1 est conservée ; 1 : elle est optimisée par le programme (option non reconstituée ici : l\'épaisseur saisie est conservée).' },
           { k: 'A3.EXCENTR', code: 'EXCENTR', label: LBL.EXCENTR, type: 'sel', opts: [[1, '1 — Guyon'], [0, '0 — K en A8']], help: 'Coefficients de répartition transversale : 1 calculés par la méthode de Guyon-Massonnet ; 0 lus à la ligne A8 (KA, KBC, KBT, KCM, KTR).' },
           { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
         ] },
-        { title: 'Efforts à calculer (A3)', alt: true, flex: 5, cols: 5, fields: A3G1.map(c => ck(c, LBL[c])) },
+        { title: 'Efforts (A3)', alt: true, flex: 4, cols: 3, fields: A3G1.map(c => ck(c, LBL[c])) },
+        { title: 'Ferraillage et sorties (A3)', flex: 6, cols: 4, fields: A3G2.map(c => ck(c, LBL[c])) },
       ] },
-      { label: 'Calculs : ferraillage', groups: [
-        { title: 'Ferraillage et sorties à calculer (A3)', flex: 8, cols: 8, fields: A3G2.map(c => ck(c, LBL[c])) },
+      { label: 'Impressions détaillées (A4)', groups: [
+        { title: 'Efforts : résultats intermédiaires imprimés (A4)', flex: 8, cols: 4, fields: ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1].map(c => imp(c, LBL[c])) },
+        { title: 'Ferraillage : résultats intermédiaires imprimés (A4)', alt: true, flex: 8, cols: 4, fields: A3G2.map(c => imp(c, LBL[c])) },
       ] },
-      { label: 'Impression : efforts', groups: [
-        { title: 'Résultats intermédiaires imprimés (A4)', alt: true, flex: 8, cols: 8, fields: ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1].map(c => imp(c, LBL[c])) },
-      ] },
-      { label: 'Impression : ferraillage', groups: [
-        { title: 'Résultats intermédiaires imprimés (A4)', alt: true, flex: 8, cols: 8, fields: A3G2.map(c => imp(c, LBL[c])) },
-      ] },
-    ], schema: (svg) => drawElev(svg, gen(), true) },
+    ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
     { id: 'long', label: 'Profil en long', view: 'elev', caption: 'ligne A5 — portées biaises', hint: 'Nombre de travées, biais, abouts et portées biaises (mesurées suivant l\'axe de l\'ouvrage).', pages: [
       { label: 'Travées', groups: [
@@ -101,10 +97,10 @@
         ] },
         { title: 'Portées biaises', alt: true, flex: 6, cols: 6, fields: [1, 2, 3, 4, 5, 6].map(sp) },
       ] },
-    ], schema: (svg) => drawElev(svg, gen(), true) },
+    ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'trav', label: 'Profil en travers', view: 'coupe', caption: 'ligne A6 — de gauche à droite', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
-      { label: 'Largeurs', groups: [
+    { id: 'trav', label: 'Coupe transversale', view: 'coupe', caption: 'lignes A6 et A7', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
+      { label: 'Profil en travers (A6)', caption: 'ligne A6 — profil en travers de gauche à droite', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
           { k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
@@ -117,21 +113,7 @@
           { k: 'A6.NVOIE', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation. 0 : calculé selon l\'article 2.2 du fascicule 61 titre II ; à remplir seulement s\'il en diffère (chaussée de 9 m à deux voies…).' },
         ] },
       ] },
-      { label: 'Fibres et symétrie', groups: [
-        { title: 'Symétrie et fibres', flex: 2, cols: 2, fields: [
-          { k: 'A6.SYMTAB', code: 'SYMTAB', label: 'symétrie', type: 'sel', opts: [[1, '1 — symétrique'], [0, '0 — asymétrique']], help: 'Symétrie transversale du profil en travers : 1 si ETROTG = ETROTD et EGAU = EDROI, 0 dans les autres cas.' },
-          { k: 'A6.NF', code: 'NF', label: 'fibres flex. transv.', type: 'sel', opts: [[1, '1 — axe'], [2, '2 — ±E/4'], [3, '3 — ±3E/8']], help: 'Fibres étudiées en flexion transversale : 1 axe mécanique ; 2 axe et fibres à ±EDALLE/4 ; 3 en plus fibres à ±3 EDALLE/8. Normalement 3.' },
-        ] },
-        { title: 'Axe mécanique', alt: true, flex: 2, cols: 2, fields: [
-          { k: 'A6.DISEXT', code: 'DISEXT', label: 'extrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'extrados de la dalle (0 si confondus).' },
-          { k: 'A6.DISINT', code: 'DISINT', label: 'intrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'intrados de la dalle (0 si confondus).' },
-        ] },
-        { title: 'Largeur exceptionnelle (normalement 0)', flex: 4, cols: 4, fields: [2, 3, 4, 5].map(i => ({ k: 'A6.YY' + i, code: `YY(${i})`, label: 'fibre ' + i, unit: 'm', dec: 3, help: `Ouvrages exceptionnels seulement : distance au bord gauche du trottoir gauche de la fibre ${i} étudiée pour les coefficients K. Normalement 0.` })) },
-      ] },
-    ], schema: (svg) => drawCoupe(svg, gen(), true) },
-
-    { id: 'sect', label: 'Coupe transversale', view: 'coupe', caption: 'ligne A7 — structure porteuse', hint: 'Nervure, flancs obliques et encorbellements de la dalle (largeurs droites cumulées).', pages: [
-      { label: 'Section', groups: [
+      { label: 'Structure porteuse (A7)', caption: 'ligne A7 — demi-coupe de la dalle', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
@@ -143,7 +125,18 @@
           { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
         ] },
       ] },
-    ], schema: (svg) => drawCoupe(svg, gen(), true, 'half') },
+      { label: 'Fibres et symétrie (A6)', caption: 'ligne A6 — symétrie, fibres et axe mécanique', groups: [
+        { title: 'Symétrie et fibres', flex: 2, cols: 2, fields: [
+          { k: 'A6.SYMTAB', code: 'SYMTAB', label: 'symétrie', type: 'sel', opts: [[1, '1 — symétrique'], [0, '0 — asymétrique']], help: 'Symétrie transversale du profil en travers : 1 si ETROTG = ETROTD et EGAU = EDROI, 0 dans les autres cas.' },
+          { k: 'A6.NF', code: 'NF', label: 'fibres flex. transv.', type: 'sel', opts: [[1, '1 — axe'], [2, '2 — ±E/4'], [3, '3 — ±3E/8']], help: 'Fibres étudiées en flexion transversale : 1 axe mécanique ; 2 axe et fibres à ±EDALLE/4 ; 3 en plus fibres à ±3 EDALLE/8. Normalement 3.' },
+        ] },
+        { title: 'Axe mécanique', alt: true, flex: 2, cols: 2, fields: [
+          { k: 'A6.DISEXT', code: 'DISEXT', label: 'extrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'extrados de la dalle (0 si confondus).' },
+          { k: 'A6.DISINT', code: 'DISINT', label: 'intrados', unit: 'm', dec: 3, help: 'Distance de l\'axe mécanique à l\'axe géométrique de l\'intrados de la dalle (0 si confondus).' },
+        ] },
+        { title: 'Largeur exceptionnelle (normalement 0)', flex: 4, cols: 4, fields: [2, 3, 4, 5].map(i => ({ k: 'A6.YY' + i, code: `YY(${i})`, label: 'fibre ' + i, unit: 'm', dec: 3, help: `Ouvrages exceptionnels seulement : distance au bord gauche du trottoir gauche de la fibre ${i} étudiée pour les coefficients K. Normalement 0.` })) },
+      ] },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
 
     { id: 'charg', label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, charges d\'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
       { label: 'Permanentes', groups: [
@@ -181,7 +174,7 @@
           { k: 'A8.XKTR', code: 'KTR', label: 'trottoirs', dec: 3, help: 'Coefficient imposé pour la charge des trottoirs. Seulement si EXCENTR = 0.' },
         ] },
       ] },
-    ], schema: (svg) => drawCoupe(svg, gen(), true, 'loads') },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'loads') },
 
     { id: 'mat', label: 'Béton', view: 'coupe', caption: 'ligne A9 (et C1)', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
@@ -203,7 +196,7 @@
           ...[1, 2, 3, 4].map(i => ({ k: 'C1.SS' + i, code: 'ss' + i, label: `σs PHI${i}`, unit: 't/m²', dec: 0, help: `Contrainte limite de traction des aciers de diamètre PHI${i} à l'ELS, en t/m² (seulement si GENRE = i01).` })),
         ] },
       ] },
-    ], schema: (svg) => drawCoupe(svg, gen(), true, 'mat') },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'mat') },
 
     { id: 'acier', label: 'Armatures', view: 'arm', caption: 'lignes A10 et A11', hint: 'Diamètres, nuances et disposition des armatures (diamètres saisis en mm, écrits en m dans le bordereau).', pages: [
       { label: 'Diamètres et limites', groups: [
@@ -234,10 +227,10 @@
           { k: 'A11.ENROBI', code: 'ENROBI', label: 'nappe inf.', unit: 'm', dec: 3, help: 'Enrobage des aciers de la nappe inférieure.' },
         ] },
       ] },
-    ], schema: (svg) => drawArm(svg, gen(), true) },
+    ], draw: (svg, m, sch) => drawArm(svg, m, sch) },
 
     { id: 'app', label: 'Appuis', view: 'plan', caption: 'lignes A12 et A13 — appuis numérotés de gauche à droite', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
-      { label: 'Tassements par appui (A12)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
+      { label: 'Tassements par appui (A12)', caption: 'ligne A12 — tassements des appuis', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
         { title: 'Tassements (A12)', flex: 2, cols: 2, fields: [
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
@@ -252,7 +245,7 @@
         ] },
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ title: 'Appui ' + i, alt: i % 2 === 0, flex: 2, cols: 2, fields: [typ(i), nap(i)] })) },
-    ], schema: (svg) => drawElev(svg, gen(), true, 'appt') },
+    ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
   ];
 
   /* ───── modèle générique pour les schémas de principe ───── */
@@ -1125,6 +1118,7 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
+    pairs: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],
     views: [
