@@ -174,6 +174,10 @@
 .ot.one .ot-main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:8px;min-height:0}
 .ot.one .ot-fields{min-height:0;overflow:hidden}
 .ot.one .ot-groups{height:100%;display:flex;gap:6px;align-items:flex-start}
+.ot.one.rows .ot-groups{flex-direction:column;gap:5px;overflow:auto;align-items:stretch}
+.ot.one.rows .ot-blk{display:flex;gap:10px;align-items:center;padding:4px 8px}
+.ot.one.rows .ot-blk>h4{flex:0 0 118px;margin:0;font-size:10px}
+.ot.one.rows .ot-blk>.row{flex:1;min-width:0;gap:3px 8px}
 .ot.one .ot-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ot-blk{border:1px solid var(--border);border-radius:9px;background:var(--white);padding:3px 6px 4px;min-width:0;}
 .ot-blk.wide{grid-column:1/-1}
@@ -343,7 +347,7 @@
       results: null, note: null, noteFor: null, issues: [],
     };
 
-    root.classList.add('ot'); if (def.onePage) root.classList.add('one');
+    root.classList.add('ot'); if (def.onePage) root.classList.add('one'); if (def.rows) root.classList.add('rows');
     root.style.position = 'relative';
     root.innerHTML = `
 ${def.simpleBar ? `<div class="ot-bar">
@@ -459,6 +463,7 @@ ${def.simpleBar ? `<div class="ot-bar">
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
       });
+      if (def.rows) { R.groups.innerHTML = blk.join(''); markBad(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
       const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
       R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
       markBad();

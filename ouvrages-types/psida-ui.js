@@ -126,7 +126,7 @@
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
 
-    { id: 'trav', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'lignes A6 et A7', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
+    { id: 'trav', col: 1, label: 'Profil en travers', view: 'coupe', caption: 'ligne A6', hint: 'Profil en travers de la voie portée, de gauche à droite (sens de l\'axe).', pages: [
       { label: 'Profil en travers (A6)', caption: 'ligne A6 — profil en travers de gauche à droite', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
@@ -138,19 +138,6 @@
         { title: 'Chaussée', alt: true, flex: 2, cols: 2, fields: [
           { k: 'A6.HCHAU', code: 'HCHAU', label: 'épaisseur', unit: 'm', dec: 3, help: 'Épaisseur moyenne de béton équivalent au renformis éventuel, à la chape et à la chaussée (diffusion des charges locales).' },
           { k: 'A6.NVOIE', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation. 0 : calculé selon l\'article 2.2 du fascicule 61 titre II ; à remplir seulement s\'il en diffère (chaussée de 9 m à deux voies…).' },
-        ] },
-      ] },
-      { label: 'Structure porteuse (A7)', caption: 'ligne A7 — demi-coupe de la dalle', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
-        { title: 'Épaisseurs', flex: 4, cols: 4, fields: [
-          { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
-          { k: 'A3.LIGNINF', code: 'LIGNINF', label: 'épaisseur', type: 'sel', opts: [[2, '2 — HDALLE1 conservée'], [1, '1 — optimisée']], help: 'Ligne A3 : 2 = épaisseur HDALLE1 conservée ; 1 = épaisseur optimisée par le programme (arrondie au cm puis augmentée tant que le moment ultime l\'exige). Les lignes d\'influence sont toujours calculées.' },
-          { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
-          { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
-        ] },
-        { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
-          { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
-          { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
-          { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
         ] },
       ] },
       { label: 'Fibres et symétrie (A6)', caption: 'ligne A6 — symétrie, fibres et axe mécanique', groups: [
@@ -165,6 +152,22 @@
         { title: 'Largeur exceptionnelle (normalement 0)', flex: 4, cols: 4, fields: [2, 3, 4, 5].map(i => ({ k: 'A6.YY' + i, code: `YY(${i})`, label: 'fibre ' + i, unit: 'm', dec: 3, help: `Ouvrages exceptionnels seulement : distance au bord gauche du trottoir gauche de la fibre ${i} étudiée pour les coefficients K. Normalement 0.` })) },
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
+
+    { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: 'ligne A7', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
+      { label: 'Structure porteuse (A7)', caption: 'ligne A7 — demi-coupe de la dalle', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half'), groups: [
+        { title: 'Épaisseurs', flex: 4, cols: 4, fields: [
+          { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
+          { k: 'A3.LIGNINF', code: 'LIGNINF', label: 'épaisseur', type: 'sel', opts: [[2, '2 — HDALLE1 conservée'], [1, '1 — optimisée']], help: 'Ligne A3 : 2 = épaisseur HDALLE1 conservée ; 1 = épaisseur optimisée par le programme (arrondie au cm puis augmentée tant que le moment ultime l\'exige). Les lignes d\'influence sont toujours calculées.' },
+          { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
+          { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
+        ] },
+        { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
+          { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
+          { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
+          { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
+        ] },
+      ] },
+    ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'half') },
 
     { id: 'charg', col: 2, label: 'Charges', view: 'coupe', caption: 'ligne A8', hint: 'Charges permanentes, charges d\'exploitation du fascicule 61 titre II, coefficients de répartition imposés.', pages: [
       { label: 'Permanentes', groups: [
@@ -1139,7 +1142,7 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
-    pairs: true, onePage: true, simpleBar: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
+    pairs: true, onePage: true, rows: true, simpleBar: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],
     views: [
