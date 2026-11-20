@@ -426,7 +426,8 @@
       const W = f => f.type === 'txt' ? (f.w ? `--w:${f.w}px;flex:0 0 auto` : '') : f.type === 'sel' ? `--w:${f.w || 84}px` : `--w:${f.w || 52}px`;
       const fh = f => { let x = fieldHTML(f).replace('class="ot-f', `style="${W(f)}" class="ot-f${f.type === 'txt' ? ' wtxt' : ''}`); if (f.bare) x = x.replace(/<label[^>]*>[\s\S]*?<\/label>/, ''); return x; };
       const blk = steps.map((st, si) => {
-        const gs = st.pages.flatMap(p => p.groups);
+        const vis = x => !x.show || x.show(S.model);   // cases et groupes conditionnels (ex. portées D1…DNT, appuis 1…NT + 1)
+        const gs = st.pages.flatMap(p => p.groups).filter(vis).map(g => g.fields.every(vis) ? g : Object.assign({}, g, { fields: g.fields.filter(vis) })).filter(g => g.fields.length);
         const tabs = gs.filter(g => g.appui), mx = gs.filter(g => g.mtx), plain = gs.filter(g => !g.appui && !g.mtx);
         let h = plain.map(g => `<div class="sg${g.alt ? ' alt' : ''}${g.fields.some(f => f.type === 'txt' && !f.w) ? ' full' : ''}" title="${esc(g.title)}">${g.short === '' ? '' : `<i>${esc(g.short || g.title)}</i>`}<div class="fs">${g.fields.map(fh).join('')}</div></div>`).join('');
         if (mx.length) {   // matrice de cases à cocher : colonnes = codes, lignes = groupes (ex. A3 calculé / A4 imprimé)
