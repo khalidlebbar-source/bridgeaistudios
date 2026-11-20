@@ -21,7 +21,10 @@
   const fdot = (v, w) => pad((G.PSIDA_FDOT0 ? Math.round(v) : fx(v, 0)) + '.', w);
   const STAR = ['                                                              *     * ', '                                                                 * '];
 
+  const kOf = (o, c) => /CVOI/.test(c) ? o.CV : c === 'ME.80' ? o.Me80 : c === 'ME.120' ? o.Me120 : c === 'MC.80' && o.Mc80 != null && r_ext ? o.Mc80 : o.Mc;
+  let r_ext = false;
   function renderNote(m, r, opt) {
+    r_ext = !!r.milExt;
     opt = opt || {};
     // v24 : la date du passage identifie aussi la génération du programme : passages antérieurs à 2010 (3452, 3453, 3488 de 2007–2008)
     // = même arrondi des égalités que la version 2006 (constat v19 sur 3488 ; Ei imprimé 3517981 vs 3517980 en 2022). PSIDA_RNDDATE = 0 : sans.
@@ -123,7 +126,7 @@
       '                            CHARGES BC  , ' + r.nomBt, '', '',
       "     CHARGES D'EXPLOITATION A CARACTERE PARTICULIER", '',
       '                  * RELEVANT DU TITRE II DU FASC. 61 (1971) ', '',
-      ...(r.ce.mil === 4 ? ['                            CONVOI MILITAIRE TYPE MC 120', ''] : r.ce.mil === 3 ? ['                            CONVOI MILITAIRE TYPE MC 80', ''] : []),
+      ...r.chargesC.filter(c => /^M[CE]/.test(c)).flatMap(c => ['                            ' + ({ 'MC.120': 'CONVOI MILITAIRE TYPE MC 120', 'MC.80': 'CONVOI MILITAIRE TYPE MC 80', 'ME.80': 'SYSTEME MILITAIRE TYPE ME 80', 'ME.120': 'SYSTEME MILITAIRE TYPE ME 120' })[c], '']),
       ...(r.ce.exc === 2 ? ['                            CONVOIS EXCEPTIONNELS TYPES D ET E'] : r.ce.exc === 1 ? ['                            CONVOI EXCEPTIONNEL TYPE D'] : [])];
     page("ETAT-LIMITE D'OUVERTURE DES FISSURES", p4, { sub: '************************************' });
     // ---------------------------------------------------------- page 5 : LI moments sur appuis
@@ -196,18 +199,18 @@
       '             PORTEE    CP            BC              ' + r.nomBt + '            ' + r.chargesC.join('          '), ''];
     r.cmd.forEach((c, s) => {
       let l = '   ' + T(s) + f(c.L, 9, 3) + fdot(c.G, 7) + '    ' + fdot(c.Sbc, 6) + f(c.bc, 8, 3) + '    ****' + f(c.bt, 8, 3);
-      for (const cn of r.chargesC) l += /CVOI/.test(cn) ? '    ****   1.000' : fdot(c.Smc, 8) + f(c.mc, 8, 3);
+      for (const cn of r.chargesC) l += /CVOI/.test(cn) ? '    ****   1.000' : fdot((c.Smil || {})[cn] || c.Smc, 8) + f((c.dmil || {})[cn] || c.mc, 8, 3);
       pc.push(l, '', '');
     });
     pc.push('                                              COEFFICIENTS DE MAJORATION DYNAMIQUE SUR APPUIS', '',
       '                    ' + Array.from({ length: n + 1 }, (_, k) => pad('APPUI ' + (k + 1), 16)).join(''), '',
       padR('   BC', 20) + r.cmdAppui.map(a => f(a.bc, 16, 3)).join(''), '',
       padR('   ' + r.nomBt, 20) + r.cmdAppui.map(a => f(a.bc, 16, 3)).join(''), '');
-    for (const cn of r.chargesC) pc.push(padR('   ' + cn, 20) + r.cmdAppui.map(a => f(/CVOI/.test(cn) ? (a.end ? 1.1 : 1) : a.mc, 16, 3)).join(''), '');
+    for (const cn of r.chargesC) pc.push(padR('   ' + cn, 20) + r.cmdAppui.map(a => f(/CVOI/.test(cn) ? (a.end ? 1.1 : 1) : ((a.dmil || {})[cn] || a.mc), 16, 3)).join(''), '');
     page('DENSITE DE CHARGE PERMANENTE', pc, { sub2: 'POIDS AU METRE' });
     // ---------------------------------------------------------- Guyon-Massonnet
     const cHdr = '                        TROTTOIRS    A(' + r.nvoies + '  /' + r.nvoies + '  )   BC (2  /2  )   ' + r.nomBt + ' (2  /2  )' + r.chargesC.map(c => pad(c, 14)).join('');
-    const cVal = (o) => '     COEFFICIENTS    ' + [o.trot, o.A, o.Bc, o.Bt].map(v => f(v, 14, 3)).join('') + r.chargesC.map(c => f(/CVOI/.test(c) ? o.CV : o.Mc, 14, 3)).join('');
+    const cVal = (o) => '     COEFFICIENTS    ' + [o.trot, o.A, o.Bc, o.Bt].map(v => f(v, 14, 3)).join('') + r.chargesC.map(c => f(kOf(o, c), 14, 3)).join('');
     for (let s = 0; s < nPrint; s++) {
       const g = r.gm[s];
       const pg = ['                                                             *    * ', '                                                                * ', ''];
@@ -221,7 +224,7 @@
         { sub2: '               PORTEE EQUIVALENTE' + f(g.Leq, 7, 3) + '                              PARAMETRE D ENTRETOISEMENT ' + f(g.theta, 5, 2) });
     }
     const prc = [...STAR, ...(TX ? ['', "                           L'EFFET DES COEFFICIENTS REDUCTEURS,FONCTIONS DU NOMBRE DE VOIES CHARGEES", '                   EST PRIS EN COMPTE DANS LE CALCUL DES COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE', ''] : []), '', '                        TROTTOIRS           A            BC             ' + r.nomBt + r.chargesC.map(c => pad(c, 14)).join(''), ''];
-    r.gm.forEach((g, s) => prc.push('         ' + T(s) + '   ' + [g.coef.trot, g.coef.A, g.coef.Bc, g.coef.Bt].map(v => f(v, 14, 3)).join('') + r.chargesC.map(c => f(/CVOI/.test(c) ? g.coef.CV : g.coef.Mc, 14, 3)).join(''), ''));
+    r.gm.forEach((g, s) => prc.push('         ' + T(s) + '   ' + [g.coef.trot, g.coef.A, g.coef.Bc, g.coef.Bt].map(v => f(v, 14, 3)).join('') + r.chargesC.map(c => f(kOf(g.coef, c), 14, 3)).join(''), ''));
     page('RECAPITULATION DES COEFFICIENTS CORRECTIFS DE REPARTITION TRANSVERSALE', prc);
     // ---------------------------------------------------------- moments fléchissants
     for (let i = 0; i < nPrint; i++) {
@@ -279,7 +282,7 @@
         pv2.push(' '.repeat(33) + f(v.G.dn, 11, 1) + [l.A.neg.v, l.B.min.v, l.C.min.v, l.T.min].map(x => f(x, 14, 1)).join('') + f(v.els.min, 14, 1) + f(v.elu.min, 11, 1), '');
       });
       page('EFFORTS TRANCHANTS SUR APPUIS', pv2, { sub2: 'SOUS LA CHARGE PERMANENTE ET LES DIFFERENTS CAS DE SURCHARGE POUR LA LARGEUR TOTALE' });
-      const slots = ['CVOI.D', 'CVOI.E', 'MC.120', 'MC.80'].filter(c => r.chargesC.includes(c));
+      const slots = ['CVOI.D', 'CVOI.E', 'MC.120', 'MC.80', 'ME.80', 'ME.120'].filter(c => r.chargesC.includes(c));
       const pr2 = [...STAR, "              CHARGES  TROTTOIRS   A ( L )       C H A R G E S   B                 C H A R G E S   C                ETATS-LIMITES",
         '               PERM.                           BC        ' + r.nomBt + '                ' + slots.map(c => padR(c, 10)).join('') + '              SERVICE   ULTIME', ''];
       const nR = sym(r) ? Math.ceil((n + 1) / 2) : n + 1;

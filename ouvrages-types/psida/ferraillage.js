@@ -252,7 +252,7 @@
   function appareils(m, r) {
     if (!r.reactions || !r.appuis) return null;
     const A13 = m.lignes.A13 || {}, n = r.n;
-    const cas = ['CP', 'A', 'BC', r.nomBt || 'BT', ...((r.chargesC || []).filter(c => /CVOI|MC/.test(c)))];
+    const cas = ['CP', 'A', 'BC', r.nomBt || 'BT', ...((r.chargesC || []).filter(c => /CVOI|MC|ME/.test(c)))];
     const out = r.appuis.map((ap, k) => {
       const R = r.reactions[k], nap = Math.max(1, ap.nap), l = R.live;
       const coef = {}; for (const c of cas) coef[c] = 1;
@@ -269,7 +269,7 @@
       const dy = (r.cmdAppui && r.cmdAppui[k]) || { bc: 1, mc: 1 };
       const cands = [[l.A.pos.v * 1.2, l.A.neg.v * 1.2, coef.A], [l.Bc.max * 1.2 * dy.bc, l.Bc.min * 1.2 * dy.bc, coef.BC],
         [l.Bt.max * 1.2 * dy.bc, l.Bt.min * 1.2 * dy.bc, coef[r.nomBt || 'BT']]];
-      for (const c of l.CE || []) { const d = /CVOI/.test(c.nom) ? (end ? 1.1 : 1) : dy.mc; cands.push([c.max.v * d, c.min.v * d, coef[c.nom] || 1]); }
+      for (const c of l.CE || []) { const d = /CVOI/.test(c.nom) ? (end ? 1.1 : 1) : ((dy.dmil || {})[c.nom] || dy.mc); cands.push([c.max.v * d, c.min.v * d, coef[c.nom] || 1]); }
       const vmax = Math.max(...cands.map(c => c[0] * c[2])), vmin = Math.min(...cands.map(c => c[1] * c[2]));
       const videMax = R.G.up * coef.CP / nap, videMin = R.G.dn / nap;
       // trottoirs : facteur Na/2 (v11, activé en v13 avec la section ELU des chevêtres) : 3639 et 3603 (Na = 2) sont exacts avec les

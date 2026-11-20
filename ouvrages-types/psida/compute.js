@@ -327,7 +327,10 @@
     r.ce = { gen: +ce[0], exc: +ce[1], mil: +ce[2] };
     r.chargesC = [];
     if (r.ce.exc >= 1) r.chargesC.push('CVOI.D'); if (r.ce.exc >= 2) r.chargesC.push('CVOI.E');
-    if (r.ce.mil === 3) r.chargesC.push('MC.80'); if (r.ce.mil === 4) r.chargesC.push('MC.120');
+    const C9 = model.lignes.C9;   // extension BridgeAI : militaires cochés un à un (Mc80, Mc120, Me80, Me120)
+    if (C9) { if (C9.MC80) r.chargesC.push('MC.80'); if (C9.MC120) r.chargesC.push('MC.120'); if (C9.ME80) r.chargesC.push('ME.80'); if (C9.ME120) r.chargesC.push('ME.120'); }
+    else { if (r.ce.mil === 3) r.chargesC.push('MC.80'); if (r.ce.mil === 4) r.chargesC.push('MC.120'); }
+    r.milExt = !!C9;
     r.nomBt = r.f61_1960 ? 'BE' : 'BT';
     // extension BridgeAI (cases à cocher de l'interface) : A = 000 sans charge A ; B = 000 sans B, 002 Bc seul, 003 Bt seul
     const cA = String(A8.A).padStart(3, '0'), cB = String(A8.B).padStart(3, '0');
@@ -408,13 +411,17 @@
       o.Sbt = Sbt; o.bt = o.bc; // Bt : même coefficient que Bc dans le listing SETRA
       const Smc = r.f61_1960 ? 100 : 110;
       o.Smc = Smc; o.mc = dyn(l, Gt, Smc);
+      // δ par système militaire (extension C9) : Mc80 72 t, Me80 2 × 22 t, Me120 2 × 33 t ; Mc120 : δ du listing
+      o.Smil = { 'MC.120': Smc, 'MC.80': r.milExt ? 72 : Smc, 'ME.80': 44, 'ME.120': 66 };
+      o.dmil = {}; for (const k in o.Smil) o.dmil[k] = k === 'MC.120' || !r.milExt ? o.mc : dyn(l, Gt, o.Smil[k]);
       return o;
     });
     // sur appuis : appuis intermédiaires = enveloppe des travées adjacentes
     r.cmdAppui = Array.from({ length: n + 1 }, (_, k) => {
       const adj = [k - 1, k].filter(s => s >= 0 && s < n);
       const end = k === 0 || k === n;
-      const o = { bc: Math.max(...adj.map(s => r.cmd[s].bc)), mc: Math.max(...adj.map(s => r.cmd[s].mc)), end };
+      const o = { bc: Math.max(...adj.map(s => r.cmd[s].bc)), mc: Math.max(...adj.map(s => r.cmd[s].mc)), end, dmil: {} };
+      for (const kk in r.cmd[0].dmil) { const v = Math.max(...adj.map(s => r.cmd[s].dmil[kk])); o.dmil[kk] = end && !globalThis.PSIDA_DYNC0 ? Math.max(v, (v + 1.2) / 2) : v; }
       // culées (notice PSIDP-EL, page « COEFFICIENTS DE MAJORATION DYNAMIQUE SUR APPUIS », valeurs « fixées arbitrairement
       // par le programme ») : δ culée = (δ travée + 1,5)/2 pour B, (δ travée + 1,2)/2 pour Mc120 (convois : (1 + 1,2)/2 = 1,1),
       // jamais inférieur au δ de la travée de rive. Crochet PSIDA_DYNC0 = 1 : δ de la travée (ancien calcul).
@@ -618,6 +625,7 @@
   }
   const CV_OFF = 0.425;   // v9 (avec LI interpolée au pas imprimé 0,5) ; v8 : 0,375 avec intégration continue
   const CV_OFF_V8 = 0.375;   // décalage de l'axe des convois D/E vers la fibre (3 pas de 0,125 m ; calage)
+  const ME = { 'ME.80': { P: 22, e: 1.5, w: 3.5, l: 0.12 }, 'ME.120': { P: 33, e: 1.8, w: 4.0, l: 0.15 } };   // F61 II art. 9 (Me120 : entraxe 1,80 m, décision BridgeAI)
   const CVD = { P: 140, len: 11, gap: 18.75, nom: 19 }, CVE = { P: 200, len: 15, gap: 32.75, nom: 33 }; // 2 remorques (F61 II art. 10)
 
   function liveEffects(r, f, A6, dynOverride, extraSegs, kOne) {
@@ -659,12 +667,21 @@
     if (OF.Bc && OF.Bt) { out.B.max.typ = ''; out.B.min.typ = ''; }
     // charges particulières
     const ce = [];
-    const mcDef = r.ce.mil === 4 ? (r.f61_1960 ? MC1960 : MC120) : r.ce.mil === 3 ? MC80 : null;
-    if (mcDef) {
+    for (const mnom of r.chargesC.filter(c => /^M[CE]\./.test(c))) {
+     const dmF = sp => (r.cmd[sp].dmil || {})[mnom] || r.cmd[sp].mc;
+     if (/^ME/.test(mnom)) {   // système Me : 2 essieux (Me80 2 × 22 t à 1,50 m ; Me120 2 × 33 t à 1,80 m), un seul véhicule
+      const d = ME[mnom], ax = [[0, d.P], [d.e, d.P]], key = mnom === 'ME.80' ? 'Me80' : 'Me120';
+      const me = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef[key] * dynOverride.mc) : (sp => r.gm[sp].coef[key] * dmF(sp)), step, 1, 0, [0]);
+      ce.push({ nom: mnom, ...me }); continue;
+     }
+     const mcDef = mnom === 'MC.120' ? (r.f61_1960 ? MC1960 : MC120) : MC80;
+     {
       const N = G.PSIDA_MCN || 400, ax = []; for (let k = 0; k < N; k++) ax.push([mcDef.len * (k + 0.5) / N, mcDef.P / N]);
       ax.dist = { len: mcDef.len, P: mcDef.P };
-      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef.Mc * dynOverride.mc) : spanFactor(r, 'Mc', 'mc'), step, mcDef.n || 2, mcDef.gap, [0], false, 0, mcGapOk(r, mcDef));
-      ce.push({ nom: r.ce.mil === 4 ? 'MC.120' : 'MC.80', ...mc });
+      const kMc = r.milExt && mnom === 'MC.80' ? 'Mc80' : 'Mc';
+      const mc = vehicleScan(r, f, ax, kOne ? (sp => dynOverride.mc) : dynOverride ? (sp => r.gm[sp].coef[kMc] * dynOverride.mc) : (kMc === 'Mc' ? spanFactor(r, 'Mc', 'mc') : (sp => r.gm[sp].coef[kMc] * dmF(sp))), step, mcDef.n || 2, mcDef.gap, [0], false, 0, mcGapOk(r, mcDef));
+      ce.push({ nom: mnom, ...mc });
+     }
     }
     for (const [nom, d] of [['CVOI.D', CVD], ['CVOI.E', CVE]]) if (r.chargesC.includes(nom)) {
       const N = 40, ax = []; for (let k = 0; k < N; k++) ax.push([d.len * (k + 0.5) / N, d.P / N]);
@@ -798,7 +815,7 @@
       const A1 = sec.Eeq / Math.sin(psi * GR), A2 = A1 / Leq;
       const term = c => [1, 3, 5].map(m => { const x = m * Math.PI * Math.min(c, Leq) / (2 * Leq); return Math.sin(x) / x; });
       const etal = [['CHARGE REPARTIE', Leq], ['BC', 1.5 + e0], [r.nomBt, (r.f61_1960 ? 0 : 1.35) + e0]];
-      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? Math.min(Leqmin, (c === 'CVOI.D' ? CVD : CVE).len + e1) : (c === 'MC.120' ? (r.f61_1960 ? 4.5 : 6.1) : 4.9) + e1]);
+      for (const c of r.chargesC) etal.push([c, /CVOI/.test(c) ? Math.min(Leqmin, (c === 'CVOI.D' ? CVD : CVE).len + e1) : /^ME/.test(c) ? ME[c].e + ME[c].l + e1 : (c === 'MC.120' ? (r.f61_1960 ? 4.5 : 6.1) : 4.9) + e1]);
       const bS = A1 / 2, LS = Leq * Math.sin(psi * GR);   // travée droite équivalente (biais)
       const sP = Math.sin(psi * GR), eInt = r._A7.EDALLE1 / 2 / sP;
       // abscisses imprimées perpendiculaires à l'axe (e) ; coordonnées de la plaque équivalente = e / sin ψ
@@ -885,9 +902,14 @@
       let cMx = { v: 0, nom: '' }, cMn = { v: 0, nom: '' };
       for (const nom of r.chargesC) {
         const Zc = Z(term(nom)); let mx = 0, mn = 0;
-        if (/^MC/.test(nom)) {
-          const mean = a => { let t = 0; for (let i = 0; i <= 8; i++) t += (i === 0 || i === 8 ? 0.5 : 1) * Zc(a + i / 8); return t / 8; };
-          for (let k = 0; x0 + k * h <= x1 - 4.25 + 1e-9; k++) { const x = x0 + k * h, val = (dyn.mc || 1) * (r.f61_1960 ? 50 : 55) * A2 * (mean(x) + mean(x + 3.25)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+        if (/^ME/.test(nom)) {   // Me : 2 essieux sur une bande de largeur w (3,50 / 4,00 m)
+          const d = ME[nom], dm = (dyn.dmil || {})[nom] || 1;
+          const mean = a => { let t = 0; for (let i = 0; i <= 8; i++) t += (i === 0 || i === 8 ? 0.5 : 1) * Zc(a + i * d.w / 8); return t / 8; };
+          for (let k = 0; x0 + k * h <= x1 - d.w + 1e-9; k++) { const x = x0 + k * h, val = dm * 2 * d.P * A2 * mean(x); mx = Math.max(mx, val); mn = Math.min(mn, val); }
+        } else if (/^MC/.test(nom)) {
+          const m80 = r.milExt && nom === 'MC.80', cw = m80 ? 0.85 : 1, ent = m80 ? 2.75 : 3.25, Pch = m80 ? 36 : (r.f61_1960 ? 50 : 55), dm = m80 ? (dyn.dmil || {})[nom] || 1 : (dyn.mc || 1);
+          const mean = a => { let t = 0; for (let i = 0; i <= 8; i++) t += (i === 0 || i === 8 ? 0.5 : 1) * Zc(a + i * cw / 8); return t / 8; };
+          for (let k = 0; x0 + k * h <= x1 - (ent + cw) + 1e-9; k++) { const x = x0 + k * h, val = dm * Pch * A2 * (mean(x) + mean(x + ent)); mx = Math.max(mx, val); mn = Math.min(mn, val); }
         } else {
           // convoi D/E : remorque de 3,30 m, densité P/longueur, axe à ±0,40 m de l'axe de la chaussée (calage 3826/3827,
           // règle exacte non retrouvée)
@@ -1160,6 +1182,10 @@
       let bestMc = 0;
       for (let x = g0; x <= g1 - 4.25 + 1e-9; x += h) bestMc = Math.max(bestMc, (meanW(x, 1) + meanW(x + 3.25, 1)) / 2);
       res.Mc = bestMc;
+      // extension C9 : Mc80 (chenilles 0,85 m, entraxe 2,80 m arrondi au pas), Me80 / Me120 (bande de 3,50 / 4,00 m)
+      let b80 = 0; for (let x = g0; x <= g1 - 3.6 + 1e-9; x += h) b80 = Math.max(b80, (meanW(x, 0.85) + meanW(x + 2.75, 0.85)) / 2);
+      res.Mc80 = b80;
+      for (const [kk, w] of [['Me80', 3.5], ['Me120', 4.0]]) { let b = 0; for (let x = g0; x <= g1 - w + 1e-9; x += h) b = Math.max(b, meanW(x, w)); res[kk] = b; }
       // convois D / E : remorque de 3,30 m, axe décalé de 0,50 m vers la fibre (calage listings)
       const cvk = G.PSIDA_CVK === undefined ? 1 : G.PSIDA_CVK;
       if (cvk) {
@@ -1187,7 +1213,7 @@
     });
     // fibre la plus sollicitée par cas de charge
     const pick = key => Math.max(...out.map(o => o[key]));
-    return { Leq, theta, Weq, fibres: out, coef: { trot: pick('trot'), A: pick('A'), Bc: pick('Bc'), Bt: pick('Bt'), Mc: pick('Mc'), CV: pick('CV') } };
+    return { Leq, theta, Weq, fibres: out, coef: { trot: pick('trot'), A: pick('A'), Bc: pick('Bc'), Bt: pick('Bt'), Mc: pick('Mc'), CV: pick('CV'), Mc80: pick('Mc80'), Me80: pick('Me80'), Me120: pick('Me120') } };
   }
 
   const api = { compute, section, influence, plateLine, Kline, SECT, _solve: solve, asELS, asELU, steelGeom };

@@ -18,6 +18,7 @@
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
     }
+    if (k.startsWith('MIL.')) return milGet(m)[k.slice(4)];                // militaires cochés un à un (ligne d'extension C9)
     if (k.startsWith('CE.')) {                                            // cases à cocher du code CE = i m j
       const ce = String(((m.lignes || {}).A8 || {}).CE || '000').padStart(3, '0'), w = k.slice(3);
       return w === 'D' ? +(+ce[1] >= 1) : w === 'E' ? +(+ce[1] === 2) : w === 'MC80' ? +(ce[2] === '3') : +(ce[2] === '4');
@@ -45,6 +46,12 @@
       if (k === 'FIX.BC') bc = on; else bt = on;
       A8.B = bc && bt ? '001' : bc ? '002' : bt ? '003' : '000'; return;
     }
+    if (k.startsWith('MIL.')) {
+      m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
+      const o = milGet(m); o[k.slice(4)] = num(v) === 1 ? 1 : 0; m.lignes.C9 = o;
+      const c = String(m.lignes.A8.CE || '000').padStart(3, '0').split(''); c[2] = o.MC120 ? '4' : o.MC80 ? '3' : '0'; m.lignes.A8.CE = c.join('');   // code SETRA le plus proche
+      return;
+    }
     if (k.startsWith('CE.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
       const c = String(m.lignes.A8.CE || '000').padStart(3, '0').split(''), w = k.slice(3), on = num(v) === 1;
@@ -61,6 +68,12 @@
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
   };
+  function milGet(m) {
+    const L = m.lignes || {};
+    if (L.C9) return { MC80: +!!L.C9.MC80, MC120: +!!L.C9.MC120, ME80: +!!L.C9.ME80, ME120: +!!L.C9.ME120 };
+    const j = String((L.A8 || {}).CE || '000').padStart(3, '0')[2];
+    return { MC80: +(j === '3'), MC120: +(j === '4'), ME80: 0, ME120: 0 };
+  }
   const V = (m, k) => { const x = num(get(m, k)); return isFinite(x) ? x : 0; };
   const code = k => (k.split('.')[1] || k);
   const nvF61 = es => es < 6 ? (es >= 5 ? 2 : 1) : Math.floor(es / 3);
@@ -173,12 +186,14 @@
         { title: 'Classe du pont', short: 'Pont', flex: 1, cols: 1, fields: [
           { k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3) : 1re classe si la largeur roulable est ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà.' },
         ] },
-        { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 7, cols: 7, fields: [
+        { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 9, cols: 9, fields: [
           { k: 'FIX.A', code: 'A(l)', type: 'chk', help: 'Charge A(l) du fascicule 61 titre II : cochée = appliquée.' },
           { k: 'FIX.BC', code: 'Bc', type: 'chk', help: 'Camions Bc : cochés = appliqués.' },
           { k: 'FIX.BT', code: 'Bt', type: 'chk', help: 'Tandems Bt : cochés = appliqués.' },
-          { k: 'CE.MC80', code: 'Mc80', type: 'chk', relayout: true, help: 'Char militaire Mc80 (un seul char militaire : Mc80 ou Mc120).' },
-          { k: 'CE.MC120', code: 'Mc120', type: 'chk', relayout: true, help: 'Char militaire Mc120 (un seul char militaire : Mc80 ou Mc120).' },
+          { k: 'MIL.MC80', code: 'Mc80', type: 'chk', help: 'Char militaire Mc80 (72 t, 2 chenilles de 4,90 × 0,85 m).' },
+          { k: 'MIL.MC120', code: 'Mc120', type: 'chk', help: 'Char militaire Mc120 (110 t, 2 chenilles de 6,10 × 1,00 m).' },
+          { k: 'MIL.ME80', code: 'Me80', type: 'chk', help: 'Système militaire Me80 : 2 essieux de 22 t distants de 1,50 m (impact 3,50 × 0,12 m).' },
+          { k: 'MIL.ME120', code: 'Me120', type: 'chk', help: 'Système militaire Me120 : 2 essieux de 33 t distants de 1,80 m (impact 4,00 × 0,15 m).' },
           { k: 'CE.D', code: 'Convoi D', type: 'chk', relayout: true, help: 'Convoi exceptionnel type D (circulaire R/DR, 1973).' },
           { k: 'CE.E', code: 'Convoi E', type: 'chk', relayout: true, help: 'Convoi exceptionnel type E (cocher E entraîne D, comme le code CE du SETRA).' },
         ] },
