@@ -719,7 +719,10 @@ ${def.simpleBar ? `<div class="ot-bar">
       }
       download(name, text);
     }
-    root.addEventListener('click', e => {
+    const barEl = root.querySelector('.ot-bar');   // la barre peut être déplacée hors de root (bandeau de la page) : écouteur propre
+    if (barEl) barEl.addEventListener('click', e => { e.stopPropagation(); onAct(e); });
+    root.addEventListener('click', e => onAct(e));
+    function onAct(e) {
       const b = e.target.closest('[data-a]'); if (!b) return;
       const a = b.dataset.a;
       if (a === 'run') run();
@@ -732,7 +735,7 @@ ${def.simpleBar ? `<div class="ot-bar">
       else if (a === 'copy') { if (S.note && navigator.clipboard) navigator.clipboard.writeText(S.note).then(() => toast('Note copiée')); }
       else if (a === 'dl') { if (S.note) download(`${def.prog}-note.txt`, S.note); }
       else if (a === 'print') { if (!S.note) return; document.body.classList.add('ot-print'); setTimeout(() => { window.print(); document.body.classList.remove('ot-print'); }, 50); }
-    });
+   }
     function confirmNew() { return true; }
     R.ex.addEventListener('change', () => {
       const i = R.ex.value; if (i === '') return;
