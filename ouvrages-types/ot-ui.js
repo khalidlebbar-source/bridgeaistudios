@@ -184,6 +184,8 @@
 .ot.one.rows .ot-blk{display:flex;gap:10px;align-items:center;padding:4px 8px}
 .ot.one.rows .ot-blk>h4{flex:0 0 118px;margin:0;font-size:10px}
 .ot.one.rows .ot-blk>.row{flex:1;min-width:0;gap:3px 8px}
+.ot.one.rows .ot-blk>.msgs{flex:0 1 34%;font-size:11px;line-height:1.35;color:#9a5b00;text-align:right}
+.ot.one.rows .ot-blk>.msgs:empty{display:none}
 .ot.one .ot-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:6px}
 .ot-blk{border:1px solid var(--border);border-radius:9px;background:var(--white);padding:3px 6px 4px;min-width:0;}
 .ot-blk.wide{grid-column:1/-1}
@@ -516,6 +518,11 @@ ${def.simpleBar ? `<div class="ot-bar">
     function markBad() {
       const bad = new Set(S.issues.filter(x => x.level === 'e' && x.k).map(x => x.k));
       $$(R.groups, '.ot-f').forEach(el => el.classList.toggle('bad', bad.has(el.dataset.k)));
+      if (def.rows) $$(R.groups, '.ot-blk').forEach(b => {   // mode lignes : avertissements affichés au bout de la rubrique concernée
+        const id = steps[+b.dataset.si].id, ms = [...new Set(S.issues.filter(x => x.step === id).map(x => (x.level === 'e' ? '⛔ ' : '⚠ ') + x.msg))];
+        let el = b.querySelector(':scope > .msgs'); if (!el) { el = document.createElement('div'); el.className = 'msgs'; b.appendChild(el); }
+        el.innerHTML = ms.map(t => `<div>${esc(t)}</div>`).join('');
+      });
     }
 
     /* dessins */

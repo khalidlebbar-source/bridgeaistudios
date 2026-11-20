@@ -610,8 +610,8 @@
     const es = ws[2];
     if (!(es > 0)) E_('trav', 'A6.ESURCH', 'la largeur chargeable ESURCH doit être positive');
     // règle : le profil en travers a la même largeur que la coupe transversale (ETROTG + EGAU + ESURCH + EDROI + ETROTD = EDALLE1 + EDALLE2)
-    if (Wd > 0 && Ws > 0 && Math.abs(Ws - Wd) > 0.005) { const t = `profil en travers ${fmt(Ws, 2)} m ≠ largeur de la dalle EDALLE1 + EDALLE2 ${fmt(Wd, 2)} m : les deux largeurs doivent être égales`;
-      W_('trav', 'A6.ESURCH', t); W_('sect', 'A7.EDALLE2', t); }   // avertissement (le calcul reste possible)
+    if (Wd > 0 && Ws > 0 && Math.abs(Ws - Wd) > 0.005) { const t = `largeur de la dalle ${fmt(Wd, 2)} m ≠ profil en travers ${fmt(Ws, 2)} m : les deux largeurs doivent être égales`;
+      W_('sect', 'A7.EDALLE2', t); }   // avertissement (le calcul reste possible)
     const nv = Math.round(V(m, 'A6.NVOIE'));
     if (nv < 0) E_('trav', 'A6.NVOIE', 'nombre de voies négatif');
     else if (nv > 0 && es > 0 && nv !== nvF61(es)) W_('trav', 'A6.NVOIE', `NVOIE = ${nv} imposé ; le fascicule 61 donne ${nvF61(es)} voie${nvF61(es) > 1 ? 's' : ''} pour ESURCH = ${fmt(es, 2)} m (laisser 0 sauf cas particulier)`);
