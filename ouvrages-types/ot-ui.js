@@ -478,10 +478,22 @@ ${def.simpleBar ? `<div class="ot-bar">
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
       });
-      if (def.rows) { R.groups.innerHTML = `<div class="ot-fit">${blk.join('')}</div>`; markBad(); fitRows(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
+      if (def.rows) { R.groups.innerHTML = `<div class="ot-fit">${blk.join('')}</div>`; markBad(); fitInputs(); fitRows(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
       const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
       R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
       markBad();
+    }
+    // lisibilité : chaque case s'élargit pour montrer tout son texte (valeur saisie ou choix affiché)
+    const meas = document.createElement('canvas').getContext('2d');
+    function fitInputs(only) {
+      for (const el of only ? [only] : $$(R.groups, '.ot-f input:not([type=checkbox]), .ot-f select')) {
+        const box = el.closest('.ot-f'); if (!box || box.classList.contains('wtxt')) continue;
+        const cs = getComputedStyle(el); meas.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const txt = el.tagName === 'SELECT' ? ((el.options[el.selectedIndex] || {}).text || '') : el.value;
+        const need = Math.ceil(meas.measureText(txt).width + (el.tagName === 'SELECT' ? 30 : 14));
+        if (!box.dataset.w0) box.dataset.w0 = box.getBoundingClientRect().width / (parseFloat((R.groups.querySelector('.ot-fit') || {}).style?.zoom) || 1);
+        const w = Math.max(+box.dataset.w0, need); box.style.width = w + 'px'; box.style.setProperty('--w', w + 'px');
+      }
     }
     function fitRows() {   // pas de scroll : la grille des données est réduite au besoin pour tenir dans la hauteur disponible
       const w = R.groups.querySelector('.ot-fit'); if (!w) return;
@@ -619,6 +631,7 @@ ${def.simpleBar ? `<div class="ot-bar">
       redrawT = setTimeout(() => { runChecks(); renderSteps(); renderSchema(); renderLive(); renderHelp(); markBad(); save(); if (f.relayout) renderFields(); }, 120);
     }
     R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) onEdit(e.target); });
+    if (def.rows) { R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) fitInputs(e.target); }); R.groups.addEventListener('change', e => { if (e.target.matches('select')) fitInputs(e.target); }); }
     R.groups.addEventListener('change', e => { if (e.target.matches('select,input[type=checkbox]')) { onEdit(e.target); const f = fieldByKey(e.target.closest('.ot-f').dataset.k); if (f && f.relayout) setTimeout(renderFields, 130); } });
     R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; if (def.onePage) followField(S.focus); hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
     R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; if (def.onePage) followField(S.hover); hl(R.sch, S.hover); hl(R.live, S.hover); R.msg.innerHTML = helpFor(S.hover); } });
