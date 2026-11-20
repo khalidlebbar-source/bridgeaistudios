@@ -107,8 +107,8 @@
   const A3G2 = ['FERLON', 'FERTRAN', 'ETRIERS', 'POINCON', 'DEFORM', 'AVMETRE', 'PP', 'DESSIN'];
   const LBL = { LIGNINF: 'lignes d\'influence', EXCENTR: 'répartition transv.', TASMENT: 'tassements', MOMENT: 'moments', EFTRAN: 'efforts tranchants', REAPPUI: 'réactions d\'appui', MOTRAN: 'flexion transv.', DIMAP: 'appareils d\'appui', FERLON: 'ferr. longitudinal', FERTRAN: 'ferr. transversal', ETRIERS: 'étriers', POINCON: 'poinçonnement', DEFORM: 'déformations', AVMETRE: 'avant-métré', PP: 'tableau P.P.', DESSIN: 'dessin' };
   const sp = i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1), k: 'A5.D' + i, code: 'D' + i, label: 'travée ' + i, unit: 'm', dec: 3, help: `Portée biaise de la travée ${i}, mesurée suivant l'axe de l'ouvrage entre lignes d'appui. Les remplir toutes, même si l'ouvrage est symétrique ; 0 au-delà de NT.` });
-  const tp = i => ({ rowLabel: 'TP', k: 'A12.TP' + i, code: 'TP' + i, label: '', unit: 'm', dec: 3, help: `Tassement probable de l'appui ${i} (m). Pris en compte si TASMENT = 2 (ligne A3).` });
-  const dtp = i => ({ rowLabel: 'DTP', k: 'A12.DTP' + i, code: 'DTP' + i, label: '', unit: 'm', dec: 3, help: `Tassement supplémentaire aléatoire de l'appui ${i} (m).` });
+  const tp = i => ({ rowLabel: 'TP', k: 'A12.TP' + i, code: 'TP' + i, label: '', unit: 'm', dec: 3, help: `Tassement probable de l'appui ${i} (m). Toujours pris en compte (0 si aucun tassement).` });
+  const dtp = i => ({ rowLabel: 'ΔTP', k: 'A12.DTP' + i, code: 'ΔTP' + i, label: '', unit: 'm', dec: 3, help: `ΔTP : tassement supplémentaire aléatoire de l'appui ${i} (m). Toujours pris en compte (0 si aucun).` });
   const typ = i => ({ rowLabel: 'TYPAP', k: 'A13.TYPAP' + i, code: 'TYPAP' + i, label: '', type: 'sel', opts: [[1, 'élast.'], [0, 'Freys.'], [2, 'autre']], help: `Type d'appareil d'appui de la ligne d'appui ${i} : 0 articulation Freyssinet, 1 élastomère fretté, 2 autre type.` });
   const nap = i => ({ rowLabel: 'NAP', k: 'A13.NAP' + i, code: 'NAP' + i, label: '', type: 'int', help: `Nombre d'appareils d'appui sur la ligne d'appui ${i} (0 au-delà de NT + 1).` });
 
@@ -242,8 +242,7 @@
     { id: 'app', col: 0, label: 'Appuis', view: 'plan', caption: '', hint: 'Tassements d\'appui (A12) et appareils d\'appui (A13), appuis numérotés de 1 à NT + 1.', pages: [
       { label: 'Tassements par appui (A12)', caption: '', draw: (svg, m, sch) => drawElev(svg, m, sch, 'appt'), groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A12', alt: i % 2 === 0, flex: 2, cols: 2, fields: [tp(i), dtp(i)] })) },
       { label: 'Coefficients et compressions', groups: [
-        { title: 'Tassements (A12)', flex: 3, cols: 3, fields: [
-          { k: 'A3.TASMENT', code: 'TASMENT', label: LBL.TASMENT, type: 'sel', opts: [[0, '0 — non'], [1, '1 — 1 cm'], [2, '2 — + A12']], help: '0 : pas de calcul ; 1 : moments et réactions dus à des dénivellations d\'appui unitaires de 1 cm ; 2 : en plus, sécurité vis-à-vis des tassements de la ligne A12.' },
+        { title: 'Tassements (A12)', flex: 2, cols: 2, fields: [
           { k: 'A12.YOUNG', code: 'YOUNG', label: 'Ei28 / E', dec: 3, def: '3', help: 'Valeur entre 3 et 5 donnant le module Ei28/YOUNG utilisé pour les efforts dus aux tassements. Sauf précision contraire, 3.' },
           { k: 'A12.KTP', code: 'KTP', label: 'fraction ELS', dec: 3, def: '1', help: 'Fraction des tassements probables prise en compte dans l\'étude ELS (combinaison quasi permanente).' },
         ] },
@@ -385,7 +384,7 @@
       if (T) {
         const y0 = -hp - 0.3 * s, y1 = -hp - 3.4 * s;
         arrow(d, xs[k], y0, y1, `A12.TP${k + 1} A12.DTP${k + 1}`);
-        d.text(xs[k] + 0.8 * s, (y0 + y1) / 2 - 0.4 * s, sch ? `TP${k + 1}+DTP${k + 1}` : fmt(V(m, 'A12.TP' + (k + 1)), 3) + '+' + fmt(V(m, 'A12.DTP' + (k + 1)), 3), { size: 0.7, a: 'start', cls: sch ? 'tc' : 'dv', k: `A12.TP${k + 1} A12.DTP${k + 1}` });
+        d.text(xs[k] + 0.8 * s, (y0 + y1) / 2 - 0.4 * s, sch ? `TP${k + 1}+ΔTP${k + 1}` : fmt(V(m, 'A12.TP' + (k + 1)), 3) + '+' + fmt(V(m, 'A12.DTP' + (k + 1)), 3), { size: 0.7, a: 'start', cls: sch ? 'tc' : 'dv', k: `A12.TP${k + 1} A12.DTP${k + 1}` });
       }
     }
     // cotes
@@ -670,8 +669,6 @@
     for (let i = n + 2; i <= 7; i++) if (V(m, 'A12.TP' + i) || V(m, 'A12.DTP' + i)) W_('app', 'A12.TP' + i, `tassement saisi sur l'appui ${i} alors que l'ouvrage n'en compte que ${n + 1}`);
     const tas = V(m, 'A3.TASMENT');
     let anyT = false; for (let i = 1; i <= n + 1; i++) { if (V(m, 'A12.TP' + i) < 0 || V(m, 'A12.DTP' + i) < 0) E_('app', 'A12.TP' + i, `tassements de l'appui ${i} négatifs`); if (V(m, 'A12.TP' + i) || V(m, 'A12.DTP' + i)) anyT = true; }
-    if (tas === 2 && !anyT) W_('app', 'A12.DTP1', 'TASMENT = 2 mais aucun tassement n\'est donné en ligne A12');
-    if (tas !== 2 && anyT) W_('app', 'A3.TASMENT', 'tassements saisis en ligne A12 mais TASMENT ≠ 2 : ils ne sont pas étudiés');
     for (let i = 1; i <= n + 1; i++) {
       const a = V(m, 'A13.NAP' + i);
       if (!(a >= 1)) (V(m, 'A3.DIMAP') ? E_ : W_)('app', 'A13.NAP' + i, `ligne d'appui ${i} : nombre d'appareils NAP${i} nul`);
@@ -1139,7 +1136,7 @@
   /* la note donne tout systématiquement : tous les calculs (A3) et toutes les impressions détaillées (A4) ; répartition par Guyon (EXCENTR = 1) */
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
-    A3.EXCENTR = 1; A3.LIGNINF = 2; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;   // épaisseur HDALLE1 toujours conservée (pas d'optimisation)
+    A3.EXCENTR = 1; A3.LIGNINF = 2; A3.TASMENT = 2; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;   // épaisseur HDALLE1 toujours conservée (pas d'optimisation)
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
     if (m.lignes.A6) { const A6 = m.lignes.A6; for (let i = 2; i <= 5; i++) A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
