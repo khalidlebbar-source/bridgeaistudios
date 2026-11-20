@@ -411,7 +411,7 @@
       const id = 'f_' + String(f.k).replace(/[^\w]/g, '_');
       const lab = `<label for="${id}"><code>${esc(f.code || f.k)}</code><span>${esc(f.label || '')}</span>${f.unit ? `<em>${esc(f.unit)}</em>` : ''}</label>`;
       if (f.type === 'chk') {
-        return `<div class="ot-f ck" data-k="${esc(f.k)}"><input type="checkbox" id="${id}" ${num(v) === (f.on == null ? 1 : f.on) ? 'checked' : ''}>${lab}</div>`;
+        return `<div class="ot-f ck" data-k="${esc(f.k)}"><input type="checkbox" id="${id}" ${num(v) === (f.on == null ? 1 : f.on) ? 'checked' : ''}${f.locked ? ' disabled' : ''}>${lab}</div>`;
       }
       if (f.type === 'sel') {
         const opts = f.opts.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(v) ? 'selected' : ''}>${esc(o[1])}</option>`).join('');

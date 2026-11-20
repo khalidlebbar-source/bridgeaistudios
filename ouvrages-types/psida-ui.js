@@ -13,6 +13,11 @@
     if (k === 'TITRE1') return (m.titre || [])[0] || '';
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
+    if (k.startsWith('FIX.')) return 1;                                   // charges A(l), Bc, Bt : toujours appliquées
+    if (k.startsWith('CE.')) {                                            // cases à cocher du code CE = i m j
+      const ce = String(((m.lignes || {}).A8 || {}).CE || '000').padStart(3, '0'), w = k.slice(3);
+      return w === 'D' ? +(+ce[1] >= 1) : w === 'E' ? +(+ce[1] === 2) : w === 'MC80' ? +(ce[2] === '3') : +(ce[2] === '4');
+    }
     const [l, v] = k.split('.');
     const o = (m.lignes || {})[l];
     if (!o) return l === 'C1' ? 0 : undefined;
@@ -23,6 +28,16 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k.startsWith('FIX.')) return;
+    if (k.startsWith('CE.')) {
+      m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
+      const c = String(m.lignes.A8.CE || '000').padStart(3, '0').split(''), w = k.slice(3), on = num(v) === 1;
+      if (w === 'D') c[1] = on ? (c[1] === '2' ? '2' : '1') : '0';
+      if (w === 'E') c[1] = on ? '2' : (c[1] === '2' ? '1' : c[1]);      // E entraîne D
+      if (w === 'MC80') c[2] = on ? '3' : (c[2] === '3' ? '0' : c[2]);    // un seul char militaire
+      if (w === 'MC120') c[2] = on ? '4' : (c[2] === '4' ? '0' : c[2]);
+      m.lignes.A8.CE = c.join(''); return;
+    }
     const [l, n] = k.split('.');
     m.lignes = m.lignes || {};
     if (!m.lignes[l]) m.lignes[l] = emptyLine(l);
@@ -139,11 +154,17 @@
         ] },
       ] },
       { label: 'Exploitation', groups: [
-        { title: 'Fascicule 61 titre II', flex: 4, cols: 4, fields: [
-          { k: 'A8.STATUT', code: 'STATUT', label: 'classe', type: 'sel', opts: [['100', '100 — 1re classe'], ['200', '200 — 2e classe'], ['300', '300 — 3e classe']], help: 'Classe du pont (F61 II art. 3, 1971) : 100, 200 ou 300. Le règlement de 1960 (STATUT 000) n\'est pas proposé.' },
-          { k: 'A8.A', code: 'A', label: 'charge A(l)', type: 'sel', opts: [['001', '001 — réglementaire'], ['100', '100 — généralisée (B3)']], help: '001 : charge A(l) réglementaire du F61 II ; 100 : charge généralisée définie en ligne B3 (passerelle, voie ferrée…).' },
-          { k: 'A8.B', code: 'B', label: 'charges B', type: 'sel', opts: [['001', '001 — Bc et Bt'], ['100', '100 — BG seuls'], ['101', '101 — B + BG']], help: '001 : camions Bc et tandems Bt ; 100 : seuls camions généralisés BG (lignes B1, B2) ; 101 : B du F61 et BG.' },
-          { k: 'A8.CE', code: 'CE', label: 'caract. particulier', type: 'sel', opts: [['000', '000 — aucune'], ['003', '003 — Mc80'], ['004', '004 — Mc120'], ['010', '010 — convoi D'], ['020', '020 — D et E'], ['013', '013 — D + Mc80'], ['014', '014 — D + Mc120'], ['023', '023 — D, E + Mc80'], ['024', '024 — D, E + Mc120']], help: 'Code i m j : i charges généralisées (lignes B4), m convois exceptionnels (1 : D ; 2 : D et E), j charges militaires (3 : Mc80 ; 4 : Mc120). Ex. 024 = D, E et Mc120.' },
+        { title: 'Classe du pont', short: 'Pont', flex: 1, cols: 1, fields: [
+          { k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3) : 1re classe si la largeur roulable est ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà.' },
+        ] },
+        { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 7, cols: 7, fields: [
+          { k: 'FIX.A', code: 'A(l)', type: 'chk', locked: true, help: 'Charge A(l) du fascicule 61 titre II : toujours appliquée.' },
+          { k: 'FIX.BC', code: 'Bc', type: 'chk', locked: true, help: 'Camions Bc : toujours appliqués.' },
+          { k: 'FIX.BT', code: 'Bt', type: 'chk', locked: true, help: 'Tandems Bt : toujours appliqués (ponts de 1re et 2e classe).' },
+          { k: 'CE.MC80', code: 'Mc80', type: 'chk', relayout: true, help: 'Char militaire Mc80 (un seul char militaire : Mc80 ou Mc120).' },
+          { k: 'CE.MC120', code: 'Mc120', type: 'chk', relayout: true, help: 'Char militaire Mc120 (un seul char militaire : Mc80 ou Mc120).' },
+          { k: 'CE.D', code: 'Convoi D', type: 'chk', relayout: true, help: 'Convoi exceptionnel type D (circulaire R/DR, 1973).' },
+          { k: 'CE.E', code: 'Convoi E', type: 'chk', relayout: true, help: 'Convoi exceptionnel type E (cocher E entraîne D, comme le code CE du SETRA).' },
         ] },
         { title: 'Trottoirs', alt: true, flex: 1, cols: 1, fields: [
           { k: 'A8.PSTROT', code: 'PSTROT', label: 'charge', unit: 't/m²', dec: 3, help: 'Charge générale des trottoirs : 0 pour une plateforme autoroutière, 0,150 t/m² pour une voirie ordinaire.' },
@@ -1074,6 +1095,7 @@
   function allOn(m) {
     const A3 = m.lignes.A3, A4 = m.lignes.A4 || (m.lignes.A4 = {});
     A3.EXCENTR = 1; for (const c of [...A3G1, ...A3G2]) A3[c] = 1;
+    if (m.lignes.A8) { m.lignes.A8.A = '001'; m.lignes.A8.B = '001'; }   // A(l) réglementaire, Bc et Bt
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
     const A13 = m.lignes.A13, nt = +(m.lignes.A5 && m.lignes.A5.NT) || 0; if (A13) for (let i = 1; i <= 7; i++) A13['TYPAP' + i] = i <= nt + 1 ? 1 : 0;
     // cases masquées au-delà de NT (portées) et de NT + 1 (appuis) : 0, comme le demande le bordereau
