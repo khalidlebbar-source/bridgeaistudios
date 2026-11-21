@@ -43,6 +43,8 @@
       I('SYMAP', 6)].concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [I('TYPAP' + i, 5), I('NAP' + i, 3)])) },
     C1: { lab: 2, f: [F('XB', 7, 2), F('SS1', 8, 0), F('SS2', 8, 0), F('SS3', 8, 0), F('SS4', 8, 0)] },
     // extension BridgeAI (ligne absente des bordereaux SETRA) : charges militaires cochées une à une (1 = appliquée)
+    // extension BridgeAI : dalle réelle (FORME 1 encorbellements, 2 trapèze ; PENTE en %) — sert à remplir A7, ignorée par le calcul
+    C8: { lab: 2, f: [I('FORME', 3), F('H1', 7, 3), F('H2', 7, 3), F('H3', 7, 3), F('PENTE', 7, 3), F('E1', 7, 3), F('E2', 7, 3), F('N', 7, 3)] },
     C9: { lab: 2, f: [I('MC80', 5), I('MC120', 5), I('ME80', 5), I('ME120', 5), I('TROTX', 5)] },   // TROTX : 0 deux trottoirs chargés, 1 gauche seul, 2 droit seul, 3 aucun
   };
   // Variante de mise en page (listings 2006 : A6 EDROI F6.3 / HCHAU F8.3)
@@ -204,7 +206,7 @@
       out.push(fmtLine(k, L[k], k === 'A6' && m.version === '2006' ? A6_2006 : null, S[k]));
       if (k !== 'A13') out.push('');
     }
-    for (const k of ['C1', 'C9']) if (L[k]) out.push(fmtLine(k, L[k], null, S[k]));
+    for (const k of ['C1', 'C8', 'C9']) if (L[k]) out.push(fmtLine(k, L[k], null, S[k]));
     for (const k of Object.keys(L)) if (/_raw$/.test(k)) for (const r of L[k]) out.push(k.slice(0, 2) + '   ' + r);
     return out.map(x => (x === '' ? ' ' : x + ' ')).join('\n') + '\n';
   }

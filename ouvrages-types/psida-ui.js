@@ -14,6 +14,7 @@
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
     if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
+    if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
     if (k.startsWith('FIX.')) {                                           // charges A(l), Bc, Bt (codes A et B, extension 000 / 002 / 003)
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
@@ -34,6 +35,11 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k.startsWith('DR.')) {
+      m.lignes = m.lignes || {}; const c = m.lignes.C8 || (m.lignes.C8 = { FORME: 0, H1: 0, H2: 0, H3: 0, PENTE: 0, E1: 0, E2: 0, N: 0 });
+      if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; } } else c[k.slice(3)] = num(v);
+      realToSetra(m); return;
+    }
     if (k === 'FC28') {                                                   // fc28 (MPa) → FCJ, et FTJ = 60 + 0,06 FCJ (t/m²)
       m.lignes = m.lignes || {}; if (!m.lignes.A9) m.lignes.A9 = emptyLine('A9');
       const fc = num(v) * 100; m.lignes.A9.FCJ = fc; m.lignes.A9.FTJ = Math.round((60 + 0.06 * fc) * 10) / 10; return;
@@ -74,6 +80,21 @@
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
   };
+  const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
+  /* passage dalle réelle → dalle SETRA (règle de la feuille de Khalid, exacte sur 0063) : extrados en toit remplacé par un
+     extrados plat à sa hauteur moyenne, sous-face des encorbellements prise à sa hauteur moyenne. */
+  function realGeom(c) {
+    const f = +c.FORME, H1 = +c.H1 || 0, H2 = f === 1 ? (+c.H2 || 0) : 0, H3 = +c.H3 || 0, p = (+c.PENTE || 0) / 100;
+    const E1 = f === 1 ? (+c.E1 || 0) : 0, E2 = +c.E2 || 0, N = +c.N || 0, L = N + 2 * (E1 + E2), bomb = p * L / 2;
+    const Hd1 = H1 + H2 + H3 + bomb / 2, Hd3 = H3 + H2 / 2;
+    return { f, H1, H2, H3, p, E1, E2, N, L, bomb, H: H1 + H2 + H3 + bomb, A7: { HDALLE1: Hd1, HDALLE2: Hd1 - Hd3, HDALLE3: Hd3, EDALLE1: N, EDALLE2: 2 * (E1 + E2), EDALLE3: 2 * E2 } };
+  }
+  function realToSetra(m) {
+    const c = (m.lignes || {}).C8; if (!c || !c.FORME || !(c.N > 0)) return;
+    const g = realGeom(c), A7 = m.lignes.A7 || (m.lignes.A7 = emptyLine('A7'));
+    for (const [k, v] of Object.entries(g.A7)) A7[k] = Math.round(v * 1000 + 1e-6) / 1000;   // au mm, comme les bordereaux SETRA (0063 : 0,738 / 0,313 / 0,425)
+    A7.HDALLE2 = Math.round((A7.HDALLE1 - A7.HDALLE3) * 1000 + 1e-6) / 1000;
+  }
   function milGet(m) {
     const L = m.lignes || {};
     if (L.C9) return { MC80: +!!L.C9.MC80, MC120: +!!L.C9.MC120, ME80: +!!L.C9.ME80, ME120: +!!L.C9.ME120, TROTX: +L.C9.TROTX || 0 };
@@ -152,6 +173,18 @@
 
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
       { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab'), groups: [
+        { title: 'Dalle réelle (remplit HDALLE et EDALLE)', short: 'Dalle réelle → SETRA', alt: true, flex: 8, cols: 8, fields: [
+          { k: 'DR.FORME', code: 'Forme', type: 'sel', w: 132, relayout: true, opts: [[0, 'saisie SETRA directe'], [1, 'encorbellements'], [2, 'trapèze']], help: 'Forme de la dalle réelle : les épaisseurs et largeurs SETRA (HDALLE, EDALLE) en sont déduites. « saisie SETRA directe » : HDALLE et EDALLE saisis à la main.' },
+          { show: m => drF(m) === 1, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Encorbellements : épaisseur au bout de l\'encorbellement (verticale du bord).' },
+          { show: m => drF(m) === 1, relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
+          { show: m => drF(m) === 1, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Encorbellements : hauteur du flanc, de l\'intrados à la sous-face de l\'encorbellement à son enracinement.' },
+          { show: m => drF(m) === 2, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Trapèze : hauteur de la face verticale du bord.' },
+          { show: m => drF(m) === 2, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Trapèze : hauteur du pan incliné, de l\'intrados au bas de la face verticale du bord.' },
+          { show: m => drF(m) > 0, relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
+          { show: m => drF(m) === 1, relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
+          { show: m => drF(m) > 0, relayout: true, k: 'DR.E2', code: 'E2', unit: 'm', dec: 3, help: 'Projection horizontale du flanc (trapèze : du pan incliné).' },
+          { show: m => drF(m) > 0, relayout: true, k: 'DR.N', code: 'N', unit: 'm', dec: 3, help: 'Largeur de l\'intrados (nervure).' },
+        ] },
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
           { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
           { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
@@ -427,6 +460,13 @@
       if (xc > xb) zone(d, [[sg * xb, H3], [sg * xc, H1 - H2], [sg * xc, H1], [sg * xb, H1]], 'A7.EDALLE2 A7.HDALLE2');
     }
     d.path(full.concat([full[0]]), 'l');
+    if (mode === 'slab' && !sch && drF(m) && (((m.lignes || {}).C8 || {}).N > 0)) {   // dalle réelle superposée (tiretés rouges)
+      const g = realGeom(m.lignes.C8), x2 = g.L / 2, x1 = x2 - g.E1, x0 = g.N / 2, yE = g.H1 + g.H2 + g.H3;
+      const half_ = [[x0, 0], [x1, g.H3], ...(g.f === 1 ? [[x2, g.H3 + g.H2]] : []), [x2, yE], [0, g.H]];
+      const pts = [...half_, ...half_.slice(0, -1).reverse().map(p => [-p[0], p[1]])];
+      d.path(pts.concat([pts[0]]), 'real');
+      d.text(0, g.H + hc + 0.42, `dalle réelle : H = ${fmt(g.H, 3)} m au centre, dévers ${fmt(g.p * 100, 1)} %`, { size: 0.7, cls: 'realt' });
+    }
     if (HALF) { zone(d, [[-2, -0.4], [-0.35, -0.4], [-0.35, H1 + hc + 0.6], [-2, H1 + hc + 0.6]], '', 'car'); const p = []; for (let i = 0; i <= 10; i++) p.push([-0.35 + (i % 2 ? 0.05 : -0.05), -0.25 + (H1 + hc + 0.5) * i / 10]); d.path(p, 'l'); }
     d.line(0, -0.9, 0, top + (HALF ? 0.75 : 0.6), 'ax');
     if (HALF) d.text(0.06, top + 0.62, 'axe', { size: 0.8, a: 'start', cls: 'ts' });
