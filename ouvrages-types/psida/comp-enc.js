@@ -21,11 +21,21 @@
     const b = Math.min(1, Math.max(1 / 3, beta)), k = b <= 0.5 ? 0 : 1;
     return lin(BETAS[k], BETAS[k + 1], chart(pl + '_' + BK[k], e, ae), chart(pl + '_' + BK[k + 1], e, ae), b);
   }
+  function abaqueDet(pl, beta, e, ae) {   // lecture détaillée : deux betas encadrants et interpolation
+    const b = Math.min(1, Math.max(1 / 3, beta)), k = b <= 0.5 ? 0 : 1, m1 = chart(pl + '_' + BK[k], e, ae), m2 = chart(pl + '_' + BK[k + 1], e, ae);
+    return { b1: BETAS[k], b2: BETAS[k + 1], m1, m2, m: lin(BETAS[k], BETAS[k + 1], m1, m2, b) };
+  }
   function doublet0(beta, ce) {   // planche 3, d/e = 0 (charge ponctuelle de 10 t)
     const c = Math.min(1, Math.max(0.1, ce)), fj = (c - 0.1) / 0.1, j0 = Math.min(8, Math.floor(fj)), tj = fj - j0;
     const at = k => lin(0, 1, TAB.P3[k][j0], TAB.P3[k][j0 + 1], tj);
     const b = Math.min(1, Math.max(1 / 3, beta)), k = b <= 0.5 ? 0 : 1;
     return lin(BETAS[k], BETAS[k + 1], at(BK[k]), at(BK[k + 1]), b);
+  }
+  function doubletDet(beta, ce) {
+    const c = Math.min(1, Math.max(0.1, ce)), fj = (c - 0.1) / 0.1, j0 = Math.min(8, Math.floor(fj)), tj = fj - j0;
+    const at = k => lin(0, 1, TAB.P3[k][j0], TAB.P3[k][j0 + 1], tj);
+    const b = Math.min(1, Math.max(1 / 3, beta)), k = b <= 0.5 ? 0 : 1;
+    return { b1: BETAS[k], b2: BETAS[k + 1], m1: at(BK[k]), m2: at(BK[k + 1]) };
   }
   function computeEnc(m, r) {
     const C8 = m.lignes.C8 || {}, C12 = m.lignes.C12 || {}, A6 = m.lignes.A6 || {}, A8 = m.lignes.A8 || {}, A10 = m.lignes.A10 || {}, A11 = m.lignes.A11 || {};
@@ -57,7 +67,7 @@
       const Mu = Math.max(...U.map(x => x[1])), Ms = Math.max(...S.map(x => x[1]));
       const mu = Mu / (d * d * fbu), bb = 1 - Math.sqrt(Math.max(0, 1 - 2 * mu)), Au = Mu / (d * (1 - 0.5 * bb) * fsu) * 1e4;
       const As = Ms / (d * (1 - aAB / 3) * ss) * 1e4, Amin = 0.0015 * h1 * 1e4, Om = Math.max(Au, As, Amin);
-      sides.push({ nom, tr, a, ae, MB, MC120, MC80, MC, cR, MR, MTR, U, S, Mu, Ms, d, mu, Au, As, Amin, Om, Om3: Om / 3 });
+      sides.push({ dB: abaqueDet('1.' + cl, beta, e, ae), dC120: MC120 != null ? abaqueDet('2.1', beta, e, ae) : null, dC80: MC80 != null ? abaqueDet('2.2', beta, e, ae) : null, dR: MR > 0 ? doubletDet(beta, cR / e) : null, nom, tr, a, ae, MB, MC120, MC80, MC, cR, MR, MTR, U, S, Mu, Ms, d, mu, Au, As, Amin, Om, Om3: Om / 3 });
     }
     return { e, E1, E2, H1, H2, H3, h1, h2, beta, gam, VG0, MG0, VG1, BRAS, MG1, MG, LTR, SEP, classe: cl, delta, d, sides };
   }
@@ -66,36 +76,42 @@
     const { page, f, padR } = T, BL = '';
     const pl = ['  GUIDE PSIDP-EL DU SETRA, ANNEXE 3 - MOMENTS TRANSVERSAUX D\'ENCASTREMENT DES ENCORBELLEMENTS (SECTIONS SG ET SD)', BL];
     if (E.skip) { pl.push('     ' + E.skip); page('CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS', pl, {}); return; }
-    const col = fn => E.sides.map(s => fn(s)).join('');
-    pl.push(`     PORTEE DE LA CONSOLE   E = ${f(E.e, 6, 3)} M  (E1 = ${f(E.E1, 5, 3)} + E2 = ${f(E.E2, 5, 3)})      EPAISSEUR AU BOUT  H2 = ${f(E.h2, 5, 3)} M`, BL,
-      `     HAUTEUR DE LA SECTION D'ENCASTREMENT DE CALCUL  H1 = ${f(E.h1, 5, 3)} M  (BETON DU GOUSSET PRIS DANS LA PENTE 1/3)      BETA = H2/H1 = ${f(E.beta, 5, 3)}`, BL,
-      `     CLASSE DU PONT ${E.classe}      COEFFICIENT DE MAJORATION DYNAMIQUE FORFAITAIRE  DELTA = ${f(E.delta, 4, 2)}`, BL, BL,
-      '  CHARGES PERMANENTES (PAR METRE DE LONGUEUR)', BL,
-      `     POIDS PROPRE DE LA CONSOLE      V = ${f(E.VG0, 7, 3)} T/M     M = ${f(E.MG0, 7, 3)} TM/M`,
-      `     SUPERSTRUCTURES (DONNEES C12)   V = ${f(E.VG1, 7, 3)} T/M     M = ${f(E.MG1, 7, 3)} TM/M   (BRAS DE LEVIER ${f(E.BRAS, 5, 3)} M)`,
-      padR('     TOTAL', `     POIDS PROPRE DE LA CONSOLE      V = ${f(E.VG0, 7, 3)} T/M     `.length - 1) + `MG = ${f(E.MG, 7, 3)} TM/M`, BL, BL,
-      '  MOMENTS UNITAIRES DES CHARGES D\'EXPLOITATION (TM/ML, LECTURE DES ABAQUES, AUCUN COEFFICIENT SAUF BC ET BT)', BL,
-      '     COTE      TROTTOIR   A (M)    A/E    MB PL.1.' + E.classe + '   MC120 PL.2.1   MC80 PL.2.2    C (M)   MR ROUE 6 T PL.3   MTR TROTTOIR', BL);
-    const nf = (v, w) => v == null ? padR('', w - 1) + '-' : f(v, w, 2);
-    for (const s of E.sides) pl.push('     ' + padR(s.nom, 9) + f(s.tr, 9, 2) + f(s.a, 8, 3) + f(s.ae, 7, 3) + f(s.MB, 11, 2) + nf(s.MC120, 15) + nf(s.MC80, 14) + f(s.cR, 9, 3) + f(s.MR, 16, 2) + f(s.MTR, 15, 3), BL);
-    const W0 = 80, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 14, d)).join(''), hd = t => padR(t, W0) + E.sides.map(s => ('COTE ' + s.nom).padStart(14)).join('');
-    pl.push(BL, hd('  COMBINAISONS (ANNEXE 3, PARAGRAPHE 4)'), BL);
-    const s0 = E.sides[0];
-    s0.U.forEach((u, k) => pl.push(rw('     ELU  ' + u[0], E.sides.map(s => (s.U[k] || [0, 0])[1]), 3)));
-    pl.push(rw('          MU MAX (TM/M)', E.sides.map(s => s.Mu), 3), BL);
-    s0.S.forEach((u, k) => pl.push(rw('     ELS  ' + u[0], E.sides.map(s => (s.S[k] || [0, 0])[1]), 3)));
-    pl.push(rw('          MSER MAX (TM/M)', E.sides.map(s => s.Ms), 3), BL, BL,
-      hd('  FERRAILLAGE TRANSVERSAL SUPERIEUR A L\'ENCASTREMENT (B = 1 M, H = H1, D = ' + f(E.d, 5, 3) + ' M)'), BL,
-      rw('     SECTION ELU (CM2/M)', E.sides.map(s => s.Au), 2),
-      rw('     SECTION ELS (CM2/M)', E.sides.map(s => s.As), 2),
-      rw('     SECTION MINIMALE 0.15 POUR CENT (CM2/M)', E.sides.map(s => s.Amin), 2),
-      rw('     Ωa RETENU (CM2/M)', E.sides.map(s => s.Om), 2),
-      rw('     Ω\'a = Ωb = Ω\'b = Ωa / 3 (CM2/M)', E.sides.map(s => s.Om3), 2), BL,
+    const c = (v, w, d) => v == null ? padR('', w - 1) + '-' : f(v, w, d);
+    const hd = cols => '     ' + cols.map(([t, w]) => t.padStart(w)).join('');
+    const S = E.sides;
+    pl.push('  1. GEOMETRIE DE LA CONSOLE (SECTION D\'ENCASTREMENT DE CALCUL S, PENTE 1/3 DANS LE GOUSSET)', BL,
+      hd([['h1 (M)', 10], ['h2 (M)', 10], ['BETA', 10], ['E (M)', 10], ['A GAUCHE', 12], ['A DROIT', 12], ['CLASSE', 9], ['DELTA', 9]]),
+      '     ' + f(E.h1, 10, 3) + f(E.h2, 10, 3) + f(E.beta, 10, 3) + f(E.e, 10, 3) + f(S[0].a, 12, 3) + f(S[1].a, 12, 3) + c(E.classe, 9, 0) + f(E.delta, 9, 2), BL,
+      '  2. MOMENT DU AU POIDS PROPRE : MG (TM/M)', BL,
+      hd([['CONSOLE', 10], ['SUPERSTR.', 12], ['BRAS (M)', 10], ['MG', 10]]),
+      '     ' + f(E.MG0, 10, 3) + f(E.MG1, 12, 3) + f(E.BRAS, 10, 3) + f(E.MG, 10, 3), BL,
+      '  3. MOMENT DU A LA CHARGE DE TROTTOIR DE 0.45 T/M2 : MTR (TM/M)', BL,
+      hd([['COTE', 8], ['LTR (M)', 10], ['MTR', 10]]));
+    for (const s of S) pl.push('     ' + s.nom.slice(0, 1).padStart(8) + f(Math.min(E.LTR, s.tr), 10, 3) + f(s.MTR, 10, 3));
+    const tab = (titre, key) => {
+      pl.push(BL, titre, BL, hd([['COTE', 8], ['A/E', 9], ['BETA1', 9], ['BETA2', 9], ['M BETA1', 10], ['M BETA2', 10], ['M BETA', 10]]));
+      for (const s of S) { const q = s[key]; if (!q) continue; pl.push('     ' + s.nom.slice(0, 1).padStart(8) + f(s.ae, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 10, 2) + f(q.m2, 10, 2) + f(q.m, 10, 2)); }
+    };
+    tab('  4. MOMENT DU AU SYSTEME B : MB (TM/M, PLANCHE 1.' + E.classe + ', INTERPOLATION EN BETA)', 'dB');
+    if (S.some(s => s.dC120)) tab('  5. MOMENT DU AU SYSTEME MC120 : MC (TM/M, PLANCHE 2.1)', 'dC120');
+    if (S.some(s => s.dC80)) tab('  5. MOMENT DU AU SYSTEME MC80 : MC (TM/M, PLANCHE 2.2)', 'dC80');
+    pl.push(BL, '  6. MOMENT DU A LA ROUE DE 6 T : MR (TM/M, PLANCHE 3, D/E = 0, LECTURE 10 T x 0.6)', BL,
+      hd([['COTE', 8], ['C/E', 9], ['BETA1', 9], ['BETA2', 9], ['10T BETA1', 11], ['10T BETA2', 11], ['MR 6T', 9]]));
+    for (const s of S) { const q = s.dR; pl.push('     ' + s.nom.slice(0, 1).padStart(8) + (q ? f(s.cR / E.e, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 11, 2) + f(q.m2, 11, 2) + f(s.MR, 9, 2) : '   TROTTOIR SEPARE OU ABSENT : MR = 0')); }
+    const W0 = 62, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 12, d)).join(''), hs = t => padR(t, W0) + S.map(s => ('COTE ' + s.nom.slice(0, 1)).padStart(12)).join('');
+    pl.push(BL, hs('  7. COMBINAISONS (TM/M)'), BL);
+    S[0].U.forEach((u, k) => pl.push(rw('     ELU  ' + u[0], S.map(s => (s.U[k] || [0, 0])[1]), 3)));
+    pl.push(rw('          MU MAX', S.map(s => s.Mu), 3));
+    S[0].S.forEach((u, k) => pl.push(rw('     ELS  ' + u[0], S.map(s => (s.S[k] || [0, 0])[1]), 3)));
+    pl.push(rw('          MSER MAX', S.map(s => s.Ms), 3), BL,
+      hs('  8. FERRAILLAGE SUPERIEUR (B = 1 M, D = ' + f(E.d, 5, 3) + ' M, CM2/M)'), BL,
+      rw('     SECTION ELU', S.map(s => s.Au), 2),
+      rw('     SECTION ELS', S.map(s => s.As), 2),
+      rw('     SECTION MINIMALE 0.15 %', S.map(s => s.Amin), 2),
+      rw('     Ωa RETENU', S.map(s => s.Om), 2),
+      rw('     Ω\'a = Ωb = Ω\'b = Ωa / 3', S.map(s => s.Om3), 2), BL,
       '   >> NOTA - Ωa NE DOIT PAS DESCENDRE EN DESSOUS DU FERRAILLAGE MIS EN PLACE DANS LA NERVURE (ANNEXE 3, 5.2.1).',
-      '             MR : ROUE ISOLEE DE 6 T SUR TROTTOIR NON SEPARE DE LA CHAUSSEE (FASC. 61 II, ART. 12.2).',
-      '             MTR : 0.45 T/M2 SUR LA LARGEUR UTILE DU TROTTOIR.',
-      '             ABAQUES NUMERISES DU GUIDE PSIDP-EL, INTERPOLATION LINEAIRE EN E, A/E ET BETA',
-      '             (CALCUL BRIDGEAI, NON PRODUIT PAR LE PROGRAMME SETRA).');
+      '             ABAQUES NUMERISES DU GUIDE PSIDP-EL (CALCUL BRIDGEAI, NON PRODUIT PAR LE PROGRAMME SETRA).');
     page('CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS', pl, {});
   }
   P.computeEnc = computeEnc; P.renderEnc = renderEnc; P.ENC_TAB = TAB; P.encAbaque = abaque; P.encDoublet = doublet0;
