@@ -1540,6 +1540,9 @@
     /* affichage : en-tête « PSIDAEL nnnn » et date retirés de toutes les pages (texte du moteur inchangé) */
     pageDisplay: p => { const L = p.split('\n'); for (let k = 0; k < Math.min(3, L.length); k++)
         L[k] = L[k].replace(/^PSIDAEL\s+\S+/, x => ' '.repeat(x.length)).replace(/^\d\d  \d\d  \d\d/, x => ' '.repeat(x.length));
+      // bordereau : options d'édition A3 / A4 (en-tête vertical LIGNIN … DESSIN) non affichées
+      const k3 = L.findIndex(l => /^A3\s/.test(l));
+      if (k3 > 0 && /^A4\s/.test(L[k3 + 1] || '')) { let k0 = k3; while (k0 > 0 && /^\s+([A-Z]\s*)+$/.test(L[k0 - 1]) && L[k0 - 1].trim().length > 20) k0--; L.splice(k0, k3 + 2 - k0 + (L[k3 + 2] != null && !L[k3 + 2].trim() ? 1 : 0)); }
       while (L.length && !L[0].trim()) L.shift(); return L.join('\n'); },
     _draw: { drawElev, drawCoupe, drawPlan, drawArm },
   };
