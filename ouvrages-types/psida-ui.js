@@ -1064,15 +1064,26 @@
   /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
   /* encorbellement : coupe cotée (annexe 3, figure du § 1) */
   function drawEncCoupe(E, s) {
-    const W = 640, Hh = 330, k = (W - 150) / (E.e + 0.6), X = v => 60 + v * k, Y = v => 120 + v * k;
-    let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" font-family="Courier New, monospace" font-size="17">`;
-    g += `<path d="M${X(-0.4)} ${Y(0)} L${X(E.e)} ${Y(0)} L${X(E.e)} ${Y(E.h2)} L${X(E.E2)} ${Y(E.H1 + E.H2)} L${X(0)} ${Y(E.h1)} L${X(-0.4)} ${Y(E.h1 + 0.15)} Z" fill="#ece6d8" stroke="#5d5545"/>`;
-    g += `<line x1="${X(0)}" y1="${Y(-0.3)}" x2="${X(0)}" y2="${Y(E.h1 + 0.35)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 4}" y="${Y(-0.35)}" text-anchor="end" fill="#c0392b">S</text>`;
-    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.18)}" text-anchor="middle" font-size="15">trottoir</text>`;
-    const dim = (a, b, yy, t) => `<line x1="${X(a)}" y1="${yy}" x2="${X(b)}" y2="${yy}" stroke="#1a4fd6"/><line x1="${X(a)}" y1="${yy - 5}" x2="${X(a)}" y2="${yy + 5}" stroke="#1a4fd6"/><line x1="${X(b)}" y1="${yy - 5}" x2="${X(b)}" y2="${yy + 5}" stroke="#1a4fd6"/><text x="${(X(a) + X(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="#1a4fd6">${t}</text>`;
-    g += dim(0, s.a, Y(-0.45), `a = ${fmt(s.a, 2)}`) + dim(0, E.e, Y(E.h1 + 0.6), `e = ${fmt(E.e, 2)} m`);
-    g += `<text x="${X(0) + 6}" y="${Y(E.h1 / 2) + 4}" fill="#1a4fd6">h1 = ${fmt(E.h1, 2)}</text><text x="${X(E.e) + 6}" y="${Y(E.h2 / 2) + 4}" fill="#1a4fd6">h2 = ${fmt(E.h2, 2)}</text>`;
-    g += `<text x="${X(E.e / 2)}" y="${Y(E.h1 + 0.95)}" text-anchor="middle" fill="#5d5545">β = h2/h1 = ${fmt(E.beta, 3)}</text></svg>`;
+    /* vraie dalle (allure 1-2) : nervure, flanc oblique E2/H3, console E1 (H1+H2 -> H1) ; x depuis S vers le bord libre */
+    const Ht = E.H1 + E.H2 + E.H3, W = 640, k = Math.min((W - 230) / (E.e + 0.55), 150 / Ht), X = v => 95 + (v + 0.55) * k, y0 = 104, Y = v => y0 + v * k;
+    const Hh = Math.round(Y(Ht) + 112), C = '#1a4fd6';
+    let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" font-family="Courier New, monospace" font-size="15">`;
+    g += `<path d="M${X(-0.55)} ${Y(0)} L${X(E.e)} ${Y(0)} L${X(E.e)} ${Y(E.H1)} L${X(E.E2)} ${Y(E.H1 + E.H2)} L${X(0)} ${Y(Ht)} L${X(-0.55)} ${Y(Ht)}" fill="#ece6d8" stroke="#5d5545"/>`;
+    g += `<line x1="${X(-0.55)}" y1="${Y(0)}" x2="${X(-0.55)}" y2="${Y(Ht)}" stroke="#5d5545" stroke-dasharray="2 4"/>`;
+    // droite de pente 1/3 issue de l'encastrement de la console
+    const d3 = E.E2 / 3, yS = E.H1 + E.H2 + Math.min(E.H3, d3);
+    g += `<line x1="${X(E.E2)}" y1="${Y(E.H1 + E.H2)}" x2="${X(-0.2)}" y2="${Y(E.H1 + E.H2 + (E.E2 + 0.2) / 3)}" stroke="#c0392b" stroke-width="1.6" stroke-dasharray="7 4"/>`;
+    g += `<text x="${X(E.E2) + 8}" y="${Y(E.H1 + E.H2) + 18}" fill="#c0392b" font-size="14">pente 1/3</text>`;
+    g += `<circle cx="${X(0)}" cy="${Y(yS)}" r="3.5" fill="#c0392b"/>`;
+    g += `<line x1="${X(0)}" y1="${Y(-0.28)}" x2="${X(0)}" y2="${Y(Ht + 0.12)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 5}" y="${Y(-0.3)}" text-anchor="end" fill="#c0392b" font-weight="700">S</text>`;
+    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.12) + 0.12 * k - 4}" text-anchor="middle" font-size="13">trottoir</text>`;
+    const dH = (a, b, yy, t) => `<line x1="${X(a)}" y1="${yy}" x2="${X(b)}" y2="${yy}" stroke="${C}"/><line x1="${X(a)}" y1="${yy - 5}" x2="${X(a)}" y2="${yy + 5}" stroke="${C}"/><line x1="${X(b)}" y1="${yy - 5}" x2="${X(b)}" y2="${yy + 5}" stroke="${C}"/>` + ((X(b) - X(a)) < 8 * t.length + 6 ? `<text x="${X(a) - 6}" y="${yy + 5}" text-anchor="end" fill="${C}">${t}</text>` : `<text x="${(X(a) + X(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="${C}">${t}</text>`);
+    const dV = (xx, a, b, t, left) => `<line x1="${xx}" y1="${Y(a)}" x2="${xx}" y2="${Y(b)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(a)}" x2="${xx + 5}" y2="${Y(a)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(b)}" x2="${xx + 5}" y2="${Y(b)}" stroke="${C}"/><text x="${xx + (left ? -6 : 6)}" y="${(Y(a) + Y(b)) / 2 + 5}" text-anchor="${left ? 'end' : 'start'}" fill="${C}">${t}</text>`;
+    g += dH(0, s.a, Y(-0.42), `a = ${fmt(s.a, 2)}`);
+    g += dH(0, E.E2, Y(Ht) + 26, `E2 = ${fmt(E.E2, 2)}`) + dH(E.E2, E.e, Y(Ht) + 26, `E1 = ${fmt(E.E1, 2)}`) + dH(0, E.e, Y(Ht) + 56, `e = E1 + E2 = ${fmt(E.e, 2)} m`);
+    g += dV(X(0) + 12, 0, yS, `h1 = ${fmt(E.h1, 3)}`, false) + dV(X(-0.55) - 8, 0, Ht, `${fmt(Ht, 2)}`, true);
+    g += dV(X(E.e) + 10, 0, E.H1, `h2 = ${fmt(E.h2, 2)}`, false);
+    g += `<text x="8" y="${Hh - 26}" fill="#5d5545" font-size="13" xml:space="preserve">h1 = H1 + H2 + min(H3 ; E2/3) = ${fmt(E.H1, 2)} + ${fmt(E.H2, 2)} + min(${fmt(E.H3, 2)} ; ${fmt(d3, 3)}) = ${fmt(E.h1, 3)} m</text><text x="8" y="${Hh - 6}" fill="#5d5545" font-size="13" xml:space="preserve">h2 = H1 = ${fmt(E.h2, 2)} m      β = h2 / h1 = ${fmt(E.beta, 3)}</text></svg>`;
     return g;
   }
   /* abaque reproduit (courbes a/e interpolées en β) et point de lecture */
