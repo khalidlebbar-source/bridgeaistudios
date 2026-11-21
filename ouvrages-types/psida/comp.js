@@ -33,21 +33,22 @@
     const fbu = 0.85 * fc / 1.5, fsu = fe / 1.15, fbser = 0.6 * fc, aAB = 15 * fbser / (15 * fbser + ss);
     const enrS = +A11.ENROBS || 0.03, phi1 = +A10.PHI1 || 0.025, phi2 = +A10.PHI2 || 0.016;
     const lines = [];
-    for (let k = 1; k < n; k++) {
+    for (let k = 0; k <= n; k++) {
       const ap = r.appuis[k], Na = ap.nap; if (!(Na >= 2)) continue;
+      const culee = k === 0 || k === n;
       const sinb = Math.sin((r.biais || 100) * Math.PI / 200);
       let a = +C11['A' + (k + 1)] || 0, e = +C11['E' + (k + 1)] || 0;
       const reg = !(a > 0); if (reg) a = ap.esp; if (!(e > 0)) e = a;   // entraxes mesurés suivant l'axe de la ligne d'appui
       a *= sinb; e *= sinb;                                               // largeurs droites
       const nEff = Math.min(Na, 4);                                       // 5 appareils : appareil central négligé (§ 5.4.1)
       const c = nEff === 2 ? (B - a) / 2 : nEff === 3 ? (B - 2 * a) / 2 : (B - 2 * a - e) / 2;
-      const L = (r.L[k - 1] + r.L[k]) / 2;
-      lines.push({ k, Na, nEff, a, e, c, L, reg, esp: ap.esp });
+      const L = culee ? r.L[k === 0 ? 0 : n - 1] / 2 : (r.L[k - 1] + r.L[k]) / 2;
+      lines.push({ k, Na, nEff, a, e, c, L, reg, esp: ap.esp, culee });
     }
     // ------------------------------------------------------------------ RENF (§ 7)
     if (C10.RENF) {
       const d = H - enrS - phi1 / 2, z = d * (1 - aAB / 3);
-      out.renf = { d, z, ss, rows: lines.map(Lg => {
+      out.renf = { d, z, ss, rows: lines.filter(Lg => !Lg.culee).map(Lg => {
         const { k, nEff, a, e, c, L } = Lg;
         const s1 = r.moments[k - 1][r.moments[k - 1].length - 1], s2 = r.moments[k][0];
         const M = Math.max(-Math.min(s1.els.min, s2.els.min), 0);
@@ -76,6 +77,8 @@
       const asU = Mu => { const mu = Mu / (d * d * fbu); const al = 1.25 * (1 - Math.sqrt(Math.max(0, 1 - 2 * mu))); return Mu / (d * (1 - 0.4 * al) * fsu) * 1e4; };
       const asS = Ms => Ms / (d * (1 - aAB / 3) * ss) * 1e4;
       out.kin = { d, rows: lines.map(Lg => {
+        if (Lg.culee) { const ap = r.fer && r.fer.appareils && r.fer.appareils[Lg.k], achN = ap && ap.ach ? ap.ach * 1e4 : null, espR = Math.max(Lg.a, Lg.e) / Math.sin((r.biais || 100) * Math.PI / 200), kmaj = Math.max(1, espR / Lg.esp);
+          return Object.assign({}, Lg, { loads: [], bands: [], achN, kmaj, achMaj: achN != null ? achN * kmaj : null }); }
         const { k, nEff, a, e, c, L } = Lg, R = r.reactions[k], dyn = (r.cmdAppui[k] || {}).bc || 1;
         const al = a / B, la = c / B, mu = e / B;
         const dd = Math.max(a + c, (a + e) / 2, Math.min(B / 2, L));
@@ -135,7 +138,15 @@
     const C = r.comp; if (!C) return;
     const { page, f, pad, padR } = T, BL = '';
     if (C.kin) {
-      for (const q of C.kin.rows) {
+      const cu = C.kin.rows.filter(q => q.culee);
+      if (cu.length) {
+        const pl = ['  CULEES - MAJORATION DU DOSSIER PSIDA-68 (PIECE 2.01, 5.2.3.1) : SECTION DU CHEVETRE x ESPACEMENT REEL MAXI / ESPACEMENT CALCULE', BL,
+          '   APPUI   NAP   ESPACEMENT CALCULE (M)   ESPACEMENT REEL MAXI (M)   COEFFICIENT   SECTION NOTE (CM2/ML)   SECTION MAJOREE (CM2/ML)', BL];
+        for (const q of cu) pl.push('   ' + pad(q.k + 1, 4) + pad(q.Na, 6) + f(q.esp, 18, 3) + f(Math.max(q.a, q.e) / Math.sin((r.biais || 100) * Math.PI / 200), 25, 3) + f(q.kmaj, 16, 3) + f(q.achN, 20, 2) + f(q.achMaj, 25, 2), BL);
+        pl.push(BL, '   >> NOTA - LES REGLES DE L\'ANNEXE 4 DU GUIDE PSIDP-EL (PARAGRAPHES 5 ET 6) VISENT LES LIGNES D\'APPUI INTERMEDIAIRES ;', '             AUX CULEES SEULE LA MAJORATION DU DOSSIER PSIDA-68 EST APPLIQUEE (CALCUL BRIDGEAI).');
+        page('CALCULS COMPLEMENTAIRES - CHEVETRES DES CULEES', pl, {});
+      }
+      for (const q of C.kin.rows.filter(q => !q.culee)) {
         const pl = ['  GUIDE PSIDP-EL DU SETRA, ANNEXE 4 - REPARTITION DE LA REACTION D\'APPUI ENTRE APPAREILS D\'APPUI ET CHEVETRE INCORPORE', BL,
           `     LIGNE D'APPUI ${q.k + 1}      NOMBRE D'APPAREILS ${pad(q.Na, 3)}` + (q.Na > 4 ? '   (APPAREIL CENTRAL NEGLIGE, PARAGRAPHE 5.4.1)' : '') + (q.reg ? '      APPAREILS REGULIEREMENT ESPACES' : '      ENTRAXES REELS DONNES (LIGNE C11)'), BL,
           `     LARGEUR DE LA DALLE EQUIVALENTE  B = ${f(r.section.Eeq, 7, 3)} M      DEMI-SOMME DES PORTEES  L = ${f(q.L, 7, 3)} M`, BL,

@@ -125,17 +125,28 @@
     document.body.appendChild(w); const f = w.querySelector('input'); if (f) { f.focus(); f.select(); }
   }
   const nv = (w, k) => { const x = w.querySelector(`[data-v="${k}"]`); const n = x ? num(x.value) : NaN; return isFinite(n) ? n : 0; };
+  /* croquis de la fenêtre : lignes de 4 et de 3 appareils, cotes c / a / e (annexe 4 du guide PSIDP-EL) */
+  function kinSketch() {
+    const one = (y, pos, labs, tit) => {
+      let g = `<text x="8" y="${y - 22}" font-size="11" fill="#7a6a4a">${tit}</text><rect x="20" y="${y - 12}" width="460" height="12" fill="#ece6d8" stroke="#8a7d63"/>`;
+      for (const x of pos) g += `<path d="M${x} ${y} l-7 12 h14 z" fill="#3c3f4d"/>`;
+      const cuts = [20, ...pos, 480];
+      for (let j = 0; j < cuts.length - 1; j++) g += `<line x1="${cuts[j]}" y1="${y + 22}" x2="${cuts[j + 1]}" y2="${y + 22}" stroke="#1a4fd6"/><line x1="${cuts[j]}" y1="${y + 17}" x2="${cuts[j]}" y2="${y + 27}" stroke="#1a4fd6"/><text x="${(cuts[j] + cuts[j + 1]) / 2}" y="${y + 19}" text-anchor="middle" font-size="12" font-weight="700" fill="#1a4fd6">${labs[j]}</text>`;
+      return g + `<line x1="480" y1="${y + 17}" x2="480" y2="${y + 27}" stroke="#1a4fd6"/>`;
+    };
+    return `<svg viewBox="0 0 500 150" width="100%" style="max-width:500px;display:block;margin:0 0 10px" font-family="Courier New, monospace">${one(48, [90, 175, 325, 410], ['c', 'a', 'e', 'a', 'c'], '4 appareils')}${one(118, [110, 250, 390], ['c', 'a', 'a', 'c'], '3 appareils')}</svg>`;
+  }
   function popKin(m, app) {
     const L = m.lignes || (m.lignes = {}), nt = Math.round(+(L.A5 || {}).NT || 1), A13 = L.A13 || {}, C = L.C11 || {};
     let rows = '';
-    for (let i = 2; i <= nt; i++) {
+    for (let i = 1; i <= nt + 1; i++) {
       const nap = Math.round(+A13['NAP' + i] || 0), a = +C['A' + i] || 0, e = +C['E' + i] || 0;
-      rows += `<tr><td>Appui ${i}</td><td>${nap}</td><td><input type="text" data-v="A${i}" value="${a ? fmt(a, 3) : ''}" placeholder="régulier"></td><td>${nap >= 4 ? `<input type="text" data-v="E${i}" value="${e ? fmt(e, 3) : ''}" placeholder="= a">` : '—'}</td></tr>`;
+      rows += `<tr><td style="text-align:left">Appui ${i}${i === 1 || i === nt + 1 ? ' (culée)' : ''}</td><td>${nap}</td><td><input type="text" data-v="A${i}" value="${a ? fmt(a, 3) : ''}" placeholder="régulier"></td><td>${nap >= 4 ? `<input type="text" data-v="E${i}" value="${e ? fmt(e, 3) : ''}" placeholder="= a">` : '—'}</td></tr>`;
     }
-    popup('Entraxes réels des appareils d\'appui', 'Lignes d\'appui intermédiaires. Entraxes mesurés suivant la ligne d\'appui (m) : <b>a</b> entre appareil de rive et appareil voisin, <b>e</b> entre les deux appareils centraux (lignes de 4 appareils). Case vide : appareils régulièrement espacés (espacement de la note).',
-      `<table><tr><th></th><th>NAP</th><th>a (m)</th><th>e (m)</th></tr>${rows}</table>`, w => {
+    popup('Entraxes réels des appareils d\'appui', 'Entraxes mesurés suivant la ligne d\'appui (m) : <b>a</b> entre appareil de rive et appareil voisin, <b>e</b> entre les deux appareils centraux (lignes de 4 appareils). Case vide : appareils régulièrement espacés (espacement de la note).',
+      kinSketch() + `<table><tr><th></th><th>NAP</th><th>a (m)</th><th>e (m)</th></tr>${rows}</table>`, w => {
         const o = Object.assign({}, L.C11 || {});
-        for (let i = 2; i <= nt; i++) { o['A' + i] = nv(w, 'A' + i); o['E' + i] = nv(w, 'E' + i); }
+        for (let i = 1; i <= nt + 1; i++) { o['A' + i] = nv(w, 'A' + i); o['E' + i] = nv(w, 'E' + i); }
         L.C11 = o; if (app) app.refresh();
       });
   }
