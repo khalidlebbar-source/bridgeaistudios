@@ -56,7 +56,7 @@
       const MB = abaque('1.' + cl, beta, e, ae);
       const MC120 = milOn('MC.120') ? abaque('2.1', beta, e, ae) : null, MC80 = milOn('MC.80') ? abaque('2.2', beta, e, ae) : null;
       const MC = Math.max(MC120 || 0, MC80 || 0);
-      const cR = Math.max(0, a - 0.25), MR = tr > 0 && !SEP ? 0.6 * doublet0(beta, cR / e) : 0;
+      const cR = e, MR = tr > 0 && !SEP ? 0.6 * doublet0(beta, cR / e) : 0;
       const lt = Math.min(LTR, tr), MTR = tr > 0 ? 0.45 * lt * (a + lt / 2) : 0;
       const U = [['1.35 MG + 1.6 MTR + 1.6 x D x MB', 1.35 * MG + 1.6 * MTR + 1.6 * delta * MB]];
       if (MC > 0) U.push(['1.35 MG + 1.6 MTR + 1.35 x D x MC', 1.35 * MG + 1.6 * MTR + 1.35 * delta * MC]);
@@ -95,7 +95,7 @@
     tab('  4. MOMENT DU AU SYSTEME B : MB (TM/M, PLANCHE 1.' + E.classe + ', INTERPOLATION EN BETA)', 'dB');
     if (S.some(s => s.dC120)) tab('  5. MOMENT DU AU SYSTEME MC120 : MC (TM/M, PLANCHE 2.1)', 'dC120');
     if (S.some(s => s.dC80)) tab('  5. MOMENT DU AU SYSTEME MC80 : MC (TM/M, PLANCHE 2.2)', 'dC80');
-    pl.push(BL, '  6. MOMENT DU A LA ROUE DE 6 T : MR (TM/M, PLANCHE 3, D/E = 0, LECTURE 10 T x 0.6)', BL,
+    pl.push(BL, '  6. MOMENT DU A LA ROUE DE 6 T : MR (TM/M, PLANCHE 3, D/E = 0, ROUE AU BORD LIBRE C/E = 1, LECTURE 10 T x 0.6)', BL,
       hd([[one ? '' : 'COTE', 8], ['C/E', 9], ['BETA1', 9], ['BETA2', 9], ['10T BETA1', 11], ['10T BETA2', 11], ['MR 6T', 9]]));
     for (const s of S) { const q = s.dR; pl.push('     ' + nm(s).padStart(8) + (q ? f(s.cR / E.e, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 11, 2) + f(q.m2, 11, 2) + f(s.MR, 9, 2) : '   TROTTOIR SEPARE OU ABSENT : MR = 0')); }
     const W0 = 62, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 12, d)).join(''), hs = t => padR(t, W0) + S.map(s => (one ? 'VALEUR' : 'COTE ' + s.nom.slice(0, 1)).padStart(12)).join('');
