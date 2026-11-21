@@ -1551,6 +1551,13 @@
       // bordereau : options d'édition A3 / A4 (en-tête vertical LIGNIN … DESSIN) non affichées
       const k3 = L.findIndex(l => /^A3\s/.test(l));
       if (k3 > 0 && /^A4\s/.test(L[k3 + 1] || '')) { let k0 = k3; while (k0 > 0 && /^\s+([A-Z]\s*)+$/.test(L[k0 - 1]) && L[k0 - 1].trim().length > 20) k0--; L.splice(k0, k3 + 2 - k0 + (L[k3 + 2] != null && !L[k3 + 2].trim() ? 1 : 0)); }
+      // bordereau : intitulés des lignes C (comme les lignes A), alignés sur les champs
+      const CH = { C1: [2, ['XB', 7], ['SS1', 8], ['SS2', 8], ['SS3', 8], ['SS4', 8]], C8: [2, ['FORME', 3], ['H1', 7], ['H2', 7], ['H3', 7], ['PENTE', 7], ['E1', 7], ['E2', 7], ['N', 7], ['FORCE', 3]],
+        C9: [2, ['MC80', 5], ['MC120', 5], ['ME80', 5], ['ME120', 5], ['TROTX', 5]], C10: [3, ['ENC', 5], ['KIN', 5], ['RENF', 5]],
+        C11: [3].concat([1, 2, 3, 4, 5, 6, 7].flatMap(i => [['A' + i, 7], ['E' + i, 7]])), C12: [3, ['VG1', 7], ['BRAS', 7], ['SEP', 3], ['LTR', 7]] };
+      for (let k = L.length - 1; k >= 0; k--) { const mm = /^(C\d{1,2})\s/.exec(L[k]); const h = mm && CH[mm[1]];
+        if (h && !(L[k - 1] || '').trim().startsWith(h[1][0])) { const ar = []; let e = h[0], last = -1; for (const [n, w] of h.slice(1)) { e += w; let st = Math.max(e - n.length, last + 2); for (let c = 0; c < n.length; c++) ar[st + c] = n[c]; last = st + n.length - 1; } let t = Array.from(ar, c => c || ' ').join('');
+          L.splice(k, 0, t); if (k > 0 && L[k - 1].trim()) L.splice(k, 0, ''); } }
       while (L.length && !L[0].trim()) L.shift(); return L.join('\n'); },
     _draw: { drawElev, drawCoupe, drawPlan, drawArm },
   };
