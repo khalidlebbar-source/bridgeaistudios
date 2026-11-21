@@ -14,6 +14,8 @@
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
     if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
+    if (k === 'NV.N' || k === 'NV.FORCE') { const A6 = (m.lignes || {}).A6 || {}, nv = Math.round(+A6.NVOIE || 0);   // nombre de voies : fascicule 61 sauf s'il est forcé
+      return k === 'NV.FORCE' ? (nv > 0 ? 1 : 0) : nv > 0 ? nv : nvF61(+A6.ESURCH || 0); }
     if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : k === 'DR.FORCE' ? (+c.FORCE ? 1 : 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
     if (k.startsWith('FIX.')) {                                           // charges A(l), Bc, Bt (codes A et B, extension 000 / 002 / 003)
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
@@ -35,6 +37,8 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k === 'NV.N' || k === 'NV.FORCE') { m.lignes = m.lignes || {}; const A6 = m.lignes.A6 || (m.lignes.A6 = emptyLine('A6'));
+      A6.NVOIE = k === 'NV.N' ? Math.max(0, Math.round(num(v))) : num(v) ? nvF61(+A6.ESURCH || 0) : 0; return; }
     if (k.startsWith('DR.')) {
       m.lignes = m.lignes || {}; const c = m.lignes.C8 || (m.lignes.C8 = { FORME: 0, H1: 0, H2: 0, H3: 0, PENTE: 0, E1: 0, E2: 0, N: 0 });
       if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
@@ -180,13 +184,14 @@
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
           { k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
-          { k: 'A6.ESURCH', code: 'ESURCH', label: 'chargeable', unit: 'm', dec: 3, help: 'Largeur chargeable au sens de l\'article 2 du fascicule 61 titre II.' },
+          { relayout: true, k: 'A6.ESURCH', code: 'ESURCH', label: 'chargeable', unit: 'm', dec: 3, help: 'Largeur chargeable au sens de l\'article 2 du fascicule 61 titre II.' },
           { k: 'A6.EDROI', code: 'EDROI', label: 'bande D', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue à droite : largeur de la bande non chargeable côté chaussée (0,50 m) ; sinon 0.' },
           { k: 'A6.ETROTD', code: 'ETROTD', label: 'trottoir D', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de droite.' },
         ] },
         { title: 'Chaussée', alt: true, flex: 2, cols: 2, fields: [
           { k: 'A6.HCHAU', code: 'HCHAU', label: 'épaisseur', unit: 'm', dec: 3, help: 'Épaisseur moyenne de béton équivalent au renformis éventuel, à la chape et à la chaussée (diffusion des charges locales).' },
-          { k: 'A6.NVOIE', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation. 0 : calculé selon l\'article 2.2 du fascicule 61 titre II ; à remplir seulement s\'il en diffère (chaussée de 9 m à deux voies…).' },
+          { ro: m => !+((((m.lignes || {}).A6) || {}).NVOIE), k: 'NV.N', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation : déduit automatiquement de ESURCH selon l\'article 2.2 du fascicule 61 titre II. Cocher « forcer » pour l\'imposer (chaussée de 9 m à deux voies…).' },
+          { k: 'NV.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour imposer soi-même le nombre de voies (sinon il est calculé selon le fascicule 61).' },
         ] },
       ] },
       { label: 'Fibres et symétrie (A6)', caption: '', groups: [
@@ -521,7 +526,7 @@
     if (ws[4] > 0) d.rect(xp[4], H1, ws[4], hc + ht, 'b2', 'A6.ETROTD' + QS);
     for (const [x, w, k] of [[xp[1], ws[1], 'A6.EGAU'], [xp[4], -ws[3], 'A6.EDROI']]) if (Math.abs(w) > 0) { d.rect(x - (w < 0 ? 0.06 : 0), top, 0.06, 0.5, 'b', k); d.line(x, top + 0.45, x + w * 0.7, top + 0.45, 'l', k); }
     const nvR = Math.round(V(m, 'A6.NVOIE')), nv = nvR > 0 ? nvR : nvF61(ws[2]);
-    for (let i = 1; i < nv; i++) { const x = xp[2] + ws[2] * i / nv; d.line(x, top + 0.02, x, top + 0.22, 'l', 'A6.NVOIE'); }
+    for (let i = 1; i < nv; i++) { const x = xp[2] + ws[2] * i / nv; d.line(x, top + 0.02, x, top + 0.22, 'l', 'A6.NVOIE NV.N'); }
     const L = k => lab(m, k, sch, 3);
     if (LOADS) {
       // Plan de chargement EN TRAVERS : chaque charge est vue de l'arrière (elle circule perpendiculairement au dessin),
@@ -694,8 +699,8 @@
     if (Wd > 0 && Ws > 0 && Math.abs(Ws - Wd) > 0.005) { const t = `largeur de la dalle ${fmt(Wd, 2)} m ≠ profil en travers ${fmt(Ws, 2)} m : les deux largeurs doivent être égales`;
       W_('sect', 'A7.EDALLE2', t); }   // avertissement (le calcul reste possible)
     const nv = Math.round(V(m, 'A6.NVOIE'));
-    if (nv < 0) E_('trav', 'A6.NVOIE', 'nombre de voies négatif');
-    else if (nv > 0 && es > 0 && nv !== nvF61(es)) W_('trav', 'A6.NVOIE', `NVOIE = ${nv} imposé ; le fascicule 61 donne ${nvF61(es)} voie${nvF61(es) > 1 ? 's' : ''} pour ESURCH = ${fmt(es, 2)} m (laisser 0 sauf cas particulier)`);
+    if (nv < 0) E_('trav', 'NV.N', 'nombre de voies négatif');
+    else if (nv > 0 && es > 0 && nv !== nvF61(es)) W_('trav', 'NV.N', `NVOIE = ${nv} imposé ; le fascicule 61 donne ${nvF61(es)} voie${nvF61(es) > 1 ? 's' : ''} pour ESURCH = ${fmt(es, 2)} m (décocher « forcer » sauf cas particulier)`);
     const sym = Math.abs(ws[0] - ws[4]) < 1e-6 && Math.abs(ws[1] - ws[3]) < 1e-6;
     const hc = V(m, 'A6.HCHAU'); if (hc < 0 || hc > 0.4) W_('trav', 'A6.HCHAU', `épaisseur de chaussée HCHAU inhabituelle (${fmt(hc, 3)} m)`);
     // charges
