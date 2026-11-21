@@ -12,6 +12,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+/* Identification : titre + allures de dalle toujours sur une seule ligne (le titre se rétrécit) */
+.ot-blk[data-si="0"] .row{flex-wrap:nowrap}
+.ot-blk[data-si="0"] .sg:first-child{flex:1 1 auto!important;min-width:180px;max-width:520px}
+.ot-blk[data-si="0"] .sg:first-child .ot-f{flex:1 1 auto!important;width:100%!important;--w:100%!important}
+.ot-blk[data-si="0"] .sg:first-child .fs{width:100%}
+.ot-blk[data-si="0"] .sg:first-child input{width:100%!important}
+.ot-blk[data-si="0"] .sg:last-child{flex:0 0 auto!important}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{color-scheme:light;--bg:#f9f8f5;--bg2:#f0ede8;--ink:#18191f;--ink3:#7a7e8e;--gold:#a07828;--gold2:#c9a84c;--border:#e2ddd6}
 html,body{height:100%}
