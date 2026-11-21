@@ -554,8 +554,8 @@
         { k: 'MIL.MC120', c: 'Mc120', v: 'char 110 t', draw: (y) => tank(y, 1.00, 2.30, '110 t', 'MIL.MC120') },
         { k: 'MIL.ME80', c: 'Me80', v: '2 essieux × 22 t', draw: (y) => axle(y, 3.50, 0.12, '2 × 22 t', 'MIL.ME80') },
         { k: 'MIL.ME120', c: 'Me120', v: '2 essieux × 33 t', draw: (y) => axle(y, 4.00, 0.15, '2 × 33 t', 'MIL.ME120') },
-        { k: 'CE.D', c: 'Convoi D', v: 'remorque 140 t', draw: (y) => conv(y, '140 t', 'CE.D') },
-        { k: 'CE.E', c: 'Convoi E', v: 'remorque 200 t', draw: (y) => conv(y, '200 t', 'CE.E') },
+        { k: 'CE.D', c: 'Convoi D', v: '2 remorques × 140 t', draw: (y) => conv(y, '140 t / 11 m', 'CE.D') },
+        { k: 'CE.E', c: 'Convoi E', v: '2 remorques × 200 t', draw: (y) => conv(y, '200 t / 15 m', 'CE.E') },
       ].filter(r => on(r.k));
       /* véhicules vus de l'arrière, d'après les vues « transversalement » des charges réglementaires (fascicule 61 titre II) */
       const VS = ONE ? 1.4 : 1;   // hauteurs des véhicules un peu amplifiées (la place en hauteur est libre)
@@ -585,13 +585,13 @@
         d.rect(cx - w / 2 + 0.15, y + 0.12 * h, w - 0.3, 0.4 * h, 'veh', k);
         side(cx + w / 2, y, `${fmt(w, 2)} m`, k);
       }
-      function conv(y, t, k) {   // convoi D / E : remorque de 3,30 m sur train de chenilles
+      function conv(y, t, k) {   // convoi D / E : charge uniforme sur un rectangle de 3,30 m de large (fasc. 61 art. 10), vue arrière d'une remorque modulaire
         const h = VS, w = 3.3, a = cx - w / 2;
-        d.rect(a, y, w, 0.1 * h, 'tyre', k);
-        for (let i = 0; i < 6; i++) d.circle(a + 0.3 + i * (w - 0.6) / 5, y + 0.17 * h, 0.065 * h, 'veh', k);
-        d.rect(a - 0.05, y + 0.24 * h, w + 0.1, 0.12 * h, 'veh', k);
-        d.rect(a + 0.45, y + 0.36 * h, w - 0.9, 0.34 * h, 'veh', k);
-        side(a + w, y, '3.30 m', k);
+        d.rect(a, y, w, 0.1 * h, 'qh', k);                                           // empreinte : charge répartie sur 3,30 m
+        for (let i = 0; i < 4; i++) { const xg = a + 0.25 + i * (w - 0.5) / 3; for (const dx of [-0.17, 0.03]) d.rect(xg + dx, y + 0.1 * h, 0.14, 0.2 * h, 'tyre', k); }   // lignes de roues jumelées
+        d.rect(a, y + 0.3 * h, w, 0.1 * h, 'veh', k);                                // plateau
+        d.rect(a + 0.35, y + 0.4 * h, w - 0.7, 0.32 * h, 'veh', k);                  // charge transportée
+        side(a + w, y, '3.30 m · ' + t, k);
       }
       const rowH = ONE ? 1.6 : 0.95, y0 = top + ht + 1.05, offRow = [];
       for (const xx of [x0, x0 + wc]) d.line(xx, top, xx, y0 + rows.length * rowH, 'lane');

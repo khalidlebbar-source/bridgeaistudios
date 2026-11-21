@@ -333,6 +333,7 @@
 .ot svg .la{fill:#1a4fd6;fill-opacity:.10;stroke:#1a4fd6;stroke-width:.8px;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
 .ot svg .veh{fill:#f4efe4;stroke:#5d5545;stroke-width:1px;vector-effect:non-scaling-stroke}
 .ot svg .tyre{fill:#3c3f4d}
+.ot svg .qh{fill:url(#hatch);stroke:#5d5545;stroke-width:.8px;vector-effect:non-scaling-stroke}
 .ot svg .real{fill:none;stroke:#c0392b;stroke-width:1.4px;stroke-dasharray:6 3;vector-effect:non-scaling-stroke}
 .ot svg .realt{fill:#c0392b;font-family:'Outfit',sans-serif}
 .ot svg .lane{stroke:#b9ad92;stroke-width:1px;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
