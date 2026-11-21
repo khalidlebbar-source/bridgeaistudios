@@ -216,6 +216,7 @@
 .ot-f.pick .pk button:hover{border-color:var(--gold2)}
 .ot-f.xx input{background:#f1efea;color:#a39d90;border-color:#e2ded5;cursor:default;text-align:center;letter-spacing:.1em}
 .ot-f.xx label,.ot-f.xx .u{opacity:.55}
+.ot-f.auto select{background:#eef3fd;color:#1a4fd6;border-color:#cdd9f3;opacity:1;cursor:default}
 .ot-f.auto input{background:#eef3fd;color:#1a4fd6;border-color:#cdd9f3;cursor:default}
 .ot.one .ot-f.ck{width:auto;height:20px;margin:0 10px 0 0;gap:4px}
 .ot.one .ot-f.ck input{width:13px;height:13px}
@@ -467,7 +468,8 @@ ${def.simpleBar ? `<div class="ot-bar">
       if (f.type === 'sel') {
         const opts = f.opts.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(v) ? 'selected' : ''}>${esc(o[1])}</option>`).join('');
         const known = f.opts.some(o => String(o[0]) === String(v));
-        return `<div class="ot-f${ch ? ' chg' : ''}" data-k="${esc(f.k)}">${lab}<select id="${id}">${known ? '' : `<option value="${esc(v)}" selected>${esc(v)}</option>`}${opts}</select></div>`;
+        const sro = f.ro && f.ro(S.model);   // liste déduite automatiquement (lecture seule)
+        return `<div class="ot-f${ch ? ' chg' : ''}${sro ? ' auto' : ''}" data-k="${esc(f.k)}">${lab}<select id="${id}"${sro ? ' disabled' : ''}>${known ? '' : `<option value="${esc(v)}" selected>${esc(v)}</option>`}${opts}</select></div>`;
       }
       if (f.xx && f.xx(S.model)) return `<div class="ot-f xx" data-k="${esc(f.k)}">${lab}<input id="${id}" value="xx" readonly tabindex="-1"></div>`;   // case neutralisée (ex. dalle réelle quand HDALLE / EDALLE sont forcés)
       const shown = f.type === 'txt' ? (v == null ? '' : v) : fmt(v, f.dec);

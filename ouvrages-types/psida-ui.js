@@ -14,6 +14,7 @@
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
     if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
+    if (k === 'CL.FORCE') return clForced(m) ? 1 : 0;
     if (k === 'NV.N' || k === 'NV.FORCE') { const A6 = (m.lignes || {}).A6 || {}, nv = Math.round(+A6.NVOIE || 0);   // nombre de voies : fascicule 61 sauf s'il est forcé
       return k === 'NV.FORCE' ? (nv > 0 ? 1 : 0) : nv > 0 ? nv : nvF61(+A6.ESURCH || 0); }
     if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : k === 'DR.FORCE' ? (+c.FORCE ? 1 : 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
@@ -37,6 +38,7 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k === 'CL.FORCE') { m.clForce = num(v) ? 1 : 0; if (!m.clForce) clAuto(m); return; }
     if (k === 'NV.N' || k === 'NV.FORCE') { m.lignes = m.lignes || {}; const A6 = m.lignes.A6 || (m.lignes.A6 = emptyLine('A6'));
       A6.NVOIE = k === 'NV.N' ? Math.max(0, Math.round(num(v))) : num(v) ? nvF61(+A6.ESURCH || 0) : 0; return; }
     if (k.startsWith('DR.')) {
@@ -82,12 +84,19 @@
       m.lignes.A8.CE = c.join(''); return;
     }
     const [l, n] = k.split('.');
+    if (l === 'A6') m.clForce = clForced(m) ? 1 : 0;   // état de la classe figé avant la modification de la largeur
     m.lignes = m.lignes || {};
     if (!m.lignes[l]) m.lignes[l] = emptyLine(l);
     if (isS(l, n)) { const x = num(v); m.lignes[l][n] = isFinite(x) ? String(Math.round(x)).padStart(3, '0') : String(v); return; }
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
+    if (l === 'A6' && !m.clForce) clAuto(m);   // largeur roulable modifiée : la classe suit
   };
+  /* classe du pont (fascicule 61 titre II, art. 3) d'après la largeur roulable Lr = EGAU + ESURCH + EDROI :
+     1re si Lr ≥ 7 m, 2e si 5,50 < Lr < 7 m, 3e si Lr ≤ 5,50 m. Forcée si la case est cochée (ou si le bordereau lu en diffère). */
+  const clOf = m => { const A6 = (m.lignes || {}).A6 || {}, lr = (+A6.EGAU || 0) + (+A6.ESURCH || 0) + (+A6.EDROI || 0); return lr >= 7 - 1e-6 ? '100' : lr > 5.5 + 1e-6 ? '200' : '300'; };
+  const clForced = m => m.clForce != null ? !!m.clForce : String(((m.lignes || {}).A8 || {}).STATUT || '100').padStart(3, '0') !== clOf(m);
+  const clAuto = m => { m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8'); m.lignes.A8.STATUT = clOf(m); };
   const TH = (enc, bomb) => {   // vignette de l'allure de la dalle réelle (64 × 20)
     const top = bomb ? 'M2 6 L32 4.4 L62 6' : 'M2 5 L62 5';   // bombement discret
     const und = enc ? 'L62 9 L48 10 L44 17 L20 17 L16 10 L2 9' : 'L62 9 L46 17 L18 17 L2 9';
@@ -183,9 +192,9 @@
       { label: 'Profil en travers (A6)', caption: '', groups: [
         { title: 'Profil en travers (de gauche à droite)', flex: 5, cols: 5, fields: [
           { k: 'A6.ETROTG', code: 'ETROTG', label: 'trottoir G', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de gauche. Passage inférieur : largeur de la bande non chargée à gauche de la glissière de gauche.' },
-          { k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
+          { relayout: true, k: 'A6.EGAU', code: 'EGAU', label: 'bande G', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue : largeur de la bande non chargeable côté chaussée, le long du dispositif (0,50 m) ; sinon 0.' },
           { relayout: true, k: 'A6.ESURCH', code: 'ESURCH', label: 'chargeable', unit: 'm', dec: 3, help: 'Largeur chargeable au sens de l\'article 2 du fascicule 61 titre II.' },
-          { k: 'A6.EDROI', code: 'EDROI', label: 'bande D', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue à droite : largeur de la bande non chargeable côté chaussée (0,50 m) ; sinon 0.' },
+          { relayout: true, k: 'A6.EDROI', code: 'EDROI', label: 'bande D', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue à droite : largeur de la bande non chargeable côté chaussée (0,50 m) ; sinon 0.' },
           { k: 'A6.ETROTD', code: 'ETROTD', label: 'trottoir D', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de droite.' },
         ] },
         { title: 'Chaussée', alt: true, flex: 2, cols: 2, fields: [
@@ -241,7 +250,8 @@
       ] },
       { label: 'Exploitation', groups: [
         { title: 'Classe du pont', short: 'Pont', flex: 1, cols: 1, fields: [
-          { k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3) : 1re classe si la largeur roulable est ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà.' },
+          { ro: m => !clForced(m), k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3), déduite de la largeur roulable Lr = EGAU + ESURCH + EDROI : 1re si Lr ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà. Cocher « forcer » pour l\'imposer.' },
+          { k: 'CL.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour imposer soi-même la classe du pont (sinon elle est déduite de la largeur roulable).' },
         ] },
         { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 9, cols: 9, fields: [
           { k: 'FIX.A', code: 'A(l)', type: 'chk', help: 'Charge A(l) du fascicule 61 titre II : cochée = appliquée.' },
