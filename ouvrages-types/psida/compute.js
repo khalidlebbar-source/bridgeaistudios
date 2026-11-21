@@ -451,6 +451,7 @@
     longitudinal(r, A6);
     // --- ferraillage (ferraillage.js : ferraillage longitudinal retenu, étriers, appareils d'appui…)
     if (G.PSIDA && G.PSIDA.computeFer) G.PSIDA.computeFer(model, r);
+    if (G.PSIDA && G.PSIDA.computeComp) r.comp = G.PSIDA.computeComp(model, r);   // calculs complémentaires (ligne C10, extension BridgeAI)
     return r;
   }
 

@@ -500,7 +500,7 @@ ${def.simpleBar ? `<div class="ot-bar">
         if (tabs.length) {
           const kinds = [...new Set(tabs.map(g => g.appui))], cols = tabs.filter(g => g.appui === kinds[0]);
           let rws = '';
-          for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { rws += `<tr><th>${esc(f0.rowLabel || f0.code)}${f0.unit ? ` <small style="font-size:8.5px;color:var(--ink3)">${esc(f0.unit)}</small>` : ''}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
+          for (const kd of kinds) { const gk = tabs.filter(g => g.appui === kd); gk[0].fields.forEach((f0, r) => { if (f0.show && !f0.keep && !f0.show(S.model)) return; rws += `<tr><th>${esc(f0.rowLabel || f0.code)}${f0.unit ? ` <small style="font-size:8.5px;color:var(--ink3)">${esc(f0.unit)}</small>` : ''}</th>${gk.map(g => `<td>${fieldHTML(g.fields[r])}</td>`).join('')}</tr>`; }); }
           h += `<table class="ot-tbl"><tr><th></th>${cols.map(g => `<th>${esc(g.title)}</th>`).join('')}</tr>${rws}</table>`;
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;

@@ -468,6 +468,7 @@
         page('                   RESULTATS UTILISABLES EN DONNEES POUR LE PROGRAMME PP73 (SUITE ET FIN)'.trim(), pz, { sub: '                      *     * ' });
       }
     }
+    if (G.PSIDA.renderComp && r.comp) G.PSIDA.renderComp(m, r, { page, f, fx, pad, padR, STAR, num, dstr });   // calculs complémentaires (C10)
     return pages.join('\n\f');
   }
   function sum(a) { return a.reduce((p, q) => p + q, 0); }

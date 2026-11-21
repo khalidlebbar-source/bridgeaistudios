@@ -1,9 +1,9 @@
-/* PSIDA-EL — point d'entrée. Navigateur : charger parse.js, compute.js, note.js, ferraillage.js puis index.js (globalThis.PSIDA).
+/* PSIDA-EL — point d'entrée. Navigateur : charger parse.js, compute.js, note.js, ferraillage.js, comp.js puis index.js (globalThis.PSIDA).
  * Node : require('./index.js'). */
 (function (G) {
   'use strict';
   if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
-    require('./parse.js'); require('./compute.js'); require('./note.js'); require('./ferraillage.js');
+    require('./parse.js'); require('./compute.js'); require('./note.js'); require('./ferraillage.js'); require('./comp.js');
   }
   const P = G.PSIDA;
   P.run = function (texteBordereau, opts) {

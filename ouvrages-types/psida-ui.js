@@ -115,6 +115,7 @@
     let N = W - 2 * (t.E1 + t.E2); if (N < 0.5 * W) { const k = 0.5 * W / (2 * (t.E1 + t.E2)); t.E1 = Math.round(t.E1 * k * 100) / 100; t.E2 = Math.round(t.E2 * k * 100) / 100; N = W - 2 * (t.E1 + t.E2); }
     return Object.assign(t, { FORME: f, PENTE: p, N: Math.round(N * 1000) / 1000 }); };
   const drForced = m => !!+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE forcés : la dalle réelle n'est plus utilisée
+  const cmpOn = m => { const c = (m.lignes || {}).C10 || {}; return !!(+c.KIN || +c.RENF); };   // entraxes réels demandés
   const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
   const drEnc = m => { const f = drF(m); return f === 1 || f === 2; }, drBomb = m => { const f = drF(m); return f === 1 || f === 3; };
   const drAuto = m => drF(m) > 0 && !+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE calculés depuis la dalle réelle
@@ -328,13 +329,16 @@
         ] },
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
+      { label: 'Entraxes réels des appareils (C11)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'C11', alt: i % 2 === 0, flex: 2, cols: 2, fields: [
+        { show: cmpOn, k: 'C11.A' + i, code: 'a' + i, rowLabel: 'a', unit: 'm', dec: 3, help: `Appui ${i} : entraxe réel des appareils de rive (mesuré suivant la ligne d'appui), pour les calculs complémentaires de l'annexe 4. 0 : appareils régulièrement espacés (espacement de la note).` },
+        { show: cmpOn, k: 'C11.E' + i, code: 'e' + i, rowLabel: 'e', unit: 'm', dec: 3, help: `Appui ${i} : entraxe réel des deux appareils centraux (lignes de 4 appareils). 0 : égal à a.` }] })) },
     ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
     { id: 'comp', col: 1, label: 'Calculs complémentaires', view: 'coupe', caption: '', hint: 'Calculs complémentaires du guide PSIDP-EL (annexes 3 et 4), à cocher.', pages: [
       { label: 'Calculs complémentaires', groups: [
         { title: 'Guide PSIDP-EL — annexes 3 et 4', short: 'À effectuer', flex: 3, cols: 3, fields: [
-          { k: 'CMP.ENC', code: 'Encorbellements', type: 'chk', keep: true, show: m => drF(m) === 1 || drF(m) === 2, help: 'Calcul des encorbellements (dalles-consoles) : flexion transversale de l\'encorbellement sous charges locales (guide PSIDP-EL, annexe 3). Proposé pour les dalles à larges encorbellements.' },
-          { k: 'CMP.KIN', code: 'Coef. d\'inégalité et chevêtres', type: 'chk', help: 'Correction des coefficients d\'inégalité de répartition entre appareils d\'appui et ferraillage des chevêtres incorporés lorsque les appareils d\'une ligne ne sont pas régulièrement espacés (guide PSIDP-EL, annexe 4 § 5 et 6).' },
-          { k: 'CMP.RENF', code: 'Renforcements au droit des appareils', type: 'chk', help: 'Renforcements locaux du ferraillage longitudinal au droit des appareils d\'appui des lignes intermédiaires (pointes de moment ΔM− / ΔM+, guide PSIDP-EL, annexe 4 § 7).' },
+          { relayout: true, k: 'CMP.ENC', code: 'Encorbellements', type: 'chk', keep: true, show: m => drF(m) === 1 || drF(m) === 2, help: 'Calcul des encorbellements (dalles-consoles) : flexion transversale de l\'encorbellement sous charges locales (guide PSIDP-EL, annexe 3). Proposé pour les dalles à larges encorbellements.' },
+          { relayout: true, k: 'CMP.KIN', code: 'Coef. d\'inégalité et chevêtres', type: 'chk', help: 'Correction des coefficients d\'inégalité de répartition entre appareils d\'appui et ferraillage des chevêtres incorporés lorsque les appareils d\'une ligne ne sont pas régulièrement espacés (guide PSIDP-EL, annexe 4 § 5 et 6).' },
+          { relayout: true, k: 'CMP.RENF', code: 'Renforcements au droit des appareils', type: 'chk', help: 'Renforcements locaux du ferraillage longitudinal au droit des appareils d\'appui des lignes intermédiaires (pointes de moment ΔM− / ΔM+, guide PSIDP-EL, annexe 4 § 7).' },
         ] },
       ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
     ] },
@@ -1014,6 +1018,34 @@
   }
 
   /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
+  /* ligne d'appui : appareils, cotes c / a / e et bandes du chevêtre (calculs complémentaires) */
+  function drawLigne(r, q) {
+    const B = r.section.Eeq, W = 1240, k = (W - 80) / B, x = v => 40 + (v + B / 2) * k, y0 = 120;
+    const ee = q.nEff === 4 ? q.e : q.a, pos = q.nEff === 2 ? [-q.a / 2, q.a / 2] : q.nEff === 3 ? [-q.a, 0, q.a] : [-q.e / 2 - q.a, -q.e / 2, q.e / 2, q.e / 2 + q.a];
+    let sv = `<svg viewBox="0 0 ${W} 250" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="13">`;
+    sv += `<rect x="${x(-B / 2)}" y="${y0 - 22}" width="${B * k}" height="22" fill="#ece6d8" stroke="#5d5545"/>`;
+    for (const p of pos) sv += `<path d="M${x(p)} ${y0} l-9 16 h18 z" fill="#3c3f4d"/>`;
+    const dim = (a, b, yy, t) => `<line x1="${x(a)}" y1="${yy}" x2="${x(b)}" y2="${yy}" stroke="#1a4fd6"/><line x1="${x(a)}" y1="${yy - 5}" x2="${x(a)}" y2="${yy + 5}" stroke="#1a4fd6"/><line x1="${x(b)}" y1="${yy - 5}" x2="${x(b)}" y2="${yy + 5}" stroke="#1a4fd6"/><text x="${(x(a) + x(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="#1a4fd6">${t}</text>`;
+    const cuts = [-B / 2, ...pos, B / 2];
+    for (let j = 0; j < cuts.length - 1; j++) { const w = cuts[j + 1] - cuts[j], lab = j === 0 || j === cuts.length - 2 ? 'c' : (q.nEff === 4 && j === 2 ? 'e' : 'a'); sv += dim(cuts[j], cuts[j + 1], y0 + 40, `${lab} = ${fmt(w, 2)}`); }
+    sv += dim(-B / 2, B / 2, y0 + 70, `B = ${fmt(B, 3)} m`);
+    const b1 = 2 / 3 * Math.max(q.c, q.a, ee), b2 = Math.max(2 * q.c, q.a, ee);
+    const band = (cx, w, yy, col, t) => `<rect x="${x(cx - w / 2)}" y="${yy}" width="${w * k}" height="9" fill="${col}" opacity=".55"/><text x="${x(cx)}" y="${yy - 3}" text-anchor="middle" fill="${col}" font-size="11">${t}</text>`;
+    for (const p of pos) sv += band(p, b2, 40, '#0a8a78', '2') + band(p, b1, 62, '#c0392b', '1');
+    sv += `<text x="${x(-B / 2)}" y="30" fill="#5d5545" font-size="11">bandes du chevêtre (face supérieure), centrées sur les appareils</text></svg>`;
+    return sv;
+  }
+  function drawRenf(r, q) {
+    const B = r.section.Eeq, W = 1240, L = q.L, kx = (W - 80) / B, ky = 220 / (0.3 * L), X = v => 40 + (v + B / 2) * kx, Y = v => 30 + (v + 0.1 * L) * ky;
+    const pos = q.nEff === 4 ? [-q.e / 2 - q.a, -q.e / 2, q.e / 2, q.e / 2 + q.a] : q.nEff === 3 ? [-q.a, 0, q.a] : [-q.a / 2, q.a / 2];
+    let sv = `<svg viewBox="0 0 ${W} 290" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="12">`;
+    sv += `<rect x="${X(-B / 2)}" y="${Y(-0.1 * L)}" width="${B * kx}" height="${0.3 * L * ky}" fill="#f6f2ea" stroke="#5d5545"/><line x1="${X(-B / 2)}" y1="${Y(0)}" x2="${X(B / 2)}" y2="${Y(0)}" stroke="#5d5545" stroke-dasharray="8 5"/>`;
+    pos.forEach((p, j) => { const rive = j === 0 || j === pos.length - 1, w = rive ? q.bR : q.bC, As = rive ? q.AsR : q.AsC;
+      if (w > 0 && As > 0) for (let t = 0; t <= 6; t++) { const xx = p - w / 2 + w * t / 6; sv += `<line x1="${X(xx)}" y1="${Y(t % 2 ? -0.1 * L : -0.05 * L)}" x2="${X(xx)}" y2="${Y(t % 2 ? 0.15 * L : 0.2 * L)}" stroke="#c0392b" stroke-width="1.6"/>`; }
+      sv += `<rect x="${X(p) - 6}" y="${Y(0) - 6}" width="12" height="12" fill="#3c3f4d"/><text x="${X(p)}" y="${Y(0.2 * L) + 16}" text-anchor="middle">${rive ? fmt(q.AsR, 2) : fmt(q.AsC, 2)} cm²</text>`; });
+    sv += `<text x="${X(B / 2) + 4}" y="${Y(0) + 4}" font-size="11">appui ${q.k + 1}</text><text x="${X(B / 2) + 4}" y="${Y(-0.1 * L) + 10}" font-size="11">0,1 L</text><text x="${X(B / 2) + 4}" y="${Y(0.2 * L)}" font-size="11">0,2 L</text></svg>`;
+    return sv;
+  }
   function drawApp(r, k) {
     const a = r.fer.appareils[k], pc = r.fer.poincon, P0 = pc.ap[k], g = pc.gam;
     const la = a.larg / 2, lo = a.long / 2;
@@ -1223,6 +1255,21 @@
       add(i, 'APPAREILS D\'APPUI — ÉTRIERS AUX ENVIRONS DES APPUIS CONCENTRÉS', `DENCHA = ${fmt(PC.D, 3)}`, body,
         'Appareils dessinés à l\'échelle, largeur suivant l\'axe de l\'ouvrage, longueur suivant la ligne d\'appui. Distances de la page « REPARTITION DES ARMATURES DE CISAILLEMENT … AUX ENVIRONS DES POINTS D\'APPUI CONCENTRES ».');
     }
+
+    /* 10 — calculs complémentaires : ligne d'appui (annexe 4 PSIDP-EL) */
+    if (r.comp && r.comp.kin) for (const q of r.comp.kin.rows) {
+      const i = first(new RegExp("APPAREILS D'APPUI ET CHEVETRE DE LA LIGNE D'APPUI " + (q.k + 1) + '$', 'm'));
+      add(i, `LIGNE D'APPUI ${q.k + 1} — APPAREILS ET BANDES DU CHEVÊTRE INCORPORÉ`, `B = ${fmt(r.section.Eeq, 3)} m · a = ${fmt(q.a, 3)} · e = ${fmt(q.e, 3)} · c = ${fmt(q.c, 3)} m`,
+        box('COUPE SUIVANT LA LIGNE D\'APPUI (LARGEURS DROITES)', drawLigne(r, q), true),
+        'Appareils (triangles) et largeurs c, a, e de l\'annexe 4 ; bandes de ferraillage du chevêtre : 1 et 2 en face supérieure, 1\' en face inférieure (sections de la page).');
+    }
+    if (r.comp && r.comp.renf) {
+      const i = first(/RENFORCEMENTS LONGITUDINAUX AU DROIT DES APPAREILS/);
+      const q = r.comp.renf.rows[0];
+      if (q) add(i, 'RENFORCEMENTS LONGITUDINAUX AU DROIT DES APPAREILS', 'disposition en plan (annexe 4, 7.2)', box('VUE EN PLAN AUTOUR D\'UNE LIGNE D\'APPUI INTERMÉDIAIRE', drawRenf(r, q), true),
+        'Aciers de renforcement (traits) sur 0,1 L côté travée et 0,2 L de l\'autre côté, largeurs c/2 + a/4 (appareil de rive) et a/4 + e/4 (appareil central).');
+    }
+    if (r.comp && r.comp.enc && G.PSIDA.encFigures) for (const fg of G.PSIDA.encFigures(r)) add(first(fg.re), fg.title, fg.sub, fg.body, fg.cap);
 
     pl.sort((a, b) => a.i - b.i);
     return pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
