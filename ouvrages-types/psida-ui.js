@@ -1159,7 +1159,7 @@
     for (const m of marks) { const p = c.p[m.bi], x = p[0] * m.x + p[1], y = p[2] * m.M + p[3], x0 = p[0] * base + p[1], y0 = p[2] * M0 + p[3];
       g += `<line x1="${x0}" y1="${y}" x2="${x}" y2="${y}" stroke="${R}" stroke-width="2.2" stroke-dasharray="9 6"/><line x1="${x}" y1="${y0}" x2="${x}" y2="${y}" stroke="${R}" stroke-width="2.2" stroke-dasharray="9 6"/>`;
       g += `<circle cx="${x}" cy="${y}" r="8" fill="${R}"/><text x="${x - 12}" y="${y - 14}" text-anchor="end" fill="${R}" font-size="30" font-weight="700" font-family="Segoe Print, Comic Sans MS, cursive">${fmt(m.M, 2)}</text>`; }
-    if (note) g += `<text x="${c.W - 60}" y="${pl === '3' ? 40 : c.H - 40}" text-anchor="end" fill="${R}" font-size="30" font-family="Segoe Print, Comic Sans MS, cursive">${note}</text>`;
+    // pas d'annotation de synthèse sur la planche (lecture seule : points et valeurs)
     return `<div style="position:relative;line-height:0;background:#fff"><img src="ouvrages-types/psida/planches/pl-${pl}.jpg" alt="Planche ${pl}" style="width:100%;display:block"><svg viewBox="0 0 ${c.W} ${c.H}" style="position:absolute;inset:0;width:100%;height:100%">${g}</svg></div>`;
   }
   /* ligne d'appui : appareils, cotes c / a / e et bandes du chevêtre (calculs complémentaires) */
