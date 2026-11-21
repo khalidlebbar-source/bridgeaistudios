@@ -95,6 +95,7 @@
     const t = enc ? { H1: 0.20, H2: 0.15, H3: 0.35, E1: 2.0, E2: 0.35 } : { H1: 0.30, H2: 0, H3: 0.35, E1: 0, E2: 1.5 };
     let N = W - 2 * (t.E1 + t.E2); if (N < 0.5 * W) { const k = 0.5 * W / (2 * (t.E1 + t.E2)); t.E1 = Math.round(t.E1 * k * 100) / 100; t.E2 = Math.round(t.E2 * k * 100) / 100; N = W - 2 * (t.E1 + t.E2); }
     return Object.assign(t, { FORME: f, PENTE: p, N: Math.round(N * 1000) / 1000 }); };
+  const drForced = m => !!+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE forcés : la dalle réelle n'est plus utilisée
   const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
   const drEnc = m => { const f = drF(m); return f === 1 || f === 2; }, drBomb = m => { const f = drF(m); return f === 1 || f === 3; };
   const drAuto = m => drF(m) > 0 && !+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE calculés depuis la dalle réelle
@@ -195,13 +196,13 @@
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
       { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab'), groups: [
         { show: m => drF(m) > 0, title: 'Dalle réelle (remplit HDALLE et EDALLE)', short: 'Dalle réelle', alt: true, flex: 8, cols: 8, fields: [
-          { show: m => drF(m) > 0, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Épaisseur au bord : bout de l\'encorbellement, ou face verticale du bord (trapèze).' },
-          { keep: true, show: m => drEnc(m), relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
-          { show: m => drF(m) > 0, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Hauteur du flanc (ou du pan incliné du trapèze), de l\'intrados à la sous-face de l\'encorbellement ou au bas de la face du bord.' },
-          { keep: true, show: m => drBomb(m), relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
-          { keep: true, show: m => drEnc(m), relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
-          { show: m => drF(m) > 0, relayout: true, k: 'DR.E2', code: 'E2', unit: 'm', dec: 3, help: 'Projection horizontale du flanc (trapèze : du pan incliné).' },
-          { show: m => drF(m) > 0, relayout: true, k: 'DR.N', code: 'N', unit: 'm', dec: 3, help: 'Largeur de l\'intrados (nervure).' },
+          { show: m => drF(m) > 0, relayout: true, xx: drForced, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Épaisseur au bord : bout de l\'encorbellement, ou face verticale du bord (trapèze).' },
+          { keep: true, show: m => drEnc(m), relayout: true, xx: drForced, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
+          { show: m => drF(m) > 0, relayout: true, xx: drForced, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Hauteur du flanc (ou du pan incliné du trapèze), de l\'intrados à la sous-face de l\'encorbellement ou au bas de la face du bord.' },
+          { keep: true, show: m => drBomb(m), relayout: true, xx: drForced, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
+          { keep: true, show: m => drEnc(m), relayout: true, xx: drForced, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
+          { show: m => drF(m) > 0, relayout: true, xx: drForced, k: 'DR.E2', code: 'E2', unit: 'm', dec: 3, help: 'Projection horizontale du flanc (trapèze : du pan incliné).' },
+          { show: m => drF(m) > 0, relayout: true, xx: drForced, k: 'DR.N', code: 'N', unit: 'm', dec: 3, help: 'Largeur de l\'intrados (nervure).' },
           { show: m => drF(m) > 0, k: 'DR.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour saisir soi-même HDALLE et EDALLE (ils ne sont plus recalculés depuis la dalle réelle).' },
         ] },
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
