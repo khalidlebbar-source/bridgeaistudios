@@ -78,27 +78,27 @@
     if (E.skip) { pl.push('     ' + E.skip); page('CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS', pl, {}); return; }
     const c = (v, w, d) => v == null ? padR('', w - 1) + '-' : f(v, w, d);
     const hd = cols => '     ' + cols.map(([t, w]) => t.padStart(w)).join('');
-    const S = E.sides;
+    const S = E.sides[0].tr === E.sides[1].tr ? [E.sides[0]] : E.sides, one = S.length === 1, nm = s => one ? '' : s.nom.slice(0, 1);
     pl.push('  1. GEOMETRIE DE LA CONSOLE (SECTION D\'ENCASTREMENT DE CALCUL S, PENTE 1/3 DANS LE GOUSSET)', BL,
-      hd([['h1 (M)', 10], ['h2 (M)', 10], ['BETA', 10], ['E (M)', 10], ['A GAUCHE', 12], ['A DROIT', 12], ['CLASSE', 9], ['DELTA', 9]]),
-      '     ' + f(E.h1, 10, 3) + f(E.h2, 10, 3) + f(E.beta, 10, 3) + f(E.e, 10, 3) + f(S[0].a, 12, 3) + f(S[1].a, 12, 3) + c(E.classe, 9, 0) + f(E.delta, 9, 2), BL,
+      hd([['h1 (M)', 10], ['h2 (M)', 10], ['BETA', 10], ['E (M)', 10]].concat(S.map(s => [one ? 'A (M)' : 'A ' + s.nom, 12]), [['CLASSE', 9], ['DELTA', 9]])),
+      '     ' + f(E.h1, 10, 3) + f(E.h2, 10, 3) + f(E.beta, 10, 3) + f(E.e, 10, 3) + S.map(s => f(s.a, 12, 3)).join('') + c(E.classe, 9, 0) + f(E.delta, 9, 2), BL,
       '  2. MOMENT DU AU POIDS PROPRE : MG (TM/M)', BL,
       hd([['CONSOLE', 10], ['SUPERSTR.', 12], ['BRAS (M)', 10], ['MG', 10]]),
       '     ' + f(E.MG0, 10, 3) + f(E.MG1, 12, 3) + f(E.BRAS, 10, 3) + f(E.MG, 10, 3), BL,
       '  3. MOMENT DU A LA CHARGE DE TROTTOIR DE 0.45 T/M2 : MTR (TM/M)', BL,
-      hd([['COTE', 8], ['LTR (M)', 10], ['MTR', 10]]));
-    for (const s of S) pl.push('     ' + s.nom.slice(0, 1).padStart(8) + f(Math.min(E.LTR, s.tr), 10, 3) + f(s.MTR, 10, 3));
+      hd([[one ? '' : 'COTE', 8], ['LTR (M)', 10], ['MTR', 10]]));
+    for (const s of S) pl.push('     ' + nm(s).padStart(8) + f(Math.min(E.LTR, s.tr), 10, 3) + f(s.MTR, 10, 3));
     const tab = (titre, key) => {
-      pl.push(BL, titre, BL, hd([['COTE', 8], ['A/E', 9], ['BETA1', 9], ['BETA2', 9], ['M BETA1', 10], ['M BETA2', 10], ['M BETA', 10]]));
-      for (const s of S) { const q = s[key]; if (!q) continue; pl.push('     ' + s.nom.slice(0, 1).padStart(8) + f(s.ae, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 10, 2) + f(q.m2, 10, 2) + f(q.m, 10, 2)); }
+      pl.push(BL, titre, BL, hd([[one ? '' : 'COTE', 8], ['A/E', 9], ['BETA1', 9], ['BETA2', 9], ['M BETA1', 10], ['M BETA2', 10], ['M BETA', 10]]));
+      for (const s of S) { const q = s[key]; if (!q) continue; pl.push('     ' + nm(s).padStart(8) + f(s.ae, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 10, 2) + f(q.m2, 10, 2) + f(q.m, 10, 2)); }
     };
     tab('  4. MOMENT DU AU SYSTEME B : MB (TM/M, PLANCHE 1.' + E.classe + ', INTERPOLATION EN BETA)', 'dB');
     if (S.some(s => s.dC120)) tab('  5. MOMENT DU AU SYSTEME MC120 : MC (TM/M, PLANCHE 2.1)', 'dC120');
     if (S.some(s => s.dC80)) tab('  5. MOMENT DU AU SYSTEME MC80 : MC (TM/M, PLANCHE 2.2)', 'dC80');
     pl.push(BL, '  6. MOMENT DU A LA ROUE DE 6 T : MR (TM/M, PLANCHE 3, D/E = 0, LECTURE 10 T x 0.6)', BL,
-      hd([['COTE', 8], ['C/E', 9], ['BETA1', 9], ['BETA2', 9], ['10T BETA1', 11], ['10T BETA2', 11], ['MR 6T', 9]]));
-    for (const s of S) { const q = s.dR; pl.push('     ' + s.nom.slice(0, 1).padStart(8) + (q ? f(s.cR / E.e, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 11, 2) + f(q.m2, 11, 2) + f(s.MR, 9, 2) : '   TROTTOIR SEPARE OU ABSENT : MR = 0')); }
-    const W0 = 62, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 12, d)).join(''), hs = t => padR(t, W0) + S.map(s => ('COTE ' + s.nom.slice(0, 1)).padStart(12)).join('');
+      hd([[one ? '' : 'COTE', 8], ['C/E', 9], ['BETA1', 9], ['BETA2', 9], ['10T BETA1', 11], ['10T BETA2', 11], ['MR 6T', 9]]));
+    for (const s of S) { const q = s.dR; pl.push('     ' + nm(s).padStart(8) + (q ? f(s.cR / E.e, 9, 3) + f(q.b1, 9, 3) + f(q.b2, 9, 3) + f(q.m1, 11, 2) + f(q.m2, 11, 2) + f(s.MR, 9, 2) : '   TROTTOIR SEPARE OU ABSENT : MR = 0')); }
+    const W0 = 62, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 12, d)).join(''), hs = t => padR(t, W0) + S.map(s => (one ? 'VALEUR' : 'COTE ' + s.nom.slice(0, 1)).padStart(12)).join('');
     pl.push(BL, hs('  7. COMBINAISONS (TM/M)'), BL);
     S[0].U.forEach((u, k) => pl.push(rw('     ELU  ' + u[0], S.map(s => (s.U[k] || [0, 0])[1]), 3)));
     pl.push(rw('          MU MAX', S.map(s => s.Mu), 3));
