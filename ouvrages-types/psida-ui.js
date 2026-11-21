@@ -1090,10 +1090,10 @@
   }
   /* abaque reproduit (courbes a/e interpolées en β) et points de lecture (côtés G et D) */
   const PTC = ['#c0392b', '#1a7f4b'];
-  function drawAbaque(pl, beta, e, pts) {
-    const W = 640, H = 360, ml = 44, mr = 46, mt = 18, mb = 32, A = G.PSIDA.encAbaque;
+  function drawAbaque(pl, beta, e, pts, o) {
+    o = o || {}; const W = o.W || 640, H = o.H || 360, ml = 44, mr = 46, mt = 18, mb = 32, A = G.PSIDA.encAbaque;
     let mx = 0; for (let j = 1; j <= 10; j++) mx = Math.max(mx, A(pl, beta, 5, j / 10));
-    const top = Math.ceil(mx / 2) * 2, bot = pl.startsWith('2') ? 0 : 2;
+    const top = o.top || Math.ceil(mx / 2) * 2, bot = pl.startsWith('2') ? 0 : 2;
     const X = v => ml + (v - 0.5) / 4.5 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
     let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" font-family="Courier New, monospace" font-size="13">`;
     for (let v = bot; v <= top + 1e-9; v += 2) g += `<line x1="${X(0.5)}" y1="${Y(v)}" x2="${X(5)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.5) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
@@ -1112,14 +1112,15 @@
     return g;
   }
   /* planche 3 : doublet d/e = 0 (charge de 10 t), courbes β = 1/3, 1/2, 1 et β du calcul ; points de lecture de la roue */
-  function drawAbaque3(beta, pts, sel) {
+  function drawAbaque3(beta, pts, sel, o) {
+    o = o || {};
     const F = G.PSIDA.ENC_P3F, BK3 = b => Math.abs(b - 1 / 3) < 1e-6 ? '0.333' : Math.abs(b - 0.5) < 1e-6 ? '0.5' : '1';
     if (sel != null && F && F[BK3(sel)]) {   // planche 3 complète au β tabulé : courbes d/e = 0 à 2
-      const T = F[BK3(sel)], D0 = G.PSIDA.encDoublet, W = 640, H = 360, ml = 44, mr = 46, mt = 18, mb = 32;
+      const T = F[BK3(sel)], D0 = G.PSIDA.encDoublet, W = o.W || 640, H = o.H || 360, ml = 44, mr = 46, mt = 18, mb = 32;
       const val = (de, c) => { if (de === '0') return D0(sel, c); const r = T[de], f = (c - 0.1) / 0.1, i = Math.min(8, Math.max(0, Math.floor(f))), t = f - i, R = k => r[Math.min(9, Math.max(0, k))];   // Catmull-Rom entre les noeuds
         const p0 = R(i - 1), p1 = R(i), p2 = R(i + 1), p3 = R(i + 2); return 0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t * t * t); };
       let mx = 0; for (const de in T) mx = Math.max(mx, val(de, 1));
-      const top = Math.ceil(mx * 2) / 2, bot = 1.5, X = v => ml + v / 1 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
+      const top = o.top || Math.ceil(mx * 2) / 2, bot = 1.5, X = v => ml + v / 1 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
       let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" font-family="Courier New, monospace" font-size="13">`;
       for (let v = bot; v <= top + 1e-9; v += 0.5) g += `<line x1="${X(0)}" y1="${Y(v)}" x2="${X(1)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${Number.isInteger(v) ? v : ''}</text>`;
       for (let k = 0; k <= 10; k++) g += `<line x1="${X(k / 10)}" y1="${Y(bot)}" x2="${X(k / 10)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(k / 10)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(k / 10, 1)}</text>`;
@@ -1409,17 +1410,22 @@
       const side = SD.map(q => `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${q.nom})</h5>${drawEncCoupe(E, q, q.nom === 'GAUCHE')}</div>`).join('');
       // abaques : une page par côté, pour chaque charge les deux planches encadrant β (lecture à β1 et β2, puis interpolation)
       const bt = b => Math.abs(b - 1 / 3) < 1e-6 ? '1/3' : fmt(b, 2);
+      // abaques fidèles aux planches SETRA : par côté, une page par planche (β = 1/3, 1/2, 1) ; points de lecture sur les deux planches encadrant β seulement
+      const CLN = ['', 'première', 'deuxième', 'troisième'], B3 = [1 / 3, 0.5, 1], SZ = (fmx, st) => ({ W: 420, H: 560, top: Math.ceil(fmx() / st) * st });
       for (const q of SD) {
-        const cell = (t, svg) => `<div style="min-width:0"><h5>${t}</h5>${svg}</div>`, rows = [];
-        const pair = (nm, pl, d, key) => { if (!d) return; rows.push(cell(`${nm} — PLANCHE ${pl}, β = ${bt(d.b1)} : M = ${fmt(d.m1, 2)}`, drawAbaque(pl, d.b1, E.e, [{ ae: q.ae, val: d.m1, lab: '' }])) +
-          cell(`${nm} — PLANCHE ${pl}, β = ${bt(d.b2)} : M = ${fmt(d.m2, 2)}`, drawAbaque(pl, d.b2, E.e, [{ ae: q.ae, val: d.m2, lab: '' }]))); };
-        pair('SYSTÈME B', '1.' + E.classe, q.dB);
-        if (q.dC120) pair('MC120', '2.1', q.dC120); else if (q.dC80) pair('MC80', '2.2', q.dC80);
-        if (q.dR) rows.push(cell(`ROUE 6 T — PLANCHE 3, β = ${bt(q.dR.b1)} : M(10 T) = ${fmt(q.dR.m1, 2)}`, drawAbaque3(q.dR.b1, [{ ce: q.cR / E.e, val: q.dR.m1, lab: '' }], q.dR.b1)) +
-          cell(`ROUE 6 T — PLANCHE 3, β = ${bt(q.dR.b2)} : M(10 T) = ${fmt(q.dR.m2, 2)}`, drawAbaque3(q.dR.b2, [{ ce: q.cR / E.e, val: q.dR.m2, lab: '' }], q.dR.b2)));
-        const res = [`MB = ${fmt(q.MB, 2)}`].concat(q.dC120 ? [`MC120 = ${fmt(q.MC120, 2)}`] : q.dC80 ? [`MC80 = ${fmt(q.MC80, 2)}`] : [], q.dR ? [`MR = 0,6 × ${fmt(q.MR / 0.6, 2)} = ${fmt(q.MR, 2)}`] : []).join(' · ');
-        add(i, `ABAQUES DES ENCORBELLEMENTS — CÔTÉ ${q.nom}`, `e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}${q.dR ? ` · c/e = ${fmt(q.cR / E.e, 3)}` : ''} · β = ${fmt(E.beta, 3)} interpolé entre les deux planches : ${res} (TM/ML)`,
-          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 18px">${rows.join('')}</div>`, 'Lecture sur les planches du guide PSIDP-EL (annexe 3) encadrant β, puis interpolation linéaire en β.');
+        const pg = (num, desc, d, draw, res) => {
+          if (!d) return;
+          const cells = B3.map(b => { const on = Math.abs(b - d.b1) < 1e-6 ? d.m1 : Math.abs(b - d.b2) < 1e-6 ? d.m2 : null;
+            return `<div style="min-width:0"><h5 style="text-align:center">β = ${bt(b)}${on != null ? ` — lu ${fmt(on, 2)}` : ''}</h5>${draw(b, on)}</div>`; }).join('');
+          add(i, `GUIDE PSIDP-EL, PLANCHE ${num} — CÔTÉ ${q.nom}`, desc, `<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px">${cells}</div>`, res);
+        };
+        const dB = q.dB, dC = q.dC120 || q.dC80, plC = q.dC120 ? '2.1' : '2.2';
+        pg('1.' + E.classe, `Pont de ${CLN[E.classe]} classe · moment transversal d'encastrement enveloppe des charges Br, Bc, Bt (aucun coefficient de pondération sauf bc, bt) · e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}`,
+          dB, (b, on) => drawAbaque('1.' + E.classe, b, E.e, on != null ? [{ ae: q.ae, val: on, lab: '' }] : [], SZ(pa => G.PSIDA.encAbaque('1.' + E.classe, 1 / 3, 5, 1), 2)), `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dB.b1)} (${fmt(dB.m1, 2)}) et β = ${bt(dB.b2)} (${fmt(dB.m2, 2)}) : MB = ${fmt(q.MB, 2)} tm/ml.`);
+        if (dC) pg(plC, `Moment transversal d'encastrement dû au système ${q.dC120 ? 'Mc120' : 'Mc80'} (aucun coefficient de pondération) · e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}`,
+          dC, (b, on) => drawAbaque(plC, b, E.e, on != null ? [{ ae: q.ae, val: on, lab: '' }] : [], SZ(() => Math.max(...B3.map(bb => G.PSIDA.encAbaque(plC, bb, 5, 1))), 2)), `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dC.b1)} (${fmt(dC.m1, 2)}) et β = ${bt(dC.b2)} (${fmt(dC.m2, 2)}) : MC = ${fmt(q.dC120 ? q.MC120 : q.MC80, 2)} tm/ml.`);
+        if (q.dR) pg('3', `Moment transversal d'encastrement d'un doublet de charges ponctuelles (P = 10 t, d/e = 0 pour la roue isolée) · roue de 6 t à c = ${fmt(q.cR, 3)} m, c/e = ${fmt(q.cR / E.e, 3)}`,
+          q.dR, (b, on) => drawAbaque3(b, on != null ? [{ ce: q.cR / E.e, val: on, lab: '' }] : [], b, { W: 420, H: 560, top: 6.5 }), `Interpolation en β = ${fmt(E.beta, 3)} : M(10 t) = ${fmt(q.MR / 0.6, 2)} tm/ml, roue de 6 t : MR = 0,6 × ${fmt(q.MR / 0.6, 2)} = ${fmt(q.MR, 2)} tm/ml.`);
       }
       if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
