@@ -37,13 +37,10 @@
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
     if (k.startsWith('DR.')) {
       m.lignes = m.lignes || {}; const c = m.lignes.C8 || (m.lignes.C8 = { FORME: 0, H1: 0, H2: 0, H3: 0, PENTE: 0, E1: 0, E2: 0, N: 0 });
-      if (k === 'DR.FORME') { const f0 = +c.FORME || 0; c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
-        if (!(c.N > 0)) { const A7 = m.lignes.A7 || {}; c.N = A7.EDALLE1 || 6; c.E2 = (A7.EDALLE3 || 0.6) / 2; c.E1 = Math.max(0, (A7.EDALLE2 || 3.6) / 2 - c.E2);   // valeurs de départ tirées de la saisie SETRA
-          c.H3 = A7.HDALLE3 || 0.4; c.H1 = A7.HDALLE2 || 0.3; c.H2 = 0; c.PENTE = c.PENTE || 2.5; }
-        const tr0 = f0 > 2, tr1 = c.FORME > 2;   // changement de famille seulement : la largeur totale de la dalle est conservée
-        if (f0 && !tr0 && tr1) c.E2 = c.E2 + c.E1;   // encorbellement réduit : le pan incliné va jusqu'au bord (E1 gardé en mémoire)
-        else if (tr0 && !tr1) { if (c.E1 > 0 && c.E1 < c.E2 - 0.05) c.E2 = c.E2 - c.E1; else { c.E1 = Math.round(c.E2 * 0.8 * 100) / 100; c.E2 = Math.round((c.E2 - c.E1) * 1000) / 1000; } if (!(c.H2 > 0)) c.H2 = 0.1; }
-        else if (!f0 && tr1) c.E2 = c.E2 + c.E1;
+      if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
+        const A6 = m.lignes.A6 || {}, A7 = m.lignes.A7 || {};   // valeurs courantes de la forme choisie, calées sur la largeur du profil en travers
+        const W = ['ETROTG', 'EGAU', 'ESURCH', 'EDROI', 'ETROTD'].reduce((t, x) => t + (+A6[x] || 0), 0) || ((+A7.EDALLE1 || 0) + (+A7.EDALLE2 || 0)) || 12;
+        Object.assign(c, drTyp(c.FORME, W), { FORCE: 0 });
       } else if (k === 'DR.FORCE') c.FORCE = num(v) ? 1 : 0; else c[k.slice(3)] = num(v);
       realToSetra(m); return;
     }
@@ -92,6 +89,12 @@
     const und = enc ? 'L62 9 L48 10 L44 17 L20 17 L16 10 L2 9' : 'L62 9 L46 17 L18 17 L2 9';
     return `<svg viewBox="0 0 64 20"><path d="${top} ${und} Z" fill="#e8e1d1" stroke="#5d5545" stroke-width="1" stroke-linejoin="round"/></svg>`;
   };
+  /* valeurs courantes (dalle de largeur W) : encorbellements de 2,00 m (0,20 au bout, 0,35 à l'enracinement), flanc 0,35 × 0,35 ;
+     trapèze : bord vertical 0,30, pan incliné 1,50 × 0,35 ; dévers en toit 2,5 % pour les formes bombées */
+  const drTyp = (f, W) => { const enc = f <= 2, p = f === 1 || f === 3 ? 2.5 : 0;
+    const t = enc ? { H1: 0.20, H2: 0.15, H3: 0.35, E1: 2.0, E2: 0.35 } : { H1: 0.30, H2: 0, H3: 0.35, E1: 0, E2: 1.5 };
+    let N = W - 2 * (t.E1 + t.E2); if (N < 0.5 * W) { const k = 0.5 * W / (2 * (t.E1 + t.E2)); t.E1 = Math.round(t.E1 * k * 100) / 100; t.E2 = Math.round(t.E2 * k * 100) / 100; N = W - 2 * (t.E1 + t.E2); }
+    return Object.assign(t, { FORME: f, PENTE: p, N: Math.round(N * 1000) / 1000 }); };
   const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
   const drEnc = m => { const f = drF(m); return f === 1 || f === 2; }, drBomb = m => { const f = drF(m); return f === 1 || f === 3; };
   const drAuto = m => drF(m) > 0 && !+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE calculés depuis la dalle réelle
@@ -325,7 +328,7 @@
     const f = drF(m || {}); if (!f) return gen();
     if (GENF[f]) return GENF[f];
     const g = JSON.parse(JSON.stringify(gen()));
-    g.lignes.C8 = f <= 2 ? { FORME: f, H1: 0.25, H2: 0.12, H3: 0.42, PENTE: 2.5, E1: 1.5, E2: 0.5, N: 6, FORCE: 0 } : { FORME: f, H1: 0.3, H2: 0, H3: 0.45, PENTE: 2.5, E1: 0, E2: 2.0, N: 6, FORCE: 0 };   // largeur 10,00 = profil du schéma
+    g.lignes.C8 = Object.assign(drTyp(f, 10), { FORCE: 0 });   // largeur 10,00 = profil du schéma
     realToSetra(g); return (GENF[f] = g);
   }
   /* ───── dessins ───── */
@@ -1187,14 +1190,14 @@
   const EX1 = [...HEAD('EXEMPLE DE PONT-DALLE EN BETON ARME', '3 TRAVEES 12,50 - 16,00 - 12,50 M'), ...A34,
     LBL5, 'A5  3    100.000    0.500   12.500   16.000   12.500    0.000    0.000    0.000 ', ' ',
     LBL6, 'A6    0     1.000   0.000    10.000  0.000   1.000  0.080    1       0.000     0.000  3    0.000   0.000   0.000   0.000 ', ' ',
-    LBL7, 'A7     0.775    0.325    0.450     7.800   4.200    0.600 ', ' ',
+    LBL7, 'A7     0.775    0.350    0.425     7.300   4.700    0.700 ', ' ',
     LBL8, 'A8      100  2.500   1.000  1.000  5.092  3.470    001 001 024    0.150   0.0   0.0    0.000 0.000 0.000 0.000 0.000 ', ' ',
     LBL9, 'A9    200  000 .000  .000  3000.  240. .00040 ', ' ',
     LBL10, A10, ' ',
     LBL11, 'A11     3    3   0.320   0.000   0.030   0.030 ', ' ',
     LBL12, 'A12    3.000  1.000  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.000  0.000  0.000  0.000  0.000 ', ' ',
     LBL13, 'A13      250.     2000.     1500.     3500.     1    1  4    1  5    1  5    1  4    0  0    0  0    0  0 ', ' ',
-    'C8  1  0.200  0.100  0.400  2.500  1.800  0.300  7.800  0', ''].join('\n');
+    'C8  1  0.200  0.150  0.350  2.500  2.000  0.350  7.300  0', ''].join('\n');
   const EX2 = [...HEAD('EXEMPLE DE PONT-DALLE EN BETON ARME', '2 TRAVEES 15,00 - 15,00 M'), ...A34,
     LBL5, 'A5  2    100.000    0.500   15.000   15.000    0.000    0.000    0.000    0.000 ', ' ',
     LBL6, 'A6    0     1.000   0.000     8.000  0.000   1.000  0.080    1       0.000     0.000  3    0.000   0.000   0.000   0.000 ', ' ',
