@@ -265,7 +265,7 @@
 .ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden;min-width:0}
 .ot-combo{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;border-top:1px dashed var(--border);padding-top:6px}
 .ot-combo>pre{margin:0;font-size:10.5px;overflow-x:auto}
-.ot-combo .cb{display:flex;flex-direction:column;gap:8px}.ot-combo .cb svg{display:block;width:100%;height:auto}.ot-combo .cb>div:first-child svg{max-height:230px}.ot-combo h5{margin:4px 0 0;font:700 10.5px 'Courier New',monospace;color:var(--ink2)}
+.ot-combo .cb{display:flex;flex-direction:column;gap:8px}.ot-combo .cb svg{display:block;width:100%;height:auto}.ot-combo .cb>div:nth-child(-n+2) svg{max-height:260px}.ot-combo h5{margin:4px 0 0;font:700 10.5px 'Courier New',monospace;color:var(--ink2)}
 @media (max-width:1100px){.ot-combo{grid-template-columns:1fr}}
 .ot-mini{font:inherit;font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--gold);cursor:pointer}
 .ot-mini:hover{border-color:var(--gold)}

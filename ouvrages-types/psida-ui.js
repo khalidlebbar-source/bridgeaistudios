@@ -1063,31 +1063,34 @@
 
   /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
   /* encorbellement : coupe cotée (annexe 3, figure du § 1) */
-  function drawEncCoupe(E, s) {
-    /* vraie dalle (allure 1-2) : nervure, flanc oblique E2/H3, console E1 (H1+H2 -> H1) ; x depuis S vers le bord libre */
-    const Ht = E.H1 + E.H2 + E.H3, W = 640, k = Math.min((W - 230) / (E.e + 0.55), 150 / Ht), X = v => 95 + (v + 0.55) * k, y0 = 104, Y = v => y0 + v * k;
-    const Hh = Math.round(Y(Ht) + 112), C = '#1a4fd6';
+  function drawEncCoupe(E, s, mir) {
+    /* vraie dalle (allure 1-2) : nervure, flanc oblique E2/H3, console E1 (H1+H2 -> H1) ; x depuis S vers le bord libre ; mir : console gauche (bord libre à gauche) */
+    const Ht = E.H1 + E.H2 + E.H3, W = 640, k = Math.min((W - 230) / (E.e + 0.55), 150 / Ht), sg = mir ? -1 : 1, X = v => mir ? W - (95 + (v + 0.55) * k) : 95 + (v + 0.55) * k, y0 = 104, Y = v => y0 + v * k;
+    const Hh = Math.round(Y(Ht) + 112), C = '#1a4fd6', anc = right => (right !== mir) ? 'start' : 'end';
     let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" font-family="Courier New, monospace" font-size="15">`;
     g += `<path d="M${X(-0.55)} ${Y(0)} L${X(E.e)} ${Y(0)} L${X(E.e)} ${Y(E.H1)} L${X(E.E2)} ${Y(E.H1 + E.H2)} L${X(0)} ${Y(Ht)} L${X(-0.55)} ${Y(Ht)}" fill="#ece6d8" stroke="#5d5545"/>`;
     g += `<line x1="${X(-0.55)}" y1="${Y(0)}" x2="${X(-0.55)}" y2="${Y(Ht)}" stroke="#5d5545" stroke-dasharray="2 4"/>`;
-    // droite de pente 1/3 issue de l'encastrement de la console
     const d3 = E.E2 / 3, yS = E.H1 + E.H2 + Math.min(E.H3, d3);
     g += `<line x1="${X(E.E2)}" y1="${Y(E.H1 + E.H2)}" x2="${X(-0.2)}" y2="${Y(E.H1 + E.H2 + (E.E2 + 0.2) / 3)}" stroke="#c0392b" stroke-width="1.6" stroke-dasharray="7 4"/>`;
-    g += `<text x="${X(E.E2) + 8}" y="${Y(E.H1 + E.H2) + 18}" fill="#c0392b" font-size="14">pente 1/3</text>`;
+    g += `<text x="${X(E.E2) + 8 * sg}" y="${Y(E.H1 + E.H2) + 18}" text-anchor="${anc(true)}" fill="#c0392b" font-size="14">pente 1/3</text>`;
     g += `<circle cx="${X(0)}" cy="${Y(yS)}" r="3.5" fill="#c0392b"/>`;
-    g += `<line x1="${X(0)}" y1="${Y(-0.28)}" x2="${X(0)}" y2="${Y(Ht + 0.12)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 5}" y="${Y(-0.3)}" text-anchor="end" fill="#c0392b" font-weight="700">S</text>`;
-    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.12) + 0.12 * k - 4}" text-anchor="middle" font-size="13">trottoir</text>`;
-    const dH = (a, b, yy, t) => `<line x1="${X(a)}" y1="${yy}" x2="${X(b)}" y2="${yy}" stroke="${C}"/><line x1="${X(a)}" y1="${yy - 5}" x2="${X(a)}" y2="${yy + 5}" stroke="${C}"/><line x1="${X(b)}" y1="${yy - 5}" x2="${X(b)}" y2="${yy + 5}" stroke="${C}"/>` + ((X(b) - X(a)) < 8 * t.length + 6 ? `<text x="${X(a) - 6}" y="${yy + 5}" text-anchor="end" fill="${C}">${t}</text>` : `<text x="${(X(a) + X(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="${C}">${t}</text>`);
-    const dV = (xx, a, b, t, left) => `<line x1="${xx}" y1="${Y(a)}" x2="${xx}" y2="${Y(b)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(a)}" x2="${xx + 5}" y2="${Y(a)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(b)}" x2="${xx + 5}" y2="${Y(b)}" stroke="${C}"/><text x="${xx + (left ? -6 : 6)}" y="${(Y(a) + Y(b)) / 2 + 5}" text-anchor="${left ? 'end' : 'start'}" fill="${C}">${t}</text>`;
-    g += dH(0, s.a, Y(-0.42), `a = ${fmt(s.a, 2)}`);
+    g += `<line x1="${X(0)}" y1="${Y(-0.28)}" x2="${X(0)}" y2="${Y(Ht + 0.12)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 5 * sg}" y="${Y(-0.3)}" text-anchor="${anc(false)}" fill="#c0392b" font-weight="700">S</text>`;
+    if (s.tr > 0) g += `<rect x="${Math.min(X(s.a), X(E.e))}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.12) + 0.12 * k - 4}" text-anchor="middle" font-size="13">trottoir</text>`;
+    if (s.MR > 0) { const xr = X(s.cR); g += `<line x1="${xr}" y1="${Y(-0.6)}" x2="${xr}" y2="${Y(-0.15)}" stroke="#c0392b" stroke-width="2"/><path d="M${xr - 5} ${Y(-0.15) - 8} L${xr} ${Y(-0.13)} L${xr + 5} ${Y(-0.15) - 8}Z" fill="#c0392b"/><text x="${xr - 8 * sg}" y="${Y(-0.5)}" text-anchor="${anc(false)}" fill="#c0392b" font-size="13">roue 6 t</text>`; }
+    const dH = (a, b, yy, t) => { const xa = X(a), xb = X(b), L = Math.abs(xb - xa);
+      return `<line x1="${xa}" y1="${yy}" x2="${xb}" y2="${yy}" stroke="${C}"/><line x1="${xa}" y1="${yy - 5}" x2="${xa}" y2="${yy + 5}" stroke="${C}"/><line x1="${xb}" y1="${yy - 5}" x2="${xb}" y2="${yy + 5}" stroke="${C}"/>` +
+        (L < 8 * t.length + 6 ? `<text x="${xa - 6 * sg}" y="${yy + 5}" text-anchor="${anc(false)}" fill="${C}">${t}</text>` : `<text x="${(xa + xb) / 2}" y="${yy - 4}" text-anchor="middle" fill="${C}">${t}</text>`); };
+    const dV = (xx, a, b, t, right) => `<line x1="${xx}" y1="${Y(a)}" x2="${xx}" y2="${Y(b)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(a)}" x2="${xx + 5}" y2="${Y(a)}" stroke="${C}"/><line x1="${xx - 5}" y1="${Y(b)}" x2="${xx + 5}" y2="${Y(b)}" stroke="${C}"/><text x="${xx + (right !== mir ? 6 : -6)}" y="${(Y(a) + Y(b)) / 2 + 5}" text-anchor="${anc(right)}" fill="${C}">${t}</text>`;
+    g += dH(0, s.a, Y(-0.27), `a = ${fmt(s.a, 2)}`);
     g += dH(0, E.E2, Y(Ht) + 26, `E2 = ${fmt(E.E2, 2)}`) + dH(E.E2, E.e, Y(Ht) + 26, `E1 = ${fmt(E.E1, 2)}`) + dH(0, E.e, Y(Ht) + 56, `e = E1 + E2 = ${fmt(E.e, 2)} m`);
-    g += dV(X(0) + 12, 0, yS, `h1 = ${fmt(E.h1, 3)}`, false) + dV(X(-0.55) - 8, 0, Ht, `${fmt(Ht, 2)}`, true);
-    g += dV(X(E.e) + 10, 0, E.H1, `h2 = ${fmt(E.h2, 2)}`, false);
+    g += dV(X(0) + 12 * sg, 0, yS, `h1 = ${fmt(E.h1, 3)}`, true) + dV(X(-0.55) - 8 * sg, 0, Ht, `${fmt(Ht, 2)}`, false);
+    g += dV(X(E.e) + 10 * sg, 0, E.H1, `h2 = ${fmt(E.h2, 2)}`, true);
     g += `<text x="8" y="${Hh - 26}" fill="#5d5545" font-size="13" xml:space="preserve">h1 = H1 + H2 + min(H3 ; E2/3) = ${fmt(E.H1, 2)} + ${fmt(E.H2, 2)} + min(${fmt(E.H3, 2)} ; ${fmt(d3, 3)}) = ${fmt(E.h1, 3)} m</text><text x="8" y="${Hh - 6}" fill="#5d5545" font-size="13" xml:space="preserve">h2 = H1 = ${fmt(E.h2, 2)} m      β = h2 / h1 = ${fmt(E.beta, 3)}</text></svg>`;
     return g;
   }
-  /* abaque reproduit (courbes a/e interpolées en β) et point de lecture */
-  function drawAbaque(pl, beta, e, ae, val) {
+  /* abaque reproduit (courbes a/e interpolées en β) et points de lecture (côtés G et D) */
+  const PTC = ['#c0392b', '#1a7f4b'];
+  function drawAbaque(pl, beta, e, pts) {
     const W = 640, H = 360, ml = 44, mr = 46, mt = 18, mb = 32, A = G.PSIDA.encAbaque;
     let mx = 0; for (let j = 1; j <= 10; j++) mx = Math.max(mx, A(pl, beta, 5, j / 10));
     const top = Math.ceil(mx / 2) * 2, bot = pl.startsWith('2') ? 0 : 2;
@@ -1096,14 +1099,34 @@
     for (let v = bot; v <= top + 1e-9; v += 2) g += `<line x1="${X(0.5)}" y1="${Y(v)}" x2="${X(5)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.5) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
     for (let i = 0; i < 10; i++) { const ee = 0.5 + 0.5 * i; g += `<line x1="${X(ee)}" y1="${Y(bot)}" x2="${X(ee)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(ee)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(ee, 1)}</text>`; }
     for (let j = 1; j <= 10; j++) {
-      const pts = []; for (let q = 0; q <= 45; q++) { const ee = 0.5 + q * 0.1; pts.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, j / 10)).toFixed(1)}`); }
-      g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#3c3f4d" stroke-width="1.1"/><text x="${X(5) + 4}" y="${Y(A(pl, beta, 5, j / 10)) + 4}" fill="#5d5545">${fmt(j / 10, 1)}</text>`;
+      const q = []; for (let n = 0; n <= 45; n++) { const ee = 0.5 + n * 0.1; q.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, j / 10)).toFixed(1)}`); }
+      g += `<polyline points="${q.join(' ')}" fill="none" stroke="#3c3f4d" stroke-width="1.1"/><text x="${X(5) + 4}" y="${Y(A(pl, beta, 5, j / 10)) + 4}" fill="#5d5545">${fmt(j / 10, 1)}</text>`;
     }
-    const pts = []; for (let q = 0; q <= 45; q++) { const ee = 0.5 + q * 0.1; pts.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, ae)).toFixed(1)}`); }
-    g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 3"/>`;
-    g += `<line x1="${X(e)}" y1="${Y(bot)}" x2="${X(e)}" y2="${Y(val)}" stroke="#c0392b" stroke-dasharray="3 3"/><line x1="${X(0.5)}" y1="${Y(val)}" x2="${X(e)}" y2="${Y(val)}" stroke="#c0392b" stroke-dasharray="3 3"/>`;
-    g += `<circle cx="${X(e)}" cy="${Y(val)}" r="5" fill="#c0392b"/><text x="${X(e) + 8}" y="${Y(val) - 8}" fill="#c0392b" font-weight="700">${fmt(val, 2)}</text>`;
+    pts.forEach((p, n) => {
+      const c = PTC[n % 2], q = []; for (let m = 0; m <= 45; m++) { const ee = 0.5 + m * 0.1; q.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, p.ae)).toFixed(1)}`); }
+      g += `<polyline points="${q.join(' ')}" fill="none" stroke="${c}" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+      g += `<line x1="${X(e)}" y1="${Y(bot)}" x2="${X(e)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/><line x1="${X(0.5)}" y1="${Y(p.val)}" x2="${X(e)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/>`;
+      g += `<circle cx="${X(e)}" cy="${Y(p.val)}" r="5" fill="${c}"/><text x="${X(e) + 8}" y="${Y(p.val) - 8 - 15 * n}" fill="${c}" font-weight="700">${p.lab} ${fmt(p.val, 2)}</text>`;
+    });
     g += `<text x="${X(5) + 4}" y="${mt + 2}" fill="#5d5545">a/e</text><text x="${X(5)}" y="${H - 4}" text-anchor="end" fill="#7a7e8e">e (m)</text></svg>`;
+    return g;
+  }
+  /* planche 3 : doublet d/e = 0 (charge de 10 t), courbes β = 1/3, 1/2, 1 et β du calcul ; points de lecture de la roue */
+  function drawAbaque3(beta, pts) {
+    const W = 640, H = 340, ml = 44, mr = 70, mt = 18, mb = 32, D = G.PSIDA.encDoublet;
+    let mx = 0; for (const b of [1 / 3, 0.5, 1]) mx = Math.max(mx, D(b, 1));
+    const top = Math.ceil(mx), bot = Math.floor(Math.min(D(1, 0.1), D(1 / 3, 0.1)));
+    const X = v => ml + (v - 0.1) / 0.9 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
+    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" font-family="Courier New, monospace" font-size="13">`;
+    for (let v = bot; v <= top + 1e-9; v += 1) g += `<line x1="${X(0.1)}" y1="${Y(v)}" x2="${X(1)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.1) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
+    for (let i = 1; i <= 10; i++) g += `<line x1="${X(i / 10)}" y1="${Y(bot)}" x2="${X(i / 10)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(i / 10)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(i / 10, 1)}</text>`;
+    const curve = (b, st) => { const q = []; for (let n = 0; n <= 45; n++) { const c = 0.1 + n * 0.02; q.push(`${X(c).toFixed(1)},${Y(D(b, c)).toFixed(1)}`); } return `<polyline points="${q.join(' ')}" fill="none" ${st}/>`; };
+    for (const [b, t] of [[1 / 3, '1/3'], [0.5, '1/2'], [1, '1']]) g += curve(b, 'stroke="#3c3f4d" stroke-width="1.1"') + `<text x="${X(1) + 4}" y="${Y(D(b, 1)) + 4}" fill="#5d5545">β=${t}</text>`;
+    g += curve(beta, 'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 3"');
+    pts.forEach((p, n) => { const c = PTC[n % 2];
+      g += `<line x1="${X(p.ce)}" y1="${Y(bot)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/><line x1="${X(0.1)}" y1="${Y(p.val)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/>`;
+      g += `<circle cx="${X(p.ce)}" cy="${Y(p.val)}" r="5" fill="${c}"/><text x="${X(p.ce) - 8}" y="${Y(p.val) - 8 - 15 * n}" text-anchor="end" fill="${c}" font-weight="700">${p.lab} ${fmt(p.val, 2)}</text>`; });
+    g += `<text x="${X(1)}" y="${H - 4}" text-anchor="end" fill="#7a7e8e">c/e  (d/e = 0, P = 10 t)</text></svg>`;
     return g;
   }
   /* ligne d'appui : appareils, cotes c / a / e et bandes du chevêtre (calculs complémentaires) */
@@ -1359,10 +1382,15 @@
     }
     let encFig = null;
     if (r.comp && r.comp.enc && !r.comp.enc.skip) {   // encorbellements : une seule page (texte de la note + coupe + lecture des abaques)
-      const E = r.comp.enc, i = first(/CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS/), s = E.sides[0];
-      let side = `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${s.nom})</h5>${drawEncCoupe(E, s)}</div><div><h5>PLANCHE 1.${E.classe} — MB = ${fmt(s.MB, 2)} TM/ML (β = ${fmt(E.beta, 2)})</h5>${drawAbaque('1.' + E.classe, E.beta, E.e, s.ae, s.MB)}</div>`;
-      if (s.MC120 != null) side += `<div><h5>PLANCHE 2.1 — MC120 = ${fmt(s.MC120, 2)} TM/ML</h5>${drawAbaque('2.1', E.beta, E.e, s.ae, s.MC120)}</div>`;
-      if (s.MC80 != null) side += `<div><h5>PLANCHE 2.2 — MC80 = ${fmt(s.MC80, 2)} TM/ML</h5>${drawAbaque('2.2', E.beta, E.e, s.ae, s.MC80)}</div>`;
+      const E = r.comp.enc, i = first(/CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS/), SD = E.sides, Lb = q => 'côté ' + q.nom.slice(0, 1);
+      const pts = key => SD.filter(q => q[key] != null && q[key] > 0).map(q => ({ ae: q.ae, val: q[key], lab: q.nom.slice(0, 1) }));
+      const vals = key => SD.map(q => `${q.nom.slice(0, 1)} ${fmt(q[key], 2)}`).join(' · ');
+      let side = SD.map(q => `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${q.nom})</h5>${drawEncCoupe(E, q, q.nom === 'GAUCHE')}</div>`).join('');
+      side += `<div><h5>PLANCHE 1.${E.classe} — MB (TM/ML) : ${vals('MB')} (β = ${fmt(E.beta, 2)})</h5>${drawAbaque('1.' + E.classe, E.beta, E.e, pts('MB'))}</div>`;
+      if (SD.some(q => q.MC120 != null)) side += `<div><h5>PLANCHE 2.1 — MC120 (TM/ML) : ${vals('MC120')}</h5>${drawAbaque('2.1', E.beta, E.e, pts('MC120'))}</div>`;
+      if (SD.some(q => q.MC80 != null)) side += `<div><h5>PLANCHE 2.2 — MC80 (TM/ML) : ${vals('MC80')}</h5>${drawAbaque('2.2', E.beta, E.e, pts('MC80'))}</div>`;
+      const pR = SD.filter(q => q.MR > 0).map(q => ({ ce: q.cR / E.e, val: q.MR / 0.6, lab: q.nom.slice(0, 1) }));
+      if (pR.length) side += `<div><h5>PLANCHE 3 — ROUE DE 6 T : 10 T LU ${pR.map(p => p.lab + ' ' + fmt(p.val, 2)).join(' · ')} → MR = 0,6 × M</h5>${drawAbaque3(E.beta, pR)}</div>`;
       if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
     pl.sort((a, b) => a.i - b.i);

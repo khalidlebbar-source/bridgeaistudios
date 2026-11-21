@@ -81,7 +81,7 @@
     if (E.skip) { pl.push('     ' + E.skip); page('CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS', pl, {}); return; }
     const c = (v, w, d) => v == null ? padR('', w - 1) + '-' : f(v, w, d);
     const hd = cols => '     ' + cols.map(([t, w]) => t.padStart(w)).join('');
-    const S = E.sides[0].tr === E.sides[1].tr ? [E.sides[0]] : E.sides, one = S.length === 1, nm = s => one ? '' : s.nom.slice(0, 1);
+    const S = E.sides, one = false, nm = s => one ? '' : s.nom.slice(0, 1);
     pl.push('  1. GEOMETRIE DE LA CONSOLE (SECTION D\'ENCASTREMENT DE CALCUL S, PENTE 1/3 DANS LE GOUSSET)', BL,
       hd([['h1 (M)', 10], ['h2 (M)', 10], ['BETA', 10], ['E (M)', 10]].concat(S.map(s => [one ? 'A (M)' : 'A ' + s.nom, 12]), [['CLASSE', 9], ['DELTA', 9]])),
       '     ' + f(E.h1, 10, 3) + f(E.h2, 10, 3) + f(E.beta, 10, 3) + f(E.e, 10, 3) + S.map(s => f(s.a, 12, 3)).join('') + c(E.classe, 9, 0) + f(E.delta, 9, 2), BL,
