@@ -345,6 +345,17 @@
         }
       }
     }
+    // SYMAP (dictionnaire du bordereau) : 1 = symétrie longitudinale des appareils (appuis k et n − k identiques, les plus grands) ;
+    // 2 = appareils des appuis intermédiaires tous identiques. Sans effet sur le corpus (SYMAP = 1, ouvrages symétriques).
+    // Crochet PSIDA_SYMAP0 = 1 : appareils ligne par ligne (ancien comportement).
+    const sym = +A13.SYMAP || 0;
+    if (!G.PSIDA_SYMAP0 && sym) {
+      const same = grp => { const g = grp.filter(a => a && a.typ !== 0); if (g.length < 2) return;
+        const big = g.reduce((x, y) => (y.larg * y.long > x.larg * x.long + 1e-9 ? y : x));
+        for (const a of g) { a.larg = big.larg; a.long = big.long; a.cMin = a.chMin / (a.larg * a.long); a.cMax = a.chMax / (a.larg * a.long); } };
+      if (sym === 1) for (let k = 0; k < n - k; k++) same([out[k], out[n - k]]);
+      else if (sym === 2) same(out.slice(1, n));
+    }
     return out;
   }
 
