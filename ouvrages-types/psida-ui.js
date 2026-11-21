@@ -93,17 +93,11 @@
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
     if (l === 'A6' && !m.clForce) clAuto(m);
-    if (l === 'A5' || l === 'A13') symAuto(m);   // symétrie des appareils jugée par le programme
     if (l === 'A9' && n === 'GENRE' && String(v).slice(-1) === '1' && !(m.lignes.C1 && m.lignes.C1.SS1 > 0)) {   // σs imposée : valeur de départ 2/3 fe
       const c = m.lignes.C1 || (m.lignes.C1 = emptyLine('C1')), fe = num((m.lignes.A10 || {}).FE1) || 50000; for (const j of [1, 2, 3, 4]) c['SS' + j] = Math.round(fe * 2 / 3); }   // largeur roulable modifiée : la classe suit
   };
   /* classe du pont (fascicule 61 titre II, art. 3) d'après la largeur roulable Lr = EGAU + ESURCH + EDROI :
      1re si Lr ≥ 7 m, 2e si 5,50 < Lr < 7 m, 3e si Lr ≤ 5,50 m. Forcée si la case est cochée (ou si le bordereau lu en diffère). */
-  /* SYMAP déduit : 1 (appareils symétriques) si les portées, le nombre et le type d'appareils sont symétriques, sinon 0 */
-  const symAuto = m => { const L = m.lignes || {}, A5 = L.A5 || {}, A13 = L.A13; if (!A13) return; const nt = Math.round(+A5.NT || 0); let ok = nt > 0;
-    for (let i = 1; ok && i <= nt; i++) ok = Math.abs((+A5['D' + i] || 0) - (+A5['D' + (nt + 1 - i)] || 0)) < 1e-3;
-    for (let i = 1; ok && i <= nt + 1; i++) ok = Math.round(+A13['NAP' + i] || 0) === Math.round(+A13['NAP' + (nt + 2 - i)] || 0) && Math.round(+A13['TYPAP' + i] || 0) === Math.round(+A13['TYPAP' + (nt + 2 - i)] || 0);
-    A13.SYMAP = ok ? 1 : 0; };
   const clOf = m => { const A6 = (m.lignes || {}).A6 || {}, lr = (+A6.EGAU || 0) + (+A6.ESURCH || 0) + (+A6.EDROI || 0); return lr >= 7 - 1e-6 ? '100' : lr > 5.5 + 1e-6 ? '200' : '300'; };
   const clForced = m => m.clForce != null ? !!m.clForce : String(((m.lignes || {}).A8 || {}).STATUT || '100').padStart(3, '0') !== clOf(m);
   const clAuto = m => { m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8'); m.lignes.A8.STATUT = clOf(m); };
@@ -1258,7 +1252,7 @@
     LBL10, 'A10    0.025  0.016  0.012  0.010   50000.   50000.   50000.   50000.    0    0    0    0     1.60  1.60  1.60  1.60  1.50 ', ' ',
     LBL11, 'A11     3    3   0.250   0.000   0.030   0.030 ', ' ',
     LBL12, 'A12    3.000  1.000  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.000  0.000  0.000 ', ' ',
-    LBL13, 'A13      250.     2000.     1500.     3500.     1    1  3    1  4    1  4    1  4    1  3    0  0    0  0 ', ' ',
+    LBL13, 'A13      250.     2000.     1500.     3500.     0    1  3    1  4    1  4    1  4    1  3    0  0    0  0 ', ' ',
     'C1     0.00 33333. 33333. 33333. 33333.',
     'C8  1  0.240  0.100  0.360  2.500  1.970  0.180  7.000  0', ''].join('\n');
   const EX2 = [...HEAD('EXEMPLE DE PONT-DALLE EN BETON ARME', '2 TRAVEES 15,00 - 15,00 M'), ...A34,
@@ -1297,7 +1291,7 @@
     for (let i = nt + 1; i <= 6; i++) if (m.lignes.A5) m.lignes.A5['D' + i] = 0;
     for (let i = nt + 2; i <= 7; i++) { if (A13) A13['NAP' + i] = 0; if (m.lignes.A12) { m.lignes.A12['TP' + i] = 0; m.lignes.A12['DTP' + i] = 0; } }   // appareils toujours en élastomère fretté
     for (const c of ['LIGNINF', 'EXCENTR', 'TASMENT', ...A3G1, ...A3G2]) A4[c] = 1;
-    symAuto(m);   // SYMAP jugé par le programme (portées et appareils symétriques)
+    if (A13) A13.SYMAP = 0;   // SYMAP = 0 : chaque ligne d'appui calculée telle que saisie (pas de symétrisation des appareils)
   }
   /* moteur : la note attend une date {j, m, a} */
   const engine = {
