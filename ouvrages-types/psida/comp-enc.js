@@ -91,8 +91,10 @@
       '     OMEGA A RETENU (CM2/M)                                                 ' + col(s => f(s.Om, 10, 2) + '      '),
       '     OMEGA\'A = OMEGA B = OMEGA\'B = OMEGA A / 3 (CM2/M)                      ' + col(s => f(s.Om3, 10, 2) + '      '), BL,
       '   >> NOTA - OMEGA A NE DOIT PAS DESCENDRE EN DESSOUS DU FERRAILLAGE MIS EN PLACE DANS LA NERVURE (ANNEXE 3, 5.2.1).',
-      '             MR : ROUE ISOLEE DE 6 T SUR TROTTOIR NON SEPARE DE LA CHAUSSEE (FASC. 61 II, ART. 12.2) ; MTR : 0.45 T/M2 SUR LA LARGEUR UTILE DU TROTTOIR.',
-      '             ABAQUES NUMERISES DU GUIDE PSIDP-EL, INTERPOLATION LINEAIRE EN E, A/E ET BETA (CALCUL BRIDGEAI, NON PRODUIT PAR LE PROGRAMME SETRA)');
+      '             MR : ROUE ISOLEE DE 6 T SUR TROTTOIR NON SEPARE DE LA CHAUSSEE (FASC. 61 II, ART. 12.2).',
+      '             MTR : 0.45 T/M2 SUR LA LARGEUR UTILE DU TROTTOIR.',
+      '             ABAQUES NUMERISES DU GUIDE PSIDP-EL, INTERPOLATION LINEAIRE EN E, A/E ET BETA',
+      '             (CALCUL BRIDGEAI, NON PRODUIT PAR LE PROGRAMME SETRA).');
     page('CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS', pl, {});
   }
   P.computeEnc = computeEnc; P.renderEnc = renderEnc; P.ENC_TAB = TAB; P.encAbaque = abaque; P.encDoublet = doublet0;

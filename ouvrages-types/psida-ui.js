@@ -1347,19 +1347,18 @@
       if (q) add(i, 'RENFORCEMENTS LONGITUDINAUX AU DROIT DES APPAREILS', 'disposition en plan (annexe 4, 7.2)', box('VUE EN PLAN AUTOUR D\'UNE LIGNE D\'APPUI INTERMÉDIAIRE', drawRenf(r, q), true),
         'Aciers de renforcement (traits) sur 0,1 L côté travée et 0,2 L de l\'autre côté, largeurs c/2 + a/4 (appareil de rive) et a/4 + e/4 (appareil central).');
     }
-    if (r.comp && r.comp.enc && !r.comp.enc.skip) {
+    let encFig = null;
+    if (r.comp && r.comp.enc && !r.comp.enc.skip) {   // encorbellements : une seule page (texte de la note + coupe + lecture des abaques)
       const E = r.comp.enc, i = first(/CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS/), s = E.sides[0];
-      const parts = [box('COUPE DE L\'ENCORBELLEMENT ÉTUDIÉ (CÔTÉ ' + s.nom + ')', drawEncCoupe(E, s), false)];
-      parts.push(box(`PLANCHE 1.${E.classe} — MB (β = ${fmt(E.beta, 2)} interpolé)`, drawAbaque('1.' + E.classe, E.beta, E.e, s.ae, s.MB), false,
-        `Lecture : e = ${fmt(E.e, 2)} m, a/e = ${fmt(s.ae, 3)} → MB = ${fmt(s.MB, 2)} tm/ml`));
-      if (s.MC120 != null) parts.push(box(`PLANCHE 2.1 — MC120, UNE CHENILLE (β = ${fmt(E.beta, 2)})`, drawAbaque('2.1', E.beta, E.e, s.ae, s.MC120), false, `Lecture : MC = ${fmt(s.MC120, 2)} tm/ml`));
-      if (s.MC80 != null) parts.push(box(`PLANCHE 2.2 — MC80, UNE CHENILLE (β = ${fmt(E.beta, 2)})`, drawAbaque('2.2', E.beta, E.e, s.ae, s.MC80), false, `Lecture : MC = ${fmt(s.MC80, 2)} tm/ml`));
-      add(i, 'ENCORBELLEMENTS — SECTION D\'ENCASTREMENT ET LECTURE DES ABAQUES', 'guide PSIDP-EL, annexe 3', pair(...parts),
-        'Courbes a/e = 0,1 à 1 des planches numérisées, interpolées pour le β de l\'ouvrage ; le point rouge est la valeur retenue dans la note.');
+      let side = `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${s.nom})</h5>${drawEncCoupe(E, s)}</div><div><h5>PLANCHE 1.${E.classe} — MB = ${fmt(s.MB, 2)} TM/ML (β = ${fmt(E.beta, 2)})</h5>${drawAbaque('1.' + E.classe, E.beta, E.e, s.ae, s.MB)}</div>`;
+      if (s.MC120 != null) side += `<div><h5>PLANCHE 2.1 — MC120 = ${fmt(s.MC120, 2)} TM/ML</h5>${drawAbaque('2.1', E.beta, E.e, s.ae, s.MC120)}</div>`;
+      if (s.MC80 != null) side += `<div><h5>PLANCHE 2.2 — MC80 = ${fmt(s.MC80, 2)} TM/ML</h5>${drawAbaque('2.2', E.beta, E.e, s.ae, s.MC80)}</div>`;
+      if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
-
     pl.sort((a, b) => a.i - b.i);
-    return pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
+    const out = pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
+    if (encFig) out.push(encFig);
+    return out;
   }
 
   /* ───── exemples (bordereaux du corpus, titres génériques) et nouveau ───── */
