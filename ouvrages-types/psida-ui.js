@@ -305,7 +305,6 @@
           { k: 'A11.N1', code: 'N1', label: 'barres / groupe', type: 'int', def: '3', help: 'Nombre de barres dans un groupe d\'armatures longitudinales (valeur conseillée 3).' },
           { k: 'A11.N2', code: 'N2', label: 'groupes / épure', type: 'int', def: '3', help: 'Nombre de groupes considérés ensemble pour l\'épure d\'arrêt des barres (valeur conseillée 3).' },
           { k: 'A11.ESPAC1', code: 'ESPAC1', label: 'espacement', unit: 'm', dec: 3, help: 'Espacement désiré entre axes des groupes (conseillé 10 PHI1) ; éventuellement réduit par le programme.' },
-          { k: 'A11.ESPAC2', code: 'ESPAC2', label: 'réservé', unit: 'm', dec: 3, help: 'Case réservée : porter 0.' },
         ] },
         { title: 'Enrobages', alt: true, flex: 2, cols: 2, fields: [
           { k: 'A11.ENROBS', code: 'ENROBS', label: 'nappe sup.', unit: 'm', dec: 3, help: 'Enrobage des aciers de la nappe supérieure.' },
@@ -1282,7 +1281,8 @@
     if (m.lignes.A8) { const a = String(m.lignes.A8.A).padStart(3, '0'), b = String(m.lignes.A8.B).padStart(3, '0');
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
     if (m.lignes.A6) { const A6 = m.lignes.A6; for (let i = 2; i <= 5; i++) A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
-      A6.NF = 3; A6.DISEXT = 0; A6.DISINT = 0;                                                     // toutes les fibres ; axe mécanique = axe géométrique
+      A6.NF = 3; A6.DISEXT = 0; A6.DISINT = 0;
+      if (m.lignes.A11) m.lignes.A11.ESPAC2 = 0;   // ESPAC2 : case réservée par SETRA, toujours 0                                                     // toutes les fibres ; axe mécanique = axe géométrique
       A6.SYMTAB = Math.abs((A6.ETROTG || 0) - (A6.ETROTD || 0)) < 1e-6 && Math.abs((A6.EGAU || 0) - (A6.EDROI || 0)) < 1e-6 ? 1 : 0; }   // symétrie déduite du profil
     if (m.lignes.A9) { m.lignes.A9.BA = '000'; m.lignes.A9.XKI = 0; }   // coefficients BAEL réglementaires, ψ1 = 0
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)
