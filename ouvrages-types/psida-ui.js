@@ -1113,6 +1113,26 @@
   }
   /* planche 3 : doublet d/e = 0 (charge de 10 t), courbes β = 1/3, 1/2, 1 et β du calcul ; points de lecture de la roue */
   function drawAbaque3(beta, pts, sel) {
+    const F = G.PSIDA.ENC_P3F, BK3 = b => Math.abs(b - 1 / 3) < 1e-6 ? '0.333' : Math.abs(b - 0.5) < 1e-6 ? '0.5' : '1';
+    if (sel != null && F && F[BK3(sel)]) {   // planche 3 complète au β tabulé : courbes d/e = 0 à 2
+      const T = F[BK3(sel)], D0 = G.PSIDA.encDoublet, W = 640, H = 360, ml = 44, mr = 46, mt = 18, mb = 32;
+      const val = (de, c) => { if (de === '0') return D0(sel, c); const r = T[de], f = (c - 0.1) / 0.1, i = Math.min(8, Math.max(0, Math.floor(f))), t = f - i, R = k => r[Math.min(9, Math.max(0, k))];   // Catmull-Rom entre les noeuds
+        const p0 = R(i - 1), p1 = R(i), p2 = R(i + 1), p3 = R(i + 2); return 0.5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t * t * t); };
+      let mx = 0; for (const de in T) mx = Math.max(mx, val(de, 1));
+      const top = Math.ceil(mx * 2) / 2, bot = 1.5, X = v => ml + v / 1 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
+      let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" font-family="Courier New, monospace" font-size="13">`;
+      for (let v = bot; v <= top + 1e-9; v += 0.5) g += `<line x1="${X(0)}" y1="${Y(v)}" x2="${X(1)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${Number.isInteger(v) ? v : ''}</text>`;
+      for (let k = 0; k <= 10; k++) g += `<line x1="${X(k / 10)}" y1="${Y(bot)}" x2="${X(k / 10)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(k / 10)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(k / 10, 1)}</text>`;
+      const keys = Object.keys(T).sort((a, b) => +a - +b);
+      keys.forEach((de, n) => { const q = []; for (let m = 0; m <= 45; m++) { const c = 0.1 + m * 0.02; q.push(`${X(c).toFixed(1)},${Y(val(de, c)).toFixed(1)}`); }
+        g += `<polyline points="${q.join(' ')}" fill="none" stroke="#3c3f4d" stroke-width="${de === '0' ? 1.8 : 1.1}"/>`;
+        if (n % 2 === 0) g += `<text x="${X(1) + 4}" y="${Y(val(de, 1)) + 4}" fill="#5d5545"${de === '0' ? ' font-weight="700"' : ''}>${fmt(+de, 1)}</text>`; });
+      pts.forEach((p, n) => { const c = PTC[n % 2];
+        g += `<line x1="${X(p.ce)}" y1="${Y(bot)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/><line x1="${X(0)}" y1="${Y(p.val)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/>`;
+        g += `<circle cx="${X(p.ce)}" cy="${Y(p.val)}" r="5" fill="${c}"/><text x="${X(p.ce) - 8}" y="${Y(p.val) - 8}" text-anchor="end" fill="${c}" font-weight="700">${fmt(p.val, 2)}</text>`; });
+      g += `<text x="${X(1) + 4}" y="${mt + 2}" fill="#5d5545">d/e</text><text x="${X(1)}" y="${H - 4}" text-anchor="end" fill="#7a7e8e">c/e</text></svg>`;
+      return g;
+    }
     const W = 640, H = 340, ml = 44, mr = 70, mt = 18, mb = 32, D = G.PSIDA.encDoublet;
     let mx = 0; for (const b of [1 / 3, 0.5, 1]) mx = Math.max(mx, D(b, 1));
     const top = Math.ceil(mx), bot = Math.floor(Math.min(D(1, 0.1), D(1 / 3, 0.1)));
