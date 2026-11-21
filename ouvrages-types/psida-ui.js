@@ -177,8 +177,8 @@
           { k: 'A8.QSUPMIN', code: 'QSUPTm', label: 'min', unit: 't/m', dec: 3, help: 'Valeur nominale minimale du poids des superstructures, par mètre de tablier.' },
         ] },
         { title: 'Gradient thermique', flex: 2, cols: 2, fields: [
-          { k: 'A8.DGRADI', code: 'DGRADI', label: 'gradient', unit: '°C', dec: 1, help: 'Gradient thermique (°C). Normalement 0 pour un pont-dalle en béton armé.' },
-          { k: 'A8.XGRADI', code: 'XGRADI', label: 'fraction', dec: 1, help: 'Fraction du gradient thermique prise en compte. Normalement 0.' },
+          { k: 'A8.DGRADI', code: 'DGRADI', label: 'gradient', unit: '°C', dec: 1, help: 'Gradient thermique global ΔT (°C, fibre supérieure plus chaude, ex. 12). Calcul BridgeAI : moments hyperstatiques, efforts tranchants et réactions dans la dalle continue (module instantané, inertie brute), pris en compte à l\'ELS. 0 = pas de gradient.' },
+          { k: 'A8.XGRADI', code: 'XGRADI', label: 'fraction', dec: 1, help: 'Fraction du gradient cumulée avec les charges d\'exploitation (combinaison rare : max(G + Q + XGRADI·ΔT , G + ΔT)). Ex. 0,5.' },
         ] },
       ] },
       { label: 'Exploitation', groups: [

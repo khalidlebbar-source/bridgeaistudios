@@ -400,6 +400,20 @@
     r.tassProb = Array.from({ length: n + 1 }, (_, k) => A12['TP' + (k + 1)] || 0);
     r.tassAlea = Array.from({ length: n + 1 }, (_, k) => A12['DTP' + (k + 1)] || 0);
     r.young = A12.YOUNG || 3; r.ktp = A12.KTP;
+    // --- gradient thermique (extension BridgeAI ; inopérant dans les programmes SETRA) : ΔT = DGRADI (°C, fibre supérieure
+    // plus chaude), courbure libre κ = α ΔT / H (α = 10⁻⁵), module instantané Ei, inertie brute. Équation des trois moments :
+    // Mj-1 Lj + 2 Mj (Lj + Lj+1) + Mj+1 Lj+1 = 3 EI κ (Lj + Lj+1) → moments hyperstatiques positifs (traction en fibre
+    // inférieure) sur appuis intermédiaires, linéaires entre appuis ; réactions = dérivées des moments. ELS seulement :
+    // combinaison rare max(G + Q + XGRADI·ΔT, G + ΔT).
+    { const A8 = model.lignes.A8 || {}, dT = +A8.DGRADI || 0;
+      r.grad = null;
+      if (dT) {
+        const m = n - 1, kap = 1e-5 * dT / sec.H, rhs = []; for (let j = 0; j < m; j++) rhs.push(3 * EI * kap * (L[j] + L[j + 1]));
+        const M = [0, ...(m ? solve(flexMat(L), rhs) : []), 0];
+        const R = []; for (let j = 0; j <= n; j++) { let v = 0; if (j < n) v += (M[j + 1] - M[j]) / L[j]; if (j > 0) v -= (M[j] - M[j - 1]) / L[j - 1]; R.push(v); }
+        r.grad = { dT, psi: +A8.XGRADI || 0, kap, Ei, M, R, V: L.map((l, i) => (M[i + 1] - M[i]) / l) };
+      }
+    }
 
     // --- portées équivalentes et coefficients de majoration dynamique
     r.Leq = L.map((l, s) => l * Math.pow(deflRatio(L, s), 0.25));
@@ -697,8 +711,8 @@
     return out;
   }
 
-  function combine(r, G, T, live) {
-    // G : {up, dn} ; T : tassement (>= 0) ; live : {A, B, C, T(trot)}
+  function combine(r, G, T, live, tg) {
+    // G : {up, dn} ; T : tassement (>= 0) ; live : {A, B, C, T(trot)} ; tg : effet du gradient thermique (signé, ELS seulement)
     const gq = r.gamma;
     const posA = Math.max(0, live.A.pos.v), negA = Math.min(0, live.A.neg.v);
     const posB = Math.max(0, live.B.max.v), negB = Math.min(0, live.B.min.v);
@@ -707,6 +721,10 @@
       max: G.up + T + live.T.max + Math.max(gq.sA * posA, gq.sB * posB, gq.sC * posC),
       min: G.dn - T + live.T.min + Math.min(gq.sA * negA, gq.sB * negB, gq.sC * negC),
     };
+    if (tg && r.grad) {   // combinaison rare : G + Q + ψ ΔT  ou  G + ΔT (sans charges d'exploitation)
+      const ps = r.grad.psi, qMax = live.T.max + Math.max(gq.sA * posA, gq.sB * posB, gq.sC * posC), qMin = live.T.min + Math.min(gq.sA * negA, gq.sB * negB, gq.sC * negC);
+      if (tg > 0) els.max = G.up + T + Math.max(qMax + ps * tg, tg); else els.min = G.dn - T + Math.min(qMin + ps * tg, tg);
+    }
     const elu = {
       max: gq.f3 * (Math.max(gq.g1 * G.up, gq.g2 * G.up) + gq.uT * T + gq.uTr * live.T.max + Math.max(gq.uA * posA, gq.uB * posB, gq.uC * posC)),
       min: gq.f3 * (Math.min(gq.g1 * G.dn, gq.g2 * G.dn) - gq.uT * T + gq.uTr * live.T.min + Math.min(gq.uA * negA, gq.uB * negB, gq.uC * negC)),
@@ -729,14 +747,16 @@
     const gMax = r.cp.gMax, gMin = r.cp.gMin;
     // effet des dénivellations sur les moments en section (i, a) : interpolation des moments d'appui
     const tassM = (i, a) => Array.from({ length: n + 1 }, (_, k) => (1 - a) * r.tass.M[k][i] + a * r.tass.M[k][i + 1]);
+    const gradM = (i, a) => r.grad ? (1 - a) * r.grad.M[i] + a * r.grad.M[i + 1] : 0;   // moment du gradient thermique en section
     r.moments = L.map((l, i) => SECT.map(a => {
       const f = mkMomentLI(r, i, a);
       const xs = r.LI.xs; let I = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(f, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; }
       const G = { up: Math.max(gMax * I, gMin * I), dn: Math.min(gMax * I, gMin * I) };
       const T = settlementEffect(r, tassM(i, a));
       const live = liveEffects(r, f, A6);
-      const comb = combine(r, G, T, live);
-      return { a, x: r.LI.xs[i] + a * l, G, T, live, ...comb };
+      const tg = gradM(i, a);
+      const comb = combine(r, G, T, live, tg);
+      return { a, x: r.LI.xs[i] + a * l, G, T, tg, live, ...comb };
     }));
     // sections intermédiaires (0,15 ; 0,25 … 0,85 L) : calcul interne de l'enveloppe sur 21 abscisses (pas de 0,05 L) pour
     // l'épure d'arrêt des barres (constat v12 : l'interpolation linéaire sur les 13 sections imprimées raccourcit les fers
@@ -748,7 +768,7 @@
         const f = mkMomentLI(r, i, a);
         const xs = r.LI.xs; let I = 0; for (let s = 0; s < n; s++) { const pn = posNegAreas(f, xs[s], xs[s + 1], 60); I += pn.pos + pn.neg; }
         const Gm = { up: Math.max(gMax * I, gMin * I), dn: Math.min(gMax * I, gMin * I) };
-        const comb = combine(r, Gm, settlementEffect(r, tassM(i, a)), liveEffects(r, f, A6));
+        const comb = combine(r, Gm, settlementEffect(r, tassM(i, a)), liveEffects(r, f, A6), gradM(i, a));
         return { a, x: r.LI.xs[i] + a * l, ...comb };
       }));
       // crochet d'essai PSIDA_R1MODE (v29, rang 1 des LIT seulement) : variantes de calcul des sections internes
@@ -987,7 +1007,7 @@
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
       fx.base = f; fx.jump = true; if (side === 'g') fx.spanAt = X => spanOf(r, Math.abs(X - Xs) < 1e-7 ? Xs + 1e-9 : X);   // charges réparties (aires) : LI d'origine
       const live = liveEffects(r, fx, A6);
-      const c = combine(r, G, 0, live);
+      const c = combine(r, G, 0, live, r.grad ? r.grad.V[i] : 0);
       return { side, G, live, ...c };
     }));
     // effort tranchant en section courante (a relatif) de la travée i
@@ -998,7 +1018,7 @@
       const I = area(f);
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
       const live = liveEffects(r, f, A6);
-      return { G, live, ...combine(r, G, 0, live) };
+      return { G, live, ...combine(r, G, 0, live, r.grad ? r.grad.V[i] : 0) };
     };
     // réactions : sans majoration dynamique ni tassements (notice SETRA)
     r.reactions = Array.from({ length: n + 1 }, (_, k) => {
@@ -1011,7 +1031,7 @@
       const G = { up: Math.max(r.cp.gMax * I, r.cp.gMin * I), dn: Math.min(r.cp.gMax * I, r.cp.gMin * I) };
       const ab = k === 0 || k === n ? [{ s: k === 0 ? 0 : n - 1, l: r.about, area: r.liR[k].about }] : [];
       const live = liveEffects(r, f, A6, { bc: 1, mc: 1 }, ab, true);
-      const c = combine(r, G, 0, live);
+      const c = combine(r, G, 0, live, r.grad ? r.grad.R[k] : 0);
       return { k, G, live, ...c };
     });
     // ouvrage symétrique : réactions de la seconde moitié = image miroir (calcul SETRA sur la première moitié)

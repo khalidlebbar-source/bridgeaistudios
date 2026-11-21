@@ -189,6 +189,22 @@
       'TASSEMENTS ALEATOIRES ' + r.tassAlea.map(v => f(v, 15, 3)).join(''), '',
       `             LE MODULE DE DEFORMATION DU BETON UTILISE EST EGAL A ${f(1 / r.young, 5, 3)} FOIS LA VALEUR DU`);
     page("MOMENTS SUR APPUIS ET REACTIONS D'APPUIS DUS AUX DENIVELLATIONS D'APPUI", pt, { sub2: 'EN FONCTION D\'UNE DENIVELLATION             D\'APPUI DE 1 CM' });
+    // ---------------------------------------------------------- gradient thermique (extension BridgeAI)
+    if (r.grad) {
+      const g = r.grad, pg = ['', '                      ' + Array.from({ length: n + 1 }, (_, k) => pad('APPUI ' + pad(k + 1, 3), 15)).join(''), ''];
+      pg.push(padR('  MOMENTS SUR APPUIS (TM)', 22) + g.M.map(v => f(v, 15, 2)).join(''), '');
+      pg.push(padR('  REACTIONS D\'APPUIS (T)', 22) + g.R.map(v => f(v, 15, 2)).join(''), '');
+      pg.push('', '                      ' + r.L.map((_, s) => pad('TRAVEE ' + pad(s + 1, 2), 15)).join(''), '',
+        padR('  EFFORT TRANCHANT (T)', 22) + g.V.map(v => f(v, 15, 2)).join(''), '', '',
+        `   GRADIENT THERMIQUE GLOBAL         DT = ${f(g.dT, 6, 1)} DEGRES (FIBRE SUPERIEURE PLUS CHAUDE)`, '',
+        `   COURBURE LIBRE  ALPHA*DT/H        = ${fx(g.kap, 12, 7)} 1/M      (ALPHA = 1.E-5 , H = ${f(r.section.H, 6, 3)} M)`, '',
+        `   MODULE INSTANTANE EI              = ${fdot(g.Ei, 9)} T/M2 , INERTIE BRUTE ${f(r.section.I, 9, 5)} M4`, '',
+        `   FRACTION EN PRESENCE DES CHARGES D'EXPLOITATION  XGRADI = ${f(g.psi, 5, 2)}`, '',
+        '   >> NOTA - EFFETS PRIS EN COMPTE A L\'ELS (COMBINAISON RARE) : MAX ( G + Q + XGRADI*DT , G + DT )',
+        '             SUR LES MOMENTS, LES EFFORTS TRANCHANTS ET LES REACTIONS D\'APPUIS. NON PRIS EN COMPTE A L\'ELU.',
+        '             (CALCUL BRIDGEAI : LE GRADIENT N\'EST PAS OPERATIONNEL DANS LES PROGRAMMES SETRA)');
+      page('MOMENTS, EFFORTS TRANCHANTS ET REACTIONS DUS AU GRADIENT THERMIQUE', pg, {});
+    }
     // ---------------------------------------------------------- CP + CMD
     const cnames = r.chargesC.filter(c => /MC/.test(c)).concat([]);
     const pc = [...STAR, '', '                                                                          MAX           MIN', '',
