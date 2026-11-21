@@ -197,8 +197,10 @@
           { relayout: true, k: 'A6.EDROI', code: 'EDROI', label: 'bande D', unit: 'm', dec: 3, help: 'S\'il existe un dispositif de retenue à droite : largeur de la bande non chargeable côté chaussée (0,50 m) ; sinon 0.' },
           { k: 'A6.ETROTD', code: 'ETROTD', label: 'trottoir D', unit: 'm', dec: 3, help: 'Largeur utile du trottoir de droite.' },
         ] },
-        { title: 'Chaussée', alt: true, flex: 2, cols: 2, fields: [
+        { title: 'Chaussée', alt: true, flex: 1, cols: 1, fields: [
           { k: 'A6.HCHAU', code: 'HCHAU', label: 'épaisseur', unit: 'm', dec: 3, help: 'Épaisseur moyenne de béton équivalent au renformis éventuel, à la chape et à la chaussée (diffusion des charges locales).' },
+        ] },
+        { title: 'Voies de circulation', short: 'Voies', flex: 2, cols: 2, fields: [
           { ro: m => !+((((m.lignes || {}).A6) || {}).NVOIE), k: 'NV.N', code: 'NVOIE', label: 'nb de voies', type: 'int', help: 'Nombre de voies de circulation : déduit automatiquement de ESURCH selon l\'article 2.2 du fascicule 61 titre II. Cocher « forcer » pour l\'imposer (chaussée de 9 m à deux voies…).' },
           { k: 'NV.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour imposer soi-même le nombre de voies (sinon il est calculé selon le fascicule 61).' },
         ] },
@@ -491,7 +493,7 @@
     let dimOff = null;
     const ONE = mode === 'loads1', LOADS = mode === 'loads' || ONE;   // loads1 : schéma unique (toutes les charges, cochées en couleur)
     const nLoads = LOADS ? ['FIX.A', 'FIX.BC', 'FIX.BT', 'MIL.MC80', 'MIL.MC120', 'MIL.ME80', 'MIL.ME120', 'CE.D', 'CE.E'].filter(k => ONE || sch || num(get(m, k)) === 1).length : 0;
-    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * (ONE ? 1.3 : 0.95) + 0.6 : HALF || mode === 'slab' ? 0.9 : 2.3);
+    const yTop = top + (LOADS ? 0.18 + 1.05 + nLoads * (ONE ? 1.95 : 0.95) + 0.6 : HALF || mode === 'slab' ? 0.9 : 2.3);
     const d = HALF ? svg({ x0: -0.9, y0: -1.25, x1: xc + 0.7, y1: yTop }, { pad: 0.04 }) : LOADS ? svg({ x0: -half - (ONE ? 3.4 : 1.9), y0: -1.95, x1: half + (sch || ONE ? 0.5 : 3.6), y1: yTop }, { pad: 0.04 }) : svg({ x0: -half - 0.9, y0: mode === 'prof' ? -0.4 : -1.95, x1: half + 0.9, y1: yTop }, { pad: 0.04 });
     const u = d.u, Z = HALF ? 0.75 : 1;                       // tailles de texte relatives
     // section
@@ -545,27 +547,59 @@
       const isOn = k => num(get(m, k)) === 1, on = k => ONE || sch || isOn(k);
       const nf = Math.max(1, Math.min(nv, Math.floor(wc / 2.5 + 1e-9))), ntd = Math.max(1, Math.min(2, nv, Math.floor(wc / 3 + 1e-9)));
       const rows = [
-        { k: 'FIX.A', c: 'A(l)', v: `${nv} voie${nv > 1 ? 's' : ''} chargée${nv > 1 ? 's' : ''}`, draw: (y) => { d.rect(x0, y, wc, 0.32, 'la', 'FIX.A'); for (let i = 1; i < nv; i++) d.line(x0 + wc * i / nv, y, x0 + wc * i / nv, y + 0.32, 'lane', 'FIX.A'); } },
-        { k: 'FIX.BC', c: 'Bc', v: `${nf} file${nf > 1 ? 's' : ''} de camions de 30 t`, draw: (y) => { for (let f = 0; f < nf; f++) { const a = x0 + f * 2.5; d.rect(a + 0.12, y + 0.16, 2.26, 0.42, 'veh', 'FIX.BC'); for (const w of [0.25, 2.25]) d.rect(a + w - 0.15, y, 0.3, 0.2, 'tyre', 'FIX.BC'); } } },
-        { k: 'FIX.BT', c: 'Bt', v: `${ntd} tandem${ntd > 1 ? 's' : ''} de 32 t`, draw: (y) => { for (let f = 0; f < ntd; f++) { const a = x0 + f * 3; d.rect(a + 0.3, y + 0.16, 2.4, 0.42, 'veh', 'FIX.BT'); for (const w of [0.5, 2.5]) d.rect(a + w - 0.3, y, 0.6, 0.2, 'tyre', 'FIX.BT'); } } },
-        { k: 'MIL.MC80', c: 'Mc80', v: 'char de 72 t', draw: (y) => tank(y, 0.85, 2.80, 'MIL.MC80') },
-        { k: 'MIL.MC120', c: 'Mc120', v: 'char de 110 t', draw: (y) => tank(y, 1.00, 3.30, 'MIL.MC120') },
-        { k: 'MIL.ME80', c: 'Me80', v: '2 essieux de 22 t', draw: (y) => axle(y, 3.50, 'MIL.ME80') },
-        { k: 'MIL.ME120', c: 'Me120', v: '2 essieux de 33 t', draw: (y) => axle(y, 4.00, 'MIL.ME120') },
-        { k: 'CE.D', c: 'Convoi D', v: 'remorque de 140 t', draw: (y) => conv(y, 'CE.D') },
-        { k: 'CE.E', c: 'Convoi E', v: 'remorque de 200 t', draw: (y) => conv(y, 'CE.E') },
+        { k: 'FIX.A', c: 'A(l)', v: `${nv} voie${nv > 1 ? 's' : ''} chargée${nv > 1 ? 's' : ''}`, draw: (y) => { const h = ONE ? 0.5 : 0.32; d.rect(x0, y, wc, h, 'la', 'FIX.A'); for (let i = 1; i < nv; i++) d.line(x0 + wc * i / nv, y, x0 + wc * i / nv, y + h, 'lane', 'FIX.A'); } },
+        { k: 'FIX.BC', c: 'Bc', v: `${nf} file${nf > 1 ? 's' : ''} de camions de 30 t`, draw: (y) => { for (let f = 0; f < nf; f++) truck(y, x0 + f * 2.5, 'FIX.BC', f === 0); } },
+        { k: 'FIX.BT', c: 'Bt', v: `${ntd} tandem${ntd > 1 ? 's' : ''} de 32 t`, draw: (y) => { for (let f = 0; f < ntd; f++) tandem(y, x0 + f * 3, 'FIX.BT', f === 0); } },
+        { k: 'MIL.MC80', c: 'Mc80', v: 'char de 72 t', draw: (y) => tank(y, 0.85, 1.95, '72 t', 'MIL.MC80') },
+        { k: 'MIL.MC120', c: 'Mc120', v: 'char de 110 t', draw: (y) => tank(y, 1.00, 2.30, '110 t', 'MIL.MC120') },
+        { k: 'MIL.ME80', c: 'Me80', v: '2 essieux de 22 t', draw: (y) => axle(y, 3.50, 0.12, '2 × 22 t', 'MIL.ME80') },
+        { k: 'MIL.ME120', c: 'Me120', v: '2 essieux de 33 t', draw: (y) => axle(y, 4.00, 0.15, '2 × 33 t', 'MIL.ME120') },
+        { k: 'CE.D', c: 'Convoi D', v: 'remorque de 140 t', draw: (y) => conv(y, '140 t', 'CE.D') },
+        { k: 'CE.E', c: 'Convoi E', v: 'remorque de 200 t', draw: (y) => conv(y, '200 t', 'CE.E') },
       ].filter(r => on(r.k));
-      function tank(y, cw, ent, k) { const a = cx - ent / 2; d.rect(a - cw / 2 - 0.1, y + 0.2, ent + cw + 0.2, 0.42, 'veh', k); d.rect(a + ent / 2 - 0.5, y + 0.62, 1.0, 0.18, 'veh', k); for (const t of [a, a + ent]) d.rect(t - cw / 2, y, cw, 0.24, 'tyre', k); }
-      function axle(y, w, k) { d.rect(cx - w / 2, y, w, 0.12, 'tyre', k); d.rect(cx - w / 2 + 0.2, y + 0.12, w - 0.4, 0.36, 'veh', k); }
-      function conv(y, k) { const w = 3.3; d.rect(cx - w / 2, y + 0.18, w, 0.3, 'veh', k); for (let i = 0; i < 8; i++) d.rect(cx - w / 2 + 0.1 + i * (w - 0.3) / 7, y, 0.1, 0.18, 'tyre', k); }
-      const rowH = ONE ? 1.3 : 0.95, y0 = top + ht + 1.05, offRow = [];
+      /* véhicules vus de l'arrière, d'après les vues « transversalement » des charges réglementaires (fascicule 61 titre II) */
+      const VS = ONE ? 1.6 : 1;   // hauteurs des véhicules un peu amplifiées (la place en hauteur est libre)
+      const lt = (x, y, s, k) => d.text(x, y, s, { size: ONE ? 0.42 : 0.5, cls: 'ts', k });
+      const wdim = (xa, xb, y, s, k) => { d.line(xa, y, xb, y, 'hl-line', k); for (const xx of [xa, xb]) d.line(xx, y - 0.06, xx, y + 0.06, 'hl-line', k); lt((xa + xb) / 2, y + 0.16, s, k); };
+      function truck(y, a, k, cote) {   // Bc : caisse de 2,50 m, roues à 2,00 m d'entraxe (pneus de 0,25 m)
+        for (const w of [0.25, 2.25]) d.rect(a + w - 0.125, y, 0.25, 0.22, 'tyre', k);
+        d.line(a + 0.25, y + VS * 0.11, a + 2.25, y + VS * 0.11, 'l', k);
+        d.poly([[a + 0.05, y + VS * 0.22], [a + 2.45, y + VS * 0.22], [a + 2.45, y + VS * 0.78], [a + 2.33, y + VS * 0.86], [a + 0.17, y + VS * 0.86], [a + 0.05, y + VS * 0.78]], 'veh', k);
+        lt(a + 1.25, y + VS * 0.54, '30 t', k); if (cote) wdim(a + 0.25, a + 2.25, y + VS * 1.0, '2.00', k);
+      }
+      function tandem(y, a, k, cote) {   // Bt : caisse de 3,00 m, roues de 0,60 m à 2,00 m d'entraxe
+        for (const w of [0.5, 2.5]) d.rect(a + w - 0.3, y, 0.6, 0.18, 'tyre', k);
+        d.rect(a + 0.08, y + VS * 0.18, 2.84, 0.5, 'veh', k);
+        lt(a + 1.5, y + VS * 0.43, '32 t', k); if (cote) wdim(a + 0.5, a + 2.5, y + VS * 0.9, '2.00', k);
+      }
+      function tank(y, cw, gap, t, k) {   // char : deux chenilles de largeur cw séparées de gap, caisse et tourelle
+        const W = 2 * cw + gap, a = cx - W / 2;
+        for (const c of [a, a + cw + gap]) d.poly([[c, y], [c + cw, y], [c + cw, y + VS * 0.3], [c, y + VS * 0.3]], 'tyre', k);
+        d.poly([[a - 0.05, y + VS * 0.3], [a + W + 0.05, y + VS * 0.3], [a + W + 0.05, y + VS * 0.55], [a + W - 0.15, y + VS * 0.62], [a + 0.15, y + VS * 0.62], [a - 0.05, y + VS * 0.55]], 'veh', k);
+        d.poly([[cx - 0.7, y + VS * 0.62], [cx + 0.7, y + VS * 0.62], [cx + 0.55, y + VS * 0.8], [cx - 0.55, y + VS * 0.8]], 'veh', k);
+        lt(cx, y + VS * 0.46, t, k); wdim(a, a + W, y + VS * 0.98, fmt(cw, 2) + ' · ' + fmt(gap, 2) + ' · ' + fmt(cw, 2), k);
+      }
+      function axle(y, w, e, t, k) {   // Me : rouleau / essieu de largeur w (bande d'appui e dans le sens de circulation)
+        d.rect(cx - w / 2, y, w, 0.14, 'tyre', k);
+        d.rect(cx - w / 2 + 0.15, y + VS * 0.14, w - 0.3, 0.42, 'veh', k);
+        lt(cx, y + VS * 0.35, t, k); wdim(cx - w / 2, cx + w / 2, y + VS * 0.78, fmt(w, 2), k);
+      }
+      function conv(y, t, k) {   // convoi D / E : remorque de 3,30 m sur train de chenilles
+        const w = 3.3, a = cx - w / 2;
+        d.rect(a, y, w, 0.12, 'tyre', k);
+        for (let i = 0; i < 6; i++) d.circle(a + 0.3 + i * (w - 0.6) / 5, y + VS * 0.19, 0.07 * VS, 'veh', k);
+        d.rect(a - 0.05, y + VS * 0.26, w + 0.1, 0.12, 'veh', k);
+        d.rect(a + 0.45, y + VS * 0.38, w - 0.9, 0.36, 'veh', k);
+        lt(cx, y + VS * 0.56, t, k); wdim(a, a + w, y + VS * 0.95, '3.30', k);
+      }
+      const rowH = ONE ? 1.95 : 0.95, y0 = top + ht + 1.05, offRow = [];
       for (const xx of [x0, x0 + wc]) d.line(xx, top, xx, y0 + rows.length * rowH, 'lane');
       rows.forEach((r, i) => {
         const y = y0 + (rows.length - 1 - i) * rowH, act = !ONE || isOn(r.k);
         if (ONE) d.rect(-half - 3.3, y - 0.12, 2 * half + 3.75, rowH - 0.1, act ? 'rowon' : 'rowoff', r.k);   // bande cliquable : coche / décoche
         d.line(x0, y, x0 + wc, y, 'hl-line'); r.draw(y);
-        if (ONE) { d.text(-half - 3.1, y + 0.62, (act ? '☑ ' : '☐ ') + r.c, { size: 1.05, a: 'start', cls: act ? 'tc' : 'ts', k: r.k });
-          d.text(-half - 3.1, y + 0.08, r.v, { size: 0.62, a: 'start', cls: 'ts', k: r.k }); }
+        if (ONE) { d.text(-half - 3.1, y + 1.15, (act ? '☑ ' : '☐ ') + r.c, { size: 1.05, a: 'start', cls: act ? 'tc' : 'ts', k: r.k });
+          d.text(-half - 3.1, y + 0.45, r.v, { size: 0.5, a: 'start', cls: 'ts', k: r.k }); }
         else { d.text(-half - 0.2, y + 0.25, r.c, { size: 0.8, a: 'end', cls: sch ? 'tc' : 't', k: r.k });
           if (!sch) d.text(half + 0.2, y + 0.25, r.v, { size: 0.68, a: 'start', cls: 'ts', k: r.k }); }
         if (ONE && !act) offRow.push(r.k);
@@ -590,7 +624,7 @@
       d.text(xp[2] + ws[2] / 2, top + 0.3, sch ? 'NVOIE voies' : nv + ' voie' + (nv > 1 ? 's' : '') + (nvR > 0 ? '' : ' (F61)'), { size: 0.75, cls: sch ? 'tc' : 'ts', k: 'A6.NVOIE', base: 'auto' });
       if (hc > 0 || sch) d.text(xp[4] - 0.15, top + 0.3, (sch ? 'HCHAU' : 'chaussée ' + fmt(hc, 3)) + ' ▾', { size: 0.7, a: 'end', base: 'auto', cls: sch ? 'tc' : 'dv', k: 'A6.HCHAU' });
     }
-    if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
+    if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ'), 0)} t/m² · ft28 ${fmt(V(m, 'A9.FTJ'), 0)} t/m²`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
     // cotes de la section
     const DET = !LOADS && mode !== 'mat' && mode !== 'prof' && !(realPts && mode === 'slab');   // 'prof' : seules les cotes du profil en travers ; 'slab' : seules celles de la dalle
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
