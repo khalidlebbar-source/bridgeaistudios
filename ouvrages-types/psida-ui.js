@@ -1151,6 +1151,17 @@
     g += `<text x="${X(1)}" y="${H - 4}" text-anchor="end" fill="#7a7e8e">c/e  (d/e = 0, P = 10 t)</text></svg>`;
     return g;
   }
+  /* planches scannées du guide PSIDP-EL (annexe 3) : calage pixel des trois graphes β = 1/3, 1/2, 1 (x = ax·e + bx, y = ay·M + by) */
+  const SCAN = {"1.1":{"W":1775,"H":1236,"p":[[91.7758,54.2667,-34.2449,1184.5574],[93.5152,587.9333,-34.3303,1184.5896],[94.0848,1125.9667,-34.2434,1181.1231]]},"1.2":{"W":1775,"H":1242,"p":[[91.8303,52.2667,-34.2152,1188.3243],[93.4606,584.4333,-34.1352,1189.4964],[94.0606,1126.0333,-34.2242,1192.6667]]},"1.3":{"W":1775,"H":1234,"p":[[92.0182,52.1,-34.0421,1188.3551],[93.2727,586.0,-33.7629,1185.3929],[94.0667,1124.3667,-33.9742,1189.1072]]},"2.1":{"W":1771,"H":1242,"p":[[91.703,50.6667,-28.6454,1191.0485],[93.3697,577.3333,-28.6797,1191.0857],[93.4364,1112.7,-28.6745,1190.6319]]},"2.2":{"W":1773,"H":1236,"p":[[92.1576,65.2667,-28.1909,1073.3182],[93.2485,595.6667,-28.2364,1075.4273],[93.5394,1131.5667,-28.3,1077.2889]]},"3":{"W":1769,"H":1242,"p":[[369.5,316.5,-182.6667,1456.0],[372.0,779.0,-182.8889,1456.3333],[374.5,1245.0,-182.6667,1455.0]]}};
+  function scanPage(pl, marks, note) {
+    const c = SCAN[pl], base = pl === '3' ? 0 : 0.5, M0 = pl === '3' ? 1.5 : pl.startsWith('2') ? 0 : 2, R = '#d0021b';
+    let g = '';
+    for (const m of marks) { const p = c.p[m.bi], x = p[0] * m.x + p[1], y = p[2] * m.M + p[3], x0 = p[0] * base + p[1], y0 = p[2] * M0 + p[3];
+      g += `<line x1="${x0}" y1="${y}" x2="${x}" y2="${y}" stroke="${R}" stroke-width="2.2" stroke-dasharray="9 6"/><line x1="${x}" y1="${y0}" x2="${x}" y2="${y}" stroke="${R}" stroke-width="2.2" stroke-dasharray="9 6"/>`;
+      g += `<circle cx="${x}" cy="${y}" r="8" fill="${R}"/><text x="${x - 12}" y="${y - 14}" text-anchor="end" fill="${R}" font-size="30" font-weight="700" font-family="Segoe Print, Comic Sans MS, cursive">${fmt(m.M, 2)}</text>`; }
+    if (note) g += `<text x="${c.W - 60}" y="${pl === '3' ? 40 : c.H - 40}" text-anchor="end" fill="${R}" font-size="30" font-family="Segoe Print, Comic Sans MS, cursive">${note}</text>`;
+    return `<div style="position:relative;line-height:0;background:#fff"><img src="ouvrages-types/psida/planches/pl-${pl}.jpg" alt="Planche ${pl}" style="width:100%;display:block"><svg viewBox="0 0 ${c.W} ${c.H}" style="position:absolute;inset:0;width:100%;height:100%">${g}</svg></div>`;
+  }
   /* ligne d'appui : appareils, cotes c / a / e et bandes du chevêtre (calculs complémentaires) */
   function drawLigne(r, q) {
     const B = r.section.Eeq, W = 1240, k = (W - 80) / B, x = v => 40 + (v + B / 2) * k, y0 = 120;
@@ -1413,19 +1424,16 @@
       // abaques fidèles aux planches SETRA : par côté, une page par planche (β = 1/3, 1/2, 1) ; points de lecture sur les deux planches encadrant β seulement
       const CLN = ['', 'première', 'deuxième', 'troisième'], B3 = [1 / 3, 0.5, 1], SZ = (fmx, st) => ({ W: 420, H: 560, top: Math.ceil(fmx() / st) * st });
       for (const q of SD) {
-        const pg = (num, desc, d, draw, res) => {
-          if (!d) return;
-          const cells = B3.map(b => { const on = Math.abs(b - d.b1) < 1e-6 ? d.m1 : Math.abs(b - d.b2) < 1e-6 ? d.m2 : null;
-            return `<div style="min-width:0"><h5 style="text-align:center">β = ${bt(b)}${on != null ? ` — lu ${fmt(on, 2)}` : ''}</h5>${draw(b, on)}</div>`; }).join('');
-          add(i, `GUIDE PSIDP-EL, PLANCHE ${num} — CÔTÉ ${q.nom}`, desc, `<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px">${cells}</div>`, res);
-        };
-        const dB = q.dB, dC = q.dC120 || q.dC80, plC = q.dC120 ? '2.1' : '2.2';
-        pg('1.' + E.classe, `Pont de ${CLN[E.classe]} classe · moment transversal d'encastrement enveloppe des charges Br, Bc, Bt (aucun coefficient de pondération sauf bc, bt) · e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}`,
-          dB, (b, on) => drawAbaque('1.' + E.classe, b, E.e, on != null ? [{ ae: q.ae, val: on, lab: '' }] : [], SZ(pa => G.PSIDA.encAbaque('1.' + E.classe, 1 / 3, 5, 1), 2)), `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dB.b1)} (${fmt(dB.m1, 2)}) et β = ${bt(dB.b2)} (${fmt(dB.m2, 2)}) : MB = ${fmt(q.MB, 2)} tm/ml.`);
-        if (dC) pg(plC, `Moment transversal d'encastrement dû au système ${q.dC120 ? 'Mc120' : 'Mc80'} (aucun coefficient de pondération) · e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}`,
-          dC, (b, on) => drawAbaque(plC, b, E.e, on != null ? [{ ae: q.ae, val: on, lab: '' }] : [], SZ(() => Math.max(...B3.map(bb => G.PSIDA.encAbaque(plC, bb, 5, 1))), 2)), `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dC.b1)} (${fmt(dC.m1, 2)}) et β = ${bt(dC.b2)} (${fmt(dC.m2, 2)}) : MC = ${fmt(q.dC120 ? q.MC120 : q.MC80, 2)} tm/ml.`);
-        if (q.dR) pg('3', `Moment transversal d'encastrement d'un doublet de charges ponctuelles (P = 10 t, d/e = 0 pour la roue isolée) · roue de 6 t à c = ${fmt(q.cR, 3)} m, c/e = ${fmt(q.cR / E.e, 3)}`,
-          q.dR, (b, on) => drawAbaque3(b, on != null ? [{ ce: q.cR / E.e, val: on, lab: '' }] : [], b, { W: 420, H: 560, top: 6.5 }), `Interpolation en β = ${fmt(E.beta, 3)} : M(10 t) = ${fmt(q.MR / 0.6, 2)} tm/ml, roue de 6 t : MR = 0,6 × ${fmt(q.MR / 0.6, 2)} = ${fmt(q.MR, 2)} tm/ml.`);
+        const BI = b => Math.abs(b - 1 / 3) < 1e-6 ? 0 : Math.abs(b - 0.5) < 1e-6 ? 1 : 2;
+        const pg = (pl, d, x, note, res) => { if (!d) return;
+          add(i, `GUIDE PSIDP-EL, PLANCHE ${pl} — CÔTÉ ${q.nom}`, '', scanPage(pl, [{ bi: BI(d.b1), x, M: d.m1 }, { bi: BI(d.b2), x, M: d.m2 }], note), res); };
+        const dB = q.dB, dC = q.dC120 || q.dC80, plC = q.dC120 ? '2.1' : '2.2', cot = `côté ${q.nom.toLowerCase()}`;
+        pg('1.' + E.classe, dB, E.e, `${cot} : e = ${fmt(E.e, 2)} m, a/e = ${fmt(q.ae, 2)}, β = ${fmt(E.beta, 3)} → MB = ${fmt(q.MB, 2)}`,
+          `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dB.b1)} (${fmt(dB.m1, 2)}) et β = ${bt(dB.b2)} (${fmt(dB.m2, 2)}) : MB = ${fmt(q.MB, 2)} tm/ml.`);
+        if (dC) pg(plC, dC, E.e, `${cot} : e = ${fmt(E.e, 2)} m, a/e = ${fmt(q.ae, 2)}, β = ${fmt(E.beta, 3)} → MC = ${fmt(q.dC120 ? q.MC120 : q.MC80, 2)}`,
+          `Interpolation en β = ${fmt(E.beta, 3)} entre β = ${bt(dC.b1)} (${fmt(dC.m1, 2)}) et β = ${bt(dC.b2)} (${fmt(dC.m2, 2)}) : MC = ${fmt(q.dC120 ? q.MC120 : q.MC80, 2)} tm/ml.`);
+        if (q.dR) pg('3', q.dR, q.cR / E.e, `${cot} : roue 6 t, c/e = ${fmt(q.cR / E.e, 3)}, d/e = 0 → M(10 t) = ${fmt(q.MR / 0.6, 2)}, MR = ${fmt(q.MR, 2)}`,
+          `Interpolation en β = ${fmt(E.beta, 3)} : M(10 t) = ${fmt(q.MR / 0.6, 2)} tm/ml, roue de 6 t : MR = 0,6 × ${fmt(q.MR / 0.6, 2)} = ${fmt(q.MR, 2)} tm/ml.`);
       }
       if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
