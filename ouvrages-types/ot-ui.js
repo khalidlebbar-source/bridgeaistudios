@@ -505,7 +505,8 @@ ${def.simpleBar ? `<div class="ot-bar">
         }
         return `<section class="ot-blk${st.wide ? ' wide' : ''}${si === S.step ? ' on' : ''}" data-si="${si}"><h4>${esc(st.label)}</h4><div class="row">${h}</div></section>`;
       });
-      if (def.rows) { R.groups.innerHTML = `<div class="ot-fit">${blk.join('')}</div>`; markBad(); fitInputs(); fitRows(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
+      if (def.rows) { R.groups.innerHTML = `<div class="ot-fit">${blk.join('')}</div>`; $$(R.groups, '[title]').forEach(x => x.removeAttribute('title'));   // une seule bulle : celle de l'aide (pas d'infobulle du navigateur)
+        markBad(); fitInputs(); fitRows(); return; }   // une rubrique par ligne, dans l'ordre du bordereau
       const nc = Math.max(1, ...steps.map(st => (st.col || 0) + 1));
       R.groups.innerHTML = Array.from({ length: nc }, (_, c) => `<div class="ot-col">${blk.filter((_, si) => (steps[si].col || 0) === c).join('')}</div>`).join('');
       markBad();
@@ -668,7 +669,7 @@ ${def.simpleBar ? `<div class="ot-bar">
     if (def.rows) { R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) fitInputs(e.target); }); R.groups.addEventListener('change', e => { if (e.target.matches('select')) fitInputs(e.target); }); }
     R.groups.addEventListener('change', e => { if (e.target.matches('select,input[type=checkbox]')) { onEdit(e.target); const f = fieldByKey(e.target.closest('.ot-f').dataset.k); if (f && f.relayout) setTimeout(renderFields, 130); } });
     R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; if (def.onePage) followField(S.focus); hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
-    R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; if (def.onePage) followField(S.hover); hl(R.sch, S.hover); hl(R.live, S.hover); R.msg.innerHTML = helpFor(S.hover); } });
+    R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; if (def.onePage) followField(S.hover); hl(R.sch, S.hover); hl(R.live, S.hover); if (!def.rows) R.msg.innerHTML = helpFor(S.hover); } });   // en lignes : la définition est dans la bulle
     R.groups.addEventListener('mouseleave', () => { S.hover = null; hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); tipHide(); });
     /* bulle d'aide : définition complète du paramètre sous la case survolée */
     const tip = document.createElement('div'); tip.className = 'ot-tip'; document.body.appendChild(tip); let tipT = 0, tipK = null;
