@@ -1112,7 +1112,7 @@
     return g;
   }
   /* planche 3 : doublet d/e = 0 (charge de 10 t), courbes β = 1/3, 1/2, 1 et β du calcul ; points de lecture de la roue */
-  function drawAbaque3(beta, pts) {
+  function drawAbaque3(beta, pts, sel) {
     const W = 640, H = 340, ml = 44, mr = 70, mt = 18, mb = 32, D = G.PSIDA.encDoublet;
     let mx = 0; for (const b of [1 / 3, 0.5, 1]) mx = Math.max(mx, D(b, 1));
     const top = Math.ceil(mx), bot = Math.floor(Math.min(D(1, 0.1), D(1 / 3, 0.1)));
@@ -1121,8 +1121,9 @@
     for (let v = bot; v <= top + 1e-9; v += 1) g += `<line x1="${X(0.1)}" y1="${Y(v)}" x2="${X(1)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.1) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
     for (let i = 1; i <= 10; i++) g += `<line x1="${X(i / 10)}" y1="${Y(bot)}" x2="${X(i / 10)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(i / 10)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(i / 10, 1)}</text>`;
     const curve = (b, st) => { const q = []; for (let n = 0; n <= 45; n++) { const c = 0.1 + n * 0.02; q.push(`${X(c).toFixed(1)},${Y(D(b, c)).toFixed(1)}`); } return `<polyline points="${q.join(' ')}" fill="none" ${st}/>`; };
-    for (const [b, t] of [[1 / 3, '1/3'], [0.5, '1/2'], [1, '1']]) g += curve(b, 'stroke="#3c3f4d" stroke-width="1.1"') + `<text x="${X(1) + 4}" y="${Y(D(b, 1)) + 4}" fill="#5d5545">β=${t}</text>`;
-    g += curve(beta, 'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 3"');
+    for (const [b, t] of [[1 / 3, '1/3'], [0.5, '1/2'], [1, '1']]) { const on = sel == null || Math.abs(b - sel) < 1e-6;
+      g += curve(b, on ? 'stroke="#3c3f4d" stroke-width="' + (sel == null ? 1.1 : 1.8) + '"' : 'stroke="#c9c3b6" stroke-width="1"') + `<text x="${X(1) + 4}" y="${Y(D(b, 1)) + 4}" fill="${on ? '#3c3f4d' : '#b0a998'}"${on && sel != null ? ' font-weight="700"' : ''}>β=${t}</text>`; }
+    if (sel == null) g += curve(beta, 'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 3"');
     pts.forEach((p, n) => { const c = PTC[n % 2];
       g += `<line x1="${X(p.ce)}" y1="${Y(bot)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/><line x1="${X(0.1)}" y1="${Y(p.val)}" x2="${X(p.ce)}" y2="${Y(p.val)}" stroke="${c}" stroke-dasharray="3 3"/>`;
       g += `<circle cx="${X(p.ce)}" cy="${Y(p.val)}" r="5" fill="${c}"/><text x="${X(p.ce) - 8}" y="${Y(p.val) - 8 - 15 * n}" text-anchor="end" fill="${c}" font-weight="700">${p.lab} ${fmt(p.val, 2)}</text>`; });
@@ -1385,12 +1386,21 @@
       const E = r.comp.enc, i = first(/CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS/), SD = E.sides, Lb = q => 'côté ' + q.nom.slice(0, 1);
       const pts = key => SD.filter(q => q[key] != null && q[key] > 0).map(q => ({ ae: q.ae, val: q[key], lab: q.nom.slice(0, 1) }));
       const vals = key => SD.map(q => `${q.nom.slice(0, 1)} ${fmt(q[key], 2)}`).join(' · ');
-      let side = SD.map(q => `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${q.nom})</h5>${drawEncCoupe(E, q, q.nom === 'GAUCHE')}</div>`).join('');
-      side += `<div><h5>PLANCHE 1.${E.classe} — MB (TM/ML) : ${vals('MB')} (β = ${fmt(E.beta, 2)})</h5>${drawAbaque('1.' + E.classe, E.beta, E.e, pts('MB'))}</div>`;
-      if (SD.some(q => q.MC120 != null)) side += `<div><h5>PLANCHE 2.1 — MC120 (TM/ML) : ${vals('MC120')}</h5>${drawAbaque('2.1', E.beta, E.e, pts('MC120'))}</div>`;
-      if (SD.some(q => q.MC80 != null)) side += `<div><h5>PLANCHE 2.2 — MC80 (TM/ML) : ${vals('MC80')}</h5>${drawAbaque('2.2', E.beta, E.e, pts('MC80'))}</div>`;
-      const pR = SD.filter(q => q.MR > 0).map(q => ({ ce: q.cR / E.e, val: q.MR / 0.6, lab: q.nom.slice(0, 1) }));
-      if (pR.length) side += `<div><h5>PLANCHE 3 — ROUE DE 6 T : 10 T LU ${pR.map(p => p.lab + ' ' + fmt(p.val, 2)).join(' · ')} → MR = 0,6 × M</h5>${drawAbaque3(E.beta, pR)}</div>`;
+      const side = SD.map(q => `<div><h5>COUPE DE L'ENCORBELLEMENT (CÔTÉ ${q.nom})</h5>${drawEncCoupe(E, q, q.nom === 'GAUCHE')}</div>`).join('');
+      // abaques : une page par côté, pour chaque charge les deux planches encadrant β (lecture à β1 et β2, puis interpolation)
+      const bt = b => Math.abs(b - 1 / 3) < 1e-6 ? '1/3' : fmt(b, 2);
+      for (const q of SD) {
+        const cell = (t, svg) => `<div style="min-width:0"><h5>${t}</h5>${svg}</div>`, rows = [];
+        const pair = (nm, pl, d, key) => { if (!d) return; rows.push(cell(`${nm} — PLANCHE ${pl}, β = ${bt(d.b1)} : M = ${fmt(d.m1, 2)}`, drawAbaque(pl, d.b1, E.e, [{ ae: q.ae, val: d.m1, lab: '' }])) +
+          cell(`${nm} — PLANCHE ${pl}, β = ${bt(d.b2)} : M = ${fmt(d.m2, 2)}`, drawAbaque(pl, d.b2, E.e, [{ ae: q.ae, val: d.m2, lab: '' }]))); };
+        pair('SYSTÈME B', '1.' + E.classe, q.dB);
+        if (q.dC120) pair('MC120', '2.1', q.dC120); else if (q.dC80) pair('MC80', '2.2', q.dC80);
+        if (q.dR) rows.push(cell(`ROUE 6 T — PLANCHE 3, β = ${bt(q.dR.b1)} : M(10 T) = ${fmt(q.dR.m1, 2)}`, drawAbaque3(q.dR.b1, [{ ce: q.cR / E.e, val: q.dR.m1, lab: '' }], q.dR.b1)) +
+          cell(`ROUE 6 T — PLANCHE 3, β = ${bt(q.dR.b2)} : M(10 T) = ${fmt(q.dR.m2, 2)}`, drawAbaque3(q.dR.b2, [{ ce: q.cR / E.e, val: q.dR.m2, lab: '' }], q.dR.b2)));
+        const res = [`MB = ${fmt(q.MB, 2)}`].concat(q.dC120 ? [`MC120 = ${fmt(q.MC120, 2)}`] : q.dC80 ? [`MC80 = ${fmt(q.MC80, 2)}`] : [], q.dR ? [`MR = 0,6 × ${fmt(q.MR / 0.6, 2)} = ${fmt(q.MR, 2)}`] : []).join(' · ');
+        add(i, `ABAQUES DES ENCORBELLEMENTS — CÔTÉ ${q.nom}`, `e = ${fmt(E.e, 3)} m · a/e = ${fmt(q.ae, 3)}${q.dR ? ` · c/e = ${fmt(q.cR / E.e, 3)}` : ''} · β = ${fmt(E.beta, 3)} interpolé entre les deux planches : ${res} (TM/ML)`,
+          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 18px">${rows.join('')}</div>`, 'Lecture sur les planches du guide PSIDP-EL (annexe 3) encadrant β, puis interpolation linéaire en β.');
+      }
       if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
     pl.sort((a, b) => a.i - b.i);
