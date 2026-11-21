@@ -240,7 +240,16 @@
       const f = o => 0.5 * (simp(o) + simp(o + E));
       MC = Na * Math.max(f(0), f(-E / 2));
     }
-    return { s, CP: r3In(CP, 1), A: r3In(A, 2), BC: r3In(BCk, 4), BT: r3In(BTk, 8), MC120: r3In(MC, 16), CONVOIS: null };
+    // Convois D / E (v34, 21/11/2026) — guide PSIDP-EL, annexe 4 § 5 : pour les charges proches de la ligne d'appui, la répartition
+    // « est proche de celle d'une poutre sur appuis simples constitués par les appareils d'appui ». Convoi = bande uniforme de 3,30 m
+    // (fasc. 61 art. 10) centrée sur un appareil intermédiaire : K = Na (1 − 3,30 / 4s) (s/3,30 × Na si 3,30 > 2s).
+    // Approché : 3610 piles 2,390 (SETRA 2,392), 3826 2,245 (2,211), culées 3610 Na = 3 2,149 (2,276). Crochet PSIDA_CVK0 = 1 : 1,000.
+    let CV = null;
+    if (!globalThis.PSIDA_CVK0) {   // convoi centré sur un appareil intermédiaire ; 2 appareils : convoi dans l'axe, partage égal
+      const w = 3.30;
+      CV = Na <= 2 ? 1 : Na * (w <= 2 * s ? 1 - w / (4 * s) : s / w);
+    }
+    return { s, CP: r3In(CP, 1), A: r3In(A, 2), BC: r3In(BCk, 4), BT: r3In(BTk, 8), MC120: r3In(MC, 16), CONVOIS: CV };
   }
 
   // ------------------------------------------------------------------ appareils d'appui (DIMENSIONNEMENT …)
@@ -264,6 +273,7 @@
           nvc: r.nvoies, classe: r.classe, H: A7.HDALLE1 || r.section.H, hchau: A6.HCHAU || 0 });
         coef.CP = K.CP;
         if (!r.f61_1960) { coef.A = K.A; coef.BC = K.BC; coef.BT = K.BT; if ('MC.120' in coef) coef['MC.120'] = K.MC120; }
+        if (K.CONVOIS != null) for (const c of cas) if (/CVOI/.test(c)) coef[c] = K.CONVOIS;   // v34 : convois D / E (annexe 4 PSIDP)
       }
       const end = k === 0 || k === n;
       const dy = (r.cmdAppui && r.cmdAppui[k]) || { bc: 1, mc: 1 };
