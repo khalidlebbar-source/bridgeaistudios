@@ -37,10 +37,13 @@
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
     if (k.startsWith('DR.')) {
       m.lignes = m.lignes || {}; const c = m.lignes.C8 || (m.lignes.C8 = { FORME: 0, H1: 0, H2: 0, H3: 0, PENTE: 0, E1: 0, E2: 0, N: 0 });
-      if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
+      if (k === 'DR.FORME') { const f0 = +c.FORME || 0; c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
         if (!(c.N > 0)) { const A7 = m.lignes.A7 || {}; c.N = A7.EDALLE1 || 6; c.E2 = (A7.EDALLE3 || 0.6) / 2; c.E1 = Math.max(0, (A7.EDALLE2 || 3.6) / 2 - c.E2);   // valeurs de départ tirées de la saisie SETRA
           c.H3 = A7.HDALLE3 || 0.4; c.H1 = A7.HDALLE2 || 0.3; c.H2 = 0; c.PENTE = c.PENTE || 2.5; }
-        if (c.FORME > 2) { c.E2 = c.E2 + c.E1; }   // encorbellement réduit : le pan incliné va jusqu'au bord
+        const tr0 = f0 > 2, tr1 = c.FORME > 2;   // changement de famille seulement : la largeur totale de la dalle est conservée
+        if (f0 && !tr0 && tr1) c.E2 = c.E2 + c.E1;   // encorbellement réduit : le pan incliné va jusqu'au bord (E1 gardé en mémoire)
+        else if (tr0 && !tr1) { if (c.E1 > 0 && c.E1 < c.E2 - 0.05) c.E2 = c.E2 - c.E1; else { c.E1 = Math.round(c.E2 * 0.8 * 100) / 100; c.E2 = Math.round((c.E2 - c.E1) * 1000) / 1000; } if (!(c.H2 > 0)) c.H2 = 0.1; }
+        else if (!f0 && tr1) c.E2 = c.E2 + c.E1;
       } else if (k === 'DR.FORCE') c.FORCE = num(v) ? 1 : 0; else c[k.slice(3)] = num(v);
       realToSetra(m); return;
     }
@@ -85,7 +88,7 @@
     m.lignes[l][n] = v;
   };
   const TH = (enc, bomb) => {   // vignette de l'allure de la dalle réelle (64 × 20)
-    const top = bomb ? 'M2 7 L32 3 L62 7' : 'M2 5 L62 5';
+    const top = bomb ? 'M2 6 L32 4.4 L62 6' : 'M2 5 L62 5';   // bombement discret
     const und = enc ? 'L62 9 L48 10 L44 17 L20 17 L16 10 L2 9' : 'L62 9 L46 17 L18 17 L2 9';
     return `<svg viewBox="0 0 64 20"><path d="${top} ${und} Z" fill="#e8e1d1" stroke="#5d5545" stroke-width="1" stroke-linejoin="round"/></svg>`;
   };
@@ -189,13 +192,11 @@
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
       { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab'), groups: [
         { show: m => drF(m) > 0, title: 'Dalle réelle (remplit HDALLE et EDALLE)', short: 'Dalle réelle', alt: true, flex: 8, cols: 8, fields: [
-          { show: m => drEnc(m), relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Encorbellements : épaisseur au bout de l\'encorbellement (verticale du bord).' },
-          { show: m => drEnc(m), relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
-          { show: m => drEnc(m), relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Encorbellements : hauteur du flanc, de l\'intrados à la sous-face de l\'encorbellement à son enracinement.' },
-          { show: m => drF(m) > 2, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Trapèze : hauteur de la face verticale du bord.' },
-          { show: m => drF(m) > 2, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Trapèze : hauteur du pan incliné, de l\'intrados au bas de la face verticale du bord.' },
-          { show: m => drBomb(m), relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
-          { show: m => drEnc(m), relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
+          { show: m => drF(m) > 0, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Épaisseur au bord : bout de l\'encorbellement, ou face verticale du bord (trapèze).' },
+          { keep: true, show: m => drEnc(m), relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
+          { show: m => drF(m) > 0, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Hauteur du flanc (ou du pan incliné du trapèze), de l\'intrados à la sous-face de l\'encorbellement ou au bas de la face du bord.' },
+          { keep: true, show: m => drBomb(m), relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
+          { keep: true, show: m => drEnc(m), relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
           { show: m => drF(m) > 0, relayout: true, k: 'DR.E2', code: 'E2', unit: 'm', dec: 3, help: 'Projection horizontale du flanc (trapèze : du pan incliné).' },
           { show: m => drF(m) > 0, relayout: true, k: 'DR.N', code: 'N', unit: 'm', dec: 3, help: 'Largeur de l\'intrados (nervure).' },
           { show: m => drF(m) > 0, k: 'DR.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour saisir soi-même HDALLE et EDALLE (ils ne sont plus recalculés depuis la dalle réelle).' },
