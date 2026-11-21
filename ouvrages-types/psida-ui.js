@@ -278,7 +278,7 @@
       { label: 'Béton', groups: [
         { title: 'Béton (BAEL 91 mod. 99)', short: '', flex: 4, cols: 4, fields: [
           { k: 'FC28', code: 'fc28', label: 'compression', unit: 't/m²', dec: 0, help: 'Résistance caractéristique à la compression à 28 jours (t/m² ; 3000 t/m² = 30 MPa). ft28 = 60 + 0,06 fc28 (t/m²) en est déduite (BAEL A.2.1,12).' },
-          { k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
+          { k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['101', 'peu préj. · σs imposées'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
           { k: 'A9.POISSON', code: 'Poisson', label: 'coef. Poisson', dec: 3, help: 'Coefficient de Poisson du béton (flexion transversale). Valeur conseillée 0,20.', def: '0,20' },
           { k: 'A9.RETRAI', code: 'Retrait', label: 'retrait', dec: 5, help: 'Raccourcissement relatif final du retrait du béton (BAEL A.2.1,22), ex. 0,00040.', def: '0,00040' },
         ] },
@@ -1237,18 +1237,20 @@
   const A34 = ['A3    2      1      1      1      1      1      2      1      1      1      1      1      1      1      1      1 ',
     'A4    1      1      1      0      0      1      0      1      1      0      0      0      0      0      0      0 ', ' '];
   const A10 = 'A10    0.032  0.016  0.012  0.010   50000.   50000.   50000.   50000.    0    0    0    0     1.60  1.60  1.60  1.60  1.50 ';
-  // exemple par défaut : dalle de 12,00 m (profil 1,00 + 10,00 + 1,00), encorbellements larges, bombée 2,5 %
-  const EX1 = [...HEAD('EXEMPLE DE PONT-DALLE EN BETON ARME', '3 TRAVEES 12,50 - 16,00 - 12,50 M'), ...A34,
-    LBL5, 'A5  3    100.000    0.500   12.500   16.000   12.500    0.000    0.000    0.000 ', ' ',
-    LBL6, 'A6    0     1.000   0.000    10.000  0.000   1.000  0.080    1       0.000     0.000  3    0.000   0.000   0.000   0.000 ', ' ',
-    LBL7, 'A7     0.775    0.350    0.425     7.300   4.700    0.700 ', ' ',
-    LBL8, 'A8      100  2.500   1.000  1.000  5.092  3.470    001 001 024    0.150   0.0   0.0    0.000 0.000 0.000 0.000 0.000 ', ' ',
-    LBL9, 'A9    200  000 .000  .000  3000.  240. .00040 ', ' ',
-    LBL10, A10, ' ',
-    LBL11, 'A11     3    3   0.320   0.000   0.030   0.030 ', ' ',
-    LBL12, 'A12    3.000  1.000  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.000  0.000  0.000  0.000  0.000 ', ' ',
-    LBL13, 'A13      250.     2000.     1500.     3500.     1    1  4    1  5    1  5    1  4    0  0    0  0    0  0 ', ' ',
-    'C8  1  0.200  0.150  0.350  2.500  2.000  0.350  7.300  0', ''].join('\n');
+  // exemple par défaut : bordereau de la note SETRA PSIDA-EL n° 3610 (passage supérieur de 11,30 m, 4 travées 13 - 18 - 18 - 13 m)
+  // dalle réelle reconstituée : encorbellements larges, bombée 2,5 % (H1 0,200 · H2 0,178 · H3 0,321 · E1 1,97 · E2 0,18 · N 7,00 → A7 de la note)
+  const EX1 = [...HEAD('PASSAGE SUPERIEUR DE 11.30M DE LARGEUR', 'BIAIS 100GRADES - TPC 12M'), ...A34,
+    LBL5, 'A5  4    100.000    0.450   13.000   18.000   18.000   13.000    0.000    0.000 ', ' ',
+    LBL6, 'A6    0     1.650   0.000     8.000  0.000   1.650  0.080    1       0.000     0.000  3    0.000   0.000   0.000   0.000 ', ' ',
+    LBL7, 'A7     0.770    0.360    0.410     7.000   4.300    0.360 ', ' ',
+    LBL8, 'A8      100  2.500   1.000  1.000  5.600  4.000    001 001 024    0.150   0.0   0.0    0.000 0.000 0.000 0.000 0.000 ', ' ',
+    LBL9, 'A9    101  000 .000  .000  3000.  240. .00040 ', ' ',
+    LBL10, 'A10    0.025  0.016  0.012  0.010   50000.   50000.   50000.   50000.    0    0    0    0     1.60  1.60  1.60  1.60  1.50 ', ' ',
+    LBL11, 'A11     3    3   0.250   0.000   0.030   0.030 ', ' ',
+    LBL12, 'A12    3.000  1.000  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.010  0.000  0.000  0.000  0.000 ', ' ',
+    LBL13, 'A13      250.     2000.     1500.     3500.     1    1  3    1  4    1  4    1  4    1  3    0  0    0  0 ', ' ',
+    'C1     0.00 33333. 33333. 33333. 33333.',
+    'C8  1  0.200  0.178  0.321  2.500  1.970  0.180  7.000  0', ''].join('\n');
   const EX2 = [...HEAD('EXEMPLE DE PONT-DALLE EN BETON ARME', '2 TRAVEES 15,00 - 15,00 M'), ...A34,
     LBL5, 'A5  2    100.000    0.500   15.000   15.000    0.000    0.000    0.000    0.000 ', ' ',
     LBL6, 'A6    0     1.000   0.000     8.000  0.000   1.000  0.080    1       0.000     0.000  3    0.000   0.000   0.000   0.000 ', ' ',
