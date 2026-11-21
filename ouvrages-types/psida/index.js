@@ -3,7 +3,7 @@
 (function (G) {
   'use strict';
   if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
-    require('./parse.js'); require('./compute.js'); require('./note.js'); require('./ferraillage.js'); require('./comp.js');
+    require('./parse.js'); require('./compute.js'); require('./note.js'); require('./ferraillage.js'); require('./comp.js'); require('./comp-enc.js');
   }
   const P = G.PSIDA;
   P.run = function (texteBordereau, opts) {

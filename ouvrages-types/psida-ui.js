@@ -155,8 +155,9 @@
     popup('Encorbellements — superstructures', 'Charges permanentes des superstructures portées par un encorbellement (corniche, contre-corniche, dispositif de retenue, remplissage du trottoir, bordure…), par mètre de longueur, et bras de levier de leur résultante par rapport à la section d\'encastrement. Le poids propre de l\'encorbellement est calculé à partir de la dalle réelle.',
       `<table><tr><td style="text-align:left">Charge des superstructures VG1 (t/m)</td><td><input type="text" data-v="VG1" value="${fmt(C.VG1 != null ? C.VG1 : 1.996, 3)}"></td></tr>
        <tr><td style="text-align:left">Bras de levier (m)</td><td><input type="text" data-v="BRAS" value="${fmt(C.BRAS != null ? C.BRAS : 1.436, 3)}"></td></tr>
+       <tr><td style="text-align:left">Largeur utile du trottoir, hors corniche et dispositif de retenue (m)</td><td><input type="text" data-v="LTR" value="${fmt(C.LTR > 0 ? C.LTR : 1.0, 3)}"></td></tr>
        <tr><td style="text-align:left">Trottoirs séparés de la chaussée par un obstacle infranchissable</td><td style="text-align:left"><input type="checkbox" data-c="SEP"${+C.SEP ? ' checked' : ''}></td></tr></table>`, w => {
-        L.C12 = { VG1: nv(w, 'VG1'), BRAS: nv(w, 'BRAS'), SEP: w.querySelector('[data-c="SEP"]').checked ? 1 : 0 }; if (app) app.refresh();
+        L.C12 = { VG1: nv(w, 'VG1'), BRAS: nv(w, 'BRAS'), SEP: w.querySelector('[data-c="SEP"]').checked ? 1 : 0, LTR: nv(w, 'LTR') }; if (app) app.refresh();
       });
   }
   const cmpOn = m => { const c = (m.lignes || {}).C10 || {}; return !!(+c.KIN || +c.RENF); };   // entraxes réels demandés
@@ -1061,6 +1062,40 @@
   }
 
   /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
+  /* encorbellement : coupe cotée (annexe 3, figure du § 1) */
+  function drawEncCoupe(E, s) {
+    const W = 640, Hh = 330, k = (W - 120) / (E.e + 0.6), X = v => 60 + v * k, Y = v => 120 + v * k;
+    const tipY = E.h2, rootY = E.H1 + E.H2 * E.e / E.E1;
+    let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="12">`;
+    g += `<path d="M${X(-0.4)} ${Y(0)} L${X(E.e)} ${Y(0)} L${X(E.e)} ${Y(E.h2)} L${X(E.E2)} ${Y(E.H1 + E.H2)} L${X(0)} ${Y(E.h1)} L${X(-0.4)} ${Y(E.h1 + 0.15)} Z" fill="#ece6d8" stroke="#5d5545"/>`;
+    g += `<line x1="${X(0)}" y1="${Y(-0.3)}" x2="${X(0)}" y2="${Y(E.h1 + 0.35)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 4}" y="${Y(-0.35)}" text-anchor="end" fill="#c0392b">S</text>`;
+    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.18)}" text-anchor="middle" font-size="11">trottoir</text>`;
+    const dim = (a, b, yy, t) => `<line x1="${X(a)}" y1="${yy}" x2="${X(b)}" y2="${yy}" stroke="#1a4fd6"/><line x1="${X(a)}" y1="${yy - 5}" x2="${X(a)}" y2="${yy + 5}" stroke="#1a4fd6"/><line x1="${X(b)}" y1="${yy - 5}" x2="${X(b)}" y2="${yy + 5}" stroke="#1a4fd6"/><text x="${(X(a) + X(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="#1a4fd6">${t}</text>`;
+    g += dim(0, s.a, Y(-0.45), `a = ${fmt(s.a, 2)}`) + dim(0, E.e, Y(E.h1 + 0.6), `e = ${fmt(E.e, 2)} m`);
+    g += `<text x="${X(0) + 6}" y="${Y(E.h1 / 2) + 4}" fill="#1a4fd6">h1 = ${fmt(E.h1, 2)}</text><text x="${X(E.e) + 6}" y="${Y(E.h2 / 2) + 4}" fill="#1a4fd6">h2 = ${fmt(E.h2, 2)}</text>`;
+    g += `<text x="${X(E.e / 2)}" y="${Y(E.h1 + 0.95)}" text-anchor="middle" fill="#5d5545">β = h2/h1 = ${fmt(E.beta, 3)}</text></svg>`;
+    return g;
+  }
+  /* abaque reproduit (courbes a/e interpolées en β) et point de lecture */
+  function drawAbaque(pl, beta, e, ae, val) {
+    const W = 600, H = 330, ml = 46, mr = 50, mt = 16, mb = 34, A = G.PSIDA.encAbaque;
+    let mx = 0; for (let j = 1; j <= 10; j++) mx = Math.max(mx, A(pl, beta, 5, j / 10));
+    const top = Math.ceil(mx / 2) * 2, bot = pl.startsWith('2') ? 0 : 2;
+    const X = v => ml + (v - 0.5) / 4.5 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
+    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="11">`;
+    for (let v = bot; v <= top + 1e-9; v += 2) g += `<line x1="${X(0.5)}" y1="${Y(v)}" x2="${X(5)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.5) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
+    for (let i = 0; i < 10; i++) { const ee = 0.5 + 0.5 * i; g += `<line x1="${X(ee)}" y1="${Y(bot)}" x2="${X(ee)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(ee)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(ee, 1)}</text>`; }
+    for (let j = 1; j <= 10; j++) {
+      const pts = []; for (let q = 0; q <= 45; q++) { const ee = 0.5 + q * 0.1; pts.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, j / 10)).toFixed(1)}`); }
+      g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#3c3f4d" stroke-width="1.1"/><text x="${X(5) + 4}" y="${Y(A(pl, beta, 5, j / 10)) + 4}" fill="#5d5545">${fmt(j / 10, 1)}</text>`;
+    }
+    const pts = []; for (let q = 0; q <= 45; q++) { const ee = 0.5 + q * 0.1; pts.push(`${X(ee).toFixed(1)},${Y(A(pl, beta, ee, ae)).toFixed(1)}`); }
+    g += `<polyline points="${pts.join(' ')}" fill="none" stroke="#c0392b" stroke-width="1.4" stroke-dasharray="5 3"/>`;
+    g += `<line x1="${X(e)}" y1="${Y(bot)}" x2="${X(e)}" y2="${Y(val)}" stroke="#c0392b" stroke-dasharray="3 3"/><line x1="${X(0.5)}" y1="${Y(val)}" x2="${X(e)}" y2="${Y(val)}" stroke="#c0392b" stroke-dasharray="3 3"/>`;
+    g += `<circle cx="${X(e)}" cy="${Y(val)}" r="5" fill="#c0392b"/><text x="${X(e) + 8}" y="${Y(val) - 8}" fill="#c0392b" font-weight="700">${fmt(val, 2)}</text>`;
+    g += `<text x="${X(5) + 4}" y="${mt + 2}" fill="#5d5545">a/e</text><text x="${X(5)}" y="${H - 4}" text-anchor="end" fill="#7a7e8e">e (m)</text></svg>`;
+    return g;
+  }
   /* ligne d'appui : appareils, cotes c / a / e et bandes du chevêtre (calculs complémentaires) */
   function drawLigne(r, q) {
     const B = r.section.Eeq, W = 1240, k = (W - 80) / B, x = v => 40 + (v + B / 2) * k, y0 = 120;
@@ -1312,7 +1347,16 @@
       if (q) add(i, 'RENFORCEMENTS LONGITUDINAUX AU DROIT DES APPAREILS', 'disposition en plan (annexe 4, 7.2)', box('VUE EN PLAN AUTOUR D\'UNE LIGNE D\'APPUI INTERMÉDIAIRE', drawRenf(r, q), true),
         'Aciers de renforcement (traits) sur 0,1 L côté travée et 0,2 L de l\'autre côté, largeurs c/2 + a/4 (appareil de rive) et a/4 + e/4 (appareil central).');
     }
-    if (r.comp && r.comp.enc && G.PSIDA.encFigures) for (const fg of G.PSIDA.encFigures(r)) add(first(fg.re), fg.title, fg.sub, fg.body, fg.cap);
+    if (r.comp && r.comp.enc && !r.comp.enc.skip) {
+      const E = r.comp.enc, i = first(/CALCULS COMPLEMENTAIRES - ENCORBELLEMENTS/), s = E.sides[0];
+      const parts = [box('COUPE DE L\'ENCORBELLEMENT ÉTUDIÉ (CÔTÉ ' + s.nom + ')', drawEncCoupe(E, s), false)];
+      parts.push(box(`PLANCHE 1.${E.classe} — MB (β = ${fmt(E.beta, 2)} interpolé)`, drawAbaque('1.' + E.classe, E.beta, E.e, s.ae, s.MB), false,
+        `Lecture : e = ${fmt(E.e, 2)} m, a/e = ${fmt(s.ae, 3)} → MB = ${fmt(s.MB, 2)} tm/ml`));
+      if (s.MC120 != null) parts.push(box(`PLANCHE 2.1 — MC120, UNE CHENILLE (β = ${fmt(E.beta, 2)})`, drawAbaque('2.1', E.beta, E.e, s.ae, s.MC120), false, `Lecture : MC = ${fmt(s.MC120, 2)} tm/ml`));
+      if (s.MC80 != null) parts.push(box(`PLANCHE 2.2 — MC80, UNE CHENILLE (β = ${fmt(E.beta, 2)})`, drawAbaque('2.2', E.beta, E.e, s.ae, s.MC80), false, `Lecture : MC = ${fmt(s.MC80, 2)} tm/ml`));
+      add(i, 'ENCORBELLEMENTS — SECTION D\'ENCASTREMENT ET LECTURE DES ABAQUES', 'guide PSIDP-EL, annexe 3', pair(...parts),
+        'Courbes a/e = 0,1 à 1 des planches numérisées, interpolées pour le β de l\'ouvrage ; le point rouge est la valeur retenue dans la note.');
+    }
 
     pl.sort((a, b) => a.i - b.i);
     return pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
