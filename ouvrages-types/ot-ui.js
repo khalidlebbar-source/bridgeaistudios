@@ -263,9 +263,9 @@
 .ot-f.ck input{width:16px;height:16px;accent-color:var(--gold)}
 .ot-f.ck label{white-space:normal}
 .ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden;min-width:0}
-.ot-combo{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start;border-top:1px dashed var(--border);padding-top:6px}
+.ot-combo{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start;border-top:1px dashed var(--border);padding-top:6px}
 .ot-combo>pre{margin:0;font-size:10.5px;overflow-x:auto}
-.ot-combo .cb{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}.ot-combo .cb>div:first-child{grid-column:1 / -1}.ot-combo .cb>div:first-child svg{max-height:210px}.ot-combo .cb svg{max-height:340px}.ot-combo h5{margin:4px 0 0;font:700 10.5px 'Courier New',monospace;color:var(--ink2)}
+.ot-combo .cb{display:flex;flex-direction:column;gap:8px}.ot-combo .cb svg{display:block;width:100%;height:auto}.ot-combo .cb>div:first-child svg{max-height:230px}.ot-combo h5{margin:4px 0 0;font:700 10.5px 'Courier New',monospace;color:var(--ink2)}
 @media (max-width:1100px){.ot-combo{grid-template-columns:1fr}}
 .ot-mini{font:inherit;font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--gold);cursor:pointer}
 .ot-mini:hover{border-color:var(--gold)}
@@ -809,11 +809,12 @@ ${def.simpleBar ? `<div class="ot-bar">
       // croquis intercalés (def.figures : [{ after: indice de page (0 = première), html }]), séquence SETRA conservée
       let figs = []; try { figs = (def.figures && S.results) ? (def.figures(S.model, S.results, pgs) || []) : []; } catch (e) { console.error(e); figs = []; }
       R.note.innerHTML = pgs.map((p, i) => {
-        let t = esc(p);
+        const dsp = x => def.pageDisplay ? def.pageDisplay(x) : x;
+        let t = esc(dsp(p));
         if (q) { const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'); t = t.replace(re, m => { hits++; return `<mark>${m}</mark>`; }); }
         if (figs.some(f => f.replace && f.absorb && f.after === i - 1)) return '';   // page reprise dans la page composée précédente
         const rep = figs.find(f => f.after === i && f.replace);   // page remplacée par une page composée (texte + croquis)
-        if (rep) { let tt = t; if (rep.absorb && pgs[i + 1] != null) tt += '\n' + esc(pgs[i + 1]);
+        if (rep) { let tt = t; if (rep.absorb && pgs[i + 1] != null) tt += '\n' + esc(dsp(pgs[i + 1]));
           return rep.html.replace('%PRE%', () => `<pre>${tt}</pre>`) + figs.filter(f => (f.after === i || (rep.absorb && f.after === i + 1)) && !f.replace).map(f => f.html).join(''); }
         return `<pre>${t}</pre>` + figs.filter(f => f.after === i).map(f => f.html).join('');
       }).join('') + figs.filter(f => f.after == null || f.after >= pgs.length).map(f => f.html).join('');

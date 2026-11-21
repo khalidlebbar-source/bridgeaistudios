@@ -73,24 +73,25 @@
       '  CHARGES PERMANENTES (PAR METRE DE LONGUEUR)', BL,
       `     POIDS PROPRE DE LA CONSOLE      V = ${f(E.VG0, 7, 3)} T/M     M = ${f(E.MG0, 7, 3)} TM/M`,
       `     SUPERSTRUCTURES (DONNEES C12)   V = ${f(E.VG1, 7, 3)} T/M     M = ${f(E.MG1, 7, 3)} TM/M   (BRAS DE LEVIER ${f(E.BRAS, 5, 3)} M)`,
-      `     TOTAL                                                MG = ${f(E.MG, 7, 3)} TM/M`, BL, BL,
+      padR('     TOTAL', `     POIDS PROPRE DE LA CONSOLE      V = ${f(E.VG0, 7, 3)} T/M     `.length - 1) + `MG = ${f(E.MG, 7, 3)} TM/M`, BL, BL,
       '  MOMENTS UNITAIRES DES CHARGES D\'EXPLOITATION (TM/ML, LECTURE DES ABAQUES, AUCUN COEFFICIENT SAUF BC ET BT)', BL,
       '     COTE      TROTTOIR   A (M)    A/E    MB PL.1.' + E.classe + '   MC120 PL.2.1   MC80 PL.2.2    C (M)   MR ROUE 6 T PL.3   MTR TROTTOIR', BL);
     const nf = (v, w) => v == null ? padR('', w - 1) + '-' : f(v, w, 2);
     for (const s of E.sides) pl.push('     ' + padR(s.nom, 9) + f(s.tr, 9, 2) + f(s.a, 8, 3) + f(s.ae, 7, 3) + f(s.MB, 11, 2) + nf(s.MC120, 15) + nf(s.MC80, 14) + f(s.cR, 9, 3) + f(s.MR, 16, 2) + f(s.MTR, 15, 3), BL);
-    pl.push(BL, '  COMBINAISONS (ANNEXE 3, PARAGRAPHE 4)                         ' + col(s => padR('COTE ' + s.nom, 16)), BL);
+    const W0 = 80, rw = (lab, vals, d) => padR(lab, W0) + vals.map(v => f(v, 14, d)).join(''), hd = t => padR(t, W0) + E.sides.map(s => ('COTE ' + s.nom).padStart(14)).join('');
+    pl.push(BL, hd('  COMBINAISONS (ANNEXE 3, PARAGRAPHE 4)'), BL);
     const s0 = E.sides[0];
-    s0.U.forEach((u, k) => pl.push('     ELU  ' + padR(u[0], 53) + col(s => f((s.U[k] || [0, 0])[1], 10, 3) + '      ')));
-    pl.push('          ' + padR('MU MAX (TM/M)', 53) + col(s => f(s.Mu, 10, 3) + '      '), BL);
-    s0.S.forEach((u, k) => pl.push('     ELS  ' + padR(u[0], 53) + col(s => f((s.S[k] || [0, 0])[1], 10, 3) + '      ')));
-    pl.push('          ' + padR('MSER MAX (TM/M)', 53) + col(s => f(s.Ms, 10, 3) + '      '), BL, BL,
-      '  FERRAILLAGE TRANSVERSAL SUPERIEUR A L\'ENCASTREMENT (B = 1 M, H = H1, D = ' + f(E.d, 5, 3) + ' M)        ' + col(s => padR('COTE ' + s.nom, 16)), BL,
-      '     SECTION ELU (CM2/M)                                                    ' + col(s => f(s.Au, 10, 2) + '      '),
-      '     SECTION ELS (CM2/M)                                                    ' + col(s => f(s.As, 10, 2) + '      '),
-      '     SECTION MINIMALE 0.15 POUR CENT (CM2/M)                                ' + col(s => f(s.Amin, 10, 2) + '      '),
-      '     OMEGA A RETENU (CM2/M)                                                 ' + col(s => f(s.Om, 10, 2) + '      '),
-      '     OMEGA\'A = OMEGA B = OMEGA\'B = OMEGA A / 3 (CM2/M)                      ' + col(s => f(s.Om3, 10, 2) + '      '), BL,
-      '   >> NOTA - OMEGA A NE DOIT PAS DESCENDRE EN DESSOUS DU FERRAILLAGE MIS EN PLACE DANS LA NERVURE (ANNEXE 3, 5.2.1).',
+    s0.U.forEach((u, k) => pl.push(rw('     ELU  ' + u[0], E.sides.map(s => (s.U[k] || [0, 0])[1]), 3)));
+    pl.push(rw('          MU MAX (TM/M)', E.sides.map(s => s.Mu), 3), BL);
+    s0.S.forEach((u, k) => pl.push(rw('     ELS  ' + u[0], E.sides.map(s => (s.S[k] || [0, 0])[1]), 3)));
+    pl.push(rw('          MSER MAX (TM/M)', E.sides.map(s => s.Ms), 3), BL, BL,
+      hd('  FERRAILLAGE TRANSVERSAL SUPERIEUR A L\'ENCASTREMENT (B = 1 M, H = H1, D = ' + f(E.d, 5, 3) + ' M)'), BL,
+      rw('     SECTION ELU (CM2/M)', E.sides.map(s => s.Au), 2),
+      rw('     SECTION ELS (CM2/M)', E.sides.map(s => s.As), 2),
+      rw('     SECTION MINIMALE 0.15 POUR CENT (CM2/M)', E.sides.map(s => s.Amin), 2),
+      rw('     Ωa RETENU (CM2/M)', E.sides.map(s => s.Om), 2),
+      rw('     Ω\'a = Ωb = Ω\'b = Ωa / 3 (CM2/M)', E.sides.map(s => s.Om3), 2), BL,
+      '   >> NOTA - Ωa NE DOIT PAS DESCENDRE EN DESSOUS DU FERRAILLAGE MIS EN PLACE DANS LA NERVURE (ANNEXE 3, 5.2.1).',
       '             MR : ROUE ISOLEE DE 6 T SUR TROTTOIR NON SEPARE DE LA CHAUSSEE (FASC. 61 II, ART. 12.2).',
       '             MTR : 0.45 T/M2 SUR LA LARGEUR UTILE DU TROTTOIR.',
       '             ABAQUES NUMERISES DU GUIDE PSIDP-EL, INTERPOLATION LINEAIRE EN E, A/E ET BETA',

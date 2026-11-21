@@ -1064,12 +1064,11 @@
   /* appareil d'appui en plan (à l'échelle) avec les contours d'espacement maximal des étriers (poinçonnement) */
   /* encorbellement : coupe cotée (annexe 3, figure du § 1) */
   function drawEncCoupe(E, s) {
-    const W = 640, Hh = 330, k = (W - 120) / (E.e + 0.6), X = v => 60 + v * k, Y = v => 120 + v * k;
-    const tipY = E.h2, rootY = E.H1 + E.H2 * E.e / E.E1;
-    let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="12">`;
+    const W = 640, Hh = 330, k = (W - 150) / (E.e + 0.6), X = v => 60 + v * k, Y = v => 120 + v * k;
+    let g = `<svg viewBox="0 0 ${W} ${Hh}" width="100%" font-family="Courier New, monospace" font-size="17">`;
     g += `<path d="M${X(-0.4)} ${Y(0)} L${X(E.e)} ${Y(0)} L${X(E.e)} ${Y(E.h2)} L${X(E.E2)} ${Y(E.H1 + E.H2)} L${X(0)} ${Y(E.h1)} L${X(-0.4)} ${Y(E.h1 + 0.15)} Z" fill="#ece6d8" stroke="#5d5545"/>`;
     g += `<line x1="${X(0)}" y1="${Y(-0.3)}" x2="${X(0)}" y2="${Y(E.h1 + 0.35)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6 4"/><text x="${X(0) - 4}" y="${Y(-0.35)}" text-anchor="end" fill="#c0392b">S</text>`;
-    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.18)}" text-anchor="middle" font-size="11">trottoir</text>`;
+    g += `<rect x="${X(s.a)}" y="${Y(-0.12)}" width="${(E.e - s.a) * k}" height="${0.12 * k}" fill="#d9cfb8" stroke="#8a7d63"/><text x="${X((s.a + E.e) / 2)}" y="${Y(-0.18)}" text-anchor="middle" font-size="15">trottoir</text>`;
     const dim = (a, b, yy, t) => `<line x1="${X(a)}" y1="${yy}" x2="${X(b)}" y2="${yy}" stroke="#1a4fd6"/><line x1="${X(a)}" y1="${yy - 5}" x2="${X(a)}" y2="${yy + 5}" stroke="#1a4fd6"/><line x1="${X(b)}" y1="${yy - 5}" x2="${X(b)}" y2="${yy + 5}" stroke="#1a4fd6"/><text x="${(X(a) + X(b)) / 2}" y="${yy - 4}" text-anchor="middle" fill="#1a4fd6">${t}</text>`;
     g += dim(0, s.a, Y(-0.45), `a = ${fmt(s.a, 2)}`) + dim(0, E.e, Y(E.h1 + 0.6), `e = ${fmt(E.e, 2)} m`);
     g += `<text x="${X(0) + 6}" y="${Y(E.h1 / 2) + 4}" fill="#1a4fd6">h1 = ${fmt(E.h1, 2)}</text><text x="${X(E.e) + 6}" y="${Y(E.h2 / 2) + 4}" fill="#1a4fd6">h2 = ${fmt(E.h2, 2)}</text>`;
@@ -1078,11 +1077,11 @@
   }
   /* abaque reproduit (courbes a/e interpolées en β) et point de lecture */
   function drawAbaque(pl, beta, e, ae, val) {
-    const W = 600, H = 330, ml = 46, mr = 50, mt = 16, mb = 34, A = G.PSIDA.encAbaque;
+    const W = 640, H = 360, ml = 44, mr = 46, mt = 18, mb = 32, A = G.PSIDA.encAbaque;
     let mx = 0; for (let j = 1; j <= 10; j++) mx = Math.max(mx, A(pl, beta, 5, j / 10));
     const top = Math.ceil(mx / 2) * 2, bot = pl.startsWith('2') ? 0 : 2;
     const X = v => ml + (v - 0.5) / 4.5 * (W - ml - mr), Y = v => mt + (top - v) / (top - bot) * (H - mt - mb);
-    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" font-family="Courier New, monospace" font-size="11">`;
+    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" font-family="Courier New, monospace" font-size="13">`;
     for (let v = bot; v <= top + 1e-9; v += 2) g += `<line x1="${X(0.5)}" y1="${Y(v)}" x2="${X(5)}" y2="${Y(v)}" stroke="#e4ded2"/><text x="${X(0.5) - 6}" y="${Y(v) + 4}" text-anchor="end" fill="#7a7e8e">${v}</text>`;
     for (let i = 0; i < 10; i++) { const ee = 0.5 + 0.5 * i; g += `<line x1="${X(ee)}" y1="${Y(bot)}" x2="${X(ee)}" y2="${Y(top)}" stroke="#e4ded2"/><text x="${X(ee)}" y="${Y(bot) + 15}" text-anchor="middle" fill="#7a7e8e">${fmt(ee, 1)}</text>`; }
     for (let j = 1; j <= 10; j++) {
@@ -1463,6 +1462,10 @@
       { id: 'arm', label: 'Armatures', draw: (svg, m) => drawArm(svg, m, false) },
     ],
     figures,
+    /* affichage : en-tête « PSIDAEL nnnn » et date retirés de toutes les pages (texte du moteur inchangé) */
+    pageDisplay: p => { const L = p.split('\n'); for (let k = 0; k < Math.min(3, L.length); k++)
+        L[k] = L[k].replace(/^PSIDAEL\s+\S+/, x => ' '.repeat(x.length)).replace(/^\d\d  \d\d  \d\d/, x => ' '.repeat(x.length));
+      while (L.length && !L[0].trim()) L.shift(); return L.join('\n'); },
     _draw: { drawElev, drawCoupe, drawPlan, drawArm },
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
