@@ -296,7 +296,7 @@
           { k: 'A10.PHI1', code: 'PHI1', label: 'longit. princ.', unit: 'mm', dec: 0, help: 'Diamètre des aciers longitudinaux principaux (et éventuellement des chevêtres incorporés).' },
           { k: 'A10.PHI2', code: 'PHI2', label: 'transv. inf.', unit: 'mm', dec: 0, help: 'Diamètre des aciers transversaux inférieurs en travée, des chevêtres incorporés et des aciers longitudinaux complémentaires.' },
           { k: 'A10.PHI3', code: 'PHI3', label: 'transv. sup.', unit: 'mm', dec: 0, help: 'Diamètre des aciers transversaux supérieurs en travée et éventuellement des aciers longitudinaux de construction.' },
-          { k: 'A10.PHI4', code: 'PHI4', label: 'étriers', unit: 'mm', dec: 0, help: 'Diamètre des étriers.' },
+          { k: 'A10.PHI4', code: 'PHI4', label: 'étriers', unit: 'mm', dec: 0, help: 'Diamètre des étriers (armatures transversales d\'effort tranchant), en mm.' },
         ] },
         { title: 'Limites d\'élasticité', alt: true, flex: 4, cols: 4, fields: [1, 2, 3, 4].map(i => ({ k: 'A10.FE' + i, code: 'FE' + i, unit: 't/m²', dec: 0, def: '50000', help: `Limite d'élasticité garantie des aciers PHI${i}, en t/m² (50 000 t/m² = FeE500 ; 40 000 = FeE400).` })) },
       ] },
@@ -1282,7 +1282,8 @@
       if (a !== '000') m.lignes.A8.A = '001'; if (!['000', '002', '003'].includes(b)) m.lignes.A8.B = '001'; }   // A(l) réglementaire ; Bc et Bt selon les cases
     if (m.lignes.A6) { const A6 = m.lignes.A6; for (let i = 2; i <= 5; i++) A6['YY' + i] = 0;   // fibres exceptionnelles : jamais utilisées
       A6.NF = 3; A6.DISEXT = 0; A6.DISINT = 0;
-      if (m.lignes.A11) m.lignes.A11.ESPAC2 = 0;   // ESPAC2 : case réservée par SETRA, toujours 0                                                     // toutes les fibres ; axe mécanique = axe géométrique
+      if (m.lignes.A11) m.lignes.A11.ESPAC2 = 0;   // ESPAC2 : case réservée par SETRA, toujours 0
+      // toutes les fibres ; axe mécanique = axe géométrique
       A6.SYMTAB = Math.abs((A6.ETROTG || 0) - (A6.ETROTD || 0)) < 1e-6 && Math.abs((A6.EGAU || 0) - (A6.EDROI || 0)) < 1e-6 ? 1 : 0; }   // symétrie déduite du profil
     if (m.lignes.A9) { m.lignes.A9.BA = '000'; m.lignes.A9.XKI = 0; }   // coefficients BAEL réglementaires, ψ1 = 0
     const A10 = m.lignes.A10; if (A10) { for (let i = 1; i <= 4; i++) { A10['NA' + i] = 0; A10['ETA' + i] = 1.6; } A10.PSID = 1.5; }   // aciers HA, valeurs BAEL (palier, η = 1,6, ψs = 1,5)

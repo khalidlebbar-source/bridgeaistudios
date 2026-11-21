@@ -263,6 +263,10 @@
 .ot-f.ck input{width:16px;height:16px;accent-color:var(--gold)}
 .ot-f.ck label{white-space:normal}
 .ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden;min-width:0}
+.ot-tip{position:fixed;z-index:60;max-width:380px;padding:7px 10px;border-radius:7px;background:#2f2b24;color:#f4efe4;font-size:12px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none;opacity:0;transition:opacity .12s;font-family:inherit}
+.ot-tip.on{opacity:1}
+.ot-tip span{color:#b9b09c!important}
+.ot-tip code{font-family:'Courier New',monospace;color:#e8c46a;font-weight:600}
 .ot-help code{font-family:'Courier New',monospace;color:var(--gold);font-weight:600}
 .ot-help .msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ot-help .chk{flex:0 0 auto;font-size:11.5px;padding:2px 9px;border-radius:99px;cursor:pointer;border:1px solid}
@@ -665,7 +669,20 @@ ${def.simpleBar ? `<div class="ot-bar">
     R.groups.addEventListener('change', e => { if (e.target.matches('select,input[type=checkbox]')) { onEdit(e.target); const f = fieldByKey(e.target.closest('.ot-f').dataset.k); if (f && f.relayout) setTimeout(renderFields, 130); } });
     R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; if (def.onePage) followField(S.focus); hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
     R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (b && b.dataset.k !== S.hover) { S.hover = b.dataset.k; if (def.onePage) followField(S.hover); hl(R.sch, S.hover); hl(R.live, S.hover); R.msg.innerHTML = helpFor(S.hover); } });
-    R.groups.addEventListener('mouseleave', () => { S.hover = null; hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); });
+    R.groups.addEventListener('mouseleave', () => { S.hover = null; hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); tipHide(); });
+    /* bulle d'aide : définition complète du paramètre sous la case survolée */
+    const tip = document.createElement('div'); tip.className = 'ot-tip'; document.body.appendChild(tip); let tipT = 0, tipK = null;
+    function tipHide() { clearTimeout(tipT); tip.classList.remove('on'); tipK = null; }
+    function tipShow(b) {
+      const k = b.dataset.k, h = helpFor(k); if (!h) return tipHide();
+      tip.innerHTML = h; tipK = k; const r = b.getBoundingClientRect();
+      tip.style.left = '0px'; tip.style.top = '0px'; tip.classList.add('on');
+      const w = tip.offsetWidth, hh = tip.offsetHeight, vw = innerWidth, vh = innerHeight;
+      let x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), vw - w - 8), y = r.bottom + 6; if (y + hh > vh - 8) y = r.top - hh - 6;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    }
+    R.groups.addEventListener('mouseover', e => { const b = e.target.closest('.ot-f'); if (!b) { tipHide(); return; } if (b.dataset.k === tipK) return; clearTimeout(tipT); tipT = setTimeout(() => tipShow(b), 250); });
+    R.groups.addEventListener('focusin', tipHide); R.groups.addEventListener('input', tipHide);
     R.groups.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
       const all = $$(R.groups, 'input,select'); const i = all.indexOf(e.target);
