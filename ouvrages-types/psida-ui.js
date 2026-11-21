@@ -23,6 +23,7 @@
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
     }
+    if (k.startsWith('CMP.')) return +!!((((m.lignes || {}).C10) || {})[k.slice(4)]);   // calculs complémentaires (ligne C10)
     if (k.startsWith('MIL.')) return milGet(m)[k.slice(4)];
     if (k === 'TRT.G' || k === 'TRT.D') { const t = milGet(m).TROTX; return k === 'TRT.G' ? +(t === 0 || t === 1) : +(t === 0 || t === 2); }   // trottoirs chargés                // militaires cochés un à un (ligne d'extension C9)
     if (k.startsWith('CE.')) {                                            // cases à cocher du code CE = i m j
@@ -70,6 +71,7 @@
       let g = t === 0 || t === 1, d = t === 0 || t === 2; if (k === 'TRT.G') g = num(v) === 1; else d = num(v) === 1;
       o.TROTX = g && d ? 0 : g ? 1 : d ? 2 : 3; m.lignes.C9 = o; return;
     }
+    if (k.startsWith('CMP.')) { m.lignes = m.lignes || {}; const o = Object.assign({ ENC: 0, KIN: 0, RENF: 0 }, m.lignes.C10 || {}); o[k.slice(4)] = num(v) === 1 ? 1 : 0; m.lignes.C10 = o; return; }
     if (k.startsWith('MIL.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
       const o = milGet(m); o[k.slice(4)] = num(v) === 1 ? 1 : 0; m.lignes.C9 = o;
@@ -327,6 +329,15 @@
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
     ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
+    { id: 'comp', col: 1, label: 'Calculs complémentaires', view: 'coupe', caption: '', hint: 'Calculs complémentaires du guide PSIDP-EL (annexes 3 et 4), à cocher.', pages: [
+      { label: 'Calculs complémentaires', groups: [
+        { title: 'Guide PSIDP-EL — annexes 3 et 4', short: 'À effectuer', flex: 3, cols: 3, fields: [
+          { k: 'CMP.ENC', code: 'Encorbellements', type: 'chk', keep: true, show: m => drF(m) === 1 || drF(m) === 2, help: 'Calcul des encorbellements (dalles-consoles) : flexion transversale de l\'encorbellement sous charges locales (guide PSIDP-EL, annexe 3). Proposé pour les dalles à larges encorbellements.' },
+          { k: 'CMP.KIN', code: 'Coef. d\'inégalité et chevêtres', type: 'chk', help: 'Correction des coefficients d\'inégalité de répartition entre appareils d\'appui et ferraillage des chevêtres incorporés lorsque les appareils d\'une ligne ne sont pas régulièrement espacés (guide PSIDP-EL, annexe 4 § 5 et 6).' },
+          { k: 'CMP.RENF', code: 'Renforcements au droit des appareils', type: 'chk', help: 'Renforcements locaux du ferraillage longitudinal au droit des appareils d\'appui des lignes intermédiaires (pointes de moment ΔM− / ΔM+, guide PSIDP-EL, annexe 4 § 7).' },
+        ] },
+      ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
+    ] },
   ];
 
   /* ───── modèle générique pour les schémas de principe ───── */
