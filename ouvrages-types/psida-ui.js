@@ -255,7 +255,7 @@
           { ro: m => !clForced(m), k: 'A8.STATUT', code: 'Classe', label: 'classe', type: 'sel', w: 72, opts: [['100', '1re'], ['200', '2e'], ['300', '3e']], help: 'Classe du pont (fascicule 61 titre II, art. 3), déduite de la largeur roulable Lr = EGAU + ESURCH + EDROI : 1re si Lr ≥ 7 m, 2e entre 5,50 et 7 m, 3e en deçà. Cocher « forcer » pour l\'imposer.' },
           { k: 'CL.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour imposer soi-même la classe du pont (sinon elle est déduite de la largeur roulable).' },
         ] },
-        { title: 'Charges routières', short: 'Charges routières (cocher)', alt: true, flex: 9, cols: 9, fields: [
+        { title: 'Charges routières', alt: true, flex: 9, cols: 9, fields: [
           { k: 'FIX.A', code: 'A(l)', type: 'chk', help: 'Charge A(l) du fascicule 61 titre II : cochée = appliquée.' },
           { k: 'FIX.BC', code: 'Bc', type: 'chk', help: 'Camions Bc : cochés = appliqués.' },
           { k: 'FIX.BT', code: 'Bt', type: 'chk', help: 'Tandems Bt : cochés = appliqués.' },
