@@ -50,17 +50,17 @@ main{flex:1;min-height:0;padding:10px 24px 12px;max-width:1600px;width:100%;marg
   </div>
 </nav>
 <main><div id="app"></div></main>
-<script src="ouvrages-types/psida/parse.js?v=20261123f"></script>
-<script src="ouvrages-types/psida/compute.js?v=20261123f"></script>
-<script src="ouvrages-types/psida/note.js?v=20261123f"></script>
-<script src="ouvrages-types/psida/ferraillage.js?v=20261123f"></script>
-<script src="ouvrages-types/psida/comp.js?v=20261123f"></script>
-<script src="ouvrages-types/psida/index.js?v=20261123f"></script>
-<script src="ouvrages-types/ot-ui.js?v=20261123f"></script>
-<script src="ouvrages-types/psida-ui.js?v=20261123f"></script>
+<script src="ouvrages-types/psida/parse.js?v=20261123g"></script>
+<script src="ouvrages-types/psida/compute.js?v=20261123g"></script>
+<script src="ouvrages-types/psida/note.js?v=20261123g"></script>
+<script src="ouvrages-types/psida/ferraillage.js?v=20261123g"></script>
+<script src="ouvrages-types/psida/comp.js?v=20261123g"></script>
+<script src="ouvrages-types/psida/index.js?v=20261123g"></script>
+<script src="ouvrages-types/ot-ui.js?v=20261123g"></script>
+<script src="ouvrages-types/psida-ui.js?v=20261123g"></script>
 <script>try { if (localStorage.getItem('psida-init') !== '3610b') { localStorage.removeItem('bai-ot-PSIDA-EL'); localStorage.setItem('psida-init', '3610b'); } } catch (e) {}   // réinitialisation unique : nouvel exemple (dalle de 12 m)
 globalThis.OT_FONT = 1.18;   // textes des dessins un peu plus grands
-OTUI.mount(document.getElementById('app'), PSIDA_UI);
+window.OT_APP = OTUI.mount(document.getElementById('app'), PSIDA_UI);
 // gain de place : la barre Données · Lancer le calcul · Sorties remonte dans le bandeau
 (function () { const bar = document.querySelector('#app .ot-bar'), nav = document.querySelector('.nav-inner'), back = nav && nav.querySelector('.nav-back');
   if (bar && nav && back) { bar.classList.add('in-nav'); nav.insertBefore(bar, back); } })();</script>

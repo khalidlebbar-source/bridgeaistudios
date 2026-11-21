@@ -263,6 +263,16 @@
 .ot-f.ck input{width:16px;height:16px;accent-color:var(--gold)}
 .ot-f.ck label{white-space:normal}
 .ot-help{display:flex;align-items:center;gap:10px;min-height:30px;padding:5px 12px;border-radius:8px;background:var(--bg2);border:1px solid var(--border);font-size:12px;color:var(--ink2);overflow:hidden;min-width:0}
+.ot-mini{font:inherit;font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--gold);cursor:pointer}
+.ot-mini:hover{border-color:var(--gold)}
+.ot-f.btn{width:auto!important;min-width:0!important;align-self:center}.ot-f.btn .ot-mini{white-space:nowrap;width:auto!important;height:auto!important}
+.ot-modal{position:fixed;inset:0;z-index:80;background:rgba(30,26,20,.35);display:flex;align-items:center;justify-content:center}
+.ot-modal>div{background:#fffdf8;border:1px solid #d8d0bf;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.2);padding:18px 22px;min-width:420px;max-width:min(640px,92vw);font-size:13px}
+.ot-modal h3{margin:0 0 4px;font-size:15px;color:#6b4f12}.ot-modal p{margin:0 0 12px;color:#6b6457;font-size:12px;line-height:1.45}
+.ot-modal table{border-collapse:collapse}.ot-modal th{font-weight:600;font-size:11.5px;color:#7a6a4a;padding:3px 8px;text-align:center}.ot-modal td{padding:3px 6px;text-align:center}
+.ot-modal input[type=text]{width:78px;padding:4px 6px;border:1px solid #d8d0bf;border-radius:6px;font:inherit;text-align:right}
+.ot-modal .act{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.ot-modal button{font:inherit;padding:5px 14px;border-radius:7px;border:1px solid #d8d0bf;background:#f6f2ea;cursor:pointer}
+.ot-modal button.ok{background:#a07828;border-color:#a07828;color:#fff}
 .ot-tip{position:fixed;z-index:60;max-width:380px;padding:7px 10px;border-radius:7px;background:#2f2b24;color:#f4efe4;font-size:12px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.18);pointer-events:none;opacity:0;transition:opacity .12s;font-family:inherit}
 .ot-tip.on{opacity:1}
 .ot-tip span{color:#b9b09c!important}
@@ -476,6 +486,7 @@ ${def.simpleBar ? `<div class="ot-bar">
         const sro = f.ro && f.ro(S.model);   // liste déduite automatiquement (lecture seule)
         return `<div class="ot-f${ch ? ' chg' : ''}${sro ? ' auto' : ''}" data-k="${esc(f.k)}">${lab}<select id="${id}"${sro ? ' disabled' : ''}>${known ? '' : `<option value="${esc(v)}" selected>${esc(v)}</option>`}${opts}</select></div>`;
       }
+      if (f.type === 'btn') return `<div class="ot-f btn" data-k="${esc(f.k)}"><button type="button" class="ot-mini" data-btn="${esc(f.k)}">${esc(f.label || f.code)}</button></div>`;   // bouton (ex. saisie en fenêtre)
       if (f.xx && f.xx(S.model)) return `<div class="ot-f xx" data-k="${esc(f.k)}">${lab}<input id="${id}" value="xx" readonly tabindex="-1"></div>`;   // case neutralisée (ex. dalle réelle quand HDALLE / EDALLE sont forcés)
       const shown = f.type === 'txt' ? (v == null ? '' : v) : fmt(v, f.dec);
       const ro = f.ro && f.ro(S.model);   // case calculée automatiquement (lecture seule)
@@ -653,13 +664,14 @@ ${def.simpleBar ? `<div class="ot-bar">
       else { const n = num(el.value); if (!isFinite(n)) { box.classList.add('bad'); return; } v = f.type === 'int' ? Math.round(n) : n; }
       box.classList.remove('bad');
       set(k, v);
-      if (def.onChange) def.onChange(S.model, k, v);
+      if (def.onChange) def.onChange(S.model, k, v, api);
       box.classList.toggle('chg', def.isChanged ? def.isChanged(S.model, k) : false);
       S.results = null;
       clearTimeout(redrawT);
       redrawT = setTimeout(() => { runChecks(); renderSteps(); renderSchema(); renderLive(); renderHelp(); markBad(); save(); if (f.relayout) renderFields(); }, 120);
     }
     R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])') && !e.target.readOnly) onEdit(e.target); });
+    R.groups.addEventListener('click', e => { const bt = e.target.closest('[data-btn]'); if (bt && def.onButton) def.onButton(S.model, bt.dataset.btn, api); });
     R.groups.addEventListener('click', e => {   // champs « pick »
       const b = e.target.closest('.pk button'); if (!b) return;
       const box = b.closest('.ot-f'), k = box.dataset.k, cur = String(get(k)), v = b.dataset.v === cur ? 0 : (isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v);
@@ -862,7 +874,9 @@ ${def.simpleBar ? `<div class="ot-bar">
     root.style.setProperty('--fh', (34 + rows * 52) + 'px');
     renderAll();
     window.addEventListener('resize', () => { if (S.tab === 'bord' && S.mode === 'guide') { renderSchema(); renderLive(); if (def.rows) fitRows(); } });
-    return { get model() { return S.model; }, run, setTab, go };
+    const api = { get model() { return S.model; }, run, setTab, go,
+      refresh() { S.results = null; runChecks(); renderFields(); renderSteps(); renderSchema(); renderLive(); renderHelp(); markBad(); save(); } };
+    return api;
   }
 
   G.OTUI = { mount, svg, chart, figPage, esc, fmt, num };

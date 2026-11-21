@@ -115,6 +115,39 @@
     let N = W - 2 * (t.E1 + t.E2); if (N < 0.5 * W) { const k = 0.5 * W / (2 * (t.E1 + t.E2)); t.E1 = Math.round(t.E1 * k * 100) / 100; t.E2 = Math.round(t.E2 * k * 100) / 100; N = W - 2 * (t.E1 + t.E2); }
     return Object.assign(t, { FORME: f, PENTE: p, N: Math.round(N * 1000) / 1000 }); };
   const drForced = m => !!+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE forcés : la dalle réelle n'est plus utilisée
+  /* fenêtres de saisie des calculs complémentaires */
+  function popup(title, intro, body, onOk) {
+    const w = document.createElement('div'); w.className = 'ot-modal';
+    w.innerHTML = `<div role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p>${intro}</p>${body}<div class="act"><button type="button" data-x>Annuler</button><button type="button" class="ok" data-ok>Valider</button></div></div>`;
+    const close = () => w.remove();
+    w.addEventListener('click', e => { if (e.target === w || e.target.closest('[data-x]')) close(); if (e.target.closest('[data-ok]')) { onOk(w); close(); } });
+    w.addEventListener('keydown', e => { if (e.key === 'Escape') close(); if (e.key === 'Enter') { onOk(w); close(); } });
+    document.body.appendChild(w); const f = w.querySelector('input'); if (f) { f.focus(); f.select(); }
+  }
+  const nv = (w, k) => { const x = w.querySelector(`[data-v="${k}"]`); const n = x ? num(x.value) : NaN; return isFinite(n) ? n : 0; };
+  function popKin(m, app) {
+    const L = m.lignes || (m.lignes = {}), nt = Math.round(+(L.A5 || {}).NT || 1), A13 = L.A13 || {}, C = L.C11 || {};
+    let rows = '';
+    for (let i = 2; i <= nt; i++) {
+      const nap = Math.round(+A13['NAP' + i] || 0), a = +C['A' + i] || 0, e = +C['E' + i] || 0;
+      rows += `<tr><td>Appui ${i}</td><td>${nap}</td><td><input type="text" data-v="A${i}" value="${a ? fmt(a, 3) : ''}" placeholder="régulier"></td><td>${nap >= 4 ? `<input type="text" data-v="E${i}" value="${e ? fmt(e, 3) : ''}" placeholder="= a">` : '—'}</td></tr>`;
+    }
+    popup('Entraxes réels des appareils d\'appui', 'Lignes d\'appui intermédiaires. Entraxes mesurés suivant la ligne d\'appui (m) : <b>a</b> entre appareil de rive et appareil voisin, <b>e</b> entre les deux appareils centraux (lignes de 4 appareils). Case vide : appareils régulièrement espacés (espacement de la note).',
+      `<table><tr><th></th><th>NAP</th><th>a (m)</th><th>e (m)</th></tr>${rows}</table>`, w => {
+        const o = Object.assign({}, L.C11 || {});
+        for (let i = 2; i <= nt; i++) { o['A' + i] = nv(w, 'A' + i); o['E' + i] = nv(w, 'E' + i); }
+        L.C11 = o; if (app) app.refresh();
+      });
+  }
+  function popEnc(m, app) {
+    const L = m.lignes || (m.lignes = {}), C = L.C12 || {};
+    popup('Encorbellements — superstructures', 'Charges permanentes des superstructures portées par un encorbellement (corniche, contre-corniche, dispositif de retenue, remplissage du trottoir, bordure…), par mètre de longueur, et bras de levier de leur résultante par rapport à la section d\'encastrement. Le poids propre de l\'encorbellement est calculé à partir de la dalle réelle.',
+      `<table><tr><td style="text-align:left">Charge des superstructures VG1 (t/m)</td><td><input type="text" data-v="VG1" value="${fmt(C.VG1 != null ? C.VG1 : 1.996, 3)}"></td></tr>
+       <tr><td style="text-align:left">Bras de levier (m)</td><td><input type="text" data-v="BRAS" value="${fmt(C.BRAS != null ? C.BRAS : 1.436, 3)}"></td></tr>
+       <tr><td style="text-align:left">Trottoirs séparés de la chaussée par un obstacle infranchissable</td><td style="text-align:left"><input type="checkbox" data-c="SEP"${+C.SEP ? ' checked' : ''}></td></tr></table>`, w => {
+        L.C12 = { VG1: nv(w, 'VG1'), BRAS: nv(w, 'BRAS'), SEP: w.querySelector('[data-c="SEP"]').checked ? 1 : 0 }; if (app) app.refresh();
+      });
+  }
   const cmpOn = m => { const c = (m.lignes || {}).C10 || {}; return !!(+c.KIN || +c.RENF); };   // entraxes réels demandés
   const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
   const drEnc = m => { const f = drF(m); return f === 1 || f === 2; }, drBomb = m => { const f = drF(m); return f === 1 || f === 3; };
@@ -329,16 +362,15 @@
         ] },
       ] },
       { label: 'Appareils par appui (A13)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'A13', alt: i % 2 === 0, flex: 2, cols: 2, fields: [nap(i)] })) },
-      { label: 'Entraxes réels des appareils (C11)', groups: [1, 2, 3, 4, 5, 6, 7].map(i => ({ show: m => i <= (Math.round(V(m, 'A5.NT')) || 1) + 1, title: 'Appui ' + i, appui: 'C11', alt: i % 2 === 0, flex: 2, cols: 2, fields: [
-        { show: cmpOn, k: 'C11.A' + i, code: 'a' + i, rowLabel: 'a', unit: 'm', dec: 3, help: `Appui ${i} : entraxe réel des appareils de rive (mesuré suivant la ligne d'appui), pour les calculs complémentaires de l'annexe 4. 0 : appareils régulièrement espacés (espacement de la note).` },
-        { show: cmpOn, k: 'C11.E' + i, code: 'e' + i, rowLabel: 'e', unit: 'm', dec: 3, help: `Appui ${i} : entraxe réel des deux appareils centraux (lignes de 4 appareils). 0 : égal à a.` }] })) },
     ], draw: (svg, m, sch) => drawPlan(svg, m, sch) },
     { id: 'comp', col: 1, label: 'Calculs complémentaires', view: 'coupe', caption: '', hint: 'Calculs complémentaires du guide PSIDP-EL (annexes 3 et 4), à cocher.', pages: [
       { label: 'Calculs complémentaires', groups: [
-        { title: 'Guide PSIDP-EL — annexes 3 et 4', short: 'À effectuer', flex: 3, cols: 3, fields: [
+        { title: 'Guide PSIDP-EL — annexes 3 et 4', short: 'À effectuer', flex: 5, cols: 5, fields: [
           { relayout: true, k: 'CMP.ENC', code: 'Encorbellements', type: 'chk', keep: true, show: m => drF(m) === 1 || drF(m) === 2, help: 'Calcul des encorbellements (dalles-consoles) : flexion transversale de l\'encorbellement sous charges locales (guide PSIDP-EL, annexe 3). Proposé pour les dalles à larges encorbellements.' },
+          { k: 'BTN.ENC', type: 'btn', label: 'données…', keep: true, show: m => +(((m.lignes || {}).C10 || {}).ENC) === 1 && (drF(m) === 1 || drF(m) === 2), help: 'Ouvrir la fenêtre de saisie des données des encorbellements (superstructures portées par l\'encorbellement).' },
           { relayout: true, k: 'CMP.KIN', code: 'Coef. d\'inégalité et chevêtres', type: 'chk', help: 'Correction des coefficients d\'inégalité de répartition entre appareils d\'appui et ferraillage des chevêtres incorporés lorsque les appareils d\'une ligne ne sont pas régulièrement espacés (guide PSIDP-EL, annexe 4 § 5 et 6).' },
           { relayout: true, k: 'CMP.RENF', code: 'Renforcements au droit des appareils', type: 'chk', help: 'Renforcements locaux du ferraillage longitudinal au droit des appareils d\'appui des lignes intermédiaires (pointes de moment ΔM− / ΔM+, guide PSIDP-EL, annexe 4 § 7).' },
+          { k: 'BTN.KIN', type: 'btn', label: 'données…', keep: true, show: cmpOn, help: 'Ouvrir la fenêtre de saisie des entraxes réels des appareils (a, e) par ligne d\'appui.' },
         ] },
       ], draw: (svg, m, sch) => drawCoupe(svg, m, sch) },
     ] },
@@ -1365,6 +1397,8 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
+    onChange: (m, k, v, app) => { if (v === 1 && (k === 'CMP.KIN' || k === 'CMP.RENF')) setTimeout(() => popKin(m, app), 160); if (v === 1 && k === 'CMP.ENC') setTimeout(() => popEnc(m, app), 160); },
+    onButton: (m, k, app) => { if (k === 'BTN.KIN') popKin(m, app); if (k === 'BTN.ENC') popEnc(m, app); },
     pairs: true, onePage: true, rows: true, simpleBar: true, schemaModel: m => genFor(m),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],

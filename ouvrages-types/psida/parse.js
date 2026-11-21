@@ -47,6 +47,7 @@
     C8: { lab: 2, f: [I('FORME', 3), F('H1', 7, 3), F('H2', 7, 3), F('H3', 7, 3), F('PENTE', 7, 3), F('E1', 7, 3), F('E2', 7, 3), F('N', 7, 3), I('FORCE', 3)] },
     C9: { lab: 2, f: [I('MC80', 5), I('MC120', 5), I('ME80', 5), I('ME120', 5), I('TROTX', 5)] },
     C10: { lab: 3, f: [I('ENC', 5), I('KIN', 5), I('RENF', 5)] },
+    C12: { lab: 3, f: [F('VG1', 7, 3), F('BRAS', 7, 3), I('SEP', 3)] },   // encorbellements : superstructures sur l'encorbellement (t/m, bras de levier m), trottoir séparé de la chaussée (1)
     C11: { lab: 3, f: [1, 2, 3, 4, 5, 6, 7].flatMap(i => [F('A' + i, 7, 3), F('E' + i, 7, 3)]) },   // entraxes réels des appareils par ligne d'appui : a (rive), e (central) ; 0 = régulier   // calculs complémentaires (guide PSIDP-EL ann. 3 et 4) : encorbellements, coefficients d'inégalité / chevêtres, renforcements longitudinaux   // TROTX : 0 deux trottoirs chargés, 1 gauche seul, 2 droit seul, 3 aucun
   };
   // Variante de mise en page (listings 2006 : A6 EDROI F6.3 / HCHAU F8.3)
@@ -208,7 +209,7 @@
       out.push(fmtLine(k, L[k], k === 'A6' && m.version === '2006' ? A6_2006 : null, S[k]));
       if (k !== 'A13') out.push('');
     }
-    for (const k of ['C1', 'C8', 'C9', 'C10', 'C11']) if (L[k]) out.push(fmtLine(k, L[k], null, S[k]));
+    for (const k of ['C1', 'C8', 'C9', 'C10', 'C11', 'C12']) if (L[k]) out.push(fmtLine(k, L[k], null, S[k]));
     for (const k of Object.keys(L)) if (/_raw$/.test(k)) for (const r of L[k]) out.push(k.slice(0, 2) + '   ' + r);
     return out.map(x => (x === '' ? ' ' : x + ' ')).join('\n') + '\n';
   }
