@@ -13,7 +13,7 @@
     if (k === 'TITRE1') return (m.titre || [])[0] || '';
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
-    if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
+    if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ);   // t/m² (unité du bordereau)
     if (k === 'CL.FORCE') return clForced(m) ? 1 : 0;
     if (k === 'NV.N' || k === 'NV.FORCE') { const A6 = (m.lignes || {}).A6 || {}, nv = Math.round(+A6.NVOIE || 0);   // nombre de voies : fascicule 61 sauf s'il est forcé
       return k === 'NV.FORCE' ? (nv > 0 ? 1 : 0) : nv > 0 ? nv : nvF61(+A6.ESURCH || 0); }
@@ -50,9 +50,9 @@
       } else if (k === 'DR.FORCE') c.FORCE = num(v) ? 1 : 0; else c[k.slice(3)] = num(v);
       realToSetra(m); return;
     }
-    if (k === 'FC28') {                                                   // fc28 (MPa) → FCJ, et FTJ = 60 + 0,06 FCJ (t/m²)
+    if (k === 'FC28') {                                                   // fc28 (t/m²) → FCJ, et FTJ = 60 + 0,06 FCJ (t/m²)
       m.lignes = m.lignes || {}; if (!m.lignes.A9) m.lignes.A9 = emptyLine('A9');
-      const fc = num(v) * 100; m.lignes.A9.FCJ = fc; m.lignes.A9.FTJ = Math.round((60 + 0.06 * fc) * 10) / 10; return;
+      const fc = num(v); m.lignes.A9.FCJ = fc; m.lignes.A9.FTJ = Math.round((60 + 0.06 * fc) * 10) / 10; return;
     }
     if (k.startsWith('FIX.')) {
       m.lignes = m.lignes || {}; if (!m.lignes.A8) m.lignes.A8 = emptyLine('A8');
@@ -275,7 +275,7 @@
     { id: 'mat', col: 2, label: 'Béton', view: 'coupe', caption: '', hint: 'État-limite d\'ouverture des fissures et caractéristiques du béton (unités du bordereau : t/m²).', pages: [
       { label: 'Béton', groups: [
         { title: 'Béton (BAEL 91 mod. 99)', short: '', flex: 4, cols: 4, fields: [
-          { k: 'FC28', code: 'fc28', label: 'compression', unit: 'MPa', dec: 1, help: 'Résistance caractéristique à la compression à 28 jours (MPa). ft28 = 0,6 + 0,06 fc28 en est déduite (BAEL A.2.1,12).' },
+          { k: 'FC28', code: 'fc28', label: 'compression', unit: 't/m²', dec: 0, help: 'Résistance caractéristique à la compression à 28 jours (t/m² ; 3000 t/m² = 30 MPa). ft28 = 60 + 0,06 fc28 (t/m²) en est déduite (BAEL A.2.1,12).' },
           { k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
           { k: 'A9.POISSON', code: 'Poisson', label: 'coef. Poisson', dec: 3, help: 'Coefficient de Poisson du béton (flexion transversale). Valeur conseillée 0,20.', def: '0,20' },
           { k: 'A9.RETRAI', code: 'Retrait', label: 'retrait', dec: 5, help: 'Raccourcissement relatif final du retrait du béton (BAEL A.2.1,22), ex. 0,00040.', def: '0,00040' },
@@ -740,9 +740,9 @@
     if (!/^[123]0[01]$/.test(ge)) E_('mat', 'A9.GENRE', 'GENRE : 100, 200, 300 (ou 101, 201, 301 avec la ligne C1)');
     else if (ge[2] === '1' && !(L.C1 && [1, 2, 3, 4].every(i => L.C1['SS' + i] > 0))) E_('mat', 'C1.SS1', `GENRE = ${ge} : contraintes limites ss1 à ss4 de la ligne C1 à renseigner`);
     const fc = V(m, 'A9.FCJ'), ft = V(m, 'A9.FTJ');
-    if (!(fc > 0)) E_('mat', 'FC28', 'la résistance fc28 doit être positive (MPa)');
-    else if (fc < 1000) E_('mat', 'FC28', `fc28 = ${fmt(fc / 100, 1)} MPa : trop faible`);
-    else if (fc < 2000 || fc > 6000) W_('mat', 'FC28', `résistance ${fmt(fc / 100, 0)} MPa inhabituelle (25 à 40 MPa)`);
+    if (!(fc > 0)) E_('mat', 'FC28', 'la résistance fc28 doit être positive (t/m²)');
+    else if (fc < 1000) E_('mat', 'FC28', `fc28 = ${fmt(fc, 0)} t/m² : trop faible`);
+    else if (fc < 2000 || fc > 6000) W_('mat', 'FC28', `résistance ${fmt(fc, 0)} t/m² inhabituelle (2500 à 4000 t/m²)`);
     if (fc >= 1000) { const ftr = 60 + 0.06 * fc; if (!(ft > 0)) E_('mat', 'A9.FTJ', 'la résistance à la traction FTJ doit être positive'); else if (Math.abs(ft - ftr) > 0.06 * ftr) W_('mat', 'A9.FTJ', `BAEL : ftj = 0,6 + 0,06 fcj = ${fmt(ftr, 0)} t/m² (saisi ${fmt(ft, 0)})`); }
     const nu = V(m, 'A9.POISSON'); if (nu < 0 || nu > 0.3) E_('mat', 'A9.POISSON', 'coefficient de Poisson compris entre 0 et 0,3');
     const re = V(m, 'A9.RETRAI'); if (re < 0 || re > 0.001) W_('mat', 'A9.RETRAI', `retrait ${fmt(re, 5)} inhabituel (≈ 0,0003 à 0,0005)`);
