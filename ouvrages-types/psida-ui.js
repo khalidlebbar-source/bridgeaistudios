@@ -14,7 +14,7 @@
     if (k === 'TITRE2') return (m.titre || [])[1] || '';
     if (k === 'NUM') return m.numero || '';
     if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ) / 100;   // t/m² → MPa
-    if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
+    if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : k === 'DR.FORCE' ? (+c.FORCE ? 1 : 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
     if (k.startsWith('FIX.')) {                                           // charges A(l), Bc, Bt (codes A et B, extension 000 / 002 / 003)
       const A8 = (m.lignes || {}).A8 || {}, a = String(A8.A || '001').padStart(3, '0'), b = String(A8.B || '001').padStart(3, '0');
       return k === 'FIX.A' ? +(a !== '000') : k === 'FIX.BC' ? +(b !== '000' && b !== '003') : +(b !== '000' && b !== '002');
@@ -37,7 +37,11 @@
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
     if (k.startsWith('DR.')) {
       m.lignes = m.lignes || {}; const c = m.lignes.C8 || (m.lignes.C8 = { FORME: 0, H1: 0, H2: 0, H3: 0, PENTE: 0, E1: 0, E2: 0, N: 0 });
-      if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; } } else c[k.slice(3)] = num(v);
+      if (k === 'DR.FORME') { c.FORME = Math.round(num(v)) || 0; if (!c.FORME) { delete m.lignes.C8; return; }
+        if (!(c.N > 0)) { const A7 = m.lignes.A7 || {}; c.N = A7.EDALLE1 || 6; c.E2 = (A7.EDALLE3 || 0.6) / 2; c.E1 = Math.max(0, (A7.EDALLE2 || 3.6) / 2 - c.E2);   // valeurs de départ tirées de la saisie SETRA
+          c.H3 = A7.HDALLE3 || 0.4; c.H1 = A7.HDALLE2 || 0.3; c.H2 = 0; c.PENTE = c.PENTE || 2.5; }
+        if (c.FORME > 2) { c.E2 = c.E2 + c.E1; }   // encorbellement réduit : le pan incliné va jusqu'au bord
+      } else if (k === 'DR.FORCE') c.FORCE = num(v) ? 1 : 0; else c[k.slice(3)] = num(v);
       realToSetra(m); return;
     }
     if (k === 'FC28') {                                                   // fc28 (MPa) → FCJ, et FTJ = 60 + 0,06 FCJ (t/m²)
@@ -80,17 +84,24 @@
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
   };
+  const TH = (enc, bomb) => {   // vignette de l'allure de la dalle réelle (64 × 20)
+    const top = bomb ? 'M2 7 L32 3 L62 7' : 'M2 5 L62 5';
+    const und = enc ? 'L62 9 L48 10 L44 17 L20 17 L16 10 L2 9' : 'L62 9 L46 17 L18 17 L2 9';
+    return `<svg viewBox="0 0 64 20"><path d="${top} ${und} Z" fill="#e8e1d1" stroke="#5d5545" stroke-width="1" stroke-linejoin="round"/></svg>`;
+  };
   const drF = m => +(((m.lignes || {}).C8 || {}).FORME) || 0;
+  const drEnc = m => { const f = drF(m); return f === 1 || f === 2; }, drBomb = m => { const f = drF(m); return f === 1 || f === 3; };
+  const drAuto = m => drF(m) > 0 && !+(((m.lignes || {}).C8 || {}).FORCE);   // HDALLE / EDALLE calculés depuis la dalle réelle
   /* passage dalle réelle → dalle SETRA (règle de la feuille de Khalid, exacte sur 0063) : extrados en toit remplacé par un
      extrados plat à sa hauteur moyenne, sous-face des encorbellements prise à sa hauteur moyenne. */
   function realGeom(c) {
-    const f = +c.FORME, H1 = +c.H1 || 0, H2 = f === 1 ? (+c.H2 || 0) : 0, H3 = +c.H3 || 0, p = (+c.PENTE || 0) / 100;
-    const E1 = f === 1 ? (+c.E1 || 0) : 0, E2 = +c.E2 || 0, N = +c.N || 0, L = N + 2 * (E1 + E2), bomb = p * L / 2;
+    const f = +c.FORME, enc = f === 1 || f === 2, H1 = +c.H1 || 0, H2 = enc ? (+c.H2 || 0) : 0, H3 = +c.H3 || 0, p = f === 1 || f === 3 ? (+c.PENTE || 0) / 100 : 0;
+    const E1 = enc ? (+c.E1 || 0) : 0, E2 = +c.E2 || 0, N = +c.N || 0, L = N + 2 * (E1 + E2), bomb = p * L / 2;
     const Hd1 = H1 + H2 + H3 + bomb / 2, Hd3 = H3 + H2 / 2;
-    return { f, H1, H2, H3, p, E1, E2, N, L, bomb, H: H1 + H2 + H3 + bomb, A7: { HDALLE1: Hd1, HDALLE2: Hd1 - Hd3, HDALLE3: Hd3, EDALLE1: N, EDALLE2: 2 * (E1 + E2), EDALLE3: 2 * E2 } };
+    return { f, enc, H1, H2, H3, p, E1, E2, N, L, bomb, H: H1 + H2 + H3 + bomb, A7: { HDALLE1: Hd1, HDALLE2: Hd1 - Hd3, HDALLE3: Hd3, EDALLE1: N, EDALLE2: 2 * (E1 + E2), EDALLE3: 2 * E2 } };
   }
   function realToSetra(m) {
-    const c = (m.lignes || {}).C8; if (!c || !c.FORME || !(c.N > 0)) return;
+    const c = (m.lignes || {}).C8; if (!c || !c.FORME || +c.FORCE || !(c.N > 0)) return;
     const g = realGeom(c), A7 = m.lignes.A7 || (m.lignes.A7 = emptyLine('A7'));
     for (const [k, v] of Object.entries(g.A7)) A7[k] = Math.round(v * 1000 + 1e-6) / 1000;   // au mm, comme les bordereaux SETRA (0063 : 0,738 / 0,313 / 0,425)
     A7.HDALLE2 = Math.round((A7.HDALLE1 - A7.HDALLE3) * 1000 + 1e-6) / 1000;
@@ -137,7 +148,11 @@
     { id: 'id', noCap: true, label: 'Identification', view: 'elev', caption: '', hint: 'Survolez une case : sa définition s\'affiche ici et la cote correspondante s\'allume sur les dessins.', pages: [
       { label: 'Titre', groups: [
         { title: 'Titre de la note (ligne A1)', short: '', flex: 5, cols: 2, fields: [
-          { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', bare: true, help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
+          { k: 'TITRE1', code: 'A1', label: 'ligne 1', type: 'txt', bare: true, w: 520, help: 'Identité de l\'ouvrage (ligne A1, 80 caractères) : imprimée en tête de la note.' },
+        ] },
+        { title: 'Allure de la dalle réelle', short: '', flex: 4, cols: 4, fields: [
+          { k: 'DR.FORME', code: 'Allure de la dalle réelle', type: 'pick', bare: true, opts: [[1, 'encorb. larges, bombée', TH(1, 1)], [2, 'encorb. larges, plate', TH(1, 0)], [3, 'encorb. réduit, bombée', TH(0, 1)], [4, 'encorb. réduit, plate', TH(0, 0)]],
+            help: 'Allure de la dalle réelle : les croquis la suivent et HDALLE / EDALLE en sont déduits (rubrique Coupe transversale). Cliquer à nouveau sur le bouton actif : saisie SETRA directe.' },
         ] },
       ] },
     ], draw: (svg, m, sch) => drawElev(svg, m, sch, 'app') },
@@ -173,27 +188,27 @@
 
     { id: 'sect', col: 1, label: 'Coupe transversale', view: 'coupe', caption: '', hint: 'Épaisseurs et largeurs droites de la dalle (EDALLE2 mesurée depuis les arêtes inférieures, flancs compris).', pages: [
       { label: 'Structure porteuse (A7)', caption: '', draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab'), groups: [
-        { title: 'Dalle réelle (remplit HDALLE et EDALLE)', short: 'Dalle réelle → SETRA', alt: true, flex: 8, cols: 8, fields: [
-          { k: 'DR.FORME', code: 'Forme', type: 'sel', w: 132, relayout: true, opts: [[0, 'saisie SETRA directe'], [1, 'encorbellements'], [2, 'trapèze']], help: 'Forme de la dalle réelle : les épaisseurs et largeurs SETRA (HDALLE, EDALLE) en sont déduites. « saisie SETRA directe » : HDALLE et EDALLE saisis à la main.' },
-          { show: m => drF(m) === 1, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Encorbellements : épaisseur au bout de l\'encorbellement (verticale du bord).' },
-          { show: m => drF(m) === 1, relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
-          { show: m => drF(m) === 1, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Encorbellements : hauteur du flanc, de l\'intrados à la sous-face de l\'encorbellement à son enracinement.' },
-          { show: m => drF(m) === 2, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Trapèze : hauteur de la face verticale du bord.' },
-          { show: m => drF(m) === 2, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Trapèze : hauteur du pan incliné, de l\'intrados au bas de la face verticale du bord.' },
-          { show: m => drF(m) > 0, relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
-          { show: m => drF(m) === 1, relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
+        { show: m => drF(m) > 0, title: 'Dalle réelle (remplit HDALLE et EDALLE)', short: 'Dalle réelle', alt: true, flex: 8, cols: 8, fields: [
+          { show: m => drEnc(m), relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Encorbellements : épaisseur au bout de l\'encorbellement (verticale du bord).' },
+          { show: m => drEnc(m), relayout: true, k: 'DR.H2', code: 'H2', unit: 'm', dec: 3, help: 'Encorbellements : surépaisseur de la sous-face entre le bout et l\'enracinement de l\'encorbellement.' },
+          { show: m => drEnc(m), relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Encorbellements : hauteur du flanc, de l\'intrados à la sous-face de l\'encorbellement à son enracinement.' },
+          { show: m => drF(m) > 2, relayout: true, k: 'DR.H1', code: 'H1', unit: 'm', dec: 3, help: 'Trapèze : hauteur de la face verticale du bord.' },
+          { show: m => drF(m) > 2, relayout: true, k: 'DR.H3', code: 'H3', unit: 'm', dec: 3, help: 'Trapèze : hauteur du pan incliné, de l\'intrados au bas de la face verticale du bord.' },
+          { show: m => drBomb(m), relayout: true, k: 'DR.PENTE', code: 'Pente', unit: '%', dec: 2, help: 'Dévers en toit de l\'extrados (%, de part et d\'autre de l\'axe).' },
+          { show: m => drEnc(m), relayout: true, k: 'DR.E1', code: 'E1', unit: 'm', dec: 3, help: 'Encorbellements : largeur de l\'encorbellement (du bord à l\'enracinement).' },
           { show: m => drF(m) > 0, relayout: true, k: 'DR.E2', code: 'E2', unit: 'm', dec: 3, help: 'Projection horizontale du flanc (trapèze : du pan incliné).' },
           { show: m => drF(m) > 0, relayout: true, k: 'DR.N', code: 'N', unit: 'm', dec: 3, help: 'Largeur de l\'intrados (nervure).' },
+          { show: m => drF(m) > 0, k: 'DR.FORCE', code: 'forcer', type: 'chk', relayout: true, help: 'Cocher pour saisir soi-même HDALLE et EDALLE (ils ne sont plus recalculés depuis la dalle réelle).' },
         ] },
         { title: 'Épaisseurs', flex: 3, cols: 3, fields: [
-          { k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
-          { k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
-          { k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
+          { ro: drAuto, k: 'A7.HDALLE1', code: 'HDALLE1', label: 'nervure', unit: 'm', dec: 3, help: 'Épaisseur de la dalle résistante (de la nervure si la coupe comporte des encorbellements). À majorer si la dalle est bombée.' },
+          { ro: drAuto, k: 'A7.HDALLE2', code: 'HDALLE2', label: 'bout d\'encorb.', unit: 'm', dec: 3, help: 'Épaisseur à l\'extrémité des encorbellements latéraux. Cas courant : moyenne ½(h1 + h2) des épaisseurs d\'encorbellement.' },
+          { ro: drAuto, k: 'A7.HDALLE3', code: 'HDALLE3', label: 'flanc', unit: 'm', dec: 3, help: 'Hauteur verticale du flanc oblique entre l\'encorbellement et le corps de la dalle. Cas courant : HDALLE1 − HDALLE2.' },
         ] },
         { title: 'Largeurs droites', alt: true, flex: 3, cols: 3, fields: [
-          { k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
-          { k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
-          { k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
+          { ro: drAuto, k: 'A7.EDALLE1', code: 'EDALLE1', label: 'intrados', unit: 'm', dec: 3, help: 'Largeur droite d\'intrados entre encorbellements (entre arêtes inférieures de la nervure).' },
+          { ro: drAuto, k: 'A7.EDALLE2', code: 'EDALLE2', label: 'encorb. cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux encorbellements (gauche + droit), mesurée depuis les arêtes inférieures de la nervure : flancs obliques compris. Largeur totale de la dalle = EDALLE1 + EDALLE2.' },
+          { ro: drAuto, k: 'A7.EDALLE3', code: 'EDALLE3', label: 'flancs cumulés', unit: 'm', dec: 3, help: 'Largeur droite cumulée des deux flancs obliques (projection horizontale), comprise dans EDALLE2.' },
         ] },
       ] },
     ], draw: (svg, m, sch) => drawCoupe(svg, m, sch, 'slab') },
@@ -303,6 +318,15 @@
     GEN = m; return m;
   }
 
+  // schéma de principe : même allure de dalle réelle que l'ouvrage saisi (cotes génériques)
+  const GENF = {};
+  function genFor(m) {
+    const f = drF(m || {}); if (!f) return gen();
+    if (GENF[f]) return GENF[f];
+    const g = JSON.parse(JSON.stringify(gen()));
+    g.lignes.C8 = f <= 2 ? { FORME: f, H1: 0.25, H2: 0.12, H3: 0.42, PENTE: 2.5, E1: 1.4, E2: 0.5, N: 6, FORCE: 0 } : { FORME: f, H1: 0.3, H2: 0, H3: 0.45, PENTE: 2.5, E1: 0, E2: 1.9, N: 6, FORCE: 0 };
+    realToSetra(g); return (GENF[f] = g);
+  }
   /* ───── dessins ───── */
   const lab = (m, k, sch, d, u) => sch ? code(k) : fmt(V(m, k), d == null ? 2 : d) + (u || '');
   const P = (x, y) => (+x.toFixed(4)) + ',' + (+(-y).toFixed(4));
@@ -453,19 +477,33 @@
     // section
     const R = [[xa, 0], ...(xb > xa ? [[xb, H3]] : [[xa, H3]]), ...(xc > xb ? [[xc, H1 - H2]] : []), [xc, H1]];
     const full = [...R.slice().reverse().map(p => [-p[0], p[1]]), ...R];
-    d.poly(full, 'b');
+    const RG = drF(m) && (((m.lignes || {}).C8 || {}).N > 0) ? realGeom(m.lignes.C8) : null;   // allure réelle de la dalle
+    let realPts = null;
+    if (RG) { const x2 = RG.L / 2, x1 = x2 - RG.E1, x0 = RG.N / 2, yE = RG.H1 + RG.H2 + RG.H3, dy = RG.H - RG.bomb / 2 - H1;   // extrados moyen calé sur HDALLE1
+      const hp = [[x0, 0], ...(RG.enc ? [[x1, RG.H3], [x2, RG.H3 + RG.H2]] : [[x2, RG.H3]]), [x2, yE], [0, RG.H]];
+      realPts = [...hp, ...hp.slice(0, -1).reverse().map(p => [-p[0], p[1]])].map(p => [p[0], p[1] - dy]);
+      realPts.geo = { x0, x1, x2, yE, dy }; }
+    d.poly(realPts || full, 'b');
     zone(d, [[-xa, 0], [xa, 0], [xa, H1], [-xa, H1]], 'A7.EDALLE1 A7.HDALLE1');
     for (const sg of [1, -1]) {
       if (xb > xa) zone(d, [[sg * xa, 0], [sg * xb, H3], [sg * xb, H1], [sg * xa, H1]], 'A7.EDALLE3 A7.HDALLE3');
       if (xc > xb) zone(d, [[sg * xb, H3], [sg * xc, H1 - H2], [sg * xc, H1], [sg * xb, H1]], 'A7.EDALLE2 A7.HDALLE2');
     }
-    d.path(full.concat([full[0]]), 'l');
-    if (mode === 'slab' && !sch && drF(m) && (((m.lignes || {}).C8 || {}).N > 0)) {   // dalle réelle superposée (tiretés rouges)
-      const g = realGeom(m.lignes.C8), x2 = g.L / 2, x1 = x2 - g.E1, x0 = g.N / 2, yE = g.H1 + g.H2 + g.H3;
-      const half_ = [[x0, 0], [x1, g.H3], ...(g.f === 1 ? [[x2, g.H3 + g.H2]] : []), [x2, yE], [0, g.H]];
-      const pts = [...half_, ...half_.slice(0, -1).reverse().map(p => [-p[0], p[1]])];
-      d.path(pts.concat([pts[0]]), 'real');
-      d.text(0, g.H + hc + 0.42, `dalle réelle : H = ${fmt(g.H, 3)} m au centre, dévers ${fmt(g.p * 100, 1)} %`, { size: 0.7, cls: 'realt' });
+    d.path((realPts || full).concat([(realPts || full)[0]]), 'l');
+    if (realPts && mode === 'slab') {   // coupe transversale : dalle SETRA équivalente en tiretés + cotes de la dalle réelle
+      d.path(full.concat([full[0]]), 'real');
+      const { x0, x1, x2, yE, dy } = realPts.geo, Y = y => y - dy;
+      d.text(-x2, -1.15, sch ? 'tiretés : dalle SETRA équivalente (HDALLE, EDALLE)' : `tiretés : dalle SETRA équivalente — HDALLE1 ${fmt(H1, 3)} · HDALLE2 ${fmt(H2, 3)} · HDALLE3 ${fmt(H3, 3)}`, { size: 0.62, a: 'start', cls: 'realt' });
+      d.dim(-x0, Y(0), x0, Y(0), sch ? 'N' : fmt(RG.N, 2), -0.3, 'DR.N', { size: 0.95 });
+      for (const sg of [-1, 1]) {
+        if (RG.enc) { d.dim(sg < 0 ? -x1 : x0, Y(0), sg < 0 ? -x0 : x1, Y(0), sch ? 'E2' : fmt(RG.E2, 2), -0.3, 'DR.E2', { size: 0.8 }); d.dim(sg < 0 ? -x2 : x1, Y(0), sg < 0 ? -x1 : x2, Y(0), sch ? 'E1' : fmt(RG.E1, 2), -0.3, 'DR.E1', { size: 0.8 }); }
+        else d.dim(sg < 0 ? -x2 : x0, Y(0), sg < 0 ? -x0 : x2, Y(0), sch ? 'E2' : fmt(RG.E2, 2), -0.3, 'DR.E2', { size: 0.8 });
+      }
+      d.dim(x2, Y(yE - RG.H1), x2, Y(yE), sch ? 'H1' : fmt(RG.H1, 3), -0.2, 'DR.H1', { size: 0.8 });
+      if (RG.enc && RG.H2 > 0) d.dim(x2 + 0.45, Y(RG.H3), x2 + 0.45, Y(RG.H3 + RG.H2), sch ? 'H2' : fmt(RG.H2, 3), -0.2, 'DR.H2', { size: 0.8 });
+      d.dim(RG.enc ? x1 : x2 + 0.9, Y(0), RG.enc ? x1 : x2 + 0.9, Y(RG.H3), sch ? 'H3' : fmt(RG.H3, 3), -0.2, 'DR.H3', { size: 0.8 });
+      d.dim(-0.25, Y(0), -0.25, Y(RG.H), sch ? 'H' : fmt(RG.H, 3), -0.05, 'DR.H1 DR.H2 DR.H3 DR.PENTE', { size: 0.8, inside: true });
+      if (RG.p > 0) for (const sg of [-1, 1]) d.text(sg * x2 * 0.55, Y(RG.H - RG.p * x2 * 0.55) + 0.12, sch ? (sg < 0 ? '← pente' : 'pente →') : (sg < 0 ? '← ' : '') + fmt(RG.p * 100, 1) + ' %' + (sg > 0 ? ' →' : ''), { size: 0.7, cls: sch ? 'tc' : 'dv', k: 'DR.PENTE' });
     }
     if (HALF) { zone(d, [[-2, -0.4], [-0.35, -0.4], [-0.35, H1 + hc + 0.6], [-2, H1 + hc + 0.6]], '', 'car'); const p = []; for (let i = 0; i <= 10; i++) p.push([-0.35 + (i % 2 ? 0.05 : -0.05), -0.25 + (H1 + hc + 0.5) * i / 10]); d.path(p, 'l'); }
     d.line(0, -0.9, 0, top + (HALF ? 0.75 : 0.6), 'ax');
@@ -534,7 +572,7 @@
     }
     if (mode === 'mat') d.text(0, H1 * 0.45, sch ? 'fc28 · fissuration · Poisson · retrait' : `fc28 ${fmt(V(m, 'A9.FCJ') / 100, 1)} MPa · ft28 ${fmt(V(m, 'A9.FTJ') / 100, 2)} MPa`, { size: 0.8, cls: sch ? 'tc' : 'dv', k: 'A9.FCJ A9.FTJ A9.POISSON A9.RETRAI A9.GENRE' });
     // cotes de la section
-    const DET = !LOADS && mode !== 'mat' && mode !== 'prof';   // 'prof' : seules les cotes du profil en travers ; 'slab' : seules celles de la dalle
+    const DET = !LOADS && mode !== 'mat' && mode !== 'prof' && !(realPts && mode === 'slab');   // 'prof' : seules les cotes du profil en travers ; 'slab' : seules celles de la dalle
     const sides = !DET ? [] : HALF ? [1] : [-1, 1];
     if (xc > xb) for (const sg of sides) d.dim(sg < 0 ? -xc : xa, 0, sg < 0 ? -xa : xc, 0, sch ? 'EDALLE2/2' : fmt(xc - xa, 2), -1.0, 'A7.EDALLE2', { size: 0.9 * Z });
     if (HALF) d.dim(0, 0, xa, 0, sch ? 'EDALLE1/2' : fmt(xa, 2), -0.5, 'A7.EDALLE1', { size: Z });
@@ -1203,7 +1241,7 @@
 
   G.PSIDA_UI = {
     prog: 'PSIDA-EL', engine, steps, get, set, checks, summary, blank,
-    pairs: true, onePage: true, rows: true, simpleBar: true, schemaModel: () => gen(),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
+    pairs: true, onePage: true, rows: true, simpleBar: true, schemaModel: m => genFor(m),   // à gauche le schéma SETRA coté par les paramètres, à droite l'ouvrage saisi à l'échelle
     numero: m => m.numero || '0001',
     examples: [{ label: '3 travées 12,5 + 16 + 12,5 m, pont droit', text: EX1 }, { label: '2 travées 15 + 15 m, pont droit', text: EX2 }],
     views: [

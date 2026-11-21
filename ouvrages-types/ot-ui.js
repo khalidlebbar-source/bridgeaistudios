@@ -206,6 +206,14 @@
 .ot.one .ot-f label em{display:inline;font-style:normal;font-family:'Outfit',sans-serif;font-size:8.5px;font-weight:400;color:var(--ink3);margin-left:4px;letter-spacing:0;text-transform:none}
 .ot.one .ot-f input,.ot.one .ot-f select{height:22px;font-size:11.5px;padding:0 4px;border-radius:5px}
 .ot.one .ot-f select{padding:0 1px}
+.ot.one .ot-f.pick{width:auto}
+.ot-f.pick .pk{display:flex;gap:6px}
+.ot-f.pick .pk button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 6px 2px;border:1px solid var(--border);border-radius:7px;background:var(--white);cursor:pointer;font:inherit;color:var(--ink3)}
+.ot-f.pick .pk button svg{width:64px;height:20px;display:block}
+.ot-f.pick .pk button span{font-size:9px;line-height:1.1;white-space:nowrap}
+.ot-f.pick .pk button.on{border-color:var(--gold);background:var(--gold-bg);color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.ot-f.pick .pk button:hover{border-color:var(--gold2)}
+.ot-f.auto input{background:#eef3fd;color:#1a4fd6;border-color:#cdd9f3;cursor:default}
 .ot.one .ot-f.ck{width:auto;height:20px;margin:0 10px 0 0;gap:4px}
 .ot.one .ot-f.ck input{width:13px;height:13px}
 .ot.one .ot-f.wtxt{width:100%;flex:1 1 200px}
@@ -447,6 +455,9 @@ ${def.simpleBar ? `<div class="ot-bar">
       const ch = def.isChanged ? def.isChanged(S.model, f.k) : false;
       const id = 'f_' + String(f.k).replace(/[^\w]/g, '_');
       const lab = `<label for="${id}"><code>${esc(f.code || f.k)}</code><span>${esc(f.label || '')}</span>${f.unit ? `<em>${esc(f.unit)}</em>` : ''}</label>`;
+      if (f.type === 'pick') {   // boutons à vignette (ex. allure de la dalle) ; un second clic sur le bouton actif le désélectionne
+        return `<div class="ot-f pick" data-k="${esc(f.k)}">${lab}<div class="pk">${f.opts.map(o => `<button type="button" data-v="${esc(o[0])}" class="${String(o[0]) === String(v) ? 'on' : ''}" title="${esc(o[1])}">${o[2] || ''}<span>${esc(o[1])}</span></button>`).join('')}</div></div>`;
+      }
       if (f.type === 'chk') {
         return `<div class="ot-f ck" data-k="${esc(f.k)}"><input type="checkbox" id="${id}" ${num(v) === (f.on == null ? 1 : f.on) ? 'checked' : ''}${f.locked ? ' disabled' : ''}>${lab}</div>`;
       }
@@ -456,12 +467,13 @@ ${def.simpleBar ? `<div class="ot-bar">
         return `<div class="ot-f${ch ? ' chg' : ''}" data-k="${esc(f.k)}">${lab}<select id="${id}">${known ? '' : `<option value="${esc(v)}" selected>${esc(v)}</option>`}${opts}</select></div>`;
       }
       const shown = f.type === 'txt' ? (v == null ? '' : v) : fmt(v, f.dec);
-      return `<div class="ot-f${ch ? ' chg' : ''}" data-k="${esc(f.k)}">${lab}<input id="${id}" ${f.type === 'txt' ? '' : 'inputmode="decimal"'} value="${esc(shown)}" autocomplete="off"></div>`;
+      const ro = f.ro && f.ro(S.model);   // case calculée automatiquement (lecture seule)
+      return `<div class="ot-f${ch ? ' chg' : ''}${ro ? ' auto' : ''}" data-k="${esc(f.k)}">${lab}<input id="${id}" ${f.type === 'txt' ? '' : 'inputmode="decimal"'} value="${esc(shown)}" autocomplete="off"${ro ? ' readonly tabindex="-1"' : ''}></div>`;
     }
     function renderOne() {
       // blocs = étapes ; sous-groupes = groupes des pages ; groupes « par appui » (g.appui) regroupés en tableau
       const W = f => f.type === 'txt' ? (f.w ? `--w:${f.w}px;flex:0 0 auto` : '') : f.type === 'sel' ? `--w:${f.w || 84}px` : `--w:${f.w || 52}px`;
-      const fh = f => { let x = fieldHTML(f).replace('class="ot-f', `style="${W(f)}" class="ot-f${f.type === 'txt' ? ' wtxt' : ''}`); if (f.bare) x = x.replace(/<label[^>]*>[\s\S]*?<\/label>/, ''); return x; };
+      const fh = f => { let x = fieldHTML(f).replace('class="ot-f', `style="${W(f)}" class="ot-f${f.type === 'txt' && !f.w ? ' wtxt' : ''}`); if (f.bare) x = x.replace(/<label[^>]*>[\s\S]*?<\/label>/, ''); return x; };
       const blk = steps.map((st, si) => {
         const vis = x => !x.show || x.show(S.model);   // cases et groupes conditionnels (ex. portées D1…DNT, appuis 1…NT + 1)
         const gs = st.pages.flatMap(p => p.groups).filter(vis).map(g => g.fields.every(vis) ? g : Object.assign({}, g, { fields: g.fields.filter(vis) })).filter(g => g.fields.length);
@@ -555,7 +567,7 @@ ${def.simpleBar ? `<div class="ot-bar">
       R.sch.closest('.ot-main').classList.toggle('single', !!one);
       if (one) { R.schcap.textContent = 'cliquez une charge pour la cocher ou la décocher'; let h1 = ''; try { h1 = one(svg, S.model); } catch (e) { console.error(e); } R.sch.innerHTML = h1; const s1 = R.sch.querySelector('svg'); if (s1) s1.style.cursor = 'pointer'; hl(R.sch, S.focus); return; }
       const dp = pairOf(); const pc = dp && (steps[S.step].pages[S.page] || {}).caption;
-      try { h = dp ? dp(svg, def.schemaModel ? def.schemaModel() : S.model, true) : st.schema ? st.schema(svg, S.model) : ''; } catch (e) { h = `<div class="ot-empty">Schéma indisponible.</div>`; console.error(e); }
+      try { h = dp ? dp(svg, def.schemaModel ? def.schemaModel(S.model) : S.model, true) : st.schema ? st.schema(svg, S.model) : ''; } catch (e) { h = `<div class="ot-empty">Schéma indisponible.</div>`; console.error(e); }
       R.sch.innerHTML = h; const s = R.sch.querySelector('svg'); if (s) s.classList.add('sch');
       R.schcap.textContent = pc || st.caption || '';
       hl(R.sch, S.focus);
@@ -635,7 +647,13 @@ ${def.simpleBar ? `<div class="ot-bar">
       clearTimeout(redrawT);
       redrawT = setTimeout(() => { runChecks(); renderSteps(); renderSchema(); renderLive(); renderHelp(); markBad(); save(); if (f.relayout) renderFields(); }, 120);
     }
-    R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) onEdit(e.target); });
+    R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])') && !e.target.readOnly) onEdit(e.target); });
+    R.groups.addEventListener('click', e => {   // champs « pick »
+      const b = e.target.closest('.pk button'); if (!b) return;
+      const box = b.closest('.ot-f'), k = box.dataset.k, cur = String(get(k)), v = b.dataset.v === cur ? 0 : (isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v);
+      set(k, v); if (def.onChange) def.onChange(S.model, k, v); S.results = null; S._pk = null;
+      runChecks(); renderFields(); renderSteps(); renderSchema(); renderLive(); renderHelp(); markBad(); save();
+    });
     if (def.rows) { R.groups.addEventListener('input', e => { if (e.target.matches('input:not([type=checkbox])')) fitInputs(e.target); }); R.groups.addEventListener('change', e => { if (e.target.matches('select')) fitInputs(e.target); }); }
     R.groups.addEventListener('change', e => { if (e.target.matches('select,input[type=checkbox]')) { onEdit(e.target); const f = fieldByKey(e.target.closest('.ot-f').dataset.k); if (f && f.relayout) setTimeout(renderFields, 130); } });
     R.groups.addEventListener('focusin', e => { const b = e.target.closest('.ot-f'); if (b) { S.focus = b.dataset.k; if (def.onePage) followField(S.focus); hl(R.sch, S.focus); hl(R.live, S.focus); renderHelp(); } });
