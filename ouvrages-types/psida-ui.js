@@ -15,6 +15,7 @@
     if (k === 'NUM') return m.numero || '';
     if (k === 'FC28') return num(((m.lignes || {}).A9 || {}).FCJ);   // t/m² (unité du bordereau)
     if (k === 'CL.FORCE') return clForced(m) ? 1 : 0;
+    if (k === 'SS.ALL') return num(((m.lignes || {}).C1 || {}).SS1) || 0;   // σs imposée (ligne C1)
     if (k === 'NV.N' || k === 'NV.FORCE') { const A6 = (m.lignes || {}).A6 || {}, nv = Math.round(+A6.NVOIE || 0);   // nombre de voies : fascicule 61 sauf s'il est forcé
       return k === 'NV.FORCE' ? (nv > 0 ? 1 : 0) : nv > 0 ? nv : nvF61(+A6.ESURCH || 0); }
     if (k.startsWith('DR.')) { const c = ((m.lignes || {}).C8) || {}; return k === 'DR.FORME' ? (c.FORME || 0) : k === 'DR.FORCE' ? (+c.FORCE ? 1 : 0) : (c[k.slice(3)] || 0); }   // dalle réelle (ligne C8)
@@ -38,6 +39,7 @@
   const set = (m, k, v) => {
     if (k === 'TITRE1' || k === 'TITRE2') { m.titre = (m.titre || ['', '']).slice(); m.titre[k === 'TITRE1' ? 0 : 1] = String(v).toUpperCase().slice(0, 76); return; }
     if (k === 'NUM') { m.numero = String(v).toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 6) || null; return; }
+    if (k === 'SS.ALL') { m.lignes = m.lignes || {}; const c = m.lignes.C1 || (m.lignes.C1 = emptyLine('C1')); for (const j of [1, 2, 3, 4]) c['SS' + j] = num(v); return; }
     if (k === 'CL.FORCE') { m.clForce = num(v) ? 1 : 0; if (!m.clForce) clAuto(m); return; }
     if (k === 'NV.N' || k === 'NV.FORCE') { m.lignes = m.lignes || {}; const A6 = m.lignes.A6 || (m.lignes.A6 = emptyLine('A6'));
       A6.NVOIE = k === 'NV.N' ? Math.max(0, Math.round(num(v))) : num(v) ? nvF61(+A6.ESURCH || 0) : 0; return; }
@@ -90,7 +92,9 @@
     if (isS(l, n)) { const x = num(v); m.lignes[l][n] = isFinite(x) ? String(Math.round(x)).padStart(3, '0') : String(v); return; }
     if (l === 'A10' && /^PHI/.test(n)) { m.lignes[l][n] = num(v) / 1000; return; }
     m.lignes[l][n] = v;
-    if (l === 'A6' && !m.clForce) clAuto(m);   // largeur roulable modifiée : la classe suit
+    if (l === 'A6' && !m.clForce) clAuto(m);
+    if (l === 'A9' && n === 'GENRE' && String(v).slice(-1) === '1' && !(m.lignes.C1 && m.lignes.C1.SS1 > 0)) {   // σs imposée : valeur de départ 2/3 fe
+      const c = m.lignes.C1 || (m.lignes.C1 = emptyLine('C1')), fe = num((m.lignes.A10 || {}).FE1) || 50000; for (const j of [1, 2, 3, 4]) c['SS' + j] = Math.round(fe * 2 / 3); }   // largeur roulable modifiée : la classe suit
   };
   /* classe du pont (fascicule 61 titre II, art. 3) d'après la largeur roulable Lr = EGAU + ESURCH + EDROI :
      1re si Lr ≥ 7 m, 2e si 5,50 < Lr < 7 m, 3e si Lr ≤ 5,50 m. Forcée si la case est cochée (ou si le bordereau lu en diffère). */
@@ -278,7 +282,8 @@
       { label: 'Béton', groups: [
         { title: 'Béton (BAEL 91 mod. 99)', short: '', flex: 4, cols: 4, fields: [
           { k: 'FC28', code: 'fc28', label: 'compression', unit: 't/m²', dec: 0, help: 'Résistance caractéristique à la compression à 28 jours (t/m² ; 3000 t/m² = 30 MPa). ft28 = 60 + 0,06 fc28 (t/m²) en est déduite (BAEL A.2.1,12).' },
-          { k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['101', 'peu préj. · σs imposées'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
+          { relayout: true, k: 'A9.GENRE', code: 'Fissuration', label: 'fissuration', type: 'sel', opts: [['100', 'peu préjudiciable'], ['101', 'peu préj. · σs imposées'], ['200', 'préjudiciable'], ['300', 'très préjudiciable']], w: 130, help: '100 / 200 / 300 : fissuration peu préjudiciable / préjudiciable / très préjudiciable ; i01 : contraintes limites extra-réglementaires lues en ligne C1.' },
+          { show: m => String(((m.lignes || {}).A9 || {}).GENRE || '').slice(-1) === '1', relayout: true, k: 'SS.ALL', code: 'σs', label: 'imposée', unit: 't/m²', dec: 0, help: 'Contrainte limite imposée de l\'acier (t/m², ligne C1 : ss1 à ss4 prennent cette valeur). Ex. 33333 t/m² = 2/3 fe pour fe = 500 MPa.' },
           { k: 'A9.POISSON', code: 'Poisson', label: 'coef. Poisson', dec: 3, help: 'Coefficient de Poisson du béton (flexion transversale). Valeur conseillée 0,20.', def: '0,20' },
           { k: 'A9.RETRAI', code: 'Retrait', label: 'retrait', dec: 5, help: 'Raccourcissement relatif final du retrait du béton (BAEL A.2.1,22), ex. 0,00040.', def: '0,00040' },
         ] },
@@ -773,7 +778,7 @@
     // béton
     const ge = String(get(m, 'A9.GENRE') || '');
     if (!/^[123]0[01]$/.test(ge)) E_('mat', 'A9.GENRE', 'GENRE : 100, 200, 300 (ou 101, 201, 301 avec la ligne C1)');
-    else if (ge[2] === '1' && !(L.C1 && [1, 2, 3, 4].every(i => L.C1['SS' + i] > 0))) E_('mat', 'C1.SS1', `GENRE = ${ge} : contraintes limites ss1 à ss4 de la ligne C1 à renseigner`);
+    else if (ge[2] === '1' && !(L.C1 && [1, 2, 3, 4].every(i => L.C1['SS' + i] > 0))) E_('mat', 'SS.ALL', `GENRE = ${ge} : contraintes limites ss1 à ss4 de la ligne C1 à renseigner`);
     const fc = V(m, 'A9.FCJ'), ft = V(m, 'A9.FTJ');
     if (!(fc > 0)) E_('mat', 'FC28', 'la résistance fc28 doit être positive (t/m²)');
     else if (fc < 1000) E_('mat', 'FC28', `fc28 = ${fmt(fc, 0)} t/m² : trop faible`);
