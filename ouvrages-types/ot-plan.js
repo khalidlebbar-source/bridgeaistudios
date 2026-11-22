@@ -7,7 +7,7 @@
     CONTOUR: [7, 'CONTINUOUS', 0.5, '#111'], VU: [7, 'CONTINUOUS', 0.25, '#111'], CACHE: [8, 'DASHED', 0.25, '#555'], AXE: [1, 'DASHDOT', 0.18, '#c0392b'],
     COTES: [3, 'CONTINUOUS', 0.13, '#1a4fd6'], TEXTE: [7, 'CONTINUOUS', 0.18, '#111'], APPAREILS: [5, 'CONTINUOUS', 0.35, '#1a4fd6'], CADRE: [7, 'CONTINUOUS', 0.5, '#111'],
     CARTOUCHE: [7, 'CONTINUOUS', 0.25, '#111'], BETON: [8, 'CONTINUOUS', 0, '#b9b3a6'], CABLES: [6, 'CONTINUOUS', 0.45, '#b0129b'], TERRAIN: [32, 'CONTINUOUS', 0.25, '#7a5a2a'],
-    TABLEAU: [7, 'CONTINUOUS', 0.18, '#111'],
+    TABLEAU: [7, 'CONTINUOUS', 0.18, '#111'], BLANC: [7, 'CONTINUOUS', 0, '#fff'],
   };
   const f2 = (v, d) => (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
   const SCALES = [10, 20, 25, 50, 75, 100, 125, 200, 250, 500, 1000, 2000];

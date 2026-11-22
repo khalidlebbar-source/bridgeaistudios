@@ -1170,6 +1170,8 @@
   G.PIPO_UI = {
     prog: 'PIPO-EL', engine: E, steps, get, set, onChange, checks, summary, blank, figures,
     numero: m => m.numero || '0001',
+    extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) { const b = G.PIPO_PLANS.coffrage(m);
+      G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du portique', sub: `A3 · coupe droite 1/${b.scC} · plan 1/${b.scPl} · coupe axiale 1/${b.scT}`, file: 'coffrage-PIPO-' + (m.numero || 'portique') }); } }],
     examples: [{ label: 'Portique 10 m sur semelles, dalles de transition', text: EX1 }, { label: 'Portique biais 65 gr sous 2,50 m de remblai', text: EX2 }],
     views: [
       { id: 'coupe', label: 'Coupe', draw: (svg, m) => drawCoupe(svg, m, false) },

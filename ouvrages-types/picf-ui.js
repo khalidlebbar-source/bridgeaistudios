@@ -840,6 +840,8 @@
   G.PICF_UI = {
     prog: 'PICF-EL', engine: E, steps, get, set, checks, summary, blank, figures: FG.figures,
     numero: m => m.num || m.numero || '0001',
+    extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) { const b = G.PICF_PLANS.coffrage(m);
+      G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du cadre', sub: `A3 · coupe droite 1/${b.scC} · plan 1/${b.scPl} · coupe axiale 1/${b.scT}`, file: 'coffrage-PICF-' + (m.num || m.numero || 'cadre') }); } }],
     examples: [{ label: 'Passage inférieur 10 m, biais droit', text: EX1 }, { label: 'Ouvrage hydraulique 5,35 m sous 15 m de remblai', text: EX2 }],
     views: [
       { id: 'coupe', label: 'Coupe du cadre', draw: (svg, m) => drawCoupe(svg, m, false, false) },
