@@ -1547,10 +1547,8 @@
     figures,
     /* onglet séparé : plan de coffrage du tablier (A3), téléchargeable */
     extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) {
-      const cp = G.PSIDA_COF.page(m, r);
-      el.innerHTML = `<div class="ot-xbar"><b style="font-size:13px">Plan de coffrage du tablier</b><span style="font-size:12px;color:var(--ink3)">A3 · plan et coupe longitudinale 1/${cp.scP} · coupe transversale 1/${cp.scT}</span><div class="ot-sp" style="flex:1"></div>
-        <button class="ot-btn" onclick="PSIDA_COF.download()">Télécharger DXF (AutoCAD)</button><button class="ot-btn" onclick="PSIDA_COF.downloadSVG()">Télécharger SVG</button><button class="ot-btn pri" onclick="PSIDA_COF.printPDF()">Imprimer / PDF</button></div>
-        <div class="ot-xfig">${cp.svg}</div>`;
+      const b = G.PSIDA_COF.build(m, r, {});
+      G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du tablier', sub: `A3 · plan et coupe longitudinale 1/${b.scP} · coupe transversale 1/${b.scT}`, file: 'coffrage-PSIDA-' + (m.numero || 'tablier') });
     } }],
     /* affichage : en-tête « PSIDAEL nnnn » et date retirés de toutes les pages (texte du moteur inchangé) */
     pageDisplay: p => { const L = p.split('\n'); for (let k = 0; k < Math.min(3, L.length); k++)

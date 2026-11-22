@@ -6,12 +6,6 @@
 (function (G) {
   const GR = Math.PI / 200, n0 = v => (isFinite(+v) ? +v : 0);
   const f2 = (v, d) => (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d);
-  const SHEET = { W: 420, H: 297 };
-  const LAYERS = {   // nom : [couleur ACI, type de ligne, épaisseur SVG (mm)]
-    CONTOUR: [7, 'CONTINUOUS', 0.5], VU: [7, 'CONTINUOUS', 0.25], CACHE: [8, 'DASHED', 0.25], AXE: [1, 'DASHDOT', 0.18],
-    COTES: [3, 'CONTINUOUS', 0.13], TEXTE: [7, 'CONTINUOUS', 0.18], APPAREILS: [5, 'CONTINUOUS', 0.35], CADRE: [7, 'CONTINUOUS', 0.5],
-    CARTOUCHE: [7, 'CONTINUOUS', 0.25], BETON: [8, 'CONTINUOUS', 0],
-  };
 
   function geometry(m, r) {
     const L = m.lignes || {}, A5 = L.A5 || {}, A6 = L.A6 || {}, A7 = L.A7 || {}, A13 = L.A13 || {}, C8 = L.C8 || {}, C11 = L.C11 || {};
@@ -52,41 +46,28 @@
     return { n, D, ab, xs, Lt, bg, phi, ct, tro, Wp, hc, sec, lignes, nom };
   }
 
-  /* ---------- primitives ---------- */
-  function Sheet() {
-    const P = [];
-    const o = {
-      P,
-      line: (x1, y1, x2, y2, ly) => P.push({ t: 'L', p: [[x1, y1], [x2, y2]], ly }),
-      poly: (pts, ly, closed) => P.push({ t: 'P', p: pts, ly, c: !!closed }),
-      fill: (pts, ly) => P.push({ t: 'F', p: pts, ly }),
-      text: (x, y, s, h, opt) => P.push(Object.assign({ t: 'T', x, y, s: String(s), h, ly: 'TEXTE', a: 'c', v: 'b', rot: 0 }, opt || {})),
-      // cote alignée entre p1 et p2, ligne décalée de off (mm, normale à gauche de p1→p2), attaches depuis les points
-      dim(p1, p2, off, s, opt) {
-        opt = opt || {};
-        const dx = p2[0] - p1[0], dy = p2[1] - p1[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
-        const a = [p1[0] + nx * off, p1[1] + ny * off], b = [p2[0] + nx * off, p2[1] + ny * off], sg = off >= 0 ? 1 : -1;
-        if (!opt.noExt) { o.line(p1[0] + nx * sg * 1, p1[1] + ny * sg * 1, a[0] + nx * sg * 1.5, a[1] + ny * sg * 1.5, 'COTES'); o.line(p2[0] + nx * sg * 1, p2[1] + ny * sg * 1, b[0] + nx * sg * 1.5, b[1] + ny * sg * 1.5, 'COTES'); }
-        o.line(a[0], a[1], b[0], b[1], 'COTES');
-        for (const q of [a, b]) o.line(q[0] - (ux + nx) * 0.9, q[1] - (uy + ny) * 0.9, q[0] + (ux + nx) * 0.9, q[1] + (uy + ny) * 0.9, 'COTES');
-        let rot = Math.atan2(uy, ux) * 180 / Math.PI; if (rot > 90.01 || rot < -89.99) rot += 180;
-        const h = opt.h || 2.2, tx = (a[0] + b[0]) / 2, ty = (a[1] + b[1]) / 2, small = L < s.length * h * 0.75 + 2;
-        if (opt.right) { o.text(tx + 1.8, ty - h * 0.45, s, h, { a: 'l', ly: 'COTES' }); return; }   // texte horizontal à droite de la cote
-        const sh = small && opt.outside !== false ? (L / 2 + s.length * h * 0.42 + 1.5) : 0;
-        o.text(tx + ux * sh + nx * 0.8, ty + uy * sh + ny * 0.8, s, h, { rot, v: 'b', ly: 'COTES' });
-      },
-    };
-    return o;
-  }
-
   /* ---------- planche ---------- */
   const SCP = [50, 75, 100, 125, 200, 250, 500, 1000], SCT = [20, 25, 50, 75, 100, 125, 200];
+  /* section SETRA équivalente (HDALLE/EDALLE, même convention PSIDA et PSIDP) */
+  function secSetra(H1, H2, H3, E1, E2, E3) {
+    H1 = Math.max(0.3, H1); H2 = Math.max(0, H2); H3 = Math.max(0, H3); E1 = Math.max(0.5, E1); E2 = Math.max(0, E2); E3 = Math.max(0, E3);
+    const xa = E1 / 2, xb = E1 / 2 + Math.min(E3, E2) / 2, xc = (E1 + E2) / 2;
+    const half = [[xa, 0]].concat(xb > xa ? [[xb, H3]] : [[xa, H3]], xc > xb ? [[xc, H1 - H2]] : [], [[xc, H1]]);
+    return { real: false, enc: xc > xb, H1, W: 2 * xc, yE: H1, Hax: H1, half, top: () => H1, xN: xa, xR: xb, N: E1, p: 0 };
+  }
   function build(m, r, info) {
-    info = info || {};
-    const g = geometry(m, r), S = Sheet(), s = g.sec, Wd = s.W, Wtop = Math.max(Wd, g.Wp);
+    const g = geometry(m, r), s = g.sec;
+    return layout(g, Object.assign({ sous: 'pont-dalle en béton armé — PSIDA-EL', ouvrage: m.titre, numero: m.numero,
+      notes: ['NOTES :', '— cotes en mètres ; travées mesurées suivant l\'axe de l\'ouvrage.',
+        '— appareils d\'appui : ' + (g.lignes.some(l => !l.reg) ? 'entraxes réels (ligne C11)' : 'espacement régulier de la note') + ', dimensions ' + (g.lignes.some(l => l.sized) ? 'du calcul' : 'indicatives') + '.',
+        '— ' + (s.real ? 'section : dalle réelle (ligne C8).' : 'section : dalle SETRA équivalente (ligne A7).')] }, info || {}));
+  }
+  /* planche de coffrage d'un tablier-dalle à partir d'une géométrie normalisée g (voir geometry) */
+  function layout(g, meta) {
+    const info = meta, S = G.OTPLAN.Sheet(), s = g.sec, Wd = s.W, Wtop = Math.max(Wd, g.Wp);
     const ex = Wd / 2 * Math.abs(g.ct);
     // cadre
-    S.poly([[10, 10], [410, 10], [410, 287], [10, 287]], 'CADRE', true);
+    S.frame();
     // ---------- échelles ----------
     const scP = SCP.find(sc => (g.Lt + 2 * ex + 6) * 1000 / sc <= 340 && (Wd + 5) * 1000 / sc <= 78) || 1000, kP = 1000 / scP;
     const hT = 268 - (Wd / 2 + 2.8) * kP - Wd * kP - 24 - 16 - s.Hax * kP - 26 - 20 - 36;   // hauteur restante pour la coupe transversale
@@ -187,102 +168,10 @@
       const xa = T(0, 0)[0] + 3; S.dim([xa, T(0, 0)[1]], [xa, T(0, s.Hax)[1]], 0, f2(s.Hax, 3), { noExt: true, h: 2 });
       if (s.p > 0) for (const sg of [-1, 1]) { const x = sg * s.W * 0.27, q = T(x, s.top(x) + g.hc); S.text(q[0], q[1] + 2.5, (sg < 0 ? '← ' : '') + f2(s.p * 100, 1) + ' %' + (sg > 0 ? ' →' : ''), 2.2); } }
     S.text(15, tT, 'COUPE TRANSVERSALE COURANTE', 4, { a: 'l', bold: 1 }); S.text(15, tT - 4.5, 'échelle 1/' + scT + (lp.na ? ' — appareils de la ligne ' + g.nom(lp.k) : ''), 2.5, { a: 'l' });
-    // ---------- cartouche KLE ----------
-    const cx0 = 282, cy0 = 10, cw = 128, chh = 76;
-    S.poly([[cx0, cy0], [cx0 + cw, cy0], [cx0 + cw, cy0 + chh], [cx0, cy0 + chh]], 'CARTOUCHE', true);
-    const rows = [cy0 + 62, cy0 + 50, cy0 + 34, cy0 + 22, cy0 + 12];
-    for (const y of rows) S.line(cx0, y, cx0 + cw, y, 'CARTOUCHE');
-    S.line(cx0 + 64, cy0, cx0 + 64, cy0 + 22, 'CARTOUCHE');
-    S.text(cx0 + cw / 2, cy0 + 67.5, 'KLE INGÉNIERIE', 5, { bold: 1 });
-    S.text(cx0 + cw / 2, cy0 + 64, 'Bureau d\'études techniques — ouvrages d\'art', 2.2);
-    S.text(cx0 + cw / 2, cy0 + 55, 'PLAN DE COFFRAGE DU TABLIER', 4, { bold: 1 });
-    S.text(cx0 + cw / 2, cy0 + 51.2, 'pont-dalle en béton armé — PSIDA-EL', 2.4);
-    const tt = (m.titre || []).map(x => String(x || '').trim()).filter(Boolean);
-    S.text(cx0 + cw / 2, cy0 + 44, tt[0] || 'ouvrage', 2.8);
-    if (tt[1]) S.text(cx0 + cw / 2, cy0 + 39, tt[1], 2.5);
-    S.text(cx0 + 3, cy0 + 27, 'Note de calcul n° ' + (m.numero || '—'), 2.5, { a: 'l' });
-    S.text(cx0 + 3, cy0 + 24, 'Échelles : plan 1/' + scP + ', coupe 1/' + scT, 2.2, { a: 'l' });
-    S.text(cx0 + cw - 3, cy0 + 27, 'Format A3', 2.5, { a: 'r' });
-    S.text(cx0 + 3, cy0 + 16, 'Date : ' + (info.date || ''), 2.5, { a: 'l' });
-    S.text(cx0 + 67, cy0 + 16, 'Indice : A', 2.5, { a: 'l' });
-    S.text(cx0 + 3, cy0 + 4.5, 'Dessiné : BridgeAI Studios', 2.2, { a: 'l' });
-    S.text(cx0 + 67, cy0 + 4.5, 'Vérifié :', 2.2, { a: 'l' });
-    S.text(cx0 + 3, cy0 + 8.5, 'Établi par : KLE Ingénierie', 2.2, { a: 'l' });
-    S.text(cx0 + 67, cy0 + 8.5, 'Plan n° : COF-01', 2.2, { a: 'l' });
-    // notes
-    const notes = ['NOTES :', '— cotes en mètres ; travées mesurées suivant l\'axe de l\'ouvrage.',
-      '— appareils d\'appui : ' + (g.lignes.some(l => !l.reg) ? 'entraxes réels (ligne C11)' : 'espacement régulier de la note') + ', dimensions ' + (g.lignes.some(l => l.sized) ? 'du calcul' : 'indicatives') + '.',
-      '— ' + (s.real ? 'section : dalle réelle (ligne C8).' : 'section : dalle SETRA équivalente (ligne A7).')];
-    notes.forEach((t, i) => S.text(282, 115 - i * 4.2, t, 2.2, { a: 'l' }));
+    S.cartouche({ titre: meta.titre || 'PLAN DE COFFRAGE DU TABLIER', sous: meta.sous, ouvrage: meta.ouvrage, numero: meta.numero, echelles: 'plan 1/' + scP + ', coupe 1/' + scT, date: info.date, planNo: meta.planNo || 'COF-01' });
+    S.notes(meta.notes);
     return { S, g, scP, scT };
   }
 
-  /* ---------- rendu SVG ---------- */
-  function toSVG(b) {
-    const H = SHEET.H, esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    let o = `<svg viewBox="0 0 ${SHEET.W} ${H}" width="100%" style="background:#fff;display:block" font-family="Arial Narrow, Arial, sans-serif"><defs><pattern id="cofH" width="2" height="2" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="2" stroke="#b9b3a6" stroke-width="0.25"/></pattern></defs>`;
-    const pt = p => `${(+p[0]).toFixed(2)},${(H - p[1]).toFixed(2)}`;
-    const sty = ly => { const [c, lt, w] = LAYERS[ly] || LAYERS.VU; const col = ly === 'AXE' ? '#c0392b' : ly === 'COTES' ? '#1a4fd6' : ly === 'APPAREILS' ? '#1a4fd6' : ly === 'CACHE' ? '#555' : '#111';
-      return `stroke="${col}" stroke-width="${w}" fill="none"${lt === 'DASHED' ? ' stroke-dasharray="2 1.2"' : lt === 'DASHDOT' ? ' stroke-dasharray="6 1.2 1 1.2"' : ''}`; };
-    for (const q of b.S.P) {
-      if (q.t === 'F') o += `<polygon points="${q.p.map(pt).join(' ')}" fill="url(#cofH)" stroke="none"/>`;
-      else if (q.t === 'L' || q.t === 'P') o += `<${q.c ? 'polygon' : 'polyline'} points="${q.p.map(pt).join(' ')}" ${sty(q.ly)} stroke-linejoin="round"/>`;
-      else if (q.t === 'T') {
-        const an = q.a === 'l' ? 'start' : q.a === 'r' ? 'end' : 'middle', col = q.ly === 'COTES' ? '#1a4fd6' : q.ly === 'AXE' ? '#c0392b' : '#111';
-        o += `<text x="${q.x.toFixed(2)}" y="${(H - q.y).toFixed(2)}" font-size="${(q.h / 0.72).toFixed(2)}" text-anchor="${an}" fill="${col}"${q.bold ? ' font-weight="700"' : ''}${q.rot ? ` transform="rotate(${(-q.rot).toFixed(2)} ${q.x.toFixed(2)} ${(H - q.y).toFixed(2)})"` : ''}>${esc(q.s)}</text>`;
-      }
-    }
-    return o + '</svg>';
-  }
-
-  /* ---------- rendu DXF R12 (unités : mm papier) ---------- */
-  function toDXF(b) {
-    const out = [], p = (c, v) => out.push(String(c), String(v));
-    const tx = s0 => { const s = s0.replace(/—/g, '-').replace(/←/g, '<-').replace(/→/g, '->').replace(/[’‘]/g, "'"); let r = ''; for (const ch of s) { const c = ch.codePointAt(0); r += c > 255 ? '\\U+' + c.toString(16).toUpperCase().padStart(4, '0') : ch; } return r; };
-    p(0, 'SECTION'); p(2, 'HEADER'); p(9, '$ACADVER'); p(1, 'AC1009'); p(9, '$DWGCODEPAGE'); p(3, 'ANSI_1252'); p(9, '$INSUNITS'); p(70, 4);
-    p(9, '$EXTMIN'); p(10, 0); p(20, 0); p(9, '$EXTMAX'); p(10, SHEET.W); p(20, SHEET.H); p(0, 'ENDSEC');
-    p(0, 'SECTION'); p(2, 'TABLES');
-    p(0, 'TABLE'); p(2, 'LTYPE'); p(70, 3);
-    const lt = (n, d, pat) => { p(0, 'LTYPE'); p(2, n); p(70, 0); p(3, d); p(72, 65); p(73, pat.length); p(40, pat.reduce((a, v) => a + Math.abs(v), 0)); for (const v of pat) p(49, v); };
-    lt('CONTINUOUS', 'Solid line', []); lt('DASHED', '__ __ __', [2, -1.2]); lt('DASHDOT', '__ . __ .', [6, -1.2, 0, -1.2]);
-    p(0, 'ENDTAB');
-    p(0, 'TABLE'); p(2, 'LAYER'); p(70, Object.keys(LAYERS).length);
-    for (const [n, [c, l]] of Object.entries(LAYERS)) { p(0, 'LAYER'); p(2, n); p(70, 0); p(62, c); p(6, l); }
-    p(0, 'ENDTAB');
-    p(0, 'TABLE'); p(2, 'STYLE'); p(70, 1); p(0, 'STYLE'); p(2, 'STANDARD'); p(70, 0); p(40, 0); p(41, 0.85); p(50, 0); p(71, 0); p(42, 2.5); p(3, 'arial.ttf'); p(4, ''); p(0, 'ENDTAB');
-    p(0, 'ENDSEC');
-    p(0, 'SECTION'); p(2, 'ENTITIES');
-    for (const q of b.S.P) {
-      if (q.t === 'F') continue;
-      if (q.t === 'L') { p(0, 'LINE'); p(8, q.ly); p(10, q.p[0][0].toFixed(3)); p(20, q.p[0][1].toFixed(3)); p(30, 0); p(11, q.p[1][0].toFixed(3)); p(21, q.p[1][1].toFixed(3)); p(31, 0); }
-      else if (q.t === 'P') { p(0, 'POLYLINE'); p(8, q.ly); p(66, 1); p(10, 0); p(20, 0); p(30, 0); p(70, q.c ? 1 : 0);
-        for (const v of q.p) { p(0, 'VERTEX'); p(8, q.ly); p(10, v[0].toFixed(3)); p(20, v[1].toFixed(3)); p(30, 0); } p(0, 'SEQEND'); p(8, q.ly); }
-      else if (q.t === 'T') { const h72 = q.a === 'l' ? 0 : q.a === 'r' ? 2 : 1;
-        p(0, 'TEXT'); p(8, q.ly); p(10, q.x.toFixed(3)); p(20, q.y.toFixed(3)); p(30, 0); p(40, q.h); p(1, tx(q.s)); if (q.rot) p(50, q.rot.toFixed(3)); p(41, 0.85); p(7, 'STANDARD');
-        if (h72) { p(72, h72); p(11, q.x.toFixed(3)); p(21, q.y.toFixed(3)); p(31, 0); } }
-    }
-    p(0, 'ENDSEC'); p(0, 'EOF');
-    const s = out.join('\r\n') + '\r\n', bytes = new Uint8Array(s.length);
-    for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); bytes[i] = c < 256 ? c : 63; }
-    return bytes;
-  }
-
-  let last = null;
-  function page(m, r) {
-    const d = new Date(), info = { date: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear() };
-    last = { m, b: build(m, r, info) };
-    return { svg: toSVG(last.b), scP: last.b.scP, scT: last.b.scT };
-  }
-  function download() {
-    if (!last) return;
-    save(new Blob([toDXF(last.b)], { type: 'application/dxf' }), 'coffrage-PSIDA-' + (last.m.numero || 'tablier') + '.dxf');
-  }
-  function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
-  function downloadSVG() { if (!last) return; const svg = toSVG(last.b).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="297mm" ').replace('width="100%" ', ''); save(new Blob([svg], { type: 'image/svg+xml' }), 'coffrage-PSIDA-' + (last.m.numero || 'tablier') + '.svg'); }
-  function printPDF() {   // impression A3 paysage (enregistrer en PDF depuis la boîte d'impression)
-    if (!last) return; const w = window.open('', '_blank'); if (!w) return;
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Plan de coffrage ${last.m.numero || ''}</title><style>@page{size:A3 landscape;margin:0}html,body{margin:0}svg{width:420mm;height:297mm;display:block}</style></head><body>${toSVG(last.b).replace('width="100%" ', '')}</body></html>`);
-    w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 300);
-  }
-  G.PSIDA_COF = { geometry, build, toSVG, toDXF, page, download, downloadSVG, printPDF };
+  G.PSIDA_COF = G.DALLE_COF = { geometry, build, layout, secSetra };
 })(typeof window !== 'undefined' ? window : globalThis);

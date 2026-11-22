@@ -1489,6 +1489,14 @@
   G.PSIDP_UI = {
     prog: 'PSIDP-EL', engine: E, steps, get, set, checks, summary, blank, onChange, figures,
     numero: m => (m.numeroRaw2 || ((m.numero || '0001') + '-')),
+    /* onglets séparés : plans de coffrage et de câblage (A3, DXF / SVG / PDF) */
+    extraTabs: [
+      { t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) { const b = G.PSIDP_PLANS.coffrage(m, r);
+        G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du tablier', sub: `A3 · plan et coupe longitudinale 1/${b.scP} · coupe transversale 1/${b.scT}`, file: 'coffrage-PSIDP-' + (m.numero || 'tablier') }); } },
+      { t: 'cab', label: 'Plan de câblage', color: '#b0129b', render(m, r, el) { const b = G.PSIDP_PLANS.cablage(m, r);
+        if (!b) { el.innerHTML = '<div class="ot-empty">Pas de câblage calculé pour ces données.</div>'; return; }
+        G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de câblage du tablier', sub: `A3 · ${b.N} câbles · élévation 1/${b.scP} (hauteurs ×${b.ex.toFixed(1)}) · coupes 1/${b.scT}`, file: 'cablage-PSIDP-' + (m.numero || 'tablier') }); } },
+    ],
     examples: [{ label: 'Passage supérieur 4 travées 14-20-20-14 m, droit', text: EX1 }, { label: 'Pont-dalle biais 75 gr, câblage imposé', text: EX2 }],
     views: [
       { id: 'elev', label: 'Élévation', draw: (svg, m) => drawElev(svg, m, false) },
