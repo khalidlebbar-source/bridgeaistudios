@@ -60,6 +60,8 @@
       },
       // niveau : triangle plein pointe en bas + valeur
       level(x, y, s, opt) { opt = opt || {}; const k = opt.left ? -1 : 1; P.push({ t: 'F', p: [[x, y], [x - 1.3, y + 2.2], [x + 1.3, y + 2.2]], ly: 'NIVEAUX', solid: 1, col: '#111' }); o.line(x, y, x + k * 13, y, 'NIVEAUX'); o.line(x, y + 2.2, x + k * 13, y + 2.2, 'FIN'); o.text(x + k * 2.2, y + 2.9, s, 2, { a: k > 0 ? 'l' : 'r', ly: 'NIVEAUX' }); },
+      // série de niveaux sur une même verticale : libellés décalés quand deux niveaux sont trop proches
+      levels(x, list) { const L = list.slice().sort((a, b) => a[0] - b[0]); let last = -1e9, sh = 0; L.forEach(([y, s0]) => { sh = y - last < 4.6 ? (sh ? 0 : 17) : 0; o.level(x + sh, y, s0); last = y; }); },
       // trait de coupe A-A : deux flèches et lettres
       cut(x1, y1, x2, y2, L, opt) { opt = opt || {}; const dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l, sg = opt.flip ? -1 : 1, nx = -uy * sg, ny = ux * sg;
         for (const [x, y, k] of [[x1, y1, 1], [x2, y2, -1]]) { P.push({ t: 'L', p: [[x, y], [x + ux * 5 * k, y + uy * 5 * k]], ly: 'CONTOUR', w: 0.7 }); P.push({ t: 'F', p: [[x + nx * 4.5, y + ny * 4.5], [x + nx * 2 - ux * 1.1, y + ny * 2 - uy * 1.1], [x + nx * 2 + ux * 1.1, y + ny * 2 + uy * 1.1]], ly: 'CONTOUR', solid: 1, col: '#111' }); o.line(x, y, x + nx * 2.5, y + ny * 2.5, 'CONTOUR'); o.text(x + nx * 6.5 - ux * 1.5 * k, y + ny * 6.5 - uy * 1.5 * k - 1.2, L, 3.2, { bold: 1 }); }

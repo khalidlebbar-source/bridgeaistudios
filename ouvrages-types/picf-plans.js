@@ -78,7 +78,7 @@
     const lv = [[e1, 'dessus radier ±0.00'], [0, 'sous-face ' + sgn(-e1)], [Ht - e3, 'intrados ' + sgn(h)], [Ht, 'extrados ' + sgn(h + e3)]];
     if (!cut && hc > 0) lv.push([yC, 'chaussée ' + sgn(h + e3 + hs + hc)]);
     const xLv = C(B + ext, 0)[0] + 2;
-    lv.forEach(([y, s0]) => { const q = C(B, y); S.level(xLv, q[1], s0); });
+    S.levels(xLv, lv.map(([y, s0]) => [C(0, y)[1], s0]));
     // désignations
     S.text(C(B / 2, 0)[0], C(0, e1 + h * 0.55)[1], 'OUVERTURE DROITE ' + f2(o) + ' — HAUTEUR LIBRE ' + f2(h), 2.4, { bold: 1 });
     S.text(C(B / 2, 0)[0], C(0, e1 + h * 0.55)[1] - 4, 'biais ' + f2(g.bg, 1) + ' gr — ouverture biaise ' + f2(o / g.s), 2.1, { ly: 'COTES' });

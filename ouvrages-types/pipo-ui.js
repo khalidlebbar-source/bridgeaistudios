@@ -1170,7 +1170,7 @@
   G.PIPO_UI = {
     prog: 'PIPO-EL', engine: E, steps, get, set, onChange, checks, summary, blank, figures,
     numero: m => m.numero || '0001',
-    extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) { const b = G.PIPO_PLANS.coffrage(m);
+    extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) { const b = G.PIPO_PLANS.coffrage(m, r);
       G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du portique', sub: `A3 · coupe droite 1/${b.scC} · plan 1/${b.scPl} · coupe axiale 1/${b.scT}`, file: 'coffrage-PIPO-' + (m.numero || 'portique') }); } },
       { t: 'fer', label: 'Plan de ferraillage', color: 'var(--red, #c0392b)', render(m, r, el) { const b = G.PIPO_FERR.build(m, r);
         G.OTPLAN.tabs(el, { sheets: b.sheets, title: 'Plan de ferraillage du portique', file: 'ferraillage-PIPO-' + (m.numero || 'portique') }); } }],
