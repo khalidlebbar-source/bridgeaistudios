@@ -1437,6 +1437,11 @@
       }
       if (i >= 0) encFig = { after: i, replace: true, absorb: pages[i + 1] != null && /^PAGE/.test(pages[i + 1].trim()) ? 1 : 0, html: `<section class="ot-combo">%PRE%<div class="cb">${side}</div></section>` };
     }
+    // plan de coffrage du tablier (planche A3, téléchargeable en DXF)
+    if (G.PSIDA_COF) { try { const cp = G.PSIDA_COF.page(m, r), last = pages.length - 1;
+      add(last, 'PLAN DE COFFRAGE DU TABLIER', `format A3 · vue en plan et coupe longitudinale 1/${cp.scP} · coupe transversale 1/${cp.scT}`,
+        `<div style="grid-column:1/-1;width:100%"><div style="margin:0 0 8px"><button type="button" class="ot-btn" onclick="PSIDA_COF.download()">Télécharger le plan (DXF AutoCAD)</button></div><div style="border:1px solid #d6d0c4">${cp.svg}</div></div>`,
+        'Planche générée depuis les données du bordereau ; à compléter (ferraillage, équipements, niveaux) avant diffusion.'); } catch (e) { console.warn('coffrage', e); } }
     pl.sort((a, b) => a.i - b.i);
     const out = pl.map((p, k) => ({ after: p.i, html: O.figPage(`PLANCHE ${k + 1} — ${p.title}`, p.sub, STY + p.body, p.cap) }));
     if (encFig) out.push(encFig);
