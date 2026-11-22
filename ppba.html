@@ -192,6 +192,7 @@ article.note{background:var(--white);border:1px solid var(--border);border-radiu
 @media (max-width:1000px){.bord-card{height:auto;min-height:0}.sg-panels{grid-template-columns:1fr}.fig{height:300px;flex:none}.bh-title span{display:none}}
 @media (max-width:600px){nav{padding:0 12px}.app{padding:6px 8px}.sg-st:not(.on) span{display:none}.fig{height:240px}article.note{padding:14px}.sg-fs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media print{nav,.bord-head,.status,.note-tools{display:none!important}.app{padding:0}.bord-card{border:none;box-shadow:none;padding:0}article.note{border:none;padding:0}body{background:#fff}}
+.plan-tab{display:flex;flex-direction:column;gap:8px;height:calc(100vh - 170px);margin-top:8px}.plan-tab .ot-xbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.plan-tab .ot-xfig{flex:1;min-height:0;background:#fff;border:1px solid #e4ded2;border-radius:12px;padding:10px;display:flex;justify-content:center}.plan-tab .ot-xfig svg{height:100%;width:100%}.plan-tab .ot-btn{height:32px;padding:0 13px;border-radius:7px;border:1px solid #d6d0c4;background:#fff;font-size:12.5px;cursor:pointer}.plan-tab .ot-btn.pri{background:#a87a1e;border-color:#a87a1e;color:#fff}.plan-tab select{height:32px;border-radius:7px;border:1px solid #d6d0c4;padding:0 8px}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -207,6 +208,8 @@ article.note{background:var(--white);border:1px solid var(--border);border-radiu
 </nav>
 <main class="app" id="app"></main>
 <script>window.PPBA_WORKER = "ppba/ppba-worker.js";</script>
-<script src="ppba/ppba-app.js"></script>
+<script src="ouvrages-types/ot-plan.js?v=20261124j"></script>
+<script src="ppba/ppba-plans.js?v=20261124j"></script>
+<script src="ppba/ppba-app.js?v=20261124j"></script>
 </body>
 </html>
