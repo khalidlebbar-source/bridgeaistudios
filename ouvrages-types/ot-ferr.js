@@ -111,5 +111,70 @@
     });
   }
 
-  G.OTFERR = { devLen, croquis, nomenclature, recap, sideBubbles, kg, fmt, r3, HA };
+  /* découpe de polylignes par un rectangle R = [x0, y0, x1, y1] (Liang-Barsky) et tracé générique des barres */
+  function clipSeg(a, b, R) {
+    let t0 = 0, t1 = 1; const dx = b[0] - a[0], dy = b[1] - a[1];
+    for (const [p, q] of [[-dx, a[0] - R[0]], [dx, R[2] - a[0]], [-dy, a[1] - R[1]], [dy, R[3] - a[1]]]) {
+      if (Math.abs(p) < 1e-12) { if (q < 0) return null; } else { const t = q / p; if (p < 0) { if (t > t1) return null; if (t > t0) t0 = t; } else { if (t < t0) return null; if (t < t1) t1 = t; } }
+    }
+    return [[a[0] + dx * t0, a[1] + dy * t0], [a[0] + dx * t1, a[1] + dy * t1]];
+  }
+  function clipPoly(pts, R) {
+    if (!R) return [pts];
+    const res = []; let cur = null;
+    for (let i = 0; i < pts.length - 1; i++) { const s = clipSeg(pts[i], pts[i + 1], R); if (!s) { cur = null; continue; }
+      if (cur && Math.hypot(cur[cur.length - 1][0] - s[0][0], cur[cur.length - 1][1] - s[0][1]) < 1e-9) cur.push(s[1]); else { cur = [s[0], s[1]]; res.push(cur); } }
+    return res;
+  }
+  const inR = (p, R) => !R || (p[0] >= R[0] - 1e-9 && p[0] <= R[2] + 1e-9 && p[1] >= R[1] - 1e-9 && p[1] <= R[3] + 1e-9);
+  function drawBars(S, list, T, k, R) {
+    for (const b of list) {
+      for (const pth of b.paths || []) clipPoly(pth, R).forEach(pc => S.bar(pc.map(p => T(p[0], p[1])), b.d, b.thin ? { w: 0.2 } : { k: k / 1000 }));
+      for (const p of b.dots || []) if (inR(p, R)) { const q = T(p[0], p[1]); S.dot(q[0], q[1], Math.max(0.32, b.d / 2000 * k), b.d); }
+    }
+  }
+  function drawPolys(S, polys, T, R, ly) { for (const poly of polys) clipPoly(poly.concat([poly[0]]), R).forEach(pc => S.poly(pc.map(p => T(p[0], p[1])), ly || 'CONTOUR')); }
+  /* bulles des repères d'un détail : position libre la plus proche de la barre */
+  function detailBubbles(S, list, T, R) {
+    const placed = [], cand = [[5, 5], [-5, 5], [5, -5], [-5, -5], [0, 7], [7, 0], [0, -7], [-7, 0], [8, 8], [-8, 8], [8, -8], [-8, -8], [11, 3], [-11, 3]];
+    const a0 = T(R[0], R[1]), a1 = T(R[2], R[3]), xr = [a0[0] + 2, a1[0] - 2], yr = [a0[1] + 2, a1[1] - 2];
+    list.forEach(b => { if (b.rep || b.thin) return; const pc = (b.paths || []).map(pth => clipPoly(pth, R)[0]).find(Boolean); if (!pc) return;
+      let best = null; for (const t of [0.5, 0.3, 0.7, 0.15, 0.85]) { const A = pc[0], Z = pc[pc.length - 1], q = T(A[0] + (Z[0] - A[0]) * t, A[1] + (Z[1] - A[1]) * t);
+        for (const [dx, dy] of cand) { const c0 = [q[0] + dx, q[1] + dy]; if (c0[0] < xr[0] || c0[0] > xr[1] || c0[1] < yr[0] || c0[1] > yr[1]) continue; if (placed.every(p => Math.hypot(p[0] - c0[0], p[1] - c0[1]) > 5)) { best = [q, c0]; break; } } if (best) break; }
+      if (!best) return; placed.push(best[1]); S.repere([best[0], best[1]], b.id, '', {}); });
+  }
+  /* bulles de toute une vue : tags {side, p (m)} des barres → rangées autour de la vue (bbox papier [x0,y0,x1,y1]) */
+  function viewBubbles(S, list, T, bb, opt) {
+    opt = opt || {}; const lab = b => b.n + ' HA' + b.d + (b.esp ? ' e=' + b.esp.toFixed(3) : ''); const sides = { top: [], bottom: [], left: [], right: [] };
+    for (const b of list) { if (!b.tag || !b.tag.p) continue; const q = T(b.tag.p[0], b.tag.p[1]); sides[b.tag.side].push({ id: b.id + (b.sub || ''), at: q, lab: lab(b), want: b.tag.side === 'left' || b.tag.side === 'right' ? q[1] : q[0] }); }
+    const d = opt.d || 26;
+    if (sides.top.length) sideBubbles(S, sides.top, 'top', bb[3] + d, { edge: bb[3] });
+    if (sides.bottom.length) sideBubbles(S, sides.bottom, 'bottom', bb[1] - d, { edge: bb[1] });
+    if (sides.left.length) sideBubbles(S, sides.left, 'left', bb[0] - d - 4, { edge: bb[0] });
+    if (sides.right.length) sideBubbles(S, sides.right, 'right', bb[2] + d + 4, { edge: bb[2] });
+  }
+  /* planche « nomenclature » commune : nomenclature (1 ou 2 colonnes), désignation des repères, récapitulatif, contrôle avant-métré */
+  function nomenSheet(m, list, o) {
+    const P = G.OTPLAN, S = P.Sheet(); S.frame();
+    const rows = list.map(b => ({ id: b.id + (b.sub || ''), d: b.d, n: b.n, ne: b.ne, esp: b.esp, segs: b.segs, hooks: b.hooks, L: b.L, role: b.role }));
+    const two = rows.length > 22, half = two ? Math.ceil(rows.length / 2) : rows.length, rh = Math.min(10, Math.max(7.2, 250 / (half + 3)));
+    const t1 = nomenclature(S, 14, 276, rows.slice(0, half), { rh, wF: 54 });
+    if (two) nomenclature(S, 14 + t1.W + 6, 276, rows.slice(half), { rh, wF: 54, title: 'NOMENCLATURE GÉNÉRALE DES ACIERS (suite)' });
+    const xD = two ? 14 : 14 + t1.W + 8;
+    let yInfo;
+    if (!two) { S.text(xD, 278, 'DÉSIGNATION DES REPÈRES', 3, { a: 'l', bold: 1 });
+      rows.forEach((rw, i) => { S.text(xD, 272 - i * 4.1, rw.id, 2.1, { a: 'l', bold: 1, col: P.WEB_D[rw.d] }); S.text(xD + 7, 272 - i * 4.1, rw.role, 2, { a: 'l' }); });
+      yInfo = Math.min(272 - rows.length * 4.1 - 14, 130); }
+    const rc = recap(S, two ? 14 : xD, two ? t1.y - 14 : yInfo, rows, { vol: o.vol });
+    if (o.ton > 0) S.text(two ? 14 : xD, rc.y - 10, 'Avant-métré de la note : ' + (o.ton / 1000).toFixed(2) + ' t — nomenclature : ' + (rc.tot / 1000).toFixed(2) + ' t (écart ' + ((rc.tot / o.ton - 1) * 100).toFixed(1) + ' %)', 2.1, { a: 'l' });
+    if (two) {   // désignation des repères à droite du récapitulatif, en une ou deux colonnes
+      const x0 = 14 + Math.max(rc.W, 118) + 8, y0 = t1.y - 8, nMax = Math.max(4, Math.floor((y0 - 16) / 3.9)), cols = Math.ceil(rows.length / nMax), cw = Math.min(140, (270 - x0) / cols);
+      S.text(x0, y0 + 2, 'DÉSIGNATION DES REPÈRES', 3, { a: 'l', bold: 1 });
+      rows.forEach((rw, i) => { const cI = Math.floor(i / nMax), y = y0 - 4 - (i % nMax) * 3.9, x = x0 + cI * cw; S.text(x, y, rw.id, 2, { a: 'l', bold: 1, col: P.WEB_D[rw.d] }); S.text(x + 6.5, y, rw.role.length > cw / 1.25 ? rw.role.slice(0, Math.floor(cw / 1.25)) + '…' : rw.role, 1.8, { a: 'l' }); });
+    }
+    S.cartouche(Object.assign({ echelles: '—' }, o.cart));
+    return { S, tot: rc.tot };
+  }
+
+  G.OTFERR = { clipPoly, drawBars, drawPolys, detailBubbles, viewBubbles, nomenSheet, devLen, croquis, nomenclature, recap, sideBubbles, kg, fmt, r3, HA };
 })(typeof window !== 'undefined' ? window : globalThis);

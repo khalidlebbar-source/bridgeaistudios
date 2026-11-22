@@ -9,11 +9,11 @@
 
   /* ───────── barres du cadre (coordonnées m : x depuis le parement extérieur gauche, y depuis la sous-face du radier) ───────── */
   function bars(m, r) {
-    const o = V(m, 'GEOM.OUVER'), h = V(m, 'GEOM.HAUTL'), e1 = V(m, 'GEOM.E1'), e2 = V(m, 'GEOM.E2'), e3 = V(m, 'GEOM.E3');
+    const o0 = V(m, 'GEOM.OUVER'), h = V(m, 'GEOM.HAUTL'), e1 = V(m, 'GEOM.E1'), e20 = V(m, 'GEOM.E2'), e3 = V(m, 'GEOM.E3');
     const c = V(m, 'MAT.ENROB') || 0.03, phi = ['ACIER.PHI1', 'ACIER.PHI2', 'ACIER.PHI3'].map((k, i) => V(m, k) || [25, 14, 10][i]);
-    const g = r.geom, s = g.s || 1, W = g.W, B = o + 2 * e2, Ht = e1 + h + e3, xa = e2 / 2, ya = e1 / 2;
+    const g = r.geom, s = g.s || 1, W = g.W, o = o0 / s, e2 = e20 / s, B = o + 2 * e2, Ht = e1 + h + e3, xa = e2 / 2, ya = e1 / 2;
     const fer = r.fer, D = r.det, ep = D.epure, nom = D.nom;
-    const gs = o <= 3 ? [0.2, 0.2] : o <= 5 ? [0.6, 0.3] : [0.9, 0.3], gi = o <= 2 ? [0.3, 0.2] : o <= 4 ? [0.5, 0.3] : [0.7, 0.5];
+    const gs0 = o0 <= 3 ? [0.2, 0.2] : o0 <= 5 ? [0.6, 0.3] : [0.9, 0.3], gi0 = o0 <= 2 ? [0.3, 0.2] : o0 <= 4 ? [0.5, 0.3] : [0.7, 0.5], gs = [gs0[0] / s, gs0[1]], gi = [gi0[0] / s, gi0[1]];
     const cx = d => c + d / 2000, mm = d => d / 1000, mir = pts => pts.map(p => [B - p[0], p[1]]);
     const out = []; let k = 0;
     const add = (b, same) => { b.id = String(same ? k : ++k); out.push(b); return b; };
@@ -35,7 +35,7 @@
       const d = d2, P1 = sup ? [e2, Ht - e3 - gd[1]] : [e2, e1 + gd[1]], P2 = sup ? [e2 + gd[0], Ht - e3] : [e2 + gd[0], e1];
       const dx = P2[0] - P1[0], dy = P2[1] - P1[1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l, nx = sup ? -uy : uy, ny = sup ? ux : -ux, cc = cx(d);
       const M = [(P1[0] + P2[0]) / 2 + nx * cc, (P1[1] + P2[1]) / 2 + ny * cc], pts = [[M[0] - ux * L / 2, M[1] - uy * L / 2], [M[0] + ux * L / 2, M[1] + uy * L / 2]];
-      return add({ zone: sup ? 'traverse' : 'radier', d, n: nb(W / s, nom.eG), ne: 2, esp: nom.eG, role: 'Gousset ' + (sup ? 'supérieur' : 'inférieur') + ' ' + f2(gd[0]) + ' × ' + f2(gd[1]), segs: [{ l: L, a: Math.round(Math.atan2(uy, ux) * 180 / Math.PI) }], paths: [pts, mir(pts)],
+      return add({ zone: sup ? 'traverse' : 'radier', d, n: nb(W / s, nom.eG), ne: 2, esp: nom.eG, role: 'Gousset ' + (sup ? 'supérieur' : 'inférieur') + ' ' + f2(gd[0] * s) + ' × ' + f2(gd[1]), segs: [{ l: L, a: Math.round(Math.atan2(uy, ux) * 180 / Math.PI) }], paths: [pts, mir(pts)],
         tag: { side: sup ? 'top' : 'bottom', p: M }, gd, chamfer: [P1, P2] });
     };
     gous(false, gi, nom.LGI);
@@ -155,7 +155,7 @@
     F.sideBubbles(S, left, 'left', T(0, 0)[0] - 30, { edge: T(0, 0)[0] });
     // trait de coupe A-A (traverse)
     { const xA = B * 0.7, a = T(xA, Ht - e3 - 0.25), z = T(xA, Ht + 0.25); S.cut(a[0], a[1], z[0], z[1], 'A', { axis: false }); }
-    S.vtitle(ox + B * k / 2, 279, 'COUPE TRANSVERSALE DU CADRE — FERRAILLAGE', 'Éch : 1/' + sc + ' — coupe droite (perpendiculaire aux piédroits)');
+    S.vtitle(ox + B * k / 2, 279, 'COUPE ' + (G0.s < 0.999 ? 'BIAISE' : 'TRANSVERSALE') + ' DU CADRE — FERRAILLAGE', 'Éch : 1/' + sc + (G0.s < 0.999 ? ' — suivant l\'axe de la voie portée (biais ' + f2(G0.biais, 1) + ' gr)' : ' — coupe droite'));
     S.text(T(B / 2, 0)[0], T(0, e1 + G0.h / 2)[1], 'O = ' + f2(G0.o) + ' — Hi = ' + f2(G0.h), 2.4, { ly: 'COTES' });
     S.text(T(B, 0)[0] + 3, T(0, Ht / 2)[1], 'symétrique', 2.2, { rot: 90, ly: 'COTES' });
     // détail de l'angle supérieur gauche (1/20 ou 1/25)
@@ -168,7 +168,7 @@
     S.brk(TD(R[2], Ht)[0], TD(R[2], Ht)[1], TD(R[2], Ht - e3)[0], TD(R[2], Ht - e3)[1]);
     // cotes du détail : enrobage, gousset
     S.dim(TD(0, Ht), TD(c, Ht), 4, 'c=' + f2(c, 3), { h: 1.8 });
-    S.dim(TD(e2, Ht - e3 - G0.gs[1]), TD(e2 + G0.gs[0], Ht - e3), -4, 'gousset ' + f2(G0.gs[0]) + ' × ' + f2(G0.gs[1]), { h: 1.8 });
+    S.dim(TD(e2, Ht - e3 - G0.gs[1]), TD(e2 + G0.gs[0], Ht - e3), -4, 'gousset ' + f2(G0.gs[0] * G0.s) + ' × ' + f2(G0.gs[1]), { h: 1.8 });
     S.chainV([TD(0, Ht - e3)[1], TD(0, Ht)[1]], TD(R[2], 0)[0] + 5, [f2(e3)], { right: true });
     S.chainH([TD(0, 0)[0], TD(e2, 0)[0]], TD(0, R[1])[1] - 5, [f2(e2)]);
     // repères du détail (numéros seuls) : bulle reliée à la barre, position libre la plus proche
@@ -233,7 +233,9 @@
   }
 
   function build(m, r) {
-    const BB = bars(m, r), s1 = sheet1(m, r, BB), s2 = sheet2(m, r, BB);
+    const BB = bars(m, r), s1 = sheet1(m, r, BB), G0 = BB.geo;
+    const vol = (G0.B * G0.Ht - (G0.o * G0.h - (G0.gs[0] * G0.gs[1] + G0.gi[0] * G0.gi[1]))) * G0.W;
+    const s2 = G.OTFERR.nomenSheet(m, BB.list, { vol, ton: (BB.ton || []).reduce((a, v) => a + v, 0), cart: { titre: 'PLAN DE FERRAILLAGE DU CADRE', sous: 'nomenclature — planche 2/2', ouvrage: m.titre, numero: m.num || m.numero, planNo: 'FER-02' } });
     return { sheets: [{ S: s1.S, label: 'Planche 1/2 · coupes', sub: 'A3 · coupe 1/' + s1.sc + ' · détail d\'angle · coupe A-A' }, { S: s2.S, label: 'Planche 2/2 · nomenclature', sub: 'A3 · nomenclature ADFER · récapitulatif · ' + (s2.tot / 1000).toFixed(2) + ' t' }], bars: BB };
   }
   G.PICF_FERR = { bars, build };
