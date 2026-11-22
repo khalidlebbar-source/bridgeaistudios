@@ -78,7 +78,7 @@
         P.push({ t: 'P', p: pts, ly: 'TERRAIN' }); },
       // titre de vue centré, souligné, avec l'échelle (présentation KLE)
       vtitle(x, y, t, sc) { const w = t.length * 2.05 + 2; o.text(x, y, t, 3.6, { bold: 1 }); o.line(x - w / 2, y - 1.2, x + w / 2, y - 1.2, 'CONTOUR'); if (sc) o.text(x, y - 5, sc, 2.4); },
-      title: (x, y, t, sub) => { o.text(x, y, t, 4, { a: 'l', bold: 1 }); if (sub) o.text(x, y - 4.5, sub, 2.5, { a: 'l' }); },
+      title: (x, y, t, sub) => { o.text(x, y, t, 3.8, { a: 'l', bold: 1 }); o.line(x, y - 1.2, x + t.length * 2.2, y - 1.2, 'CONTOUR'); if (sub) o.text(x, y - 5, sub.replace(/^échelle /, 'Éch : '), 2.4, { a: 'l' }); },
       frame: () => o.poly([[10, 10], [410, 10], [410, 287], [10, 287]], 'CADRE', true),
       // cartouche KLE en bas à droite (128 × 76 mm)
       cartouche(c) {

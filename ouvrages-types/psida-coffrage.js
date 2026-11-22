@@ -170,6 +170,11 @@
     S.text(15, tT, 'COUPE TRANSVERSALE COURANTE', 4, { a: 'l', bold: 1 }); S.text(15, tT - 4.5, 'échelle 1/' + scT + (lp.na ? ' — appareils de la ligne ' + g.nom(lp.k) : ''), 2.5, { a: 'l' });
     S.cartouche({ titre: meta.titre || 'PLAN DE COFFRAGE DU TABLIER', sous: meta.sous, ouvrage: meta.ouvrage, numero: meta.numero, echelles: 'plan 1/' + scP + ', coupe 1/' + scT, date: info.date, planNo: meta.planNo || 'COF-01' });
     S.notes(meta.notes);
+    // quantités (avant-métré) : section transversale × longueur, coffrage de sous-face et des rives
+    { const sc0 = g.sec, hp = sc0.half, ar = (() => { const P0 = [[-hp[0][0], 0]].concat(hp.map(p => [p[0], p[1]])).concat(hp.slice().reverse().map(p => [-p[0], p[1]])); let a = 0; for (let i = 0; i < P0.length; i++) { const p = P0[i], q = P0[(i + 1) % P0.length]; a += p[0] * q[1] - q[0] * p[1]; } return Math.abs(a / 2); })();
+      let per = 0; for (let i = 0; i < hp.length - 1; i++) per += Math.hypot(hp[i + 1][0] - hp[i][0], hp[i + 1][1] - hp[i][1]); per = 2 * per + 2 * hp[0][0];
+      const rowsQ = [['Désignation', 'Unité', 'Quantité'], ['Béton du tablier', 'm³', (ar * g.Lt).toFixed(1)], ['Coffrage perdu / sous-face et rives', 'm²', (per * g.Lt).toFixed(1)], ['Coffrage des abouts (2)', 'm²', (2 * ar / Math.sin(g.phi)).toFixed(1)], ['Section transversale', 'm²', ar.toFixed(3)]];
+      S.text(345, 151, 'QUANTITÉS (avant-métré)', 2.8, { bold: 1 }); S.table(284, 148, [86, 12, 22], rowsQ, 4.4); }
     return { S, g, scP, scT };
   }
 
