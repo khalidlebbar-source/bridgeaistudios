@@ -288,7 +288,8 @@ footer{background:var(--ink2);padding:56px 5% 28px;border-top:1px solid var(--bo
 .hero-sub{margin-bottom:56px}
 .nav-soon{font-size:13px;font-weight:300;color:rgba(136,146,164,.45);letter-spacing:.04em;cursor:default}
 .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;text-align:left;opacity:0;animation:fadeUp .8s ease .55s forwards}
-.tool{display:flex;flex-direction:column;gap:10px;padding:28px 26px 24px;border-radius:16px;border:1px solid var(--border);background:rgba(255,255,255,.02);text-decoration:none;color:inherit;transition:border-color .25s,background .25s,transform .25s}
+.tool-prog{position:absolute;top:18px;right:16px;display:flex;flex-direction:column;align-items:center;gap:2px}.tool-prog small{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,228,218,.55)}
+.tool{position:relative;display:flex;flex-direction:column;gap:10px;padding:28px 26px 24px;border-radius:16px;border:1px solid var(--border);background:rgba(255,255,255,.02);text-decoration:none;color:inherit;transition:border-color .25s,background .25s,transform .25s}
 a.tool:hover{border-color:var(--border2);background:rgba(201,168,76,.04);transform:translateY(-3px)}
 .tool-icon{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;margin-bottom:8px}
 .tool-tag{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--silver)}
@@ -372,6 +373,7 @@ h1{font-size:clamp(52px,9vw,104px)}
 
     <div class="tools">
       <a class="tool" href="composer.html">
+        <span class="tool-prog" title="Avancement du développement : 25 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="70.69" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">25%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 21.5h18"/><path d="M3 28.5Q10.5 14.5 18 28.5" stroke-width="1.6"/><path d="M6.5 21.5v2.2M14.5 21.5v2.2" stroke-width="1"/><path d="M1 28.5h19.5"/><path d="M30 16.5L22.2 8.7" stroke-width="2"/><path d="M30 16.5l-2.4-2.4" stroke-width="3.2"/><path d="M20.5 2.2q.5 2.6 3.1 3.1-2.6.5-3.1 3.1-.5-2.6-3.1-3.1 2.6-.5 3.1-3.1z" fill="currentColor" stroke-width=".7"/><path d="M11.5 9.5q.3 1.5 1.8 1.8-1.5.3-1.8 1.8-.3-1.5-1.8-1.8 1.5-.3 1.8-1.8z" fill="currentColor" stroke-width=".5"/><circle cx="16" cy="13.6" r=".9" fill="currentColor" stroke="none"/><circle cx="7.5" cy="15.2" r=".7" fill="currentColor" stroke="none"/><path d="M14.5 6.5l1.6.9M17.2 10.4l1.2-1.4" stroke-width=".9"/></svg>
         </div>
@@ -380,6 +382,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go" data-fr="Composer un pont →" data-en="Compose a bridge →">Composer un pont →</span>
       </a>
       <a class="tool" href="ponts-types.html">
+        <span class="tool-prog" title="Avancement du développement : 48 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="49.01" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">48%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M2.5 8.5h27v3.2h-27z"/><path d="M5 11.7h6M13 11.7h6M21 11.7h6" stroke-width="1.8"/><path d="M8 12v9.5M16 12v9.5M24 12v9.5" stroke-width="1.6"/><path d="M6 21.5h4v2.6H6zM14 21.5h4v2.6h-4zM22 21.5h4v2.6h-4z"/><path d="M2 28h28" stroke-width="1" stroke-dasharray="2 1.6"/></svg>
         </div>
@@ -388,6 +391,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go" data-fr="Choisir un type →" data-en="Choose a type →">Choisir un type →</span>
       </a>
       <a class="tool" href="plans-ferraillage.html">
+        <span class="tool-prog" title="Avancement du développement : 35 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="61.26" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">35%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="34" height="34" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5h11v2.2L8.7 10v11.5h3.8v3H0.5v-3h3.8V10L1 7.2z"/><path d="M2.6 3.6h2v1.4h-2zM8.4 3.6h2v1.4h-2z" stroke-width=".8"/><path d="M13.6 15h3.6M15.8 13.4l1.6 1.6-1.6 1.6" stroke-width="1.2"/><path d="M20 5h11v2.2L27.7 10v11.5h3.8v3H19.5v-3h3.8V10L20 7.2z" stroke-width=".7" opacity=".5"/><path d="M21.6 3.6h2v1.4h-2zM27.4 3.6h2v1.4h-2z" stroke-width=".7" opacity=".5" stroke-width=".8"/><path d="M20.4 6.1h11.2M20.4 6.1v1.3M31.6 6.1v1.3M24.4 6.1v17.7M26.6 6.1v17.7M20 23.8h11M20 23.8v-1.3M31 23.8v-1.3" stroke-width="1.05"/><path d="M23.9 12h3.2M23.9 15h3.2M23.9 18h3.2M23.9 21h3.2" stroke-width=".75"/></svg>
         </div>
@@ -396,6 +400,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go" data-fr="Dessiner un plan →" data-en="Draw a plan →">Dessiner un plan →</span>
       </a>
       <a class="tool" href="handbag.html">
+        <span class="tool-prog" title="Avancement du développement : 60 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37.70" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">60%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M11 10V7.5A2.5 2.5 0 0 1 13.5 5h5A2.5 2.5 0 0 1 21 7.5V10"/><rect x="4" y="10" width="24" height="17" rx="2.5"/><path d="M4 16.5h24"/><path d="M14 15v3h4v-3"/></svg>
         </div>
@@ -404,6 +409,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go">Ouvrir l'outil →</span>
       </a>
       <a class="tool" href="bibliotheque.html">
+        <span class="tool-prog" title="Avancement du développement : 65 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="32.99" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">65%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="5" width="5" height="22" rx="1"/><rect x="10" y="5" width="5" height="22" rx="1"/><path d="M17.5 7.5l4.8-1.3 5.7 20.4-4.8 1.3z"/><path d="M3 27h26"/></svg>
         </div>
@@ -412,6 +418,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go" data-fr="Entrer →" data-en="Enter →">Entrer →</span>
       </a>
       <a class="tool" href="liens-utiles.html">
+        <span class="tool-prog" title="Avancement du développement : 60 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="37.70" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">60%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="16" cy="16" r="12"/><path d="M4 16h24"/><path d="M16 4c3.5 3.4 5 7.4 5 12s-1.5 8.6-5 12c-3.5-3.4-5-7.4-5-12s1.5-8.6 5-12z"/></svg>
         </div>
@@ -420,6 +427,7 @@ h1{font-size:clamp(52px,9vw,104px)}
         <span class="tool-go" data-fr="Explorer →" data-en="Explore →">Explorer →</span>
       </a>
       <a class="tool" href="etudiants.html">
+        <span class="tool-prog" title="Avancement du développement : 40 %"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="56.55" transform="rotate(-90 20 20)"/><text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">40%</text></svg></span>
         <div class="tool-icon" style="background:rgba(26,184,160,.1);color:var(--teal)">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M2 12.5L16 6l14 6.5L16 19z"/><path d="M8 15.3v6.2c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5v-6.2"/><path d="M28 13.4v7.6" stroke-width="1.2"/><circle cx="28" cy="22.5" r="1.2" fill="currentColor" stroke="none"/></svg>
         </div>
