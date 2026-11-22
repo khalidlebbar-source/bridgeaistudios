@@ -1496,6 +1496,8 @@
       { t: 'cab', label: 'Plan de câblage', color: '#b0129b', render(m, r, el) { const b = G.PSIDP_PLANS.cablage(m, r);
         if (!b) { el.innerHTML = '<div class="ot-empty">Pas de câblage calculé pour ces données.</div>'; return; }
         G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de câblage du tablier', sub: `A3 · ${b.N} câbles · élévation 1/${b.scP} (hauteurs ×${b.ex.toFixed(1)}) · coupes 1/${b.scT}`, file: 'cablage-PSIDP-' + (m.numero || 'tablier') }); } },
+      { t: 'fer', label: 'Plan de ferraillage', color: 'var(--red, #c0392b)', render(m, r, el) { const b = G.PSIDP_FERR.build(m, r);
+        G.OTPLAN.tabs(el, { sheets: b.sheets, title: 'Plan de ferraillage passif du tablier', file: 'ferraillage-PSIDP-' + (m.numero || 'tablier') }); } },
     ],
     examples: [{ label: 'Passage supérieur 4 travées 14-20-20-14 m, droit', text: EX1 }, { label: 'Pont-dalle biais 75 gr, câblage imposé', text: EX2 }],
     views: [
