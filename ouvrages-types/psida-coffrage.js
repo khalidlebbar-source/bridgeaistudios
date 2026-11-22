@@ -275,9 +275,14 @@
   }
   function download() {
     if (!last) return;
-    const blob = new Blob([toDXF(last.b)], { type: 'application/dxf' }), a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'coffrage-PSIDA-' + (last.m.numero || 'tablier') + '.dxf';
-    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    save(new Blob([toDXF(last.b)], { type: 'application/dxf' }), 'coffrage-PSIDA-' + (last.m.numero || 'tablier') + '.dxf');
   }
-  G.PSIDA_COF = { geometry, build, toSVG, toDXF, page, download };
+  function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  function downloadSVG() { if (!last) return; const svg = toSVG(last.b).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="297mm" ').replace('width="100%" ', ''); save(new Blob([svg], { type: 'image/svg+xml' }), 'coffrage-PSIDA-' + (last.m.numero || 'tablier') + '.svg'); }
+  function printPDF() {   // impression A3 paysage (enregistrer en PDF depuis la boîte d'impression)
+    if (!last) return; const w = window.open('', '_blank'); if (!w) return;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Plan de coffrage ${last.m.numero || ''}</title><style>@page{size:A3 landscape;margin:0}html,body{margin:0}svg{width:420mm;height:297mm;display:block}</style></head><body>${toSVG(last.b).replace('width="100%" ', '')}</body></html>`);
+    w.document.close(); setTimeout(() => { w.focus(); w.print(); }, 300);
+  }
+  G.PSIDA_COF = { geometry, build, toSVG, toDXF, page, download, downloadSVG, printPDF };
 })(typeof window !== 'undefined' ? window : globalThis);

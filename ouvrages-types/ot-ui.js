@@ -304,6 +304,7 @@
 .ot-kv .ok{color:var(--teal)}.ot-kv .ko{color:var(--red)}
 .ot-note-tools{display:flex;gap:8px;align-items:center}
 .ot-note-tools input{height:32px;border-radius:7px;border:1px solid var(--border);background:var(--white);padding:0 10px;font-family:inherit;font-size:12.5px;width:240px}
+.ot-xtab{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px}.ot-xtab .ot-xbar{display:flex;gap:8px;align-items:center}.ot-xtab .ot-xfig{flex:1;min-height:0;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;justify-content:center}.ot-xtab .ot-xfig svg{height:100%;width:100%;max-width:100%}
 .ot-note{flex:1;min-height:0;overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px}
 .ot-note pre{font-family:'Courier New',monospace;font-size:10.5px;line-height:1.3;margin:0 0 14px;padding-bottom:14px;border-bottom:1px dashed var(--border);white-space:pre;color:#222}
 .ot-note pre mark{background:#fbe7b5;color:inherit}
@@ -405,6 +406,7 @@ ${def.simpleBar ? `<div class="ot-bar">
     <button data-t="bord" class="on"><i style="background:var(--gold)"></i>Données</button>
     <button class="go" data-a="run">Lancer le calcul ›</button>
     <button data-t="note"><i style="background:var(--blue)"></i>Sorties</button>
+    ${(def.extraTabs || []).map(x => `<button data-t="${x.t}"><i style="background:${x.color || 'var(--ink3)'}"></i>${esc(x.label)}</button>`).join('')}
   </div>
   <div hidden data-r="mode"><button data-m="guide" class="on"></button><button data-m="texte"></button></div>
   <select hidden data-r="ex"><option value=""></option></select>
@@ -417,6 +419,7 @@ ${def.simpleBar ? `<div class="ot-bar">
     <button data-t="bord" class="on"><i style="background:var(--gold)"></i>1 · Bordereau</button>
     <button data-t="res"><i style="background:var(--teal)"></i>2 · Résultats</button>
     <button data-t="note"><i style="background:var(--blue)"></i>3 · Note de calcul</button>
+    ${(def.extraTabs || []).map(x => `<button data-t="${x.t}"><i style="background:${x.color || 'var(--ink3)'}"></i>${esc(x.label)}</button>`).join('')}
   </div>
   <div class="ot-tabs" data-r="mode"><button data-m="guide" class="on">Saisie guidée</button><button data-m="texte">Texte ${esc(def.prog)}</button></div>
   <div class="ot-sp"></div>
@@ -446,7 +449,8 @@ ${def.simpleBar ? `<div class="ot-bar">
   <div class="ot-note-tools"><input type="search" placeholder="Rechercher dans la note…" data-r="find"><span class="ts" data-r="nfo" style="font-size:12px;color:var(--ink3)"></span><div class="ot-sp"></div>
     <button class="ot-btn" data-a="copy">Copier</button><button class="ot-btn" data-a="dl">Télécharger .txt</button><button class="ot-btn" data-a="print">Imprimer</button></div>
   <div class="ot-note" data-r="note"><div class="ot-empty">Aucune note pour l'instant.</div></div>
-</div>`;
+</div>
+${(def.extraTabs || []).map(x => `<div class="ot-sec" data-s="${x.t}" hidden><div class="ot-xtab" data-x="${x.t}"></div></div>`).join('')}`;
     const R = {}; $$(root, '[data-r]').forEach(e => { R[e.dataset.r] = e; });
     const toast = (() => { let t = document.querySelector('.ot-toast'); if (!t) { t = document.createElement('div'); t.className = 'ot-toast'; document.body.appendChild(t); } let h; return m => { t.textContent = m; t.classList.add('on'); clearTimeout(h); h = setTimeout(() => t.classList.remove('on'), 2400); }; })();
 
@@ -753,6 +757,8 @@ ${def.simpleBar ? `<div class="ot-bar">
       S.tab = t;
       $$(R.tabs, 'button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
       $$(root, '[data-s]').forEach(s => { s.hidden = s.dataset.s !== t; });
+      const xt = (def.extraTabs || []).find(x => x.t === t);
+      if (xt) { const el = root.querySelector(`[data-x="${t}"]`); if (!S.results) el.innerHTML = '<div class="ot-empty">Lancez le calcul pour générer cette planche.</div>'; else try { xt.render(S.model, S.results, el); } catch (e) { console.error(e); el.innerHTML = '<div class="ot-empty">Génération impossible : ' + esc(e.message) + '</div>'; } }
       if (t === 'res') renderResults(); if (t === 'note') renderNote(); if (t === 'bord' && def.rows) fitRows();
     }
     R.tabs.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.t) setTab(b.dataset.t); });
