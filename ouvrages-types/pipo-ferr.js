@@ -110,7 +110,7 @@
   function build(m, r) {
     const BB = bars(m, r), s1 = sheet1(m, r, BB);
     const s2 = G.OTFERR.nomenSheet(m, BB.list, { vol: BB.beton, ton: BB.ton, cart: { titre: 'PLAN DE FERRAILLAGE DU PORTIQUE', sous: 'nomenclature — planche 2/2', ouvrage: [m.titre, m.soustitre].filter(Boolean), numero: m.numero, planNo: 'FER-02' } });
-    return { sheets: [{ S: s1.S, label: 'Planche 1/2 · coupes', sub: 'A3 · coupe 1/' + s1.sc + ' · détails angle et semelle' }, { S: s2.S, label: 'Planche 2/2 · nomenclature', sub: 'A3 · nomenclature ADFER · ' + (s2.tot / 1000).toFixed(2) + ' t' }], bars: BB };
+    return { sheets: [{ S: s1.S, label: 'Coupes', sub: 'A3 · coupe 1/' + s1.sc + ' · détails angle et semelle' }, ...s2.sheets.map((S, i) => ({ S, label: 'Nomenclature' + (s2.sheets.length > 1 ? ' ' + (i + 1) : ''), sub: 'A3 · nomenclature ADFER · ' + (s2.tot / 1000).toFixed(2) + ' t' }))], bars: BB };
   }
   G.PIPO_FERR = { bars, build };
 })(typeof window !== 'undefined' ? window : globalThis);

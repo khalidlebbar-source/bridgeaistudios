@@ -88,10 +88,11 @@
         o.line(x0 + 64, y0, x0 + 64, y0 + 22, 'CARTOUCHE');
         o.text(x0 + w / 2, y0 + 67.5, 'KLE INGÉNIERIE', 5, { bold: 1 });
         o.text(x0 + w / 2, y0 + 64, 'Bureau d\'études techniques — ouvrages d\'art', 2.2);
-        o.text(x0 + w / 2, y0 + 55, c.titre, 4, { bold: 1 });
+        const fit = (s, h0) => Math.min(h0, (w - 6) / Math.max(1, String(s).length * 0.8));
+        o.text(x0 + w / 2, y0 + 55, c.titre, fit(c.titre, 4), { bold: 1 });
         o.text(x0 + w / 2, y0 + 51.2, c.sous || '', 2.4);
-        const tt = (c.ouvrage || []).map(x => String(x || '').trim()).filter(Boolean);
-        o.text(x0 + w / 2, y0 + 44, tt[0] || 'ouvrage', 2.8); if (tt[1]) o.text(x0 + w / 2, y0 + 39, tt[1], 2.5);
+        const tt = [].concat(c.ouvrage || []).flatMap(x => { const t = String(x || ''); return t.length > 48 && /,/.test(t) ? t.split(/\s*,\s*/) : t.split(/\n/); }).map(x => x.trim()).filter(Boolean);
+        o.text(x0 + w / 2, y0 + 44, tt[0] || 'ouvrage', fit(tt[0] || 'ouvrage', 2.8)); if (tt[1]) o.text(x0 + w / 2, y0 + 39, tt[1], fit(tt[1], 2.5));
         o.text(x0 + 3, y0 + 27, 'Note de calcul n° ' + (c.numero || '—'), 2.5, { a: 'l' });
         o.text(x0 + 3, y0 + 24, 'Échelles : ' + (c.echelles || ''), 2.2, { a: 'l' });
         o.text(x0 + w - 3, y0 + 27, 'Format A3', 2.5, { a: 'r' });

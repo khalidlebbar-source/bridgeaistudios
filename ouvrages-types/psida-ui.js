@@ -1549,7 +1549,9 @@
     extraTabs: [{ t: 'cof', label: 'Plan de coffrage', color: 'var(--teal)', render(m, r, el) {
       const b = G.PSIDA_COF.build(m, r, {});
       G.OTPLAN.tab(el, { sheet: b.S, title: 'Plan de coffrage du tablier', sub: `A3 · plan et coupe longitudinale 1/${b.scP} · coupe transversale 1/${b.scT}`, file: 'coffrage-PSIDA-' + (m.numero || 'tablier') });
-    } }],
+    } },
+    { t: 'fer', label: 'Plan de ferraillage', color: 'var(--red, #c0392b)', render(m, r, el) { const b = G.PSIDA_FERR.build(m, r);
+      G.OTPLAN.tabs(el, { sheets: b.sheets, title: 'Plan de ferraillage du tablier', file: 'ferraillage-PSIDA-' + (m.numero || 'tablier') }); } }],
     /* affichage : en-tête « PSIDAEL nnnn » et date retirés de toutes les pages (texte du moteur inchangé) */
     pageDisplay: p => { const L = p.split('\n'); for (let k = 0; k < Math.min(3, L.length); k++)
         L[k] = L[k].replace(/^PSIDAEL\s+\S+/, x => ' '.repeat(x.length)).replace(/^\d\d  \d\d  \d\d/, x => ' '.repeat(x.length));

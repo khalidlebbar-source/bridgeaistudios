@@ -153,27 +153,29 @@
     if (sides.left.length) sideBubbles(S, sides.left, 'left', bb[0] - d - 4, { edge: bb[0] });
     if (sides.right.length) sideBubbles(S, sides.right, 'right', bb[2] + d + 4, { edge: bb[2] });
   }
-  /* planche « nomenclature » commune : nomenclature (1 ou 2 colonnes), désignation des repères, récapitulatif, contrôle avant-métré */
+  /* planches « nomenclature » communes : nomenclature ADFER (1 colonne + désignations, ou 2 colonnes, plusieurs planches si besoin),
+     récapitulatif par diamètre et contrôle de l'avant-métré de la note sur la dernière planche. Renvoie { sheets: [S…], tot }. */
   function nomenSheet(m, list, o) {
-    const P = G.OTPLAN, S = P.Sheet(); S.frame();
-    const rows = list.map(b => ({ id: b.id + (b.sub || ''), d: b.d, n: b.n, ne: b.ne, esp: b.esp, segs: b.segs, hooks: b.hooks, L: b.L, role: b.role }));
-    const two = rows.length > 22, half = two ? Math.ceil(rows.length / 2) : rows.length, rh = Math.min(10, Math.max(7.2, 250 / (half + 3)));
-    const t1 = nomenclature(S, 14, 276, rows.slice(0, half), { rh, wF: 54 });
-    if (two) nomenclature(S, 14 + t1.W + 6, 276, rows.slice(half), { rh, wF: 54, title: 'NOMENCLATURE GÉNÉRALE DES ACIERS (suite)' });
-    const xD = two ? 14 : 14 + t1.W + 8;
-    let yInfo;
-    if (!two) { S.text(xD, 278, 'DÉSIGNATION DES REPÈRES', 3, { a: 'l', bold: 1 });
-      rows.forEach((rw, i) => { S.text(xD, 272 - i * 4.1, rw.id, 2.1, { a: 'l', bold: 1, col: P.WEB_D[rw.d] }); S.text(xD + 7, 272 - i * 4.1, rw.role, 2, { a: 'l' }); });
-      yInfo = Math.min(272 - rows.length * 4.1 - 14, 130); }
-    const rc = recap(S, two ? 14 : xD, two ? t1.y - 14 : yInfo, rows, { vol: o.vol });
-    if (o.ton > 0) S.text(two ? 14 : xD, rc.y - 10, 'Avant-métré de la note : ' + (o.ton / 1000).toFixed(2) + ' t — nomenclature : ' + (rc.tot / 1000).toFixed(2) + ' t (écart ' + ((rc.tot / o.ton - 1) * 100).toFixed(1) + ' %)', 2.1, { a: 'l' });
-    if (two) {   // désignation des repères à droite du récapitulatif, en une ou deux colonnes
-      const x0 = 14 + Math.max(rc.W, 118) + 8, y0 = t1.y - 8, nMax = Math.max(4, Math.floor((y0 - 16) / 3.9)), cols = Math.ceil(rows.length / nMax), cw = Math.min(140, (270 - x0) / cols);
-      S.text(x0, y0 + 2, 'DÉSIGNATION DES REPÈRES', 3, { a: 'l', bold: 1 });
-      rows.forEach((rw, i) => { const cI = Math.floor(i / nMax), y = y0 - 4 - (i % nMax) * 3.9, x = x0 + cI * cw; S.text(x, y, rw.id, 2, { a: 'l', bold: 1, col: P.WEB_D[rw.d] }); S.text(x + 6.5, y, rw.role.length > cw / 1.25 ? rw.role.slice(0, Math.floor(cw / 1.25)) + '…' : rw.role, 1.8, { a: 'l' }); });
-    }
-    S.cartouche(Object.assign({ echelles: '—' }, o.cart));
-    return { S, tot: rc.tot };
+    const P = G.OTPLAN, all = list.map(b => ({ id: b.id + (b.sub || ''), d: b.d, n: b.n, ne: b.ne, esp: b.esp, segs: b.segs, hooks: b.hooks, L: b.L, role: b.role }));
+    const one = all.length <= 22, rh = one ? Math.min(10, Math.max(7.2, 250 / (all.length + 3))) : 7.2, cap = one ? all.length : Math.floor((276 - 8 - 5 - 98) / rh);
+    const pages = []; if (one) pages.push([all]); else for (let i = 0; i < all.length; i += 2 * cap) pages.push([all.slice(i, i + cap), all.slice(i + cap, i + 2 * cap)].filter(x => x.length));
+    // calcul des longueurs et masses sur toutes les lignes (pour le récapitulatif)
+    const sheets = []; let tot = 0;
+    pages.forEach((cols, pi) => {
+      const S = P.Sheet(); S.frame(); const last = pi === pages.length - 1;
+      const t1 = nomenclature(S, 14, 276, cols[0], { rh, wF: 54, title: 'NOMENCLATURE GÉNÉRALE DES ACIERS' + (pi ? ' (suite)' : '') });
+      if (cols[1]) nomenclature(S, 14 + t1.W + 6, 276, cols[1], { rh, wF: 54, title: 'NOMENCLATURE GÉNÉRALE DES ACIERS (suite)' });
+      if (one) { const xD = 14 + t1.W + 8; S.text(xD, 278, 'DÉSIGNATION DES REPÈRES', 3, { a: 'l', bold: 1 });
+        all.forEach((rw, i) => { S.text(xD, 272 - i * 4.1, rw.id, 2.1, { a: 'l', bold: 1, col: P.WEB_D[rw.d] }); S.text(xD + 7, 272 - i * 4.1, rw.role, 2, { a: 'l' }); }); }
+      if (last) {
+        const x0 = one ? 14 + t1.W + 8 : 14, y0 = one ? Math.min(272 - all.length * 4.1 - 14, 130) : t1.y - 10;
+        const rc = recap(S, x0, y0, all, { vol: o.vol }); tot = rc.tot;
+        if (o.ton > 0) S.text(x0, rc.y - 10, 'Avant-métré de la note' + (o.tonLab ? ' (' + o.tonLab + ')' : '') + ' : ' + (o.ton / 1000).toFixed(2) + ' t — nomenclature : ' + (rc.tot / 1000).toFixed(2) + ' t (écart ' + ((rc.tot / o.ton - 1) * 100).toFixed(1) + ' %)', 2.1, { a: 'l' });
+      }
+      S.cartouche(Object.assign({ echelles: '—' }, o.cart, pages.length > 1 ? { sous: (o.cart.sous || '') + ' (' + (pi + 1) + '/' + pages.length + ')' } : {}));
+      sheets.push(S);
+    });
+    return { sheets, S: sheets[0], tot };
   }
 
   G.OTFERR = { clipPoly, drawBars, drawPolys, detailBubbles, viewBubbles, nomenSheet, devLen, croquis, nomenclature, recap, sideBubbles, kg, fmt, r3, HA };

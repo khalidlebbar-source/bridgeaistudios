@@ -236,7 +236,7 @@
     const BB = bars(m, r), s1 = sheet1(m, r, BB), G0 = BB.geo;
     const vol = (G0.B * G0.Ht - (G0.o * G0.h - (G0.gs[0] * G0.gs[1] + G0.gi[0] * G0.gi[1]))) * G0.W;
     const s2 = G.OTFERR.nomenSheet(m, BB.list, { vol, ton: (BB.ton || []).reduce((a, v) => a + v, 0), cart: { titre: 'PLAN DE FERRAILLAGE DU CADRE', sous: 'nomenclature — planche 2/2', ouvrage: m.titre, numero: m.num || m.numero, planNo: 'FER-02' } });
-    return { sheets: [{ S: s1.S, label: 'Planche 1/2 · coupes', sub: 'A3 · coupe 1/' + s1.sc + ' · détail d\'angle · coupe A-A' }, { S: s2.S, label: 'Planche 2/2 · nomenclature', sub: 'A3 · nomenclature ADFER · récapitulatif · ' + (s2.tot / 1000).toFixed(2) + ' t' }], bars: BB };
+    return { sheets: [{ S: s1.S, label: 'Coupes', sub: 'A3 · coupe 1/' + s1.sc + ' · détail d\'angle · coupe A-A' }, ...s2.sheets.map((S, i) => ({ S, label: 'Nomenclature' + (s2.sheets.length > 1 ? ' ' + (i + 1) : ''), sub: 'A3 · nomenclature ADFER · récapitulatif · ' + (s2.tot / 1000).toFixed(2) + ' t' }))], bars: BB };
   }
   G.PICF_FERR = { bars, build };
 })(typeof window !== 'undefined' ? window : globalThis);
