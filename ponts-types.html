@@ -90,44 +90,37 @@ a.tile:hover .go{letter-spacing:.1em}
 .tile-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .tile-foot small{font-size:11px;color:var(--silver)}
 
-/* ─── teintes sobres : liseré par type, dessins techniques uniformes ─── */
-.grid>.tile:nth-child(1){--c:52,86,140}    /* VIPP : bleu ardoise */
-.grid>.tile:nth-child(2){--c:150,108,58}   /* PPBA : bronze */
-.grid>.tile:nth-child(3){--c:64,120,104}   /* PSIDA : vert de gris */
-.grid>.tile:nth-child(4){--c:100,86,140}   /* PSIDP : prune */
-.grid>.tile:nth-child(5){--c:52,112,132}   /* PICF : pétrole */
-.grid>.tile:nth-child(6){--c:140,70,86}    /* PIPO : bordeaux */
-.grid>.tile{background:#fff;border-color:rgba(20,23,31,.08)}
-.grid>.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:rgb(var(--c))}
-.grid>a.tile:hover{border-color:rgba(var(--c),.45);box-shadow:0 14px 32px -16px rgba(20,23,31,.28)}
-.grid>.tile .abbr{color:#1b2030}
+/* ─── thème sombre comme l'accueil, une teinte par type d'ouvrage ─── */
+:root{--ink:#0c0e14;--ink2:#1a1e2e;--white:#ffffff;--silver:#8892a4;--gold:#c9a84c;--gold2:#e8c97a;--teal:#1ab8a0;--border:rgba(255,255,255,.07);--border2:rgba(201,168,76,.35)}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),transparent 70%),radial-gradient(ellipse 40% 40% at 85% 85%,rgba(26,184,160,.06),transparent 60%),#0c0e14;background-attachment:fixed}
+.head{background:transparent;border-bottom:1px solid rgba(255,255,255,.06)}
+.head::before{background:none}
+.head-arch{opacity:.18}
+.head h1{color:#fff}.head h1 em{color:var(--gold)}
+.grid>.tile:nth-child(1){--c:74,134,232}   /* VIPP : bleu acier */
+.grid>.tile:nth-child(2){--c:214,128,72}   /* PPBA : cuivre */
+.grid>.tile:nth-child(3){--c:46,182,150}   /* PSIDA : émeraude */
+.grid>.tile:nth-child(4){--c:150,110,220}  /* PSIDP : violet */
+.grid>.tile:nth-child(5){--c:60,170,210}   /* PICF : cyan */
+.grid>.tile:nth-child(6){--c:206,86,110}   /* PIPO : framboise */
+.grid>.tile{background:linear-gradient(160deg,rgba(var(--c),.20) 0%,rgba(var(--c),.07) 55%,rgba(255,255,255,.015) 100%);border:1px solid rgba(var(--c),.32);box-shadow:none}
+.grid>a.tile:hover{border-color:rgba(var(--c),.65);background:linear-gradient(160deg,rgba(var(--c),.28) 0%,rgba(var(--c),.10) 55%,rgba(255,255,255,.02) 100%);box-shadow:0 16px 36px -18px rgba(0,0,0,.6)}
+.grid>.tile .abbr{color:#fff}
+.grid>.tile .name{color:#e8e4da}
+.grid>.tile .desc,.grid>.tile small,.grid>.tile .prog small{color:var(--silver)!important}
 .grid>.tile .status.on{color:rgb(var(--c))}
 .grid>.tile .status.on::before{background:rgb(var(--c))}
-.grid>.tile .schema [fill="#ddd6c1"],.grid>.tile .schema [fill="#cfc7b0"]{fill:#e3e8ef}
-.grid>.tile .schema [fill="#c6bda4"]{fill:#c3cdd9}
-.grid>.tile .schema [fill="#8f887a"],.grid>.tile .schema [fill="#8a8478"]{fill:#7d8a9c}
-.grid>.tile .schema [fill="#f4f0e5"]{fill:#f5f7fa}
-.grid>.tile .schema [stroke="#5b5446"]{stroke:#3d4a5c}
-.grid>.tile .schema [stroke="#8a8478"]{stroke:#7d8a9c}
-
-body{background:#eef1f5}
-.head{background:linear-gradient(180deg,#fafbfc,#f1f3f7)}
-.grid>.tile{border-color:rgba(30,45,70,.10);box-shadow:0 1px 3px rgba(30,45,70,.06)}
-
-/* ─── couleurs v3 : en-tête sombre comme l'accueil, teintes par type dans les dessins ─── */
-.head{background:linear-gradient(120deg,#0f1422 0%,#17203a 60%,#1a2440 100%);border-bottom:none}
-.head::before{background:radial-gradient(ellipse 50% 160% at 12% 0%,rgba(201,168,76,.06),transparent 70%)}
-.head h1{color:#f3f1ea}.head h1 em{color:#d4b35a}.head .eyebrow{color:#d4b35a}.head .eyebrow::before{background:#d4b35a}
-.head-arch{opacity:.35}
-body{background:#e9edf3}
-.grid>.tile::before{left:0;right:0;top:0;bottom:auto;width:auto;height:4px;background:linear-gradient(90deg,rgb(var(--c)),rgba(var(--c),.35))}
-.grid>.tile .abbr{color:color-mix(in srgb,rgb(var(--c)) 55%,#141a2a)}
-.grid>.tile .schema [fill="#ddd6c1"],.grid>.tile .schema [fill="#cfc7b0"]{fill:color-mix(in srgb,rgb(var(--c)) 16%,#fff)}
-.grid>.tile .schema [fill="#c6bda4"]{fill:color-mix(in srgb,rgb(var(--c)) 34%,#fff)}
-.grid>.tile .schema [fill="#8f887a"],.grid>.tile .schema [fill="#8a8478"]{fill:color-mix(in srgb,rgb(var(--c)) 60%,#6b7380)}
-.grid>.tile .schema [fill="#f4f0e5"]{fill:color-mix(in srgb,rgb(var(--c)) 5%,#fff)}
-.grid>.tile .schema [stroke="#5b5446"]{stroke:color-mix(in srgb,rgb(var(--c)) 60%,#1e2430)}
-.grid>.tile .schema [stroke="#8a8478"]{stroke:color-mix(in srgb,rgb(var(--c)) 50%,#6b7380)}
+.grid>.tile .go{color:var(--gold)}
+.grid>.tile .prog circle[stroke="#ece7da"]{stroke:rgba(255,255,255,.12)}
+.grid>.tile .prog text{fill:#e8e4da}
+.grid>.tile .schema [fill="#ddd6c1"],.grid>.tile .schema [fill="#cfc7b0"]{fill:rgba(var(--c),.22)}
+.grid>.tile .schema [fill="#c6bda4"]{fill:rgba(var(--c),.42)}
+.grid>.tile .schema [fill="#8f887a"],.grid>.tile .schema [fill="#8a8478"]{fill:rgba(var(--c),.5)}
+.grid>.tile .schema [fill="#f4f0e5"]{fill:rgba(255,255,255,.06)}
+.grid>.tile .schema [fill="#3d4250"],.grid>.tile .schema [fill="#4a4d57"]{fill:#c9ced8}
+.grid>.tile .schema [stroke="#5b5446"]{stroke:rgb(var(--c))}
+.grid>.tile .schema [stroke="#8a8478"]{stroke:rgba(var(--c),.8)}
+.grid>.tile .schema [stroke="#ece7da"]{stroke:rgba(255,255,255,.12)}
 
 /* ─── FOOTER ─── */
 footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid var(--border)}
