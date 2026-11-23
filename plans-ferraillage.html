@@ -328,6 +328,37 @@ footer{flex:none;background:var(--ink2);padding:10px 24px;border-top:1px solid v
   .p-hyp{font-size:7.2pt;color:#333;line-height:1.45;margin-top:6pt}
   .p-hyp ul{padding-left:12pt;columns:2;column-gap:18pt}
 }
+/* ═══ THÈME SOMBRE (comme l'accueil) ═══ */
+:root{--ink:#0c0e14;--ink2:#1a1e2e;--gold:#c9a84c;--gold2:#e8c97a;--teal:#1ab8a0;--silver:#8892a4;--white:#ffffff;--border:rgba(255,255,255,.08);--border2:rgba(201,168,76,.35);--paper:#151a26}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),transparent 70%),#0c0e14;background-attachment:fixed}
+.head{background:transparent;border-bottom:1px solid rgba(255,255,255,.06)}
+.head::before{background:radial-gradient(ellipse 40% 160% at 10% 0%,rgba(201,168,76,.06),transparent 70%)}
+.step-btn{background:rgba(255,255,255,.03)}
+.step-btn.active{background:rgba(201,168,76,.10);box-shadow:none}
+.step-btn.active .step-num{color:#0c0e14}
+/* panneaux de travail (dessins, nomenclature, tiroirs) : restent en « papier » clair */
+.card,.drawer{--ink:#f6f4ee;--ink2:#ffffff;--gold:#a8842a;--gold2:#8a6b1f;--teal:#0f8f7b;--silver:#5f6778;--white:#14171f;--border:rgba(20,23,31,.09);--border2:rgba(168,132,42,.4);--paper:#f8f6f0;color:#14171f}
+.drawer{background:#fff}
+/* catalogue : une teinte par structure */
+.catalog>.tile{--c:74,134,232}
+.catalog>.tile:nth-child(6n+1){--c:214,128,72}
+.catalog>.tile:nth-child(6n+2){--c:46,182,150}
+.catalog>.tile:nth-child(6n+3){--c:74,134,232}
+.catalog>.tile:nth-child(6n+4){--c:150,110,220}
+.catalog>.tile:nth-child(6n+5){--c:60,170,210}
+.catalog>.tile:nth-child(6n+6){--c:206,86,110}
+.catalog>.tile{background:linear-gradient(160deg,rgba(var(--c),.20) 0%,rgba(var(--c),.07) 55%,rgba(255,255,255,.015) 100%);border:1px solid rgba(var(--c),.32);box-shadow:none}
+.catalog>button.tile:hover{border-color:rgba(var(--c),.65);background:linear-gradient(160deg,rgba(var(--c),.28) 0%,rgba(var(--c),.10) 55%,rgba(255,255,255,.02) 100%);box-shadow:0 16px 36px -18px rgba(0,0,0,.6)}
+.catalog>.tile.dev{background:linear-gradient(160deg,rgba(var(--c),.09) 0%,rgba(255,255,255,.015) 70%);border-color:rgba(var(--c),.16)}
+.catalog>.tile .name{color:#fff}
+.catalog>.tile.on .name{color:#fff}
+.catalog>.tile.dev .name{color:#b9bfcc}
+.catalog>.tile .status.on{color:rgb(var(--c))}
+.catalog>.tile .status.on::before{background:rgb(var(--c))}
+.catalog>.tile .schema svg{color:rgba(var(--c),.55)}
+.catalog>.tile.on .schema svg{color:rgb(var(--c))}
+.catalog>.tile .go{color:var(--gold)}
+/* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
