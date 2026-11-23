@@ -371,6 +371,59 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 /* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
+<style id="coff-css">
+/* ── Plans de coffrage : espace de travail ── */
+.cws[hidden]{display:none!important}
+.cws{display:flex;flex-direction:column;gap:10px;min-height:0}
+.cws-bar{flex:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cws-bar h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:24px;color:#fff;margin-right:auto}
+.cws-tabs{display:inline-flex;border:1px solid var(--border2);border-radius:10px;overflow:hidden}
+.cws-tabs button{background:transparent;border:none;color:var(--silver);padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
+.cws-tabs button.on{background:rgba(201,168,76,.16);color:var(--gold2)}
+.cws-tabs button[hidden]{display:none}
+.cws-act{display:flex;gap:8px}
+.cws-act[hidden]{display:none}
+body.coff-open #steps{display:none}
+.cws-saisie{flex:1;min-height:0;display:grid;grid-template-columns:minmax(340px,36%) minmax(0,1fr);gap:12px}
+.cws-saisie[hidden],.cws-plan[hidden]{display:none}
+.cws-left{min-height:0}
+.cws-stabs{flex:none;display:flex;gap:4px;padding:6px 10px 0;flex-wrap:wrap}
+.cws-stabs button{border:1px solid var(--border);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;color:var(--silver);cursor:pointer}
+.cws-stabs button.on{border-color:var(--gold);color:var(--gold2);background:#fbf6e9}
+.cws-schema{flex:0 0 42%;min-height:150px;padding:4px 8px}
+.cws-fields{flex:1;min-height:0;overflow:auto;padding:0 14px 10px;border-top:1px solid var(--border)}
+.cgrp-t{font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--silver);padding:9px 0 5px}
+.cfg{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
+.cws-fields .cfg{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px}
+.cws-fields .num input{height:28px;padding-right:30px}
+.cfg.c3{grid-template-columns:1fr 1fr 1fr}
+.cf{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cf.wide{grid-column:span 2}
+.cf-l{font-size:11.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#3b4150}
+.cf-l b{color:#1d4ed8;font-weight:700;margin-right:3px}
+.cws-fields .num input{color:#c0262d;height:30px}
+.cf[data-k]:focus-within .cf-l b{color:#d97706}
+.cws-right{min-height:0}
+.cws-right .card-h small{margin-right:auto}
+.cerr{color:#b3261e}.cok{color:#0f8f7b}
+#cLive,#cSheet{background:#fff;border-radius:0 0 14px 14px}
+#cSheet{background:#e9ecf1;padding:10px}
+#cSheet svg{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.cws-plan{flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr);gap:12px}
+.cws-opt .card-b{flex:1;min-height:0;overflow:auto}
+.cws-opt select,.cws-opt input[type=text]{width:100%;height:30px;border:1px solid rgba(20,23,31,.16);border-radius:7px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff;color:#14171f}
+.cws-opt .num input[type=text]{padding-right:8px}
+.cws-opt textarea{width:100%;border:1px solid rgba(20,23,31,.16);border-radius:7px;padding:6px 8px;font:inherit;font-size:12px;resize:vertical}
+.clogo{display:flex;gap:6px;align-items:center}.clogo input{font-size:11px;max-width:100%}
+.cws-sheet .card-h small{text-align:right}
+@media(min-width:1000px) and (min-height:600px){.cws:not([hidden]){flex:1;min-height:0}}
+@media(max-width:999px),(max-height:599px){
+  .cws-saisie,.cws-plan{grid-template-columns:minmax(0,1fr)}
+  .cws-schema{height:260px;flex:none}.cws-fields{max-height:none}
+  #cLive{height:70vw;min-height:320px;flex:none}#cSheet{height:75vw;flex:none}
+}
+@media(max-width:600px){.cws-fields .cfg{grid-template-columns:1fr 1fr}.cws-bar h2{font-size:20px}}
+</style>
 </head>
 <body>
 
@@ -414,7 +467,7 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
     <form class="card panel" id="coffForm" autocomplete="off" onsubmit="return false">
       <div class="card-h"><h3 id="c-name">Coffrage</h3><div id="presets"></div></div>
       <div class="card-b"><div id="fields"></div><div class="msg" id="coffMsg" role="alert"></div></div>
-      <div class="panel-f"><button type="button" class="btn ghost" data-go="1" style="flex:none">←</button><button type="button" class="btn" id="btnValider">Valider le coffrage →</button></div>
+      <div class="panel-f"><button type="button" class="btn ghost" data-go="1" style="flex:none">←</button><button type="button" class="btn ghost" id="btnPlanC" style="flex:none" title="Plan de coffrage A3 à A0, cartouche, DXF">Plan</button><button type="button" class="btn" id="btnValider">Valider le coffrage →</button></div>
     </form>
     <div class="card">
       <div class="card-h"><h3 id="v-title">Coupe transversale</h3><div class="seg" id="viewSeg"><button type="button" class="on" data-v="coupe">Coupe</button><button type="button" data-v="second" id="v2btn">Élévation</button></div></div>
@@ -455,6 +508,33 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
     </div>
     <div class="card"><div class="card-h"><h3>Synthèse</h3><button class="btn ghost small" data-go="3">← Ferraillage</button></div><div class="card-b" id="expSum"></div></div>
   </section>
+
+  <!-- Plans de coffrage : espace de travail commun à toutes les structures -->
+  <section class="cws" id="coff" hidden aria-label="Plan de coffrage">
+    <div class="cws-bar">
+      <button type="button" class="btn ghost small" id="cBack">← Structures</button>
+      <h2 id="cName"></h2>
+      <div class="cws-tabs" id="cTabs" role="tablist"><button type="button" data-t="saisie" class="on">1 · Saisie</button><button type="button" data-t="plan">2 · Plan de coffrage</button></div>
+      <div class="cws-act" id="cAct" hidden><button type="button" class="btn ghost small" id="cPrint">Imprimer / PDF</button><button type="button" class="btn small" id="cDxf">Exporter DXF</button></div>
+    </div>
+    <div class="cws-saisie" id="cSaisie">
+      <div class="card cws-left">
+        <div class="card-h"><h3>Schéma de principe</h3><button type="button" class="btn ghost small" id="cReset" title="Revenir aux valeurs par défaut">↺ Défauts</button></div>
+        <div class="cws-stabs" id="cSchemaTabs"></div>
+        <div class="cws-schema" id="cSchema"></div>
+        <div class="cws-fields" id="cFields"></div>
+      </div>
+      <div class="card cws-right">
+        <div class="card-h"><h3>Votre ouvrage</h3><small id="cMsg"></small><button type="button" class="btn small" id="cToPlan">Plan de coffrage →</button></div>
+        <div class="draw" id="cLive"></div>
+        <div class="band" id="cQty"></div>
+      </div>
+    </div>
+    <div class="cws-plan" id="cPlan" hidden>
+      <div class="card cws-opt"><div class="card-h"><h3>Mise en page</h3></div><div class="card-b" id="cOpts"></div></div>
+      <div class="card cws-sheet"><div class="card-h"><h3>Plan de coffrage</h3><small id="cSheetI"></small></div><div class="draw" id="cSheet"></div></div>
+    </div>
+  </section>
 </main>
 
 <div class="scrim" id="scrim"></div>
@@ -489,6 +569,9 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 <script src="ferraillage/calc.js?v=11"></script>
 <script src="ferraillage/draw.js?v=11"></script>
 <script src="ferraillage/dxf.js?v=11"></script>
-<script src="ferraillage/app.js?v=24"></script>
+<script src="ferraillage/coffrage.js?v=1"></script>
+<script src="ferraillage/coffrage-structs.js?v=1"></script>
+<script src="ferraillage/coffrage-ui.js?v=1"></script>
+<script src="ferraillage/app.js?v=25"></script>
 </body>
 </html>

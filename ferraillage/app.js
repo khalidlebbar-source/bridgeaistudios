@@ -120,12 +120,24 @@
   /* ───── Étape 1 ───── */
   /* Cercle d'avancement du développement (comme sur l'accueil) */
   const RING = (p) => `<span class="tile-prog" title="Avancement du développement : ${p} %"><svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/>${p > 0 ? `<circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="${(94.25 * (1 - p / 100)).toFixed(2)}" transform="rotate(-90 20 20)"/>` : ''}<text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">${p}%</text></svg></span>`;
+  /* Rubriques → modèles de coffrage (ferraillage/coffrage-structs.js) */
+  const CID = { 'Culée voile': 'culeeV', 'Culée à colonnes': 'culeeC', 'Pile semelle + fûts': 'pile', 'Chevêtre': 'chevetre', 'Dalle de transition': 'dalleT', 'Mur en retour': 'murRetour', 'Mur en aile (cadres, portiques)': 'murAile', 'Massif sur pieux': 'massif', 'Poutres VIPP': 'poutreVIPP', 'Poutre PPBA': 'poutrePPBA', 'Hourdis': 'hourdis', 'Entretoises': 'entretoises', 'Corniche': 'corniche', 'Portique ouvert (PIPO)': 'pipo', 'Mur en U (trémies)': 'murU', "Tête d'ouvrage hydraulique": 'teteOH' };
   function renderCatalog() {
     $('#catalog').innerHTML = CATALOG.map((c) => c.id
       ? `<button class="tile on" data-struct="${c.id}">${RING(c.pct || 0)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Disponible</span><span class="name">${c.name}</span><span class="desc">${c.desc}</span><span class="go">Dessiner →</span></span></button>`
-      : `<div class="tile dev" aria-disabled="true">${RING(c.pct || 0)}<span class="status">Bientôt</span><span class="schema">${c.svg}</span><span class="name">${c.name}</span></div>`).join('');
+      : (CID[c.name] && window.COFFUI
+        ? `<button class="tile on" data-coff="${CID[c.name]}">${RING(c.pct == null ? 30 : c.pct)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Coffrage</span><span class="name">${c.name}</span><span class="go">Coffrage →</span></span></button>`
+        : `<div class="tile dev" aria-disabled="true">${RING(c.pct || 0)}<span class="status">Bientôt</span><span class="schema">${c.svg}</span><span class="name">${c.name}</span></div>`)).join('');
     $$('#catalog [data-struct]').forEach((b) => b.addEventListener('click', () => selectStruct(b.dataset.struct)));
+    $$('#catalog [data-coff]').forEach((b) => b.addEventListener('click', () => window.COFFUI.open(b.dataset.coff, { back: () => goStep(1) })));
   }
+  /* Mur et dalot : plan de coffrage à partir de la géométrie saisie dans leur module */
+  function openPlanCoffrage() {
+    readForm();
+    const g = {}; Object.keys(S.geom).forEach((k) => { if (typeof S.geom[k] === 'number' && isFinite(S.geom[k])) g[k] = S.geom[k]; });
+    window.COFFUI.open(S.struct, { g, tab: 'plan', back: () => goStep(S.step || 2) });
+  }
+  document.addEventListener('click', (e) => { if (e.target.closest('#btnPlanC')) openPlanCoffrage(); });
 
   function selectStruct(id) {
     if (S.struct !== id) {
