@@ -453,10 +453,10 @@ const NMAX = 8;
 const MODS = ((window.BA && BA.catalogue) || []).filter(m => m.code);
 const mcard = m => m.statut === "dev" ? `<div class="mcard dev"><div class="c">${m.code}<i>Bientôt</i></div><div class="n">${m.nom}</div></div>`
   : `<a class="mcard ${m.statut}" href="outils/${m.slug}.html" title="${strip(m.desc || "").replace(/"/g, "")}"><div class="c">${m.code}${m.statut === "beta" ? "<i>Bêta</i>" : ""}</div><div class="n">${m.nom}</div></a>`;
-const modsBlock = l => l.length ? `<section class="mods" aria-label="Outils de calculs des ponts"><div class="mods-h"><h2>Outils de calculs des ponts<span>${l.length} modules</span></h2><a href="outils-ponts.html">Voir comment les outils s’enchaînent →</a></div><p class="mods-sub">Du tablier aux fondations : chaque outil calcule une partie d’ouvrage, produit sa note de calcul et transmet ses résultats au suivant.</p><div class="mods-grid">${l.map(mcard).join("")}</div></section>` : "";
+const modsBlock = l => l.length ? `<section class="mods" aria-label="Outils de calculs des ponts"><div class="mods-h"><h2>Outils de calculs des ponts<span>${l.length} modules</span></h2><a href="outils-ponts.html">Voir comment les outils s’enchaînent →</a></div><div class="mods-grid">${l.map(mcard).join("")}</div></section>` : "";
 function renderHome(q = "") {
   document.body.classList.add("home"); cur = null; document.title = "BridgeAI Studios — HandBag";
-  const t = norm(q), top = `<div class="h-top"><div><div class="eyebrow">HandBag</div><h1>Calculs usuels d'ouvrages d'art</h1><div class="sub">${CALCS.length} feuilles de calcul en ${CATS.length} rubriques et ${MODS.length} outils de calculs des ponts, chacun avec sa note de calcul PDF prête à imprimer.</div></div><input class="h-find" id="find" type="search" placeholder="Rechercher un calcul…" aria-label="Rechercher un calcul" value="${q.replace(/"/g, "&quot;")}"></div>`;
+  const t = norm(q), top = `<div class="h-top"><div><div class="eyebrow">HandBag</div><h1>Calculs usuels d'ouvrages d'art</h1></div><input class="h-find" id="find" type="search" placeholder="Rechercher un calcul…" aria-label="Rechercher un calcul" value="${q.replace(/"/g, "&quot;")}"></div>`;
   let body = "";
   if (t) {
     const hits = ORDER.filter(c => norm(c.t + " " + c.cat + " " + c.ref + " " + c.desc).includes(t));
