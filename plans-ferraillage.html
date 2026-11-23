@@ -355,9 +355,11 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 .catalog>.tile.dev .name{color:#b9bfcc}
 .catalog>.tile .status.on{color:rgb(var(--c))}
 .catalog>.tile .status.on::before{background:rgb(var(--c))}
-.catalog>.tile .schema svg{color:rgba(var(--c),.55)}
+.catalog>.tile .schema svg{color:rgba(var(--c),.9);height:64px;max-width:150px}
 .catalog>.tile.on .schema svg{color:rgb(var(--c))}
 .catalog>.tile .go{color:var(--gold)}
+/* étapes 1 à 3 masquées (navigation par les boutons des panneaux) */
+#steps li:has([data-go="1"]),#steps li:has([data-go="2"]),#steps li:has([data-go="3"]){display:none}
 /* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -395,7 +397,7 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 <main>
   <!-- ÉTAPE 1 -->
   <section class="step show" id="step1" aria-label="Choix de la structure">
-    <div class="intro"><h2>Choix de la structure</h2><p>Deux structures disponibles ; le programme propose le ferraillage, la nomenclature avec façonnage et exporte le plan en DXF.</p></div>
+    <div class="intro"><h2>Choix structure</h2></div>
     <div class="catalog" id="catalog"></div>
   </section>
 
@@ -479,6 +481,6 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 <script src="ferraillage/calc.js?v=11"></script>
 <script src="ferraillage/draw.js?v=11"></script>
 <script src="ferraillage/dxf.js?v=11"></script>
-<script src="ferraillage/app.js?v=11"></script>
+<script src="ferraillage/app.js?v=12"></script>
 </body>
 </html>
