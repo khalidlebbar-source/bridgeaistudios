@@ -8,32 +8,49 @@
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   /* ───── Catalogue ───── */
-  /* Croquis inspirés des plans KLE (coupes et élévations) : béton rempli, remblai, terrain hachuré, axes, appareils d'appui. */
-  const sv = (d) => `<svg viewBox="0 0 160 100" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${d}</svg>`;
-  const C = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".3"/>`;                                   // béton coupé
-  const V = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".08"/>`;                                  // béton vu
-  const T = (d, o) => `<path d="${d}" stroke-width=".8" opacity="${o || .6}"/>`;                                // trait fin
-  const A = (d) => `<path d="${d}" stroke-width=".6" stroke-dasharray="6 2 1 2" opacity=".55"/>`;              // axe
-  const D = (d) => `<path d="${d}" stroke-width=".8" stroke-dasharray="3 2" opacity=".6"/>`;                   // caché / tablier
-  const E = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".05" stroke-width=".6" stroke-dasharray="1.5 2" opacity=".8"/>`; // remblai
-  const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 2; x <= x2; x += 5) h += `M${x} ${y}l-3.5 4.5`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".9" opacity=".75"/><path d="${h}" stroke-width=".55" opacity=".5"/>`; };
-  const AP = (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="2.6" fill="currentColor" fill-opacity=".55" stroke-width=".5"/>`; // appareil d'appui
-  const BRK = (x, y, w) => `<path d="M${x - 1} ${y}l${w / 2 + 1} -2.5l0 5l${w / 2 + 1} -2.5" stroke-width=".6" opacity=".7"/>`; // coupure de pieu
+  /* Croquis en perspective cavalière (inspirés des plans KLE) : face avant, dessus et côté en trois tons. */
+  const sv = (d, dy) => { dy = dy || 0; const W = 160 * (100 + dy) / 100; return `<svg viewBox="${((160 - W) / 2).toFixed(1)} ${-dy} ${W.toFixed(1)} ${100 + dy}" fill="none" stroke="currentColor" stroke-width=".9" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${d}</svg>`; };
+  const OX = .62, OY = -.42;                                   // direction de fuite (par unité de profondeur)
+  const P = (pts) => pts.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
+  const face = (pts, op) => `<path d="M${P(pts)}Z" fill="#10131b" stroke="none"/><path d="M${P(pts)}Z" fill="currentColor" fill-opacity="${op}"/>`;
+  /* Extrusion d'un profil (liste de points, sens quelconque) sur une profondeur d ; trou optionnel. */
+  function X(pts, d, hole) {
+    const ox = OX * d, oy = OY * d;
+    let ar = 0; for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; ar += p[0] * q[1] - q[0] * p[1]; }
+    const sg = ar > 0 ? 1 : -1; let out = '';
+    const quads = (poly, inner) => { let r = []; for (let i = 0; i < poly.length; i++) {
+      const p = poly[i], q = poly[(i + 1) % poly.length]; let nx = (q[1] - p[1]) * sg, ny = -(q[0] - p[0]) * sg; if (inner) { nx = -nx; ny = -ny; }
+      const v = nx * ox + ny * oy; if (v <= 1e-6) continue;
+      const L = Math.hypot(nx, ny) || 1, top = -ny / L > .5;
+      r.push({ z: Math.min(p[1], q[1]), s: face([p, q, [q[0] + ox, q[1] + oy], [p[0] + ox, p[1] + oy]], top ? .16 : .5) }); }
+      return r.sort((u, w) => w.z - u.z).map((u) => u.s).join(''); };
+    if (hole) out += quads(hole, true);
+    out += quads(pts, false);
+    out += hole ? `<path d="M${P(pts)}Z M${P(hole)}Z" fill="#10131b" stroke="none" fill-rule="evenodd"/><path d="M${P(pts)}Z M${P(hole)}Z" fill="currentColor" fill-opacity=".32" fill-rule="evenodd"/>` : face(pts, .32);
+    return out;
+  };
+  const B = (x, y, w, h, d) => X([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], d);  // boîte
+  /* Cylindre vertical (fût, pieu) */
+  const CY = (cx, y1, y2, r) => { const ry = r * .38;
+    return `<path d="M${cx - r} ${y1}V${y2}A${r} ${ry} 0 0 0 ${cx + r} ${y2}V${y1}Z" fill="#10131b" stroke="none"/><path d="M${cx - r} ${y1}V${y2}A${r} ${ry} 0 0 0 ${cx + r} ${y2}V${y1}Z" fill="currentColor" fill-opacity=".36"/>`
+      + `<path d="M${cx + r * .35} ${y1 + ry * .9}V${y2 + ry * .9}" stroke-width=".5" opacity=".35"/>`
+      + `<ellipse cx="${cx}" cy="${y1}" rx="${r}" ry="${ry}" fill="#10131b"/><ellipse cx="${cx}" cy="${y1}" rx="${r}" ry="${ry}" fill="currentColor" fill-opacity=".16"/>`; };
+  const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 2; x <= x2; x += 5) h += `M${x} ${y}l-3 4`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".7" opacity=".6"/><path d="${h}" stroke-width=".45" opacity=".4"/>`; };
   const CATALOG = [
     { id: 'murT', name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
-      svg: sv(E('M70 14L96 12L150 2V74H72Z') + C('M28 86H140V74H72L69 14H60V74H28Z') + C('M96 86H106V92H96Z') + T('M69 14L96 12L150 2', .55) + T('M8 64H60', .6) + G(8, 28, 86) + G(140, 156, 86) + T('M66 70V20', .35) + `<circle cx="66" cy="72" r="1.6" stroke-width=".7" opacity=".7"/>`) },
+      svg: sv(X([[18, 84], [102, 84], [102, 76], [62, 76], [58, 30], [50, 30], [50, 76], [18, 76]], 48) + B(66, 84, 9, 6, 48) + G(4, 20, 84)) },
     { id: 'dalot', name: 'Dalot cadre fermé', desc: 'Cadre 1 cellule avec goussets : U extérieurs, nappes intérieures, piédroits, goussets et filants.',
-      svg: sv(E('M6 12H154V22H6Z') + T('M6 12H154', .8) + C('M34 22H126V86H34ZM44 32V76H116V32Z') + T('M44 40L52 32M108 32L116 40M44 68L52 76M108 76L116 68', .9) + `<path d="M44 40L52 32H108L116 40V68L108 76H52L44 68Z" stroke-width=".9"/>` + E('M6 22H34V86H6ZM126 22H154V86H126Z') + G(6, 154, 90) + A('M80 16V92')) },
-    { name: 'Culée', svg: sv(E('M74 28H156V82H58V40H74Z') + C('M20 82H112V94H20Z') + C('M46 82V40H40V28H62V8H68V20H74V30L66 40H58V82Z') + V('M74 20L152 25V30L74 25Z') + D('M4 16H56V24H4') + AP(44, 25.4, 10) + A('M52 4V98') + G(4, 20, 94) + G(112, 156, 94) + T('M4 72H20', .6)) },
-    { name: 'Pile semelle + colonnes', svg: sv(D('M8 10H152V18H8') + C('M24 26H136V36L124 42H36L24 36Z') + AP(40, 21, 10) + AP(75, 21, 10) + AP(110, 21, 10) + C('M54 42H66V78H54ZM94 42H106V78H94Z') + C('M30 78H130V92H30Z') + A('M60 38V96M100 38V96') + G(6, 30, 92) + G(130, 154, 92) + T('M6 70H54M66 70H94M106 70H154', .5)) },
-    { name: 'Chevêtre', svg: sv(C('M8 30H152V48L136 58H24L8 48Z') + `<path d="M22 24h12v6H22ZM74 24h12v6H74ZM126 24h12v6h-12Z" fill="currentColor" fill-opacity=".14" stroke-width=".8"/>` + AP(23, 21.4, 10) + AP(75, 21.4, 10) + AP(127, 21.4, 10) + V('M48 58H62V92H48ZM98 58H112V92H98Z') + A('M55 18V96M105 18V96M80 18V64') + T('M8 30L4 30M152 30L156 30', .3)) },
-    { name: 'Dalle de transition', svg: sv(E('M30 34L156 46V92H30Z') + C('M14 92V20H26V8H32V20H26V30H38L32 36H26V92Z') + C('M38 30L150 42V50L38 38Z') + T('M32 8V24H156', .6) + `<path d="M32 22L156 24" stroke-width="1.6" opacity=".8"/>` + D('M2 14H22V20H2') + G(2, 156, 94) + A('M20 4V96')) },
-    { name: 'Mur en retour', svg: sv(E('M30 22L152 84V90H30Z') + C('M16 90V12H34V22L58 22L152 80V90Z') + T('M34 22V90', .5) + T('M58 22L152 80', .3) + T('M16 12H34L46 4', .5) + D('M2 10H16') + G(2, 156, 92) + A('M25 4V96')) },
-    { name: 'Massif sur pieux', svg: sv(V('M66 6H94V26H66Z') + C('M20 26H140V48H20Z') + C('M34 48H46V82H34ZM74 48H86V82H74ZM114 48H126V82H114Z') + BRK(34, 82, 12) + BRK(74, 82, 12) + BRK(114, 82, 12) + T('M34 86V94M46 86V94M74 86V94M86 86V94M114 86V94M126 86V94', .45) + G(4, 20, 30) + G(140, 156, 30) + A('M40 22V98M80 2V98M120 22V98') + T('M20 37H140', .25)) },
-    { name: 'Tablier PSIDN', svg: sv(C('M6 40H154V48H138L132 74H108L102 48H92L86 74H74L68 48H58L52 74H28L22 48H6Z') + `<path d="M6 40V32h6v8M148 32h6v8" stroke-width=".9"/>` + T('M12 30V20M148 30V20', .7) + T('M18 38H142', .5) + A('M80 14V86')) },
-    { name: 'Poutres VIPP', svg: sv(C('M24 10H136V16L94 20L88 24V66L100 72V90H60V72L72 66V24L66 20L24 16Z') + `<circle cx="74" cy="80" r="2.6" stroke-width=".7"/><circle cx="86" cy="80" r="2.6" stroke-width=".7"/><circle cx="80" cy="73" r="2.6" stroke-width=".7"/><circle cx="74" cy="86" r="0" />` + A('M80 4V96') + T('M24 13H136', .3)) },
-    { name: 'Hourdis', svg: sv(C('M4 26H156V40H4Z') + V('M20 40L26 44V92H42V44L48 40M70 40L76 44V92H92V44L98 40M120 40L126 44V92H142V44L148 40') + T('M4 30H156', .35) + T('M28 22H152', .7) + A('M34 18V96M84 18V96M134 18V96') + T('M48 36H70M98 36H120', .4)) },
-    { name: 'Entretoises', svg: sv(C('M10 10H46V16L32 20V70L42 76V88H14V76L24 70V20L10 16ZM114 10H150V16L136 20V70L146 76V88H118V76L128 70V20L114 16Z') + C('M32 22H128V62H32Z') + `<path d="M54 62h14v8H54ZM92 62h14v8H92Z" fill="currentColor" fill-opacity=".14" stroke-width=".8"/>` + T('M54 74h14M92 74h14', .7) + T('M32 42H128', .3) + A('M28 4V96M132 4V96')) },
+      svg: sv(X([[20, 88], [100, 88], [100, 38], [20, 38]], 54, [[30, 78], [30, 54], [36, 48], [84, 48], [90, 54], [90, 78]].reverse()) + G(4, 20, 88)) },
+    { name: 'Culée', svg: sv(B(16, 80, 72, 10, 56) + X([[38, 80], [38, 44], [32, 44], [32, 36], [52, 36], [52, 18], [57, 18], [57, 28], [62, 28], [62, 36], [56, 42], [48, 42], [48, 80]], 56) + G(2, 16, 90), 12) },
+    { name: 'Pile semelle + colonnes', svg: sv(B(20, 80, 84, 10, 34) + CY(50, 44, 80, 6) + CY(76, 44, 80, 6) + CY(60, 36, 72, 6) + CY(88, 36, 72, 6) + X([[22, 30], [108, 30], [108, 38], [98, 44], [32, 44], [22, 38]], 30) + B(34, 26, 8, 4, 6) + B(84, 26, 8, 4, 6)) },
+    { name: 'Chevêtre', svg: sv(CY(52, 50, 92, 6) + CY(92, 50, 92, 6) + X([[14, 30], [118, 30], [118, 44], [104, 54], [28, 54], [14, 44]], 30) + B(26, 25, 10, 5, 8) + B(60, 25, 10, 5, 8) + B(94, 25, 10, 5, 8)) },
+    { name: 'Dalle de transition', svg: sv(X([[30, 30], [118, 42], [118, 48], [30, 36]], 52) + X([[10, 90], [10, 22], [20, 22], [20, 8], [25, 8], [25, 26], [30, 30], [30, 36], [20, 36], [20, 90]], 52) + G(2, 10, 90), 10) },
+    { name: 'Mur en retour', svg: sv(B(14, 18, 18, 72, 50) + X([[32, 18], [56, 18], [118, 74], [118, 84], [32, 84]], 6) + G(2, 14, 90), 8) },
+    { name: 'Massif sur pieux', svg: sv(CY(52, 46, 90, 4.5) + CY(86, 46, 90, 4.5) + CY(36, 52, 96, 4.5) + CY(70, 52, 96, 4.5) + B(22, 40, 70, 14, 36) + B(46, 18, 22, 22, 14)) },
+    { name: 'Tablier PSIDN', svg: sv(X([[6, 50], [104, 50], [104, 58], [94, 58], [89, 80], [73, 80], [68, 58], [58, 58], [53, 80], [37, 80], [32, 58], [22, 58], [17, 80], [1, 80], [-4, 58], [6, 58]].map(([x, y]) => [x + 10, y]), 64)) },
+    { name: 'Poutres VIPP', svg: sv(X([[22, 30], [82, 30], [82, 35], [58, 38], [54, 42], [54, 74], [62, 79], [62, 92], [42, 92], [42, 79], [50, 74], [50, 42], [46, 38], [22, 35]], 60), 8) },
+    { name: 'Hourdis', svg: sv(X([[30, 52], [34, 56], [34, 92], [26, 92], [26, 56], [22, 52]], 58) + X([[60, 52], [64, 56], [64, 92], [56, 92], [56, 56], [52, 52]], 58) + X([[90, 52], [94, 56], [94, 92], [86, 92], [86, 56], [82, 52]], 58) + X([[8, 44], [108, 44], [108, 52], [8, 52]], 58)) },
+    { name: 'Entretoises', svg: sv(X([[86, 28], [110, 28], [110, 32], [101, 35], [101, 74], [108, 78], [108, 86], [88, 86], [88, 78], [95, 74], [95, 35], [86, 32]], 52) + B(34, 40, 61, 32, 10) + X([[16, 28], [40, 28], [40, 32], [31, 35], [31, 74], [38, 78], [38, 86], [18, 86], [18, 78], [25, 74], [25, 35], [16, 32]], 52), 6) },
   ];
   const DESIGNATION = { murT: 'Mur de soutènement — plot type', dalot: 'Dalot cadre fermé' };
 
