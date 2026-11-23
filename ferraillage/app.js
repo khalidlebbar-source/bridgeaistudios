@@ -14,7 +14,7 @@
   const P = (pts) => pts.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
   const face = (pts, op) => `<path d="M${P(pts)}Z" fill="#10131b" stroke="none"/><path d="M${P(pts)}Z" fill="currentColor" fill-opacity="${op}"/>`;
   /* Extrusion d'un profil (liste de points, sens quelconque) sur une profondeur d ; trou optionnel. */
-  function X(pts, d, hole) {
+  function X(pts, d, hole, k) { k = k || 1;
     const ox = OX * d, oy = OY * d;
     let ar = 0; for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; ar += p[0] * q[1] - q[0] * p[1]; }
     const sg = ar > 0 ? 1 : -1; let out = '';
@@ -22,14 +22,14 @@
       const p = poly[i], q = poly[(i + 1) % poly.length]; let nx = (q[1] - p[1]) * sg, ny = -(q[0] - p[0]) * sg; if (inner) { nx = -nx; ny = -ny; }
       const v = nx * ox + ny * oy; if (v <= 1e-6) continue;
       const L = Math.hypot(nx, ny) || 1, top = -ny / L > .5;
-      r.push({ z: Math.min(p[1], q[1]), s: face([p, q, [q[0] + ox, q[1] + oy], [p[0] + ox, p[1] + oy]], top ? .16 : .5) }); }
+      r.push({ z: Math.min(p[1], q[1]), s: face([p, q, [q[0] + ox, q[1] + oy], [p[0] + ox, p[1] + oy]], (top ? .16 : .5) * k) }); }
       return r.sort((u, w) => w.z - u.z).map((u) => u.s).join(''); };
     if (hole) out += quads(hole, true);
     out += quads(pts, false);
-    out += hole ? `<path d="M${P(pts)}Z M${P(hole)}Z" fill="#10131b" stroke="none" fill-rule="evenodd"/><path d="M${P(pts)}Z M${P(hole)}Z" fill="currentColor" fill-opacity=".32" fill-rule="evenodd"/>` : face(pts, .32);
+    out += hole ? `<path d="M${P(pts)}Z M${P(hole)}Z" fill="#10131b" stroke="none" fill-rule="evenodd"/><path d="M${P(pts)}Z M${P(hole)}Z" fill="currentColor" fill-opacity="${.32 * k}" fill-rule="evenodd"/>` : face(pts, .32 * k);
     return out;
   };
-  const B = (x, y, w, h, d) => X([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], d);  // boîte
+  const B = (x, y, w, h, d, k) => X([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], d, null, k);  // boîte
   /* Cylindre vertical (fût, pieu) */
   const CY = (cx, y1, y2, r) => { const ry = r * .38;
     return `<path d="M${cx - r} ${y1}V${y2}A${r} ${ry} 0 0 0 ${cx + r} ${y2}V${y1}Z" fill="#10131b" stroke="none"/><path d="M${cx - r} ${y1}V${y2}A${r} ${ry} 0 0 0 ${cx + r} ${y2}V${y1}Z" fill="currentColor" fill-opacity=".36"/>`
@@ -38,21 +38,22 @@
   const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 2; x <= x2; x += 5) h += `M${x} ${y}l-3 4`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".7" opacity=".6"/><path d="${h}" stroke-width=".45" opacity=".4"/>`; };
   /* 4 poutres en I avec entretoises intermédiaires */
   const ENT = () => { const I = (x) => [[x, 34], [x + 18, 34], [x + 18, 37], [x + 11.5, 39], [x + 11.5, 72], [x + 16, 75], [x + 16, 82], [x + 2, 82], [x + 2, 75], [x + 6.5, 72], [x + 6.5, 39], [x, 37]];
-    let o = ''; [6, 40, 74, 108].forEach((x, i) => { o += X(I(x), 46); if (i < 3) o += B(x + 11.5 + OX * 20, 44 + OY * 20, 29, 24, 6); }); return o; };
+    let o = ''; [2, 42, 82, 122].forEach((x, i) => { o += X(I(x), 34); if (i < 3) o += B(x + 11.5 + OX * 14, 44 + OY * 14, 29, 24, 6, 1.9); }); return o; };
   const CATALOG = [
     { id: 'murT', name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
-      svg: sv(X([[18, 84], [102, 84], [102, 76], [62, 76], [58, 30], [50, 30], [50, 76], [18, 76]], 48) + B(66, 84, 9, 6, 48) + G(4, 20, 84)) },
+      svg: sv(X([[18, 84], [102, 84], [102, 76], [62, 76], [58, 30], [50, 30], [50, 76], [18, 76]], 48) + G(4, 20, 84)) },
     { id: 'dalot', name: 'Dalot cadre fermé', desc: 'Cadre 1 cellule avec goussets : U extérieurs, nappes intérieures, piédroits, goussets et filants.',
-      svg: sv(X([[20, 88], [100, 88], [100, 38], [20, 38]], 54, [[30, 78], [30, 54], [36, 48], [84, 48], [90, 54], [90, 78]].reverse()) + G(4, 20, 88)) },
+      svg: sv(X([[20, 88], [100, 88], [100, 38], [20, 38]], 54, [[36, 78], [30, 72], [30, 54], [36, 48], [84, 48], [90, 54], [90, 72], [84, 78]].reverse()) + G(4, 20, 88)) },
     { name: 'Culée', svg: sv(B(16, 80, 72, 10, 56) + X([[38, 80], [38, 44], [32, 44], [32, 36], [52, 36], [52, 18], [57, 18], [57, 28], [62, 28], [62, 36], [56, 42], [48, 42], [48, 80]], 56) + G(2, 16, 90), 12) },
     { name: 'Pile semelle + colonnes', svg: sv(B(20, 80, 84, 10, 34) + CY(50, 44, 80, 6) + CY(76, 44, 80, 6) + CY(60, 36, 72, 6) + CY(88, 36, 72, 6) + X([[22, 30], [108, 30], [108, 38], [98, 44], [32, 44], [22, 38]], 30) + B(34, 26, 8, 4, 6) + B(84, 26, 8, 4, 6)) },
     { name: 'Chevêtre', svg: sv(CY(52, 50, 92, 6) + CY(92, 50, 92, 6) + X([[14, 30], [118, 30], [118, 44], [104, 54], [28, 54], [14, 44]], 30) + B(26, 25, 10, 5, 8) + B(60, 25, 10, 5, 8) + B(94, 25, 10, 5, 8)) },
     { name: 'Dalle de transition', svg: sv(X([[30, 30], [118, 42], [118, 48], [30, 36]], 52) + X([[10, 90], [10, 22], [20, 22], [20, 8], [25, 8], [25, 26], [30, 30], [30, 36], [20, 36], [20, 90]], 52) + G(2, 10, 90), 10) },
     { name: 'Mur en retour', svg: sv(B(14, 18, 18, 72, 44) + X([[32, 18], [122, 18], [122, 30], [58, 84], [32, 84]], 6) + G(2, 14, 90), 8) },
-    { name: 'Massif sur pieux', svg: sv(CY(52, 46, 90, 4.5) + CY(86, 46, 90, 4.5) + CY(36, 52, 96, 4.5) + CY(70, 52, 96, 4.5) + B(22, 40, 70, 14, 36) + B(46, 18, 22, 22, 14)) },
+    { name: 'Massif sur pieux', svg: sv([40, 66, 92].map((x) => CY(x + OX * 22, 50 + OY * 22, 92 + OY * 22, 4.5)).join('') + [40, 66, 92].map((x) => CY(x, 50, 94, 4.5)).join('') + B(26, 38, 80, 14, 30) + CY(66 + OX * 15, 10, 38 + OY * 15, 10), 4) },
     { name: 'Poutres VIPP', svg: sv(X([[22, 30], [82, 30], [82, 35], [58, 38], [54, 42], [54, 74], [62, 79], [62, 92], [42, 92], [42, 79], [50, 74], [50, 42], [46, 38], [22, 35]], 60), 8) },
-    { name: 'Hourdis', svg: sv(X([[30, 52], [34, 56], [34, 92], [26, 92], [26, 56], [22, 52]], 58) + X([[60, 52], [64, 56], [64, 92], [56, 92], [56, 56], [52, 52]], 58) + X([[90, 52], [94, 56], [94, 92], [86, 92], [86, 56], [82, 52]], 58) + X([[8, 44], [108, 44], [108, 52], [8, 52]], 58)) },
-    { name: 'Entretoises', svg: sv(ENT(), 4) },
+    { name: 'PPBA', svg: sv([10, 40, 70, 100].map((x) => B(x, 52, 9, 34, 56)).join('') + X([[4, 44], [118, 44], [118, 52], [4, 52]], 56), 10) },
+    { name: 'Hourdis', svg: sv([10, 36, 62, 88].map((x) => X([[x + 5, 52], [x + 11, 52], [x + 11, 78], [x + 16, 83], [x + 16, 92], [x, 92], [x, 83], [x + 5, 78]], 52)).join('') + X([[4, 44], [110, 44], [110, 52], [4, 52]], 52), 4) },
+    { name: 'Entretoises', svg: sv(ENT(), 14) },
   ];
   const DESIGNATION = { murT: 'Mur de soutènement — plot type', dalot: 'Dalot cadre fermé' };
 
