@@ -298,6 +298,16 @@ a.tool:hover{border-color:var(--border2);background:rgba(201,168,76,.04);transfo
 .tool-desc{font-size:13px;color:var(--silver);line-height:1.7;flex:1}
 .tool-go{font-size:13px;color:var(--gold);margin-top:8px}
 
+/* ─── cartes colorées (une teinte par outil, Bridge Composer inchangé) ─── */
+.tools>.tool:nth-child(n+2){--c:120,140,200;background:linear-gradient(160deg,rgba(var(--c),.20) 0%,rgba(var(--c),.07) 55%,rgba(255,255,255,.015) 100%);border-color:rgba(var(--c),.32)}
+.tools>.tool:nth-child(n+2):hover{border-color:rgba(var(--c),.65);background:linear-gradient(160deg,rgba(var(--c),.28) 0%,rgba(var(--c),.10) 55%,rgba(255,255,255,.02) 100%)}
+.tools>.tool:nth-child(n+2) .tool-icon{background:rgba(var(--c),.18)!important;color:rgb(var(--c))!important}
+.tools>.tool:nth-child(2){--c:74,134,232}   /* Ponts types : bleu acier */
+.tools>.tool:nth-child(3){--c:214,128,72}   /* Plans : cuivre */
+.tools>.tool:nth-child(4){--c:46,182,150}   /* HandBag : vert émeraude */
+.tools>.tool:nth-child(5){--c:150,110,220}  /* Bibliothèque : violet */
+.tools>.tool:nth-child(6){--c:60,170,210}   /* Liens utiles : cyan */
+.tools>.tool:nth-child(7){--c:206,86,110}   /* Espace étudiants : framboise */
 .tool.soon{opacity:.45;filter:grayscale(1);cursor:default}
 .tool.soon .tool-go{color:var(--silver)}
 footer{padding:24px 5%}
