@@ -119,6 +119,30 @@
 @media(max-width:1180px){.chapters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:980px){.hero .in{grid-template-columns:1fr}.hero-art{display:none}}
 @media(max-width:640px){.chapters{grid-template-columns:1fr 1fr;gap:10px}.chap{min-height:0;padding:12px}.chap h4{font-size:18px}.chap p{display:none}.hero{padding:30px 16px 28px}.wrap{padding:24px 16px 32px}}
+
+/* ═══ THÈME SOMBRE (comme l'accueil) ═══ */
+body{--paper:#0c0e14;--card:#141926;--ink:#f1eee6;--ink-soft:#c9cdd6;--mute:#8892a4;--gold:#c9a84c;--gold-soft:rgba(201,168,76,.12);--line:rgba(255,255,255,.08);--line2:rgba(201,168,76,.35);background:radial-gradient(ellipse 80% 40% at 50% 30%,rgba(45,107,228,.10),transparent 70%),#0c0e14;color:var(--ink)}
+.hero{background:linear-gradient(160deg,#0c0f19 0%,#141c33 60%,#18294a 100%)}
+.btn.light{background:rgba(255,255,255,.05);color:var(--ink);border-color:var(--line)}
+/* chapitres : une teinte par chapitre */
+.chapters>.chap{--k:74,134,232}
+.chapters>.chap:nth-child(6n+1){--k:201,168,76}
+.chapters>.chap:nth-child(6n+2){--k:74,134,232}
+.chapters>.chap:nth-child(6n+3){--k:214,128,72}
+.chapters>.chap:nth-child(6n+4){--k:46,182,150}
+.chapters>.chap:nth-child(6n+5){--k:150,110,220}
+.chapters>.chap:nth-child(6n+6){--k:206,86,110}
+.chapters>.chap{background:linear-gradient(160deg,rgba(var(--k),.20),rgba(var(--k),.07) 55%,rgba(255,255,255,.015));border:1px solid rgba(var(--k),.32);color:var(--ink)}
+.chapters>.chap:hover{border-color:rgba(var(--k),.65);background:linear-gradient(160deg,rgba(var(--k),.28),rgba(var(--k),.10) 55%,rgba(255,255,255,.02));box-shadow:0 16px 36px -18px rgba(0,0,0,.6)}
+.chapters>.chap .num{-webkit-text-stroke:1px rgba(var(--k),.55)}
+.chapters>.chap small{color:rgb(var(--k))}
+.chapters>.chap p{color:var(--mute)}
+.chap .tags span,.chap .tags span.t3d,.chap .tags span.ani,.chap .tags span.cal{background:rgba(255,255,255,.07);color:#c9cdd6}
+.dl,.tool{background:rgba(255,255,255,.03)}
+.soon span{background:transparent;color:var(--mute);border-color:rgba(255,255,255,.15)}
+.course-card{background:linear-gradient(170deg,rgba(201,168,76,.12),rgba(255,255,255,.02))}
+.tools-line a{background:rgba(255,255,255,.04)}
+/* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
