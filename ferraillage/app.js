@@ -36,9 +36,18 @@
       + `<path d="M${cx + r * .35} ${y1 + ry * .9}V${y2 + ry * .9}" stroke-width=".5" opacity=".35"/>`
       + `<ellipse cx="${cx}" cy="${y1}" rx="${r}" ry="${ry}" fill="#10131b"/><ellipse cx="${cx}" cy="${y1}" rx="${r}" ry="${ry}" fill="currentColor" fill-opacity=".16"/>`; };
   const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 2; x <= x2; x += 5) h += `M${x} ${y}l-3 4`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".7" opacity=".6"/><path d="${h}" stroke-width=".45" opacity=".4"/>`; };
+  /* Poutre VIPP / PPBA (profil commun) et câbles de précontrainte vus sur la face de l'âme */
+  const VP = [[22, 30], [82, 30], [82, 35], [58, 38], [54, 42], [54, 74], [62, 79], [62, 92], [42, 92], [42, 79], [50, 74], [50, 42], [46, 38], [22, 35]];
+  const CAB = () => { let o = ''; const d = 60;
+    [[48, 86], [58, 85], [68, 84]].forEach(([y0, ym], i) => {                     // ancrage (y0) relevé, point bas (ym) en travée
+      let pts = []; for (let k = 0; k <= 40; k++) { const t = k / 40, u = t < .35 ? t / .35 : t > .65 ? (1 - t) / .35 : 1;
+        pts.push([54 + OX * d * t, y0 + (ym - y0) * (1 - Math.pow(1 - u, 2)) + OY * d * t]); }
+      o += `<path d="M${P(pts)}" stroke-width=".7" stroke-dasharray="2.5 1.5" opacity=".9"/>`; });
+    [[52, 52], [52, 62], [52, 72], [47, 84], [52, 87], [57, 84]].forEach(([x, y]) => { o += `<circle cx="${x}" cy="${y}" r="1.6" fill="currentColor" fill-opacity=".85" stroke-width=".5"/>`; });
+    return o; };
   /* 4 poutres en I avec entretoises intermédiaires */
   const ENT = () => { const I = (x) => [[x, 34], [x + 18, 34], [x + 18, 37], [x + 11.5, 39], [x + 11.5, 72], [x + 16, 75], [x + 16, 82], [x + 2, 82], [x + 2, 75], [x + 6.5, 72], [x + 6.5, 39], [x, 37]];
-    let o = ''; [2, 42, 82, 122].forEach((x, i) => { o += X(I(x), 34); if (i < 3) o += B(x + 11.5 + OX * 14, 44 + OY * 14, 29, 24, 6, 1.9); }); return o; };
+    let o = ''; [2, 42, 82, 122].forEach((x, i) => { o += X(I(x), 34); if (i < 3) o += B(x + 11.5 + OX * 14, 44 + OY * 14, 29, 24, 6, 1.9); }); return o + X([[-2, 27], [144, 27], [144, 34], [-2, 34]], 34); };
   const CATALOG = [
     { id: 'murT', name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
       svg: sv(X([[18, 84], [102, 84], [102, 76], [62, 76], [58, 30], [50, 30], [50, 76], [18, 76]], 48) + G(4, 20, 84)) },
@@ -50,10 +59,10 @@
     { name: 'Dalle de transition', svg: sv(X([[30, 30], [118, 42], [118, 48], [30, 36]], 52) + X([[10, 90], [10, 22], [20, 22], [20, 8], [25, 8], [25, 26], [30, 30], [30, 36], [20, 36], [20, 90]], 52) + G(2, 10, 90), 10) },
     { name: 'Mur en retour', svg: sv(B(14, 18, 18, 72, 44) + X([[32, 18], [122, 18], [122, 30], [58, 84], [32, 84]], 6) + G(2, 14, 90), 8) },
     { name: 'Massif sur pieux', svg: sv([40, 66, 92].map((x) => CY(x + OX * 22, 50 + OY * 22, 92 + OY * 22, 4.5)).join('') + [40, 66, 92].map((x) => CY(x, 50, 94, 4.5)).join('') + B(26, 38, 80, 14, 30) + CY(66 + OX * 15, 10, 38 + OY * 15, 10), 4) },
-    { name: 'Poutres VIPP', svg: sv(X([[22, 30], [82, 30], [82, 35], [58, 38], [54, 42], [54, 74], [62, 79], [62, 92], [42, 92], [42, 79], [50, 74], [50, 42], [46, 38], [22, 35]], 60), 8) },
-    { name: 'PPBA', svg: sv([10, 40, 70, 100].map((x) => B(x, 52, 9, 34, 56)).join('') + X([[4, 44], [118, 44], [118, 52], [4, 52]], 56), 10) },
-    { name: 'Hourdis', svg: sv([10, 36, 62, 88].map((x) => X([[x + 5, 52], [x + 11, 52], [x + 11, 78], [x + 16, 83], [x + 16, 92], [x, 92], [x, 83], [x + 5, 78]], 52)).join('') + X([[4, 44], [110, 44], [110, 52], [4, 52]], 52), 4) },
-    { name: 'Entretoises', svg: sv(ENT(), 14) },
+    { name: 'Poutres VIPP', svg: sv(X(VP, 60) + CAB(), 8) },
+    { name: 'Poutre PPBA', svg: sv(X(VP, 60), 8) },
+    { name: 'Hourdis', svg: sv([10, 36, 62, 88].map((x) => X([[x - 2, 52], [x + 18, 52], [x + 18, 55], [x + 11, 58], [x + 11, 78], [x + 16, 83], [x + 16, 92], [x, 92], [x, 83], [x + 5, 78], [x + 5, 58], [x - 2, 55]], 52)).join('') + X([[4, 44], [110, 44], [110, 52], [4, 52]], 52), 4) },
+    { name: 'Entretoises', svg: sv(ENT(), 22) },
   ];
   const DESIGNATION = { murT: 'Mur de soutènement — plot type', dalot: 'Dalot cadre fermé' };
 
