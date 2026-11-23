@@ -49,9 +49,9 @@
   const ENT = () => { const I = (x) => [[x, 34], [x + 18, 34], [x + 18, 37], [x + 11.5, 39], [x + 11.5, 72], [x + 16, 75], [x + 16, 82], [x + 2, 82], [x + 2, 75], [x + 6.5, 72], [x + 6.5, 39], [x, 37]];
     let o = ''; [2, 42, 82, 122].forEach((x, i) => { o += X(I(x), 34); if (i < 3) o += B(x + 11.5 + OX * 14, 44 + OY * 14, 29, 24, 6, 1.9); }); return o + X([[-2, 27], [144, 27], [144, 34], [-2, 34]], 34); };
   const CATALOG = [
-    { id: 'murT', name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
+    { id: 'murT', pct: 60, name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
       svg: sv(X([[18, 88], [102, 88], [102, 72], [62, 72], [58, 26], [50, 26], [50, 72], [18, 72]], 48) + G(4, 20, 88)) },
-    { id: 'dalot', name: 'Dalot cadre fermé', desc: 'Cadre 1 cellule avec goussets : U extérieurs, nappes intérieures, piédroits, goussets et filants.',
+    { id: 'dalot', pct: 40, name: 'Dalot cadre fermé', desc: 'Cadre 1 cellule avec goussets : U extérieurs, nappes intérieures, piédroits, goussets et filants.',
       svg: sv(X([[20, 88], [100, 88], [100, 38], [20, 38]], 54, [[36, 78], [30, 72], [30, 54], [36, 48], [84, 48], [90, 54], [90, 72], [84, 78]].reverse()) + G(4, 20, 88)) },
     { name: 'Culée', svg: sv(B(16, 80, 72, 10, 56) + X([[38, 80], [38, 44], [32, 44], [32, 36], [52, 36], [52, 18], [57, 18], [57, 28], [62, 28], [62, 36], [56, 42], [48, 42], [48, 80]], 56) + G(2, 16, 90), 12) },
     { name: 'Pile semelle + fût', svg: sv(B(22, 76, 84, 18, 34) + CY(64 + OX * 17, 34 + OY * 11, 76 + OY * 17, 7) + X([[16, 12], [116, 12], [116, 18], [78, 34], [54, 34], [16, 18]], 22) + B(24, 8, 9, 4, 8) + B(99, 8, 9, 4, 8), 14) },
@@ -94,10 +94,12 @@
   });
 
   /* ───── Étape 1 ───── */
+  /* Cercle d'avancement du développement (comme sur l'accueil) */
+  const RING = (p) => `<span class="tile-prog" title="Avancement du développement : ${p} %"><svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/>${p > 0 ? `<circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="${(94.25 * (1 - p / 100)).toFixed(2)}" transform="rotate(-90 20 20)"/>` : ''}<text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">${p}%</text></svg></span>`;
   function renderCatalog() {
     $('#catalog').innerHTML = CATALOG.map((c) => c.id
-      ? `<button class="tile on" data-struct="${c.id}"><span class="schema">${c.svg}</span><span class="tx"><span class="status on">Disponible</span><span class="name">${c.name}</span><span class="desc">${c.desc}</span><span class="go">Dessiner →</span></span></button>`
-      : `<div class="tile dev" aria-disabled="true"><span class="status">Bientôt</span><span class="schema">${c.svg}</span><span class="name">${c.name}</span></div>`).join('');
+      ? `<button class="tile on" data-struct="${c.id}">${RING(c.pct || 0)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Disponible</span><span class="name">${c.name}</span><span class="desc">${c.desc}</span><span class="go">Dessiner →</span></span></button>`
+      : `<div class="tile dev" aria-disabled="true">${RING(c.pct || 0)}<span class="status">Bientôt</span><span class="schema">${c.svg}</span><span class="name">${c.name}</span></div>`).join('');
     $$('#catalog [data-struct]').forEach((b) => b.addEventListener('click', () => selectStruct(b.dataset.struct)));
   }
 
