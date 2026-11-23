@@ -341,7 +341,7 @@ body.scrolled .nav-search{display:none}
       <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Titre, auteur, norme, type d'ouvrage, mot-clé…" aria-label="Rechercher dans la bibliothèque">
       <div class="hint"><span class="kbd">/</span><button class="clear" id="clear">Effacer</button></div>
     </div>
-    <div class="kinds" id="kindSeg"><button data-kind="doc" class="on">Bibliothèque<span id="nDoc"></span></button><button data-kind="archive">Archives projets<span id="nArc"></span></button><button data-kind="all">Tout</button></div>
+    <div class="kinds" id="kindSeg" hidden></div>
     </div>
     <div class="layout">
       <aside id="facets"></aside>
@@ -518,6 +518,7 @@ function load(data){
     ];
     return d;
   });
+  DOCS = DOCS.filter(d => d.kind !== "archive"); // archives projets retirées
   $("#genDate").textContent = data.demo ? "aperçu de démonstration" : data.generated ? "index du " + new Date(data.generated).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"}) : "";
   readURL(); renderStatic(); render();
   const m = location.hash.match(/^#doc=(.+)$/); if(m) openDoc(decodeURIComponent(m[1]), false);
@@ -625,7 +626,7 @@ function renderStatic(){
   ].map(([b,s]) => `<div class="stat"><b>${b}</b><small>${s}</small></div>`).join("");
 
   const nd = DOCS.filter(d => d.kind === "doc").length;
-  $("#nDoc").textContent = nd.toLocaleString("fr-FR"); $("#nArc").textContent = (DOCS.length - nd).toLocaleString("fr-FR");
+  
   if(DOCS.length === nd) $("#kindSeg").style.display = "none";
   const counts = {}; DOCS.forEach(d => counts[d.theme] = (counts[d.theme]||0) + 1);
   $("#shelves").innerHTML = Object.entries(THEMES).filter(([k]) => counts[k]).map(([k,t]) =>
@@ -747,7 +748,7 @@ function readURL(){
   STATE.q = p.get("q") || ""; $("#q").value = STATE.q;
   FACETS.forEach(f => STATE[f.key] = new Set((p.get(f.key) || "").split("|").filter(Boolean)));
   STATE.sort = p.get("tri") || "rel"; $("#sort").value = STATE.sort;
-  STATE.kind = p.get("fonds") || "doc";
+  STATE.kind = "doc";
   STATE.view = p.get("vue") || localStorageGet("bib-view") || "grid"; setView(STATE.view, false);
 }
 function localStorageGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -778,7 +779,7 @@ document.addEventListener("click", e => {
   else if(t.dataset.reset){ STATE[t.dataset.reset].clear(); }
   else if(t.dataset.clear){ STATE.q = ""; $("#q").value = ""; }
   else if(t.dataset.q){ STATE.q = t.dataset.q; $("#q").value = t.dataset.q; }
-  else if(t.dataset.theme){ STATE.theme = new Set([t.dataset.theme]); STATE.kind = t.dataset.theme === "archives" ? "archive" : "doc"; }
+  else if(t.dataset.theme){ STATE.theme = new Set([t.dataset.theme]); STATE.kind = "doc"; }
   else if(t.dataset.kind){ STATE.kind = t.dataset.kind; STATE.theme.clear(); }
   render();
   if(inModal) closeDoc();
