@@ -254,6 +254,14 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 .shelves>.shelf:nth-child(6n+6){--k:206,86,110}
 .shelves>.shelf{background:linear-gradient(160deg,rgba(var(--k),.20),rgba(var(--k),.07) 55%,rgba(255,255,255,.015));border:1px solid rgba(var(--k),.32);border-radius:14px;box-shadow:none}
 .shelves>.shelf:hover{background:linear-gradient(160deg,rgba(var(--k),.28),rgba(var(--k),.10) 55%,rgba(255,255,255,.02));border-color:rgba(var(--k),.65)}
+/* la page commence au catalogue : couverture et rayonnages masqués, recherche déplacée dans le catalogue */
+.cover,#rayons{display:none}
+.sec.catalog{border-top:none}
+.cat-search{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 26px}
+.cat-search .searchbox{flex:1;min-width:280px;max-width:720px;margin:0}
+.cat-search .searchbox input{padding-top:14px;padding-bottom:14px;font-size:15px}
+.cat-search .kinds{margin-top:0}
+body.scrolled .nav-search{display:none}
 /* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -308,12 +316,6 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
     <div class="eyebrow"><i></i><span>Fonds documentaire · KLE Ingénierie</span><i></i></div>
     <h1>La <em>Bibliothèque</em> des ouvrages d'art</h1>
     <p class="cover-sub">Guides SETRA, règlements, Eurocodes, notes de calcul et études de référence — indexés, classés et consultables en un instant.</p>
-    <div class="searchbox" id="searchbox">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Titre, auteur, norme, type d'ouvrage, mot-clé…" aria-label="Rechercher dans la bibliothèque">
-      <div class="hint"><span class="kbd">/</span><button class="clear" id="clear">Effacer</button></div>
-    </div>
-    <div class="kinds" id="kindSeg"><button data-kind="doc" class="on">Bibliothèque<span id="nDoc"></span></button><button data-kind="archive">Archives projets<span id="nArc"></span></button><button data-kind="all">Tout</button></div>
     <div class="suggest" id="suggest"></div>
     <div class="stats" id="stats"></div>
   </div>
@@ -333,6 +335,14 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
   <div class="sec-inner">
     <div class="sec-eyebrow">Catalogue</div>
     <h2 class="sec-title" id="catTitle">Tous les documents</h2>
+    <div class="cat-search">
+    <div class="searchbox" id="searchbox">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Titre, auteur, norme, type d'ouvrage, mot-clé…" aria-label="Rechercher dans la bibliothèque">
+      <div class="hint"><span class="kbd">/</span><button class="clear" id="clear">Effacer</button></div>
+    </div>
+    <div class="kinds" id="kindSeg"><button data-kind="doc" class="on">Bibliothèque<span id="nDoc"></span></button><button data-kind="archive">Archives projets<span id="nArc"></span></button><button data-kind="all">Tout</button></div>
+    </div>
     <div class="layout">
       <aside id="facets"></aside>
       <div>
