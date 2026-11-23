@@ -360,6 +360,11 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 .catalog>.tile .go{color:var(--gold)}
 /* étapes 1 à 3 masquées (navigation par les boutons des panneaux) */
 #steps li:has([data-go="1"]),#steps li:has([data-go="2"]),#steps li:has([data-go="3"]){display:none}
+/* toutes les rubriques à la même taille */
+.catalog>.tile.on{grid-column:auto;flex-direction:column;align-items:stretch;gap:4px;padding:10px 12px}
+.catalog>.tile.on .tx{display:contents}
+.catalog>.tile.on .status{order:0}.catalog>.tile.on .schema{order:1}.catalog>.tile.on .name{order:2;font-size:18px}.catalog>.tile.on .desc{display:none}.catalog>.tile.on .go{order:3}
+.catalog>.tile .schema svg,.catalog>.tile.on .schema svg{width:100%;max-width:118px;height:72px;flex:none}
 /* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -481,6 +486,6 @@ body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),t
 <script src="ferraillage/calc.js?v=11"></script>
 <script src="ferraillage/draw.js?v=11"></script>
 <script src="ferraillage/dxf.js?v=11"></script>
-<script src="ferraillage/app.js?v=14"></script>
+<script src="ferraillage/app.js?v=15"></script>
 </body>
 </html>
