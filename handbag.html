@@ -267,6 +267,37 @@ table.t td{text-align:right;padding:3px 6px;border-bottom:1px solid #f0ece6}
   .nav-app{display:none}
   nav{padding:0 16px}
 }
+/* ═══ THÈME SOMBRE (comme l'accueil) ═══ */
+:root{--bg:#0c0e14;--bg2:#141824;--white:#131826;--ink:#f1eee6;--ink2:#c9cdd6;--ink3:#8892a4;--gold:#c9a84c;--gold2:#e8c97a;--gold-bg:rgba(201,168,76,.08);--gold-border:rgba(201,168,76,.3);--teal:#1ab8a0;--border:rgba(255,255,255,.08);--shadow:none}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),transparent 70%),#0c0e14;background-attachment:fixed}
+nav{background:rgba(12,14,20,.96)}
+.btn-head{background:rgba(255,255,255,.04)}
+.h-find{background:rgba(255,255,255,.04);color:var(--ink)}
+/* feuille de calcul, fenêtre d'en-tête, impression : restent en « papier » clair */
+.layout>main,.mbox,#print{--bg:#f9f8f5;--bg2:#f0ede8;--white:#fff;--ink:#18191f;--ink2:#3c3f4d;--ink3:#7a7e8e;--gold:#a07828;--gold2:#c9a84c;--gold-bg:#fdf8ee;--gold-border:#e8d5a0;--teal:#0a8a78;--border:#e2ddd6;--shadow:0 1px 8px rgba(0,0,0,.06);color:var(--ink)}
+.layout>main{background:#f9f8f5}
+/* Outils de calculs des ponts : une teinte par module */
+.mods{background:rgba(255,255,255,.02)}
+.mods-h h2 span,.rtile-h .nb{background:rgba(255,255,255,.07);color:var(--ink3)}
+.mods-grid>.mcard{--k:74,134,232}
+.mods-grid>.mcard:nth-child(6n+1){--k:201,168,76}
+.mods-grid>.mcard:nth-child(6n+2){--k:74,134,232}
+.mods-grid>.mcard:nth-child(6n+3){--k:214,128,72}
+.mods-grid>.mcard:nth-child(6n+4){--k:46,182,150}
+.mods-grid>.mcard:nth-child(6n+5){--k:150,110,220}
+.mods-grid>.mcard:nth-child(6n+6){--k:206,86,110}
+.mods-grid>.mcard{background:linear-gradient(160deg,rgba(var(--k),.18),rgba(var(--k),.05) 60%,rgba(255,255,255,.01));border:1px solid rgba(var(--k),.28);border-left:3px solid rgb(var(--k))}
+.mods-grid>.mcard:hover{border-color:rgba(var(--k),.6);border-left-color:rgb(var(--k))}
+.mods-grid>.mcard .c,.mods-grid>.mcard.beta .c{color:rgb(var(--k))}
+/* rubriques : dégradé dans la couleur de la rubrique */
+.rtile{background:linear-gradient(160deg,color-mix(in srgb,var(--c) 18%,transparent),color-mix(in srgb,var(--c) 6%,transparent) 55%,rgba(255,255,255,.015));border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.rtile-h{background:transparent;border-bottom-color:color-mix(in srgb,var(--c) 22%,transparent)}
+.rtile-h .ic{background:color-mix(in srgb,var(--c) 22%,transparent)}
+.rtile li a:hover{background:rgba(255,255,255,.05)}
+.rtile .more{background:color-mix(in srgb,var(--c) 12%,transparent)}
+.rtile .more:hover{background:color-mix(in srgb,var(--c) 22%,transparent)}
+.rcard{background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,transparent),rgba(255,255,255,.015))}
+/* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
