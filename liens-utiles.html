@@ -176,6 +176,26 @@ footer{flex:none;background:var(--ink2);padding:14px 3%;border-top:1px solid var
   .grid{grid-template-columns:1fr}
   .lk-desc{-webkit-line-clamp:3}
 }
+/* ═══ THÈME SOMBRE (comme l'accueil) ═══ */
+:root{--ink:#0c0e14;--ink2:#141926;--ink3:#1b2132;--gold:#c9a84c;--gold2:#e8c97a;--teal:#1ab8a0;--silver:#8892a4;--white:#ffffff;--border:rgba(255,255,255,.08);--border2:rgba(201,168,76,.35)}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),transparent 70%),#0c0e14;background-attachment:fixed}
+.head{background:transparent}
+.search,.ctl{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1)}
+.search input{color:#fff}
+select.ctl option{background:#141926;color:#fff}
+.tab.on{background:rgba(201,168,76,.10);box-shadow:none}
+.ico{background:rgba(var(--k,255,255,255),.14);border-color:rgba(var(--k,255,255,255),.3);color:rgb(var(--k,255,255,255))}
+/* fiches : une teinte par ressource */
+.card{--k:74,134,232}
+.card:nth-child(6n+1){--k:201,168,76}
+.card:nth-child(6n+2){--k:74,134,232}
+.card:nth-child(6n+3){--k:214,128,72}
+.card:nth-child(6n+4){--k:46,182,150}
+.card:nth-child(6n+5){--k:150,110,220}
+.card:nth-child(6n+6){--k:206,86,110}
+.card{background:linear-gradient(160deg,rgba(var(--k),.18),rgba(var(--k),.06) 55%,rgba(255,255,255,.015));border:1px solid rgba(var(--k),.30);box-shadow:none}
+.card:hover{background:linear-gradient(160deg,rgba(var(--k),.26),rgba(var(--k),.09) 55%,rgba(255,255,255,.02));border-color:rgba(var(--k),.6);box-shadow:0 16px 36px -18px rgba(0,0,0,.6)}
+/* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
