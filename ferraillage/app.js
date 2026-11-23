@@ -8,26 +8,32 @@
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   /* ───── Catalogue ───── */
-  const sv = (d) => `<svg viewBox="0 0 120 70" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${d}</svg>`;
-  const C = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".16"/>`;            // béton
-  const T = (d, o) => `<path d="${d}" stroke-width=".9" opacity="${o || .55}"/>`;          // trait fin
-  const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 3; x < x2; x += 6) h += `M${x} ${y}l-3 4`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".9" opacity=".6"/><path d="${h}" stroke-width=".6" opacity=".45"/>`; }; // terrain
-  const R = (d) => `<path d="${d}" stroke-width=".7" stroke-dasharray="2 2" opacity=".7"/>`; // remblai / limite
+  /* Croquis inspirés des plans KLE (coupes et élévations) : béton rempli, remblai, terrain hachuré, axes, appareils d'appui. */
+  const sv = (d) => `<svg viewBox="0 0 160 100" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${d}</svg>`;
+  const C = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".3"/>`;                                   // béton coupé
+  const V = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".08"/>`;                                  // béton vu
+  const T = (d, o) => `<path d="${d}" stroke-width=".8" opacity="${o || .6}"/>`;                                // trait fin
+  const A = (d) => `<path d="${d}" stroke-width=".6" stroke-dasharray="6 2 1 2" opacity=".55"/>`;              // axe
+  const D = (d) => `<path d="${d}" stroke-width=".8" stroke-dasharray="3 2" opacity=".6"/>`;                   // caché / tablier
+  const E = (d) => `<path d="${d}" fill="currentColor" fill-opacity=".05" stroke-width=".6" stroke-dasharray="1.5 2" opacity=".8"/>`; // remblai
+  const G = (x1, x2, y) => { let h = ''; for (let x = x1 + 2; x <= x2; x += 5) h += `M${x} ${y}l-3.5 4.5`; return `<path d="M${x1} ${y}H${x2}" stroke-width=".9" opacity=".75"/><path d="${h}" stroke-width=".55" opacity=".5"/>`; };
+  const AP = (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="2.6" fill="currentColor" fill-opacity=".55" stroke-width=".5"/>`; // appareil d'appui
+  const BRK = (x, y, w) => `<path d="M${x - 1} ${y}l${w / 2 + 1} -2.5l0 5l${w / 2 + 1} -2.5" stroke-width=".6" opacity=".7"/>`; // coupure de pieu
   const CATALOG = [
     { id: 'murT', name: 'Mur de soutènement', desc: 'Cantilever paramétré comme la feuille de stabilité : fruits, talus amont, TN aval, bêche et semelle en biseau en option.',
-      svg: sv(C('M20 56H100V48H60L57 8H50V48H20Z') + T('M57 8L114 -4') + T('M6 40H50') + G(6, 20, 56) + G(100, 114, 56)) },
+      svg: sv(E('M70 14L96 12L150 2V74H72Z') + C('M28 86H140V74H72L69 14H60V74H28Z') + C('M96 86H106V92H96Z') + T('M69 14L96 12L150 2', .55) + T('M8 64H60', .6) + G(8, 28, 86) + G(140, 156, 86) + T('M66 70V20', .35) + `<circle cx="66" cy="72" r="1.6" stroke-width=".7" opacity=".7"/>`) },
     { id: 'dalot', name: 'Dalot cadre fermé', desc: 'Cadre 1 cellule avec goussets : U extérieurs, nappes intérieures, piédroits, goussets et filants.',
-      svg: sv(T('M6 8H114') + R('M6 8H26M94 8H114') + C('M26 14H94V60H26ZM36 22V52H84V22Z') + `<path d="M36 22H84V52H36Z" fill="none"/>` + T('M36 28L42 22M78 22L84 28M36 46L42 52M78 52L84 46', .8) + G(6, 114, 62)) },
-    { name: 'Culée', svg: sv(C('M18 58H82V50H56V26H62V20H50V12H46V50H18Z') + `<path d="M64 18H112V12H64Z" stroke-width=".9" opacity=".7"/>` + T('M62 20H66', .8) + R('M66 26L114 26') + T('M6 22H40', .5) + G(6, 114, 58)) },
-    { name: 'Pile semelle + colonnes', svg: sv(C('M24 58H96V48H24Z') + C('M40 48V20H48V48ZM72 48V20H80V48Z') + C('M30 20H90V12H30Z') + T('M38 10H44M76 10H82', .9) + G(6, 114, 58)) },
-    { name: 'Chevêtre', svg: sv(C('M12 32H108V18L96 12H24L12 18Z') + T('M26 10H34M56 10H64M86 10H94', .9) + C('M34 32V62H44V32ZM76 32V62H86V32Z') + T('M20 25H100', .3)) },
-    { name: 'Dalle de transition', svg: sv(C('M10 60V16H22V24H28V30H22V60Z') + C('M28 24L110 36V42L28 30Z') + T('M22 14H112', .6) + R('M30 34L112 48') + G(4, 116, 62)) },
-    { name: 'Mur en retour', svg: sv(C('M14 58H104V52H98L44 14H38V8H24V52H14Z') + T('M38 14H24', .4) + T('M44 14L98 52', .3) + G(4, 116, 58)) },
-    { name: 'Massif sur pieux', svg: sv(C('M18 30H102V12H18Z') + C('M28 30V66H36V30ZM56 30V66H64V30ZM84 30V66H92V30Z') + G(6, 114, 22) + T('M18 21H102', .25)) },
-    { name: 'Tablier PSIDN', svg: sv(C('M6 24H114V30H104L98 44H86L80 30H70L64 44H52L46 30H36L30 44H18L12 30H6Z') + T('M4 18V24M116 18V24', .8) + T('M10 22H110', .25)) },
-    { name: 'Poutres VIPP', svg: sv(C('M26 10H94V16H66L63 20V48L72 52V62H48V52L57 48V20L54 16H26Z') + T('M57 56H63M54 59H66', .7)) },
-    { name: 'Hourdis', svg: sv(C('M6 22H114V30H6Z') + C('M20 30V46L23 50V62H33V50L36 46V30M52 30V46L55 50V62H65V50L68 46V30M84 30V46L87 50V62H97V50L100 46V30', ) + T('M4 16V22M116 16V22', .8)) },
-    { name: 'Entretoises', svg: sv(C('M14 10H34V16H28V54L34 58V62H14V58L20 54V16H14ZM86 10H106V16H100V54L106 58V62H86V58L92 54V16H86Z') + C('M28 20H92V50H28Z') + T('M28 35H92', .3)) },
+      svg: sv(E('M6 12H154V22H6Z') + T('M6 12H154', .8) + C('M34 22H126V86H34ZM44 32V76H116V32Z') + T('M44 40L52 32M108 32L116 40M44 68L52 76M108 76L116 68', .9) + `<path d="M44 40L52 32H108L116 40V68L108 76H52L44 68Z" stroke-width=".9"/>` + E('M6 22H34V86H6ZM126 22H154V86H126Z') + G(6, 154, 90) + A('M80 16V92')) },
+    { name: 'Culée', svg: sv(E('M74 28H156V82H58V40H74Z') + C('M20 82H112V94H20Z') + C('M46 82V40H40V28H62V8H68V20H74V30L66 40H58V82Z') + V('M74 20L152 25V30L74 25Z') + D('M4 16H56V24H4') + AP(44, 25.4, 10) + A('M52 4V98') + G(4, 20, 94) + G(112, 156, 94) + T('M4 72H20', .6)) },
+    { name: 'Pile semelle + colonnes', svg: sv(D('M8 10H152V18H8') + C('M24 26H136V36L124 42H36L24 36Z') + AP(40, 21, 10) + AP(75, 21, 10) + AP(110, 21, 10) + C('M54 42H66V78H54ZM94 42H106V78H94Z') + C('M30 78H130V92H30Z') + A('M60 38V96M100 38V96') + G(6, 30, 92) + G(130, 154, 92) + T('M6 70H54M66 70H94M106 70H154', .5)) },
+    { name: 'Chevêtre', svg: sv(C('M8 30H152V48L136 58H24L8 48Z') + `<path d="M22 24h12v6H22ZM74 24h12v6H74ZM126 24h12v6h-12Z" fill="currentColor" fill-opacity=".14" stroke-width=".8"/>` + AP(23, 21.4, 10) + AP(75, 21.4, 10) + AP(127, 21.4, 10) + V('M48 58H62V92H48ZM98 58H112V92H98Z') + A('M55 18V96M105 18V96M80 18V64') + T('M8 30L4 30M152 30L156 30', .3)) },
+    { name: 'Dalle de transition', svg: sv(E('M30 34L156 46V92H30Z') + C('M14 92V20H26V8H32V20H26V30H38L32 36H26V92Z') + C('M38 30L150 42V50L38 38Z') + T('M32 8V24H156', .6) + `<path d="M32 22L156 24" stroke-width="1.6" opacity=".8"/>` + D('M2 14H22V20H2') + G(2, 156, 94) + A('M20 4V96')) },
+    { name: 'Mur en retour', svg: sv(E('M30 22L152 84V90H30Z') + C('M16 90V12H34V22L58 22L152 80V90Z') + T('M34 22V90', .5) + T('M58 22L152 80', .3) + T('M16 12H34L46 4', .5) + D('M2 10H16') + G(2, 156, 92) + A('M25 4V96')) },
+    { name: 'Massif sur pieux', svg: sv(V('M66 6H94V26H66Z') + C('M20 26H140V48H20Z') + C('M34 48H46V82H34ZM74 48H86V82H74ZM114 48H126V82H114Z') + BRK(34, 82, 12) + BRK(74, 82, 12) + BRK(114, 82, 12) + T('M34 86V94M46 86V94M74 86V94M86 86V94M114 86V94M126 86V94', .45) + G(4, 20, 30) + G(140, 156, 30) + A('M40 22V98M80 2V98M120 22V98') + T('M20 37H140', .25)) },
+    { name: 'Tablier PSIDN', svg: sv(C('M6 40H154V48H138L132 74H108L102 48H92L86 74H74L68 48H58L52 74H28L22 48H6Z') + `<path d="M6 40V32h6v8M148 32h6v8" stroke-width=".9"/>` + T('M12 30V20M148 30V20', .7) + T('M18 38H142', .5) + A('M80 14V86')) },
+    { name: 'Poutres VIPP', svg: sv(C('M24 10H136V16L94 20L88 24V66L100 72V90H60V72L72 66V24L66 20L24 16Z') + `<circle cx="74" cy="80" r="2.6" stroke-width=".7"/><circle cx="86" cy="80" r="2.6" stroke-width=".7"/><circle cx="80" cy="73" r="2.6" stroke-width=".7"/><circle cx="74" cy="86" r="0" />` + A('M80 4V96') + T('M24 13H136', .3)) },
+    { name: 'Hourdis', svg: sv(C('M4 26H156V40H4Z') + V('M20 40L26 44V92H42V44L48 40M70 40L76 44V92H92V44L98 40M120 40L126 44V92H142V44L148 40') + T('M4 30H156', .35) + T('M28 22H152', .7) + A('M34 18V96M84 18V96M134 18V96') + T('M48 36H70M98 36H120', .4)) },
+    { name: 'Entretoises', svg: sv(C('M10 10H46V16L32 20V70L42 76V88H14V76L24 70V20L10 16ZM114 10H150V16L136 20V70L146 76V88H118V76L128 70V20L114 16Z') + C('M32 22H128V62H32Z') + `<path d="M54 62h14v8H54ZM92 62h14v8H92Z" fill="currentColor" fill-opacity=".14" stroke-width=".8"/>` + T('M54 74h14M92 74h14', .7) + T('M32 42H128', .3) + A('M28 4V96M132 4V96')) },
   ];
   const DESIGNATION = { murT: 'Mur de soutènement — plot type', dalot: 'Dalot cadre fermé' };
 
