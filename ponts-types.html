@@ -90,6 +90,25 @@ a.tile:hover .go{letter-spacing:.1em}
 .tile-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .tile-foot small{font-size:11px;color:var(--silver)}
 
+/* ─── une teinte par type d'ouvrage ─── */
+.grid>.tile:nth-child(1){--c:45,107,228}   /* VIPP : bleu */
+.grid>.tile:nth-child(2){--c:200,110,48}   /* PPBA : cuivre */
+.grid>.tile:nth-child(3){--c:14,150,120}   /* PSIDA : émeraude */
+.grid>.tile:nth-child(4){--c:124,82,204}   /* PSIDP : violet */
+.grid>.tile:nth-child(5){--c:12,140,182}   /* PICF : bleu canard */
+.grid>.tile:nth-child(6){--c:200,62,98}    /* PIPO : framboise */
+.grid>.tile{background:linear-gradient(155deg,rgba(var(--c),.11) 0%,rgba(var(--c),.03) 45%,#fff 80%);border-color:rgba(var(--c),.22)}
+.grid>.tile::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:linear-gradient(90deg,rgb(var(--c)),rgba(var(--c),.15))}
+a.grid>.tile:hover,.grid>a.tile:hover{border-color:rgba(var(--c),.55);box-shadow:0 16px 36px -16px rgba(var(--c),.45)}
+.grid>.tile .abbr{color:color-mix(in srgb,rgb(var(--c)) 70%,#14171f)}
+.grid>.tile .go{color:rgb(var(--c))}
+.grid>.tile .status.on{color:rgb(var(--c))}
+.grid>.tile .status.on::before{background:rgb(var(--c))}
+.grid>.tile .schema [fill="#ddd6c1"],.grid>.tile .schema [fill="#cfc7b0"]{fill:color-mix(in srgb,rgb(var(--c)) 26%,#fff)}
+.grid>.tile .schema [fill="#c6bda4"],.grid>.tile .schema [fill="#8f887a"],.grid>.tile .schema [fill="#8a8478"]{fill:color-mix(in srgb,rgb(var(--c)) 45%,#5a5f6b)}
+.grid>.tile .schema [fill="#f4f0e5"]{fill:color-mix(in srgb,rgb(var(--c)) 8%,#fff)}
+.grid>.tile .schema [stroke="#5b5446"],.grid>.tile .schema [stroke="#8a8478"]{stroke:color-mix(in srgb,rgb(var(--c)) 55%,#2a2d35)}
+
 /* ─── FOOTER ─── */
 footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid var(--border)}
 .footer-bottom{max-width:1360px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 24px}
@@ -201,7 +220,7 @@ footer{flex:none;background:var(--ink2);padding:14px 3vw;border-top:1px solid va
       <div class="name">Passage supérieur ou inférieur en dalle armée</div>
       <p class="desc">Dalles en béton armé à travées continues, pleines ou à encorbellements latéraux. Bordereau et note au format PSIDA-EL du SETRA.</p>
       <div class="schema">
-        <svg viewBox="0 0 300 96" aria-label="Coupe transversale PSI-DA" role="img" xmlns="http://www.w3.org/2000/svg"><image href="img/psida-coupe.png" x="10" y="18" width="280" height="60.9" preserveAspectRatio="xMidYMid meet"/></svg>
+        <svg viewBox="0 0 300 96" aria-label="Coupe transversale PSI-DA" role="img" xmlns="http://www.w3.org/2000/svg"><polygon points="14,34 286,34 286,39 238,42 228,56 72,56 62,42 14,39" fill="#ddd6c1" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><rect x="40" y="31.5" width="220" height="2.5" fill="#4a4d57"/><polygon points="14,28 32,28 34,31 34,36 17,36 14,32" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M18 28V15" stroke="#8a8478" stroke-width="1.6"/><circle cx="18" cy="14" r="1.6" fill="#8a8478"/><polygon points="286,28 268,28 266,31 266,36 283,36 286,32" fill="#c6bda4" stroke="#5b5446" stroke-width="1.1" stroke-linejoin="round"/><path d="M282 28V15" stroke="#8a8478" stroke-width="1.6"/><circle cx="282" cy="14" r="1.6" fill="#8a8478"/></svg>
       </div>
       <div class="tile-foot"><span class="go">Ouvrir PSIDA →</span></div>
     </a>
