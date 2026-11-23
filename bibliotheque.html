@@ -235,6 +235,26 @@ footer{padding:24px 5%;background:#1a1e2e;border-top:1px solid var(--border);tex
   dl{grid-template-columns:1fr;gap:2px 0}dd{margin-bottom:8px}
   .sheet-body,.sheet-head{padding-left:16px;padding-right:16px}.related{margin-left:16px;margin-right:16px;padding-left:0;padding-right:0}
 }
+/* ═══ THÈME SOMBRE (comme l'accueil) ═══ */
+:root{--ink:#0c0e14;--ink2:#141926;--ink3:#1b2132;--ink4:#232a3d;--gold:#c9a84c;--gold2:#e8c97a;--gold3:#f1dca0;--teal:#1ab8a0;--silver:#8892a4;--mist:#141926;--white:#ffffff;--border:rgba(255,255,255,.08);--border2:rgba(201,168,76,.35)}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,107,228,.12),transparent 70%),#0c0e14;background-attachment:fixed}
+.cover{background:transparent}
+.searchbox input,.lock-card input[type=password],select{background:rgba(255,255,255,.04);color:#fff;box-shadow:none}
+.catalog{background:transparent}
+.sheet-head{background:rgba(20,25,38,.94)}
+.book img{background:#1b2132}
+/* rayonnages : une teinte par thème */
+.shelves{background:transparent;border:none;gap:12px}
+.shelves>.shelf{--k:74,134,232}
+.shelves>.shelf:nth-child(6n+1){--k:201,168,76}
+.shelves>.shelf:nth-child(6n+2){--k:214,128,72}
+.shelves>.shelf:nth-child(6n+3){--k:46,182,150}
+.shelves>.shelf:nth-child(6n+4){--k:150,110,220}
+.shelves>.shelf:nth-child(6n+5){--k:60,170,210}
+.shelves>.shelf:nth-child(6n+6){--k:206,86,110}
+.shelves>.shelf{background:linear-gradient(160deg,rgba(var(--k),.20),rgba(var(--k),.07) 55%,rgba(255,255,255,.015));border:1px solid rgba(var(--k),.32);border-radius:14px;box-shadow:none}
+.shelves>.shelf:hover{background:linear-gradient(160deg,rgba(var(--k),.28),rgba(var(--k),.10) 55%,rgba(255,255,255,.02));border-color:rgba(var(--k),.65)}
+/* ═══ FIN THÈME SOMBRE ═══ */
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
