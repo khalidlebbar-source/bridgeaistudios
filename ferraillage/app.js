@@ -130,7 +130,7 @@
     $('#catalog').innerHTML = CATALOG.map((c) => c.id
       ? `<button class="tile on" data-struct="${c.id}">${RING(c.pct || 0)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Disponible</span><span class="name">${c.name}</span><span class="desc">${c.desc}</span><span class="go">Dessiner →</span></span></button>`
       : (CID[c.name] && window.COFFUI
-        ? `<button class="tile on" data-coff="${CID[c.name]}">${RING(c.pct == null ? 30 : c.pct)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Coffrage</span><span class="name">${c.name}</span><span class="go">Coffrage →</span></span></button>`
+        ? `<button class="tile on" data-coff="${CID[c.name]}">${RING(c.pct == null ? 55 : c.pct)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Coffrage</span><span class="name">${c.name}</span><span class="go">Coffrage + ferraillage →</span></span></button>`
         : `<div class="tile dev" aria-disabled="true">${RING(c.pct || 0)}<span class="status">Bientôt</span><span class="schema">${c.svg}</span><span class="name">${c.name}</span></div>`)).join('');
     $$('#catalog [data-struct]').forEach((b) => b.addEventListener('click', () => selectStruct(b.dataset.struct)));
     $$('#catalog [data-coff]').forEach((b) => b.addEventListener('click', () => window.COFFUI.open(b.dataset.coff, { back: () => goStep(1) })));

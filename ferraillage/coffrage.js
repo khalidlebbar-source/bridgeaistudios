@@ -32,18 +32,47 @@
   View.prototype.text = function (p, s, h, opt) { this.items.push(Object.assign({ t: 'text', p, s, h: h || 2.5 }, opt || {})); return this; };
   View.prototype.ground = function (x1, x2, y) { this.items.push({ t: 'ground', x1, x2, y }); return this; };
   View.prototype.brk = function (x1, x2, y) { this.items.push({ t: 'brk', x1, x2, y }); return this; };
+  /* Aciers : barre vue en long (polyligne), barres vues en bout (points), repère ADFER (bulle + texte) */
+  View.prototype.bar = function (pts, d, rep) { this.items.push({ t: 'bar', pts, d, rep }); return this; };
+  View.prototype.dots = function (pts, d, rep) { this.items.push({ t: 'dots', pts, d, rep }); return this; };
+  View.prototype.rep = function (p, num, txt, side) { this.items.push({ t: 'rep', p, num, txt, side }); return this; };          // side : 'L' | 'R' (auto)
+  View.prototype.dist = function (a, b, txt) { this.items.push({ t: 'dist', a, b, txt }); return this; };                       // répartition « 17 x 0.20 »
   View.prototype.brkV = function (x, y1, y2) { const m = (y1 + y2) / 2, z = Math.min(0.12, (y2 - y1) / 6); this.items.push({ t: 'line', pts: [[x, y1 - 0.08], [x, m - z], [x + z, m - z / 2], [x - z, m + z / 2], [x, m + z], [x, y2 + 0.08]], st: 'thin' }); return this; };                     // ligne de coupure
 
   /* Emprise d'une vue en mètres (cotes comprises), pour une échelle donnée (mm papier par m). */
   function bounds(v, k) {
+    const b = baseBounds(v, k); if (!v.items.some((it) => it.t === 'rep')) return b;
+    let { x0, y0, x1, y1 } = b;
+    repLayout(v, k || 20).forEach((r) => { [r.p, r.q, r.c].forEach((q) => { x0 = Math.min(x0, q[0] - r.R); x1 = Math.max(x1, q[0] + r.R); y0 = Math.min(y0, q[1] - r.R); y1 = Math.max(y1, q[1] + r.R); }); });
+    return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
+  }
+  /* Repères : rangés en colonne à gauche / à droite du dessin, empilés sans chevauchement (k = mm papier / m) */
+  function repLayout(v, k) {
+    const reps = v.items.filter((it) => it.t === 'rep'); if (!reps.length) return [];
+    const b = baseBounds(v, k, true), cx = (b.x0 + b.x1) / 2, R = 2.4 / k, gap = 7 / k, out = [];
+    ['L', 'R'].forEach((side) => {
+      const L = reps.filter((r) => (r.side || (r.p[0] <= cx ? 'L' : 'R')) === side).sort((a, c) => c.p[1] - a.p[1]);
+      const col = side === 'L' ? b.x0 - 5 / k : b.x1 + 5 / k; let prev = Infinity;
+      L.forEach((r) => {
+        const y = Math.min(r.p[1], prev - gap); prev = y;
+        const tw = (String(r.txt || '').length * 2.3 * 0.56 + 2.5) / k, sg = side === 'L' ? -1 : 1;
+        const q = [col, y], e = [col + sg * tw, y], c = [col + sg * (tw + R), y];
+        out.push({ p: r.p, q, e, c, R, side, num: r.num, txt: r.txt, tx: side === 'L' ? e[0] + 0.6 / k : col + 0.6 / k });
+      });
+    });
+    return out;
+  }
+  function baseBounds(v, k, geomOnly) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     const add = (p) => { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1]; };
     v.items.forEach((it) => {
       if (it.t === 'poly' || it.t === 'line') it.pts.forEach(add);
       else if (it.t === 'circ') { add([it.c[0] - it.r, it.c[1] - it.r]); add([it.c[0] + it.r, it.c[1] + it.r]); }
       else if (it.t === 'ground' || it.t === 'brk') { add([it.x1, it.y - 0.06]); add([it.x2, it.y]); }
-      else if (it.t === 'dim') { const g = dimGeom(it, k || 20); g.ext.forEach(add); }
+      else if (it.t === 'dim') { if (!geomOnly) { const g = dimGeom(it, k || 20); g.ext.forEach(add); } }
       else if (it.t === 'text') { add(it.p); }
+      else if (it.t === 'bar' || it.t === 'dots') it.pts.forEach(add);
+      else if (it.t === 'dist' && !geomOnly) { add(it.a); add(it.b); }
     });
     if (!isFinite(x0)) { x0 = y0 = 0; x1 = y1 = 1; }
     return { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
@@ -83,6 +112,9 @@
      k : unités SVG par mètre ; o : {ox, oy} position de l'origine ; mode 'plan' | 'live' | 'schema' ;
      W : épaisseurs (unités SVG). Retourne une chaîne SVG (groupe). */
   const COL = { ink: '#14171f', dim: '#d22b2b', dimTxt: '#14171f', axis: '#c026d3', hidden: '#3b4252', fill: '#e9e6dd', fillSeen: '#f6f4ee', code: '#1d4ed8', title: '#14171f' };
+  const HA_COL = { 6: '#a855f7', 8: '#7c3aed', 10: '#0891b2', 12: '#16a34a', 14: '#ca8a04', 16: '#ea580c', 20: '#dc2626', 25: '#be123c', 32: '#4338ca', 40: '#1e3a8a' };
+  const haCol = (d) => HA_COL[d] || '#dc2626';
+  const HA_ACI = { 6: 30, 8: 200, 10: 4, 12: 3, 14: 2, 16: 30, 20: 1, 25: 241, 32: 5, 40: 170 };
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function renderView(v, k, ox, oy, mode, mm, hl) {
     // mm : taille d'un « mm papier » en unités SVG (=1 sur la feuille ; ≈ px à l'écran)
@@ -120,10 +152,27 @@
         const tw = String(label).length * fs * 0.56, room = g.L * k;
         if (room < tw + 1.2 * mm) { const sh = (room / 2 + tw / 2 + 1.0 * mm) / k; g.tp = [g.tp[0] + g.u[0] * sh, g.tp[1] + g.u[1] * sh]; }
         o += `<text x="${X(g.tp)}" y="${Y(g.tp)}" transform="rotate(${(-g.ang).toFixed(1)} ${X(g.tp)} ${Y(g.tp)})" font-size="${(mode === 'schema' ? fs * 1.15 : fs).toFixed(2)}" fill="${on ? '#d97706' : mode === 'schema' ? COL.code : COL.dimTxt}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"${mode === 'schema' ? ' font-weight="700"' : ''}>${esc(label)}</text>`;
+      } else if (it.t === 'bar') {
+        o += `<path d="${pth(it.pts)}" fill="none" stroke="${haCol(it.d)}" stroke-width="${Math.max(0.35 * mm, it.d / 1000 * k).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"/>`;
+      } else if (it.t === 'dots') {
+        const r = Math.max(0.5 * mm, it.d / 2000 * k).toFixed(2);
+        o += it.pts.map((q) => `<circle cx="${X(q)}" cy="${Y(q)}" r="${r}" fill="${haCol(it.d)}"/>`).join('');
+      } else if (it.t === 'dist') {
+        const dx = it.b[0] - it.a[0], dy = it.b[1] - it.a[1], Ld = Math.hypot(dx, dy) || 1, u = [dx / Ld, dy / Ld], nn = [-u[1], u[0]], tk = 1.0 / (k / mm);
+        o += `<path d="${pth([it.a, it.b])}${pth([[it.a[0] - nn[0] * tk, it.a[1] - nn[1] * tk], [it.a[0] + nn[0] * tk, it.a[1] + nn[1] * tk]])}${pth([[it.b[0] - nn[0] * tk, it.b[1] - nn[1] * tk], [it.b[0] + nn[0] * tk, it.b[1] + nn[1] * tk]])}" stroke="#14171f" stroke-width="${wt.toFixed(2)}" fill="none"/>`;
+        let ang = Math.atan2(u[1], u[0]) * 180 / Math.PI, sd = 1; if (ang > 90.01 || ang < -89.99) { ang += 180; sd = -1; }
+        const m = [(it.a[0] + it.b[0]) / 2 + nn[0] * sd * 0.9 / (k / mm), (it.a[1] + it.b[1]) / 2 + nn[1] * sd * 0.9 / (k / mm)];
+        o += `<text x="${X(m)}" y="${Y(m)}" transform="rotate(${(-ang).toFixed(1)} ${X(m)} ${Y(m)})" font-size="${(2 * mm).toFixed(2)}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#14171f">${esc(it.txt)}</text>`;
       } else if (it.t === 'text') {
         if (mode === 'schema' && it.noSchema) return;
         o += `<text x="${X(it.p)}" y="${Y(it.p)}" font-size="${(it.h * mm).toFixed(2)}" fill="${it.col || COL.ink}" text-anchor="${it.a || 'middle'}" font-family="Arial,Helvetica,sans-serif"${it.it ? ' font-style="italic"' : ''}>${esc(it.s)}</text>`;
       }
+    });
+    if (mode !== 'schema') repLayout(v, k / mm).forEach((r) => {
+      const RC = '#c81e1e';
+      o += `<path d="${pth([r.p, r.q, r.e])}" fill="none" stroke="${RC}" stroke-width="${(wt * 1.1).toFixed(2)}"/><circle cx="${X(r.p)}" cy="${Y(r.p)}" r="${(0.45 * mm).toFixed(2)}" fill="${RC}"/>`;
+      o += `<circle cx="${X(r.c)}" cy="${Y(r.c)}" r="${(r.R * k).toFixed(2)}" fill="#fff" stroke="${RC}" stroke-width="${(wt * 1.1).toFixed(2)}"/><text x="${X(r.c)}" y="${(+Y(r.c) + 0.85 * mm).toFixed(2)}" font-size="${(2.3 * mm).toFixed(2)}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="${RC}">${esc(r.num)}</text>`;
+      if (r.txt) o += `<text x="${X([r.tx, 0])}" y="${(+Y(r.q) - 0.7 * mm).toFixed(2)}" font-size="${(2.3 * mm).toFixed(2)}" font-family="Arial,Helvetica,sans-serif" fill="#14171f">${esc(r.txt)}</text>`;
     });
     return o;
   }
@@ -201,10 +250,10 @@
   }
 
   /* Choix automatique échelle / format (ou imposés). */
-  function layoutSheet(views, opt) {
-    opt = opt || {};
+  function layoutSheet(views, opt, extras) {
+    opt = opt || {}; extras = extras || [];
     const cart = opt.cart || 'V';
-    const sizeAt = (s) => views.map((v) => { const k = 1000 / s, b = bounds(v, k); return [Math.max(b.w * k, v.title.length * 2.9) + 16, b.h * k + 20]; });
+    const sizeAt = (s) => views.map((v) => { const k = 1000 / s, b = bounds(v, k); return [Math.max(b.w * k, v.title.length * 2.9) + 16, b.h * k + 20]; }).concat(extras.map((e) => [e.w + 12, e.h + 12]));
     const scales = opt.scale ? [opt.scale] : SCALES, fmts = opt.format ? [opt.format] : FORDER;
     let best = null;
     scales.forEach((s) => {
@@ -222,7 +271,7 @@
   /* Cartouche (rendu SVG en mm) */
   function cartouche(meta, x, y, cart, logos) {
     const [W, H] = CART[cart], v = cart === 'V';
-    const T = (tx, ty, s, h, opt) => `<text x="${tx}" y="${ty}" font-size="${h}" font-family="Arial,Helvetica,sans-serif" fill="#14171f"${opt || ''}>${esc(s)}</text>`;
+    const T = (tx, ty, s, h, opt) => `<text x="${tx}" y="${ty}" font-size="${h}" font-family="Arial,Helvetica,sans-serif"${/ fill="/.test(opt || '') ? '' : ' fill="#14171f"'}${opt || ''}>${esc(s)}</text>`;
     const L = (x1, y1, x2, y2, w) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#14171f" stroke-width="${w || 0.25}"/>`;
     let o = `<rect x="${x}" y="${y}" width="${W}" height="${H}" fill="#fff" stroke="#14171f" stroke-width="0.7"/>`;
     const rows = v
@@ -274,7 +323,7 @@
     return o;
   }
   function revTable(x, y, w, h, meta) {
-    const T = (tx, ty, s, hh, opt) => `<text x="${tx}" y="${ty}" font-size="${hh}" font-family="Arial,Helvetica,sans-serif" fill="#14171f"${opt || ''}>${esc(s)}</text>`;
+    const T = (tx, ty, s, hh, opt) => `<text x="${tx}" y="${ty}" font-size="${hh}" font-family="Arial,Helvetica,sans-serif"${/ fill="/.test(opt || '') ? '' : ' fill="#14171f"'}${opt || ''}>${esc(s)}</text>`;
     let o = T(x + 2.5, y + 4.5, 'INDICES', 2.4, ' fill-opacity=".65"');
     const c1 = x + 14, c2 = x + 40, rh = 7, top = y + 8;
     o += `<line x1="${x}" y1="${top}" x2="${x + w}" y2="${top}" stroke="#14171f" stroke-width=".25"/>`;
@@ -292,10 +341,18 @@
   }
 
   /* Feuille complète en SVG (unités = mm). */
-  function sheetSVG(struct, g, meta, opt, logos) {
-    const views = struct.views(g), L = layoutSheet(views, opt), [FW, FH] = FORMATS[L.f], k = 1000 / L.s, cart = (opt && opt.cart) || 'V';
+  /* Feuille complète en SVG (unités = mm). kind : 'coffrage' | 'ferraillage' */
+  function sheetSVG(struct, g, meta, opt, logos, kind, fp) {
+    let views, extras = [], bars = null;
+    if (kind === 'ferraillage' && typeof struct.ferr === 'function') {
+      const F = struct.ferr(g, fp || {}); views = F.views; bars = F.bars;
+      const vol = F.vol != null ? F.vol : (struct.qty ? struct.qty(g).reduce((a, q) => a + q[1], 0) : 0);
+      extras = [nomenBlock(bars, 'NOMENCLATURE DES ACIERS — ' + String(struct.name).toUpperCase(), vol)];
+    }
+    else views = struct.views(g);
+    const L = layoutSheet(views, opt, extras), [FW, FH] = FORMATS[L.f], k = 1000 / L.s, cart = (opt && opt.cart) || 'V';
     const [CW, CH] = CART[cart];
-    const m = Object.assign({}, meta, { ech: '1/' + L.s, fmt: L.f + (cart === 'V' ? '' : '') });
+    const m = Object.assign({}, meta, { ech: '1/' + L.s, fmt: L.f });
     let o = `<rect x="0" y="0" width="${FW}" height="${FH}" fill="#fff"/>`;
     o += `<rect x="${MARG.l}" y="${MARG.t}" width="${FW - MARG.l - MARG.r}" height="${FH - MARG.t - MARG.b}" fill="none" stroke="#14171f" stroke-width="0.7"/>`;
     views.forEach((v, i) => {
@@ -305,13 +362,116 @@
       o += `<text x="${cxv.toFixed(1)}" y="${(py + 10).toFixed(1)}" font-size="3" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" fill="#0f8f3b">Ech : 1/${L.s}</text>`;
       o += renderView(v, k, px + (w - b.w * k) / 2 - b.x0 * k, py + 14 + b.y1 * k + (h - 20 - b.h * k) / 2, 'plan', 1);
     });
-    // NOTA au-dessus du cartouche
+    extras.forEach((e, j) => { const [px, py] = L.pos[views.length + j]; o += primsSVG(e.prims, px + 6, py + 6); });
     const nx = FW - MARG.r - CW, ny = FH - MARG.b - CH - NOTA_H;
     o += `<rect x="${nx}" y="${ny}" width="${CW}" height="${NOTA_H}" fill="#fff" stroke="#14171f" stroke-width="0.5"/>`;
     o += `<text x="${nx + 3}" y="${ny + 6}" font-size="3.4" font-weight="700" font-family="Arial,Helvetica,sans-serif" text-decoration="underline">NOTA :</text>`;
     String(m.nota || '').split('\n').slice(0, 5).forEach((ln, i) => { o += `<text x="${nx + 3}" y="${ny + 12 + i * 4.6}" font-size="2.8" font-family="Arial,Helvetica,sans-serif">${esc(ln)}</text>`; });
     o += cartouche(m, FW - MARG.r - CW, FH - MARG.b - CH, cart, logos || {});
-    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${FW} ${FH}" width="${FW}mm" height="${FH}mm">${o}</svg>`, layout: L, FW, FH, views, meta: m, cart };
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${FW} ${FH}" width="${FW}mm" height="${FH}mm">${o}</svg>`, layout: L, FW, FH, views, extras, bars, meta: m, cart, kind: kind || 'coffrage' };
+  }
+
+  /* ───────────────────────── Aciers : longueurs, masses, nomenclature ───────────────────────── */
+  const KGM = (d) => 0.00617 * d * d;                       // kg/m pour un HA de d mm
+  const segLen = (pts) => { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return L; };
+  /* Longueur développée : polyligne (+ fermeture et crochets pour les cadres), cerce = πD + recouvrement */
+  function barLength(b) {
+    if (b.circle) return Math.PI * b.circle + 40 * b.d / 1000;
+    let L = segLen(b.closed ? b.shape.concat([b.shape[0]]) : b.shape);
+    if (b.closed) L += 2 * 10 * b.d / 1000;
+    if (b.hooks) L += b.hooks * 10 * b.d / 1000;
+    return L;
+  }
+  function finishBars(list) {
+    list.forEach((b) => { b.ne = b.ne || 1; if (b.nu == null) b.nu = b.n; b.n = b.nu * b.ne; b.L = barLength(b); b.Lt = b.L * b.n; b.kg = b.Lt * KGM(b.d); });
+    return list;
+  }
+  function totals(bars) { const t = {}; bars.forEach((b) => { t[b.d] = (t[b.d] || 0) + b.kg; }); return t; }
+
+  const f2 = (v) => (Math.round(v * 100) / 100).toFixed(2);
+  /* Croquis de façonnage (primitives mm) dans une case w × h — longueurs en m comme sur les plans KLE */
+  function shapePrims(b, x, y, w, h) {
+    const P = [], col = haCol(b.d);
+    if (b.circle) {
+      const r = Math.min(w, h) / 2 - 0.9; P.push({ t: 'circ', c: [x + w / 2 - 6, y + h / 2], r, col }); P.push({ t: 'text', p: [x + w / 2 - 6 + r + 1.5, y + h / 2 + 0.8], s: 'Ø ' + f2(b.circle), h: 2.1, a: 'start' }); return P;
+    }
+    const pts = b.closed ? b.shape.concat([b.shape[0]]) : b.shape;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; pts.forEach((q) => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+    const sw = Math.max(x1 - x0, 1e-6), sh = Math.max(y1 - y0, 1e-6), W = w - 16, Hh = h - 3.6;
+    const kx = W / sw, ky = sh < 1e-5 ? 0 : Math.min(Hh / sh, kx * 3);
+    const ox = x + 8 + (W - sw * kx) / 2, oy = y + h - 1.8 - (sh < 1e-5 ? Hh / 2 : (Hh - sh * ky) / 2);
+    const T = (q) => [ox + (q[0] - x0) * kx, oy - (q[1] - y0) * ky];
+    P.push({ t: 'pl', pts: pts.map(T), col });
+    const seen = {};
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], c = pts[i], Lm = Math.hypot(c[0] - a[0], c[1] - a[1]); if (Lm < 0.04) continue;
+      const key = f2(Lm) + (Math.abs(c[0] - a[0]) < 1e-6 ? 'v' : 'h'); if (b.closed && seen[key]) continue; seen[key] = 1;
+      const A = T(a), C = T(c), mx = (A[0] + C[0]) / 2, my = (A[1] + C[1]) / 2, vert = Math.abs(C[0] - A[0]) < Math.abs(C[1] - A[1]);
+      const left = vert && mx < x + w / 2;
+      P.push({ t: 'text', p: vert ? [left ? mx - 0.8 : mx + 0.8, my + 0.7] : [mx, my - 0.7], s: f2(Lm), h: 1.9, a: vert ? (left ? 'end' : 'start') : 'middle' });
+    }
+    return P;
+  }
+
+  /* Nomenclature des aciers « comme la Pile P3 » + récapitulatif (primitives mm, origine en haut à gauche) */
+  const NCOL = [['', 8], ['N°', 8], ['HA Ø', 10], ['Par élt', 11], ['Nb élts', 11], ['Total', 11], ['Esp.', 11], ['L. unit.', 13], ['Façonnage', 64], ['L. tot.', 16], ['Poids', 15]];
+  const DIAS = [6, 8, 10, 12, 14, 16, 20, 25, 32, 40];
+  function nomenBlock(bars, title, vol) {
+    const rh = 8, hh = 11, W = NCOL.reduce((a, c) => a + c[1], 0), P = [];
+    const xs = []; let x = 0; NCOL.forEach((c) => { xs.push(x); x += c[1]; });
+    const T = (p, s, h, o) => P.push(Object.assign({ t: 'text', p, s, h }, o || {}));
+    const Ln = (a, b, w) => P.push({ t: 'line', a, b, w: w || 0.25 });
+    Ln([0, 0], [W, 0], 0.5); T([W / 2, 6.2], title || 'NOMENCLATURE DES ACIERS', 3.6, { a: 'middle', bold: true });
+    let y = 9; Ln([0, y], [W, y], 0.5);
+    // en-tête sur deux niveaux (Nombre)
+    NCOL.forEach((c, i) => { if (i >= 3 && i <= 5) return; T([xs[i] + c[1] / 2, y + hh / 2 + 1], c[0], 2.4, { a: 'middle', bold: true }); });
+    T([xs[3] + 16.5, y + 4], 'Nombre', 2.4, { a: 'middle', bold: true }); Ln([xs[3], y + 5.5], [xs[6], y + 5.5]);
+    [3, 4, 5].forEach((i) => T([xs[i] + NCOL[i][1] / 2, y + 9.4], NCOL[i][0], 2.1, { a: 'middle' }));
+    const yH = y; y += hh; Ln([xs[1], y], [W, y], 0.35);
+    const yR = y; let g0 = y, gname = bars.length ? bars[0].grp : '';
+    const flushGrp = (yy) => { if (!gname) return; Ln([0, g0], [xs[1], g0], 0.35); T([xs[0] + 5.2, (g0 + yy) / 2], String(gname).toUpperCase(), 2.3, { a: 'middle', rot: -90, col: '#c81e1e' }); };
+    bars.forEach((b) => {
+      if (b.grp !== gname) { flushGrp(y); g0 = y; gname = b.grp; }
+      const cells = [null, String(b.rep), String(b.d), String(b.nu), String(b.ne), String(b.n), b.esp ? f2(b.esp) : '-', f2(b.L), null, f2(b.Lt), (Math.round(b.kg * 10) / 10).toFixed(1)];
+      cells.forEach((c, i) => { if (c != null) T([xs[i] + NCOL[i][1] / 2, y + 5.3], c, 2.4, { a: 'middle', col: i === 2 ? haCol(b.d) : null, bold: i === 1 }); });
+      shapePrims(b, xs[8], y + 0.4, NCOL[8][1], rh - 0.8).forEach((q) => P.push(q));
+      y += rh; Ln([xs[1], y], [W, y], 0.18);
+    });
+    flushGrp(y); Ln([0, y], [W, y], 0.5);
+    NCOL.forEach((c, i) => { if (i) Ln([xs[i], i >= 4 && i <= 5 ? yH + 5.5 : yH], [xs[i], y], i === 1 ? 0.35 : 0.18); });
+    Ln([0, 0], [0, y], 0.5); Ln([W, 0], [W, y], 0.5);
+    // récapitulatif par diamètre
+    const tot = {}, len = {}; bars.forEach((b) => { tot[b.d] = (tot[b.d] || 0) + b.kg; len[b.d] = (len[b.d] || 0) + b.Lt; });
+    const used = DIAS.filter((d) => tot[d]).concat(Object.keys(tot).map(Number).filter((d) => !DIAS.includes(d)));
+    const TT = Object.values(tot).reduce((a, c) => a + c, 0);
+    y += 5; const ry = y, lw = 40, cw = Math.min(18, (W - lw - 24) / Math.max(1, used.length)), r2 = 6.5;
+    Ln([0, y], [W, y], 0.5); T([W / 2, y + 5.2], 'RÉCAPITULATIF DES ACIERS', 3.2, { a: 'middle', bold: true }); y += 7.5; Ln([0, y], [W, y], 0.35);
+    const rowsR = [['HA Ø', (d) => String(d), true], ['Poids (kg/ml)', (d) => KGM(d).toFixed(3)], ['Longueur (m)', (d) => len[d].toFixed(1)], ['Poids (kg)', (d) => tot[d].toFixed(1), true]];
+    rowsR.forEach(([lab, fn, bold], ri) => {
+      T([2, y + 4.4], lab, 2.4, { bold: !!bold });
+      used.forEach((d, j) => T([lw + j * cw + cw / 2, y + 4.4], fn(d), 2.4, { a: 'middle', bold: !!bold, col: ri === 0 ? haCol(d) : null }));
+      if (ri === 3) { T([W - 12, y + 4.4], TT.toFixed(1), 2.5, { a: 'middle', bold: true }); }
+      if (ri === 0) T([W - 12, y + 4.4], 'TOTAL', 2.4, { a: 'middle', bold: true });
+      y += r2; Ln([0, y], [W, y], ri === 3 ? 0.35 : 0.18);
+    });
+    used.forEach((d, j) => Ln([lw + j * cw, ry + 7.5], [lw + j * cw, y], 0.18)); Ln([lw + used.length * cw, ry + 7.5], [lw + used.length * cw, y], 0.18); Ln([W - 24, ry + 7.5], [W - 24, y], 0.35);
+    // volume, ratio, total
+    const v3 = vol || 0, third = W / 3;
+    T([2, y + 4.6], 'Vol. béton (m³) :', 2.5, { bold: true }); T([third - 3, y + 4.6], v3 ? v3.toFixed(2) : '-', 2.5, { a: 'end' });
+    T([third + 2, y + 4.6], 'Ratio (kg/m³) :', 2.5, { bold: true }); T([2 * third - 3, y + 4.6], v3 ? (TT / v3).toFixed(1) : '-', 2.5, { a: 'end' });
+    T([2 * third + 2, y + 4.6], 'Total (kg) :', 2.5, { bold: true }); T([W - 3, y + 4.6], TT.toFixed(1), 2.5, { a: 'end', bold: true });
+    Ln([third, y], [third, y + 7]); Ln([2 * third, y], [2 * third, y + 7]);
+    y += 7; Ln([0, y], [W, y], 0.5); Ln([0, ry], [0, y], 0.5); Ln([W, ry], [W, y], 0.5);
+    return { w: W, h: y, prims: P, total: TT, ratio: v3 ? TT / v3 : 0 };
+  }
+  function primsSVG(P, ox, oy) {
+    return P.map((q) => {
+      if (q.t === 'line') return `<line x1="${(ox + q.a[0]).toFixed(2)}" y1="${(oy + q.a[1]).toFixed(2)}" x2="${(ox + q.b[0]).toFixed(2)}" y2="${(oy + q.b[1]).toFixed(2)}" stroke="#14171f" stroke-width="${q.w || 0.25}"/>`;
+      if (q.t === 'pl') return `<polyline points="${q.pts.map((p) => (ox + p[0]).toFixed(2) + ',' + (oy + p[1]).toFixed(2)).join(' ')}" fill="none" stroke="${q.col || '#14171f'}" stroke-width="0.45" stroke-linejoin="round"/>`;
+      if (q.t === 'circ') return `<circle cx="${(ox + q.c[0]).toFixed(2)}" cy="${(oy + q.c[1]).toFixed(2)}" r="${q.r.toFixed(2)}" fill="none" stroke="${q.col || '#14171f'}" stroke-width="0.45"/>`;
+      const tx = (ox + q.p[0]).toFixed(2), ty = (oy + q.p[1]).toFixed(2);
+      return `<text x="${tx}" y="${ty}" font-size="${q.h}" text-anchor="${q.a || 'start'}" font-family="Arial,Helvetica,sans-serif"${q.bold ? ' font-weight="700"' : ''}${q.rot ? ` transform="rotate(${q.rot} ${tx} ${ty})"` : ''} fill="${q.col || '#14171f'}">${esc(q.s)}</text>`;
+    }).join('');
   }
 
   /* ───────────────────────── Export DXF R12 ───────────────────────── */
@@ -319,7 +479,7 @@
   const CP_EXTRA = { 0x20AC: 0x80, 0x2026: 0x85, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97, 0x0153: 0x9C, 0x0152: 0x8C };
   function enc(s) { let o = ''; for (const ch of String(s)) { const c = ch.codePointAt(0); o += (c < 128 || (c >= 160 && c < 256) || CP_EXTRA[c]) ? ch : '\\U+' + c.toString(16).toUpperCase().padStart(4, '0'); } return o; }
   function toCP1252(str) { const out = new Uint8Array(str.length); let n = 0; for (const ch of str) { const c = ch.codePointAt(0); out[n++] = c < 256 ? c : (CP_EXTRA[c] || 63); } return out.slice(0, n); }
-  const LAYERS = [['COFFRAGE', 7, 'CONTINUOUS'], ['VU', 8, 'CONTINUOUS'], ['CACHE', 8, 'DASHED'], ['AXE', 6, 'CENTER'], ['COTATION', 1, 'CONTINUOUS'], ['TEXTE', 7, 'CONTINUOUS'], ['TITRE', 7, 'CONTINUOUS'], ['TERRAIN', 8, 'CONTINUOUS'], ['CADRE', 7, 'CONTINUOUS'], ['CARTOUCHE', 7, 'CONTINUOUS']];
+  const LAYERS = [['REPERE', 1, 'CONTINUOUS'], ['NOMENCLATURE', 7, 'CONTINUOUS']].concat([6, 8, 10, 12, 14, 16, 20, 25, 32, 40].map((d) => ['HA' + d, HA_ACI[d], 'CONTINUOUS'])).concat([['COFFRAGE', 7, 'CONTINUOUS'], ['VU', 8, 'CONTINUOUS'], ['CACHE', 8, 'DASHED'], ['AXE', 6, 'CENTER'], ['COTATION', 1, 'CONTINUOUS'], ['TEXTE', 7, 'CONTINUOUS'], ['TITRE', 7, 'CONTINUOUS'], ['TERRAIN', 8, 'CONTINUOUS'], ['CADRE', 7, 'CONTINUOUS'], ['CARTOUCHE', 7, 'CONTINUOUS']]);
   function dxf(sheet) {
     const L = sheet.layout, s = L.s, sc = s / 1000;          // mm papier → m modèle
     const FH = sheet.FH, o = [];
@@ -371,6 +531,29 @@
           if (gm.L * k < tw + 1.2) { const sh = (gm.L * k / 2 + tw / 2 + 1.0) / k; gm.tp = [gm.tp[0] + gm.u[0] * sh, gm.tp[1] + gm.u[1] * sh]; }
           text(W(gm.tp), 2.5 * sc, lab, 'COTATION', 'middle', gm.ang);
         } else if (it.t === 'text') text(W(it.p), it.h * sc, it.s, 'TEXTE', it.a || 'middle');
+        else if (it.t === 'bar') pline(it.pts.map(W), false, 'HA' + it.d);
+        else if (it.t === 'dots') it.pts.forEach((q) => circle(W(q), Math.max(it.d / 2000, 0.4 / k), 'HA' + it.d));
+        else if (it.t === 'dist') {
+          const dx = it.b[0] - it.a[0], dy = it.b[1] - it.a[1], Ld = Math.hypot(dx, dy) || 1, u = [dx / Ld, dy / Ld], nn = [-u[1], u[0]], tk = 1 / k;
+          line(W(it.a), W(it.b), 'REPERE'); [it.a, it.b].forEach((P) => line(W([P[0] - nn[0] * tk, P[1] - nn[1] * tk]), W([P[0] + nn[0] * tk, P[1] + nn[1] * tk]), 'REPERE'));
+          let ang = Math.atan2(u[1], u[0]) * 180 / Math.PI, sd = 1; if (ang > 90.01 || ang < -89.99) { ang += 180; sd = -1; }
+          text(W([(it.a[0] + it.b[0]) / 2 + nn[0] * sd * 0.9 / k, (it.a[1] + it.b[1]) / 2 + nn[1] * sd * 0.9 / k]), 2 * sc, it.txt, 'REPERE', 'middle', ang);
+        }
+      });
+      repLayout(v, k).forEach((r) => {
+        pline([r.p, r.q, r.e].map(W), false, 'REPERE'); circle(W(r.c), r.R, 'REPERE');
+        text(W([r.c[0], r.c[1] - 0.85 / k]), 2.3 * sc, String(r.num), 'REPERE', 'middle');
+        if (r.txt) text(W([r.tx, r.q[1] + 0.7 / k]), 2.3 * sc, r.txt, 'REPERE');
+      });
+    });
+    // blocs annexes (nomenclature)
+    (sheet.extras || []).forEach((e, j) => {
+      const [px, py] = L.pos[sheet.views.length + j], ox = px + 6, oy = py + 6;
+      e.prims.forEach((q) => {
+        if (q.t === 'line') line(M(ox + q.a[0], oy + q.a[1]), M(ox + q.b[0], oy + q.b[1]), 'NOMENCLATURE');
+        else if (q.t === 'pl') pline(q.pts.map((pp) => M(ox + pp[0], oy + pp[1])), false, 'NOMENCLATURE');
+        else if (q.t === 'circ') circle(M(ox + q.c[0], oy + q.c[1]), q.r * sc, 'NOMENCLATURE');
+        else if (q.t === 'text') text(M(ox + q.p[0], oy + q.p[1]), q.h * sc, q.s, 'NOMENCLATURE', q.a || 'start', q.rot ? -q.rot : 0);
       });
     });
     // nota + cartouche (traits et textes principaux)
@@ -398,7 +581,7 @@
     return o.join('\r\n') + '\r\n';
   }
 
-  const api = { toCP1252, View, RECT, CIRC, ARC, r3, fmt, bounds, renderView, viewSVG, viewsSVG, layoutSheet, sheetSVG, dxf, FORMATS, SCALES, STRUCTS: {} };
+  const api = { toCP1252, KGM, finishBars, totals, nomenBlock, primsSVG, HA_COL, DIAS, f2, View, RECT, CIRC, ARC, r3, fmt, bounds, renderView, viewSVG, viewsSVG, layoutSheet, sheetSVG, dxf, FORMATS, SCALES, STRUCTS: {} };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.COFF = api;
 })(typeof window !== 'undefined' ? window : globalThis);

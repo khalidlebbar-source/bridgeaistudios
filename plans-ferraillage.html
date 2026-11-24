@@ -392,18 +392,21 @@ header.head{display:none}
 .cws-stabs{flex:none;display:flex;gap:4px;padding:6px 10px 0;flex-wrap:wrap}
 .cws-stabs button{border:1px solid var(--border);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;color:var(--silver);cursor:pointer}
 .cws-stabs button.on{border-color:var(--gold);color:var(--gold2);background:#fbf6e9}
-.cws-schema{flex:0 0 42%;min-height:150px;padding:4px 8px}
+.cws-schema{flex:0 0 38%;min-height:140px;padding:4px 8px}
 .cws-fields{flex:1;min-height:0;overflow:auto;padding:0 14px 10px;border-top:1px solid var(--border)}
 .cgrp-t{font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--silver);padding:9px 0 5px}
 .cfg{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
-.cws-fields .cfg{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px}
+.cws-fields .cfg{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px 8px}
+@media(min-width:1280px){.cws-fields .cfg{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cws-fields .cgrp-t{padding:6px 0 3px}
+.cws-fields .cf-l{font-size:11px}
 .cws-fields .num input{height:28px;padding-right:30px}
 .cfg.c3{grid-template-columns:1fr 1fr 1fr}
 .cf{display:flex;flex-direction:column;gap:2px;min-width:0}
 .cf.wide{grid-column:span 2}
 .cf-l{font-size:11.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#3b4150}
 .cf-l b{color:#1d4ed8;font-weight:700;margin-right:3px}
-.cws-fields .num input{color:#c0262d;height:30px}
+.cws-fields .num input{color:#c0262d;height:27px}
 .cf[data-k]:focus-within .cf-l b{color:#d97706}
 .cws-right{min-height:0}
 .cws-right .card-h small{margin-right:auto}
@@ -411,8 +414,35 @@ header.head{display:none}
 #cLive,#cSheet{background:#fff;border-radius:0 0 14px 14px}
 #cSheet{background:#e9ecf1;padding:10px}
 #cSheet svg{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}
-.cws-plan{flex:1;min-height:0;display:grid;grid-template-columns:360px minmax(0,1fr);gap:12px}
-.cws-opt .card-b{flex:1;min-height:0;overflow:auto}
+.cws-plan{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:8px}
+.cws-opt .card-b{padding:8px 12px}
+.copts{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.copts .cf{width:auto}.copts select{width:auto!important;min-width:96px}
+.cseg{display:inline-flex;border:1px solid rgba(20,23,31,.18);border-radius:8px;overflow:hidden;align-self:flex-end}
+.cseg button{border:none;background:#fff;padding:6px 12px;font:inherit;font-size:12.5px;color:#3b4150;cursor:pointer}
+.cseg button.on{background:#14171f;color:#fff}
+.copts .cinfo{margin-left:auto;font-size:11.5px;color:#5b6170;text-align:right;align-self:center;max-width:46%}
+.cdlg{border:none;border-radius:14px;padding:0;width:min(720px,94vw);max-height:92vh;background:#fff;color:#14171f;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.cdlg::backdrop{background:rgba(5,7,12,.6)}
+.cdlg .dr-b{padding:12px 16px 16px;overflow:auto;max-height:calc(92vh - 56px)}
+.cdlg .cfg{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cdlg input[type=text],.cdlg textarea{width:100%;height:30px;border:1px solid rgba(20,23,31,.16);border-radius:7px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff;color:#14171f}
+.cdlg textarea{height:auto;padding:6px 8px}
+.cenr{font-size:12px;color:#3b4150;display:flex;align-items:center;gap:5px;margin-left:auto;margin-right:8px}
+.cenr input{width:64px;height:26px;border:1px solid rgba(20,23,31,.16);border-radius:6px;padding:0 6px;font:inherit;font-size:12.5px;color:#c0262d}
+.cnote{color:#8a6d1f!important;font-style:italic}
+.cws-nom{flex:1;min-height:0;overflow:auto;padding:0 10px}
+.cnt{width:100%;border-collapse:collapse;font-size:12px}
+.cnt th{position:sticky;top:0;background:#f7f5ef;font-weight:600;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#5b6170;padding:5px 4px;text-align:left;z-index:1}
+.cnt td{padding:1px 4px;border-top:1px solid rgba(20,23,31,.07);white-space:nowrap}
+.cnt td.des{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.cnt td.des small{display:block;color:#8a8f9c;font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.cnt tr.g td{background:#fbf6e9;color:#b3261e;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:2px 4px}
+.cnt .rp{display:inline-grid;place-items:center;width:18px;height:18px;border:1.3px solid #c81e1e;border-radius:50%;color:#c81e1e;font-size:11px}
+.cnt select,.cnt input{height:22px;border:1px solid rgba(20,23,31,.16);border-radius:5px;font:inherit;font-size:12px;background:#fff;color:#14171f;padding:0 3px}
+.cnt input{width:56px}.cnt td.kg{text-align:right;font-variant-numeric:tabular-nums}
+.cnt tr.mod td{background:#fff8e6}
+#cFLive{background:#fff;border-radius:0 0 14px 14px}
 .cws-opt select,.cws-opt input[type=text]{width:100%;height:30px;border:1px solid rgba(20,23,31,.16);border-radius:7px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff;color:#14171f}
 .cws-opt .num input[type=text]{padding-right:8px}
 .cws-opt textarea{width:100%;border:1px solid rgba(20,23,31,.16);border-radius:7px;padding:6px 8px;font:inherit;font-size:12px;resize:vertical}
@@ -422,7 +452,7 @@ header.head{display:none}
 @media(max-width:999px),(max-height:599px){
   .cws-saisie,.cws-plan{grid-template-columns:minmax(0,1fr)}
   .cws-schema{height:260px;flex:none}.cws-fields{max-height:none}
-  #cLive{height:70vw;min-height:320px;flex:none}#cSheet{height:75vw;flex:none}
+  #cLive,#cFLive{height:70vw;min-height:320px;flex:none}#cSheet{height:75vw;flex:none}.cws-nom{max-height:none}.copts .cinfo{max-width:100%;margin-left:0}
 }
 @media(max-width:600px){.cws-fields .cfg{grid-template-columns:1fr 1fr}.cws-bar h2{font-size:20px}}
 </style>
@@ -516,7 +546,7 @@ header.head{display:none}
     <div class="cws-bar">
       <button type="button" class="btn ghost small" id="cBack">← Structures</button>
       <h2 id="cName"></h2>
-      <div class="cws-tabs" id="cTabs" role="tablist"><button type="button" data-t="saisie" class="on">1 · Saisie</button><button type="button" data-t="plan">2 · Plan de coffrage</button></div>
+      <div class="cws-tabs" id="cTabs" role="tablist"><button type="button" data-t="saisie" class="on">1 · Coffrage</button><button type="button" data-t="ferr">2 · Ferraillage</button><button type="button" data-t="plan">3 · Plans</button></div>
       <div class="cws-act" id="cAct" hidden><button type="button" class="btn ghost small" id="cPrint">Imprimer / PDF</button><button type="button" class="btn small" id="cDxf">Exporter DXF</button></div>
     </div>
     <div class="cws-saisie" id="cSaisie">
@@ -527,15 +557,27 @@ header.head{display:none}
         <div class="cws-fields" id="cFields"></div>
       </div>
       <div class="card cws-right">
-        <div class="card-h"><h3>Votre ouvrage</h3><small id="cMsg"></small><button type="button" class="btn small" id="cToPlan">Plan de coffrage →</button></div>
+        <div class="card-h"><h3>Votre ouvrage</h3><small id="cMsg"></small><button type="button" class="btn small" id="cToFerr">Ferraillage →</button></div>
         <div class="draw" id="cLive"></div>
         <div class="band" id="cQty"></div>
       </div>
     </div>
-    <div class="cws-plan" id="cPlan" hidden>
-      <div class="card cws-opt"><div class="card-h"><h3>Mise en page</h3></div><div class="card-b" id="cOpts"></div></div>
-      <div class="card cws-sheet"><div class="card-h"><h3>Plan de coffrage</h3><small id="cSheetI"></small></div><div class="draw" id="cSheet"></div></div>
+    <div class="cws-saisie cws-ferr" id="cFerr" hidden>
+      <div class="card cws-left">
+        <div class="card-h"><h3>Nomenclature</h3><label class="cenr">Enrobage <input type="number" id="cEnr" step="0.005" min="0.02" max="0.10"> m</label><button type="button" class="btn ghost small" id="cFReset" title="Revenir au ferraillage proposé">↺ Défauts</button></div>
+        <div class="cws-nom" id="cNom"></div>
+        <div class="band" id="cFTot"></div>
+      </div>
+      <div class="card cws-right">
+        <div class="card-h"><h3>Ferraillage</h3><small class="cnote">Ferraillage de principe, à justifier par la note de calcul</small><button type="button" class="btn small" id="cToPlan">Plans →</button></div>
+        <div class="draw" id="cFLive"></div>
+      </div>
     </div>
+    <div class="cws-plan" id="cPlan" hidden>
+      <div class="card cws-opt"><div class="card-b" id="cOpts"></div></div>
+      <div class="card cws-sheet"><div class="draw" id="cSheet"></div></div>
+    </div>
+    <dialog id="cCartDlg" class="cdlg" aria-labelledby="cCartT"><div class="dr-h"><h3 id="cCartT">Cartouche et nota</h3><button class="dr-x" id="cCartX" aria-label="Fermer">×</button></div><div class="dr-b" id="cCart"></div></dialog>
   </section>
 </main>
 
@@ -571,9 +613,10 @@ header.head{display:none}
 <script src="ferraillage/calc.js?v=11"></script>
 <script src="ferraillage/draw.js?v=11"></script>
 <script src="ferraillage/dxf.js?v=11"></script>
-<script src="ferraillage/coffrage.js?v=2"></script>
-<script src="ferraillage/coffrage-structs.js?v=2"></script>
-<script src="ferraillage/coffrage-ui.js?v=1"></script>
-<script src="ferraillage/app.js?v=26"></script>
+<script src="ferraillage/coffrage.js?v=3"></script>
+<script src="ferraillage/coffrage-structs.js?v=3"></script>
+<script src="ferraillage/coffrage-ferr.js?v=1"></script>
+<script src="ferraillage/coffrage-ui.js?v=2"></script>
+<script src="ferraillage/app.js?v=27"></script>
 </body>
 </html>
