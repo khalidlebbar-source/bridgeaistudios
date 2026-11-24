@@ -107,7 +107,7 @@
         for (let x = it.x1 + st; x <= it.x2 + 1e-9; x += st) h += `M${X([x, it.y])} ${Y([x, it.y])} l${(-1.4 * mm).toFixed(2)} ${(1.8 * mm).toFixed(2)}`;
         o += `<path d="${pth([[it.x1, it.y], [it.x2, it.y]])}" stroke="${COL.ink}" stroke-width="${wt.toFixed(2)}"/><path d="${h}" stroke="${COL.ink}" stroke-width="${(wt * .8).toFixed(2)}"/>`;
       } else if (it.t === 'brk') {
-        const m = (it.x1 + it.x2) / 2, z = 1.6 / (k / mm);
+        const m = (it.x1 + it.x2) / 2, z = Math.min(0.15, Math.max(1.6 / (k / mm), (it.x2 - it.x1) / 10));
         o += `<path d="${pth([[it.x1 - z, it.y], [m - z / 2, it.y], [m - z / 4, it.y + z], [m + z / 4, it.y - z], [m + z / 2, it.y], [it.x2 + z, it.y]])}" fill="none" stroke="${COL.ink}" stroke-width="${wt.toFixed(2)}"/>`;
       } else if (it.t === 'dim') {
         if (mode === 'schema' && !it.k) return;
@@ -211,7 +211,7 @@
       const sz = sizeAt(s);
       fmts.forEach((f, fi) => {
         const pos = pack(sz, f, cart); if (!pos) return;
-        const score = FORDER.indexOf(f) * 1.0 + Math.log2(s / 20) * 1.35;
+        const score = [0, 1, 2.1, 3.8][FORDER.indexOf(f)] + Math.max(0, Math.log2(s / 20)) * 1.25 + (s < 20 ? 0.4 : 0);
         if (!best || score < best.score) best = { s, f, pos, sz, score };
       });
     });
@@ -361,7 +361,7 @@
         else if (it.t === 'line') pline(it.pts.map(W), false, it.st === 'axis' ? 'AXE' : it.st === 'hidden' ? 'CACHE' : 'COFFRAGE');
         else if (it.t === 'circ') circle(W(it.c), it.r * k * sc, it.st === 'axis' ? 'AXE' : it.st === 'hidden' ? 'CACHE' : 'COFFRAGE');
         else if (it.t === 'ground') { line(W([it.x1, it.y]), W([it.x2, it.y]), 'TERRAIN'); const st = 2.2 / k; for (let x = it.x1 + st; x <= it.x2 + 1e-9; x += st) line(W([x, it.y]), W([x - 1.4 / k, it.y - 1.8 / k]), 'TERRAIN'); }
-        else if (it.t === 'brk') { const m = (it.x1 + it.x2) / 2, z = 1.6 / k; pline([[it.x1 - z, it.y], [m - z / 2, it.y], [m - z / 4, it.y + z], [m + z / 4, it.y - z], [m + z / 2, it.y], [it.x2 + z, it.y]].map(W), false, 'COFFRAGE'); }
+        else if (it.t === 'brk') { const m = (it.x1 + it.x2) / 2, z = Math.min(0.15, Math.max(1.6 / k, (it.x2 - it.x1) / 10)); pline([[it.x1 - z, it.y], [m - z / 2, it.y], [m - z / 4, it.y + z], [m + z / 4, it.y - z], [m + z / 2, it.y], [it.x2 + z, it.y]].map(W), false, 'COFFRAGE'); }
         else if (it.t === 'dim') {
           const gm = dimGeom(it, k);
           line(W(gm.A), W(gm.B), 'COTATION'); line(W(gm.e1[0]), W(gm.e1[1]), 'COTATION'); line(W(gm.e2[0]), W(gm.e2[1]), 'COTATION');

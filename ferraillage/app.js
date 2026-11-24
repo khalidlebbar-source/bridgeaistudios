@@ -79,6 +79,10 @@
     { name: 'Mur en retour', svg: sv(B(14, 18, 18, 72, 44) + X([[32, 18], [122, 18], [122, 30], [58, 84], [32, 84]], 6) + G(2, 14, 90), 8) },
     { name: 'Mur en aile (cadres, portiques)', svg: sv(X([[40, 86], [84, 86], [84, 48], [40, 48]], 50, [[46, 80], [46, 54], [78, 54], [78, 80]].reverse()) + X([[8, 86], [40, 86], [40, 44], [30, 44], [8, 74]], 6) + X([[84, 86], [118, 86], [118, 74], [94, 44], [84, 44]], 6) + G(2, 124, 86), 6) },
     { name: 'Massif sur pieux', svg: sv([40, 66, 92].map((x) => CY(x + OX * 22, 50 + OY * 22, 92 + OY * 22, 4.5)).join('') + [40, 66, 92].map((x) => CY(x, 50, 94, 4.5)).join('') + B(26, 38, 80, 14, 30) + CY(66 + OX * 15, 10, 38 + OY * 15, 10), 4) },
+    { name: 'Pieu', svg: sv(G(20, 58, 30) + G(102, 140, 30) + CY(80, 18, 92, 12) + `<path d="M68 30A12 4.6 0 0 0 92 30" stroke-width=".7" stroke-dasharray="2 1.5" opacity=".8"/>`, 4) },
+    { name: 'Barrette', svg: sv(G(10, 50, 30) + G(98, 150, 30) + B(54, 22, 34, 70, 14), 4) },
+    { name: 'Paroi moulée', svg: sv([12, 42, 72].map((x) => B(x, 30, 30, 62, 8)).join('') + B(12, 22, 90, 8, 12, 1.6), 6) },
+    { name: 'Longrine sur file de pieux', svg: sv([22, 48, 74, 100].map((x) => CY(x + OX * 8, 50 + OY * 8, 94 + OY * 8, 5.5)).join('') + B(10, 36, 104, 16, 16), 4) },
     { name: 'Poutres VIPP', svg: sv(X(VP, 60) + CAB(), 8) },
     { name: 'Poutre PPBA', svg: sv(X(VP, 60), 8) },
     { name: 'Hourdis', svg: sv([10, 36, 62, 88].map((x) => X([[x - 2, 52], [x + 18, 52], [x + 18, 55], [x + 11, 58], [x + 11, 78], [x + 16, 83], [x + 16, 92], [x, 92], [x, 83], [x + 5, 78], [x + 5, 58], [x - 2, 55]], 52)).join('') + X([[4, 44], [110, 44], [110, 52], [4, 52]], 52), 4) },
@@ -121,7 +125,7 @@
   /* Cercle d'avancement du développement (comme sur l'accueil) */
   const RING = (p) => `<span class="tile-prog" title="Avancement du développement : ${p} %"><svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/>${p > 0 ? `<circle cx="20" cy="20" r="15" fill="none" stroke="#c9a84c" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.25" stroke-dashoffset="${(94.25 * (1 - p / 100)).toFixed(2)}" transform="rotate(-90 20 20)"/>` : ''}<text x="20" y="24" text-anchor="middle" font-size="11" font-family="Inter,Arial,sans-serif" fill="#e8e4da">${p}%</text></svg></span>`;
   /* Rubriques → modèles de coffrage (ferraillage/coffrage-structs.js) */
-  const CID = { 'Culée voile': 'culeeV', 'Culée à colonnes': 'culeeC', 'Pile semelle + fûts': 'pile', 'Chevêtre': 'chevetre', 'Dalle de transition': 'dalleT', 'Mur en retour': 'murRetour', 'Mur en aile (cadres, portiques)': 'murAile', 'Massif sur pieux': 'massif', 'Poutres VIPP': 'poutreVIPP', 'Poutre PPBA': 'poutrePPBA', 'Hourdis': 'hourdis', 'Entretoises': 'entretoises', 'Corniche': 'corniche', 'Portique ouvert (PIPO)': 'pipo', 'Mur en U (trémies)': 'murU', "Tête d'ouvrage hydraulique": 'teteOH' };
+  const CID = { 'Culée voile': 'culeeV', 'Culée à colonnes': 'culeeC', 'Pile semelle + fûts': 'pile', 'Chevêtre': 'chevetre', 'Dalle de transition': 'dalleT', 'Mur en retour': 'murRetour', 'Mur en aile (cadres, portiques)': 'murAile', 'Massif sur pieux': 'massif', 'Pieu': 'pieu', 'Barrette': 'barrette', 'Paroi moulée': 'paroi', 'Longrine sur file de pieux': 'longrine', 'Poutres VIPP': 'poutreVIPP', 'Poutre PPBA': 'poutrePPBA', 'Hourdis': 'hourdis', 'Entretoises': 'entretoises', 'Corniche': 'corniche', 'Portique ouvert (PIPO)': 'pipo', 'Mur en U (trémies)': 'murU', "Tête d'ouvrage hydraulique": 'teteOH' };
   function renderCatalog() {
     $('#catalog').innerHTML = CATALOG.map((c) => c.id
       ? `<button class="tile on" data-struct="${c.id}">${RING(c.pct || 0)}<span class="schema">${c.svg}</span><span class="tx"><span class="status on">Disponible</span><span class="name">${c.name}</span><span class="desc">${c.desc}</span><span class="go">Dessiner →</span></span></button>`

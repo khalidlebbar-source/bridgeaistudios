@@ -209,6 +209,104 @@
     qty(g) { return [['Massif', g.Lx * g.Ly * g.h], ['Pieux', g.nx * g.ny * Math.PI * g.D * g.D / 4 * g.Lp]]; },
   };
 
+  /* ═════════════ FONDATIONS PROFONDES ═════════════ */
+  /* Tubes d'auscultation : positions dans une section ronde (rayon r) ou rectangulaire (B × e) */
+  const tubesRond = (nt, r) => { const a = []; for (let i = 0; i < nt; i++) { const t = Math.PI / 2 + 2 * Math.PI * i / nt; a.push([r * Math.cos(t), r * Math.sin(t)]); } return a; };
+  const arase = (v, x1, x2, y, lab) => v.line([[x1 - 0.5, y], [x2 + 0.5, y]], 'thin').text([x2 + 0.55, y + 0.06], lab, 2.2, { a: 'start', it: true, noSchema: true });
+  const pfFields = (d) => [f('L', 'Longueur sous arase L', d.L, 2, 80, 0.5), f('lr', 'Surlongueur recépée lr', d.lr, 0, 2, 0.05, 'm', 'Tête'), f('za', 'Cote d\'arase za', d.za, -50, 500, 0.01, 'm NGM', 'Tête'),
+    n('nt', 'Tubes d\'auscultation nt', d.nt, 0, 6, 'Auscultation'), f('dt', 'Diamètre des tubes dt', 0.060, 0.03, 0.15, 0.005, 'm', 'Auscultation')];
+  const lv = (L) => Math.min(L, 4.0);                       // longueur représentée (vue interrompue)
+
+  S.pieu = {
+    name: 'Pieu',
+    fields: [f('D', 'Diamètre D', 1.00, 0.4, 3, 0.05, 'm', 'Géométrie')].concat(pfFields({ L: 15.00, lr: 0.50, za: 100.00, nt: 3 })),
+    validate(g) { const e = []; if (g.nt > 0 && g.dt * 3 > g.D) e.push('Tubes trop gros pour le diamètre du pieu.'); return e; },
+    views(g) {
+      const r = g.D / 2, h = lv(g.L), yb = -h, T = tubesRond(g.nt, r - 0.08 - g.dt / 2);
+      const E = V('Élévation (interrompue)'), ht = 2.2, gp = 0.7, yp = -ht - gp - 1.0;
+      E.seen(RECT(-r, -ht, g.D, ht)).brk(-r, r, -ht).seen(RECT(-r, yp, g.D, 1.0)).brk(-r, r, yp + 1.0);
+      E.seen(RECT(-r, 0, g.D, g.lr)).text([0, g.lr / 2 - 0.05], 'Recépage', 2, { it: true, noSchema: true });
+      T.forEach((p) => { E.line([[p[0], -ht + 0.05], [p[0], g.lr + 0.25]], 'hidden').line([[p[0], yp + 0.15], [p[0], yp + 0.95]], 'hidden'); });
+      E.line([[0, yp - 0.3], [0, g.lr + 0.5]], 'axis');
+      arase(E, -r, r, 0, 'Arase ' + C.fmt(g.za)); arase(E, -r, r, yp, 'Pointe ' + C.fmt(g.za - g.L));
+      E.chainH([[-r, g.lr], [r, g.lr]], g.lr + 0.6, ['D']).chainV([[r, 0], [r, g.lr]], r + 0.6, ['lr']).dimV([r, yp], [r, 0], r + 1.2, 'L', C.fmt(g.L));
+      const S1 = V('Coupe A-A').circ([0, 0], r, 'fill'); T.forEach((p) => S1.circ(p, g.dt / 2, 'thin'));
+      S1.line([[-r - 0.3, 0], [r + 0.3, 0]], 'axis').line([[0, -r - 0.3], [0, r + 0.3]], 'axis').chainH([[-r, -r], [r, -r]], -r - 0.35, ['D']);
+      if (g.nt) S1.text([0, -r - 0.75], g.nt + ' tubes Ø ' + Math.round(g.dt * 1000) + ' mm', 2.2, { it: true, noSchema: true });
+      return [E, S1];
+    },
+    qty(g) { return [['Pieu (béton théorique)', Math.PI * g.D * g.D / 4 * (g.L + g.lr)]]; },
+  };
+
+  S.barrette = {
+    name: 'Barrette',
+    fields: [f('B', 'Longueur de la barrette B', 2.80, 1, 8, 0.05, 'm', 'Géométrie'), f('e', 'Épaisseur e', 0.80, 0.4, 1.8, 0.05, 'm', 'Géométrie')].concat(pfFields({ L: 20.00, lr: 0.50, za: 100.00, nt: 4 })),
+    validate(g) { return g.e > g.B ? ['L\'épaisseur dépasse la longueur.'] : []; },
+    views(g) {
+      const h = lv(g.L), yb = -h + 0.6, Bh = g.B / 2, eh = g.e / 2, c = 0.15 + g.dt / 2;
+      const Tx = g.nt <= 2 ? spread(g.nt, g.B - 2 * c) : spread(Math.ceil(g.nt / 2), g.B - 2 * c);
+      const tubes = []; if (g.nt <= 2) Tx.forEach((x) => tubes.push([x, 0])); else Tx.forEach((x) => { tubes.push([x, eh - c]); if (tubes.length < g.nt) tubes.push([x, -eh + c]); });
+      const face = (title, W, keyW, tx) => {
+        const ht = 2.4, gp = 0.7, yp = -ht - gp - 1.0;
+        const v = V(title).seen(RECT(-W / 2, -ht, W, ht)).brk(-W / 2, W / 2, -ht).seen(RECT(-W / 2, yp, W, 1.0)).brk(-W / 2, W / 2, yp + 1.0).seen(RECT(-W / 2, 0, W, g.lr));
+        tx.forEach((x) => v.line([[x, -ht + 0.05], [x, g.lr + 0.25]], 'hidden').line([[x, yp + 0.15], [x, yp + 0.95]], 'hidden'));
+        v.line([[0, yp - 0.3], [0, g.lr + 0.5]], 'axis'); arase(v, -W / 2, W / 2, 0, 'Arase ' + C.fmt(g.za)); arase(v, -W / 2, W / 2, yp, 'Pointe ' + C.fmt(g.za - g.L));
+        v.chainH([[-W / 2, g.lr], [W / 2, g.lr]], g.lr + 0.6, [keyW]).chainV([[W / 2, 0], [W / 2, g.lr]], W / 2 + 0.6, ['lr']).dimV([W / 2, yp], [W / 2, 0], W / 2 + 1.2, 'L', C.fmt(g.L));
+        return v;
+      };
+      const A = face('Élévation face (interrompue)', g.B, 'B', [...new Set(tubes.map((p) => p[0]))]), Bv = face('Élévation profil (interrompue)', g.e, 'e', [...new Set(tubes.map((p) => p[1]))]);
+      const Cc = V('Coupe A-A').cut(RECT(-Bh, -eh, g.B, g.e)); tubes.forEach((p) => Cc.circ(p, g.dt / 2, 'thin'));
+      Cc.line([[-Bh - 0.3, 0], [Bh + 0.3, 0]], 'axis').line([[0, -eh - 0.3], [0, eh + 0.3]], 'axis').chainH([[-Bh, -eh], [Bh, -eh]], -eh - 0.35, ['B']).chainV([[Bh, -eh], [Bh, eh]], Bh + 0.35, ['e']);
+      return [A, Bv, Cc];
+    },
+    qty(g) { return [['Barrette (béton théorique)', g.B * g.e * (g.L + g.lr)]]; },
+  };
+
+  S.paroi = {
+    name: 'Paroi moulée',
+    fields: [f('e', 'Épaisseur de la paroi e', 0.80, 0.4, 1.5, 0.05, 'm', 'Paroi'), f('H', 'Profondeur H', 20.00, 4, 60, 0.5, 'm', 'Paroi'), f('Lp', 'Longueur d\'un panneau Lp', 5.60, 2, 10, 0.05, 'm', 'Paroi'), n('np', 'Panneaux représentés np', 3, 1, 6, 'Paroi'),
+      f('bm', 'Largeur murettes guides bm', 0.30, 0.15, 0.6, 0.05, 'm', 'Murettes guides'), f('hm', 'Hauteur murettes guides hm', 1.00, 0.5, 2, 0.05, 'm', 'Murettes guides'), f('jm', 'Jeu murettes / paroi jm', 0.05, 0, 0.15, 0.01, 'm', 'Murettes guides'),
+      f('bc', 'Largeur poutre de couronnement bc', 1.00, 0.4, 2, 0.05, 'm', 'Couronnement'), f('hc', 'Hauteur poutre de couronnement hc', 0.80, 0.3, 2, 0.05, 'm', 'Couronnement'), f('za', 'Cote d\'arase za', 100.00, -50, 500, 0.01, 'm NGM', 'Couronnement')],
+    validate(g) { return g.bc < g.e ? ['Poutre de couronnement plus étroite que la paroi.'] : []; },
+    views(g) {
+      const W = g.np * g.Lp, eh = g.e / 2, ht = 3.0, gp = 0.8, yb = -ht - gp - 1.2, h = -yb;
+      const E = V('Élévation développée (interrompue)').seen(RECT(0, -ht, W, ht)).brk(0, W, -ht).seen(RECT(0, yb, W, 1.2)).brk(0, W, yb + 1.2).seen(RECT(0, 0, W, g.hc));
+      for (let i = 1; i < g.np; i++) E.line([[i * g.Lp, -ht], [i * g.Lp, 0]], 'thick').line([[i * g.Lp, yb], [i * g.Lp, yb + 1.2]], 'thick');
+      for (let i = 0; i < g.np; i++) E.text([(i + 0.5) * g.Lp, -ht / 2], 'Panneau ' + (i % 2 ? 'secondaire' : 'primaire'), 2.2, { it: true, noSchema: true });
+      arase(E, 0, W, g.hc, 'Arase ' + C.fmt(g.za));
+      E.chainH([[0, g.hc], [g.Lp, g.hc]], g.hc + 0.6, ['Lp']).chainV([[W, 0], [W, g.hc]], W + 0.7, ['hc']).dimV([W, yb], [W, 0], W + 1.4, 'H', C.fmt(g.H));
+      const gx = eh + g.jm;
+      const Cc = V('Coupe transversale (interrompue)').cut(RECT(-eh, -ht, g.e, ht)).brk(-eh, eh, -ht).cut(RECT(-eh, yb, g.e, 1.2)).brk(-eh, eh, yb + 1.2).cut(RECT(-g.bc / 2, 0, g.bc, g.hc)).seen(RECT(-gx - g.bm, -g.hm, g.bm, g.hm)).seen(RECT(gx, -g.hm, g.bm, g.hm));
+      Cc.text([-gx - g.bm / 2, -g.hm - 0.3], 'Murette guide', 1.9, { it: true, noSchema: true }).ground(-gx - g.bm - 1.0, -gx - g.bm, 0).ground(gx + g.bm, gx + g.bm + 1.0, 0).line([[0, yb - 0.3], [0, g.hc + 0.4]], 'axis');
+      Cc.chainH([[-eh, yb + 0.5], [eh, yb + 0.5]], yb - 0.4, ['e']).chainH([[-g.bc / 2, g.hc], [g.bc / 2, g.hc]], g.hc + 0.5, ['bc']).chainH([[-gx - g.bm, -g.hm], [-gx, -g.hm], [-eh, -g.hm]], -g.hm - 0.7, ['bm', 'jm']).chainV([[gx + g.bm, -g.hm], [gx + g.bm, 0]], gx + g.bm + 0.6, ['hm']);
+      const P = V('Vue en plan').seen(RECT(0, -eh, W, g.e)).seen(RECT(0, -gx - g.bm, W, g.bm)).seen(RECT(0, gx, W, g.bm));
+      for (let i = 1; i < g.np; i++) P.line([[i * g.Lp, -eh], [i * g.Lp, eh]], 'thick');
+      P.line([[-0.4, 0], [W + 0.4, 0]], 'axis').chainH([[0, -gx - g.bm]].concat(Array.from({ length: g.np }, (_, i) => [(i + 1) * g.Lp, -gx - g.bm])), -gx - g.bm - 0.6, Array.from({ length: g.np }, () => 'Lp')).chainV([[W, -eh], [W, eh]], W + 0.6, ['e']);
+      return [E, Cc, P];
+    },
+    qty(g) { return [['Paroi (par panneau)', g.Lp * g.e * g.H], ['Poutre de couronnement (par panneau)', g.Lp * g.bc * g.hc], ['Murettes guides (par panneau)', 2 * g.Lp * g.bm * g.hm]]; },
+  };
+
+  S.longrine = {
+    name: 'Longrine sur file de pieux',
+    fields: [n('np', 'Nombre de pieux np', 4, 2, 12, 'Pieux'), f('D', 'Diamètre des pieux D', 1.00, 0.4, 2.5, 0.05, 'm', 'Pieux'), f('ep', 'Entraxe des pieux ep', 3.00, 1, 8, 0.05, 'm', 'Pieux'), f('ea', 'Ancrage des pieux dans la longrine ea', 0.10, 0, 0.5, 0.01, 'm', 'Pieux'),
+      f('b', 'Largeur de la longrine b', 1.40, 0.5, 4, 0.05, 'm', 'Longrine'), f('h', 'Hauteur de la longrine h', 1.20, 0.4, 3, 0.05, 'm', 'Longrine'), f('d', 'Débord au-delà des pieux d', 0.50, 0.15, 2, 0.05, 'm', 'Longrine')],
+    validate(g) { const e = []; if (g.b < g.D + 0.2) e.push('Longrine trop étroite pour les pieux (b < D + 0,20).'); if (g.ep < 2.5 * g.D) e.push('Entraxe < 2,5 D (à justifier).'); return e; },
+    views(g) {
+      const X = spread(g.np, g.ep), L = (g.np - 1) * g.ep + g.D + 2 * g.d, Lh = L / 2, bh = g.b / 2, pl = 1.6;
+      const E = V('Élévation').seen(RECT(-Lh, 0, L, g.h)); bp(E, -Lh, Lh, 0);
+      X.forEach((x) => { E.seen(RECT(x - g.D / 2, -pl, g.D, pl)).brk(x - g.D / 2, x + g.D / 2, -pl).line([[x - g.D / 2, g.ea], [x + g.D / 2, g.ea]], 'hidden').line([[x - g.D / 2, 0], [x - g.D / 2, g.ea]], 'hidden').line([[x + g.D / 2, 0], [x + g.D / 2, g.ea]], 'hidden').line([[x, -pl - 0.3], [x, g.h + 0.3]], 'axis'); });
+      E.chainH([[-Lh, g.h], [Lh, g.h]], g.h + 1.0, ['L'].map(() => null)).chainH([[-Lh, g.h]].concat(X.map((x) => [x, g.h]), [[Lh, g.h]]), g.h + 0.5, [null].concat(X.slice(1).map(() => 'ep'), [null]));
+      E.chainH([[-Lh, 0], [X[0] - g.D / 2, -0.2]], -pl - 0.5, ['d']).chainV([[Lh, 0], [Lh, g.h]], Lh + 0.7, ['h']).chainV([[X[X.length - 1] + g.D / 2, 0], [X[X.length - 1] + g.D / 2, g.ea]], X[X.length - 1] + g.D / 2 + 0.35, ['ea']);
+      const P = V('Vue en plan').seen(RECT(-Lh, -bh, L, g.b)); X.forEach((x) => P.circ([x, 0], g.D / 2, 'hidden').line([[x, -bh - 0.3], [x, bh + 0.3]], 'axis'));
+      P.line([[-Lh - 0.4, 0], [Lh + 0.4, 0]], 'axis').chainH([[-Lh, -bh], [Lh, -bh]], -bh - 0.7, [null]).chainV([[Lh, -bh], [Lh, bh]], Lh + 0.7, ['b']);
+      const Cc = V('Coupe transversale').cut(RECT(-bh, 0, g.b, g.h)).seen(RECT(-g.D / 2, -pl, g.D, pl)).brk(-g.D / 2, g.D / 2, -pl).line([[-g.D / 2, g.ea], [g.D / 2, g.ea]], 'hidden'); bp(Cc, -bh, bh, 0);
+      Cc.line([[0, -pl - 0.3], [0, g.h + 0.3]], 'axis').chainH([[-bh, g.h], [bh, g.h]], g.h + 0.5, ['b']).chainH([[-g.D / 2, -pl], [g.D / 2, -pl]], -pl - 0.5, ['D']).chainV([[bh, 0], [bh, g.h]], bh + 0.6, ['h']);
+      return [E, Cc, P];
+    },
+    qty(g) { const L = (g.np - 1) * g.ep + g.D + 2 * g.d; return [['Longrine', L * g.b * g.h]]; },
+  };
+
   /* ═════════════ DALLE DE TRANSITION ═════════════ */
   S.dalleT = {
     name: 'Dalle de transition',
