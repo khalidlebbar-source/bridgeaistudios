@@ -139,7 +139,75 @@
       + grp('Justification', rb('justif', 'Chaîne de<br>justification', 'justif', { on: view === 't:justif', tip: 'Tablier, réactions, efforts horizontaux, appareils d’appui, piles et culées, fondations — modules de calcul du site' })
         + rb('sps', 'Sondage<br>.sps', 'sps', { on: !!S.sps, tip: S.sps ? 'Sondage pressiométrique : ' + (S.spsNom || 'importé') + ' — cliquer pour en importer un autre' : 'Importer un sondage pressiométrique (.sps) pour les fondations' }));
   }
-  function renderRibbon() { $('#ribbon').innerHTML = ribbonHTML(); }
+  function renderRibbon() { renderTop(); }
+  /* barre du haut : les 4 étapes de l'étude et les commandes */
+  const tb = (cmd, label, icon, o) => { o = o || {}; return `<button class="tbtn${o.on ? ' on' : ''}" data-cmd="${cmd}"${o.arg != null ? ` data-arg="${o.arg}"` : ''} title="${esc(o.tip || label.replace(/<[^>]+>/g, ''))}">${icon ? ico(icon) : ''}<span class="l">${label}</span>${o.bd ? `<span class="bd">${o.bd}</span>` : ''}</button>`; };
+  const di = (cmd, label, icon, arg) => `<button data-cmd="${cmd}"${arg != null ? ` data-arg="${arg}"` : ''}>${icon ? ico(icon) : ''}${label}</button>`;
+  const dd = (id, label, icon, items, o) => `<div class="dd" data-dd="${id}">${tb('dd', label + ' ▾', icon, Object.assign({ arg: id }, o || {}))}<div class="ddm" role="menu">${items}</div></div>`;
+  function stepState() {
+    const tz = JZ.sum && JZ.key === Skey();
+    const cur = view === 't:justif' ? 2 : (view === 't:appuis' || view === 't:ddc') ? 3 : 1;
+    return { cur, ok2: tz && JZ.sum.verdicts.some((v) => /tablier/i.test(v.lab || v.k || '')) };
+  }
+  function renderTop() {
+    const st = stepState(), nW = M ? M.warn.length : 0, ct = S.cartouche || {};
+    const step = (n, l, sub, cmd, arg) => `<button class="step${st.cur === n ? ' on' : ''}" data-cmd="${cmd}"${arg ? ` data-arg="${arg}"` : ''}><i>${n}</i><span>${l}<small>${sub}</small></span></button>`;
+    let h = '<div class="steps">' + step(1, 'Géométrie', 'plan d’ensemble', 'view', 'plan') + '<span class="sarr"></span>'
+      + step(2, 'Tablier', 'ponts types', 'justif') + '<span class="sarr"></span>'
+      + step(3, 'Appuis', 'descente · fondations', 'tab', 'appuis') + '<span class="sarr"></span>'
+      + `<div class="dd" data-dd="liv"><button class="step" data-cmd="dd" data-arg="liv"><i>4</i><span>Livrables ▾<small>notes · plans</small></span></button><div class="ddm" role="menu">`
+      + di('pdf', 'Note de prédimensionnement (PDF)', 'pdf') + di('sheetSvg', 'Plan d’ensemble A0 (SVG vectoriel)', 'planE') + di('dxf', 'Plan d’ensemble DXF (AutoCAD)', 'dxf')
+      + '<hr>' + di('otOpen', 'Chaîne OUVRAGES TYPES (module de calcul)', 'justif') + `<button onclick="location.href='plans-ferraillage.html'">${ico('appuis')}Plans de coffrage et de ferraillage</button>` + '</div></div></div>';
+    h += '<div class="tgrp">' + tb('new', '', 'new', { tip: 'Nouveau pont (assistant de création)' }) + tb('open', '', 'open', { tip: 'Ouvrir un projet (.json)' }) + tb('save', '', 'save', { tip: 'Enregistrer le projet (.json) — Ctrl+S' }) + tb('undo', '', 'undo', { tip: 'Annuler (Ctrl+Z)' }) + tb('redo', '', 'redo', { tip: 'Rétablir (Ctrl+Y)' }) + '</div>';
+    h += '<div class="tgrp">' + tb('pick', 'Tracé', 'trace', { arg: 'trace', on: S.trace.actif, tip: 'Tracé en plan, profil en long, dévers, terrain naturel et obstacle franchi' })
+      + tb('geoPdf', 'Géotechnique', 'geo', { on: !!(S.geo && S.geo.sondages && S.geo.sondages.length), tip: 'Charger le rapport géotechnique (PDF) : sondages et essais pressiométriques' })
+      + tb('nota', 'Nota', 'nota', { on: !!(S.nota || '').trim() })
+      + dd('cart', 'Cartouche', 'cartV', di('pick', 'Renseigner le cartouche', 'edit', 'projet') + di('cartOrient', 'Cartouche A4 vertical (210 × 297)', 'cartV', 'v') + di('cartOrient', 'Cartouche A4 horizontal (297 × 210)', 'cartH', 'h') + '<hr>'
+        + di('cartImg', ct.img ? 'Retirer mon cartouche importé' : 'Importer mon cartouche (SVG, PNG, JPG)', 'cartImg')) + '</div>';
+    const lab = { predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', hyp: 'Hypothèses', justif: 'Justification', msg: 'Messages' + (nW ? ' (' + nW + ')' : '') };
+    h += '<div class="tgrp r">' + dd('res', 'Résultats', 'metre', Object.keys(lab).map((k) => di('tab', lab[k], k === 'efforts' ? 'ddc' : k === 'hyp' ? 'edit' : k, k)).join(''), { bd: nW || '' })
+      + tb('view', 'Vue 3D', 'wire', { arg: view === '3d' ? 'plan' : '3d', on: view === '3d' }) + tb('home', '', 'home', { tip: 'Accueil BridgeAI Studios' }) + '</div>';
+    $('#topbar').innerHTML = h;
+  }
+  document.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.dd')) $$('.dd.open').forEach((d) => d.classList.remove('open')); }, true);
+  /* fenêtre de propriétés flottante, ouverte au clic sur un élément de la feuille */
+  const pop = $('#pop');
+  const GAL_LAB = { PSIDA: 'PSI-DA', PSIDP: 'PSI-DP', VIPP: 'VIPP', PRAD: 'PRAD', PRP: 'PRP', MIXTE: 'Bipoutre' };
+  function galleryHTML(id) {
+    const g = (title, items, cls) => `<div class="gal${cls ? ' ' + cls : ''}"><div class="gal-t">${title}</div>${items}</div>`;
+    const it = (cmd, arg, on, icon, l, sub) => `<button class="${on ? 'on' : ''}" data-cmd="${cmd}" data-arg="${arg}">${icon}<span>${l}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
+    if (id === 'tablier' || id === 'section') {
+      return g('Ouvrage', it('usage', 'route', S.usage !== 'rail', ico('route'), 'Pont-route') + it('usage', 'rail', S.usage === 'rail', ico('rail'), 'Pont-rail'), 'c2')
+        + g('Type de tablier', C.TYPE_KEYS.map((k) => { const st = C.typeStatus(k, S.travees, S.usage); return it('deck', k, S.tablier.type === k, icoW(k), GAL_LAB[k] || k, st.k === 'ok' ? '' : st.k === 'hors' ? 'hors domaine' : 'limite'); }).join(''));
+    }
+    if (/^P\d+$/.test(id) || id === 'appuis') return g('Forme des piles (toutes)', Object.keys(C.PILES).map((k) => it('pile', k, S.piles.type === k, icoW(k), C.PILES[k].nom)).join(''));
+    if (/^C\d+$/.test(id)) return g('Forme des culées (les deux)', Object.keys(C.CULEES).map((k) => it('culee', k, S.culees.type === k, icoW(k), C.CULEES[k].nom)).join(''), 'c2');
+    if (id === 'travees') return g('Travées', it('addSpan', '', false, ico('addSpan'), 'Ajouter') + it('delSpan', '', false, ico('delSpan'), 'Retirer') + it('continu', '', S.tablier.continu, ico('continu'), 'Continues'));
+    return '';
+  }
+  let popAt = null;
+  function placePop() {
+    if (pop.hidden) return;
+    const st = $('.stage').getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = st.width - w - 12, y = 12;
+    if (popAt) { x = popAt.x - st.left + 18; y = popAt.y - st.top - 40; if (x + w > st.width - 8) x = popAt.x - st.left - w - 18; }
+    pop.style.left = Math.max(8, Math.min(x, st.width - w - 8)) + 'px';
+    pop.style.top = Math.max(8, Math.min(y, st.height - h - 8)) + 'px';
+  }
+  function openPop(at) { popAt = at || popAt; pop.hidden = false; placePop(); }
+  function closePop() { pop.hidden = true; popAt = null; }
+  $('#popX').addEventListener('click', closePop);
+  { // déplacer la fenêtre par son en-tête
+    let d = null;
+    $('.pop-h').addEventListener('pointerdown', (ev) => { if (ev.target.closest('button')) return; d = { x: ev.clientX - pop.offsetLeft, y: ev.clientY - pop.offsetTop }; $('.pop-h').setPointerCapture(ev.pointerId); });
+    $('.pop-h').addEventListener('pointermove', (ev) => { if (!d) return; pop.style.left = (ev.clientX - d.x) + 'px'; pop.style.top = (ev.clientY - d.y) + 'px'; popAt = null; });
+    $('.pop-h').addEventListener('pointerup', () => { d = null; });
+  }
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !pop.hidden && !document.querySelector('.wz,.dlg')) closePop(); });
+  /* assistant IA en fenêtre flottante */
+  const aiShow = (on) => { $('#aiPane').hidden = !on; $('#aiFab').hidden = on; saveUI('ai', on); if (on) setTimeout(() => $('#cmd').focus(), 0); };
+  $('#aiFab').addEventListener('click', () => aiShow(true));
+  $('#aiClose').addEventListener('click', () => aiShow(false));
 
   /* ───────── Arborescence ───────── */
   const TI = {
@@ -366,7 +434,7 @@
     }
     return { h: `<table class="pg"><tbody>${h}</tbody></table>`, sub };
   }
-  function renderProps() { const p = propsHTML(); $('#props').innerHTML = p.h; $('#propSub').textContent = p.sub; }
+  function renderProps() { const p = propsHTML(); $('#props').innerHTML = galleryHTML(selId) + p.h; $('#propSub').textContent = p.sub; if (typeof placePop === 'function') placePop(); }
 
   /* conserve la saisie en cours (focus, texte brut, curseur) pendant un rendu */
   let rendering = false;
@@ -454,7 +522,7 @@
 
   /* ───────── Fenêtre principale : onglets (vues graphiques et tableaux), rendu, sélection, navigation ───────── */
   const cv = $('#cv');
-  const VIEWS = [['plan', 'Plan d’ensemble'], ['elev', 'Coupe longitudinale'], ['vplan', 'Vue en plan'], ['sec', 'Coupe transversale'], ['3d', 'Vue 3D'], ['diag', 'Diagrammes']];
+  const VIEWS = [['plan', 'Plan d’ensemble'], ['3d', 'Vue 3D']];
   const TABLES = { justif: 'Justification', hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
@@ -470,6 +538,7 @@
   }
 
   function renderView() {
+    if (isTable() || view === '3d') closePop();
     renderTabs();
     const tp = $('#tpane');
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
@@ -508,7 +577,7 @@
     vbBase = el.getAttribute('viewBox').split(/\s+/).map(Number);
     vb = vbBase.slice();
     applySel();
-    $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble (A1) · cliquez un élément pour le modifier · molette : zoom · glisser : déplacer · double-clic : ajuster'
+    $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
   function draw3D() {
@@ -608,10 +677,13 @@
     vb = [drag.vb[0] - dx * drag.k, drag.vb[1] - dy * drag.k, drag.vb[2], drag.vb[3]];
     applyVB();
   });
-  const endDrag = () => {
+  const endDrag = (ev) => {
     if (!drag) return;
     const d = drag; drag = null; cv.classList.remove('drag');
-    if (!d.moved && d.tag) select(d.tag.dataset.tag, { reveal: true, keepView: true });
+    if (d.moved) return;
+    if (d.tag && d.tag.dataset.tag === 'nota') { closePop(); notaDialog(); return; }
+    if (d.tag) select(d.tag.dataset.tag, { reveal: true, keepView: true, at: ev && ev.clientX != null ? { x: ev.clientX, y: ev.clientY } : null });
+    else closePop();
   };
   cv.addEventListener('pointerup', endDrag);
   cv.addEventListener('pointercancel', () => { drag = null; cv.classList.remove('drag'); });
@@ -991,6 +1063,7 @@
       if (!isTable()) lastGraphic = view;
     }
     renderTree(); renderProps(); renderRibbon();
+    if (o.pop !== false && !isTable()) openPop(o.at);
     if (view !== v0) renderView(); else applySel();
     if (o.reveal) { const n = $(`#tree [data-node="${id}"]`); if (n) n.scrollIntoView({ block: 'nearest' }); }
   }
@@ -1036,7 +1109,7 @@
         if (S.cartouche && S.cartouche.img) { S.cartouche = Object.assign({}, S.cartouche, { img: '', nom: '' }); view = 'plan'; lastGraphic = 'plan'; break; }
         $('#fCart').click(); return;
       case 'pdf': buildPrint(); window.print(); return;
-      case 'sheetSvg': download('plan-ensemble-' + slug() + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }).replace(/ width="\d+" height="\d+"/, ' width="841mm" height="594mm"'), 'image/svg+xml'); return;
+      case 'sheetSvg': download('plan-ensemble-' + slug() + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }), 'image/svg+xml'); return;
       case 'dxf': download('composer-' + slug() + '.dxf', C.buildDXF(M, { date: today() }), 'application/dxf'); return;
       case 'home': location.href = 'index.html'; return;
       case 'usage': setUsage(arg); break;
@@ -1066,6 +1139,8 @@
       case 'justifRun': runJustif(); return;
       case 'sps': pickSps(); return;
       case 'sel': select(arg, { reveal: true }); return;
+      case 'pick': if (view !== 'plan') setView('plan'); select(arg, { keepView: true }); return;
+      case 'dd': { const d = document.querySelector(`.dd[data-dd="${arg}"]`); const o = d && !d.classList.contains('open'); $$('.dd.open').forEach((x) => x.classList.remove('open')); if (o) { d.classList.add('open'); const r = d.firstElementChild.getBoundingClientRect(), m = d.querySelector('.ddm'); m.style.top = (r.bottom + 4) + 'px'; m.style.left = Math.max(6, Math.min(r.left, innerWidth - m.offsetWidth - 8)) + 'px'; } return; }
       case 'geoPdf': if (selId !== 'geo') select('geo', { reveal: true, keepView: true }); pickGeoPdf(); return;
       case 'geoDel': delete S.geo; if (/^rapport/.test(S.spsNom || '')) { delete S.sps; delete S.spsNom; } break;
       case 'geoUse': { const d = S.geo && S.geo.sondages[+arg]; if (!d) return; loadSondages().catch(() => null).then(() => { S.sps = geoToSps(d); S.spsNom = 'rapport : ' + d.sondage; S = C.normalize(S); recompute(true); }); return; }
@@ -1103,6 +1178,7 @@
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-cmd]');
     if (!b || b.disabled) return;
+    if (b.dataset.cmd !== 'dd') $$('.dd.open').forEach((x) => x.classList.remove('open'));
     run(b.dataset.cmd, b.dataset.arg);
   });
   $('#menubar').addEventListener('click', (ev) => {
@@ -1586,6 +1662,8 @@
   try { firstVisit = !localStorage.getItem(KEY); } catch (e) { /* stockage indisponible */ }
   renderVtools();
   recompute(true);
+  try { if (JSON.parse(localStorage.getItem(UIKEY) || '{}').ai) aiShow(true); } catch (e) { /* idem */ }
+  window.addEventListener('resize', placePop);
   /* première visite (ou lien …?nouveau) : on propose l’assistant de création */
   if ((firstVisit && !/[?&]demo\b/.test(location.search)) || /[?&]nouveau\b/.test(location.search)) setTimeout(() => run('new'), 150);
 })();

@@ -39,9 +39,9 @@
   const leader = (P, from, to, s, anchor) => { line(P, from, to, 'lead'); text(P, to, s, { ht: 1.9, anchor: anchor || 'start', dy: 0.6, lay: 'note' }); };
 
   /* ───────── Élévation (coupe longitudinale) ───────── */
-  function elevScene(M) {
+  function elevScene(M, o) {
     const P = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, S = M.S;
-    const ech = pickScale(Ltot + 2 * dab + 24, 400, [50, 100, 150, 200, 250, 500, 1000, 2000]);
+    const ech = (o && o.ech) || pickScale(Ltot + 2 * dab + 24, 400, [50, 100, 150, 200, 250, 500, 1000, 2000]);
     const mm = (v) => v * ech / 1000;
     const ySeat = -(h + 0.30);
     const T = M.T, fam = T.famille, rail = S.usage === 'rail';
@@ -267,9 +267,9 @@
   }
 
   /* ───────── Vue en plan ───────── */
-  function planScene(M) {
+  function planScene(M, o) {
     const P = [], S = M.S, t = S.trace, TR = M.trace, n = M.xs.length - 1, xs = M.xs, Ltot = M.Ltot, W = M.W, dab = M.dab;
-    const ech = pickScale(Ltot + 2 * dab + 30, 420, [100, 150, 200, 250, 500, 1000, 2000]);
+    const ech = (o && o.ech) || pickScale(Ltot + 2 * dab + 30, 420, [100, 150, 200, 250, 500, 1000, 2000]);
     const mm = (v) => v * ech / 1000;
     const g2r = (g) => g * Math.PI / 200;
     // repère local : axe au départ selon +x ; courbure éventuelle de rayon R (R > 0 : virage à droite)
@@ -358,9 +358,11 @@
   }
 
   /* ───────── Coupe transversale (tablier + pile) ───────── */
-  function secScene(M) {
+  function secScene(M, o) {
+    o = o || {};
+    const part = o.part || 'pile';
     const P = [], h = M.h, sec = M.sec, W = M.W, rail = M.S.usage === 'rail', S = M.S, fam = M.T.famille;
-    const ech = pickScale(W + 4, 190, [20, 25, 50, 75, 100, 200]);
+    const ech = o.ech || pickScale(W + 4, 190, [20, 25, 50, 75, 100, 200]);
     const mm = (v) => v * ech / 1000;
     // tablier coupé (hachuré)
     sec.polys.forEach((p) => poly(P, p.pts, p.mat === 'acier' ? 'acier' : (p.role === 'poutre' ? 'prefa' : 'beton')));
@@ -460,13 +462,17 @@
     tagFrom(P, iEq, 'equip');
     const ySeat = -(h + 0.30);
     // bossages et appareils d'appui
+    if (part === 'tablier') {
+      title(P, [0, top + mm(26)], 'COUPE TRANSVERSALE COURANTE DU TABLIER', ech);
+      return { P, ech, titre: 'COUPE TRANSVERSALE COURANTE — échelle 1/' + ech };
+    }
     sec.bear.forEach((x) => { rect(P, x - 0.25, -h, x + 0.25, -h - 0.10, 'app'); rect(P, x - 0.32, -h - 0.10, x + 0.32, ySeat, 'vuB'); });
 
     // ── pile la plus haute ──
     const piles = M.supports.filter((s) => s.kind === 'pile');
     let ref = null, iP = P.length;
     {
-      ref = piles.length ? piles.reduce((a, b) => (b.H > a.H ? b : a)) : M.supports[0];
+      ref = part === 'culee' || !piles.length ? M.supports[0] : (o.id && M.supports.find((x) => x.id === o.id)) || piles.reduce((a, b) => (b.H > a.H ? b : a));
       iP = P.length;
       let g = ref.geo;
       if (ref.kind === 'culee') {                     // ouvrage à une travée : coupe sur culée
@@ -652,10 +658,10 @@
       });
       return { out, ext };
     };
-    let s = (Wpx - 2 * pad) / bw;
+    let s = opt.scale || (Wpx - 2 * pad) / bw;
     let r = render(s);
     const geoW = bw * s, extra = (r.ext[2] - r.ext[0]) - geoW;
-    if (extra > 0) { s = Math.max(0.5, (Wpx - 2 * pad - extra) / bw); r = render(s); }
+    if (!opt.scale && extra > 0) { s = Math.max(0.5, (Wpx - 2 * pad - extra) / bw); r = render(s); }
     const e = r.ext, vw = e[2] - e[0] + 2 * pad, vh = e[3] - e[1] + 2 * pad;
     const pat = (k, size, bg, ln, w, rot) => `<pattern id="${id}-${k}" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot == null ? 45 : rot})"><rect width="${size}" height="${size}" fill="${bg}"/><line x1="0" y1="0" x2="0" y2="${size}" stroke="${ln}" stroke-width="${w}"/></pattern>`;
     const defs = '<defs>' + pat('b', 5, '#efefef', '#b3b3b3', 0.7) + pat('p', 5, '#e8ebf0', '#a9b1bd', 0.7) + pat('d', 3, '#d9d9d9', '#888', 0.6, -45)
