@@ -294,56 +294,71 @@
   const pBtns = (b) => `<tr class="btns"><td colspan="2">${b}</td></tr>`;
   const OUINON = (b) => (b ? 'oui' : 'non');
 
-  /* appui : croquis coté où l'on saisit les dimensions (vide = valeur automatique, affichée en grisé) */
+  /* appui : croquis cotés (vue de face = transversale, vue de côté = longitudinale) ; on saisit chaque dimension sur sa cote.
+     Case vide : valeur automatique (en grisé). */
   function sketchHTML(s) {
-    const isC = s.kind === 'culee', g = s.geo, tr = M.trace && M.trace.sup[s.j].H != null;
-    const dp = isC ? 'culees.dim.' : 'piles.dim.';
+    const isC = s.kind === 'culee', g = s.geo, f = s.fo, pie = f.mode === 'pieux', tr = M.trace && M.trace.sup[s.j].H != null;
+    const P = isC ? 'culees' : 'piles', dp = P + '.dim.', fp = P + '.fdim.';
     const box = (x, y, inner, ro) => `<label class="ski${ro ? ' ro' : ''}" style="left:${x}%;top:${y}%">${inner}</label>`;
-    const dim = (k, x, y, auto, pre, unit) => { const v = getPath(S, dp + k); return box(x, y, `<b>${pre}</b><input type="text" inputmode="decimal" data-k="${dp + k}" value="${v > 0 ? esc(show(v)) : ''}" placeholder="${esc(fr(auto, k === 'n' ? 0 : 2))}" aria-label="${pre}"><i>${unit == null ? 'm' : unit}</i>`); };
-    const hIn = (x, y) => (tr ? box(x, y, `<b>H</b><span>${fr(s.H, 2)}</span><i>m · tracé</i>`, true)
+    const inp = (path, x, y, auto, pre, unit, d) => { const v = getPath(S, path); return box(x, y, `<b>${pre}</b><input type="text" inputmode="decimal" data-k="${path}" value="${v > 0 ? esc(show(v)) : ''}" placeholder="${esc(fr(auto, d == null ? 2 : d))}" aria-label="${pre}"><i>${unit == null ? 'm' : unit}</i>`); };
+    const hIn = (x, y) => (tr ? box(x, y, `<b>H</b><span>${fr(s.H, 2)}</span><i>tracé</i>`, true)
       : box(x, y, `<b>H</b><input type="text" inputmode="decimal" data-k="${isC ? 'culees.hauteurs.' + (s.j === 0 ? 0 : 1) : 'piles.hauteurs.' + (s.j - 1)}" value="${esc(show(s.H))}" aria-label="Hauteur"><i>m</i>`));
-    const C_ = 'fill:#e9ecef;stroke:#2b2e36;stroke-width:1.2', Dm = 'stroke:#e03131;stroke-width:.8;fill:none', Sl = 'fill:#f3eee2;stroke:none';
+    const C_ = 'fill:#e9ecef;stroke:#2b2e36;stroke-width:1.2', Cc = 'fill:#e3e6ea;stroke:#2b2e36;stroke-width:1.2', Dm = 'stroke:#e03131;stroke-width:.8;fill:none';
     const r = (x, y, w, h, st) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" style="${st || C_}"/>`;
     const ln = (x1, y1, x2, y2, st) => `<path d="M${x1} ${y1}L${x2} ${y2}" style="${st || Dm}"/>`;
     const dv = (x, y1, y2) => ln(x, y1, x, y2) + ln(x - 4, y1, x + 4, y1) + ln(x - 4, y2, x + 4, y2);
     const dh = (y, x1, x2) => ln(x1, y, x2, y) + ln(x1, y - 4, x1, y + 4) + ln(x2, y - 4, x2, y + 4);
-    const f = s.fo, fd = f.mode === 'pieux' ? f.n + ' pieux Ø ' + fr(f.D, 2) + ' — L ' + fr(f.Lp, 1) + ' m' : 'Semelle ' + fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m';
-    const sol = r(0, 196, 320, 44, Sl) + ln(0, 196, 320, 196, 'stroke:#7a8b5a;stroke-width:1');
-    const fond = (x, w) => r(x, 182, w, 18) + (f.mode === 'pieux' ? [0.2, 0.5, 0.8].map((k) => r(x + w * k - 6, 200, 12, 30, 'fill:#dee2e6;stroke:#2b2e36;stroke-width:1')).join('') : '')
-      + `<text x="160" y="${f.mode === 'pieux' ? 238 : 214}" font-size="10" text-anchor="middle" fill="#3a4352">${esc(fd)}</text>`;
-    let svg = '', ins = '';
+    const sol = '<rect x="0" y="134" width="320" height="66" style="fill:#f3eee2"/>' + ln(0, 134, 320, 134, 'stroke:#7a8b5a;stroke-width:1');
+    /* fondation dans une vue : long = sens longitudinal (B, files nr, Lx) ou transversal (L, pieux par file m, Ly) */
+    const fond = (x, w, longi) => {
+      let o = r(x, 144, w, 16);
+      if (pie) { const k = longi ? f.nr : f.m, nn = Math.min(k, 6); for (let i = 0; i < nn; i++) o += r(x + 10 + (w - 20) * (nn > 1 ? i / (nn - 1) : 0.5) - 5, 160, 10, 34, 'fill:#dee2e6;stroke:#2b2e36;stroke-width:1'); }
+      return o + dh(pie ? 172 : 172, x, x + w) + dv(x + w + 10, 144, 160);
+    };
+    const fIn = (longi) => (pie
+      ? (f.e > 0 ? inp(fp + (longi ? 'Lx' : 'Ly'), 50, 86, longi ? f.Lx : f.Ly, longi ? 'Lx' : 'Ly') + inp(fp + 'e', 91, 76, f.e, 'e') : '')
+        + inp(fp + (longi ? 'nr' : 'm'), 18, 88, longi ? f.nr : f.m, longi ? 'files' : 'pieux', '', 0) + (longi ? inp(fp + 's', 82, 96, f.s, 'entraxe') : '')
+      : inp(fp + (longi ? 'B' : 'L'), 50, 86, longi ? f.B : f.L, longi ? 'B' : 'L') + inp(fp + 'e', 91, 76, f.e, 'e'));
+    const view = (title, svg, ins) => `<div class="skv"><div class="skt">${title}</div><div class="sk"><svg viewBox="0 0 320 200" aria-hidden="true">${sol}${svg}</svg>${ins}</div></div>`;
+    let A = '', B = '';
     if (!isC) {
-      const t = g.type, ch = g.ch, fut = g.fut;
+      const ch = g.ch, fut = g.fut, t = g.type;
       if (t === 'colonnes') {
-        svg = sol + fond(50, 220) + r(30, 34, 260, 30) + [80, 160, 240].map((x) => r(x - 13, 64, 26, 118, 'fill:#e3e6ea;stroke:#2b2e36;stroke-width:1.2')).join('')
-          + dv(300, 34, 64) + dh(78, 67, 93) + dv(14, 34, 182) + `<text x="160" y="160" font-size="10" text-anchor="middle" fill="#495057">${fut.n} colonnes</text>`;
-        ins = dim('hch', 93, 20.5, ch.h, 'h') + dim('D', 25, 26, fut.D, 'Ø') + dim('n', 50, 44, fut.n, 'n', '') + hIn(10, 46);
+        A = view('Vue de face', fond(40, 240, false) + r(24, 22, 272, 24) + [80, 160, 240].map((x) => r(x - 12, 46, 24, 98, Cc)).join('') + dh(12, 24, 296) + dv(306, 22, 46) + dv(10, 22, 144),
+          inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 17, ch.h, 'h') + inp(dp + 'D', 25, 45, fut.D, 'Ø') + inp(dp + 'n', 50, 45, fut.n, 'n', '', 0) + hIn(9, 58) + fIn(false));
+        B = view('Vue de côté', fond(100, 120, true) + r(120, 22, 80, 24) + r(148, 46, 24, 98, Cc) + dh(12, 120, 200),
+          inp(dp + 'bch', 50, 6, ch.b, 'b') + fIn(true));
       } else if (t === 'voile') {
-        svg = sol + fond(90, 140) + (ch ? r(120, 34, 80, 24) : '') + r(140, ch ? 58 : 34, 40, ch ? 124 : 148) + dh(28, 140, 180) + dv(14, 34, 182)
-          + `<text x="160" y="125" font-size="10" text-anchor="middle" fill="#495057" transform="rotate(-90 160 125)">voile L ${fr(fut.L, 2)} m</text>`;
-        ins = dim('e', 50, 8, fut.e, 'e') + hIn(10, 46) + (ch ? box(82, 19, `<i>tête ${fr(ch.b, 2)} × ${fr(ch.h, 2)}</i>`, true) : '');
+        const hd = !!ch;
+        A = view('Vue de face', fond(40, 240, false) + (hd ? r(50, 22, 220, 16) : '') + r(60, hd ? 38 : 22, 200, hd ? 106 : 122) + dh(12, 60, 260) + (hd ? dv(282, 22, 38) : '') + dv(10, 22, 144),
+          inp(dp + 'Lv', 50, 6, fut.L, 'L') + (hd ? inp(dp + 'hch', 90, 15, ch.h, 'h') : '') + hIn(9, 58) + fIn(false));
+        B = view('Vue de côté', fond(100, 120, true) + (hd ? r(125, 22, 70, 16) + dh(12, 125, 195) : '') + r(142, hd ? 38 : 22, 36, hd ? 106 : 122) + dh(92, 142, 178),
+          (hd ? inp(dp + 'bch', 50, 6, ch.b, 'b') : '') + inp(dp + 'e', 50, 46, fut.e, 'e') + fIn(true));
       } else {
-        svg = sol + fond(70, 180) + `<path d="M20 34H300V54L${160 + 30} 74H${160 - 30}L20 54Z" style="${C_}"/>` + r(130, 74, 60, 108) + dv(306, 34, 74) + dh(120, 130, 190) + dv(10, 34, 182);
-        ins = dim('hch', 93, 22, ch.h, 'h') + dim('bf', 50, 42, fut.b, 'b') + dim('a', 50, 62, fut.a, 'ép.') + hIn(10, 46);
+        A = view('Vue de face', fond(60, 200, false) + `<path d="M20 22H300V44L190 62H130L20 44Z" style="${C_}"/>` + r(130, 62, 60, 82) + dh(12, 20, 300) + dv(308, 22, 62) + dv(14, 22, 44) + dh(100, 130, 190) + dv(32, 62, 144),
+          inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 21, ch.h, 'h') + inp(dp + 'h2', 11, 16, ch.h2, 'h₂') + inp(dp + 'bf', 50, 50, fut.b, 'b') + hIn(10, 52) + fIn(false));
+        B = view('Vue de côté', fond(100, 120, true) + r(122, 22, 76, 40) + r(140, 62, 40, 82) + dh(12, 122, 198) + dh(100, 140, 180),
+          inp(dp + 'bch', 50, 6, ch.b, 'b') + inp(dp + 'a', 50, 50, fut.a, 'ép.') + fIn(true));
       }
     } else {
-      const so = g.sommier, sg = g.egg, hgg = g.hgg, rt = g.retours;
-      svg = sol + fond(100, 120) + r(150, 14, 10, 36) + (so ? r(120, 50, 80, 26) : '')
-        + `<path d="M200 14H312V${so ? 76 : 120}H200" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>` + `<text x="256" y="${so ? 68 : 110}" font-size="9" text-anchor="middle" fill="#868e96">mur en retour</text>`
-        + dh(8, 200, 312);
-      if (g.type === 'enterree') {
-        svg += r(147, 76, 26, 106, 'fill:#e3e6ea;stroke:#2b2e36;stroke-width:1.2') + dv(108, 50, 76) + dh(92, 120, 200) + dv(14, 50, 182)
-          + `<path d="M120 182L60 100" style="stroke:#a59a88;stroke-width:1;stroke-dasharray:4 3"/><text x="60" y="160" font-size="9" fill="#868e96">talus</text>`;
-        ins = dim('bs', 50, 36, so.b, 'b') + dim('hs', 27, 26, so.h, 'h') + (g.colonnes ? dim('D', 60, 56, g.colonnes.D, 'Ø') : '') + dim('Lmr', 80, 3.5, rt.L, 'L') + hIn(10, 52);
-      } else {
-        const m = g.mur;
-        svg += r(145, so ? 76 : 50, 30, so ? 106 : 132) + `<path d="M175 50L320 50L320 196L175 196" style="fill:#f3eee2;stroke:none"/>` + dh(98, 145, 175) + dv(14, 50, 182) + (so ? dv(108, 50, 76) + dh(40, 120, 200) : '');
-        ins = dim('ef', 50, 44, m.e, 'e') + (so ? dim('bs', 50, 13.5, so.b, 'b') + dim('hs', 27, 26, so.h, 'h') : '') + dim('Lmr', 80, 3.5, rt.L, 'L') + hIn(10, 52);
-      }
-      svg += `<text x="155" y="11" font-size="9" text-anchor="end" fill="#495057">garde-grève ${fr(sg, 2)}</text>`;
-      void hgg;
+      const so = g.sommier, rt = g.retours, en = g.type === 'enterree';
+      // vue de côté : coupe longitudinale de la culée (remblai à droite)
+      let sv = r(150, 10, 10, 30) + (so ? r(122, 40, 76, 22) : '') + `<path d="M198 10H314V${so ? 62 : 100}H198" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>` + dh(4, 198, 314) + dh(28, 150, 160);
+      let si = inp(dp + 'egg', 40, 13, g.egg, 'e<sub>gg</sub>') + inp(dp + 'Lmr', 80, 2, rt.L, 'L') + hIn(9, 56);
+      if (so) { sv += dv(112, 40, 62) + dh(70, 122, 198); si += inp(dp + 'hs', 24, 25, so.h, 'h') + inp(dp + 'bs', 50, 35, so.b, 'b'); }
+      if (en) {
+        if (g.colonnes) { sv += r(147, 62, 26, 82, Cc) + dh(110, 147, 173); si += inp(dp + 'D', 70, 55, g.colonnes.D, 'Ø'); }
+      } else { const m = g.mur; sv += r(144, so ? 62 : 40, 32, so ? 82 : 104) + dh(110, 144, 176); si += inp(dp + 'ef', 70, 55, m.e, 'e'); }
+      sv += fond(100, 120, true) + dv(10, so ? 40 : 40, 144);
+      A = view('Vue de côté', sv, si + fIn(true));
+      // vue de face : sommier sur toute la largeur, colonnes, murs en retour
+      let fv = (so ? r(30, 40, 260, 22) : r(30, 40, 260, 104)) + r(22, 10, 8, 120, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + r(290, 10, 8, 120, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + dh(4, 290, 298)
+        + `<text x="160" y="34" font-size="10" text-anchor="middle" fill="#495057">sommier L = ${fr(so ? so.L : g.ly, 2)} m (largeur du tablier)</text>`;
+      let fi = inp(dp + 'em', 88, 2, rt.e, 'e<sub>mr</sub>');
+      if (en && g.colonnes) { fv += [80, 160, 240].map((x) => r(x - 12, 62, 24, 82, Cc)).join(''); fi += inp(dp + 'n', 50, 52, g.colonnes.n, 'n', '', 0); }
+      B = view('Vue de face', fv + fond(40, 240, false), fi + fIn(false));
     }
-    return `<div class="sk"><svg viewBox="0 0 320 240" aria-hidden="true">${svg}</svg>${ins}</div>`;
+    return A + B;
   }
   function supDims(s) {
     const f = s.fo, isC = s.kind === 'culee', k = isC ? 'fond.culees' : 'fond.piles';

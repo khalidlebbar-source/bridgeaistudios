@@ -217,9 +217,11 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'D', 'n', 'hch', 'a', 'bf'], { n: 12, D: 4, e: 5, a: 6, hch: 5 });
-    if (out.piles.dim.n) out.piles.dim.n = Math.max(1, Math.round(out.piles.dim.n));
-    out.culees.dim = dims(out.culees.dim, ['D', 'hs', 'bs', 'Lmr', 'ef'], { D: 4, hs: 5, bs: 6, Lmr: 15, ef: 4 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'Lv', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5 });
+    out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2 });
+    const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
+    out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
+    [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
     const p = out.profil;
     p.roulable = clamp(num(p.roulable, 8), 3, 30);
     p.trottoirG = clamp(num(p.trottoirG, 1.25), 0, 5);
@@ -641,18 +643,19 @@
     if (t === 'voile') {
       const ev = ov('e', Math.max(rail ? 1.2 : 0.8, r05(H / 15)));
       let hch = 0;
-      if (ev < bt) { hch = 0.8; ch = { b: bt, h: hch, L: Lsup, kind: 'tete' }; }
+      const Lv = ov('Lv', Lsup);
+      if (ev < ov('bch', bt) || dm.hch) { hch = ov('hch', 0.8); ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: Lv, kind: 'tete' }; }
       const Hf = Math.max(0.5, H - hch);
-      fut = { kind: 'voile', e: ev, L: Lsup, H: Hf };
-      parts.push({ des: 'Fût en voile ' + fr(ev, 2) + ' × ' + fr(Lsup, 2) + ' m', V: ev * Lsup * Hf, coff: 2 * (ev + Lsup) * Hf, ratio: 100 });
-      lx = ev; ly = Lsup;
+      fut = { kind: 'voile', e: ev, L: Lv, H: Hf };
+      parts.push({ des: 'Fût en voile ' + fr(ev, 2) + ' × ' + fr(Lv, 2) + ' m', V: ev * Lv * Hf, coff: 2 * (ev + Lv) * Hf, ratio: 100 });
+      lx = ev; ly = Lv;
     } else if (t === 'colonnes') {
       const D = ov('D', H > 15 ? 1.50 : (rail ? 1.40 : 1.20));
-      const Lc = Math.max(W, Lsup), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
+      const Lc = ov('Lch', Math.max(W, Lsup)), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
       const nc = ov('n', Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1));
       const s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0;
       const hch = ov('hch', r10(Math.max(1.2, 0.14 * Lc)));
-      ch = { b: Math.max(bt, D + 0.6), h: hch, L: Lc, kind: 'chevetre' };
+      ch = { b: ov('bch', Math.max(bt, D + 0.6)), h: hch, L: Lc, kind: 'chevetre' };
       const Hf = Math.max(0.5, H - hch);
       fut = { kind: 'colonnes', D, n: nc, s, H: Hf };
       parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m', V: nc * Math.PI * D * D / 4 * Hf, coff: nc * Math.PI * D * Hf, ratio: 160 });
@@ -660,8 +663,8 @@
     } else {
       const a = ov('a', Math.max(rail ? 1.5 : 1.2, r05(H / 12)));
       const bf = ov('bf', clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0)));
-      const h1 = ov('hch', rail ? 2.0 : 1.6), h2 = Math.min(0.8, h1 * 0.5);
-      ch = { b: Math.max(bt, a + 0.2), h: h1, h2, L: Lsup, bf, kind: 'marteau' };
+      const h1 = ov('hch', rail ? 2.0 : 1.6), h2 = Math.min(h1, ov('h2', Math.min(0.8, h1 * 0.5)));
+      ch = { b: ov('bch', Math.max(bt, a + 0.2)), h: h1, h2, L: ov('Lch', Lsup), bf, kind: 'marteau' };
       const Hf = Math.max(0.5, H - h1);
       fut = { kind: 'marteau', a, b: bf, H: Hf };
       parts.push({ des: 'Fût ' + fr(a, 2) + ' × ' + fr(bf, 2) + ' m', V: a * bf * Hf, coff: 2 * (a + bf) * Hf, ratio: 120 });
@@ -683,7 +686,7 @@
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
     const rail = S.usage === 'rail', t = S.culees.type, parts = [], dm = S.culees.dim || {};
     const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
-    const egg = rail ? 0.40 : 0.30, hgg = h + 0.30;
+    const egg = ov('egg', rail ? 0.40 : 0.30), hgg = h + 0.30;
     const bt = (iso ? 2.6 : 1.6) + (rail ? 0.2 : 0);
     const dab = 0.6;
     parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
@@ -695,12 +698,12 @@
       parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 });
       const Hc = H - hs;
       if (Hc > 0.5) {
-        const D = ov('D', rail ? 1.40 : 1.20), nc = Math.max(2, Math.round((W - 2 * D) / 2.7) + 1);
-        colonnes = { D, n: nc, H: Hc, s: (W - 2 * D) / (nc - 1) };
+        const D = ov('D', rail ? 1.40 : 1.20), nc = ov('n', Math.max(2, Math.round((W - 2 * D) / 2.7) + 1));
+        colonnes = { D, n: nc, H: Hc, s: nc > 1 ? (W - 2 * D) / (nc - 1) : 0 };
         parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m (enterrées)', V: nc * Math.PI * D * D / 4 * Hc, coff: nc * Math.PI * D * Hc, ratio: 160 });
         lx = D; ly = W;
       } else lx = bs;
-      const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = rail ? 0.60 : 0.50;
+      const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = ov('em', rail ? 0.60 : 0.50);
       retours = { L: Lmr, h: hmr, e: em, h2: 0.9 };
       parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
     } else {
@@ -709,7 +712,7 @@
       mur = { e: ef, H: H - hs, L: W };
       if (hs) { sommier = { b: bs, h: hs, L: W }; parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 }); }
       parts.push({ des: 'Mur de front ' + fr(ef, 2) + ' × ' + fr(H - hs, 2) + ' m', V: ef * (H - hs) * W, coff: 2 * (H - hs) * W + 2 * ef * (H - hs), ratio: 90 });
-      const Lmr = ov('Lmr', r05(0.8 * Ht + 1.0)), em = Math.max(0.4, r05(Ht / 12)), hm = 0.7 * Ht;
+      const Lmr = ov('Lmr', r05(0.8 * Ht + 1.0)), em = ov('em', Math.max(0.4, r05(Ht / 12))), hm = 0.7 * Ht;
       retours = { L: Lmr, h: hm, e: em };
       parts.push({ des: 'Murs en retour 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * hm * em, coff: 4 * Lmr * hm, ratio: 90 });
       lx = Math.max(ef, hs ? bs : 0);
@@ -740,10 +743,12 @@
         B = r10(Math.max(lx + 1.0, 2.5, opt.Bmin || 0, A / L));
         e = Math.max(0.8, r05(Math.max(B - lx, L - ly) / 4 + 0.05), opt.colonnes ? Math.min(1.5, r05(0.3 * B)) : 0);
       }
+      const o = opt.ov || {};
+      B = o.B || B; L = o.L || L; e = o.e || e;
       const Ws = GB * B * L * e + HY.gammaRemblai * 0.6 * B * L, q = (N + Ws) / (B * L);
       return { mode, B, L, e, V: B * L * e, coff: 2 * (B + L) * e, ratio: 90, prop: B * L * 0.10, fouilles: (B + 1) * (L + 1) * (e + 0.6), q, Ws };
     }
-    const D = F.diam, Q = F.qadm * 1000, s = 3 * D;
+    const o = opt.ov || {}, D = F.diam, Q = F.qadm * 1000, s = o.s || 3 * D;
     let n = opt.min || 2, nr, m, Lx, Ly, e, Wm = 0, sy;
     for (let it = 0; it < 8; it++) {
       nr = opt.uneRangee ? ((n - 1) * s + D + 0.6 <= ly + 1e-6 ? 1 : 2) : (n <= 3 ? 1 : (n <= 12 ? 2 : 3));
@@ -756,6 +761,14 @@
       const nn = Math.max(opt.min || 2, Math.ceil((N + Wm) * 1.05 / Q));
       if (nn <= n) break;
       n = nn;
+    }
+    if (o.nr || o.m || o.Lx || o.Ly || o.e) {                 // disposition imposée par l'utilisateur
+      nr = o.nr || nr; m = o.m || m; n = nr * m;
+      Lx = o.Lx || Math.max(opt.uneRangee ? lx : 0, (nr - 1) * s + D + 0.6);
+      Ly = o.Ly || Math.max((m - 1) * s + D + 0.6, ly + (opt.uneRangee ? 0 : 0.5));
+      sy = m > 1 ? Math.min(s * 1.6, (Ly - D - 0.6) / (m - 1)) : 0;
+      e = opt.sansMassif ? 0 : (o.e || e);
+      Wm = GB * Lx * Ly * e;
     }
     const Vp = n * Math.PI * D * D / 4 * F.long;
     return {
@@ -883,7 +896,7 @@
       const mode = isC ? S.fond.culees : S.fond.piles;
       let fo;
       if (isC && mode === 'pieux' && geo.type === 'enterree' && !geo.colonnes) {
-        fo = fondation(S, N, geo.sommier.b, W, 'pieux', { min: 3, uneRangee: true, sansMassif: true });
+        fo = fondation(S, N, geo.sommier.b, W, 'pieux', { min: 3, uneRangee: true, sansMassif: true, ov: S.culees.fdim });
         if (fo.Lx > geo.sommier.b + 1e-6) { // sommier élargi pour deux rangées de pieux
           const sp = geo.parts.find((p) => /^Sommier/.test(p.des)), b0 = geo.sommier.b;
           geo.sommier.b = fo.Lx;
@@ -893,7 +906,10 @@
       } else fo = fondation(S, N, geo.lx, geo.ly, mode, {
         min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
         Bmin: isC ? r10(0.65 * geo.Ht) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
+        ov: isC ? S.culees.fdim : S.piles.fdim,
       });
+      if (fo.mode === 'superficielle' && fo.q / 1000 > S.fond.sigma * 1.001) warn.push((isC ? 'Culée C' : 'Pile P') + j + ' : contrainte sous semelle ' + fr(fo.q / 1000, 3) + ' MPa > ' + fr(S.fond.sigma, 2) + ' MPa admissible.');
+      if (fo.mode === 'pieux' && fo.Npieu > fo.Q * 1.001) warn.push((isC ? 'Culée C' : 'Pile P') + j + ' : effort par pieu ' + fr(fo.Npieu / 1000, 2) + ' MN > ' + fr(fo.Q / 1000, 2) + ' MN admissible.');
       if (fo.mode === 'superficielle' && Math.max(fo.B, fo.L * (isC ? 0 : 0.6)) > 10) warn.push((isC ? 'Culée ' : 'Pile ') + (isC ? 'C' + j : 'P' + j) + ' : semelle de ' + fr(fo.B, 1) + ' m — fondations profondes à envisager (σ adm = ' + S.fond.sigma + ' MPa).');
       if (!isC && H > 25) warn.push('Pile P' + j + ' de ' + frn(H) + ' m : piles hautes, vérifier flambement, effets du second ordre et séisme.');
       supports.push({
