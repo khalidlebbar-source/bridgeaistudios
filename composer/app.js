@@ -162,7 +162,7 @@
     h += '<div class="tgrp">' + tb('pick', 'Tracé', 'trace', { arg: 'trace', on: S.trace.actif, tip: 'Tracé en plan, profil en long, dévers, terrain naturel et obstacle franchi' })
       + tb('geoPdf', 'Géotechnique', 'geo', { on: !!(S.geo && S.geo.sondages && S.geo.sondages.length), tip: 'Charger le rapport géotechnique (PDF) : sondages et essais pressiométriques' })
       + tb('nota', 'Nota', 'nota', { on: !!(S.nota || '').trim() })
-      + dd('cart', 'Cartouche', 'cartV', di('pick', 'Renseigner le cartouche', 'edit', 'projet') + di('cartOrient', 'Cartouche A4 vertical (210 × 297)', 'cartV', 'v') + di('cartOrient', 'Cartouche A4 horizontal (297 × 210)', 'cartH', 'h') + '<hr>'
+      + dd('cart', 'Cartouche', 'cartV', di('pick', 'Renseigner le cartouche', 'edit', 'projet') + '<hr>'
         + di('cartImg', ct.img ? 'Retirer mon cartouche importé' : 'Importer mon cartouche (SVG, PNG, JPG)', 'cartImg')) + '</div>';
     const lab = { predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', hyp: 'Hypothèses', justif: 'Justification', msg: 'Messages' + (nW ? ' (' + nW + ')' : '') };
     h += '<div class="tgrp r">' + dd('res', 'Résultats', 'metre', Object.keys(lab).map((k) => di('tab', lab[k], k === 'efforts' ? 'ddc' : k === 'hyp' ? 'edit' : k, k)).join(''), { bd: nW || '' })

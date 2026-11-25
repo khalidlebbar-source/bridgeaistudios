@@ -177,7 +177,7 @@
   /* opt : { dims } — orientation du cartouche dans M.S.cartouche.orient ('v' 210 × 297, 'h' 297 × 210) */
   function sheetSVG(M, opt) {
     opt = opt || {};
-    const S = M.S, ct = S.cartouche || {}, orient = ct.orient === 'h' ? 'h' : 'v', Z = layout(orient);
+    const S = M.S, ct = S.cartouche || {}, orient = 'v', Z = layout(orient);   // cartouche toujours A4 vertical (210 × 297)
     const piles = M.supports.filter((x) => x.kind === 'pile');
     const pid = piles.length ? piles.reduce((a, b) => (b.H > a.H ? b : a)).id : null;
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`

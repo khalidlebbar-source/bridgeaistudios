@@ -96,7 +96,7 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   const svgP = C.toSVG(C.planScene(m), { id: 't' }), svgE = C.toSVG(C.elevScene(m), { id: 'u' }), sh = C.sheetSVG(m, {});
   ok(!bad(svgP) && !bad(svgE) && !bad(sh) && /VUE EN PLAN/.test(svgP) && /Altitudes TN/.test(svgE) && /viewBox="0 0 1189 841"/.test(sh) && /width="210\.00" height="297\.00"/.test(sh) && /PLAN D’ENSEMBLE/.test(sh) && /COUPE TRANSVERSALE COURANTE/.test(sh) && /SUR CULÉE C0/.test(sh), 'feuille A0 : cinq vues et cartouche A4 vertical dessiné, sans valeur invalide');
   { const sv = JSON.parse(JSON.stringify(m.S)); sv.cartouche = { orient: 'h', img: 'data:image/png;base64,iVBORw0KGgo=' }; const mh = C.compute(sv), shh = C.sheetSVG(mh, {});
-    ok(!bad(shh) && /width="297" height="210"/.test(shh) && /<image [^>]*href="data:image\/png/.test(shh), 'feuille A0 : cartouche A4 horizontal avec cartouche importé');
+    ok(!bad(shh) && /width="210" height="297"/.test(shh) && /<image [^>]*href="data:image\/png/.test(shh), 'feuille A0 : cartouche importé placé en A4 vertical');
     sv.cartouche = { orient: 'v', img: 'javascript:alert(1)' }; ok(!/<image/.test(C.sheetSVG(C.compute(sv), {})), 'feuille A0 : image de cartouche invalide ignorée'); }
   ok(!bad(C.buildDXF(m, {})), 'DXF avec vue en plan sans valeur invalide');
   const m0 = C.compute(C.defaults('rail'));
