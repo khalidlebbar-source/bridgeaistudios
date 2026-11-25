@@ -185,6 +185,55 @@
     if (id === 'travees') return g('Travées', it('addSpan', '', false, ico('addSpan'), 'Ajouter') + it('delSpan', '', false, ico('delSpan'), 'Retirer') + it('continu', '', S.tablier.continu, ico('continu'), 'Continues'));
     return '';
   }
+  /* ───────── Grande fenêtre d'édition : saisie à gauche, l'élément se dessine en direct à droite ───────── */
+  const ED = $('#ed');
+  let edId = null;
+  const isEdId = (id) => /^[CP]\d+$/.test(id) || ['tablier', 'section', 'profil', 'equip'].includes(id);
+  function openEditor(id) { edId = /^(section|profil|equip)$/.test(id) ? 'tablier' : id; selId = edId; closePop(); ED.hidden = false; renderEditor(); applySel(); }
+  function closeEditor() { ED.hidden = true; edId = null; }
+  /* détail d'élévation autour d'un appui : coupe longitudinale recadrée */
+  function elevDetail(sp) {
+    const sc = C.elevScene(M), xc = sp.kind === 'culee' ? sp.x + (sp.j === 0 ? -5 : 5) : sp.x;
+    const half = Math.max(10, (sp.fo.B || sp.fo.Lx || 4) / 2 + 6, sp.kind === 'culee' ? 14 : 0), a = xc - half, b = xc + half;
+    const inn = (x) => x >= a && x <= b, cl = (q) => [Math.max(a, Math.min(b, q[0])), q[1]];
+    const P = [];
+    sc.P.forEach((p) => {
+      if (p.k === 'poly') { if (p.pts.some((q) => inn(q[0])) || (Math.min(...p.pts.map((q) => q[0])) < a && Math.max(...p.pts.map((q) => q[0])) > b)) P.push(Object.assign({}, p, { pts: p.pts.map(cl) })); }
+      else if (p.k === 'dim' || p.k === 'brk') { if (inn(p.a[0]) && inn(p.b[0])) P.push(p); }
+      else if (p.k === 'text') { if (inn(p.p[0])) P.push(p); }
+    });
+    return C.toSVG({ P, ech: sc.ech }, { width: 900, kp: 3.2, pad: 14, id: 'ed-l', dims: showDims });
+  }
+  function edView(title, svg) { return `<figure class="edf"><figcaption>${title}</figcaption><div class="edd">${svg.replace(/ width="\d+" height="\d+"/, '')}</div></figure>`; }
+  function renderEditor() {
+    if (!edId || ED.hidden || !M) return;
+    const id = edId, sp = /^[CP]\d+$/.test(id) && M.supports.find((x) => x.id === id);
+    if (/^[CP]\d+$/.test(id) && !sp) { closeEditor(); return; }
+    let left = galleryHTML(id), right = '', title;
+    const keep = selId; selId = id;
+    if (sp) {
+      title = sp.kind === 'culee' ? 'Culée ' + id + ' — ' + C.CULEES[sp.geo.type].nom.toLowerCase() : 'Pile ' + id + ' — ' + C.PILES[sp.geo.type].nom.toLowerCase();
+      left += sketchHTML(sp) + `<table class="pg"><tbody>${supDims(sp)}</tbody></table>`;
+      right = edView('Coupe transversale sur ' + (sp.kind === 'culee' ? 'culée ' : 'pile ') + id, C.toSVG(C.secScene(M, { part: sp.kind === 'culee' ? 'culee' : 'pile', id }), { width: 900, kp: 3.2, pad: 14, id: 'ed-t', dims: showDims }))
+        + edView('Coupe longitudinale — détail', elevDetail(sp));
+      if (sp.kind === 'culee' && sp.j !== 0) right = right.replace('Coupe transversale sur culée ' + id, 'Coupe transversale sur culée (type commun aux deux culées)');
+    } else {
+      title = 'Tablier — ' + C.TYPES[S.tablier.type].nom;
+      const parts = ['tablier', 'section', 'profil', 'equip'].map((k) => { selId = k; const p = propsHTML(); return p.h; }).join('');
+      left += parts;
+      right = edView('Coupe transversale courante du tablier', C.toSVG(C.secScene(M, { part: 'tablier' }), { width: 900, kp: 3.2, pad: 14, id: 'ed-t', dims: showDims }))
+        + edView('Coupe longitudinale', C.toSVG(C.elevScene(M), { width: 1200, kp: 3, pad: 12, id: 'ed-l', dims: showDims }));
+    }
+    selId = keep;
+    $('#edT').textContent = title;
+    const sc = $('#edIn').scrollTop;
+    $('#edIn').innerHTML = left; $('#edIn').scrollTop = sc;
+    $('#edView').innerHTML = right;
+  }
+  $('#edX').addEventListener('click', closeEditor);
+  ED.addEventListener('pointerdown', (ev) => { if (ev.target === ED) closeEditor(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !ED.hidden && !document.querySelector('.wz,.dlg')) { ev.stopPropagation(); closeEditor(); } }, true);
+
   let popAt = null;
   function placePop() {
     if (pop.hidden) return;
@@ -495,7 +544,7 @@
   function keepFocus(fn) {
     const a = document.activeElement, k = a && a.dataset ? a.dataset.k : null;
     const isTxt = a && (a.type === 'text' || a.tagName === 'TEXTAREA');
-    const raw = k ? a.value : null, pos = k && isTxt ? a.selectionStart : null, zone = k && a.closest ? a.closest('#ribbon,#props,#res') : null;
+    const raw = k ? a.value : null, pos = k && isTxt ? a.selectionStart : null, zone = k && a.closest ? a.closest('#ribbon,#props,#res,#edIn') : null;
     const scr = zone ? zone.scrollTop : 0;
     rendering = true;
     try { fn(); } finally { rendering = false; }
@@ -1099,7 +1148,7 @@
     if (M.trace) { S.piles.hauteurs = M.S.piles.hauteurs.slice(); S.culees.hauteurs = M.S.culees.hauteurs.slice(); S.biais = M.S.biais; }
     try { M.an = C.analyse(M); } catch (err) { console.error(err); M.an = null; }
     if (full !== 'nohist') pushHist();
-    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); });
+    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); renderEditor(); });
     renderStatus();
     save();
   }
@@ -1117,7 +1166,7 @@
       if (!isTable()) lastGraphic = view;
     }
     renderTree(); renderProps(); renderRibbon();
-    if (o.pop !== false && !isTable()) openPop(o.at);
+    if (o.pop !== false && !isTable()) { if (isEdId(id) && o.at !== undefined) openEditor(id); else openPop(o.at); }
     if (view !== v0) renderView(); else applySel();
     if (o.reveal) { const n = $(`#tree [data-node="${id}"]`); if (n) n.scrollIntoView({ block: 'nearest' }); }
   }
@@ -1293,7 +1342,7 @@
     el.value = ['tablier.h', 'profil.largeurForcee', 'hyp.kExc', 'hyp.qTrottoir'].includes(el.dataset.k) || /\.dim\./.test(el.dataset.k) ? (v ? show(v) : '') : show(v);
     recompute(false);
   };
-  ['#props', '#ribbon', '#res'].forEach((s) => {
+  ['#props', '#ribbon', '#res', '#edIn'].forEach((s) => {
     const r = $(s);
     r.addEventListener('input', onInput); r.addEventListener('change', onChange); r.addEventListener('focusout', onBlur);
     r.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.dataset && ev.target.dataset.k) ev.target.blur(); });
