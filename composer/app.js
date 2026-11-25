@@ -294,19 +294,63 @@
   const pBtns = (b) => `<tr class="btns"><td colspan="2">${b}</td></tr>`;
   const OUINON = (b) => (b ? 'oui' : 'non');
 
-  /* appui : dimensions seulement (les efforts et le métré restent dans les tableaux de résultats) */
+  /* appui : croquis coté où l'on saisit les dimensions (vide = valeur automatique, affichée en grisé) */
+  function sketchHTML(s) {
+    const isC = s.kind === 'culee', g = s.geo, tr = M.trace && M.trace.sup[s.j].H != null;
+    const dp = isC ? 'culees.dim.' : 'piles.dim.';
+    const box = (x, y, inner, ro) => `<label class="ski${ro ? ' ro' : ''}" style="left:${x}%;top:${y}%">${inner}</label>`;
+    const dim = (k, x, y, auto, pre, unit) => { const v = getPath(S, dp + k); return box(x, y, `<b>${pre}</b><input type="text" inputmode="decimal" data-k="${dp + k}" value="${v > 0 ? esc(show(v)) : ''}" placeholder="${esc(fr(auto, k === 'n' ? 0 : 2))}" aria-label="${pre}"><i>${unit == null ? 'm' : unit}</i>`); };
+    const hIn = (x, y) => (tr ? box(x, y, `<b>H</b><span>${fr(s.H, 2)}</span><i>m · tracé</i>`, true)
+      : box(x, y, `<b>H</b><input type="text" inputmode="decimal" data-k="${isC ? 'culees.hauteurs.' + (s.j === 0 ? 0 : 1) : 'piles.hauteurs.' + (s.j - 1)}" value="${esc(show(s.H))}" aria-label="Hauteur"><i>m</i>`));
+    const C_ = 'fill:#e9ecef;stroke:#2b2e36;stroke-width:1.2', Dm = 'stroke:#e03131;stroke-width:.8;fill:none', Sl = 'fill:#f3eee2;stroke:none';
+    const r = (x, y, w, h, st) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" style="${st || C_}"/>`;
+    const ln = (x1, y1, x2, y2, st) => `<path d="M${x1} ${y1}L${x2} ${y2}" style="${st || Dm}"/>`;
+    const dv = (x, y1, y2) => ln(x, y1, x, y2) + ln(x - 4, y1, x + 4, y1) + ln(x - 4, y2, x + 4, y2);
+    const dh = (y, x1, x2) => ln(x1, y, x2, y) + ln(x1, y - 4, x1, y + 4) + ln(x2, y - 4, x2, y + 4);
+    const f = s.fo, fd = f.mode === 'pieux' ? f.n + ' pieux Ø ' + fr(f.D, 2) + ' — L ' + fr(f.Lp, 1) + ' m' : 'Semelle ' + fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m';
+    const sol = r(0, 196, 320, 44, Sl) + ln(0, 196, 320, 196, 'stroke:#7a8b5a;stroke-width:1');
+    const fond = (x, w) => r(x, 182, w, 18) + (f.mode === 'pieux' ? [0.2, 0.5, 0.8].map((k) => r(x + w * k - 6, 200, 12, 30, 'fill:#dee2e6;stroke:#2b2e36;stroke-width:1')).join('') : '')
+      + `<text x="160" y="${f.mode === 'pieux' ? 238 : 214}" font-size="10" text-anchor="middle" fill="#3a4352">${esc(fd)}</text>`;
+    let svg = '', ins = '';
+    if (!isC) {
+      const t = g.type, ch = g.ch, fut = g.fut;
+      if (t === 'colonnes') {
+        svg = sol + fond(50, 220) + r(30, 34, 260, 30) + [80, 160, 240].map((x) => r(x - 13, 64, 26, 118, 'fill:#e3e6ea;stroke:#2b2e36;stroke-width:1.2')).join('')
+          + dv(300, 34, 64) + dh(78, 67, 93) + dv(14, 34, 182) + `<text x="160" y="160" font-size="10" text-anchor="middle" fill="#495057">${fut.n} colonnes</text>`;
+        ins = dim('hch', 93, 20.5, ch.h, 'h') + dim('D', 25, 26, fut.D, 'Ø') + dim('n', 50, 44, fut.n, 'n', '') + hIn(10, 46);
+      } else if (t === 'voile') {
+        svg = sol + fond(90, 140) + (ch ? r(120, 34, 80, 24) : '') + r(140, ch ? 58 : 34, 40, ch ? 124 : 148) + dh(28, 140, 180) + dv(14, 34, 182)
+          + `<text x="160" y="125" font-size="10" text-anchor="middle" fill="#495057" transform="rotate(-90 160 125)">voile L ${fr(fut.L, 2)} m</text>`;
+        ins = dim('e', 50, 8, fut.e, 'e') + hIn(10, 46) + (ch ? box(82, 19, `<i>tête ${fr(ch.b, 2)} × ${fr(ch.h, 2)}</i>`, true) : '');
+      } else {
+        svg = sol + fond(70, 180) + `<path d="M20 34H300V54L${160 + 30} 74H${160 - 30}L20 54Z" style="${C_}"/>` + r(130, 74, 60, 108) + dv(306, 34, 74) + dh(120, 130, 190) + dv(10, 34, 182);
+        ins = dim('hch', 93, 22, ch.h, 'h') + dim('bf', 50, 42, fut.b, 'b') + dim('a', 50, 62, fut.a, 'ép.') + hIn(10, 46);
+      }
+    } else {
+      const so = g.sommier, sg = g.egg, hgg = g.hgg, rt = g.retours;
+      svg = sol + fond(100, 120) + r(150, 14, 10, 36) + (so ? r(120, 50, 80, 26) : '')
+        + `<path d="M200 14H312V${so ? 76 : 120}H200" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>` + `<text x="256" y="${so ? 68 : 110}" font-size="9" text-anchor="middle" fill="#868e96">mur en retour</text>`
+        + dh(8, 200, 312);
+      if (g.type === 'enterree') {
+        svg += r(147, 76, 26, 106, 'fill:#e3e6ea;stroke:#2b2e36;stroke-width:1.2') + dv(108, 50, 76) + dh(92, 120, 200) + dv(14, 50, 182)
+          + `<path d="M120 182L60 100" style="stroke:#a59a88;stroke-width:1;stroke-dasharray:4 3"/><text x="60" y="160" font-size="9" fill="#868e96">talus</text>`;
+        ins = dim('bs', 50, 36, so.b, 'b') + dim('hs', 27, 26, so.h, 'h') + (g.colonnes ? dim('D', 60, 56, g.colonnes.D, 'Ø') : '') + dim('Lmr', 80, 3.5, rt.L, 'L') + hIn(10, 52);
+      } else {
+        const m = g.mur;
+        svg += r(145, so ? 76 : 50, 30, so ? 106 : 132) + `<path d="M175 50L320 50L320 196L175 196" style="fill:#f3eee2;stroke:none"/>` + dh(98, 145, 175) + dv(14, 50, 182) + (so ? dv(108, 50, 76) + dh(40, 120, 200) : '');
+        ins = dim('ef', 50, 44, m.e, 'e') + (so ? dim('bs', 50, 13.5, so.b, 'b') + dim('hs', 27, 26, so.h, 'h') : '') + dim('Lmr', 80, 3.5, rt.L, 'L') + hIn(10, 52);
+      }
+      svg += `<text x="155" y="11" font-size="9" text-anchor="end" fill="#495057">garde-grève ${fr(sg, 2)}</text>`;
+      void hgg;
+    }
+    return `<div class="sk"><svg viewBox="0 0 320 240" aria-hidden="true">${svg}</svg>${ins}</div>`;
+  }
   function supDims(s) {
     const f = s.fo, isC = s.kind === 'culee', k = isC ? 'fond.culees' : 'fond.piles';
-    let h = s.geo.parts.map((p) => { const m = String(p.des).match(/^(.*?)\s+(\d.*)$/); return pRO(esc(m ? m[1] : p.des), esc(m ? m[2] : '')); }).join('');
-    h += G('Fondation') + pSel('Type', k, [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux forés']]);
-    if (f.mode === 'superficielle') h += pRO('Semelle B × L × e', fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m');
-    else {
-      h += pNum('Diamètre des pieux', 'fond.diam', 'm') + pNum('Longueur des pieux', 'fond.long', 'm')
-        + pRO('Pieux', f.n + ' (' + f.nr + ' × ' + f.m + ')');
-      if (f.e > 0) h += pRO('Massif', fr(f.Lx, 2) + ' × ' + fr(f.Ly, 2) + ' × ' + fr(f.e, 2) + ' m');
-    }
-    if (isC && S.usage !== 'rail') h += G('Équipement') + pChk('Dalle de transition', 'culees.dalleTransition');
-    return h;
+    let h = G('Fondation') + pSel('Type', k, [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux forés']]);
+    if (f.mode === 'pieux') h += pNum('Diamètre des pieux', 'fond.diam', 'm') + pNum('Longueur des pieux', 'fond.long', 'm');
+    if (isC && S.usage !== 'rail') h += pChk('Dalle de transition', 'culees.dalleTransition');
+    return h + pNote('Cases vides : dimension automatique (valeur en grisé). Fondation dimensionnée d’après la descente de charges.');
   }
 
   function propsHTML() {
@@ -415,10 +459,10 @@
       const s = M.supports.find((x) => x.id === id);
       if (s.kind === 'culee') {
         sub = 'Culée ' + id + ' — ' + C.CULEES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm')) + pNote('H : du dessus de la fondation au sommier d’appui.') + supDims(s);
+        h = supDims(s);
       } else {
         sub = 'Pile ' + id + ' — ' + C.PILES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm')) + supDims(s);
+        h = supDims(s);
       }
     } else if (id === 'equip') {
       sub = 'Équipements';
@@ -429,7 +473,7 @@
     }
     return { h: `<table class="pg"><tbody>${h}</tbody></table>`, sub };
   }
-  function renderProps() { const p = propsHTML(); $('#props').innerHTML = galleryHTML(selId) + p.h; $('#propSub').textContent = p.sub; if (typeof placePop === 'function') placePop(); }
+  function renderProps() { const p = propsHTML(); const sp = /^[CP]\d+$/.test(selId) && M.supports.find((x) => x.id === selId); $('#props').innerHTML = galleryHTML(selId) + (sp ? sketchHTML(sp) : '') + p.h; $('#propSub').textContent = p.sub; if (typeof placePop === 'function') placePop(); }
 
   /* conserve la saisie en cours (focus, texte brut, curseur) pendant un rendu */
   let rendering = false;
@@ -1231,7 +1275,7 @@
     clearTimeout(tm);
     S = C.normalize(S);
     const v = getPath(S, el.dataset.k);
-    el.value = ['tablier.h', 'profil.largeurForcee', 'hyp.kExc', 'hyp.qTrottoir'].includes(el.dataset.k) ? (v ? show(v) : '') : show(v);
+    el.value = ['tablier.h', 'profil.largeurForcee', 'hyp.kExc', 'hyp.qTrottoir'].includes(el.dataset.k) || /\.dim\./.test(el.dataset.k) ? (v ? show(v) : '') : show(v);
     recompute(false);
   };
   ['#props', '#ribbon', '#res'].forEach((s) => {

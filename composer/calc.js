@@ -215,6 +215,11 @@
     while (hc.length < 2) hc.push(hc.length ? hc[0] : 3.5);
     out.culees.hauteurs = hc.slice(0, 2);
     out.culees.dalleTransition = !!out.culees.dalleTransition;
+    // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
+    const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
+    out.piles.dim = dims(out.piles.dim, ['e', 'D', 'n', 'hch', 'a', 'bf'], { n: 12, D: 4, e: 5, a: 6, hch: 5 });
+    if (out.piles.dim.n) out.piles.dim.n = Math.max(1, Math.round(out.piles.dim.n));
+    out.culees.dim = dims(out.culees.dim, ['D', 'hs', 'bs', 'Lmr', 'ef'], { D: 4, hs: 5, bs: 6, Lmr: 15, ef: 4 });
     const p = out.profil;
     p.roulable = clamp(num(p.roulable, 8), 3, 30);
     p.trottoirG = clamp(num(p.trottoirG, 1.25), 0, 5);
@@ -628,12 +633,13 @@
 
   /* ───────── Appuis : géométrie ───────── */
   function pileGeom(S, H, Lsup, iso, W) {
-    const rail = S.usage === 'rail', t = S.piles.type;
+    const rail = S.usage === 'rail', t = S.piles.type, dm = S.piles.dim || {};
+    const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
     const bt = (iso ? 2.6 : 1.2) + (rail ? 0.2 : 0);
     const parts = [];
     let lx, ly, ch = null, fut;
     if (t === 'voile') {
-      const ev = Math.max(rail ? 1.2 : 0.8, r05(H / 15));
+      const ev = ov('e', Math.max(rail ? 1.2 : 0.8, r05(H / 15)));
       let hch = 0;
       if (ev < bt) { hch = 0.8; ch = { b: bt, h: hch, L: Lsup, kind: 'tete' }; }
       const Hf = Math.max(0.5, H - hch);
@@ -641,20 +647,20 @@
       parts.push({ des: 'Fût en voile ' + fr(ev, 2) + ' × ' + fr(Lsup, 2) + ' m', V: ev * Lsup * Hf, coff: 2 * (ev + Lsup) * Hf, ratio: 100 });
       lx = ev; ly = Lsup;
     } else if (t === 'colonnes') {
-      const D = H > 15 ? 1.50 : (rail ? 1.40 : 1.20);
+      const D = ov('D', H > 15 ? 1.50 : (rail ? 1.40 : 1.20));
       const Lc = Math.max(W, Lsup), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
-      const nc = Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1);
+      const nc = ov('n', Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1));
       const s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0;
-      const hch = r10(Math.max(1.2, 0.14 * Lc));
+      const hch = ov('hch', r10(Math.max(1.2, 0.14 * Lc)));
       ch = { b: Math.max(bt, D + 0.6), h: hch, L: Lc, kind: 'chevetre' };
       const Hf = Math.max(0.5, H - hch);
       fut = { kind: 'colonnes', D, n: nc, s, H: Hf };
       parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m', V: nc * Math.PI * D * D / 4 * Hf, coff: nc * Math.PI * D * Hf, ratio: 160 });
       lx = D; ly = Lc;
     } else {
-      const a = Math.max(rail ? 1.5 : 1.2, r05(H / 12));
-      const bf = clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0));
-      const h1 = rail ? 2.0 : 1.6, h2 = 0.8;
+      const a = ov('a', Math.max(rail ? 1.5 : 1.2, r05(H / 12)));
+      const bf = ov('bf', clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0)));
+      const h1 = ov('hch', rail ? 2.0 : 1.6), h2 = Math.min(0.8, h1 * 0.5);
       ch = { b: Math.max(bt, a + 0.2), h: h1, h2, L: Lsup, bf, kind: 'marteau' };
       const Hf = Math.max(0.5, H - h1);
       fut = { kind: 'marteau', a, b: bf, H: Hf };
@@ -675,7 +681,8 @@
   }
 
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
-    const rail = S.usage === 'rail', t = S.culees.type, parts = [];
+    const rail = S.usage === 'rail', t = S.culees.type, parts = [], dm = S.culees.dim || {};
+    const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
     const egg = rail ? 0.40 : 0.30, hgg = h + 0.30;
     const bt = (iso ? 2.6 : 1.6) + (rail ? 0.2 : 0);
     const dab = 0.6;
@@ -683,26 +690,26 @@
     const Ht = H + hgg;
     let lx, ly = W, sommier = null, mur = null, colonnes = null, retours;
     if (t === 'enterree') {
-      const bs = Math.max(bt, dab + 0.05 + egg + 0.6), hs = r10(Math.max(1.2, 0.14 * W));
+      const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6)), hs = ov('hs', r10(Math.max(1.2, 0.14 * W)));
       sommier = { b: bs, h: hs, L: W };
       parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 });
       const Hc = H - hs;
       if (Hc > 0.5) {
-        const D = rail ? 1.40 : 1.20, nc = Math.max(2, Math.round((W - 2 * D) / 2.7) + 1);
+        const D = ov('D', rail ? 1.40 : 1.20), nc = Math.max(2, Math.round((W - 2 * D) / 2.7) + 1);
         colonnes = { D, n: nc, H: Hc, s: (W - 2 * D) / (nc - 1) };
         parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m (enterrées)', V: nc * Math.PI * D * D / 4 * Hc, coff: nc * Math.PI * D * Hc, ratio: 160 });
         lx = D; ly = W;
       } else lx = bs;
-      const Lmr = clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5), hmr = hgg + hs, em = rail ? 0.60 : 0.50;
+      const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = rail ? 0.60 : 0.50;
       retours = { L: Lmr, h: hmr, e: em, h2: 0.9 };
       parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
     } else {
-      const ef = Math.max(r05(H / 10), 0.80);
-      const bs = Math.max(bt, dab + 0.05 + egg + 0.6, ef), hs = bs > ef + 0.05 ? 1.0 : 0;
+      const ef = ov('ef', Math.max(r05(H / 10), 0.80));
+      const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6, ef)), hs = bs > ef + 0.05 ? ov('hs', 1.0) : 0;
       mur = { e: ef, H: H - hs, L: W };
       if (hs) { sommier = { b: bs, h: hs, L: W }; parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 }); }
       parts.push({ des: 'Mur de front ' + fr(ef, 2) + ' × ' + fr(H - hs, 2) + ' m', V: ef * (H - hs) * W, coff: 2 * (H - hs) * W + 2 * ef * (H - hs), ratio: 90 });
-      const Lmr = r05(0.8 * Ht + 1.0), em = Math.max(0.4, r05(Ht / 12)), hm = 0.7 * Ht;
+      const Lmr = ov('Lmr', r05(0.8 * Ht + 1.0)), em = Math.max(0.4, r05(Ht / 12)), hm = 0.7 * Ht;
       retours = { L: Lmr, h: hm, e: em };
       parts.push({ des: 'Murs en retour 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * hm * em, coff: 4 * Lmr * hm, ratio: 90 });
       lx = Math.max(ef, hs ? bs : 0);
