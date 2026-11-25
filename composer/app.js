@@ -294,23 +294,18 @@
   const pBtns = (b) => `<tr class="btns"><td colspan="2">${b}</td></tr>`;
   const OUINON = (b) => (b ? 'oui' : 'non');
 
-  function supRO(s) {
-    const f = s.fo;
-    let h = G('Efforts (descente de charges)') + pRO('G tablier', f0(s.G) + ' kN') + pRO('Q exploitation', f0(s.Q) + ' kN') + pRO('ELS / ELU', f0(s.els) + ' / ' + f0(s.elu) + ' kN')
-      + pRO('Poids de l’appui', f0(s.Gapp) + ' kN') + pRO('N en tête de fondation', '<b>' + f0(s.N) + ' kN</b>');
-    h += G('Éléments') + s.geo.parts.map((p) => pRO(esc(p.des), fx(p.V, 1) + ' m³')).join('');
-    h += G('Fondation');
-    if (f.mode === 'superficielle') {
-      h += pRO('Semelle B × L × e', fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m');
-      const ok = f.q / 1000 <= S.fond.sigma * 1.001;
-      h += pRO('Contrainte moyenne', `<span style="color:${ok ? 'var(--ok)' : 'var(--danger)'}">${fr(f.q / 1000, 3)} MPa ≤ ${fr(S.fond.sigma, 2)}</span>`);
-    } else {
-      h += pRO('Pieux', f.n + ' × Ø ' + fr(f.D, 2) + ' m (' + f.nr + ' × ' + f.m + '), L = ' + fr(f.Lp, 1) + ' m');
+  /* appui : dimensions seulement (les efforts et le métré restent dans les tableaux de résultats) */
+  function supDims(s) {
+    const f = s.fo, isC = s.kind === 'culee', k = isC ? 'fond.culees' : 'fond.piles';
+    let h = s.geo.parts.map((p) => { const m = String(p.des).match(/^(.*?)\s+(\d.*)$/); return pRO(esc(m ? m[1] : p.des), esc(m ? m[2] : '')); }).join('');
+    h += G('Fondation') + pSel('Type', k, [['superficielle', 'Semelle superficielle'], ['pieux', 'Pieux forés']]);
+    if (f.mode === 'superficielle') h += pRO('Semelle B × L × e', fr(f.B, 2) + ' × ' + fr(f.L, 2) + ' × ' + fr(f.e, 2) + ' m');
+    else {
+      h += pNum('Diamètre des pieux', 'fond.diam', 'm') + pNum('Longueur des pieux', 'fond.long', 'm')
+        + pRO('Pieux', f.n + ' (' + f.nr + ' × ' + f.m + ')');
       if (f.e > 0) h += pRO('Massif', fr(f.Lx, 2) + ' × ' + fr(f.Ly, 2) + ' × ' + fr(f.e, 2) + ' m');
-      h += pRO('Effort par pieu', `<span style="color:${f.Npieu <= f.Q * 1.001 ? 'var(--ok)' : 'var(--danger)'}">${fr(f.Npieu / 1000, 2)} MN ≤ ${fr(f.Q / 1000, 2)}</span>`);
     }
-    h += G('Appareils d’appui');
-    s.lines.forEach((l) => { h += pRO((s.lines.length > 1 ? (l.side === 'G' ? 'Ligne gauche' : 'Ligne droite') : 'Ligne') + ' : ' + l.nb + ' u', esc(l.app.des)); h += pRO('σ moyenne · ux', (l.app.sigma ? fr(l.app.sigma, 1) + ' MPa · ' : '') + fr(l.ux, 0) + ' mm'); });
+    if (isC && S.usage !== 'rail') h += G('Équipement') + pChk('Dalle de transition', 'culees.dalleTransition');
     return h;
   }
 
@@ -420,10 +415,10 @@
       const s = M.supports.find((x) => x.id === id);
       if (s.kind === 'culee') {
         sub = 'Culée ' + id + ' — ' + C.CULEES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm')) + pNote('H : du dessus de la fondation au sommier d’appui.') + supRO(s);
+        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'culees.hauteurs.' + (s.j === 0 ? 0 : 1), 'm')) + pNote('H : du dessus de la fondation au sommier d’appui.') + supDims(s);
       } else {
         sub = 'Pile ' + id + ' — ' + C.PILES[s.geo.type].nom.toLowerCase();
-        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm')) + supRO(s);
+        h = G('Géométrie') + (M.trace && M.trace.sup[s.j].H != null ? pRO('Hauteur H', '<b>' + fr(s.H, 2) + ' m</b> (déduite du tracé)') : pNum('Hauteur H', 'piles.hauteurs.' + (s.j - 1), 'm')) + supDims(s);
       }
     } else if (id === 'equip') {
       sub = 'Équipements';
