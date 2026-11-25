@@ -158,7 +158,7 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .canvas svg.sheet text[data-tag]{cursor:pointer}
 .canvas svg.sheet svg path[data-tag].sel{stroke-width:1.6 !important}
 .axes{position:absolute;left:10px;bottom:8px;pointer-events:none;width:46px;height:46px}
-.vinfo{position:absolute;right:10px;top:8px;pointer-events:none;font-size:11px;color:var(--mute);text-align:right;background:rgba(255,255,255,.85);padding:2px 4px;border-radius:2px}
+.vinfo{position:absolute;left:10px;top:8px;pointer-events:none;font-size:11px;color:var(--mute);text-align:right;background:rgba(255,255,255,.85);padding:2px 4px;border-radius:2px}
 .hsplit{cursor:row-resize;background:var(--chrome);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .dock{display:flex;flex-direction:column;min-height:0;background:#fff}
 .dtabs{flex:none;display:flex;gap:0;background:var(--chrome);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
@@ -428,6 +428,52 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .dlg footer{display:flex;justify-content:flex-end;gap:8px}
 .dlg footer button{border:1px solid var(--line2);background:#fff;border-radius:4px;padding:5px 14px;cursor:pointer;font-size:12px}
 .dlg footer button.pri{background:var(--acc);border-color:var(--acc2);color:#fff}.dlg footer button:hover{filter:brightness(.97)}
+
+/* ───── Interface « plan d'ensemble » : la feuille A0 est l'espace de travail ───── */
+.topbar{flex:none;display:flex;align-items:center;gap:10px;min-height:46px;padding:4px 10px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.topbar::-webkit-scrollbar{display:none}
+.steps{display:flex;align-items:center;gap:2px;flex:none}
+.step{display:flex;align-items:center;gap:7px;border:1px solid transparent;border-radius:20px;padding:4px 11px 4px 4px;background:none;cursor:pointer;font:12px/1.2 var(--ui);color:#3a4352;white-space:nowrap}
+.step i{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:#e9ecef;font-style:normal;font-weight:700;font-size:11px;color:#3a4352}
+.step small{display:block;font-size:10px;color:var(--mute)}
+.step:hover{background:var(--hov)}
+.step.on{border-color:#b9cdf0;background:#f2f7ff;color:#14171f}.step.on i{background:var(--acc);color:#fff}
+.step.ok i{background:#2b8a3e;color:#fff}
+.steps .sarr{width:14px;height:1px;background:#c9ced8}
+.tgrp{display:flex;align-items:center;gap:1px;padding-left:8px;border-left:1px solid var(--line);flex:none}
+.tgrp.r{margin-left:auto}
+.tbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid transparent;background:none;border-radius:6px;padding:5px 7px;cursor:pointer;font:12px var(--ui);color:#1b2230;white-space:nowrap}
+.tbtn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tbtn:hover{background:var(--hov)}.tbtn.on{background:#e8f0fe;border-color:#b9cdf0}
+.tbtn .bd{background:#e8590c;color:#fff;border-radius:8px;font-size:10px;padding:0 5px;margin-left:2px}
+.dd{position:relative}.ddm{display:none;position:fixed;z-index:60;min-width:230px;background:#fff;border:1px solid var(--line2);border-radius:8px;box-shadow:0 10px 28px rgba(20,30,50,.18);padding:4px}
+.dd.open .ddm{display:block}
+.ddm button{display:flex;width:100%;align-items:center;gap:8px;border:none;background:none;text-align:left;padding:7px 9px;border-radius:5px;cursor:pointer;font:12px var(--ui);color:#1b2230}
+.ddm button:hover{background:var(--hov)}.ddm button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
+.ddm hr{border:none;border-top:1px solid var(--line);margin:3px 0}
+.work.board{display:block;position:relative}
+.work.board>.center{position:absolute;inset:0}
+.canvas svg.sheet{background:#7f8792}
+.canvas svg.zone{cursor:pointer}
+.pop{position:absolute;z-index:30;width:350px;max-width:calc(100% - 16px);max-height:calc(100% - 16px);display:flex;flex-direction:column;background:#fff;border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 34px rgba(20,30,50,.22)}
+.pop[hidden]{display:none}
+.pop-h{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line);font-size:12.5px;cursor:move}
+.pop-x{border:none;background:none;font-size:18px;line-height:1;width:26px;height:26px;border-radius:5px;cursor:pointer;color:var(--mute)}.pop-x:hover{background:var(--hov);color:#14171f}
+.pop .props{flex:1;min-height:0;overflow:auto}
+.gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:9px 10px 4px}
+.gal.c2{grid-template-columns:repeat(2,1fr)}
+.gal-t{grid-column:1/-1;font-size:11px;font-weight:600;color:#3a4352;margin-top:2px}
+.gal button{display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--line2);border-radius:7px;background:#fff;padding:7px 2px 5px;cursor:pointer;font:11px var(--ui);color:#1b2230}
+.gal button:hover{border-color:#9fb6e0}.gal button.on{border-color:var(--acc);background:#f2f7ff;box-shadow:0 0 0 1px var(--acc) inset}
+.gal svg{width:24px;height:24px;fill:none;stroke:#2b3445;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.gal svg.w{width:62px;height:25px;fill:none;stroke:#2b3445;stroke-width:1.3;stroke-linejoin:round}
+.gal small{font-size:9.5px;color:var(--mute)}
+.pane.left.ai{position:absolute;left:12px;bottom:12px;z-index:28;width:360px;max-width:calc(100% - 24px);height:min(540px,calc(100% - 24px));border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 34px rgba(20,30,50,.22);overflow:hidden}
+.pane.left.ai[hidden]{display:none}
+.ai-fab{position:absolute;left:12px;bottom:12px;z-index:27;display:flex;align-items:center;gap:7px;border:1px solid #d9c27f;background:#fffaf0;border-radius:22px;padding:8px 14px 8px 11px;cursor:pointer;font:600 12.5px var(--ui);color:#1b2230;box-shadow:0 6px 18px rgba(20,30,50,.16)}
+.ai-fab svg{width:16px;height:16px;fill:#c9a84c}.ai-fab:hover{background:#fff3d6}
+@media(max-width:999px){html,body{height:100%}body{overflow:hidden}.work.board{display:block;flex:1}.work.board .center{display:grid}.work.board .stage{height:auto;order:0}.work.board .doctabs{order:0}.status{flex-wrap:nowrap;height:23px;overflow:hidden}.status .grow{flex-basis:auto}.pane.left.ai{order:0;border-top:1px solid var(--line2)}.step small{display:none}.tbtn span.l{display:none}}
+@media(max-width:640px){.pop{left:8px !important;right:8px;top:auto !important;bottom:8px;width:auto;max-height:62%}.steps .step span{display:none}.step{padding:4px}}
 </style>
 <script defer src="/_vercel/insights/script.js"></script>
 </head>
@@ -441,21 +487,19 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
   <span class="tb-right"><a href="index.html">← Accueil BridgeAI Studios</a></span>
 </header>
 
-<nav class="menubar" id="menubar" aria-label="Menus">
-  <button class="mtab file" data-m="fichier">Fichier</button>
-  <button class="mtab on" data-m="resultats">Résultats</button>
-</nav>
-<div class="ribbon" id="ribbon" role="toolbar" aria-label="Commandes"></div>
+<nav class="topbar" id="topbar" aria-label="Étapes et commandes"></nav>
+<nav class="menubar" id="menubar" hidden><button class="mtab on" data-m="resultats">Résultats</button></nav>
+<div class="ribbon" id="ribbon" hidden></div>
 
-<div class="work" id="work">
-  <aside class="pane left ai" aria-label="Assistant IA">
-    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</span><span class="ai-acts"><button type="button" class="ai-new" id="aiVoice" title="Lire les réponses à voix haute" aria-label="Lire les réponses à voix haute" aria-pressed="true"><svg viewBox="0 0 20 20"><path d="M3 8h3l4-3.5v11L6 12H3z"/><path class="w" d="M13 7.5a3.5 3.5 0 010 5M15.2 5.3a6.6 6.6 0 010 9.4"/><path class="x" d="M13 8l4 4M17 8l-4 4"/></svg></button><button type="button" class="ai-new" id="aiNew" title="Nouvelle discussion" aria-label="Nouvelle discussion"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button></span></div>
+<div class="work board" id="work">
+  <aside class="pane left ai" id="aiPane" aria-label="Assistant IA" hidden>
+    <div class="ph ai-ph"><span class="ai-t"><svg class="spk" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</span><span class="ai-acts"><button type="button" class="ai-new" id="aiVoice" title="Lire les réponses à voix haute" aria-label="Lire les réponses à voix haute" aria-pressed="true"><svg viewBox="0 0 20 20"><path d="M3 8h3l4-3.5v11L6 12H3z"/><path class="w" d="M13 7.5a3.5 3.5 0 010 5M15.2 5.3a6.6 6.6 0 010 9.4"/><path class="x" d="M13 8l4 4M17 8l-4 4"/></svg></button><button type="button" class="ai-new" id="aiNew" title="Nouvelle discussion" aria-label="Nouvelle discussion"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg></button><button type="button" class="ai-new" id="aiClose" title="Réduire l’assistant" aria-label="Réduire l’assistant"><svg viewBox="0 0 20 20"><path d="M5 8l5 5 5-5"/></svg></button></span></div>
     <div class="chat" id="chat" aria-live="polite"></div>
     <form class="ai-in" id="cmdbar" autocomplete="off">
       <div class="ai-box"><textarea id="cmd" rows="2" aria-label="Message à l’assistant" placeholder="Écrivez à l’assistant…" spellcheck="false"></textarea><button type="button" class="ai-mic" id="aiMic" aria-label="Parler à l’assistant" title="Parler à l’assistant (Alt+V)"><svg viewBox="0 0 20 20"><rect x="7.2" y="2.5" width="5.6" height="10" rx="2.8"/><path d="M4.5 9.8a5.5 5.5 0 0011 0M10 15.3v2.4"/></svg></button><button type="submit" class="ai-go" aria-label="Envoyer" title="Envoyer (Entrée)"><svg viewBox="0 0 20 20"><path d="M10 16V4M5 9l5-5 5 5"/></svg></button></div>
     </form>
   </aside>
-  <div class="vsplit" id="vsplit" title="Redimensionner"></div>
+  <div class="vsplit" id="vsplit" hidden></div>
   <section class="center">
     <div class="doctabs">
       <div class="dtl" id="dtabsList" role="tablist"></div>
@@ -468,15 +512,12 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
         <div class="vinfo" id="vinfo"></div>
       </div>
       <div class="tpane" id="tpane" hidden><div class="dock-b" id="res"></div></div>
+      <aside class="pop" id="pop" hidden aria-label="Propriétés"><div class="pop-h"><b id="propSub"></b><button type="button" class="pop-x" id="popX" aria-label="Fermer">×</button></div><div class="props" id="props"></div></aside>
     </div>
   </section>
-  <div class="vsplit" id="psplit" title="Redimensionner"></div>
-  <aside class="pane right" aria-label="Arborescence et propriétés">
-    <div class="ph">Arborescence de l’ouvrage<small id="treeSub"></small></div>
-    <div class="tree" id="tree" role="tree"></div>
-    <div class="ph ph2">Propriétés<small id="propSub"></small></div>
-    <div class="props" id="props"></div>
-  </aside>
+  <div class="vsplit" id="psplit" hidden></div>
+  <div hidden><div class="tree" id="tree" role="tree"></div><small id="treeSub"></small></div>
+  <button type="button" class="ai-fab" id="aiFab" title="Assistant IA (écrire ou parler)"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 1.8l1.9 5.1 5.1 1.9-5.1 1.9L10 15.8l-1.9-5.1L3 8.8l5.1-1.9z"/></svg>Assistant</button>
 </div>
 <div class="cmenu" id="cmenu" role="menu" hidden></div>
 
@@ -487,8 +528,8 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <div id="print" aria-hidden="true"></div>
 
 <script src="composer/calc.js?v=13"></script>
-<script src="composer/draw.js?v=13"></script>
-<script src="composer/sheet.js?v=13"></script>
+<script src="composer/draw.js?v=20"></script>
+<script src="composer/sheet.js?v=20"></script>
 <script src="composer/dxf.js?v=13"></script>
 <script src="composer/view3d.js?v=13"></script>
 <script src="composer/analysis.js?v=13"></script>
@@ -497,6 +538,6 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <script src="composer/nlp.js?v=13"></script>
 <script src="composer/justif.js?v=13"></script>
 <script src="composer/wizard.js?v=13"></script>
-<script src="composer/app.js?v=14"></script>
+<script src="composer/app.js?v=20"></script>
 </body>
 </html>
