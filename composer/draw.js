@@ -302,7 +302,7 @@
       const [, , , am] = supLine((s0 + s1) / 2, 0);
       text(P, [am.p[0], am.p[1] - W / 2 - mm(9)], ob.nom || 'Oued', { ht: 2.4, lay: 'note' });
     } else if (ob.type === 'voie' || ob.type === 'route') {
-      const s = (ob.pk || t.pk0 + Ltot / 2) - t.pk0, hl = W / 2 / Math.max(0.3, Math.sin(beta)) + 14;
+      const s = (ob.pk || t.pk0 + Ltot / 2) - t.pk0, hl = W / 2 / Math.max(0.3, Math.sin(beta)) + 6;
       const [a, b, d] = supLine(s, hl), nrm = [-d[1], d[0]], e = ob.type === 'voie' ? 2.2 : 4;
       poly(P, [[a[0] - nrm[0] * e, a[1] - nrm[1] * e], [b[0] - nrm[0] * e, b[1] - nrm[1] * e], [b[0] + nrm[0] * e, b[1] + nrm[1] * e], [a[0] + nrm[0] * e, a[1] + nrm[1] * e]], ob.type === 'voie' ? 'ballastP' : 'routeP');
       line(P, a, b, 'axe');

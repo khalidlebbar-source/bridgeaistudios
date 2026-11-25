@@ -17,9 +17,9 @@
   const FX0 = 20, FY0 = 10, FX1 = SW - 10, FY1 = SH - 10; // cadre (marge de reliure à gauche)
   const GAP = 4;
   const ECH = {
-    long: [50, 75, 100, 125, 200, 250, 500, 1000, 2000, 5000],
-    plan: [50, 75, 100, 125, 200, 250, 500, 1000, 2000, 5000],
-    sec: [20, 25, 50, 75, 100, 125, 200, 250, 500],
+    // élévation et vue en plan : la plus grande échelle qui tient, plafonnée à 1/50
+    long: [50, 60, 75, 80, 100, 120, 125, 150, 175, 200, 250, 300, 400, 500, 600, 750, 1000, 1250, 1500, 2000, 2500, 5000],
+    sec: [20, 25, 30, 40, 50, 60, 75, 80, 100, 125, 150, 200, 250, 500],
   };
 
   /* cadres (mm) selon l'orientation du cartouche A4 */
@@ -60,7 +60,7 @@
 
   /* élévation et vue en plan : même échelle, abscisses alignées (axe de C0 sur la même verticale) */
   function placePair(mk1, box1, mk2, box2, scales, opt) {
-    const bx = box1[0], bw = Math.min(box1[2], box2[2]);
+    const bx = box1[0], bw = Math.min(box1[2], box2[2]), Y0 = box1[1], Htot = box2[1] + box2[3] - box1[1];
     let r = null;
     for (const e of scales) {
       const R2 = [[mk1(e), box1, 'zl', 'travees'], [mk2(e), box2, 'zp', 'trace']].map(([sc, box, id, tag]) => {
@@ -70,11 +70,14 @@
       });
       const A = Math.max(R2[0].off, R2[1].off), U = Math.max(...R2.map((q) => A - q.off + q.w));
       r = { R2, A, U, e };
-      if (U <= bw - 2 && R2.every((q) => q.h <= q.box[3] - 2)) break;
+      // les deux vues se partagent la hauteur disponible selon leurs besoins
+      if (U <= bw - 2 && R2[0].h + R2[1].h + GAP <= Htot - 2) break;
     }
-    const k = r.U > bw ? bw / r.U : 1, X0 = bx + (bw - r.U * k) / 2;
+    const k = Math.min(1, r.U > bw ? bw / r.U : 1, (Htot - GAP) / (r.R2[0].h + r.R2[1].h)), X0 = bx + (bw - r.U * k) / 2;
+    const slack = Math.max(0, Htot - GAP - (r.R2[0].h + r.R2[1].h) * k) / 3;
+    let yc = Y0 + slack;
     const out = r.R2.map((q) => {
-      const w = q.w * k, h = q.h * k, x = X0 + (r.A - q.off) * k, y = q.box[1] + (q.box[3] - h) / 2;
+      const w = q.w * k, h = q.h * k, x = X0 + (r.A - q.off) * k, y = yc; yc += h + GAP + slack;
       return q.svg.replace(/^<svg[^>]*>/, `<svg x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" viewBox="${q.vb.join(' ')}" preserveAspectRatio="xMidYMid meet" overflow="visible" class="zone" data-tag="${q.tag}"><rect x="${q.vb[0]}" y="${q.vb[1]}" width="${q.vb[2]}" height="${q.vb[3]}" style="fill:transparent;stroke:none"/>`);
     }).join('');
     return { svg: out, ech: r.e };
@@ -192,12 +195,21 @@
     const ech = [];
     const put = (k, make, scales, id, tag) => { const r = place(make, Z[k], scales, id, opt, tag); ech.push(r.ech); s += r.svg; return r; };
     { const r = placePair((e) => C.elevScene(M, { ech: e }), Z.long, (e) => C.planScene(M, { ech: e }), Z.plan, ECH.long, opt); ech.push(r.ech); s += r.svg; }
-    put('secT', (e) => C.secScene(M, { ech: e, part: 'tablier' }), ECH.sec, 'zt', 'tablier');
-    put('secP', (e) => C.secScene(M, { ech: e, part: pid ? 'pile' : 'culee', id: pid }), ECH.sec, 'zs', pid || 'C' + (M.supports.length - 1));
-    // colonne de droite : coupe sur culée, NOTA, cartouche
+    // coupes du tablier (courante, sur pile, sur culée) : une seule échelle, la plus grande qui convient aux trois cadres
     const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP;
-    const secC = [cx, FY0, cw, top - FY0];
-    Z.secC = secC; put('secC', (e) => C.secScene(M, { ech: e, part: 'culee' }), ECH.sec, 'zc', 'C0');
+    Z.secC = [cx, FY0, cw, top - FY0];
+    const SEC = [
+      ['secT', (e) => C.secScene(M, { ech: e, part: 'tablier' }), 'zt', 'tablier'],
+      ['secP', (e) => C.secScene(M, { ech: e, part: pid ? 'pile' : 'culee', id: pid }), 'zs', pid || 'C' + (M.supports.length - 1)],
+      ['secC', (e) => C.secScene(M, { ech: e, part: 'culee' }), 'zc', 'C0'],
+    ];
+    const fits = (e) => SEC.every(([k, mk, id]) => {
+      const svg = C.toSVG(mk(e), { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false });
+      const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+      return vb[2] / K <= Z[k][2] - 2 && vb[3] / K <= Z[k][3] - 2;
+    });
+    const eSec = ECH.sec.find(fits) || ECH.sec[ECH.sec.length - 1];
+    SEC.forEach(([k, mk, id, tag]) => put(k, mk, [eSec], id, tag));
     s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart, ech, orient, S.nota);
     return s + '</svg>';
   }
