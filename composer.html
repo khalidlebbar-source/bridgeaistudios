@@ -474,11 +474,12 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 .ed-hint{color:var(--mute);font-size:11.5px;margin-left:auto}
 .ed-b{flex:1;min-height:0;display:grid;grid-template-columns:400px minmax(0,1fr)}
 .ed-in{overflow:auto;border-right:1px solid var(--line);padding-bottom:12px}
-.ed-v{overflow:auto;background:#f6f7f9;padding:14px;display:flex;flex-direction:column;gap:14px}
+.ed-v{overflow:auto;background:#f6f7f9;padding:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(300px,1fr);gap:14px;align-content:start}
 .edf{margin:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;flex:1 1 0;min-height:240px;display:flex;flex-direction:column}
+.skx{display:flex;flex-wrap:wrap;gap:6px 12px;margin:6px 10px 10px;font-size:11.5px}.skx label{display:flex;align-items:center;gap:4px}.skx input{width:46px}.skx select{font-size:11.5px}
 .edf figcaption{font-size:11.5px;font-weight:600;color:#3a4352;margin-bottom:4px}
 .edd{flex:1;min-height:0;display:flex}.edd svg{width:100%;height:100%;max-height:100%;overflow:hidden}
-@media(max-width:900px){.ed{padding:0}.ed-box{width:100vw;height:100vh;border-radius:0}.ed-b{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);overflow:auto}.ed-in{border-right:none;border-bottom:1px solid var(--line);overflow:visible}.ed-v{overflow:visible}.edf{min-height:260px}.ed-hint{display:none}}
+@media(max-width:900px){.ed{padding:0}.ed-box{width:100vw;height:100vh;border-radius:0}.ed-b{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);overflow:auto}.ed-in{border-right:none;border-bottom:1px solid var(--line);overflow:visible}.ed-v{overflow:visible;grid-template-columns:1fr}.edf{min-height:260px}.ed-hint{display:none}}
 .skv{margin:6px 10px 2px}.skt{font-size:11px;font-weight:600;color:#3a4352;margin:4px 2px}
 .sk{position:relative;border:1px solid var(--line);border-radius:8px;background:#fbfcfd}
 .ski sub{font-size:8px}
@@ -553,10 +554,10 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fCart" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=24"></script>
-<script src="composer/draw.js?v=22"></script>
+<script src="composer/calc.js?v=25"></script>
+<script src="composer/draw.js?v=23"></script>
 <script src="composer/sheet.js?v=24"></script>
-<script src="composer/dxf.js?v=13"></script>
+<script src="composer/dxf.js?v=14"></script>
 <script src="composer/view3d.js?v=13"></script>
 <script src="composer/analysis.js?v=13"></script>
 <script src="composer/diag.js?v=13"></script>
@@ -564,6 +565,6 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <script src="composer/nlp.js?v=13"></script>
 <script src="composer/justif.js?v=13"></script>
 <script src="composer/wizard.js?v=13"></script>
-<script src="composer/app.js?v=25"></script>
+<script src="composer/app.js?v=26"></script>
 </body>
 </html>

@@ -103,5 +103,15 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   ok(!bad(C.sheetSVG(m0, {})) && !m0.trace, 'feuille A0 sans tracé (pont-rail par défaut)');
 }
 
+
+{ // vues de détail des appuis (coupe longitudinale, coupe en plan, vue en plan du chevêtre / sommier)
+  for (const [pt, ct, fm] of [['colonnes', 'enterree', 'superficielle'], ['voile', 'remblayee', 'pieux'], ['marteau', 'enterree', 'pieux']]) {
+    const S = C.defaults('route'); S.piles.type = pt; S.culees.type = ct; S.fond.piles = fm; S.fond.culees = fm;
+    if (pt === 'voile') { S.piles.dim = { nl: 2, fruit: 2 }; S.piles.bout = 'pointu'; }
+    const Mx = C.compute(S);
+    const okv = Mx.supports.every((sp) => { const D = C.supScenes(Mx, sp.id); return ['lo', 'pl', 'top'].every((k) => !bad(C.toSVG(D[k], { id: 'x' }))); });
+    ok(okv, `vues de détail des appuis (${pt} / ${ct} / ${fm}) sans valeur invalide`);
+  }
+}
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');
 process.exit(fails ? 1 : 0);

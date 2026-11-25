@@ -217,11 +217,12 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'Lv', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'Lv', 'nl', 'fruit', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 2, fruit: 10 });
+    out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
     out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2 });
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
-    [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
+    [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm', 'nl'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
     const p = out.profil;
     p.roulable = clamp(num(p.roulable, 8), 3, 30);
     p.trottoirG = clamp(num(p.trottoirG, 1.25), 0, 5);
@@ -643,12 +644,16 @@
     if (t === 'voile') {
       const ev = ov('e', Math.max(rail ? 1.2 : 0.8, r05(H / 15)));
       let hch = 0;
-      const Lv = ov('Lv', Lsup);
-      if (ev < ov('bch', bt) || dm.hch) { hch = ov('hch', 0.8); ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: Lv, kind: 'tete' }; }
-      const Hf = Math.max(0.5, H - hch);
-      fut = { kind: 'voile', e: ev, L: Lv, H: Hf };
-      parts.push({ des: 'Fût en voile ' + fr(ev, 2) + ' × ' + fr(Lv, 2) + ' m', V: ev * Lv * Hf, coff: 2 * (ev + Lv) * Hf, ratio: 100 });
-      lx = ev; ly = Lv;
+      const nl = dm.nl === 2 ? 2 : 1, Lch = ov('Lch', Lsup);
+      const Lv = ov('Lv', nl === 2 ? r05(Math.max(1.5, 0.27 * Lch)) : Lsup);
+      if (nl === 2 || ev < ov('bch', bt) || dm.hch) { hch = ov('hch', nl === 2 ? r10(Math.max(1.2, 0.12 * Lch)) : 0.8); ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: nl === 2 ? Lch : Math.max(Lv, Lch === Lsup ? Lv : Lch), kind: nl === 2 ? 'chevetre' : 'tete' }; }
+      const Hf = Math.max(0.5, H - hch), fru = (dm.fruit || 0) / 100;
+      const Lb = Math.max(0.5, Lv - 2 * fru * Hf);           // longueur en pied (fruit sur les faces latérales)
+      const xl = nl === 2 ? [-(ch.L / 2 - 0.9 - Lv / 2), ch.L / 2 - 0.9 - Lv / 2] : [0];
+      fut = { kind: 'voile', e: ev, L: Lv, Lb, H: Hf, n: nl, xl, bout: S.piles.bout, fruit: fru };
+      const Ab = (L) => ev * L - (S.piles.bout === 'droit' ? 0 : (S.piles.bout === 'pointu' ? ev * ev / 2 : ev * ev * (1 - Math.PI / 4)));
+      parts.push({ des: (nl === 2 ? '2 lames ' : 'Fût en voile ') + fr(ev, 2) + ' × ' + fr(Lv, 2) + ' m' + (fru ? ' (fruit ' + fr(fru * 100, 1) + ' %)' : ''), V: nl * (Ab(Lv) + Ab(Lb)) / 2 * Hf, coff: nl * (2 * ev + Lv + Lb) * Hf, ratio: 100 });
+      lx = ev; ly = nl === 2 ? xl[1] - xl[0] + Lv : Lv;
     } else if (t === 'colonnes') {
       const D = ov('D', H > 15 ? 1.50 : (rail ? 1.40 : 1.20));
       const Lc = ov('Lch', Math.max(W, Lsup)), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
@@ -662,12 +667,13 @@
       lx = D; ly = Lc;
     } else {
       const a = ov('a', Math.max(rail ? 1.5 : 1.2, r05(H / 12)));
-      const bf = ov('bf', clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0)));
+      const bf = ov('bf', clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0))), fru = (dm.fruit || 0) / 100;
       const h1 = ov('hch', rail ? 2.0 : 1.6), h2 = Math.min(h1, ov('h2', Math.min(0.8, h1 * 0.5)));
       ch = { b: ov('bch', Math.max(bt, a + 0.2)), h: h1, h2, L: ov('Lch', Lsup), bf, kind: 'marteau' };
       const Hf = Math.max(0.5, H - h1);
-      fut = { kind: 'marteau', a, b: bf, H: Hf };
-      parts.push({ des: 'Fût ' + fr(a, 2) + ' × ' + fr(bf, 2) + ' m', V: a * bf * Hf, coff: 2 * (a + bf) * Hf, ratio: 120 });
+      const bb = Math.max(0.6, bf - 2 * fru * Hf);
+      fut = { kind: 'marteau', a, b: bf, bb, H: Hf, fruit: fru };
+      parts.push({ des: 'Fût ' + fr(a, 2) + ' × ' + fr(bf, 2) + ' m' + (fru ? ' (pied ' + fr(bb, 2) + ' m)' : ''), V: a * (bf + bb) / 2 * Hf, coff: (2 * a + bf + bb) * Hf, ratio: 120 });
       lx = a; ly = bf;
     }
     if (ch) {

@@ -29,7 +29,7 @@
     ballast: '1-EQUIPEMENTS', texte: '1-TEXTE', titre: '1-TITRE', note: '1-TEXTE', lead: '1-TEXTE',
     vuB: '1-VU', vuL: '1-VU', vuT: '1-VU', col: '1-COUPE', pred: '1-PREFA', perre: '1-REMBLAI', prop: '1-COUPE',
     corn: '1-CORNICHES', cornE: '1-CORNICHES', gcF: '1-RETENUE', rev: '1-REVETEMENT', etan: '1-REVETEMENT', four: '1-EQUIPEMENTS', gc: '1-RETENUE', gcR: '1-RETENUE',
-    eau: '1-HYDRAULIQUE', eauF: '1-HYDRAULIQUE', eauP: '1-HYDRAULIQUE', routeP: '1-EQUIPEMENTS', ballastP: '1-EQUIPEMENTS', aff: '1-HYDRAULIQUE', sond: '1-GEOTECHNIQUE', guit: '1-GUITARE', guitF: '1-GUITARE',
+    eau: '1-HYDRAULIQUE', eauF: '1-HYDRAULIQUE', eauP: '1-HYDRAULIQUE', routeP: '1-EQUIPEMENTS', ballastP: '1-EQUIPEMENTS', aff: '1-HYDRAULIQUE', sond: '1-GEOTECHNIQUE', pieuP: '1-FONDATIONS', guit: '1-GUITARE', guitF: '1-GUITARE',
   };
 
   function enc(s) {

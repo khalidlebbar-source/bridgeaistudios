@@ -215,7 +215,9 @@
       title = sp.kind === 'culee' ? 'Culée ' + id + ' — ' + C.CULEES[sp.geo.type].nom.toLowerCase() : 'Pile ' + id + ' — ' + C.PILES[sp.geo.type].nom.toLowerCase();
       left += sketchHTML(sp) + `<table class="pg"><tbody>${supDims(sp)}</tbody></table>`;
       right = edView('Coupe transversale sur ' + (sp.kind === 'culee' ? 'culée ' : 'pile ') + id, C.toSVG(C.secScene(M, { part: sp.kind === 'culee' ? 'culee' : 'pile', id }), { width: 900, kp: 3.2, pad: 14, id: 'ed-t', dims: showDims }))
-        + edView('Coupe longitudinale — détail', elevDetail(sp));
+        + (() => { const D = C.supScenes(M, id), o = { width: 900, kp: 3.2, pad: 14, dims: showDims };
+          return edView(D.lo.titre, C.toSVG(D.lo, Object.assign({ id: 'ed-lo' }, o))) + edView(D.pl.titre, C.toSVG(D.pl, Object.assign({ id: 'ed-pl' }, o))) + edView(D.top.titre, C.toSVG(D.top, Object.assign({ id: 'ed-top' }, o))); })()
+        + edView('Élévation — détail', elevDetail(sp));
       if (sp.kind === 'culee' && sp.j !== 0) right = right.replace('Coupe transversale sur culée ' + id, 'Coupe transversale sur culée (type commun aux deux culées)');
     } else {
       title = 'Tablier — ' + C.TYPES[S.tablier.type].nom;
@@ -379,15 +381,19 @@
           inp(dp + 'bch', 50, 6, ch.b, 'b') + fIn(true));
       } else if (t === 'voile') {
         const hd = !!ch;
-        A = view('Vue de face', fond(40, 240, false) + (hd ? r(50, 22, 220, 16) : '') + r(60, hd ? 38 : 22, 200, hd ? 106 : 122) + dh(12, 60, 260) + (hd ? dv(282, 22, 38) : '') + dv(10, 22, 144),
+        A = view('Vue de face', fond(40, 240, false) + (hd ? r(50, 22, 220, 16) : '') + (fut.n === 2 ? r(72, hd ? 38 : 22, 66, hd ? 106 : 122) + r(182, hd ? 38 : 22, 66, hd ? 106 : 122) + dh(12, 182, 248) : r(60, hd ? 38 : 22, 200, hd ? 106 : 122) + dh(12, 60, 260)) + (hd ? dv(282, 22, 38) : '') + dv(10, 22, 144),
           inp(dp + 'Lv', 50, 6, fut.L, 'L') + (hd ? inp(dp + 'hch', 90, 15, ch.h, 'h') : '') + hIn(9, 58) + fIn(false));
         B = view('Vue de côté', fond(100, 120, true) + (hd ? r(125, 22, 70, 16) + dh(12, 125, 195) : '') + r(142, hd ? 38 : 22, 36, hd ? 106 : 122) + dh(92, 142, 178),
           (hd ? inp(dp + 'bch', 50, 6, ch.b, 'b') : '') + inp(dp + 'e', 50, 46, fut.e, 'e') + fIn(true));
+        A += `<div class="skx"><label>Lames <select data-sel="1" data-k="piles.dim.nl"><option value="1"${fut.n === 2 ? '' : ' selected'}>1 voile</option><option value="2"${fut.n === 2 ? ' selected' : ''}>2 lames</option></select></label>`
+          + `<label>Extrémités <select data-sel="1" data-k="piles.bout">${[['droit', 'droites'], ['arrondi', 'arrondies'], ['pointu', 'pointues (avant-becs)']].map(([v, t]) => `<option value="${v}"${S.piles.bout === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`
+          + `<label>Fruit <input type="text" inputmode="decimal" data-k="piles.dim.fruit" value="${S.piles.dim.fruit > 0 ? esc(show(S.piles.dim.fruit)) : ''}" placeholder="0"><i>%</i></label></div>`;
       } else {
         A = view('Vue de face', fond(60, 200, false) + `<path d="M20 22H300V44L190 62H130L20 44Z" style="${C_}"/>` + r(130, 62, 60, 82) + dh(12, 20, 300) + dv(308, 22, 62) + dv(14, 22, 44) + dh(100, 130, 190) + dv(32, 62, 144),
           inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 21, ch.h, 'h') + inp(dp + 'h2', 11, 16, ch.h2, 'h₂') + inp(dp + 'bf', 50, 50, fut.b, 'b') + hIn(10, 52) + fIn(false));
         B = view('Vue de côté', fond(100, 120, true) + r(122, 22, 76, 40) + r(140, 62, 40, 82) + dh(12, 122, 198) + dh(100, 140, 180),
           inp(dp + 'bch', 50, 6, ch.b, 'b') + inp(dp + 'a', 50, 50, fut.a, 'ép.') + fIn(true));
+        A += `<div class="skx"><label>Fruit du fût <input type="text" inputmode="decimal" data-k="piles.dim.fruit" value="${S.piles.dim.fruit > 0 ? esc(show(S.piles.dim.fruit)) : ''}" placeholder="0"><i>%</i></label></div>`;
       }
     } else {
       const so = g.sommier, rt = g.retours, en = g.type === 'enterree';
