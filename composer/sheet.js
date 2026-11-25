@@ -111,18 +111,10 @@
   }
 
   /* cartouche A4 dessiné d'après les champs du projet */
-  function cartouche(M, box, ech, orient, nota) {
+  function cartouche(M, box, ech, orient) {
     const p = M.S.projet || {}, x = box[0], w = box[2];
     let y = box[1], h = box[3];
     let s = R(x, y, w, h, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7');
-    // NOTA dans le cadre A4 : en tête (vertical) ou à droite des blocs (horizontal)
-    const nH = orient !== 'h' ? 78 : 56;
-    const nBox = [x, y, w, nH];
-    const nb = notaBlock(nota, x, w, 2.8);
-    {
-      s += `<g data-tag="nota">` + R(nBox[0], nBox[1], nBox[2], nBox[3], 'fill:#fff;stroke:#1e1e1e;stroke-width:.35') + `<clipPath id="nclip"><rect x="${x}" y="${y}" width="${w}" height="${nH}"/></clipPath><g clip-path="url(#nclip)">${nb ? nb.draw(y) : T(x + 5, y + 8, 'NOTA', { fs: 4.5, b: true, ls: '.06em' })}</g></g>`;
-      y += nH; h -= nH;
-    }
     s += `<g data-tag="projet">`;
     const lab = (xx, yy, t) => T(xx + 3, yy + 5, t.toUpperCase(), { fs: 2.3, c: '#555', ls: '.05em' });
     const cell = (xx, yy, ww, hh, title, lines) => {
@@ -159,19 +151,19 @@
     if (orient !== 'h') {
       let yy = y;
       const blk = (hh, f) => { s += f(x, yy, w, hh); yy += hh; };
-      blk(26, (a, b, c, d) => cell(a, b, c, d, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.4 }, { t: p.lieu || '', fs: 3.2 }]));
-      blk(28, (a, b, c, d) => cell(a, b, c, d, 'Projet', wrap(p.nom || 'Ouvrage', c - 8, 4.4).slice(0, 2).map((t) => ({ t, b: true, fs: 4.4 }))));
-      blk(22, (a, b, c, d) => cell(a, b, c, d, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4 }]));
-      blk(52, titre);
+      blk(34, (a, b, c, d) => cell(a, b, c, d, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.6 }, { t: p.lieu || '', fs: 3.4 }]));
+      blk(40, (a, b, c, d) => cell(a, b, c, d, 'Projet', wrap(p.nom || 'Ouvrage', c - 8, 4.6).slice(0, 3).map((t) => ({ t, b: true, fs: 4.6 }))));
+      blk(30, (a, b, c, d) => cell(a, b, c, d, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4.2 }]));
+      blk(62, titre);
       blk(22, infos);
       blk(h - (yy - y), indices);
     } else {
       const wl = w * 0.5, wr = w - wl;
-      s += cell(x, y, wl, 28, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.2 }, { t: p.lieu || '', fs: 3 }]);
-      s += cell(x, y + 28, wl, 30, 'Projet', wrap(p.nom || 'Ouvrage', wl - 8, 4.2).slice(0, 2).map((t) => ({ t, b: true, fs: 4.2 })));
-      s += cell(x, y + 58, wl, 24, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 3.8 }]);
-      s += titre(x + wl, y, wr, 58) + infos(x + wl, y + 58, wr, 24);
-      s += indices(x, y + 82, w, h - 82);
+      s += cell(x, y, wl, 40, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.4 }, { t: p.lieu || '', fs: 3.2 }]);
+      s += cell(x, y + 40, wl, 44, 'Projet', wrap(p.nom || 'Ouvrage', wl - 8, 4.4).slice(0, 3).map((t) => ({ t, b: true, fs: 4.4 })));
+      s += cell(x, y + 84, wl, 30, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4 }]);
+      s += titre(x + wl, y, wr, 84) + infos(x + wl, y + 84, wr, 30);
+      s += indices(x, y + 114, w, h - 114);
     }
     return s + '</g>';
   }
@@ -196,8 +188,9 @@
     const put = (k, make, scales, id, tag) => { const r = place(make, Z[k], scales, id, opt, tag); ech.push(r.ech); s += r.svg; return r; };
     { const r = placePair((e) => C.elevScene(M, { ech: e }), Z.long, (e) => C.planScene(M, { ech: e }), Z.plan, ECH.long, opt); ech.push(r.ech); s += r.svg; }
     // coupes du tablier (courante, sur pile, sur culée) : une seule échelle, la plus grande qui convient aux trois cadres
-    const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP;
-    Z.secC = [cx, FY0, cw, top - FY0];
+    const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP, nb = notaBlock(S.nota, cx, cw, 3);
+    const nh = nb ? Math.min(nb.h, 150) : 0;
+    Z.secC = [cx, FY0, cw, top - FY0 - (nb ? nh + GAP : 0)];
     const SEC = [
       ['secT', (e) => C.secScene(M, { ech: e, part: 'tablier' }), 'zt', 'tablier'],
       ['secP', (e) => C.secScene(M, { ech: e, part: pid ? 'pile' : 'culee', id: pid }), 'zs', pid || 'C' + (M.supports.length - 1)],
@@ -210,7 +203,8 @@
     });
     const eSec = ECH.sec.find(fits) || ECH.sec[ECH.sec.length - 1];
     SEC.forEach(([k, mk, id, tag]) => put(k, mk, [eSec], id, tag));
-    s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart, ech, orient, S.nota);
+    if (nb) s += `<clipPath id="nclip"><rect x="${cx}" y="${top - nh}" width="${cw}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>` + R(cx, top - nh, cw, nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5');
+    s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart, ech, orient);
     return s + '</svg>';
   }
 
