@@ -712,6 +712,14 @@
         const x = l.x - sp.x, a = Math.max(0.2, (l.app.a || 300) / 1000), b = Math.max(0.2, (l.app.b || 400) / 1000);
         bear.forEach((y) => { rect(P, x - a / 2 - 0.05, y - b / 2 - 0.05, x + a / 2 + 0.05, y + b / 2 + 0.05, 'vuB'); rect(P, x - a / 2, y - b / 2, x + a / 2, y + b / 2, 'app'); });
         line(P, [x, -L / 2 - 0.4], [x, L / 2 + 0.4], 'axe');
+        // bossages de vérinage entre les appareils (plans KLE : Larache, LGV lot 10)
+        for (let k = 0; k < bear.length - 1; k++) { const y = (bear[k] + bear[k + 1]) / 2; rect(P, x - 0.25, y - 0.25, x + 0.25, y + 0.25, 'vuB'); }
+      });
+      if (bear.length > 1) text(P, [(x0 + x1) / 2, (bear[0] + bear[1]) / 2], 'vérinage', { ht: 1.8, dy: 10, lay: 'note' });
+      const bmax = Math.max(...bear.map(Math.abs)) + Math.max(0.2, ((sp.lines[0] && sp.lines[0].app.b) || 400) / 1000) / 2 + 0.45;
+      if (S.usage === 'rail' && bmax + 0.25 <= L / 2 - 0.05) [-1, 1].forEach((sd) => {   // butées de sécurité transversales (et non blocage), au-delà des appareils
+        const y = sd * bmax; rect(P, (x0 + x1) / 2 - 0.4, y - 0.25, (x0 + x1) / 2 + 0.4, y + 0.25, 'beton');
+        if (sd > 0) text(P, [x1, y], 'butée de sécurité', { ht: 1.8, dy: -6, lay: 'note' });
       });
       for (let k = 0; k < bear.length - 1; k++) dim(P, [x1, bear[k]], [x1, bear[k + 1]], 'v', 6, frn(bear[k + 1] - bear[k]));
       dim(P, [x1, -L / 2], [x1, L / 2], 'v', 14, frn(L));
