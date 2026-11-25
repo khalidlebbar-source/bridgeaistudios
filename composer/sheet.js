@@ -58,6 +58,28 @@
     return { svg, ech: best.e };
   }
 
+  /* élévation et vue en plan : même échelle, abscisses alignées (axe de C0 sur la même verticale) */
+  function placePair(mk1, box1, mk2, box2, scales, opt) {
+    const bx = box1[0], bw = Math.min(box1[2], box2[2]);
+    let r = null;
+    for (const e of scales) {
+      const R2 = [[mk1(e), box1, 'zl', 'travees'], [mk2(e), box2, 'zp', 'trace']].map(([sc, box, id, tag]) => {
+        const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false });
+        const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number), ox = +(svg.match(/data-ox="([^"]+)"/) || [0, 0])[1];
+        return { svg, vb, off: (ox - vb[0]) / K, w: vb[2] / K, h: vb[3] / K, box, tag };
+      });
+      const A = Math.max(R2[0].off, R2[1].off), U = Math.max(...R2.map((q) => A - q.off + q.w));
+      r = { R2, A, U, e };
+      if (U <= bw - 2 && R2.every((q) => q.h <= q.box[3] - 2)) break;
+    }
+    const k = r.U > bw ? bw / r.U : 1, X0 = bx + (bw - r.U * k) / 2;
+    const out = r.R2.map((q) => {
+      const w = q.w * k, h = q.h * k, x = X0 + (r.A - q.off) * k, y = q.box[1] + (q.box[3] - h) / 2;
+      return q.svg.replace(/^<svg[^>]*>/, `<svg x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" viewBox="${q.vb.join(' ')}" preserveAspectRatio="xMidYMid meet" overflow="visible" class="zone" data-tag="${q.tag}"><rect x="${q.vb[0]}" y="${q.vb[1]}" width="${q.vb[2]}" height="${q.vb[3]}" style="fill:transparent;stroke:none"/>`);
+    }).join('');
+    return { svg: out, ech: r.e };
+  }
+
   const T = (x, y, s, o) => {
     o = o || {};
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${o.fs || 3}"${o.a ? ` text-anchor="${o.a}"` : ''}${o.b ? ' font-weight="700"' : ''}${o.i ? ' font-style="italic"' : ''}${o.c ? ` fill="${o.c}"` : ''}${o.ls ? ` letter-spacing="${o.ls}"` : ''}${o.tag ? ` data-tag="${o.tag}"` : ''}>${esc(s)}</text>`;
@@ -86,9 +108,19 @@
   }
 
   /* cartouche A4 dessiné d'après les champs du projet */
-  function cartouche(M, box, ech, orient) {
-    const p = M.S.projet || {}, [x, y, w, h] = box;
-    let s = `<g data-tag="projet">` + R(x, y, w, h, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7');
+  function cartouche(M, box, ech, orient, nota) {
+    const p = M.S.projet || {}, x = box[0], w = box[2];
+    let y = box[1], h = box[3];
+    let s = R(x, y, w, h, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7');
+    // NOTA dans le cadre A4 : en tête (vertical) ou à droite des blocs (horizontal)
+    const nH = orient !== 'h' ? 78 : 56;
+    const nBox = [x, y, w, nH];
+    const nb = notaBlock(nota, x, w, 2.8);
+    {
+      s += `<g data-tag="nota">` + R(nBox[0], nBox[1], nBox[2], nBox[3], 'fill:#fff;stroke:#1e1e1e;stroke-width:.35') + `<clipPath id="nclip"><rect x="${x}" y="${y}" width="${w}" height="${nH}"/></clipPath><g clip-path="url(#nclip)">${nb ? nb.draw(y) : T(x + 5, y + 8, 'NOTA', { fs: 4.5, b: true, ls: '.06em' })}</g></g>`;
+      y += nH; h -= nH;
+    }
+    s += `<g data-tag="projet">`;
     const lab = (xx, yy, t) => T(xx + 3, yy + 5, t.toUpperCase(), { fs: 2.3, c: '#555', ls: '.05em' });
     const cell = (xx, yy, ww, hh, title, lines) => {
       let o = R(xx, yy, ww, hh, 'fill:none;stroke:#1e1e1e;stroke-width:.35') + lab(xx, yy, title);
@@ -124,19 +156,19 @@
     if (orient !== 'h') {
       let yy = y;
       const blk = (hh, f) => { s += f(x, yy, w, hh); yy += hh; };
-      blk(34, (a, b, c, d) => cell(a, b, c, d, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.6 }, { t: p.lieu || '', fs: 3.4 }]));
-      blk(40, (a, b, c, d) => cell(a, b, c, d, 'Projet', wrap(p.nom || 'Ouvrage', c - 8, 4.6).slice(0, 3).map((t) => ({ t, b: true, fs: 4.6 }))));
-      blk(30, (a, b, c, d) => cell(a, b, c, d, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4.2 }]));
-      blk(62, titre);
+      blk(26, (a, b, c, d) => cell(a, b, c, d, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.4 }, { t: p.lieu || '', fs: 3.2 }]));
+      blk(28, (a, b, c, d) => cell(a, b, c, d, 'Projet', wrap(p.nom || 'Ouvrage', c - 8, 4.4).slice(0, 2).map((t) => ({ t, b: true, fs: 4.4 }))));
+      blk(22, (a, b, c, d) => cell(a, b, c, d, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4 }]));
+      blk(52, titre);
       blk(22, infos);
       blk(h - (yy - y), indices);
     } else {
       const wl = w * 0.5, wr = w - wl;
-      s += cell(x, y, wl, 40, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.4 }, { t: p.lieu || '', fs: 3.2 }]);
-      s += cell(x, y + 40, wl, 44, 'Projet', wrap(p.nom || 'Ouvrage', wl - 8, 4.4).slice(0, 3).map((t) => ({ t, b: true, fs: 4.4 })));
-      s += cell(x, y + 84, wl, 30, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 4 }]);
-      s += titre(x + wl, y, wr, 84) + infos(x + wl, y + 84, wr, 30);
-      s += indices(x, y + 114, w, h - 114);
+      s += cell(x, y, wl, 28, 'Maître d’ouvrage', [{ t: p.moa || '—', b: true, fs: 4.2 }, { t: p.lieu || '', fs: 3 }]);
+      s += cell(x, y + 28, wl, 30, 'Projet', wrap(p.nom || 'Ouvrage', wl - 8, 4.2).slice(0, 2).map((t) => ({ t, b: true, fs: 4.2 })));
+      s += cell(x, y + 58, wl, 24, 'Bureau d’études', [{ t: p.bet || 'BridgeAI Studios — Bridge Composer', b: true, fs: 3.8 }]);
+      s += titre(x + wl, y, wr, 58) + infos(x + wl, y + 58, wr, 24);
+      s += indices(x, y + 82, w, h - 82);
     }
     return s + '</g>';
   }
@@ -159,18 +191,14 @@
       + R(FX0, FY0, FX1 - FX0, FY1 - FY0, 'fill:none;stroke:#1e1e1e;stroke-width:1');
     const ech = [];
     const put = (k, make, scales, id, tag) => { const r = place(make, Z[k], scales, id, opt, tag); ech.push(r.ech); s += r.svg; return r; };
-    put('long', (e) => C.elevScene(M, { ech: e }), ECH.long, 'zl', 'travees');
-    put('plan', (e) => C.planScene(M, { ech: e }), ECH.plan, 'zp', 'trace');
+    { const r = placePair((e) => C.elevScene(M, { ech: e }), Z.long, (e) => C.planScene(M, { ech: e }), Z.plan, ECH.long, opt); ech.push(r.ech); s += r.svg; }
     put('secT', (e) => C.secScene(M, { ech: e, part: 'tablier' }), ECH.sec, 'zt', 'tablier');
     put('secP', (e) => C.secScene(M, { ech: e, part: pid ? 'pile' : 'culee', id: pid }), ECH.sec, 'zs', pid || 'C' + (M.supports.length - 1));
     // colonne de droite : coupe sur culée, NOTA, cartouche
-    const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP, nb = notaBlock(S.nota, cx, cw, 3);
-    const nh = nb ? Math.min(nb.h, top - FY0 - 150) : 0;
-    const secC = [cx, FY0, cw, top - FY0 - (nb ? nh + GAP : 0)];
-    s += L(cx - GAP / 2, FY0, cx - GAP / 2, FY1, 0.5);
+    const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP;
+    const secC = [cx, FY0, cw, top - FY0];
     Z.secC = secC; put('secC', (e) => C.secScene(M, { ech: e, part: 'culee' }), ECH.sec, 'zc', 'C0');
-    if (nb) s += `<clipPath id="nclip"><rect x="${cx}" y="${top - nh}" width="${cw}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>` + L(cx, top - nh, cx + cw, top - nh, 0.35);
-    s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart, ech, orient);
+    s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart, ech, orient, S.nota);
     return s + '</svg>';
   }
 
