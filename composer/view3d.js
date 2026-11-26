@@ -90,11 +90,11 @@
       } else {
         const o = s.j === 0 ? -1 : 1;
         const front = s.x + o * (dab + 0.05), back = front + o * g.egg;
-        box(front, back, -W / 2, W / 2, 0, ySeat);                          // garde-grève
+        if (g.egg > 0) box(front, back, -W / 2, W / 2, 0, ySeat);          // garde-grève
         let zr0;
         if (g.type === 'enterree') {
           const xin = back - o * g.sommier.b;
-          box(back, xin, -W / 2, W / 2, ySeat, ySeat - g.sommier.h);
+          box(back, xin, -g.sommier.L / 2, g.sommier.L / 2, ySeat, ySeat - g.sommier.h);
           xf = (back + xin) / 2;
           if (g.colonnes) for (let i = 0; i < g.colonnes.n; i++) cyl(xf, -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s, g.colonnes.D, yft, ySeat - g.sommier.h);
           zr0 = ySeat - g.sommier.h + 0.3;
@@ -108,9 +108,10 @@
           else [-1, 1].forEach((sg) => box(back, back + o * rt.L, sg * W / 2, sg * (W / 2 - er), 0, ySeat - hs - 0.3));
           zr0 = null;
         }
-        if (zr0 !== null) {
-          const er = g.retours.e, Lr = g.retours.L;
-          [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * W / 2, sg * (W / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
+        if (zr0 !== null && g.retours.mode !== 'aucun') {
+          const er = g.retours.e, Lr = g.retours.L, Lw = (g.sommier && g.sommier.L) || W;
+          if (g.retours.mode === 'AV') [-1, 1].forEach((sg) => box(back, back - o * g.sommier.b, sg * Lw / 2, sg * (Lw / 2 - er), 0, ySeat));
+          else [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * Lw / 2, sg * (Lw / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
         }
         if (g.dt) box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70);
       }

@@ -212,7 +212,11 @@
     out.piles.hauteurs = hp.slice(0, np);
     if (!PILES[out.piles.type]) out.piles.type = 'voile';
     if (!CULEES[out.culees.type]) out.culees.type = 'enterree';
-    out.culees.retours = out.culees.retours === 'suspendus' ? 'suspendus' : 'U';
+    if (out.culees.type === 'remblayee') out.culees.retours = out.culees.retours === 'suspendus' ? 'suspendus' : 'U';
+    else out.culees.retours = ['AR', 'AV', 'suspendus', 'aucun'].includes(out.culees.retours) ? out.culees.retours : 'AR';
+    out.culees.gg = out.culees.gg !== false;
+    out.culees.chev = out.culees.chev === 'C' ? 'C' : 'L';
+    out.culees.section = out.culees.section === 'carre' ? 'carre' : 'circ';
     const hc = (Array.isArray(out.culees.hauteurs) ? out.culees.hauteurs : []).map((v) => clamp(num(v, 3.5), 0.5, 15));
     while (hc.length < 2) hc.push(hc.length ? hc[0] : 3.5);
     out.culees.hauteurs = hc.slice(0, 2);
@@ -694,26 +698,54 @@
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
     const rail = S.usage === 'rail', t = S.culees.type, parts = [], dm = S.culees.dim || {};
     const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
-    const egg = ov('egg', rail ? 0.40 : 0.30), hgg = h + 0.30;
+    /* culée enterrée (pile-culée PP73) : disposition de la partie supérieure 1 à 4 (PP73 1.2.3 § 3.1.1)
+       1 chevêtre simple ; 2 avec mur garde-grève ; 3 dalle de transition sans garde-grève ; 4 garde-grève + corbeau + dalle de transition */
+    const dtOn = !!S.culees.dalleTransition && !rail, ggOn = t !== 'enterree' || S.culees.gg !== false;
+    const dispo = ggOn ? (dtOn ? 4 : 2) : (dtOn ? 3 : 1);
+    const avecGG = dispo === 2 || dispo === 4, avecDT = (dispo === 3 || dispo === 4) && !rail;
+    const egg = avecGG ? ov('egg', rail ? 0.40 : 0.30) : 0, hgg = h + 0.30;
     const bt = (iso ? 2.6 : 1.6) + (rail ? 0.2 : 0);
     const dab = 0.6;
-    parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
+    if (avecGG) parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
     const Ht = H + hgg;
-    let lx, ly = W, sommier = null, mur = null, colonnes = null, retours, Bmin = 0, gros = 0;
+    let lx, ly = W, sommier = null, mur = null, colonnes = null, retours, Bmin = 0, gros = 0, nervure = null;
     if (t === 'enterree') {
+      const section = S.culees.section === 'carre' ? 'carre' : 'circ';
       const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6)), hs = ov('hs', r10(Math.max(1.2, 0.14 * W)));
-      sommier = { b: bs, h: hs, L: W };
-      parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 });
       const Hc = H - hs;
+      let Lc = W;
       if (Hc > 0.5) {
         const D = ov('D', rail ? 1.40 : 1.20), nc = ov('n', Math.max(2, Math.round((W - 2 * D) / 2.7) + 1));
-        colonnes = { D, n: nc, H: Hc, s: nc > 1 ? (W - 2 * D) / (nc - 1) : 0 };
-        parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m (enterrées)', V: nc * Math.PI * D * D / 4 * Hc, coff: nc * Math.PI * D * Hc, ratio: 160 });
+        const s_ = nc > 1 ? (W - 2 * D) / (nc - 1) : 0;
+        colonnes = { D, n: nc, H: Hc, s: s_, section };
+        if (S.culees.chev === 'C') Lc = r05((nc - 1) * s_ + D + 0.20);     // chevêtre court : Lc ≥ (n − 1) e + Φ + 0,20 (PP73, exemple 1)
+        const A = section === 'carre' ? D * D : Math.PI * D * D / 4, per = section === 'carre' ? 4 * D : Math.PI * D;
+        parts.push({ des: nc + (section === 'carre' ? ' poteaux ' + fr(D, 2) + ' × ' + fr(D, 2) : ' colonnes Ø ' + fr(D, 2)) + ' m (enterrés)', V: nc * A * Hc, coff: nc * per * Hc, ratio: 160 });
         lx = D; ly = W;
       } else lx = bs;
-      const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = ov('em', rail ? 0.60 : 0.50);
-      retours = { mode: 'suspendus', L: Lmr, h: hmr, e: em, h2: 0.9 };
-      parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
+      sommier = { b: bs, h: hs, L: Lc, court: Lc < W - 1e-6 };
+      parts.push({ des: (Lc < W - 1e-6 ? 'Chevêtre court ' : 'Chevêtre long ') + fr(bs, 2) + ' × ' + fr(hs, 2) + ' × ' + fr(Lc, 2) + ' m', V: bs * hs * Lc, coff: (2 * hs + bs) * Lc + 2 * bs * hs, ratio: 120 });
+      if (!avecGG && avecDT) parts.push({ des: 'Corbeau d’appui de la dalle de transition', V: 0.30 * (hgg - 0.70) * Lc, coff: 2 * (hgg - 0.70) * Lc, ratio: 120 });
+      const mr = ['AR', 'AV', 'suspendus', 'aucun'].includes(S.culees.retours) ? S.culees.retours : 'AR';
+      if (mr === 'AR') {          // petits murs en retour ≤ 1,50 m, ép. 0,20 (PP73 modèles 1AR / 2AR, disposition conseillée)
+        const Lmr = ov('Lmr', 1.50), em = ov('em', 0.20);
+        retours = { mode: 'AR', L: Math.min(Lmr, 1.5), h: hgg + hs, e: em, h2: 0.6 };
+        parts.push({ des: 'Petits murs en retour 2 × ' + fr(retours.L, 2) + ' m, ép. ' + fr(em, 2), V: 2 * retours.L * (hgg + 0.6) / 2 * em, coff: 2 * retours.L * (hgg + 0.6), ratio: 100 });
+      } else if (mr === 'AV') {   // murettes latérales sur les extrémités du chevêtre (PP73 1AV / 2AV)
+        const em = ov('em', 0.20);
+        retours = { mode: 'AV', L: bs, h: hgg, e: em };
+        parts.push({ des: 'Murettes latérales 2 × ' + fr(bs, 2) + ' m, ép. ' + fr(em, 2), V: 2 * bs * hgg * em, coff: 4 * bs * hgg, ratio: 80 });
+      } else if (mr === 'suspendus') {
+        const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = ov('em', rail ? 0.60 : 0.50);
+        retours = { mode: 'suspendus', L: Lmr, h: hmr, e: em, h2: 0.9 };
+        parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
+      } else retours = { mode: 'aucun', L: 0, h: 0, e: 0 };
+      if (colonnes && S.fond.culees !== 'pieux' && S.culees.nervure !== false) {   // nervure sur semelle filante (PP73 1.2.3 § 1.1)
+        const bn = r05(colonnes.D + 0.10), hn = Math.max(0.60, r05(0.3 * colonnes.s - 0.60));
+        nervure = { b: bn, h: Math.min(hn, Hc - 0.5), L: r10((nc_ => (nc_ - 1) * colonnes.s + colonnes.D + 0.6)(colonnes.n)) };
+        colonnes.H = Hc - nervure.h;
+        parts.push({ des: 'Nervure ' + fr(bn, 2) + ' × ' + fr(nervure.h, 2) + ' × ' + fr(nervure.L, 2) + ' m', V: bn * nervure.h * nervure.L, coff: 2 * nervure.h * nervure.L, ratio: 100 });
+      }
     } else {
       /* culée remblayée (plans KLE : Ardoum, Kert, PK386, Grou) : mur de front épais, élargi en tête en sommier côté pont,
          gousset côté remblai, semelle excentrée (patin côté brèche, talon sous le remblai), murs en retour en U sur la semelle ou suspendus */
@@ -741,14 +773,14 @@
       gros = gb;
     }
     let dt = null;
-    if (S.culees.dalleTransition && !rail) {
+    if (avecDT) {
       const Ldt = Ht > 9 ? 5.0 : 4.0, Bdt = PT.roulable || W;
       dt = { L: Ldt, e: 0.30, B: Bdt };
       parts.push({ des: 'Dalle de transition ' + fr(Ldt, 2) + ' m × 0,30', V: Ldt * 0.30 * Bdt, coff: 2 * 0.30 * Ldt + 0.30 * Bdt, ratio: 100 });
       parts.push({ des: 'Corbeau d’appui de dalle', V: 0.30 * 0.30 * W, coff: 0.6 * W, ratio: 120 });
     }
     const Vrem = W * Ht * Math.max(3, 0.6 * Ht) * (t === 'enterree' ? 0.5 : 1);
-    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote, Bmin, gros, pat: dm.pat > 0 ? dm.pat : 0 };
+    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote, Bmin, gros, pat: dm.pat > 0 ? dm.pat : 0, dispo, nervure };
   }
 
 
@@ -759,12 +791,18 @@
   function culeeProfil(sp) {
     const g = sp.geo, f = sp.fo, H = sp.H, hgg = g.hgg, ug = g.dab + 0.05, ub = ug + g.egg;
     const cut = [], seen = [], P = (a, pts, lay) => a.push({ pts, lay });
-    if (g.dt) {
+    if (g.dt && g.egg > 0) {
       P(cut, [[ug, hgg], [ub, hgg], [ub, hgg - 0.40], [ub + 0.30, hgg - 0.40], [ub + 0.30, hgg - 0.70], [ub, hgg - 0.85], [ub, 0], [ug, 0]], 'beton');
       const L = g.dt.L, d = 0.05 * L;
       P(cut, [[ub + 0.30, hgg - 0.40], [ub + 0.30 + L, hgg - 0.40 - d], [ub + 0.30 + L, hgg - 0.70 - d], [ub + 0.30, hgg - 0.70]], 'beton');
       P(cut, [[ub + 0.30, hgg - 0.70], [ub + 0.30 + L, hgg - 0.70 - d], [ub + 0.30 + L, hgg - 0.80 - d], [ub + 0.30, hgg - 0.80]], 'prop');
-    } else P(cut, [[ug, hgg], [ub, hgg], [ub, 0], [ug, 0]], 'beton');
+    } else if (g.egg > 0) P(cut, [[ug, hgg], [ub, hgg], [ub, 0], [ug, 0]], 'beton');
+    if (g.dt && !(g.egg > 0)) {     // disposition 3 (PP73) : dalle de transition sur corbeau, sans garde-grève
+      const L = g.dt.L, d = 0.05 * L, uc0 = ub - 0.30;
+      P(cut, [[uc0, 0], [ub, 0], [ub, hgg - 0.70], [uc0, hgg - 0.70]], 'beton');
+      P(cut, [[uc0, hgg - 0.40], [ub + L, hgg - 0.40 - d], [ub + L, hgg - 0.70 - d], [uc0, hgg - 0.70]], 'beton');
+      P(cut, [[ub, hgg - 0.70], [ub + L, hgg - 0.70 - d], [ub + L, hgg - 0.80 - d], [ub, hgg - 0.80]], 'prop');
+    }
     const B = f.mode === 'pieux' ? (f.e > 0 ? f.Lx : 0) : f.B;
     let u0, u1, uc, back, uf = null, uE = null;
     if (g.type === 'remblayee') {
@@ -794,9 +832,12 @@
       const so = g.sommier, bs = so.b, hs = so.h;
       uc = ub - bs / 2;
       P(cut, [[ub - bs, 0], [ub, 0], [ub, -hs], [ub - bs, -hs]], 'beton');
-      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -H], [uc - g.colonnes.D / 2, -H]], 'col');
+      const nv = g.nervure, zc = nv ? -H + nv.h : -H;
+      if (nv) P(cut, [[uc - nv.b / 2, -H + nv.h], [uc + nv.b / 2, -H + nv.h], [uc + nv.b / 2, -H], [uc - nv.b / 2, -H]], 'beton');
+      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, zc], [uc - g.colonnes.D / 2, zc]], g.colonnes.section === 'carre' ? 'vuB' : 'col');
       const rt = g.retours;
-      P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ub, -hs]], 'vuL');
+      if (rt.mode === 'AV') P(seen, [[ub - bs, 0], [ub, 0], [ub, hgg], [ub - bs, hgg]], 'vuL');
+      else if (rt.mode !== 'aucun') P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ub, -hs]], 'vuL');
       u0 = uc - B / 2; u1 = uc + B / 2;
       back = [[ub, -hs]];
     }

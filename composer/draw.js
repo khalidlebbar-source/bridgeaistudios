@@ -121,7 +121,7 @@
         rect(P, s.x - g.lx / 2, yTopFut, s.x + g.lx / 2, yft, g.fut.kind === 'colonnes' ? 'col' : 'vuB');
       } else {
         const o = s.j === 0 ? -1 : 1, R = C.culeeProfil(s), X = (q) => [s.x + o * q[0], ySeat + q[1]];
-        R.seen.forEach((c) => poly(P, c.pts.map(X), c.lay === 'col' ? 'col' : 'vuL'));
+        R.seen.forEach((c) => poly(P, c.pts.map(X), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vuL'));
         R.cut.forEach((c) => poly(P, c.pts.map(X), c.lay === 'prop' ? 'prop' : 'vuB'));
         xf = s.x + o * R.uc;
         if (g.gros > 0 && s.fo.mode === 'superficielle') rect(P, xf - s.fo.B / 2 - 0.5, yft - s.fo.e - 0.10, xf + s.fo.B / 2 + 0.5, yft - s.fo.e - 0.10 - g.gros, 'prop');
@@ -315,8 +315,8 @@
         circ(P, c[0] + u[0] * ex / Math.max(0.3, Math.sin(beta)) + ds[0] * ey, c[1] + u[1] * ex / Math.max(0.3, Math.sin(beta)) + ds[1] * ey, f.D / 2, 'vu');
       }
       if (isC && g.retours) {                          // murs en retour
-        const U = g.retours.mode === 'U', u0 = U ? RC.uf : RC.ub, u1 = U ? RC.uE : RC.ub + g.retours.L;
-        [-1, 1].forEach((sd) => { const p0 = at(sp.x + o * u0, sd * (W / 2 - g.retours.e / 2)), p1 = at(sp.x + o * u1, sd * (W / 2 - g.retours.e / 2)); line(P, p0, p1, 'beton'); });
+        const md = g.retours.mode, u0 = md === 'U' ? RC.uf : md === 'AV' ? RC.ub - g.sommier.b : RC.ub, u1 = md === 'U' ? RC.uE : md === 'AV' ? RC.ub : RC.ub + g.retours.L, Lw = md === 'U' ? W : (g.sommier.L || W);
+        if (md !== 'aucun') [-1, 1].forEach((sd) => { const p0 = at(sp.x + o * u0, sd * (Lw / 2 - g.retours.e / 2)), p1 = at(sp.x + o * u1, sd * (Lw / 2 - g.retours.e / 2)); line(P, p0, p1, 'beton'); });
         if (g.mur) { const a = at(sp.x + o * RC.uf, -W / 2), b = at(sp.x + o * RC.uf, W / 2); line(P, a, b, 'beton'); }
       }
       if (TR && TR.coords) {
@@ -460,8 +460,9 @@
       if (ref.kind === 'culee') {                     // ouvrage à une travée : coupe sur culée
         const so = g.sommier;
         g = {
-          ch: so ? { kind: 'chevetre', L: W, h: so.h, b: so.b } : null,
-          fut: g.colonnes ? { kind: 'colonnes', D: g.colonnes.D, n: g.colonnes.n, s: g.colonnes.s } : { kind: 'voile', L: W },
+          ch: so ? { kind: 'chevetre', L: so.L || W, h: so.h, b: so.b } : null,
+          fut: g.colonnes ? { kind: 'colonnes', D: g.colonnes.D, n: g.colonnes.n, s: g.colonnes.s, section: g.colonnes.section } : { kind: 'voile', L: W },
+          nervure: g.nervure,
         };
       }
       const hch = g.ch ? g.ch.h : 0;
@@ -499,7 +500,16 @@
       let xcols = [];
       if (g.fut.kind === 'voile') (g.fut.xl || [0]).forEach((xc) => futTrap(xc, g.fut.L, g.fut.Lb || g.fut.L, 'vuB'));
       else if (g.fut.kind === 'marteau') futTrap(0, g.fut.b, g.fut.bb || g.fut.b, 'vuB');
-      else for (let i = 0; i < g.fut.n; i++) { const x = -(g.fut.n - 1) * g.fut.s / 2 + i * g.fut.s; xcols.push(x); futRect(x - g.fut.D / 2, x + g.fut.D / 2, 'col'); }
+      else {
+        if (g.nervure) { const nv = g.nervure; rect(P, -nv.L / 2, yft + nv.h, nv.L / 2, yft, 'beton'); dim(P, [nv.L / 2, yft], [nv.L / 2, yft + nv.h], 'v', 4, frn(nv.h)); }
+        const yfc = g.nervure ? yft + g.nervure.h : yft, yf0 = yft;
+        for (let i = 0; i < g.fut.n; i++) {
+          const x = -(g.fut.n - 1) * g.fut.s / 2 + i * g.fut.s, lay = g.fut.section === 'carre' ? 'vuB' : 'col';
+          xcols.push(x);
+          if (g.nervure) rect(P, x - g.fut.D / 2, yTop, x + g.fut.D / 2, yfc, lay); else futRect(x - g.fut.D / 2, x + g.fut.D / 2, lay);
+        }
+        void yf0;
+      }
       if (xcols.length) {
         const Lc = g.ch.L, ch = [-Lc / 2].concat(xcols, [Lc / 2]);
         for (let k = 0; k < ch.length - 1; k++) dim(P, [ch[k], yTop], [ch[k + 1], yTop], 'h', -5, frn(ch[k + 1] - ch[k]));
@@ -618,7 +628,7 @@
           line(P, [X(ut - 3), 0.6], [X(ut), 0.6], 'tn');
         }
         // structure : parties vues (murs en retour, colonnes) puis coupées (garde-grève, sommier, mur de front, dalle de transition)
-        R.seen.forEach((c) => poly(P, c.pts.map(Q), c.lay === 'col' ? 'col' : 'vu'));
+        R.seen.forEach((c) => poly(P, c.pts.map(Q), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vu'));
         R.cut.forEach((c) => poly(P, c.pts.map(Q), c.lay));
         if (g.dt) { const a = lo_(X(R.ub + 0.30), X(R.ub + 0.30 + g.dt.L)); dim(P, [a[0], yTop - 0.40], [a[1], yTop - 0.40], 'h', 6, 'dalle de transition ' + frn(g.dt.L) + ' — 5 %'); }
         // fondation (semelle à patin et talon, ou massif sur pieux) et gros béton éventuel
@@ -647,8 +657,10 @@
           dim(P, [qr[0], yTop], [qr[1], yTop], 'h', 16, 'mur en retour ' + (rt.mode === 'U' ? 'en U ' : 'suspendu ') + frn(qr[1] - qr[0]) + ' — ép. ' + frn(rt.e));
         } else {
           if (g.colonnes) { const q = lo_(X(R.uc - g.colonnes.D / 2), X(R.uc + g.colonnes.D / 2)); dim(P, [q[0], (H - hs) * 0.5], [q[1], (H - hs) * 0.5], 'h', 3, 'Ø' + frn(g.colonnes.D)); }
-          const qr = lo_(X(R.ub), X(R.ub + rt.L));
-          dim(P, [qr[0], yTop], [qr[1], yTop], 'h', 16, 'mur en retour suspendu ' + frn(rt.L));
+          if (rt.mode === 'suspendus' || rt.mode === 'AR') { const qr = lo_(X(R.ub), X(R.ub + rt.L)); dim(P, [qr[0], yTop], [qr[1], yTop], 'h', 16, (rt.mode === 'AR' ? 'petit mur en retour ' : 'mur en retour suspendu ') + frn(rt.L) + ' — ép. ' + frn(rt.e)); }
+          else if (rt.mode === 'AV') text(P, [X(R.ub - so.b / 2), yTop], 'murettes latérales ép. ' + frn(rt.e), { ht: 2, dy: 6, lay: 'note' });
+          if (g.nervure) { const q = lo_(X(R.uc - g.nervure.b / 2), X(R.uc + g.nervure.b / 2)); dim(P, [q[1], 0], [q[1], g.nervure.h], 'v', 4, frn(g.nervure.h)); text(P, [q[0], g.nervure.h / 2], 'nervure', { ht: 1.8, anchor: 'end', dy: 0, lay: 'note' }); }
+          text(P, [X(R.ub - so.b / 2), yTop], 'disposition ' + g.dispo + ' (PP73)' + (so.court ? ' — chevêtre court' : ' — chevêtre long'), { ht: 2, dy: 12, lay: 'note' });
         }
         { const xm = Math.min(X(R.u0), X(ufr)) - 0.6; dim(P, [xm, 0], [xm, H], 'v', -6, 'H = ' + frn(H)); }
         line(P, [0, fl.yl - 0.5], [0, yTop + 1], 'axe');
@@ -683,10 +695,16 @@
         if (g.type === 'remblayee') {
           rr(R.uf, R.uf + g.mur.e, -W / 2, W / 2, FSEC);
           dim(P, [Math.min(X(R.uf), X(R.uf + g.mur.e)), W / 2], [Math.max(X(R.uf), X(R.uf + g.mur.e)), W / 2], 'h', 4, frn(g.mur.e));
-        } else if (g.colonnes) for (let i = 0; i < g.colonnes.n; i++) { const y = -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s; circ(P, X(R.uc), y, g.colonnes.D / 2, FSEC, 24); }
-        [-1, 1].forEach((sd) => {   // murs en retour : coupés s'ils descendent sur la semelle (U), vus s'ils sont suspendus
-          const y0 = sd * (W / 2 - rt.e / 2);
+        } else if (g.colonnes) {
+          const D = g.colonnes.D, nv = g.nervure;
+          if (nv) rr(R.uc - nv.b / 2, R.uc + nv.b / 2, -nv.L / 2, nv.L / 2, 'vu');
+          for (let i = 0; i < g.colonnes.n; i++) { const y = -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s; if (g.colonnes.section === 'carre') rr(R.uc - D / 2, R.uc + D / 2, y - D / 2, y + D / 2, FSEC); else circ(P, X(R.uc), y, D / 2, FSEC, 24); }
+        }
+        const Lch = g.sommier.L;
+        if (rt.mode !== 'aucun') [-1, 1].forEach((sd) => {   // murs en retour : coupés s'ils descendent sur la semelle (U), vus sinon
+          const y0 = sd * ((rt.mode === 'U' ? W : Lch) / 2 - rt.e / 2);
           if (rt.mode === 'U') rr(R.uf, R.uE, y0 - rt.e / 2, y0 + rt.e / 2, FSEC);
+          else if (rt.mode === 'AV') rr(R.ub - g.sommier.b, R.ub, y0 - rt.e / 2, y0 + rt.e / 2, 'vu');
           else rr(R.ub, R.ub + rt.L, y0 - rt.e / 2, y0 + rt.e / 2, 'vu');
         });
         if (rt.mode === 'U') dim(P, [Math.min(X(R.uf), X(R.uE)), -W / 2], [Math.max(X(R.uf), X(R.uE)), -W / 2], 'h', -14, 'murs en retour ' + frn(R.uE - R.uf) + ' — ép. ' + frn(rt.e));
@@ -703,10 +721,10 @@
       if (!isC) { const ch = g.ch || { b: g.fut.e || g.fut.a || 1.2, L: g.fut.L || W }; x0 = -ch.b / 2; x1 = ch.b / 2; L = ch.L; }
       else {
         const o = sp.j === 0 ? -1 : 1, R = C.culeeProfil(sp), so = g.sommier, uF = g.type === 'remblayee' ? R.uf : R.ub - so.b;
-        x0 = Math.min(o * uF, o * (uF + so.b)); x1 = Math.max(o * uF, o * (uF + so.b)); L = W;
-        rect(P, Math.min(o * R.ug, o * R.ub), -W / 2, Math.max(o * R.ug, o * R.ub), W / 2, 'vuB');
-        const rt = g.retours, ua = rt.mode === 'U' ? R.uf : R.ub, ue = rt.mode === 'U' ? R.uE : R.ub + rt.L;
-        [-1, 1].forEach((sd) => rect(P, Math.min(o * ua, o * ue), sd * (W / 2 - rt.e), Math.max(o * ua, o * ue), sd * W / 2, 'vuB'));
+        x0 = Math.min(o * uF, o * (uF + so.b)); x1 = Math.max(o * uF, o * (uF + so.b)); L = so.L || W;
+        if (g.egg > 0) rect(P, Math.min(o * R.ug, o * R.ub), -L / 2, Math.max(o * R.ug, o * R.ub), L / 2, 'vuB');
+        const rt = g.retours, ua = rt.mode === 'U' ? R.uf : rt.mode === 'AV' ? R.ub - so.b : R.ub, ue = rt.mode === 'U' ? R.uE : rt.mode === 'AV' ? R.ub : R.ub + rt.L;
+        if (rt.mode !== 'aucun') [-1, 1].forEach((sd) => rect(P, Math.min(o * ua, o * ue), sd * (L / 2 - rt.e), Math.max(o * ua, o * ue), sd * L / 2, 'vuB'));
       }
       rect(P, x0, -L / 2, x1, L / 2, 'vuL');
       const bear = M.sec.bear;

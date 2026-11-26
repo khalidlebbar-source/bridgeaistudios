@@ -423,9 +423,19 @@
       } else { const m = g.mur; sv += r(144, so ? 62 : 40, 32, so ? 82 : 104) + dh(110, 144, 176); si += inp(dp + 'ef', 70, 55, m.e, 'e'); }
       sv += fond(100, 120, true) + dv(10, so ? 40 : 40, 144);
       A = view('Vue de côté', sv, si + fIn(true));
+      {   // pile-culée PP73 : disposition de la partie supérieure, chevêtre, retours, section des appuis, nervure
+        const opt = (k, cur, L) => `<select data-sel="1" data-k="${k}">${L.map(([v, t]) => `<option value="${v}"${String(cur) === String(v) ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+        A += `<div class="skx"><span><b>Disposition ${g.dispo}</b> (PP73)</span>`
+          + `<label><input type="checkbox" data-chk="1" data-k="culees.gg"${S.culees.gg !== false ? ' checked' : ''}> Mur garde-grève</label>`
+          + `<label>Chevêtre ${opt('culees.chev', S.culees.chev, [['L', 'long'], ['C', 'court']])}</label>`
+          + `<label>Retours ${opt('culees.retours', rt.mode, [['AR', 'petits murs ≤ 1,50 m (AR)'], ['AV', 'murettes latérales (AV)'], ['suspendus', 'murs suspendus'], ['aucun', 'aucun']])}</label>`
+          + `<label>Appuis ${opt('culees.section', S.culees.section, [['circ', 'colonnes'], ['carre', 'poteaux carrés']])}</label>`
+          + (f.mode === 'superficielle' ? `<label><input type="checkbox" data-chk="1" data-k="culees.nervure"${S.culees.nervure !== false ? ' checked' : ''}> Nervure</label>` : '')
+          + '</div>';
+      }
       // vue de face : sommier sur toute la largeur, colonnes, murs en retour
       let fv = (so ? r(30, 40, 260, 22) : r(30, 40, 260, 104)) + r(22, 10, 8, 120, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + r(290, 10, 8, 120, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + dh(4, 290, 298)
-        + `<text x="160" y="34" font-size="10" text-anchor="middle" fill="#495057">sommier L = ${fr(so ? so.L : g.ly, 2)} m (largeur du tablier)</text>`;
+        + `<text x="160" y="34" font-size="10" text-anchor="middle" fill="#495057">${so && so.court ? 'chevêtre court' : 'chevêtre'} L = ${fr(so ? so.L : g.ly, 2)} m</text>`;
       let fi = inp(dp + 'em', 88, 2, rt.e, 'e<sub>mr</sub>');
       if (en && g.colonnes) { fv += [80, 160, 240].map((x) => r(x - 12, 62, 24, 82, Cc)).join(''); fi += inp(dp + 'n', 50, 52, g.colonnes.n, 'n', '', 0); }
       B = view('Vue de face', fv + fond(40, 240, false), fi + fIn(false));
