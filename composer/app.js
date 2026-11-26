@@ -180,7 +180,20 @@
       return g('Ouvrage', it('usage', 'route', S.usage !== 'rail', ico('route'), 'Pont-route') + it('usage', 'rail', S.usage === 'rail', ico('rail'), 'Pont-rail'), 'c2')
         + g('Type de tablier', C.TYPE_KEYS.map((k) => { const st = C.typeStatus(k, S.travees, S.usage); return it('deck', k, S.tablier.type === k, icoW(k), GAL_LAB[k] || k, st.k === 'ok' ? '' : st.k === 'hors' ? 'hors domaine' : 'limite'); }).join(''));
     }
-    if (/^P\d+$/.test(id) || id === 'appuis') return g('Forme des piles (toutes)', Object.keys(C.PILES).map((k) => it('pile', k, S.piles.type === k, icoW(k), C.PILES[k].nom)).join(''));
+    if (/^P\d+$/.test(id) || id === 'appuis') {
+      let h = g('Forme des piles (toutes)', Object.keys(C.PILES).map((k) => it('pile', k, S.piles.type === k, icoW(k), C.PILES[k].nom)).join(''));
+      if (S.piles.type === 'voile') {   // les 9 modèles de base du PP73 (pièce 1.2.2) : groupe × type
+        const vi = (gr, ty) => {
+          const t = ty === 'A' ? 'M6 6H26V34H6Z' : ty === 'B' ? 'M4 6H28L24 34H8Z' : 'M8 6H24L28 34H4Z';
+          const p = gr === 1 ? 'M34 6H38V34H34Z' : gr === 2 ? 'M33 6H39L37.5 34H34.5Z' : 'M34.5 6H37.5L39 34H33Z';
+          return `<svg viewBox="0 0 44 40" aria-hidden="true"><path d="${t}" style="fill:#e9ecef;stroke:#2b2e36;stroke-width:1.2"/><path d="${p}" style="fill:#dee2e6;stroke:#2b2e36;stroke-width:1.2"/></svg>`;
+        };
+        let items = '';
+        [1, 2, 3].forEach((gr) => ['A', 'B', 'C'].forEach((ty) => { items += it('voile', gr + ty, S.piles.grp === gr && S.piles.face === ty, vi(gr, ty), gr + ty); }));
+        h += g('Modèles de voiles PP73 (groupe × type)', items, 'c3');
+      }
+      return h;
+    }
     if (/^C\d+$/.test(id)) return g('Forme des culées (les deux)', Object.keys(C.CULEES).map((k) => it('culee', k, S.culees.type === k, icoW(k), C.CULEES[k].nom)).join(''), 'c2');
     if (id === 'travees') return g('Travées', it('addSpan', '', false, ico('addSpan'), 'Ajouter') + it('delSpan', '', false, ico('delSpan'), 'Retirer') + it('continu', '', S.tablier.continu, ico('continu'), 'Continues'));
     return '';
@@ -381,13 +394,21 @@
           inp(dp + 'bch', 50, 6, ch.b, 'b') + fIn(true));
       } else if (t === 'voile') {
         const hd = !!ch;
-        A = view('Vue de face', fond(40, 240, false) + (hd ? r(50, 22, 220, 16) : '') + (fut.n === 2 ? r(72, hd ? 38 : 22, 66, hd ? 106 : 122) + r(182, hd ? 38 : 22, 66, hd ? 106 : 122) + dh(12, 182, 248) : r(60, hd ? 38 : 22, 200, hd ? 106 : 122) + dh(12, 60, 260)) + (hd ? dv(282, 22, 38) : '') + dv(10, 22, 144),
+        const y0 = hd ? 38 : 22, sl = fut.face === 'A' ? 0 : 14, tz = (x, w) => { const a = fut.face === 'B' ? sl : fut.face === 'C' ? -sl : 0, k = fut.n > 1 ? a / fut.n : a; return `<path d="M${x} ${y0}H${x + w}L${x + w - k} 144H${x + k}Z" style="${C_}"/>`; };
+        const lam = fut.n === 3 ? tz(64, 52) + tz(134, 52) + tz(204, 52) + dh(12, 204, 256) : fut.n === 2 ? tz(72, 66) + tz(182, 66) + dh(12, 182, 248) : tz(60, 200) + dh(12, 60, 260);
+        A = view('Vue de face', fond(40, 240, false) + (hd ? r(50, 22, 220, 16) : '') + lam + (hd ? dv(282, 22, 38) : '') + dv(10, 22, 144),
           inp(dp + 'Lv', 50, 6, fut.L, 'L') + (hd ? inp(dp + 'hch', 90, 15, ch.h, 'h') : '') + hIn(9, 58) + fIn(false));
-        B = view('Vue de côté', fond(100, 120, true) + (hd ? r(125, 22, 70, 16) + dh(12, 125, 195) : '') + r(142, hd ? 38 : 22, 36, hd ? 106 : 122) + dh(92, 142, 178),
-          (hd ? inp(dp + 'bch', 50, 6, ch.b, 'b') : '') + inp(dp + 'e', 50, 46, fut.e, 'e') + fIn(true));
-        A += `<div class="skx"><label>Lames <select data-sel="1" data-k="piles.dim.nl"><option value="1"${fut.n === 2 ? '' : ' selected'}>1 voile</option><option value="2"${fut.n === 2 ? ' selected' : ''}>2 lames</option></select></label>`
-          + `<label>Extrémités <select data-sel="1" data-k="piles.bout">${[['droit', 'droites'], ['arrondi', 'arrondies'], ['pointu', 'pointues (avant-becs)']].map(([v, t]) => `<option value="${v}"${S.piles.bout === v ? ' selected' : ''}>${t}</option>`).join('')}</select></label>`
-          + `<label>Fruit <input type="text" inputmode="decimal" data-k="piles.dim.fruit" value="${S.piles.dim.fruit > 0 ? esc(show(S.piles.dim.fruit)) : ''}" placeholder="0"><i>%</i></label></div>`;
+        const pr = fut.grp === 1 ? r(142, y0, 36, 144 - y0) : fut.grp === 2 ? `<path d="M140 ${y0}H180L170 144H150Z" style="${C_}"/>` : `<path d="M150 ${y0}H170L180 144H140Z" style="${C_}"/>`;
+        B = view('Vue de côté', fond(100, 120, true) + (hd ? r(125, 22, 70, 16) + dh(12, 125, 195) : '') + pr + dh(92, 142, 178),
+          (hd ? inp(dp + 'bch', 50, 6, ch.b, 'b') : '') + inp(dp + 'e', 50, 46, fut.e, fut.grp === 1 ? 'e' : 'E₀') + fIn(true));
+        { const opt = (k, cur, L) => `<select data-sel="1" data-k="${k}">${L.map(([v, t]) => `<option value="${v}"${String(cur) === String(v) ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+          A += `<div class="skx"><span><b>PP73 ${fut.grp}${fut.face}${fut.sect === 'arete' ? '1' : fut.sect === 'creuse' ? '2' : ''}</b></span>`
+            + `<label>Lames ${opt('piles.dim.nl', fut.n, [[1, '1 voile'], [2, '2 lames'], [3, '3 lames']])}</label>`
+            + `<label>Section ${opt('piles.sect', fut.sect, [['plane', 'plane'], ['arete', 'à arête (1A1)'], ['creuse', 'creuse (1A2)']])}</label>`
+            + (fut.sect === 'plane' ? `<label>Extrémités ${opt('piles.bout', S.piles.bout, [['droit', 'droites'], ['arrondi', 'arrondies'], ['pointu', 'pointues (avant-becs)']])}</label>` : '')
+            + (fut.face !== 'A' ? `<label>Fruit F <input type="text" inputmode="decimal" data-k="piles.dim.fruit" value="${S.piles.dim.fruit > 0 ? esc(show(S.piles.dim.fruit)) : ''}" placeholder="${esc(fr(fut.fruit * 100, 1))}"><i>%</i></label>` : '')
+            + (fut.grp !== 1 ? `<label>E₁ (pied) <input type="text" inputmode="decimal" data-k="piles.dim.e1" value="${S.piles.dim.e1 > 0 ? esc(show(S.piles.dim.e1)) : ''}" placeholder="${esc(fr(fut.e1, 2))}"><i>m</i></label>` : '')
+            + '</div>'; }
       } else {
         A = view('Vue de face', fond(60, 200, false) + `<path d="M20 22H300V44L190 62H130L20 44Z" style="${C_}"/>` + r(130, 62, 60, 82) + dh(12, 20, 300) + dv(308, 22, 62) + dv(14, 22, 44) + dh(100, 130, 190) + dv(32, 62, 144),
           inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 21, ch.h, 'h') + inp(dp + 'h2', 11, 16, ch.h2, 'h₂') + inp(dp + 'bf', 50, 50, fut.b, 'b') + hIn(10, 52) + fIn(false));
@@ -1264,6 +1285,7 @@
       case 'continu': S.tablier.continu = !S.tablier.continu; break;
       case 'dalleC': S.tablier.dalleContinuite = !S.tablier.dalleContinuite; break;
       case 'pile': S.piles.type = arg; break;
+      case 'voile': S.piles.grp = +arg[0]; S.piles.face = arg[1]; break;
       case 'culee': S.culees.type = arg; break;
       case 'reg': S.reglement = arg; break;
       case 'retenue': S.equip.retenue = arg; break;

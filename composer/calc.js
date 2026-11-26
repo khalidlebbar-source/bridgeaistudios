@@ -223,8 +223,11 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'Lv', 'nl', 'fruit', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 2, fruit: 10 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
     out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
+    out.piles.grp = [1, 2, 3].includes(+out.piles.grp) ? +out.piles.grp : 1;
+    out.piles.face = ['A', 'B', 'C'].includes(out.piles.face) ? out.piles.face : (out.piles.dim.fruit > 0 ? 'B' : 'A');
+    out.piles.sect = ['plane', 'arete', 'creuse'].includes(out.piles.sect) ? out.piles.sect : 'plane';
     out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8 });
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
@@ -648,18 +651,31 @@
     const parts = [];
     let lx, ly, ch = null, fut;
     if (t === 'voile') {
+      /* voiles PP73 (pièce 1.2.2) : 9 modèles de base = groupe (profil de l'épaisseur) × type (contour de face)
+         groupe 1 : épaisseur constante ; 2 : plus épaisse en tête (E0 ≤ 0,80, E1 ≥ 0,50) ; 3 : plus épaisse en pied
+         type A : faces latérales verticales ; B : fruit négatif (L1 en pied ≥ 1,50 et ≥ 0,6 L0) ; C : fruit positif
+         section courante plane, à arête (1A1) ou creuse (1A2) ; extrémités droites, arrondies ou pointues ; 1 à 3 lames */
+      const grp = [1, 2, 3].includes(+S.piles.grp) ? +S.piles.grp : 1;
+      const face = ['A', 'B', 'C'].includes(S.piles.face) ? S.piles.face : (dm.fruit > 0 ? 'B' : 'A');
+      const sect = ['plane', 'arete', 'creuse'].includes(S.piles.sect) ? S.piles.sect : 'plane';
       const ev = ov('e', Math.max(rail ? 1.2 : 0.8, r05(H / 15)));
+      const e1 = grp === 1 ? ev : ov('e1', grp === 2 ? Math.max(0.50, r05(ev - 0.30)) : r05(ev + 0.30));
       let hch = 0;
-      const nl = dm.nl === 2 ? 2 : 1, Lch = ov('Lch', Lsup);
-      const Lv = ov('Lv', nl === 2 ? r05(Math.max(1.5, 0.27 * Lch)) : Lsup);
-      if (nl === 2 || ev < ov('bch', bt) || dm.hch) { hch = ov('hch', nl === 2 ? r10(Math.max(1.2, 0.12 * Lch)) : 0.8); ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: nl === 2 ? Lch : Math.max(Lv, Lch === Lsup ? Lv : Lch), kind: nl === 2 ? 'chevetre' : 'tete' }; }
-      const Hf = Math.max(0.5, H - hch), fru = (dm.fruit || 0) / 100;
-      const Lb = Math.max(0.5, Lv - 2 * fru * Hf);           // longueur en pied (fruit sur les faces latérales)
-      const xl = nl === 2 ? [-(ch.L / 2 - 0.9 - Lv / 2), ch.L / 2 - 0.9 - Lv / 2] : [0];
-      fut = { kind: 'voile', e: ev, L: Lv, Lb, H: Hf, n: nl, xl, bout: S.piles.bout, fruit: fru };
-      const Ab = (L) => ev * L - (S.piles.bout === 'droit' ? 0 : (S.piles.bout === 'pointu' ? ev * ev / 2 : ev * ev * (1 - Math.PI / 4)));
-      parts.push({ des: (nl === 2 ? '2 lames ' : 'Fût en voile ') + fr(ev, 2) + ' × ' + fr(Lv, 2) + ' m' + (fru ? ' (fruit ' + fr(fru * 100, 1) + ' %)' : ''), V: nl * (Ab(Lv) + Ab(Lb)) / 2 * Hf, coff: nl * (2 * ev + Lv + Lb) * Hf, ratio: 100 });
-      lx = ev; ly = nl === 2 ? xl[1] - xl[0] + Lv : Lv;
+      const nl = [1, 2, 3].includes(dm.nl) ? dm.nl : 1, Lch = ov('Lch', Lsup);
+      const Lv = ov('Lv', nl >= 2 ? r05(Math.max(1.5, (nl === 2 ? 0.27 : 0.18) * Lch)) : Lsup);
+      if (nl >= 2 || ev < ov('bch', bt) || dm.hch) { hch = ov('hch', nl >= 2 ? r10(Math.max(1.2, 0.12 * Lch)) : 0.8); ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: nl >= 2 ? Lch : Math.max(Lv, Lch === Lsup ? Lv : Lch), kind: nl >= 2 ? 'chevetre' : 'tete' }; }
+      const Hf = Math.max(0.5, H - hch);
+      let fru = face === 'A' ? 0 : (dm.fruit > 0 ? dm.fruit : 10) / 100;
+      let Lb = face === 'C' ? Lv + 2 * fru * Hf : Lv - 2 * fru * Hf;
+      if (face === 'B') { const Lmin = Math.min(Lv, Math.max(1.5, 0.6 * Lv)); if (Lb < Lmin) { Lb = Lmin; fru = (Lv - Lb) / 2 / Hf; } }
+      const d = nl >= 2 ? ch.L / 2 - 0.9 - Math.max(Lv, Lb) / 2 : 0;
+      const xl = nl === 1 ? [0] : nl === 2 ? [-d, d] : [-d, 0, d];
+      fut = { kind: 'voile', e: ev, e1, grp, face, sect, L: Lv, Lb, H: Hf, n: nl, xl, bout: sect === 'plane' ? S.piles.bout : 'droit', fruit: fru };
+      const em = (ev + e1) / 2, red = sect === 'arete' ? 0.25 * (em - 0.40) : sect === 'creuse' ? 0.30 * (em - 0.40) : 0;
+      const Ab = (L) => (em - red) * L - (fut.bout === 'droit' ? 0 : (fut.bout === 'pointu' ? em * em / 2 : em * em * (1 - Math.PI / 4)));
+      const nom = 'Voile PP73 ' + grp + face + (sect === 'arete' ? '1' : sect === 'creuse' ? '2' : '');
+      parts.push({ des: (nl >= 2 ? nl + ' lames — ' : '') + nom + ', ' + fr(ev, 2) + (grp !== 1 ? '/' + fr(e1, 2) : '') + ' × ' + fr(Lv, 2) + (Math.abs(Lb - Lv) > 0.01 ? '/' + fr(Lb, 2) : '') + ' m', V: nl * (Ab(Lv) + Ab(Lb)) / 2 * Hf, coff: nl * (2 * em + Lv + Lb) * Hf * (sect === 'plane' ? 1 : 1.05), ratio: 100 });
+      lx = Math.max(ev, e1); ly = nl >= 2 ? xl[xl.length - 1] - xl[0] + Math.max(Lv, Lb) : Math.max(Lv, Lb);
     } else if (t === 'colonnes') {
       const D = ov('D', H > 15 ? 1.50 : (rail ? 1.40 : 1.20));
       const Lc = ov('Lch', Math.max(W, Lsup)), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre

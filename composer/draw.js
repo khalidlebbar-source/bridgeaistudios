@@ -118,7 +118,9 @@
       if (s.kind === 'pile') {
         let yTopFut = ySeat;
         if (g.ch) { rect(P, s.x - g.ch.b / 2, ySeat, s.x + g.ch.b / 2, ySeat - g.ch.h, 'vuB'); yTopFut = ySeat - g.ch.h; }
-        rect(P, s.x - g.lx / 2, yTopFut, s.x + g.lx / 2, yft, g.fut.kind === 'colonnes' ? 'col' : 'vuB');
+        const fu = g.fut;
+        if (fu.kind === 'voile' && fu.e1 && Math.abs(fu.e1 - fu.e) > 0.01) poly(P, [[s.x - fu.e / 2, yTopFut], [s.x + fu.e / 2, yTopFut], [s.x + fu.e1 / 2, yft], [s.x - fu.e1 / 2, yft]], 'vuB');
+        else rect(P, s.x - (fu.kind === 'voile' ? fu.e : g.lx) / 2, yTopFut, s.x + (fu.kind === 'voile' ? fu.e : g.lx) / 2, yft, fu.kind === 'colonnes' ? 'col' : 'vuB');
       } else {
         const o = s.j === 0 ? -1 : 1, R = C.culeeProfil(s), X = (q) => [s.x + o * q[0], ySeat + q[1]];
         R.seen.forEach((c) => poly(P, c.pts.map(X), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vuL'));
@@ -574,8 +576,10 @@
     return { yl, W: W_ };
   }
   /* section de lame de voile en plan : longueur L (sens transversal y), épaisseur e (sens x), extrémités droites, arrondies ou pointues */
-  function lame(P, xc, yc, e, L, bout, lay) {
-    const h = L / 2, r = e / 2;
+  function lame(P, xc, yc, e, L, bout, lay, sect) {
+    const h = L / 2, r = e / 2, r0 = Math.min(r, 0.20);
+    if (sect === 'arete') return poly(P, [[xc - r0, yc - h], [xc - r, yc], [xc - r0, yc + h], [xc + r0, yc + h], [xc + r, yc], [xc + r0, yc - h]], lay);
+    if (sect === 'creuse') return poly(P, [[xc - r, yc - h], [xc - r0, yc], [xc - r, yc + h], [xc + r, yc + h], [xc + r0, yc], [xc + r, yc - h]], lay);
     if (bout === 'pointu') poly(P, [[xc - r, yc - h + r], [xc, yc - h], [xc + r, yc - h + r], [xc + r, yc + h - r], [xc, yc + h], [xc - r, yc + h - r]], lay);
     else if (bout === 'arrondi') {
       const pts = [];
@@ -595,7 +599,9 @@
         const ch = g.ch, fut = g.fut, Hf = fut.H, th = fut.kind === 'colonnes' ? fut.D : fut.kind === 'voile' ? fut.e : fut.a;
         const fl = fondLo(P, f, 0, true);
         line(P, [-(fl.W / 2 + 2), 0.6], [fl.W / 2 + 2, 0.6], 'tn');
-        rect(P, -th / 2, 0, th / 2, Hf, fut.kind === 'colonnes' ? 'col' : 'vuB');
+        if (fut.kind === 'voile' && fut.e1 && Math.abs(fut.e1 - fut.e) > 0.01) poly(P, [[-fut.e1 / 2, 0], [fut.e1 / 2, 0], [fut.e / 2, Hf], [-fut.e / 2, Hf]], 'vuB');
+        else rect(P, -th / 2, 0, th / 2, Hf, fut.kind === 'colonnes' ? 'col' : 'vuB');
+        if (fut.kind === 'voile' && fut.e1 && Math.abs(fut.e1 - fut.e) > 0.01) dim(P, [-fut.e1 / 2, 0.4], [fut.e1 / 2, 0.4], 'h', -3, frn(fut.e1));
         if (ch) { rect(P, -ch.b / 2, Hf, ch.b / 2, H, 'beton'); dim(P, [-ch.b / 2, H], [ch.b / 2, H], 'h', 14, frn(ch.b)); dim(P, [ch.b / 2, Hf], [ch.b / 2, H], 'v', 8, frn(ch.h)); }
         dim(P, [-th / 2, Hf * 0.55], [th / 2, Hf * 0.55], 'h', 3, (fut.kind === 'colonnes' ? 'Ø' : '') + frn(th));
         dim(P, [-(ch ? ch.b : th) / 2, 0], [-(ch ? ch.b : th) / 2, H], 'v', -10, 'H = ' + frn(H));
@@ -688,7 +694,12 @@
       if (!isC) {
         const fut = g.fut;
         if (fut.kind === 'colonnes') for (let i = 0; i < fut.n; i++) { const y = -(fut.n - 1) * fut.s / 2 + i * fut.s; circ(P, 0, y, fut.D / 2, FSEC, 24); if (i < fut.n - 1) dim(P, [0, y], [0, y + fut.s], 'v', -4 - (Bf / 2) * 0, frn(fut.s)); }
-        else if (fut.kind === 'voile') (fut.xl || [0]).forEach((y) => { lame(P, 0, y, fut.e, fut.Lb || fut.L, fut.bout, FSEC); dim(P, [fut.e / 2, y - (fut.Lb || fut.L) / 2], [fut.e / 2, y + (fut.Lb || fut.L) / 2], 'v', 3, frn(fut.Lb || fut.L)); });
+        else if (fut.kind === 'voile') {
+          const eb = fut.e1 || fut.e;
+          (fut.xl || [0]).forEach((y) => { lame(P, 0, y, eb, fut.Lb || fut.L, fut.bout, FSEC, fut.sect); dim(P, [eb / 2, y - (fut.Lb || fut.L) / 2], [eb / 2, y + (fut.Lb || fut.L) / 2], 'v', 3, frn(fut.Lb || fut.L)); });
+          const y0 = (fut.xl || [0])[0] - (fut.Lb || fut.L) / 2; dim(P, [-eb / 2, y0], [eb / 2, y0], 'h', -4, frn(eb));
+          text(P, [0, (fut.xl || [0])[0]], 'PP73 ' + fut.grp + fut.face + (fut.sect === 'arete' ? '1' : fut.sect === 'creuse' ? '2' : ''), { ht: 2, dy: 0, lay: 'note', anchor: 'start' });
+        }
         else rect(P, -fut.a / 2, -(fut.bb || fut.b) / 2, fut.a / 2, (fut.bb || fut.b) / 2, FSEC);
       } else {
         const R = RC, X = (u) => o * u, rt = g.retours, rr = (a, b, y0, y1, lay) => rect(P, Math.min(X(a), X(b)), y0, Math.max(X(a), X(b)), y1, lay);
