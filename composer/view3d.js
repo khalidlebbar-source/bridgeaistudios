@@ -86,6 +86,14 @@
         const f = g.fut;
         if (f.kind === 'voile') box(s.x - f.e / 2, s.x + f.e / 2, -f.L / 2, f.L / 2, zTop, yft);
         else if (f.kind === 'marteau') box(s.x - f.a / 2, s.x + f.a / 2, -f.b / 2, f.b / 2, zTop, yft);
+        else if (f.kind === 'vy') {   // voile en V / Y : deux bras (boîtes inclinées approchées par tranches)
+          const nS = 6, yN = zTop - f.hn;
+          for (let k = 0; k < nS; k++) {
+            const z0 = yft + (zTop - yft) * k / nS, z1 = yft + (zTop - yft) * (k + 1) / nS, zm = (z0 + z1) / 2, half = f.Lb / 2 + (f.Lt - f.Lb) / 2 * (zm - yft) / (zTop - yft);
+            if (zm < yN) box(s.x - f.e / 2, s.x + f.e / 2, -half, half, z1, z0);
+            else { const inner = Math.max(0, (f.Lt / 2 - f.bw) * (zm - yN) / (zTop - yN)); [-1, 1].forEach((sg) => box(s.x - f.e / 2, s.x + f.e / 2, sg * inner, sg * half, z1, z0)); }
+          }
+        }
         else (f.pos || Array.from({ length: f.n }, (_, i) => -(f.n - 1) * f.s / 2 + i * f.s)).forEach((y) => { if (f.sec && f.sec !== 'circ' && f.sec !== 'ellip') box(s.x - f.D / 2, s.x + f.D / 2, y - (f.b || f.D) / 2, y + (f.b || f.D) / 2, zTop, yft); else cyl(s.x, y, f.D, yft, zTop); });
       } else {
         const o = s.j === 0 ? -1 : 1;

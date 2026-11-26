@@ -96,6 +96,7 @@
     if (has(/\bpiles?[- ](en )?(colonnes?|poteaux|futs? (circulaires?|multiples?))\b|\bcolonnes?\b/g)) { S.piles.type = 'colonnes'; say('Piles colonnes + chevêtre'); }
     else if (has(/\bpiles?[- ](en )?(voiles?|pleines?|murs?)\b|\bvoiles?\b/g)) { S.piles.type = 'voile'; say('Piles voiles'); }
     else if (has(/\b(piles?[- ])?(en )?marteaux?\b/g)) { S.piles.type = 'marteau'; say('Piles marteau'); }
+    else if (has(/\bpiles?[- ]en [vy]\b/g)) { S.piles.type = 'vy'; S.piles.vform = /\ben y\b/.test(s) ? 'Y' : 'V'; say('Piles en ' + S.piles.vform); }
     if (has(/\bculees?[- ](enterrees?|perchees?|noyees?|apparentes? enterrees?)\b|\bsommiers? (sur colonnes|enterres?)\b/g)) { S.culees.type = 'enterree'; say('Culées enterrées'); }
     else if (has(/\bculees?[- ](remblayees?|massives?|mur de front|a mur)\b|\bmurs? de front\b/g)) { S.culees.type = 'remblayee'; say('Culées remblayées'); }
     if (has(/\bsans dalles? de transition\b/g)) { S.culees.dalleTransition = false; say('Sans dalle de transition'); }

@@ -120,7 +120,7 @@
         if (g.ch) { rect(P, s.x - g.ch.b / 2, ySeat, s.x + g.ch.b / 2, ySeat - g.ch.h, 'vuB'); yTopFut = ySeat - g.ch.h; }
         const fu = g.fut;
         if (fu.kind === 'voile' && fu.e1 && Math.abs(fu.e1 - fu.e) > 0.01) poly(P, [[s.x - fu.e / 2, yTopFut], [s.x + fu.e / 2, yTopFut], [s.x + fu.e1 / 2, yft], [s.x - fu.e1 / 2, yft]], 'vuB');
-        else rect(P, s.x - (fu.kind === 'voile' ? fu.e : g.lx) / 2, yTopFut, s.x + (fu.kind === 'voile' ? fu.e : g.lx) / 2, yft, fu.kind === 'colonnes' ? colLay(fu) : 'vuB');
+        else rect(P, s.x - (fu.kind === 'voile' || fu.kind === 'vy' ? fu.e : g.lx) / 2, yTopFut, s.x + (fu.kind === 'voile' || fu.kind === 'vy' ? fu.e : g.lx) / 2, yft, fu.kind === 'colonnes' ? colLay(fu) : 'vuB');
       } else {
         const o = s.j === 0 ? -1 : 1, R = C.culeeProfil(s), X = (q) => [s.x + o * q[0], ySeat + q[1]];
         R.seen.forEach((c) => poly(P, c.pts.map(X), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vuL'));
@@ -502,6 +502,14 @@
       let xcols = [];
       if (g.fut.kind === 'voile') (g.fut.xl || [0]).forEach((xc) => futTrap(xc, g.fut.L, g.fut.Lb || g.fut.L, 'vuB'));
       else if (g.fut.kind === 'marteau') futTrap(0, g.fut.b, g.fut.bb || g.fut.b, 'vuB');
+      else if (g.fut.kind === 'vy') {
+        const f_ = g.fut, yT = yTop, yB = ySeat - ref.H, a = f_.Lt / 2, b = f_.Lb / 2, w = f_.bw, yN = yT - f_.hn;
+        const yS = f_.form === 'Y' ? yN : yB, kx = (y) => b + (a - b) * (y - yB) / (yT - yB);
+        if (f_.form === 'Y') { const yA = yN + Math.min(0.8 * w, (yT - yN) * 0.4); poly(P, [[-b, yB], [b, yB], [b, yN], [a, yT], [a - w, yT], [0, yA], [-(a - w), yT], [-a, yT], [-b, yN]], 'vuB'); dim(P, [b, yB], [b, yN], 'v', 4, frn(yN - yB)); }
+        else poly(P, [[-b, yB], [b, yB], [a, yT], [a - w, yT], [0, yN], [-(a - w), yT], [-a, yT]], 'vuB');
+        dim(P, [-a, yT], [-(a - w), yT], 'h', 3, frn(w)); dim(P, [-b, yB], [b, yB], 'h', -3, frn(f_.Lb));
+        void yS; void kx;
+      }
       else {
         if (g.nervure) { const nv = g.nervure; rect(P, -nv.L / 2, yft + nv.h, nv.L / 2, yft, 'beton'); dim(P, [nv.L / 2, yft], [nv.L / 2, yft + nv.h], 'v', 4, frn(nv.h)); }
         const yfc = g.nervure ? yft + g.nervure.h : yft, yf0 = yft;
@@ -547,7 +555,7 @@
       }
       poly(P, [[-half, ytn], [half, ytn], [half, yLow - 0.6], [-half, yLow - 0.6]], 'sol');
       line(P, [-half, ytn], [half, ytn], 'tn');
-      const xd = g.fut.kind === 'voile' ? Math.max(...(g.fut.xl || [0]).map(Math.abs)) + g.fut.L / 2 : (g.fut.kind === 'marteau' ? g.fut.b : 2 * Math.max(...colPos(g.fut).map(Math.abs)) + (g.fut.b || g.fut.D)) / 2;
+      const xd = g.fut.kind === 'voile' ? Math.max(...(g.fut.xl || [0]).map(Math.abs)) + g.fut.L / 2 : (g.fut.kind === 'marteau' ? g.fut.b : g.fut.kind === 'vy' ? g.fut.Lt : 2 * Math.max(...colPos(g.fut).map(Math.abs)) + (g.fut.b || g.fut.D)) / 2;
       if (g.fut.kind === 'voile' && g.fut.n === 2) dim(P, [g.fut.xl[0] - g.fut.L / 2, yTop - 0.6], [g.fut.xl[0] + g.fut.L / 2, yTop - 0.6], 'h', -2, frn(g.fut.L));
       dim(P, [-xd, yTop], [-xd, yft], 'v', -6, frn(ref.H - hch));
     }
@@ -612,7 +620,7 @@
     {
       const P = [];
       if (!isC) {
-        const ch = g.ch, fut = g.fut, Hf = fut.H, th = fut.kind === 'colonnes' ? fut.D : fut.kind === 'voile' ? fut.e : fut.a;
+        const ch = g.ch, fut = g.fut, Hf = fut.H, th = fut.kind === 'colonnes' ? fut.D : fut.kind === 'voile' || fut.kind === 'vy' ? fut.e : fut.a;
         const fl = fondLo(P, f, 0, true);
         line(P, [-(fl.W / 2 + 2), 0.6], [fl.W / 2 + 2, 0.6], 'tn');
         if (fut.kind === 'voile' && fut.e1 && Math.abs(fut.e1 - fut.e) > 0.01) poly(P, [[-fut.e1 / 2, 0], [fut.e1 / 2, 0], [fut.e / 2, Hf], [-fut.e / 2, Hf]], 'vuB');
@@ -724,6 +732,7 @@
           const y0 = (fut.xl || [0])[0] - (fut.Lb || fut.L) / 2; dim(P, [-eb / 2, y0], [eb / 2, y0], 'h', -4, frn(eb));
           text(P, [0, (fut.xl || [0])[0]], 'PP73 ' + fut.grp + fut.face + (fut.sect === 'arete' ? '1' : fut.sect === 'creuse' ? '2' : ''), { ht: 2, dy: 0, lay: 'note', anchor: 'start' });
         }
+        else if (fut.kind === 'vy') { rect(P, -fut.e / 2, -fut.Lb / 2, fut.e / 2, fut.Lb / 2, FSEC); dim(P, [fut.e / 2, -fut.Lb / 2], [fut.e / 2, fut.Lb / 2], 'v', 3, frn(fut.Lb)); text(P, [0, fut.Lb / 2], 'voile en ' + fut.form + ' — section au pied', { ht: 2, dy: 4, lay: 'note' }); }
         else rect(P, -fut.a / 2, -(fut.bb || fut.b) / 2, fut.a / 2, (fut.bb || fut.b) / 2, FSEC);
       } else {
         const R = RC, X = (u) => o * u, rt = g.retours, rr = (a, b, y0, y1, lay) => rect(P, Math.min(X(a), X(b)), y0, Math.max(X(a), X(b)), y1, lay);

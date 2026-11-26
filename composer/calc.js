@@ -84,6 +84,7 @@
     voile: { nom: 'Voile', desc: 'Fût plein, tête élargie si besoin' },
     colonnes: { nom: 'Colonnes', desc: 'Colonnes circulaires + chevêtre' },
     marteau: { nom: 'Marteau', desc: 'Fût unique + chevêtre en console' },
+    vy: { nom: 'En V / Y', desc: 'Appui spécial PP73 (voile en V ou en Y)' },
   };
   const CULEES = {
     enterree: { nom: 'Enterrée', desc: 'Sommier dans le remblai, talus 3/2' },
@@ -230,6 +231,7 @@
     out.piles.sect = ['plane', 'arete', 'creuse'].includes(out.piles.sect) ? out.piles.sect : 'plane';
     out.piles.col = ['circ', 'carre', 'rect', 'octo', 'ellip'].includes(out.piles.col) ? out.piles.col : 'circ';
     out.piles.paires = !!out.piles.paires;
+    out.piles.vform = out.piles.vform === 'Y' ? 'Y' : 'V';
     out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8 });
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
@@ -707,6 +709,18 @@
       const nomS = sec === 'circ' ? 'colonnes Ø ' + fr(D, 2) : sec === 'carre' ? 'poteaux ' + fr(D, 2) + ' × ' + fr(D, 2) : sec === 'rect' ? 'fûts ' + fr(D, 2) + ' × ' + fr(bD, 2) : sec === 'octo' ? 'fûts octogonaux ' + fr(D, 2) : 'fûts elliptiques ' + fr(D, 2) + ' × ' + fr(bD, 2);
       parts.push({ des: nc + ' ' + nomS + ' m' + (paires ? ' (par paires)' : ''), V: nc * A * Hf, coff: nc * per * Hf, ratio: 160 });
       lx = D; ly = Lc;
+    } else if (t === 'vy') {
+      /* appuis non courants du PP73 (1.2.2 § 2) : voile en V (deux bras depuis le pied) ou en Y (fût puis deux bras) */
+      const form = S.piles.vform === 'Y' ? 'Y' : 'V';
+      const ev = ov('e', Math.max(rail ? 1.2 : 0.8, r05(H / 15)));
+      const hch = ov('hch', 0.8), Hf = Math.max(1.5, H - hch);
+      const Lt = ov('Lv', r05(Math.max(4, 0.85 * Lsup))), bw = ov('bf', r05(clamp(0.18 * Lt, 1.0, 2.5))), Lb = ov('a', r05(Math.max(bw, form === 'Y' ? bw : 1.2 * bw)));
+      const hn = form === 'V' ? 0.85 * Hf : 0.50 * Hf;
+      ch = { b: Math.max(ev, ov('bch', bt)), h: hch, L: ov('Lch', Lt + 0.4), kind: 'tete' };
+      fut = { kind: 'vy', form, e: ev, Lt, Lb, bw, hn, H: Hf };
+      const A = (Lt + Lb) / 2 * Hf - (Lt - 2 * bw) * hn / 2;
+      parts.push({ des: 'Voile en ' + form + ' ' + fr(ev, 2) + ' × ' + fr(Lt, 2) + ' m (pied ' + fr(Lb, 2) + ' m)', V: ev * A, coff: 2 * A + ev * (2 * Math.hypot((Lt - Lb) / 2, Hf) + 2 * Math.hypot(Lt / 2 - bw, hn) + Lb), ratio: 130 });
+      lx = ev; ly = Lb;
     } else {
       const a = ov('a', Math.max(rail ? 1.5 : 1.2, r05(H / 12)));
       const bf = ov('bf', clamp(r05(0.35 * Lsup), 2.0, Math.max(2.0, Lsup - 1.0))), fru = (dm.fruit || 0) / 100;
@@ -725,7 +739,7 @@
         const Aside = ch.bf * ch.h + 2 * lc * (ch.h + ch.h2) / 2;
         V = ch.b * Aside;
         coff = 2 * Aside + ch.b * (ch.bf + 2 * Math.hypot(lc, ch.h - ch.h2)) + 2 * ch.b * ch.h2;
-      } else { V = ch.b * ch.h * ch.L; coff = (2 * ch.h + ch.b) * ch.L + 2 * ch.b * ch.h - (fut.kind === 'colonnes' ? fut.n * fut.D * fut.b * 0.8 : fut.e * fut.L); }
+      } else { V = ch.b * ch.h * ch.L; coff = (2 * ch.h + ch.b) * ch.L + 2 * ch.b * ch.h - (fut.kind === 'colonnes' ? fut.n * fut.D * fut.b * 0.8 : fut.kind === 'vy' ? 2 * fut.e * fut.bw : fut.e * fut.L); }
       parts.push({ des: (ch.kind === 'tete' ? 'Tête élargie ' : 'Chevêtre ') + fr(ch.b, 2) + ' × ' + fr(ch.h, 2) + ' m', V, coff, ratio: 150 });
     }
     return { type: t, H, fut, ch, parts, lx, ly, V: sum(parts.map((p) => p.V)) };

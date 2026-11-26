@@ -100,6 +100,7 @@
     voile: '<path d="M18 3h24v4H18zM24 7h12v14H24zM18 21h24v2H18z"/>',
     colonnes: '<path d="M14 3h32v5H14zM19 8h4v13h-4zM37 8h4v13h-4zM14 21h32v2H14z"/>',
     marteau: '<path d="M10 3h40v3l-12 4H22L10 6zM25 10h10v11H25zM18 21h24v2H18z"/>',
+    vy: '<path d="M14 3h32v3H14zM16 6h7l7 9 7-9h7L34 21h-8zM18 21h24v2H18z"/>',
     enterree: '<path d="M8 4h20v4H8zM14 8h4v12h-4zM28 4h28M22 8l20 14"/><path d="M10 20h12v3H10z"/>',
     remblayee: '<path d="M8 3h4v18H8zM4 21h12v2H4zM12 3h44M12 6l40 0v8l-40 5" stroke-dasharray="2 2"/>',
   };
@@ -399,6 +400,12 @@
             + '</div>'; }
         B = view('Vue de côté', fond(100, 120, true) + r(120, 22, 80, 24) + r(148, 46, 24, 98, Cc) + dh(12, 120, 200),
           inp(dp + 'bch', 50, 6, ch.b, 'b') + fIn(true));
+      } else if (t === 'vy') {
+        const Y = fut.form === 'Y', yn = Y ? 84 : 120;
+        A = view('Vue de face', fond(40, 240, false) + r(56, 22, 208, 14) + (Y ? `<path d="M144 144H176V84L262 36H222L160 70L98 36H58L144 84Z" style="${C_}"/>` : `<path d="M132 144H188L262 36H222L160 ${yn}L98 36H58Z" style="${C_}"/>`) + dh(12, 56, 264) + dv(10, 22, 144),
+          inp(dp + 'Lv', 50, 6, fut.Lt, 'L') + inp(dp + 'bf', 22, 30, fut.bw, 'bras') + inp(dp + 'a', 50, 60, fut.Lb, 'pied') + hIn(9, 58) + fIn(false));
+        B = view('Vue de côté', fond(100, 120, true) + r(125, 22, 70, 14) + r(142, 36, 36, 108) + dh(92, 142, 178), inp(dp + 'e', 50, 46, fut.e, 'e') + fIn(true));
+        A += `<div class="skx"><label>Forme <select data-sel="1" data-k="piles.vform"><option value="V"${Y ? '' : ' selected'}>en V</option><option value="Y"${Y ? ' selected' : ''}>en Y</option></select></label><span>Appui spécial PP73</span></div>`;
       } else if (t === 'voile') {
         const hd = !!ch;
         const y0 = hd ? 38 : 22, sl = fut.face === 'A' ? 0 : 14, tz = (x, w) => { const a = fut.face === 'B' ? sl : fut.face === 'C' ? -sl : 0, k = fut.n > 1 ? a / fut.n : a; return `<path d="M${x} ${y0}H${x + w}L${x + w - k} 144H${x + k}Z" style="${C_}"/>`; };

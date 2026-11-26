@@ -74,6 +74,7 @@
       voile: '<svg viewBox="0 0 40 40"><path d="M6 6h28v4H6zM12 10h16v22H12zM6 32h28v5H6z"/></svg>',
       colonnes: '<svg viewBox="0 0 40 40"><path d="M4 6h32v5H4zM9 11h5v21H9zM26 11h5v21h-5zM4 32h32v5H4z"/></svg>',
       marteau: '<svg viewBox="0 0 40 40"><path d="M3 6h34v3l-9 4H12l-9-4zM15 13h10v19H15zM8 32h24v5H8z"/></svg>',
+      vy: '<svg viewBox="0 0 40 40"><path d="M4 6h32v3H4zM6 9h7l7 11 7-11h7L23 32h-6zM8 32h24v5H8z"/></svg>',
       enterree: '<svg viewBox="0 0 40 40"><path d="M2 36L22 14h16M8 10h18v6H8zM10 16h4v8h-4zM20 16h4v8h-4z"/></svg>',
       remblayee: '<svg viewBox="0 0 40 40"><path d="M6 6h8v26H6zM14 8h24M2 32h20v5H2zM14 14l22 0"/></svg>',
       superficielle: '<svg viewBox="0 0 40 40"><path d="M2 18h36M15 6h10v20H15zM6 26h28v6H6z"/></svg>',
