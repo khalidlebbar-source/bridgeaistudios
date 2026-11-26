@@ -397,6 +397,23 @@
       }
     } else {
       const so = g.sommier, rt = g.retours, en = g.type === 'enterree';
+      if (!en) {   // culée remblayée (modèle KLE) : mur de front, sommier à gousset, semelle à patin et talon, murs en retour
+        const U = rt.mode === 'U', R = C.culeeProfil(s);
+        let sv = (U ? '<path d="M118 10H228L274 70V144H118Z" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>' : '<path d="M160 10H262V40L160 80Z" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>')
+          + r(150, 10, 10, 30) + `<path d="M118 40H170V62L150 84V144H118Z" style="${C_}"/>` + ln(118, 62, 150, 62, 'stroke:#2b2e36;stroke-width:.8')
+          + r(95, 144, 180, 16) + dh(4, 150, 160) + dv(178, 40, 62) + dh(100, 118, 150) + dh(172, 95, 118) + dh(172, 150, 275) + dv(10, 40, 144) + dh(4, 118, 274);
+        let si = inp(dp + 'egg', 44, 12, g.egg, 'e<sub>gg</sub>') + inp(dp + 'hs', 62, 22, so.h, 'h<sub>s</sub>') + inp(dp + 'ef', 38, 44, g.mur.e, 'e') + hIn(9, 50)
+          + inp(dp + 'a1', 22, 26, so.a1, 'avant') + inp(dp + 'Lmr', 78, 2, rt.L, 'L<sub>mr</sub>');
+        if (f.mode === 'superficielle') si += inp(dp + 'pat', 16, 92, R.uf - R.u0, 'patin') + inp(fp + 'B', 66, 92, f.B, 'B') + inp(fp + 'e', 91, 76, f.e, 'e');
+        else si += fIn(true);
+        A = view('Vue de côté (coupe à l’axe)', sv, si);
+        A += `<div class="skx"><label>Murs en retour <select data-sel="1" data-k="culees.retours"><option value="U"${U ? ' selected' : ''}>en U sur la semelle</option><option value="suspendus"${U ? '' : ' selected'}>suspendus</option></select></label>`
+          + `<label>Gros béton <input type="text" inputmode="decimal" data-k="culees.dim.gb" value="${g.gros > 0 ? esc(show(g.gros)) : ''}" placeholder="0"><i>m</i></label></div>`;
+        let fv = r(30, 40, 260, 22) + r(30, 62, 260, 82) + r(30, 10, 8, 134, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + r(282, 10, 8, 134, 'fill:#f1f3f5;stroke:#495057;stroke-width:1') + dh(4, 282, 290)
+          + `<text x="160" y="104" font-size="10" text-anchor="middle" fill="#495057">mur de front L = ${fr(so.L, 2)} m</text>`;
+        B = view('Vue de face', fv + fond(20, 280, false), inp(dp + 'em', 88, 2, rt.e, 'e<sub>mr</sub>') + fIn(false));
+        return A + B;
+      }
       // vue de côté : coupe longitudinale de la culée (remblai à droite)
       let sv = r(150, 10, 10, 30) + (so ? r(122, 40, 76, 22) : '') + `<path d="M198 10H314V${so ? 62 : 100}H198" style="fill:#f8f9fa;stroke:#868e96;stroke-width:1;stroke-dasharray:5 3"/>` + dh(4, 198, 314) + dh(28, 150, 160);
       let si = inp(dp + 'egg', 40, 13, g.egg, 'e<sub>gg</sub>') + inp(dp + 'Lmr', 80, 2, rt.L, 'L') + hIn(9, 56);

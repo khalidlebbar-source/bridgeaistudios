@@ -87,7 +87,7 @@
   };
   const CULEES = {
     enterree: { nom: 'Enterrée', desc: 'Sommier dans le remblai, talus 3/2' },
-    remblayee: { nom: 'Remblayée', desc: 'Mur de front + murs en retour' },
+    remblayee: { nom: 'Remblayée', desc: 'Mur de front, semelle à talon, murs en retour en U ou suspendus' },
   };
 
   /* Profilés HEB : hauteur (m), masse (kg/m), largeur (m) — poutrelles enrobées */
@@ -212,6 +212,7 @@
     out.piles.hauteurs = hp.slice(0, np);
     if (!PILES[out.piles.type]) out.piles.type = 'voile';
     if (!CULEES[out.culees.type]) out.culees.type = 'enterree';
+    out.culees.retours = out.culees.retours === 'suspendus' ? 'suspendus' : 'U';
     const hc = (Array.isArray(out.culees.hauteurs) ? out.culees.hauteurs : []).map((v) => clamp(num(v, 3.5), 0.5, 15));
     while (hc.length < 2) hc.push(hc.length ? hc[0] : 3.5);
     out.culees.hauteurs = hc.slice(0, 2);
@@ -220,7 +221,7 @@
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
     out.piles.dim = dims(out.piles.dim, ['e', 'Lv', 'nl', 'fruit', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 2, fruit: 10 });
     out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
-    out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2 });
+    out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8 });
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
     [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm', 'nl'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
@@ -698,7 +699,7 @@
     const dab = 0.6;
     parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
     const Ht = H + hgg;
-    let lx, ly = W, sommier = null, mur = null, colonnes = null, retours;
+    let lx, ly = W, sommier = null, mur = null, colonnes = null, retours, Bmin = 0, gros = 0;
     if (t === 'enterree') {
       const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6)), hs = ov('hs', r10(Math.max(1.2, 0.14 * W)));
       sommier = { b: bs, h: hs, L: W };
@@ -711,18 +712,33 @@
         lx = D; ly = W;
       } else lx = bs;
       const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = ov('em', rail ? 0.60 : 0.50);
-      retours = { L: Lmr, h: hmr, e: em, h2: 0.9 };
+      retours = { mode: 'suspendus', L: Lmr, h: hmr, e: em, h2: 0.9 };
       parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
     } else {
-      const ef = ov('ef', Math.max(r05(H / 10), 0.80));
-      const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6, ef)), hs = bs > ef + 0.05 ? ov('hs', 1.0) : 0;
+      /* culée remblayée (plans KLE : Ardoum, Kert, PK386, Grou) : mur de front épais, élargi en tête en sommier côté pont,
+         gousset côté remblai, semelle excentrée (patin côté brèche, talon sous le remblai), murs en retour en U sur la semelle ou suspendus */
+      const ef = ov('ef', clamp(r05(0.80 + 0.05 * (H - 4)), 0.80, 1.20));
+      const a1 = ov('a1', rail ? 0.70 : 0.60);                 // axe des appareils → parement avant du mur
+      const hs = ov('hs', 1.00), bs = Math.max(a1 + dab + 0.05 + egg, ef);
+      sommier = { b: bs, h: hs, L: W, a1 };
       mur = { e: ef, H: H - hs, L: W };
-      if (hs) { sommier = { b: bs, h: hs, L: W }; parts.push({ des: 'Sommier ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W, coff: (2 * hs + bs) * W + 2 * bs * hs, ratio: 120 }); }
+      const gw = Math.max(0, bs - ef);
+      parts.push({ des: 'Sommier (tête du mur de front) ' + fr(bs, 2) + ' × ' + fr(hs, 2) + ' m', V: bs * hs * W + gw * gw / 2 * W, coff: (2 * hs + bs + gw * 1.42) * W + 2 * bs * hs, ratio: 120 });
       parts.push({ des: 'Mur de front ' + fr(ef, 2) + ' × ' + fr(H - hs, 2) + ' m', V: ef * (H - hs) * W, coff: 2 * (H - hs) * W + 2 * ef * (H - hs), ratio: 90 });
-      const Lmr = ov('Lmr', r05(0.8 * Ht + 1.0)), em = ov('em', Math.max(0.4, r05(Ht / 12))), hm = 0.7 * Ht;
-      retours = { L: Lmr, h: hm, e: em };
-      parts.push({ des: 'Murs en retour 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * hm * em, coff: 4 * Lmr * hm, ratio: 90 });
-      lx = Math.max(ef, hs ? bs : 0);
+      if (S.culees.retours === 'suspendus') {
+        const Lmr = ov('Lmr', 3.50), em = ov('em', 0.35), hm = hgg + hs + 0.5;
+        retours = { mode: 'suspendus', L: Lmr, h: hm, e: em, h2: 0.9 };
+        parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hm + 0.9) / 2 * em, coff: 2 * Lmr * (hm + 0.9), ratio: 90 });
+      } else {
+        const Lmr = ov('Lmr', r05(Math.max(3, 0.55 * Ht + 1.0))), em = ov('em', clamp(r05(0.25 + Ht / 40), 0.30, 0.45));
+        retours = { mode: 'U', L: Lmr, h: Ht, e: em };
+        parts.push({ des: 'Murs en retour en U sur semelle 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * 0.7 * Ht * em, coff: 4 * Lmr * 0.7 * Ht, ratio: 90 });
+      }
+      const gb = ov('gb', 0);
+      if (gb > 0) parts.push({ des: 'Gros béton sous semelle, ép. ' + fr(gb, 2) + ' m', V: 0, coff: 0, ratio: 0 });
+      lx = ef;
+      Bmin = retours.mode === 'U' ? retours.L + Math.max(1.0, ov('pat', 1.0)) : 0;
+      gros = gb;
     }
     let dt = null;
     if (S.culees.dalleTransition && !rail) {
@@ -732,7 +748,59 @@
       parts.push({ des: 'Corbeau d’appui de dalle', V: 0.30 * 0.30 * W, coff: 0.6 * W, ratio: 120 });
     }
     const Vrem = W * Ht * Math.max(3, 0.6 * Ht) * (t === 'enterree' ? 0.5 : 1);
-    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote };
+    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote, Bmin, gros, pat: dm.pat > 0 ? dm.pat : 0 };
+  }
+
+
+  /* ───────── Profil d'une culée dans son axe (repère local) ─────────
+     u : distance à l'axe des appareils, positive vers le remblai ; z : cote rapportée au dessus du sommier (appui des appareils),
+     le dessus de la fondation est en z = −H, le dessus du tablier en z = hgg.
+     Renvoie les contours coupés (cut) et vus (seen), l'emprise de la fondation [u0, u1] et son centre uc. */
+  function culeeProfil(sp) {
+    const g = sp.geo, f = sp.fo, H = sp.H, hgg = g.hgg, ug = g.dab + 0.05, ub = ug + g.egg;
+    const cut = [], seen = [], P = (a, pts, lay) => a.push({ pts, lay });
+    if (g.dt) {
+      P(cut, [[ug, hgg], [ub, hgg], [ub, hgg - 0.40], [ub + 0.30, hgg - 0.40], [ub + 0.30, hgg - 0.70], [ub, hgg - 0.85], [ub, 0], [ug, 0]], 'beton');
+      const L = g.dt.L, d = 0.05 * L;
+      P(cut, [[ub + 0.30, hgg - 0.40], [ub + 0.30 + L, hgg - 0.40 - d], [ub + 0.30 + L, hgg - 0.70 - d], [ub + 0.30, hgg - 0.70]], 'beton');
+      P(cut, [[ub + 0.30, hgg - 0.70], [ub + 0.30 + L, hgg - 0.70 - d], [ub + 0.30 + L, hgg - 0.80 - d], [ub + 0.30, hgg - 0.80]], 'prop');
+    } else P(cut, [[ug, hgg], [ub, hgg], [ub, 0], [ug, 0]], 'beton');
+    const B = f.mode === 'pieux' ? (f.e > 0 ? f.Lx : 0) : f.B;
+    let u0, u1, uc, back, uf = null, uE = null;
+    if (g.type === 'remblayee') {
+      const so = g.sommier, ef = g.mur.e, hs = so.h;
+      uf = -so.a1;
+      const ubk = Math.max(ub, uf + ef), gw = Math.max(0, ubk - (uf + ef));
+      P(cut, [[uf, 0], [ubk, 0], [ubk, -hs], [uf, -hs]], 'beton');
+      P(cut, gw > 0.05 ? [[uf, -hs], [ubk, -hs], [uf + ef, -hs - gw], [uf + ef, -H], [uf, -H]] : [[uf, -hs], [uf + ef, -hs], [uf + ef, -H], [uf, -H]], 'beton');
+      back = [[ubk, -hs], [uf + ef, -hs - gw], [uf + ef, -H]];
+      const rt = g.retours;
+      if (rt.mode === 'U') {
+        u1 = B > 0 ? Math.max(uf + rt.L, uf + ef + 0.5) : uf + rt.L;
+        u0 = B > 0 ? u1 - B : uf - 1.0;
+        if (B > 0 && u0 > uf - 1.0) { u0 = uf - 1.0; u1 = u0 + B; }
+        if (B > 0 && g.pat > 0) { u0 = uf - g.pat; u1 = u0 + B; }
+        uE = Math.min(u1, uf + rt.L) > uf + 1 ? Math.min(Math.max(u1, uf + 1), uf + rt.L) : uf + rt.L;
+        if (B > 0) uE = u1;
+        const Lr = uE - uf, Lh = Math.max(1.5, Lr - (hgg + H - 0.6)), zE = Math.max(-H + 0.6, hgg - (Lr - Lh));
+        P(seen, [[uf, hgg], [uf + Lh, hgg], [uE, zE], [uE, -H], [uf, -H]], 'vuL');
+      } else {
+        const pat = g.pat > 0 ? g.pat : B > 0 ? Math.min(Math.max(1.0, Math.round(0.3 * (B - ef) / 0.05) * 0.05), 2.6, Math.max(0.5, B - ef - 0.5)) : 1;
+        u0 = uf - pat; u1 = u0 + Math.max(B, ef);
+        P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ub, -hs - 0.3]], 'vuL');
+      }
+      uc = (u0 + u1) / 2;
+    } else {
+      const so = g.sommier, bs = so.b, hs = so.h;
+      uc = ub - bs / 2;
+      P(cut, [[ub - bs, 0], [ub, 0], [ub, -hs], [ub - bs, -hs]], 'beton');
+      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -H], [uc - g.colonnes.D / 2, -H]], 'col');
+      const rt = g.retours;
+      P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ub, -hs]], 'vuL');
+      u0 = uc - B / 2; u1 = uc + B / 2;
+      back = [[ub, -hs]];
+    }
+    return { cut, seen, u0, u1, uc, ug, ub, uf, uE, hgg, back, B };
   }
 
   /* ───────── Fondations ───────── */
@@ -912,7 +980,7 @@
         }
       } else fo = fondation(S, N, geo.lx, geo.ly, mode, {
         min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
-        Bmin: isC ? r10(0.65 * geo.Ht) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
+        Bmin: isC ? Math.max(r10(0.65 * geo.Ht), geo.Bmin || 0) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
         ov: isC ? S.culees.fdim : S.piles.fdim,
       });
       if (fo.mode === 'superficielle' && fo.q / 1000 > S.fond.sigma * 1.001) warn.push((isC ? 'Culée C' : 'Pile P') + j + ' : contrainte sous semelle ' + fr(fo.q / 1000, 3) + ' MPa > ' + fr(S.fond.sigma, 2) + ' MPa admissible.');
@@ -1044,7 +1112,7 @@
 
   return {
     fr, frn, TYPES, TYPE_KEYS, CLASSES_BETON, hypDefaults, PILES, CULEES, PRIX, HEB, ELASTO,
-    defaults, normalize, compute, typeStatus, predimH, profilEnTravers, lrAt, xyAt, tnAt, normTrace,
+    defaults, normalize, compute, typeStatus, predimH, profilEnTravers, lrAt, xyAt, tnAt, normTrace, culeeProfil,
     _int: { eta, etaInt, axleMax, lm71, sw2, area, coffLen, appareil, kCont },
   };
 });

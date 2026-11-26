@@ -11,6 +11,7 @@
   else root.COMP = Object.assign(root.COMP || {}, api);
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
+  const C = (typeof module === 'object' && module.exports) ? require('./calc.js') : self.COMP;
 
   function build3D(M) {
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
@@ -98,14 +99,19 @@
           if (g.colonnes) for (let i = 0; i < g.colonnes.n; i++) cyl(xf, -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s, g.colonnes.D, yft, ySeat - g.sommier.h);
           zr0 = ySeat - g.sommier.h + 0.3;
         } else {
-          const so = g.sommier, xin = back - o * (so ? so.b : g.mur.e), ym = so ? ySeat - so.h : ySeat;
-          if (so) box(back, xin, -W / 2, W / 2, ySeat, ym);
-          box(xin, xin + o * g.mur.e, -W / 2, W / 2, ym, yft);
-          xf = xin + o * g.mur.e / 2;
-          zr0 = yft + 0.6;
+          const R = C.culeeProfil(s), X = (u) => s.x + o * u, so = g.sommier, hs = so.h;
+          box(X(R.uf), X(R.uf + so.b), -W / 2, W / 2, ySeat, ySeat - hs);
+          box(X(R.uf), X(R.uf + g.mur.e), -W / 2, W / 2, ySeat - hs, yft);
+          xf = X(R.uc);
+          const rt = g.retours, er = rt.e;
+          if (rt.mode === 'U') [-1, 1].forEach((sg) => box(X(R.uf), X(R.uE), sg * W / 2, sg * (W / 2 - er), 0, yft));
+          else [-1, 1].forEach((sg) => box(back, back + o * rt.L, sg * W / 2, sg * (W / 2 - er), 0, ySeat - hs - 0.3));
+          zr0 = null;
         }
-        const er = g.retours.e, Lr = g.retours.L;
-        [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * W / 2, sg * (W / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
+        if (zr0 !== null) {
+          const er = g.retours.e, Lr = g.retours.L;
+          [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * W / 2, sg * (W / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
+        }
         if (g.dt) box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70);
       }
       // fondation
