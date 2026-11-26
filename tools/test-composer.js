@@ -113,5 +113,14 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
     ok(okv, `vues de détail des appuis (${pt} / ${ct} / ${fm}) sans valeur invalide`);
   }
 }
+
+{ // bibliothèque d'appuis : culées KLE / PP73, voiles PP73, colonnes
+  let ok_ = true;
+  const chk = (S) => { const Mx = C.compute(C.normalize(S)); const v = [C.toSVG(C.elevScene(Mx), { id: 'e' }), C.toSVG(C.secScene(Mx, { part: 'culee' }), { id: 'c' })]; Mx.supports.forEach((sp) => { const D = C.supScenes(Mx, sp.id); ['lo', 'pl', 'top'].forEach((k) => v.push(C.toSVG(D[k], { id: 'x' }))); }); if (v.some(bad)) ok_ = false; };
+  [['remblayee', 'U'], ['remblayee', 'suspendus'], ['enterree', 'AR'], ['enterree', 'AV'], ['enterree', 'aucun']].forEach(([t, r]) => { const S = C.defaults('route'); S.travees = [25, 30, 25]; Object.assign(S.culees, { type: t, retours: r, chev: 'C', gg: r !== 'AV' }); chk(S); });
+  [1, 2, 3].forEach((g) => ['A', 'B', 'C'].forEach((f) => { const S = C.defaults('route'); S.travees = [25, 30, 25]; S.piles.type = 'voile'; Object.assign(S.piles, { grp: g, face: f, sect: g === 2 ? 'arete' : 'plane' }); S.piles.dim = { nl: g }; chk(S); }));
+  ['circ', 'carre', 'rect', 'octo', 'ellip'].forEach((c) => { const S = C.defaults('route'); S.travees = [25, 30, 25]; S.piles.type = 'colonnes'; Object.assign(S.piles, { col: c, paires: c === 'carre' }); chk(S); });
+  ok(ok_, 'bibliothèque d’appuis (culées KLE et PP73, 9 voiles PP73, 5 sections de colonnes) sans valeur invalide');
+}
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');
 process.exit(fails ? 1 : 0);

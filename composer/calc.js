@@ -223,11 +223,13 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'bc', 'sp', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, bc: 6, sp: 10, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
     out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
     out.piles.grp = [1, 2, 3].includes(+out.piles.grp) ? +out.piles.grp : 1;
     out.piles.face = ['A', 'B', 'C'].includes(out.piles.face) ? out.piles.face : (out.piles.dim.fruit > 0 ? 'B' : 'A');
     out.piles.sect = ['plane', 'arete', 'creuse'].includes(out.piles.sect) ? out.piles.sect : 'plane';
+    out.piles.col = ['circ', 'carre', 'rect', 'octo', 'ellip'].includes(out.piles.col) ? out.piles.col : 'circ';
+    out.piles.paires = !!out.piles.paires;
     out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8 });
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
@@ -677,15 +679,33 @@
       parts.push({ des: (nl >= 2 ? nl + ' lames — ' : '') + nom + ', ' + fr(ev, 2) + (grp !== 1 ? '/' + fr(e1, 2) : '') + ' × ' + fr(Lv, 2) + (Math.abs(Lb - Lv) > 0.01 ? '/' + fr(Lb, 2) : '') + ' m', V: nl * (Ab(Lv) + Ab(Lb)) / 2 * Hf, coff: nl * (2 * em + Lv + Lb) * Hf * (sect === 'plane' ? 1 : 1.05), ratio: 100 });
       lx = Math.max(ev, e1); ly = nl >= 2 ? xl[xl.length - 1] - xl[0] + Math.max(Lv, Lb) : Math.max(Lv, Lb);
     } else if (t === 'colonnes') {
+      /* colonnes et poteaux (PP73 1.2.2 § 1.3) : section circulaire Φ ≥ 0,60, carrée a ≥ 0,50, rectangulaire, octogonale, elliptique ;
+         fûts isolés régulièrement espacés ou groupés par paires (plans KLE, LGV lot 10 : fûts 1,50 × 1,50 par paire) */
+      const sec = ['circ', 'carre', 'rect', 'octo', 'ellip'].includes(S.piles.col) ? S.piles.col : 'circ';
       const D = ov('D', H > 15 ? 1.50 : (rail ? 1.40 : 1.20));
-      const Lc = ov('Lch', Math.max(W, Lsup)), ax = D;            // axes des colonnes extrêmes à D du nu du chevêtre
-      const nc = ov('n', Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1));
-      const s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0;
+      const bD = sec === 'rect' || sec === 'ellip' ? ov('bc', r05(D * 1.5)) : D;        // dimension transversale
+      const Lc = ov('Lch', Math.max(W, Lsup)), ax = Math.max(D, bD);                       // axes des fûts extrêmes à ~bD du nu du chevêtre
+      const paires = !!S.piles.paires;
+      let nc = ov('n', Math.max(2, Math.round((Lc - 2 * ax) / 2.7) + 1));
+      if (paires) nc = Math.max(4, nc + (nc % 2));
+      let pos, s;
+      if (paires) {
+        const np = nc / 2, cMax = Lc / 2 - (bD / 2 + 0.6);                         // axe du fût extrême à bD/2 + 0,60 du bout du chevêtre
+        let sp = ov('sp', r05(bD + 0.60));                                            // entraxe des deux fûts d'une paire (vide 0,60 m)
+        const c = np > 1 ? (2 * cMax - sp) / (np - 1) : 0;
+        if (np > 1 && c - sp < bD + 0.3) sp = Math.max(bD + 0.3, (2 * cMax - (np - 1) * (bD + 0.3)) / np);
+        const c2 = np > 1 ? (2 * cMax - sp) / (np - 1) : 0;
+        pos = []; for (let k = 0; k < np; k++) { const xc = -(np - 1) * c2 / 2 + k * c2; pos.push(xc - sp / 2, xc + sp / 2); }
+        s = sp;
+      } else { s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0; pos = Array.from({ length: nc }, (_, i) => -(nc - 1) * s / 2 + i * s); }
       const hch = ov('hch', r10(Math.max(1.2, 0.14 * Lc)));
       ch = { b: ov('bch', Math.max(bt, D + 0.6)), h: hch, L: Lc, kind: 'chevetre' };
       const Hf = Math.max(0.5, H - hch);
-      fut = { kind: 'colonnes', D, n: nc, s, H: Hf };
-      parts.push({ des: nc + ' colonnes Ø ' + fr(D, 2) + ' m', V: nc * Math.PI * D * D / 4 * Hf, coff: nc * Math.PI * D * Hf, ratio: 160 });
+      const A = sec === 'circ' ? Math.PI * D * D / 4 : sec === 'ellip' ? Math.PI * D * bD / 4 : sec === 'octo' ? 0.8284 * D * D : D * bD;
+      const per = sec === 'circ' ? Math.PI * D : sec === 'ellip' ? Math.PI * (D + bD) / 2 : sec === 'octo' ? 3.3137 * D : 2 * (D + bD);
+      fut = { kind: 'colonnes', D, b: bD, sec, n: nc, s, pos, paires, H: Hf };
+      const nomS = sec === 'circ' ? 'colonnes Ø ' + fr(D, 2) : sec === 'carre' ? 'poteaux ' + fr(D, 2) + ' × ' + fr(D, 2) : sec === 'rect' ? 'fûts ' + fr(D, 2) + ' × ' + fr(bD, 2) : sec === 'octo' ? 'fûts octogonaux ' + fr(D, 2) : 'fûts elliptiques ' + fr(D, 2) + ' × ' + fr(bD, 2);
+      parts.push({ des: nc + ' ' + nomS + ' m' + (paires ? ' (par paires)' : ''), V: nc * A * Hf, coff: nc * per * Hf, ratio: 160 });
       lx = D; ly = Lc;
     } else {
       const a = ov('a', Math.max(rail ? 1.5 : 1.2, r05(H / 12)));
@@ -705,7 +725,7 @@
         const Aside = ch.bf * ch.h + 2 * lc * (ch.h + ch.h2) / 2;
         V = ch.b * Aside;
         coff = 2 * Aside + ch.b * (ch.bf + 2 * Math.hypot(lc, ch.h - ch.h2)) + 2 * ch.b * ch.h2;
-      } else { V = ch.b * ch.h * ch.L; coff = (2 * ch.h + ch.b) * ch.L + 2 * ch.b * ch.h - (fut.kind === 'colonnes' ? fut.n * Math.PI * fut.D ** 2 / 4 : fut.e * fut.L); }
+      } else { V = ch.b * ch.h * ch.L; coff = (2 * ch.h + ch.b) * ch.L + 2 * ch.b * ch.h - (fut.kind === 'colonnes' ? fut.n * fut.D * fut.b * 0.8 : fut.e * fut.L); }
       parts.push({ des: (ch.kind === 'tete' ? 'Tête élargie ' : 'Chevêtre ') + fr(ch.b, 2) + ' × ' + fr(ch.h, 2) + ' m', V, coff, ratio: 150 });
     }
     return { type: t, H, fut, ch, parts, lx, ly, V: sum(parts.map((p) => p.V)) };

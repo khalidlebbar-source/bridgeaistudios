@@ -86,7 +86,7 @@
         const f = g.fut;
         if (f.kind === 'voile') box(s.x - f.e / 2, s.x + f.e / 2, -f.L / 2, f.L / 2, zTop, yft);
         else if (f.kind === 'marteau') box(s.x - f.a / 2, s.x + f.a / 2, -f.b / 2, f.b / 2, zTop, yft);
-        else for (let i = 0; i < f.n; i++) cyl(s.x, -(f.n - 1) * f.s / 2 + i * f.s, f.D, yft, zTop);
+        else (f.pos || Array.from({ length: f.n }, (_, i) => -(f.n - 1) * f.s / 2 + i * f.s)).forEach((y) => { if (f.sec && f.sec !== 'circ' && f.sec !== 'ellip') box(s.x - f.D / 2, s.x + f.D / 2, y - (f.b || f.D) / 2, y + (f.b || f.D) / 2, zTop, yft); else cyl(s.x, y, f.D, yft, zTop); });
       } else {
         const o = s.j === 0 ? -1 : 1;
         const front = s.x + o * (dab + 0.05), back = front + o * g.egg;

@@ -388,8 +388,15 @@
     if (!isC) {
       const ch = g.ch, fut = g.fut, t = g.type;
       if (t === 'colonnes') {
-        A = view('Vue de face', fond(40, 240, false) + r(24, 22, 272, 24) + [80, 160, 240].map((x) => r(x - 12, 46, 24, 98, Cc)).join('') + dh(12, 24, 296) + dv(306, 22, 46) + dv(10, 22, 144),
-          inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 17, ch.h, 'h') + inp(dp + 'D', 25, 45, fut.D, 'Ø') + inp(dp + 'n', 50, 45, fut.n, 'n', '', 0) + hIn(9, 58) + fIn(false));
+        const xs = fut.paires ? [62, 98, 222, 258] : [80, 160, 240], wc = fut.sec === 'rect' || fut.sec === 'ellip' ? 32 : 24, cl = fut.sec === 'circ' || fut.sec === 'ellip' ? Cc : C_;
+        A = view('Vue de face', fond(40, 240, false) + r(24, 22, 272, 24) + xs.map((x) => r(x - wc / 2, 46, wc, 98, cl)).join('') + dh(12, 24, 296) + dv(306, 22, 46) + dv(10, 22, 144),
+          inp(dp + 'Lch', 50, 6, ch.L, 'L') + inp(dp + 'hch', 90, 17, ch.h, 'h') + inp(dp + 'D', 25, 45, fut.D, fut.sec === 'circ' ? 'Ø' : 'a') + inp(dp + 'n', 50, 45, fut.n, 'n', '', 0) + hIn(9, 58) + fIn(false));
+        { const opt = (k, cur, L) => `<select data-sel="1" data-k="${k}">${L.map(([v, t]) => `<option value="${v}"${String(cur) === String(v) ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+          A += `<div class="skx"><label>Section ${opt('piles.col', fut.sec, [['circ', 'circulaire'], ['carre', 'carrée'], ['rect', 'rectangulaire'], ['octo', 'octogonale'], ['ellip', 'elliptique']])}</label>`
+            + ((fut.sec === 'rect' || fut.sec === 'ellip') ? `<label>b (en travers) <input type="text" inputmode="decimal" data-k="piles.dim.bc" value="${S.piles.dim.bc > 0 ? esc(show(S.piles.dim.bc)) : ''}" placeholder="${esc(fr(fut.b, 2))}"><i>m</i></label>` : '')
+            + `<label><input type="checkbox" data-chk="1" data-k="piles.paires"${fut.paires ? ' checked' : ''}> Fûts par paires (KLE LGV)</label>`
+            + (fut.paires ? `<label>Entraxe de paire <input type="text" inputmode="decimal" data-k="piles.dim.sp" value="${S.piles.dim.sp > 0 ? esc(show(S.piles.dim.sp)) : ''}" placeholder="${esc(fr(fut.s, 2))}"><i>m</i></label>` : '')
+            + '</div>'; }
         B = view('Vue de côté', fond(100, 120, true) + r(120, 22, 80, 24) + r(148, 46, 24, 98, Cc) + dh(12, 120, 200),
           inp(dp + 'bch', 50, 6, ch.b, 'b') + fIn(true));
       } else if (t === 'voile') {

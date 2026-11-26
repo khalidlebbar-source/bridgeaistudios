@@ -120,7 +120,7 @@
         if (g.ch) { rect(P, s.x - g.ch.b / 2, ySeat, s.x + g.ch.b / 2, ySeat - g.ch.h, 'vuB'); yTopFut = ySeat - g.ch.h; }
         const fu = g.fut;
         if (fu.kind === 'voile' && fu.e1 && Math.abs(fu.e1 - fu.e) > 0.01) poly(P, [[s.x - fu.e / 2, yTopFut], [s.x + fu.e / 2, yTopFut], [s.x + fu.e1 / 2, yft], [s.x - fu.e1 / 2, yft]], 'vuB');
-        else rect(P, s.x - (fu.kind === 'voile' ? fu.e : g.lx) / 2, yTopFut, s.x + (fu.kind === 'voile' ? fu.e : g.lx) / 2, yft, fu.kind === 'colonnes' ? 'col' : 'vuB');
+        else rect(P, s.x - (fu.kind === 'voile' ? fu.e : g.lx) / 2, yTopFut, s.x + (fu.kind === 'voile' ? fu.e : g.lx) / 2, yft, fu.kind === 'colonnes' ? colLay(fu) : 'vuB');
       } else {
         const o = s.j === 0 ? -1 : 1, R = C.culeeProfil(s), X = (q) => [s.x + o * q[0], ySeat + q[1]];
         R.seen.forEach((c) => poly(P, c.pts.map(X), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vuL'));
@@ -505,18 +505,18 @@
       else {
         if (g.nervure) { const nv = g.nervure; rect(P, -nv.L / 2, yft + nv.h, nv.L / 2, yft, 'beton'); dim(P, [nv.L / 2, yft], [nv.L / 2, yft + nv.h], 'v', 4, frn(nv.h)); }
         const yfc = g.nervure ? yft + g.nervure.h : yft, yf0 = yft;
-        for (let i = 0; i < g.fut.n; i++) {
-          const x = -(g.fut.n - 1) * g.fut.s / 2 + i * g.fut.s, lay = g.fut.section === 'carre' ? 'vuB' : 'col';
+        colPos(g.fut).forEach((x) => {
+          const lay = colLay(g.fut), w = (g.fut.b || g.fut.D) / 2;
           xcols.push(x);
-          if (g.nervure) rect(P, x - g.fut.D / 2, yTop, x + g.fut.D / 2, yfc, lay); else futRect(x - g.fut.D / 2, x + g.fut.D / 2, lay);
-        }
+          if (g.nervure) rect(P, x - w, yTop, x + w, yfc, lay); else futRect(x - w, x + w, lay);
+        });
         void yf0;
       }
       if (xcols.length) {
         const Lc = g.ch.L, ch = [-Lc / 2].concat(xcols, [Lc / 2]);
         for (let k = 0; k < ch.length - 1; k++) dim(P, [ch[k], yTop], [ch[k + 1], yTop], 'h', -5, frn(ch[k + 1] - ch[k]));
         const xc = xcols[xcols.length - 1];
-        dim(P, [xc - g.fut.D / 2, yTop - 1.6], [xc + g.fut.D / 2, yTop - 1.6], 'h', 2, 'Ø' + frn(g.fut.D));
+        dim(P, [xc - (g.fut.b || g.fut.D) / 2, yTop - 1.6], [xc + (g.fut.b || g.fut.D) / 2, yTop - 1.6], 'h', 2, colLab(g.fut));
       }
       const f = ref.fo;
       const ytn = yft + 0.6, half = Math.max(W / 2, (f.mode === 'pieux' ? f.Ly : f.L) / 2) + 1.5;
@@ -542,7 +542,7 @@
       }
       poly(P, [[-half, ytn], [half, ytn], [half, yLow - 0.6], [-half, yLow - 0.6]], 'sol');
       line(P, [-half, ytn], [half, ytn], 'tn');
-      const xd = g.fut.kind === 'voile' ? Math.max(...(g.fut.xl || [0]).map(Math.abs)) + g.fut.L / 2 : (g.fut.kind === 'marteau' ? g.fut.b : (g.fut.n - 1) * g.fut.s + g.fut.D) / 2;
+      const xd = g.fut.kind === 'voile' ? Math.max(...(g.fut.xl || [0]).map(Math.abs)) + g.fut.L / 2 : (g.fut.kind === 'marteau' ? g.fut.b : 2 * Math.max(...colPos(g.fut).map(Math.abs)) + (g.fut.b || g.fut.D)) / 2;
       if (g.fut.kind === 'voile' && g.fut.n === 2) dim(P, [g.fut.xl[0] - g.fut.L / 2, yTop - 0.6], [g.fut.xl[0] + g.fut.L / 2, yTop - 0.6], 'h', -2, frn(g.fut.L));
       dim(P, [-xd, yTop], [-xd, yft], 'v', -6, frn(ref.H - hch));
     }
@@ -588,6 +588,17 @@
       poly(P, pts, lay);
     } else rect(P, xc - r, yc - h, xc + r, yc + h, lay);
   }
+  /* section d'un fût en plan : D le long de l'axe (x), b en travers (y) — circulaire, carrée, rectangulaire, octogonale, elliptique */
+  function colSec(P, xc, yc, D, b, sec, lay) {
+    if (sec === 'carre' || sec === 'rect') return rect(P, xc - D / 2, yc - b / 2, xc + D / 2, yc + b / 2, lay);
+    if (sec === 'octo') { const k = D / 2, c = k * 0.4142; return poly(P, [[xc - c, yc - k], [xc + c, yc - k], [xc + k, yc - c], [xc + k, yc + c], [xc + c, yc + k], [xc - c, yc + k], [xc - k, yc + c], [xc - k, yc - c]], lay); }
+    if (sec === 'ellip') { const pts = []; for (let i = 0; i < 32; i++) { const a = i * Math.PI / 16; pts.push([xc + D / 2 * Math.cos(a), yc + b / 2 * Math.sin(a)]); } return poly(P, pts, lay); }
+    return circ(P, xc, yc, D / 2, lay, 24);
+  }
+  const colPos = (f) => f.pos || Array.from({ length: f.n }, (_, i) => -(f.n - 1) * f.s / 2 + i * f.s);
+  const colLay = (f) => (f.sec === 'circ' || f.sec === 'ellip' || (!f.sec && f.section !== 'carre') ? 'col' : 'vuB');
+  const colLab = (f) => (f.sec === 'carre' ? frn(f.D) + ' × ' + frn(f.D) : f.sec === 'rect' || f.sec === 'ellip' ? frn(f.D) + ' × ' + frn(f.b) : f.sec === 'octo' ? 'oct. ' + frn(f.D) : 'Ø' + frn(f.D));
+
   function supScenes(M, id) {
     const sp = M.supports.find((x) => x.id === id); if (!sp) return null;
     const S = M.S, g = sp.geo, f = sp.fo, isC = sp.kind === 'culee', H = sp.H, out = {};
@@ -600,10 +611,10 @@
         const fl = fondLo(P, f, 0, true);
         line(P, [-(fl.W / 2 + 2), 0.6], [fl.W / 2 + 2, 0.6], 'tn');
         if (fut.kind === 'voile' && fut.e1 && Math.abs(fut.e1 - fut.e) > 0.01) poly(P, [[-fut.e1 / 2, 0], [fut.e1 / 2, 0], [fut.e / 2, Hf], [-fut.e / 2, Hf]], 'vuB');
-        else rect(P, -th / 2, 0, th / 2, Hf, fut.kind === 'colonnes' ? 'col' : 'vuB');
+        else rect(P, -th / 2, 0, th / 2, Hf, fut.kind === 'colonnes' ? colLay(fut) : 'vuB');
         if (fut.kind === 'voile' && fut.e1 && Math.abs(fut.e1 - fut.e) > 0.01) dim(P, [-fut.e1 / 2, 0.4], [fut.e1 / 2, 0.4], 'h', -3, frn(fut.e1));
         if (ch) { rect(P, -ch.b / 2, Hf, ch.b / 2, H, 'beton'); dim(P, [-ch.b / 2, H], [ch.b / 2, H], 'h', 14, frn(ch.b)); dim(P, [ch.b / 2, Hf], [ch.b / 2, H], 'v', 8, frn(ch.h)); }
-        dim(P, [-th / 2, Hf * 0.55], [th / 2, Hf * 0.55], 'h', 3, (fut.kind === 'colonnes' ? 'Ø' : '') + frn(th));
+        dim(P, [-th / 2, Hf * 0.55], [th / 2, Hf * 0.55], 'h', 3, fut.kind === 'colonnes' ? (fut.sec === 'circ' ? 'Ø' : '') + frn(th) : frn(th));
         dim(P, [-(ch ? ch.b : th) / 2, 0], [-(ch ? ch.b : th) / 2, H], 'v', -10, 'H = ' + frn(H));
         // appareils d'appui, bossages, abouts du tablier
         const hd = M.h, yb = H + 0.10 + 0.06;
@@ -693,7 +704,7 @@
       }
       if (!isC) {
         const fut = g.fut;
-        if (fut.kind === 'colonnes') for (let i = 0; i < fut.n; i++) { const y = -(fut.n - 1) * fut.s / 2 + i * fut.s; circ(P, 0, y, fut.D / 2, FSEC, 24); if (i < fut.n - 1) dim(P, [0, y], [0, y + fut.s], 'v', -4 - (Bf / 2) * 0, frn(fut.s)); }
+        if (fut.kind === 'colonnes') { const ps = colPos(fut); ps.forEach((y, i) => { colSec(P, 0, y, fut.D, fut.b || fut.D, fut.sec, FSEC); if (i < ps.length - 1) dim(P, [0, y], [0, ps[i + 1]], 'v', -4, frn(ps[i + 1] - y)); }); text(P, [0, ps[0]], colLab(fut), { ht: 2, dy: -8, lay: 'note', anchor: 'start' }); }
         else if (fut.kind === 'voile') {
           const eb = fut.e1 || fut.e;
           (fut.xl || [0]).forEach((y) => { lame(P, 0, y, eb, fut.Lb || fut.L, fut.bout, FSEC, fut.sect); dim(P, [eb / 2, y - (fut.Lb || fut.L) / 2], [eb / 2, y + (fut.Lb || fut.L) / 2], 'v', 3, frn(fut.Lb || fut.L)); });
