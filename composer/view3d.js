@@ -129,10 +129,11 @@
       if (f.mode === 'superficielle') box(xf - f.B / 2, xf + f.B / 2, -f.L / 2, f.L / 2, yft, yft - f.e);
       else {
         const zb = f.e === 0 ? (g.sommier ? ySeat - g.sommier.h : yft) : yft - f.e;
-        if (f.e > 0) box(xf - f.Lx / 2, xf + f.Lx / 2, -f.Ly / 2, f.Ly / 2, yft, zb);
+        const cys = f.split ? f.split.centers : [0];
+        if (f.e > 0) cys.forEach((cy) => box(xf - f.Lx / 2, xf + f.Lx / 2, cy - f.Ly / 2, cy + f.Ly / 2, yft, zb));
         mat = 'pieu';
         const sy = f.m > 1 ? (f.e === 0 ? (W - f.D - 0.6) / (f.m - 1) : f.sy) : 0;
-        for (let r = 0; r < f.nr; r++) for (let c = 0; c < f.m; c++) cyl(xf + (r - (f.nr - 1) / 2) * f.s, -(f.m - 1) * sy / 2 + c * sy, f.D, zb - f.Lp, zb);
+        for (const cy of cys) for (let r = 0; r < f.nr; r++) for (let c = 0; c < f.m; c++) cyl(xf + (r - (f.nr - 1) / 2) * f.s, cy - (f.m - 1) * sy / 2 + c * sy, f.D, zb - f.Lp, zb);
       }
     });
 

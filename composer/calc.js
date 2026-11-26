@@ -1069,6 +1069,20 @@
           sp.V *= fo.Lx / b0; sp.des = 'Sommier ' + fr(fo.Lx, 2) + ' × ' + fr(geo.sommier.h, 2) + ' m (2 rangées de pieux)';
           geo.V = sum(geo.parts.map((p) => p.V));
         }
+      } else if (!isC && geo.fut && geo.fut.paires && S.piles.massifs !== false && (() => {
+        const fu = geo.fut, np = fu.n / 2, c = []; for (let k = 0; k < np; k++) c.push((fu.pos[2 * k] + fu.pos[2 * k + 1]) / 2);
+        const sub = fondation(S, N / np, fu.D, fu.s + fu.b, mode, { min: 2, colonnes: true, ov: S.piles.fdim });
+        const Ls = mode === 'pieux' ? sub.Ly : sub.L, dmin = np > 1 ? Math.min(...c.slice(1).map((x, i) => x - c[i])) : Infinity;
+        geo._split = Ls <= dmin - 0.5 ? { sub, c } : null;      // massifs séparés seulement s'ils ne se chevauchent pas
+        return !!geo._split;
+      })()) {
+        /* fûts par paires (KLE, LGV lot 10) : un massif par paire, chacun dimensionné pour sa part de la descente de charges */
+        const np = geo.fut.n / 2, sub = geo._split.sub, centers = geo._split.c;
+        delete geo._split;
+        fo = Object.assign({}, sub, {
+          split: { n: np, centers }, V: sub.V * np, coff: sub.coff * np, prop: sub.prop * np, fouilles: sub.fouilles * np,
+          n: (sub.n || 0) * np, mlPieux: (sub.mlPieux || 0) * np, Vp: (sub.Vp || 0) * np,
+        });
       } else fo = fondation(S, N, geo.lx, geo.ly, mode, {
         min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
         Bmin: isC ? Math.max(r10(0.65 * geo.Ht), geo.Bmin || 0) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)

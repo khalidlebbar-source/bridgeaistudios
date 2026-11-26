@@ -311,9 +311,10 @@
       const B = f.mode === 'pieux' ? (f.Lx || f.B || 2) : f.B, L = f.mode === 'pieux' ? (f.Ly || f.L || W) : f.L;
       const c = ax(xf).p, u = ax(xf).u, ds = supLine(xf, 1)[2];
       const hb = B / 2 / Math.max(0.3, Math.sin(beta)), hL = L / 2;
-      if (B > 0 && L > 0) poly(P, [[c[0] - u[0] * hb - ds[0] * hL, c[1] - u[1] * hb - ds[1] * hL], [c[0] + u[0] * hb - ds[0] * hL, c[1] + u[1] * hb - ds[1] * hL], [c[0] + u[0] * hb + ds[0] * hL, c[1] + u[1] * hb + ds[1] * hL], [c[0] - u[0] * hb + ds[0] * hL, c[1] - u[1] * hb + ds[1] * hL]], 'vu');
-      if (f.mode === 'pieux') for (let r = 0; r < f.nr; r++) for (let m = 0; m < f.m; m++) {
-        const ex = (r - (f.nr - 1) / 2) * f.s, ey = (m - (f.m - 1) / 2) * (f.sy || f.s);
+      const cys = f.split ? f.split.centers : [0];
+      cys.forEach((cy) => { const cc = [c[0] + ds[0] * cy, c[1] + ds[1] * cy]; if (B > 0 && L > 0) poly(P, [[cc[0] - u[0] * hb - ds[0] * hL, cc[1] - u[1] * hb - ds[1] * hL], [cc[0] + u[0] * hb - ds[0] * hL, cc[1] + u[1] * hb - ds[1] * hL], [cc[0] + u[0] * hb + ds[0] * hL, cc[1] + u[1] * hb + ds[1] * hL], [cc[0] - u[0] * hb + ds[0] * hL, cc[1] - u[1] * hb + ds[1] * hL]], 'vu'); });
+      if (f.mode === 'pieux') for (const cy of cys) for (let r = 0; r < f.nr; r++) for (let m = 0; m < f.m; m++) {
+        const ex = (r - (f.nr - 1) / 2) * f.s, ey = cy + (m - (f.m - 1) / 2) * (f.sy || f.s);
         circ(P, c[0] + u[0] * ex / Math.max(0.3, Math.sin(beta)) + ds[0] * ey, c[1] + u[1] * ex / Math.max(0.3, Math.sin(beta)) + ds[1] * ey, f.D / 2, 'vu');
       }
       if (isC && g.retours) {                          // murs en retour
@@ -541,16 +542,18 @@
         dim(P, [f.L / 2, yft], [f.L / 2, yft - f.e], 'v', 6, frn(f.e));
         yLow = yft - f.e - 0.1;
       } else {
-        rect(P, -f.Ly / 2, yft, f.Ly / 2, yft - f.e, 'beton');
-        rect(P, -f.Ly / 2 - 0.1, yft - f.e, f.Ly / 2 + 0.1, yft - f.e - 0.1, 'prop');
-        const Lv = Math.min(f.Lp, 4);
-        for (let i = 0; i < f.m; i++) {
-          const x = -(f.m - 1) * f.sy / 2 + i * f.sy;
-          rect(P, x - f.D / 2, yft - f.e - 0.1, x + f.D / 2, yft - f.e - Lv, 'pieu');
-          if (Lv < f.Lp) P.push({ k: 'brk', a: [x - f.D / 2 - 0.15, yft - f.e - Lv], b: [x + f.D / 2 + 0.15, yft - f.e - Lv] });
-        }
-        dim(P, [-f.Ly / 2, yft - f.e], [f.Ly / 2, yft - f.e], 'h', -5, frn(f.Ly));
-        text(P, [0, yft - f.e - Lv], f.m + ' × ' + f.nr + ' pieux Ø' + fr(f.D, 2) + ' — L = ' + frn(f.Lp) + ' m', { ht: 2.2, dy: -6, lay: 'note' });
+        const Lv = Math.min(f.Lp, 4), cs = f.split ? f.split.centers : [0];
+        cs.forEach((c0) => {
+          rect(P, c0 - f.Ly / 2, yft, c0 + f.Ly / 2, yft - f.e, 'beton');
+          rect(P, c0 - f.Ly / 2 - 0.1, yft - f.e, c0 + f.Ly / 2 + 0.1, yft - f.e - 0.1, 'prop');
+          for (let i = 0; i < f.m; i++) {
+            const x = c0 - (f.m - 1) * f.sy / 2 + i * f.sy;
+            rect(P, x - f.D / 2, yft - f.e - 0.1, x + f.D / 2, yft - f.e - Lv, 'pieu');
+            if (Lv < f.Lp) P.push({ k: 'brk', a: [x - f.D / 2 - 0.15, yft - f.e - Lv], b: [x + f.D / 2 + 0.15, yft - f.e - Lv] });
+          }
+          dim(P, [c0 - f.Ly / 2, yft - f.e], [c0 + f.Ly / 2, yft - f.e], 'h', -5, frn(f.Ly));
+        });
+        text(P, [0, yft - f.e - Lv], (cs.length > 1 ? cs.length + ' massifs — ' + f.n + ' pieux' : f.m + ' × ' + f.nr + ' pieux') + ' Ø' + fr(f.D, 2) + ' — L = ' + frn(f.Lp) + ' m', { ht: 2.2, dy: -6, lay: 'note' });
         yLow = yft - f.e - Lv;
       }
       poly(P, [[-half, ytn], [half, ytn], [half, yLow - 0.6], [-half, yLow - 0.6]], 'sol');
@@ -713,15 +716,16 @@
       const P = [];
       const Bf = f.mode === 'pieux' ? (f.e > 0 ? f.Lx : 0) : f.B, Lf = f.mode === 'pieux' ? (f.e > 0 ? f.Ly : W) : f.L;
       const o = isC ? (sp.j === 0 ? -1 : 1) : 0, RC = isC ? C.culeeProfil(sp) : null, cx = isC ? o * RC.uc : 0;
-      if (Bf > 0) { rect(P, cx - Bf / 2, -Lf / 2, cx + Bf / 2, Lf / 2, 'vuL'); dim(P, [cx - Bf / 2, -Lf / 2], [cx + Bf / 2, -Lf / 2], 'h', -6, frn(Bf)); dim(P, [cx + Bf / 2, -Lf / 2], [cx + Bf / 2, Lf / 2], 'v', 8, frn(Lf)); }
+      const cys = f.split ? f.split.centers : [0];
+      if (Bf > 0) cys.forEach((cy, i) => { rect(P, cx - Bf / 2, cy - Lf / 2, cx + Bf / 2, cy + Lf / 2, 'vuL'); if (!i) dim(P, [cx - Bf / 2, cy - Lf / 2], [cx + Bf / 2, cy - Lf / 2], 'h', -6, frn(Bf)); dim(P, [cx + Bf / 2, cy - Lf / 2], [cx + Bf / 2, cy + Lf / 2], 'v', 8, frn(Lf)); });
       if (f.mode === 'pieux') {
         const sy = f.sy || f.s;
-        for (let i = 0; i < f.nr; i++) for (let k = 0; k < f.m; k++) {
-          const x = cx - (f.nr - 1) * f.s / 2 + i * f.s, y = -(f.m - 1) * sy / 2 + k * sy;
+        for (const cy of cys) for (let i = 0; i < f.nr; i++) for (let k = 0; k < f.m; k++) {
+          const x = cx - (f.nr - 1) * f.s / 2 + i * f.s, y = cy - (f.m - 1) * sy / 2 + k * sy;
           circ(P, x, y, f.D / 2, PIL, 20); line(P, [x - f.D * 0.7, y], [x + f.D * 0.7, y], 'axe'); line(P, [x, y - f.D * 0.7], [x, y + f.D * 0.7], 'axe');
         }
         if (f.m > 1) dim(P, [cx - (f.nr - 1) * f.s / 2 - (Bf / 2 || f.D) - 0.2, -(f.m - 1) * sy / 2], [cx - (f.nr - 1) * f.s / 2 - (Bf / 2 || f.D) - 0.2, -(f.m - 1) * sy / 2 + sy], 'v', -6, frn(sy));
-        text(P, [cx, -Lf / 2], f.n + ' pieux Ø' + fr(f.D, 2) + ' — L = ' + frn(f.Lp) + ' m', { ht: 2.4, dy: -11, lay: 'note' });
+        text(P, [cx, cys[0] - Lf / 2], f.n + ' pieux Ø' + fr(f.D, 2) + ' — L = ' + frn(f.Lp) + ' m', { ht: 2.4, dy: -11, lay: 'note' });
       }
       if (!isC) {
         const fut = g.fut;
