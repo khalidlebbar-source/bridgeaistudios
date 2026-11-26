@@ -229,7 +229,7 @@
       left += sketchHTML(sp) + `<table class="pg"><tbody>${supDims(sp)}</tbody></table>`;
       right = edView('Coupe transversale sur ' + (sp.kind === 'culee' ? 'culée ' : 'pile ') + id, C.toSVG(C.secScene(M, { part: sp.kind === 'culee' ? 'culee' : 'pile', id }), { width: 900, kp: 3.2, pad: 14, id: 'ed-t', dims: showDims }))
         + (() => { const D = C.supScenes(M, id), o = { width: 900, kp: 3.2, pad: 14, dims: showDims };
-          return edView(D.lo.titre, C.toSVG(D.lo, Object.assign({ id: 'ed-lo' }, o))) + edView(D.pl.titre, C.toSVG(D.pl, Object.assign({ id: 'ed-pl' }, o))) + edView(D.top.titre, C.toSVG(D.top, Object.assign({ id: 'ed-top' }, o))); })()
+          return ['lo', 'lob', 'pl', 'top', 'mr', 'gg'].filter((k) => D[k]).map((k) => edView(D[k].titre, C.toSVG(D[k], Object.assign({ id: 'ed-' + k }, o)))).join(''); })()
         + edView('Élévation — détail', elevDetail(sp));
       if (sp.kind === 'culee' && sp.j !== 0) right = right.replace('Coupe transversale sur culée ' + id, 'Coupe transversale sur culée (type commun aux deux culées)');
     } else {

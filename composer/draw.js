@@ -518,6 +518,11 @@
         const xc = xcols[xcols.length - 1];
         dim(P, [xc - (g.fut.b || g.fut.D) / 2, yTop - 1.6], [xc + (g.fut.b || g.fut.D) / 2, yTop - 1.6], 'h', 2, colLab(g.fut));
       }
+      if (ref.kind === 'culee' && ref.geo.type === 'remblayee') {   // barbacanes Ø100 tous les 1,50 m au-dessus du terrain
+        const yb = yft + 1.1, nB = Math.max(2, Math.floor((W - 1) / 1.5) + 1);
+        for (let i = 0; i < nB; i++) circ(P, -(nB - 1) * 0.75 + i * 1.5, yb, 0.05, 'vu', 10);
+        text(P, [0, yb], 'barbacanes Ø100 tous les 1,50 m', { ht: 1.8, dy: 3, lay: 'note' });
+      }
       const f = ref.fo;
       const ytn = yft + 0.6, half = Math.max(W / 2, (f.mode === 'pieux' ? f.Ly : f.L) / 2) + 1.5;
       let yLow;
@@ -648,6 +653,14 @@
         R.seen.forEach((c) => poly(P, c.pts.map(Q), c.lay === 'col' ? 'col' : c.lay === 'vuB' ? 'vuB' : 'vu'));
         R.cut.forEach((c) => poly(P, c.pts.map(Q), c.lay));
         if (g.dt) { const a = lo_(X(R.ub + 0.30), X(R.ub + 0.30 + g.dt.L)); dim(P, [a[0], yTop - 0.40], [a[1], yTop - 0.40], 'h', 6, 'dalle de transition ' + frn(g.dt.L) + ' — 5 %'); }
+        if (rem) {   // drainage (plans KLE) : nappe drainante + géotextile contre le mur, drain Ø160 en pied, barbacanes Ø100 tous les 1,50 m
+          const ub_ = R.uf + g.mur.e, yTN = 0.6 + 0.5;
+          line(P, [X(ub_ + 0.08), 0.3], [X(ub_ + 0.08), Math.max(0.6, H - so.h - (so.b - g.mur.e))], 'vuT');
+          circ(P, X(ub_ + 0.30), 0.35, 0.08, 'vu', 12);
+          line(P, [X(R.uf - 0.15), yTN], [X(ub_ + 0.05), yTN + 0.05], 'eau');
+          text(P, [X(ub_ + 0.6), 0.35], 'drain Ø160 + géotextile, nappe drainante', { ht: 1.8, anchor: o < 0 ? 'end' : 'start', lay: 'note' });
+          text(P, [X(R.uf - 0.2), yTN], 'barbacanes Ø100 / 1,50 m', { ht: 1.8, anchor: o < 0 ? 'start' : 'end', dy: 2, lay: 'note' });
+        }
         // fondation (semelle à patin et talon, ou massif sur pieux) et gros béton éventuel
         const fl = fondLo(P, f, X(R.uc), true);
         if (g.gros > 0 && f.mode === 'superficielle') {
@@ -772,6 +785,60 @@
       tagFrom(P, 0, id);
       title(P, [(x0 + x1) / 2, L / 2 + 2.4], 'VUE EN PLAN ' + (isC ? 'DU SOMMIER' : 'DU CHEVÊTRE') + ' — ' + nm, 50);
       out.top = { P, ech: 50, titre: isC ? 'Vue en plan du sommier' : 'Vue en plan du chevêtre' };
+    }
+    // ── coupe biaise à l'axe : longueurs mesurées le long de l'axe de l'ouvrage (÷ sin φ), cotes recalculées ──
+    if (S.biais < 99.5) {
+      const k = 1 / Math.max(0.3, Math.sin(S.biais * Math.PI / 200)), num = (t) => (t.match(/\d+,\d{2}/) || [null])[0];
+      const P = out.lo.P.map((p) => {
+        const q = JSON.parse(JSON.stringify(p)), sx = (pt) => [pt[0] * k, pt[1]];
+        if (q.k === 'poly') q.pts = q.pts.map(sx);
+        else if (q.k === 'dim' || q.k === 'brk') {
+          const L0 = Math.abs(q.b[0] - q.a[0]); q.a = sx(q.a); q.b = sx(q.b);
+          if (q.k === 'dim' && q.dir === 'h' && L0 > 0.01) { const n = num(q.s || ''); if (n && Math.abs(parseFloat(n.replace(',', '.')) - L0) < 0.02) q.s = q.s.replace(n, frn(L0 * k)); }
+        } else if (q.k === 'text' || q.k === 'title') { q.p = sx(q.p); if (q.k === 'title') q.s = q.s.replace('COUPE LONGITUDINALE', 'COUPE BIAISE'); }
+        return q;
+      });
+      out.lob = { P, ech: 50, titre: 'Coupe biaise à l’axe (φ = ' + fr(S.biais, 0) + ' gr)' };
+    }
+    // ── culées : mur en retour (élévation et coupe type), garde-grève (élévation) ──
+    if (isC) {
+      const R = C.culeeProfil(sp), rt = g.retours, hgg = g.hgg, H = sp.H, nm2 = 'CULÉE ' + id;
+      if (rt.mode !== 'aucun') {
+        const P = [];
+        const src = R.seen.find((c) => c.lay === 'vuL');
+        if (src) {
+          const pts = src.pts.map((q) => [q[0], q[1] + H]);
+          poly(P, pts, 'beton');
+          const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+          dim(P, [x0, y1], [x1, y1], 'h', 6, frn(x1 - x0));
+          dim(P, [x0, y0], [x0, y1], 'v', -6, frn(y1 - y0));
+          const top = pts.filter((q) => Math.abs(q[1] - y1) < 1e-6), xe = Math.max(...top.map((q) => q[0]));
+          if (xe < x1 - 0.05) dim(P, [x0, y1], [xe, y1], 'h', 14, frn(xe - x0));
+          const rr = pts.filter((q) => Math.abs(q[0] - x1) < 1e-6), ye = Math.max(...rr.map((q) => q[1]));
+          if (ye > y0 + 0.05) dim(P, [x1, y0], [x1, ye], 'v', 6, frn(ye - y0));
+          if (rt.mode === 'U') { rect(P, x0 - 0.5, y0, x1 + 0.3, y0 - (sp.fo.e || 1), 'vuL'); text(P, [(x0 + x1) / 2, y0 - (sp.fo.e || 1) / 2], 'semelle', { ht: 2, lay: 'note' }); }
+          // coupe type à côté
+          const cx = x1 + 3, e = rt.e;
+          rect(P, cx, y0, cx + e, y1, 'beton'); rect(P, cx - 0.10, y1, cx + e + 0.10, y1 - 0.25, 'vuB');
+          dim(P, [cx, y0], [cx + e, y0], 'h', -5, frn(e));
+          text(P, [cx + e / 2, y1], 'coupe type', { ht: 2.2, dy: 8, lay: 'note' });
+          title(P, [(x0 + x1) / 2, y1 + 3], 'MUR EN RETOUR — ÉLÉVATION ET COUPE TYPE — ' + nm2, 50);
+          out.mr = { P, ech: 50, titre: 'Mur en retour : élévation et coupe type' };
+        }
+      }
+      if (g.egg > 0) {
+        const P = [], Lg = g.sommier.L || M.W, W2 = Lg / 2;
+        rect(P, -W2, 0, W2, hgg, 'vuB');
+        if (g.dt) line(P, [-W2, hgg - 0.70], [W2, hgg - 0.70], 'vuT');
+        M.sec.bear.forEach((y) => { rect(P, y - 0.35, -0.0, y + 0.35, 0.10, 'vuB'); rect(P, y - 0.25, 0.10, y + 0.25, 0.16, 'app'); });
+        rect(P, -W2 - 0.2, 0, W2 + 0.2, -0.6, 'vuL');
+        dim(P, [-W2, hgg], [W2, hgg], 'h', 6, frn(Lg));
+        dim(P, [W2, 0], [W2, hgg], 'v', 6, frn(hgg));
+        const b = M.sec.bear; for (let i = 0; i < b.length - 1; i++) dim(P, [b[i], 0], [b[i + 1], 0], 'h', -5, frn(b[i + 1] - b[i]));
+        text(P, [0, hgg / 2], 'ép. ' + frn(g.egg) + (g.dt ? ' — corbeau d’appui de la dalle de transition' : ''), { ht: 2, lay: 'note' });
+        title(P, [0, hgg + 2.6], 'GARDE-GRÈVE — ÉLÉVATION — ' + nm2, 50);
+        out.gg = { P, ech: 50, titre: 'Garde-grève : élévation' };
+      }
     }
     return out;
   }
