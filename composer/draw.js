@@ -751,9 +751,9 @@
     acierL: 'fill:none;stroke:#1f3a5f;stroke-width:1.3;stroke-dasharray:6 3',
     vu: 'fill:none;stroke:#6f6f6f;stroke-width:.7;stroke-dasharray:4 2.5',
     axe: 'fill:none;stroke:#d6336c;stroke-width:.7;stroke-dasharray:14 3 2 3',
-    tn: 'fill:none;stroke:#5c940d;stroke-width:1.2',
-    sol: 'fill:url(#ID-h);stroke:none',
-    remblai: 'fill:#f6f1e3;stroke:#a68d5b;stroke-width:.6',
+    tn: 'fill:none;stroke:#2b2b2b;stroke-width:1.1',
+    sol: 'fill:none;stroke:none',
+    remblai: 'fill:none;stroke:none',
     perre: 'fill:none;stroke:#8a6a2a;stroke-width:2.4;stroke-dasharray:3 2',
     pieu: 'fill:#f3f3f3;stroke:#2b2b2b;stroke-width:.8;stroke-dasharray:6 3',
     pieuP: 'fill:none;stroke:#e8590c;stroke-width:.8;stroke-dasharray:5 3',
@@ -810,6 +810,19 @@
           const d = p.pts.map((q, i) => (i ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1)).join('') + (p.closed && p.pts.length > 2 ? 'Z' : '');
           if (p.lay !== 'sol') p.pts.forEach((q) => g(X(q[0]), Y(q[1])));
           out.push(`<path${p.tag ? ` data-tag="${p.tag}"` : ''} d="${d}" style="${(STY[p.lay] || STY.vu).split('#ID-').join('#' + id + '-')}${p.pts.length === 2 || !p.closed ? ';fill:none' : ''}"/>`);
+          if (p.lay === 'sol' || p.lay === 'remblai') {   // terrain : trait du terrain et hachures courtes en dessous (convention de dessin), sans aplat
+            const yb = Math.min(...p.pts.map((q) => q[1])), n = p.pts.length, sp = 3.2 * kp, tl = 2.2 * kp;
+            let dd = '';
+            for (let i = 0; i < n; i++) {
+              const a = p.pts[i], b = p.pts[(i + 1) % n];
+              if (Math.abs(a[1] - yb) < 1e-6 && Math.abs(b[1] - yb) < 1e-6) continue;         // fond de la zone
+              const x1 = X(a[0]), y1 = Y(a[1]), x2 = X(b[0]), y2 = Y(b[1]), L = Math.hypot(x2 - x1, y2 - y1);
+              if (L < 1 || Math.abs(y2 - y1) > 2 * Math.abs(x2 - x1)) continue;               // bords verticaux
+              dd += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+              for (let t = sp / 2; t < L; t += sp) { const x = x1 + (x2 - x1) * t / L, y = y1 + (y2 - y1) * t / L; dd += `M${x.toFixed(1)} ${y.toFixed(1)}l${(-tl * 0.7).toFixed(1)} ${(tl * 0.7).toFixed(1)}`; }
+            }
+            if (dd) out.push(`<path d="${dd}" style="fill:none;stroke:#3a3a3a;stroke-width:.5"/>`);
+          }
         } else if (p.k === 'text') {
           const fs = p.ht * kp;
           T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#c2255c"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));

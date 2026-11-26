@@ -359,7 +359,7 @@
     const ln = (x1, y1, x2, y2, st) => `<path d="M${x1} ${y1}L${x2} ${y2}" style="${st || Dm}"/>`;
     const dv = (x, y1, y2) => ln(x, y1, x, y2) + ln(x - 4, y1, x + 4, y1) + ln(x - 4, y2, x + 4, y2);
     const dh = (y, x1, x2) => ln(x1, y, x2, y) + ln(x1, y - 4, x1, y + 4) + ln(x2, y - 4, x2, y + 4);
-    const sol = '<rect x="0" y="134" width="320" height="66" style="fill:#f3eee2"/>' + ln(0, 134, 320, 134, 'stroke:#7a8b5a;stroke-width:1');
+    const sol = ln(0, 134, 320, 134, 'stroke:#2b2b2b;stroke-width:1') + '<path d="' + Array.from({ length: 40 }, (_, i) => `M${4 + i * 8} 134l-5 5`).join('') + '" style="stroke:#555;stroke-width:.6;fill:none"/>';
     /* fondation dans une vue : long = sens longitudinal (B, files nr, Lx) ou transversal (L, pieux par file m, Ly) */
     const fond = (x, w, longi) => {
       let o = r(x, 144, w, 16);
