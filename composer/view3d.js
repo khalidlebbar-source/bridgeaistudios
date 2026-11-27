@@ -21,6 +21,7 @@
     /* face orientée : inw = direction vers l'intérieur du solide ; la face est retournée pour que sa normale (Newell) pointe vers l'intérieur,
        ce qui permet d'éliminer les faces arrière au rendu (et de tracer les contours de silhouette) */
     const face = (p, ne, inw) => {
+      if (hz != null && p.every((q) => Math.abs(q[2] - hz) < 1e-6)) return;   // dessus de table de poutre collé sous le hourdis : jamais visible
       if (inw) {
         let nx = 0, ny = 0, nz = 0;
         for (let i = 0; i < p.length; i++) { const a = p[i], c = p[(i + 1) % p.length]; nx += (a[1] - c[1]) * (a[2] + c[2]); ny += (a[2] - c[2]) * (a[0] + c[0]); nz += (a[0] - c[0]) * (a[1] + c[1]); }
@@ -91,7 +92,11 @@
       const nb = pg.role === 'poutre' ? 1 : Math.max(1, Math.ceil((yb - ya) / 1.5));
       const cutsY = Array.from({ length: Math.max(0, nb - 1) }, (_, k) => ya + (yb - ya) * (k + 1) / nb);
       const parts = nb === 1 ? [pg.pts] : Array.from({ length: nb }, (_, k) => band(pg.pts, ya + (yb - ya) * k / nb, ya + (yb - ya) * (k + 1) / nb)).filter((q) => q.length >= 3);
-      pieces.forEach(([x0, x1]) => {
+      // hourdis : continu (dalle de continuité) — coupé seulement aux joints de chaussée intermédiaires
+      const jx = (M.joints || []).map((jj) => jj.x).filter((x) => x > -dab + 0.1 && x < Ltot + dab - 0.1).sort((p_, q_) => p_ - q_);
+      const hp = [-dab].concat(jx.flatMap((x) => [x - 0.04, x + 0.04]), [Ltot + dab]), hPieces = [];
+      for (let k = 0; k < hp.length; k += 2) hPieces.push([hp[k], hp[k + 1]]);
+      (pg.role === 'hourdis' && M.T.famille === 'poutres' ? hPieces : pieces).forEach(([x0, x1]) => {
         const a0 = x0 + cut, a1 = x1 - cut, ns = Math.max(1, Math.ceil((a1 - a0) / 3));
         for (let k = 0; k < ns; k++) parts.forEach((q) => {   // faces des tronçons sans arêtes (pas de quadrillage), arêtes gardées aux abouts
           const xa = a0 + (a1 - a0) * k / ns, xb = a0 + (a1 - a0) * (k + 1) / ns;
@@ -287,7 +292,8 @@
       return false;
     };
     // le gros béton (sous tout le reste) est dessiné en premier : ses faces de contact ne passent pas devant la semelle
-    const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : 0);
+    // poutres et entretoises sous le hourdis : légèrement reculées vu de dessus (avancées vu de dessous) pour ne pas percer la dalle
+    const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : o.fc.mat === 'prefa' ? (cam.pitch > 0 ? 0.8 : -0.8) : 0);
     out.sort((a, c) => (c.d + bias(c)) - (a.d + bias(a)));
     const sel = opt.sel;
     const paths = out.map((o) => {
