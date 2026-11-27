@@ -724,7 +724,7 @@
     renderTabs();
     const tp = $('#tpane');
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
-    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d';
+    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d'; if (view !== '3d') stopSeq();
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
     if (view === 'diag') {
       $('#axes2d').style.display = 'none';
@@ -739,10 +739,14 @@
       { // phases de construction (cases à cocher, dans l'ordre d'exécution) — seules les phases présentes dans l'ouvrage
         const have = new Set(model3.faces.map((f) => f.ph)), ph = $('#ph3');
         ph.innerHTML = '<b>Phasage de construction</b>' + C.PHASES.filter(([k]) => have.has(k)).map(([k, l], i) => `<label><i>${i + 1}</i><input type="checkbox" data-ph="${k}"${hide3[k] ? '' : ' checked'}>${esc(l)}</label>`).join('')
-          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button></div>';
+          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button><button type="button" data-pha="play" class="ph3p">▶ Séquence de construction</button></div><div class="ph3s" id="ph3s"></div>';
         ph.hidden = false;
         ph.onchange = (e) => { const k = e.target.dataset.ph; if (!k) return; hide3[k] = !e.target.checked; draw3D(); };
-        ph.onclick = (e) => { const a = e.target.dataset.pha; if (!a) return; ph.querySelectorAll('input').forEach((c) => { c.checked = a === 'all'; hide3[c.dataset.ph] = a !== 'all'; }); draw3D(); };
+        ph.onclick = (e) => {
+          const a = e.target.dataset.pha; if (!a) return;
+          if (a === 'play') { playSeq(); return; }
+          stopSeq(); ph.querySelectorAll('input').forEach((c) => { c.checked = a === 'all'; hide3[c.dataset.ph] = a !== 'all'; }); draw3D();
+        };
         ['pointerdown', 'wheel', 'dblclick'].forEach((t) => ph.addEventListener(t, (e) => e.stopPropagation()));
       }
       $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser : déplacer · molette : zoom';
@@ -770,6 +774,33 @@
     applySel();
     $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
+  }
+  /* séquence animée de la construction : les phases apparaissent une à une, la caméra tourne lentement autour de l'ouvrage */
+  let seq = null;
+  function stopSeq() {
+    if (!seq) return; cancelAnimationFrame(seq.raf); seq = null;
+    const b = $('#ph3 .ph3p'); if (b) b.textContent = '▶ Séquence de construction';
+    const st = $('#ph3s'); if (st) st.textContent = '';
+  }
+  function playSeq() {
+    if (seq) { stopSeq(); return; }
+    const boxes = [...$$('#ph3 input[data-ph]')], keys = boxes.map((c) => c.dataset.ph), labels = boxes.map((c) => c.parentElement.textContent.replace(/^\d+/, '').trim());
+    const DUR = 1600, yaw0 = cam3.yaw, t0 = performance.now();
+    seq = { raf: 0, last: -1 };
+    $('#ph3 .ph3p').textContent = '■ Arrêter';
+    const step = (t) => {
+      if (!seq || view !== '3d') { stopSeq(); return; }
+      const e = t - t0, k = Math.min(keys.length, Math.floor(e / DUR) + 1);
+      cam3.yaw = yaw0 + 0.00012 * e;   // rotation lente
+      if (k !== seq.last) {
+        seq.last = k;
+        keys.forEach((key, i) => { hide3[key] = i >= k; boxes[i].checked = i < k; });
+        const st = $('#ph3s'); if (st) st.textContent = 'Phase ' + k + ' / ' + keys.length + ' — ' + labels[k - 1];
+      }
+      draw3D();
+      if (e < keys.length * DUR + 1500) seq.raf = requestAnimationFrame(step); else stopSeq();
+    };
+    seq.raf = requestAnimationFrame(step);
   }
   function draw3D() {
     const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
