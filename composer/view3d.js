@@ -50,11 +50,37 @@
     const pieces = [];
     if (M.cont) pieces.push([-dab, Ltot + dab]);
     else for (let i = 0; i < n; i++) pieces.push([i === 0 ? -dab : xs[i] + 0.04, i === n - 1 ? Ltot + dab : xs[i + 1] - 0.04]);
+    // tablier découpé en tronçons de 3 m : le tri du peintre par centre de face reste juste (pas de longues faces)
+    // et hourdis découpé en bandes transversales de 1,5 m (même raison)
+    const band = (pts, y0, y1) => {
+      const cut1 = (P, inside, yc) => { const out = []; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], ia = inside(a), ib = inside(b); if (ia) out.push(a); if (ia !== ib) { const t = (yc - a[0]) / (b[0] - a[0]); out.push([yc, a[1] + t * (b[1] - a[1])]); } } return out; };
+      const r = cut1(pts, (q) => q[0] >= y0, y0); return r.length ? cut1(r, (q) => q[0] <= y1, y1) : r;
+    };
     sec.polys.forEach((pg) => {
       mat = pg.mat === 'acier' ? 'acier' : pg.role === 'poutre' ? 'prefa' : pg.role === 'hourdis' ? 'hourdis' : 'beton';
-      const cut = pg.mat === 'acier' ? 0.2 : 0;
-      pieces.forEach(([x0, x1]) => extrude(pg.pts, x0 + cut, x1 - cut));
+      const cut = pg.mat === 'acier' ? 0.2 : 0, ys = pg.pts.map((q) => q[0]), ya = Math.min(...ys), yb = Math.max(...ys);
+      const nb = pg.role === 'poutre' ? 1 : Math.max(1, Math.ceil((yb - ya) / 1.5));
+      const parts = nb === 1 ? [pg.pts] : Array.from({ length: nb }, (_, k) => band(pg.pts, ya + (yb - ya) * k / nb, ya + (yb - ya) * (k + 1) / nb)).filter((q) => q.length >= 3);
+      pieces.forEach(([x0, x1]) => {
+        const a0 = x0 + cut, a1 = x1 - cut, ns = Math.max(1, Math.ceil((a1 - a0) / 3));
+        for (let k = 0; k < ns; k++) parts.forEach((q) => {   // faces des tronçons sans arêtes (pas de quadrillage), arêtes gardées aux abouts
+          const xa = a0 + (a1 - a0) * k / ns, xb = a0 + (a1 - a0) * (k + 1) / ns;
+          face(q.map((v) => [xa, v[0], v[1]]), k > 0 || nb > 1); face(q.slice().reverse().map((v) => [xb, v[0], v[1]]), k < ns - 1 || nb > 1);
+          for (let i = 0; i < q.length; i++) { const u = q[i], w = q[(i + 1) % q.length]; face([[xa, u[0], u[1]], [xb, u[0], u[1]], [xb, w[0], w[1]], [xa, w[0], w[1]]], true); }
+        });
+      });
     });
+    // entretoises d'about (sur appuis) entre poutres d'un même tablier
+    if (M.T.famille === 'poutres' && sec.info && sec.info.btab) {
+      const i = sec.info, bx = sec.bear, zt = -i.eh - i.etab - 0.10, zb = -(h - 0.25), ee = 0.40;
+      mat = 'prefa';
+      pieces.forEach(([x0, x1]) => [[x0 + 0.10, x0 + 0.10 + ee], [x1 - 0.10 - ee, x1 - 0.10]].forEach(([a, b2]) => {
+        for (let k = 0; k < bx.length - 1; k++) {
+          if (sec.jumeaux && bx[k] < 0 && bx[k + 1] > 0) continue;
+          box(a, b2, bx[k] + i.b0 / 2, bx[k + 1] - i.b0 / 2, zt, zb);
+        }
+      }));
+    }
 
     // ── appareils d'appui et bossages ──
     tag = null;
@@ -110,15 +136,20 @@
           const R = C.culeeProfil(s), X = (u) => s.x + o * u, z0 = -g.hgg, j = M.sec.jumeaux ? M.sec.joint / 2 : 0;
           yS = z0; yft = z0 - s.H;
           const halves = (L) => (j ? [[-L / 2, -j], [j, L / 2]] : [[-L / 2, L / 2]]);
-          const extY = (pts, y0, y1) => {
+          const extY = (pts, y0, y1) => {   // découpée en bandes de 1,5 m pour un tri du peintre juste
+            const nb = Math.max(1, Math.ceil(Math.abs(y1 - y0) / 1.5));
+            if (nb > 1) { for (let k = 0; k < nb; k++) extY1(pts, y0 + (y1 - y0) * k / nb, y0 + (y1 - y0) * (k + 1) / nb, k > 0, k < nb - 1); return; }
+            extY1(pts, y0, y1, false, false);
+          };
+          const extY1 = (pts, y0, y1, n0, n1) => {
             const Q = pts.map((q) => [X(q[0]), z0 + q[1]]);
-            face(Q.map((q) => [q[0], y0, q[1]])); face(Q.slice().reverse().map((q) => [q[0], y1, q[1]]));
-            for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; face([[a[0], y0, a[1]], [c[0], y0, c[1]], [c[0], y1, c[1]], [a[0], y1, a[1]]]); }
+            face(Q.map((q) => [q[0], y0, q[1]]), n0); face(Q.slice().reverse().map((q) => [q[0], y1, q[1]]), n1);
+            for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; face([[a[0], y0, a[1]], [c[0], y0, c[1]], [c[0], y1, c[1]], [a[0], y1, a[1]]], n0 || n1); }
           };
           const em = g.retours.e || 0.5, Ls = g.sommier.L || W;
           const dtSpans = j ? [[-W / 2 + em + 0.80, -j - 0.20], [j + 0.20, W / 2 - em - 0.80]] : [[-W / 2 + em + 0.80, W / 2 - em - 0.80]];
-          R.cut.forEach((c) => {
-            mat = c.lay === 'prop' ? 'fond' : 'beton';
+          R.cut.filter((c) => c.role !== 'prop').forEach((c) => {   // béton de propreté non représenté en 3D
+            mat = 'beton';
             const spans = c.role === 'som' ? halves(Ls) : c.role === 'gg' ? halves(W) : dtSpans;
             spans.forEach(([a, b2]) => extY(c.pts, a, b2));
           });
@@ -208,10 +239,7 @@
       void view;
       out.push({ pr, d, lam, fc });
     });
-    // tri du peintre par couches : vu de dessus, appuis puis poutres puis hourdis (le hourdis masque les poutres) ;
-    // vu de dessous, ordre inverse. Évite que des faces longues de poutres passent devant le hourdis.
-    const above = cam.pitch > 0, lay = (fc) => (fc.mat === 'hourdis' ? 2 : fc.mat === 'prefa' || fc.mat === 'acier' ? 1 : 0);
-    out.sort((a, c) => { const la = lay(a.fc), lc = lay(c.fc); if (la !== lc) return above ? la - lc : lc - la; return c.d - a.d; });
+    out.sort((a, c) => c.d - a.d);
     const sel = opt.sel;
     const paths = out.map((o) => {
       const d = 'M' + o.pr.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
@@ -221,7 +249,7 @@
       const c = MAT[o.fc.mat] || MAT.beton, k = 0.62 + 0.38 * o.lam;
       const rgb = c.map((v, i) => Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)));   // sélection : léger voile bleu, couleurs conservées
       const fill = `rgb(${rgb.map(Math.round).join(',')})`;
-      if (o.fc.ne) return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round"/>`;   // facette de cylindre : pas d'arête
+      if (o.fc.ne) return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="1.1" stroke-linejoin="round"/>`;   // facette de cylindre : pas d'arête
       return `<path${t} d="${d}" fill="${fill}" stroke="${on ? '#1f5fd1' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
     }).join('');
     // trièdre
