@@ -138,6 +138,7 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
     if (v.some(bad) || Mx.T.nom !== o.type || C.build3D(Mx).faces.length < 500) okG = false;
   });
   { const Mv = C.compute(C.normalize(require('../composer/vitrine.js').vitrine)), nP = C.sheetCount(Mv); let okP = nP >= 1; for (let k = 1; k <= nP; k++) { const sh = C.sheetSVG(Mv, { planche: k }); if (bad(sh) || !/PLAN D’ENSEMBLE/.test(sh) || (nP > 1 && !new RegExp('PLANCHE ' + k + ' / ' + nP).test(sh))) okP = false; } ok(okP, 'plan d’ensemble en ' + nP + ' planche(s), cartouche A4 numéroté'); }
+  { const Mv = C.compute(C.normalize(require('../composer/vitrine.js').vitrine)), L = C.coffrageList(Mv); ok(L.length === 4 && L.every(([k]) => { const v = C.coffrageSVG(Mv, k.slice(4)); return v.length > 1000 && !bad(v) && !/Ech:1\/(75|100)/.test(v); }), 'plans de coffrage tablier, piles, culées C0 et C4 (≥ 1/50)'); }
   ok(okG, 'gabarit KLE : 5 ponts à poutres VIPP / PPBA générés (plan d’ensemble, 3D) sans valeur invalide');
 }
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');

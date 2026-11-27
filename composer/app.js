@@ -717,7 +717,7 @@
   function renderTabs() {
     const nW = M ? M.warn.length : 0;
     const nP = M && C.sheetCount ? C.sheetCount(M) : 1;
-    const V2 = [].concat(nP > 1 ? Array.from({ length: nP }, (_, i) => [i ? 'plan' + (i + 1) : 'plan', 'Plan d’ensemble — planche ' + (i + 1)]) : [['plan', 'Plan d’ensemble']], VIEWS.slice(1));
+    const V2 = [].concat(nP > 1 ? Array.from({ length: nP }, (_, i) => [i ? 'plan' + (i + 1) : 'plan', 'Plan d’ensemble — planche ' + (i + 1)]) : [['plan', 'Plan d’ensemble']], M && C.coffrageList ? C.coffrageList(M) : [], VIEWS.slice(1));
     let h = V2.map(([v, l]) => `<button class="dtab${view === v ? ' on' : ''}" data-cmd="view" data-arg="${v}">${l}</button>`).join('');
     h += openT.map((k) => `<span class="dtab tt${view === 't:' + k ? ' on' : ''}" data-cmd="tab" data-arg="${k}" role="button" tabindex="0">${ico(k)}${TABLES[k]}${k === 'msg' && nW ? `<span class="bd">${nW}</span>` : ''}<button class="dx" data-cmd="closeT" data-arg="${k}" title="Fermer" aria-label="Fermer ${TABLES[k]}">×</button></span>`).join('');
     $('#dtabsList').innerHTML = h;
@@ -747,9 +747,13 @@
       return;
     }
     if (/^plan\d+$/.test(view) && C.sheetCount && +view.slice(4) > C.sheetCount(M)) view = 'plan';
-    $('#axes2d').style.display = view.startsWith('plan') ? 'none' : '';
+    $('#axes2d').style.display = view.startsWith('plan') || view.startsWith('cof:') ? 'none' : '';
     let svg;
-    if (view.startsWith('plan')) {
+    if (view.startsWith('cof:') && C.coffrageList && !C.coffrageList(M).some(([v]) => v === view)) view = 'plan';
+    if (view.startsWith('cof:')) {
+      scene = null;
+      svg = C.coffrageSVG(M, view.slice(4), { dims: showDims });
+    } else if (view.startsWith('plan')) {
       const nko = JZ.sum && JZ.key === Skey() ? JZ.sum.verdicts.filter((v) => v.statut !== 'ok').length : null;
       scene = null;
       svg = C.sheetSVG(M, { dims: showDims, planche: +(view.slice(4) || 1), justif: nko == null ? null : { ok: !nko, nko } });
@@ -766,7 +770,7 @@
     vbBase = el.getAttribute('viewBox').split(/\s+/).map(Number);
     vb = vbBase.slice();
     applySel();
-    $('#vinfo').textContent = view.startsWith('plan') ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
+    $('#vinfo').textContent = view.startsWith('cof:') ? 'Plan de coffrage A0 · cliquez une vue pour modifier l’élément' : view.startsWith('plan') ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
   /* séquence animée de la construction : les phases apparaissent une à une, caméra fixe */
@@ -1368,7 +1372,7 @@
     if (id === 'hyp') { if (!openT.includes('hyp')) openT.push('hyp'); view = 't:hyp'; }
     const p = parentOf(id, treeModel());
     if (p) expanded.add(p);
-    if (!o.keepView && id !== 'hyp' && view !== '3d' && view !== 'diag' && view !== 'plan') {
+    if (!o.keepView && id !== 'hyp' && view !== '3d' && view !== 'diag' && !view.startsWith('plan') && !view.startsWith('cof:')) {
       if (['section', 'profil', 'equip'].includes(id)) view = 'sec';
       else if (/^T\d+$/.test(id) || /^C\d+$/.test(id)) view = 'elev';
       else if (/^P\d+$/.test(id) && view === 'sec' && !$(`#svgHost [data-tag="${id}"]`)) view = 'elev';

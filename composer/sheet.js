@@ -214,5 +214,98 @@
     return s + '</svg>';
   }
 
-  return { sheetSVG, sheetCount, SHEET: { W: SW, H: SH, layout } };
+  /* ───────── PLANS DE COFFRAGE (tablier, piles, culées) — disposition des plans KLE PRO2334 (0003, 0004 pl1/pl2) :
+       colonne de gauche : coupe transversale, coupe sur fûts / pieux, vue en plan du sommier ;
+       colonne de droite : coupe longitudinale, mur en retour (élévation et coupe type) ; cartouche A4 et NOTA à droite. ───────── */
+  function coffrageList(M) {
+    const L = [['cof:tablier', 'Coffrage tablier']];
+    if (M.supports.some((x) => x.kind === 'pile')) L.push(['cof:piles', 'Coffrage piles']);
+    M.supports.filter((x) => x.kind === 'culee').forEach((c) => L.push(['cof:' + c.id, 'Coffrage culée ' + c.id]));
+    return L;
+  }
+  function coffrageSVG(M, which, opt) {
+    opt = opt || {};
+    const S = M.S, ct = S.cartouche || {}, cart = [FX1 - 210, FY1 - 297, 210, 297];
+    const piles = M.supports.filter((x) => x.kind === 'pile');
+    const pid = piles.length ? piles.map((p) => [p, piles.filter((q) => Math.abs(q.H - p.H) < 0.01).length]).sort((a, b) => b[1] - a[1] || b[0].H - a[0].H)[0][0].id : null;
+    /* vue en plan dessinée avec l'axe transversal vertical → tournée d'un quart de tour pour être alignée sous la coupe transversale (comme sur les plans) */
+    const rot = (sc) => {
+      if (!sc) return sc;
+      const R_ = (q) => [q[1], -q[0]];
+      const P = sc.P.map((q) => {
+        q = Object.assign({}, q);
+        if (q.k === 'poly') q.pts = q.pts.map(R_);
+        else if (q.k === 'dim') { q.a = R_(q.a); q.b = R_(q.b); if (q.dir === 'h') q.dir = 'v'; else { q.dir = 'h'; q.off = -q.off; } }
+        else if (q.k === 'brk') { q.a = R_(q.a); q.b = R_(q.b); }
+        else if (q.k === 'text' || q.k === 'title') q.p = R_(q.p);
+        return q;
+      });
+      let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      P.forEach((q) => { if (q.k === 'poly') q.pts.forEach((v) => { x0 = Math.min(x0, v[0]); x1 = Math.max(x1, v[0]); y1 = Math.max(y1, v[1]); }); });
+      P.forEach((q) => { if (q.k === 'title') q.p = [(x0 + x1) / 2, y1 + 2.4]; });
+      return Object.assign({}, sc, { P });
+    };
+    const fixed = (sc, t) => sc ? () => (t ? Object.assign({}, sc, { P: sc.P.map((q) => (q.k === 'title' ? Object.assign({}, q, { s: t, sub: q.sub && q.sub.replace(/1\/\d+/, '1/50') }) : q)) }) : sc) : null;
+    let Lc = [], Rc = [], top = null, titre = '', sous = '';
+    if (which === 'tablier') {
+      titre = 'TABLIER — COFFRAGE'; sous = S.tablier.type + (S.tablier.jumeaux ? ' — 2 tabliers jumelés' : '');
+      top = ['cv', (e) => C.planScene(M, { ech: e }), 'trace'];
+      Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TRANSVERSALE EN TRAVEE' }), 'tablier']];
+      if (C.poutreScene && C.poutreScene(M, {})) Rc = [['cb1', (e) => C.poutreScene(M, { ech: e, where: 'appui' }), 'section'], ['cb2', (e) => C.poutreScene(M, { ech: e, where: 'travee' }), 'section']];
+    } else {
+      const id = which === 'piles' ? pid : which, sp = M.supports.find((x) => x.id === id); if (!sp) return '';
+      const D = C.supScenes(M, id) || {}, isC = sp.kind === 'culee', fo = sp.fo || {};
+      titre = isC ? 'CULÉES — COFFRAGE' : 'PILES — COFFRAGE';
+      sous = isC ? 'Culée ' + id : (piles.length > 1 ? 'Piles ' + piles.map((p) => p.id).join(', ') : 'Pile ' + id);
+      Lc = [['ct', (e) => C.secScene(M, { ech: e, part: isC ? 'culee' : 'pile', id, titre: 'COUPE TRANSVERSALE' }), id],
+        D.pl && ['cp', fixed(rot(D.pl), isC ? (fo.mode === 'pieux' && !(fo.e > 0) ? 'COUPE SUR PIEUX' : 'COUPE SUR FUTS') : 'COUPE SUR FUTS'), id],
+        D.top && ['cs', fixed(rot(D.top), (isC ? 'SOMMIER' : 'CHEVETRE') + ' : VUE EN PLAN'), id]].filter(Boolean);
+      Rc = [D.lo && ['cl', fixed(D.lo, 'COUPE LONGITUDINALE'), id], isC && D.mr && ['cm', fixed(D.mr), id]].filter(Boolean);
+    }
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
+      + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
+      + `<rect x="0" y="0" width="${SW}" height="${SH}" style="fill:#fff;stroke:none"/>` + R(FX0, FY0, FX1 - FX0, FY1 - FY0, 'fill:none;stroke:#1e1e1e;stroke-width:1');
+    const topN = cart[1] - GAP, nb = notaBlock(S.nota, cart[0], cart[2], 3), nh = nb ? Math.min(nb.h, topN - FY0) : 0;
+    if (nb) s += `<clipPath id="nclipc"><rect x="${cart[0]}" y="${topN - nh}" width="${cart[2]}" height="${nh}"/></clipPath><g clip-path="url(#nclipc)">${nb.draw(topN - nh)}</g>` + R(cart[0], topN - nh, cart[2], nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5');
+    s += okImg(ct.img) ? reserveA4(cart, ct.img) : `<g data-tag="projet">` + R(cart[0], cart[1], 210, 297, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7')
+      + T(cart[0] + 105, cart[1] + 148, titre, { fs: 10, a: 'middle', ls: '.04em' }) + T(cart[0] + 105, cart[1] + 160, sous, { fs: 6.5, a: 'middle' }) + '</g>';
+    const X0 = FX0 + 4, X1 = cart[0] - GAP - 4, Y0 = FY0 + 4, Y1 = FY1 - 4, AW = X1 - X0;
+    const size = (mk, id, e) => { const sc = mk(e); if (!sc) return [0, 0]; const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
+    const put = (mk, id, tag, e, x, y, w, h) => { s += place(mk, [x, y, w, h], [e], id, opt, tag).svg; };
+    let yTop = Y0;
+    if (top) {   // vue en plan du tablier sur toute la largeur
+      const eT = ECH.long.find((e) => { const [w, h] = size(top[1], top[0], e); return w <= AW && h <= 0.3 * (Y1 - Y0); }) || 500;
+      const [w, h] = size(top[1], top[0], eT); put(top[1], top[0], top[2], eT, X0 + (AW - w) / 2, Y0 + 6, w, h); yTop = Y0 + 6 + h + 3 * GAP;
+    }
+    const AH = Y1 - yTop;
+    const col = (arr, e) => { const q = arr.map(([id, mk]) => size(mk, id, e)); return [Math.max(0, ...q.map((v) => v[0])), q.reduce((a, v) => a + v[1], 0), q]; };
+    // rangement en colonnes : les vues sont empilées dans l'ordre (coupe transversale, coupes en plan, coupe longitudinale, murs en retour),
+    // une nouvelle colonne commence quand la hauteur est atteinte ; échelle la plus grande qui tient, jamais en dessous du 1/50
+    const pack = (items, e) => {
+      const cols = []; let cur = null;
+      items.forEach((it) => { const [w, h] = size(it[1], it[0], e); if (!cur || cur.h + (cur.items.length ? GAP * 3 : 0) + h > AH) { cur = { w: 0, h: 0, items: [] }; cols.push(cur); } cur.h += (cur.items.length ? GAP * 3 : 0) + h; cur.w = Math.max(cur.w, w); cur.items.push([it, w, h]); });
+      return cols;
+    };
+    const all = Lc.concat(Rc), ok = (cols) => cols.reduce((a, c) => a + c.w, 0) + 4 * GAP * (cols.length - 1) <= AW && cols.every((c) => c.h <= AH);
+    let e = 50, cols = pack(all, 50);
+    for (const e_ of (which === 'tablier' ? [] : [20, 25, 30, 40])) { const c_ = pack(all, e_); if (ok(c_)) { e = e_; cols = c_; break; } }
+    if (which === 'tablier') {   // coupe du tablier et poutres : chacune à son échelle (poutres au 1/20)
+      const eL = ECH.sec.find((e_) => { const a = col(Lc, e_), b = col(Rc, 20); return a[0] + b[0] + 6 * GAP <= AW && a[1] <= AH; }) || 50;
+      const a = col(Lc, eL), b = col(Rc, 20), gh = Rc.length ? (AW - a[0] - b[0]) / 3 : (AW - a[0]) / 2;
+      const stack = (arr, e_, x, w, q) => { const tot = q.reduce((t, v) => t + v[1], 0), g = Math.max(GAP, (AH - tot) / (arr.length + 1)); let y = yTop + Math.max(0, (AH - tot - g * (arr.length - 1)) / 2); arr.forEach(([id, mk, tag], k) => { put(mk, id, tag, e_, x + (w - q[k][0]) / 2, y, q[k][0], q[k][1]); y += q[k][1] + g; }); };
+      stack(Lc, eL, X0 + gh, a[0], a[2]); if (Rc.length) stack(Rc, 20, X0 + 2 * gh + a[0], b[0], b[2]);
+      return s + '</svg>';
+    }
+    const tw = cols.reduce((a, c) => a + c.w, 0), gx = Math.max(4 * GAP, (AW - tw) / (cols.length + 1));
+    let x = X0 + Math.max(0, (AW - tw - gx * (cols.length - 1)) / 2);
+    cols.forEach((c) => {
+      const g = c.items.length > 1 ? Math.max(3 * GAP, (AH - c.items.reduce((a, v) => a + v[2], 0)) / (c.items.length + 1)) : 0;
+      let y = yTop + Math.max(0, (AH - c.items.reduce((a, v) => a + v[2], 0) - g * (c.items.length - 1)) / 2);
+      c.items.forEach(([it, w, h]) => { put(it[1], it[0], it[2], e, x + (c.w - w) / 2, y, w, h); y += h + g; });
+      x += c.w + gx;
+    });
+    return s + '</svg>';
+  }
+
+  return { sheetSVG, sheetCount, coffrageSVG, coffrageList, SHEET: { W: SW, H: SH, layout } };
 });
