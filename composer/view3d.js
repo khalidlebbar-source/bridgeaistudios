@@ -362,5 +362,7 @@
   const PHASES = [['pieux', 'Pieux'], ['gros', 'Gros béton'], ['semelles', 'Semelles'], ['futs', 'Fûts'], ['chev', 'Chevêtres et sommiers'], ['gg', 'Garde-grève & murs en retour'],
     ['app', 'Bossages et AA'], ['poutres', 'Poutres'], ['entretoises', 'Entretoises'], ['predalles', 'Prédalles'], ['hourdis', 'Hourdis (sans la bande de continuité)'],
     ['hourdisB', 'Hourdis (bande de continuité)'], ['dt', 'Dalles de transition']];
-  return { build3D, render3D, PHASES };
+  const PH_MATK = { pieux: 'pieu', gros: 'gros', semelles: 'fond', futs: 'beton', chev: 'beton', gg: 'beton', app: 'app', poutres: 'prefa', entretoises: 'prefa', predalles: 'pred', hourdis: 'hourdis', hourdisB: 'hourdis', dt: 'dt' };
+  const PH_COLOR = {}; Object.keys(PH_MATK).forEach((k) => { PH_COLOR[k] = MAT[PH_MATK[k]].map((v) => Math.round(v + (255 - v) * 0.3)); });
+  return { build3D, render3D, PHASES, PH_COLOR };
 });

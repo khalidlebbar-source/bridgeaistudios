@@ -726,7 +726,7 @@
     renderTabs();
     const tp = $('#tpane');
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
-    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d'; if (view !== '3d') stopSeq();
+    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d'; cv.parentElement.classList.toggle('split3', view === '3d'); if (view !== '3d') stopSeq();
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
     if (view === 'diag') {
       $('#axes2d').style.display = 'none';
@@ -738,20 +738,7 @@
     if (view === '3d') {
       model3 = C.build3D(M);
       draw3D();
-      { // phases de construction (cases à cocher, dans l'ordre d'exécution) — seules les phases présentes dans l'ouvrage
-        const have = new Set(model3.faces.map((f) => f.ph)), ph = $('#ph3');
-        ph.innerHTML = '<b>Phasage de construction</b>' + C.PHASES.filter(([k]) => have.has(k)).map(([k, l], i) => `<label><i>${i + 1}</i><input type="checkbox" data-ph="${k}"${hide3[k] ? '' : ' checked'}>${esc(l)}</label>`).join('')
-          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button><button type="button" data-pha="play" class="ph3p">▶ Séquence de construction</button></div><div class="ph3a"><button type="button" data-pha="video">⬇ Télécharger la vidéo</button></div><div class="ph3s" id="ph3s"></div>';
-        ph.hidden = false;
-        ph.onchange = (e) => { const k = e.target.dataset.ph; if (!k) return; hide3[k] = !e.target.checked; draw3D(); };
-        ph.onclick = (e) => {
-          const a = e.target.dataset.pha; if (!a) return;
-          if (a === 'play') { playSeq(); return; }
-          if (a === 'video') { recordSeq(e.target); return; }
-          stopSeq(); ph.querySelectorAll('input').forEach((c) => { c.checked = a === 'all'; hide3[c.dataset.ph] = a !== 'all'; }); draw3D();
-        };
-        ['pointerdown', 'wheel', 'dblclick'].forEach((t) => ph.addEventListener(t, (e) => e.stopPropagation()));
-      }
+      render3Panel();
       $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser, bouton du milieu ou outil ✥ : déplacer · molette : zoom';
       $('#axes2d').style.display = 'none';
       return;
@@ -779,37 +766,81 @@
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
   /* séquence animée de la construction : les phases apparaissent une à une, caméra fixe */
-  let seq = null;
-  function stopSeq() {
-    if (!seq) return; cancelAnimationFrame(seq.raf); seq = null;
-    const b = $('#ph3 .ph3p'); if (b) b.textContent = '▶ Séquence de construction';
-    const st = $('#ph3s'); if (st) st.textContent = '';
+  let seq = null, seqSpeed = 1;
+  const phList = () => { const have = new Set(model3.faces.map((f) => f.ph)); return C.PHASES.filter(([k]) => have.has(k)); };
+  const stageOf = () => { const L = phList(); let k = 0; while (k < L.length && !hide3[L[k][0]]) k++; return L.slice(k).every(([q]) => hide3[q]) ? k : -1; };
+  /* affiche l'ouvrage jusqu'à la phase k incluse (0 = rien) */
+  function setStage(k) {
+    phList().forEach(([q], i) => { hide3[q] = i >= k; });
+    draw3D(); syncPanel();
   }
+  function syncPanel() {
+    const L = phList(), k = stageOf(), r = $('#ph3r'), st = $('#ph3s');
+    if (r) r.value = k < 0 ? r.value : k;
+    if (st) st.innerHTML = k < 0 ? '<span>Sélection personnalisée</span>' : k === 0 ? '<span>Terrain naturel — aucun ouvrage</span>' : `<em>Phase ${k} / ${L.length}</em>${esc(L[k - 1][1])}`;
+    $$('#ph3 .ph3row').forEach((row, i) => { const on = !hide3[L[i][0]]; row.classList.toggle('off', !on); row.classList.toggle('cur', k > 0 && i === k - 1); row.querySelector('input').checked = on; });
+    const pb = $('#ph3play'); if (pb) { pb.innerHTML = seq ? TRI.pause : TRI.play; pb.title = seq ? 'Pause' : 'Lire la séquence'; }
+    $$('#ph3 [data-t="wire"]').forEach((b) => b.classList.toggle('on', wire)); $$('#ph3 [data-t="pan"]').forEach((b) => b.classList.toggle('on', pan3));
+  }
+  function stopSeq() { if (!seq) return; clearTimeout(seq.t); seq = null; syncPanel(); }
   function playSeq() {
     if (seq) { stopSeq(); return; }
-    const boxes = [...$$('#ph3 input[data-ph]')], keys = boxes.map((c) => c.dataset.ph), labels = boxes.map((c) => c.parentElement.textContent.replace(/^\d+/, '').trim());
-    const DUR = 1600, t0 = performance.now();
-    seq = { raf: 0, last: -1 };
-    $('#ph3 .ph3p').textContent = '■ Arrêter';
-    const step = (t) => {
-      if (!seq || view !== '3d') { stopSeq(); return; }
-      const e = t - t0, k = Math.min(keys.length, Math.floor(e / DUR) + 1);
-      if (k !== seq.last) {   // caméra fixe : on ne redessine qu'au changement de phase
-        seq.last = k;
-        keys.forEach((key, i) => { hide3[key] = i >= k; boxes[i].checked = i < k; });
-        const st = $('#ph3s'); if (st) st.textContent = 'Phase ' + k + ' / ' + keys.length + ' — ' + labels[k - 1];
-        draw3D();
-      }
-      if (e < keys.length * DUR + 1500) seq.raf = requestAnimationFrame(step); else stopSeq();
+    const n = phList().length; let k = stageOf(); if (k < 0 || k >= n) k = 0;
+    seq = { t: 0 };
+    const tick = () => { if (!seq || view !== '3d') { stopSeq(); return; } setStage(k); if (k >= n) { stopSeq(); return; } k++; seq.t = setTimeout(tick, 1600 / seqSpeed); };
+    tick();
+  }
+  const tsv = (d) => `<svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">${d}</svg>`;
+  const TRI = { first: tsv('<rect x="2" y="3" width="2" height="10"/><path d="M14 3v10L5 8z"/>'), prev: tsv('<path d="M12 3v10L4 8z"/>'), next: tsv('<path d="M4 3v10l8-5z"/>'),
+    last: tsv('<rect x="12" y="3" width="2" height="10"/><path d="M2 3v10l9-5z"/>'), play: tsv('<path d="M4 2.5v11l9.5-5.5z"/>'), pause: tsv('<rect x="3.5" y="3" width="3" height="10"/><rect x="9.5" y="3" width="3" height="10"/>') };
+  const PH_ICO = { pieux: '⫴', gros: '▭', semelles: '▬', futs: '▮', chev: '┳', gg: '⊓', app: '▪', poutres: 'Ι', entretoises: '╫', predalles: '▤', hourdis: '▀', hourdisB: '▚', dt: '◩' };
+  function render3Panel() {
+    const ph = $('#ph3'), L = phList(), ouv = (S.projet && (S.projet.ouvrage || S.projet.nom)) || 'Ouvrage';
+    const rgb = (k) => (C.PH_COLOR && C.PH_COLOR[k]) || [200, 205, 215];
+    ph.innerHTML = `<div class="p3h"><b>Séquence de construction</b><small>${esc(ouv)} · ${L.length} phases</small></div>`
+      + `<div class="p3c"><div class="p3st" id="ph3s"></div>`
+      + `<input type="range" id="ph3r" min="0" max="${L.length}" step="1" value="${L.length}" aria-label="Avancement du chantier">`
+      + `<div class="p3tr"><button type="button" data-a="first" title="Début (terrain naturel)">${TRI.first}</button><button type="button" data-a="prev" title="Phase précédente">${TRI.prev}</button>`
+      + `<button type="button" data-a="play" id="ph3play" class="p3play">${TRI.play}</button><button type="button" data-a="next" title="Phase suivante">${TRI.next}</button><button type="button" data-a="last" title="Ouvrage terminé">${TRI.last}</button>`
+      + `<select id="ph3v" title="Vitesse">${[[0.5, '× 0,5'], [1, '× 1'], [2, '× 2']].map(([v, t]) => `<option value="${v}"${v === seqSpeed ? ' selected' : ''}>${t}</option>`).join('')}</select></div></div>`
+      + `<div class="p3sec"><div class="p3t">Phases<span><button type="button" data-a="all">Tout</button><button type="button" data-a="none">Rien</button></span></div><ol class="p3l">`
+      + L.map(([k, l], i) => { const c = rgb(k); return `<li class="ph3row" data-i="${i}"><span class="n">${i + 1}</span><span class="sw" style="background:rgb(${c.join(',')})">${PH_ICO[k] || ''}</span><span class="lb">${esc(l)}</span><label class="tg"><input type="checkbox" data-ph="${k}"${hide3[k] ? '' : ' checked'} aria-label="${esc(l)}"><i></i></label></li>`; }).join('')
+      + `</ol></div>`
+      + `<div class="p3sec"><div class="p3t">Affichage</div><div class="p3bt"><button type="button" data-t="fit">Ajuster la vue</button><button type="button" data-t="pan">✥ Déplacer</button><button type="button" data-t="wire">Fil de fer</button></div></div>`
+      + `<div class="p3sec"><div class="p3t">Exporter</div><div class="p3bt"><button type="button" data-t="video" class="pri">⬇ Vidéo de la séquence</button><button type="button" data-t="png">Image de la vue</button></div><p class="p3n">Vidéo 1920 × 1080, vue courante, une phase toutes les 1,8 s.</p></div>`;
+    ph.hidden = false;
+    ph.oninput = (e) => { if (e.target.id === 'ph3r') { stopSeq(); setStage(+e.target.value); } };
+    ph.onchange = (e) => {
+      if (e.target.id === 'ph3v') { seqSpeed = +e.target.value; return; }
+      const k = e.target.dataset.ph; if (!k) return; stopSeq(); hide3[k] = !e.target.checked; draw3D(); syncPanel();
     };
-    seq.raf = requestAnimationFrame(step);
+    ph.onclick = (e) => {
+      const b = e.target.closest('button'); if (!b) { const row = e.target.closest('.ph3row'); if (row && !e.target.closest('.tg')) { stopSeq(); setStage(+row.dataset.i + 1); } return; }
+      const a = b.dataset.a, t = b.dataset.t, n = L.length, k = Math.max(0, stageOf());
+      if (a === 'play') return playSeq();
+      if (a) { stopSeq(); setStage(a === 'first' || a === 'none' ? 0 : a === 'last' || a === 'all' ? n : a === 'prev' ? Math.max(0, k - 1) : Math.min(n, k + 1)); return; }
+      if (t === 'video') return recordSeq(b);
+      if (t === 'png') return snap3();
+      if (t) { run(t); syncPanel(); }
+    };
+    syncPanel();
+  }
+  /* image PNG de la vue 3D courante (1920 × 1080) */
+  async function snap3() {
+    const Wv = 1920, Hv = 1080, c = document.createElement('canvas'); c.width = Wv; c.height = Hv;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, Wv, Hv);
+    let svg = C.render3D(model3, cam3, { width: Wv, height: Hv, wire, sel: null, hide: hide3 });
+    svg = svg.replace('<svg ', '<svg width="' + Wv + '" height="' + Hv + '" ');
+    const img = new Image(); await new Promise((r) => { img.onload = r; img.onerror = r; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+    g.drawImage(img, 0, 0);
+    c.toBlob((bl) => { const a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = 'vue-3d-' + (((S.projet && S.projet.ouvrage) || 'ouvrage').replace(/[^\w-]+/g, '_')) + '.png'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }, 'image/png');
   }
   /* vidéo de la séquence de construction (1920 × 1080, caméra fixe = vue courante) : chaque phase est rendue en SVG,
      peinte sur un canevas avec un bandeau titre, et enregistrée par MediaRecorder (MP4 si le navigateur le permet, sinon WebM) */
   async function recordSeq(btn) {
     if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { const st = $('#ph3s'); if (st) st.textContent = 'Enregistrement vidéo non pris en charge par ce navigateur'; return; }
     stopSeq();
-    const boxes = [...$$('#ph3 input[data-ph]')], keys = boxes.map((c) => c.dataset.ph), labels = boxes.map((c) => c.parentElement.textContent.replace(/^\d+/, '').trim());
+    const keys = phList().map((q) => q[0]), labels = phList().map((q) => q[1]);
     const Wv = 1920, Hv = 1080, HOLD = 1800, cv2 = document.createElement('canvas'); cv2.width = Wv; cv2.height = Hv;
     const g = cv2.getContext('2d');
     const old = btn.textContent; btn.disabled = true;
@@ -1429,8 +1460,8 @@
       case 'closeT': closeTable(arg); return;
       case 'view': setView(arg); return;
       case 'fit': fitView(); return;
-      case 'pan': pan3 = !pan3; cv.classList.toggle('panmode', pan3); renderVtools(); return;
-      case 'wire': wire = !wire; if (view === '3d') draw3D(); renderRibbon(); renderVtools(); return;
+      case 'pan': pan3 = !pan3; cv.classList.toggle('panmode', pan3); renderVtools(); if (view === '3d') syncPanel(); return;
+      case 'wire': wire = !wire; if (view === '3d') { draw3D(); syncPanel(); } renderRibbon(); renderVtools(); return;
       case 'undo': undo(); return;
       case 'redo': redo(); return;
       case 'zin': zoomAt(1 / 1.25); return;
