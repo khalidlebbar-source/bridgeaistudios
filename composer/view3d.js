@@ -23,6 +23,20 @@
       if (x0 > x1) [x0, x1] = [x1, x0];
       if (y0 > y1) [y0, y1] = [y1, y0];
       if (z0 > z1) [z0, z1] = [z1, z0];
+      // grand bloc (semelle, gros béton, sommier) : découpé en pavés de 2,5 m pour un tri du peintre juste, joints invisibles
+      const nx = Math.ceil((x1 - x0) / 2.5 - 1e-9), ny = Math.ceil((y1 - y0) / 2.5 - 1e-9);
+      if (nx * ny > 1) {
+        for (let i = 0; i < nx; i++) for (let k = 0; k < ny; k++) {
+          const a = x0 + (x1 - x0) * i / nx, b = x0 + (x1 - x0) * (i + 1) / nx, c = y0 + (y1 - y0) * k / ny, d = y0 + (y1 - y0) * (k + 1) / ny;
+          face([[a, c, z0], [b, c, z0], [b, d, z0], [a, d, z0]], true);
+          face([[a, c, z1], [a, d, z1], [b, d, z1], [b, c, z1]], true);
+          face([[a, c, z0], [a, c, z1], [b, c, z1], [b, c, z0]], true);
+          face([[a, d, z0], [b, d, z0], [b, d, z1], [a, d, z1]], true);
+          face([[a, c, z0], [a, d, z0], [a, d, z1], [a, c, z1]], true);
+          face([[b, c, z0], [b, c, z1], [b, d, z1], [b, d, z0]], true);
+        }
+        return;
+      }
       face([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]]);
       face([[x0, y0, z1], [x0, y1, z1], [x1, y1, z1], [x1, y0, z1]]);
       face([[x0, y0, z0], [x0, y0, z1], [x1, y0, z1], [x1, y0, z0]]);
@@ -189,8 +203,9 @@
       // fondation
       const f = s.fo;
       mat = 'fond';
-      if (f.mode === 'superficielle' && s.kind === 'culee' && M.sec.jumeaux && !f.split) { const j = M.sec.joint / 2; box(xf - f.B / 2, xf + f.B / 2, -f.L / 2, -j, yft, yft - f.e); box(xf - f.B / 2, xf + f.B / 2, j, f.L / 2, yft, yft - f.e); if (g.gros > 0) box(xf - f.B / 2 - 0.5, xf + f.B / 2 + 0.5, -f.L / 2 - 0.5, f.L / 2 + 0.5, yft - f.e, yft - f.e - g.gros); }
-      else if (f.mode === 'superficielle') (f.split ? f.split.centers : [0]).forEach((cy) => box(xf - f.B / 2, xf + f.B / 2, cy - f.L / 2, cy + f.L / 2, yft, yft - f.e));
+      if (f.mode === 'superficielle' && s.kind === 'culee' && M.sec.jumeaux && !f.split) { const j = M.sec.joint / 2; box(xf - f.B / 2, xf + f.B / 2, -f.L / 2, -j, yft, yft - f.e); box(xf - f.B / 2, xf + f.B / 2, j, f.L / 2, yft, yft - f.e); if (g.gros > 0) { mat = 'gros'; box(xf - f.B / 2 - 0.5, xf + f.B / 2 + 0.5, -f.L / 2 - 0.5, f.L / 2 + 0.5, yft - f.e, yft - f.e - g.gros); mat = 'fond'; } }
+      else if (f.mode === 'superficielle') { (f.split ? f.split.centers : [0]).forEach((cy) => box(xf - f.B / 2, xf + f.B / 2, cy - f.L / 2, cy + f.L / 2, yft, yft - f.e));
+        if (s.kind === 'culee' && g.gros > 0) { mat = 'gros'; box(xf - f.B / 2 - 0.5, xf + f.B / 2 + 0.5, -f.L / 2 - 0.5, f.L / 2 + 0.5, yft - f.e, yft - f.e - g.gros); mat = 'fond'; } }
       else {
         const zb = f.e === 0 ? (g.sommier ? yS - g.sommier.h : yft) : yft - f.e;
         const cys = f.split ? f.split.centers : [0];
@@ -207,7 +222,7 @@
   }
 
   const MAT = {
-    beton: [204, 212, 224], hourdis: [232, 214, 176], dt: [168, 132, 214], prefa: [160, 163, 168], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
+    beton: [204, 212, 224], hourdis: [232, 214, 176], dt: [168, 132, 214], gros: [150, 132, 108], prefa: [160, 163, 168], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
   };
 
   function render3D(model, cam, opt) {
@@ -239,7 +254,9 @@
       void view;
       out.push({ pr, d, lam, fc });
     });
-    out.sort((a, c) => c.d - a.d);
+    // le gros béton (sous tout le reste) est dessiné en premier : ses faces de contact ne passent pas devant la semelle
+    const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : 0);
+    out.sort((a, c) => (c.d + bias(c)) - (a.d + bias(a)));
     const sel = opt.sel;
     const paths = out.map((o) => {
       const d = 'M' + o.pr.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
