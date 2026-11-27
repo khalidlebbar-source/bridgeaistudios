@@ -185,6 +185,18 @@
   }
 
   /* passage en altitudes réelles (cisaillement y += Z(x)) puis habillage : cotes, PHE, gabarit, sondages, guitare */
+  /* nature de sol d'après la description du log : une hachure par nature */
+  const SOL_LAB = { remblai: 'Remblai', argile: 'Argile, limon', sable: 'Sable, grave', calc: 'Calcaire, tuf', schisteA: 'Schiste altéré / argileux', schiste: 'Schiste, schiste fracturé', quartz: 'Quartzite, blocs de quartzite', roche: 'Rocher' };
+  function solType(desc) {
+    const d = String(desc || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (/remblai/.test(d)) return 'remblai';
+    if (/quartzit/.test(d) && !/schiste/.test(d)) return 'quartz';
+    if (/schiste/.test(d)) return /alter|argil|alternance/.test(d) ? 'schisteA' : 'schiste';
+    if (/argil|limon|marne/.test(d)) return 'argile';
+    if (/sable|grave|gravier/.test(d)) return 'sable';
+    if (/calcai|tuf/.test(d)) return 'calc';
+    return 'roche';
+  }
   function tracer(P, M, ZT, xL, xR, mm, ySeat, tn) {
     const TR = M.trace, S = M.S, t = S.trace, f2 = (v) => fr(v, 2);
     if (TR) {
@@ -219,6 +231,7 @@
     }
     // sondages
     const SD = (S.geo && S.geo.sondages || []).filter((d) => Number.isFinite(+d.pk) && d.pk !== null && d.pk !== '' && Number.isFinite(+d.z) && +d.z !== 0);
+    const usedSol = new Set();
     const tnAtX = (x) => { if (!tn || !tn.length) return 0; if (x <= tn[0][0]) return tn[0][1]; for (let i = 0; i < tn.length - 1; i++) if (x <= tn[i + 1][0]) { const a = tn[i], b = tn[i + 1]; return a[1] + (b[1] - a[1]) * (x - a[0]) / Math.max(1e-9, b[0] - a[0]); } return tn[tn.length - 1][1]; };
     SD.forEach((d) => {
       let x = (+d.pk) - (TR ? t.pk0 : 0);
@@ -226,26 +239,35 @@
         const sp = M.supports.find((q) => Math.abs(q.x - x) < 3 + (q.fo && (q.fo.B || q.fo.Lx) ? (q.fo.B || q.fo.Lx) / 2 : 0));
         if (sp) { const sg = sp.j === 0 ? 1 : sp.kind === 'culee' ? -1 : 1, x0 = x; x = sp.x + sg * (((sp.fo && (sp.fo.B || sp.fo.Lx)) || 3) / 2 + mm(16)); line(P, [x0, tnAtX(x0)], [x, tnAtX(x)], 'lead'); }
       }
-      const zN = +d.z, fin = +d.fin || Math.max(1, ...(d.lithologie || []).map((c) => +c.z || 0)), w = mm(2.2);
+      const zN = +d.z, fin = +d.fin || Math.max(1, ...(d.lithologie || []).map((c) => +c.z || 0)), w = mm(4);
       // sans tracé : la tête du sondage est calée sur le terrain dessiné, les cotes NGM restent celles du sondage
       const dz = TR ? 0 : tnAtX(x) - zN, zt = zN + dz, fz = (z) => f2(z - dz);
-      rect(P, x - w / 2, zt, x + w / 2, zt - fin, 'sond');
       const L = (d.lithologie || []).slice().sort((a, b) => a.z - b.z);
+      if (!L.length) rect(P, x - w / 2, zt, x + w / 2, zt - fin, 'sond');
+      const fd = (v) => fr(v, 2);   // profondeur depuis la tête du sondage
+      text(P, [x - w / 2 - mm(0.8), zt], '0,00', { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
       L.forEach((c, k) => {
-        const z1 = zt - c.z, z2 = zt - (k + 1 < L.length ? L[k + 1].z : fin);
+        const z1 = zt - c.z, z2 = zt - (k + 1 < L.length ? L[k + 1].z : fin), sol = solType(c.desc);
+        rect(P, x - w / 2, z1, x + w / 2, z2, 'sol_' + sol); usedSol.add(sol);   // même hachure pour un même sol
         if (k) line(P, [x - w / 2, z1], [x + w / 2 + mm(1.5), z1], 'note');
         text(P, [x + w / 2 + mm(1.2), (z1 + z2) / 2], String(c.desc || '').slice(0, 34), { ht: 1.5, anchor: 'start', dy: -0.5, lay: 'note' });
-        text(P, [x - w / 2 - mm(0.8), z1], fz(zt - c.z), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+        if (k) text(P, [x - w / 2 - mm(0.8), z1], fd(c.z), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
       });
-      text(P, [x - w / 2 - mm(0.8), zt - fin], fz(zt - fin), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+      text(P, [x - w / 2 - mm(0.8), zt - fin], fd(fin), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
       // essais pressiométriques : pl* et EM (MPa) à chaque profondeur d'essai, cotés à gauche du sondage
-      (d.essais || []).forEach((e) => { const ze = zt - e.z; line(P, [x - w / 2, ze], [x - w / 2 - mm(1), ze], 'note'); text(P, [x - w / 2 - mm(9), ze], (e.sup ? '>' : '') + fr(e.pl, 2) + ' / ' + fr(+e.em || +e.EM || 0, 1), { ht: 1.5, anchor: 'end', dy: -0.45, lay: 'note' }); });
-      if ((d.essais || []).length) text(P, [x - w / 2 - mm(9), zt], 'pl (MPa) / EM (MPa)', { ht: 1.5, anchor: 'end', dy: 1.6, lay: 'note' });
+      (d.essais || []).forEach((e) => { const ze = zt - e.z; line(P, [x - w / 2, ze], [x - w / 2 - mm(1), ze], 'note'); text(P, [x - w / 2 - mm(8), ze], (e.sup ? '>' : '') + fr(e.pl, 2) + ' / ' + fr(+e.em || +e.EM || 0, 1), { ht: 1.5, anchor: 'end', dy: -0.45, lay: 'note' }); });
+      if ((d.essais || []).length) text(P, [x - w / 2 - mm(8), zt], 'pl (MPa) / EM (MPa)', { ht: 1.5, anchor: 'end', dy: 1.6, lay: 'note' });
       text(P, [x, zt], 'Z = ' + f2(zN), { ht: 1.4, dy: 5.2, lay: 'note' });
       if (+d.nappe > 0) { const zn = zt - d.nappe; poly(P, [[x - mm(1.6), zn + mm(1.4)], [x + mm(1.6), zn + mm(1.4)], [x, zn]], 'eauF'); }
       text(P, [x, zt], d.sondage || 'S', { ht: 2.2, dy: 2, lay: 'titre', bold: true });
       yMin = Math.min(yMin, zt - fin);
     });
+    if (usedSol.size) {   // légende des sols (une hachure par nature de sol)
+      const lx = xL + mm(4); let ly = Math.min(yMin, ...(tn || [[0, 0]]).map((q) => q[1])) - mm(12);
+      text(P, [lx, ly + mm(5)], 'LÉGENDE DES SOLS', { ht: 2, anchor: 'start', lay: 'note', bold: true });
+      [...usedSol].forEach((sl, i) => { const yy = ly - i * mm(6); rect(P, lx, yy, lx + mm(8), yy - mm(4), 'sol_' + sl); text(P, [lx + mm(10), yy - mm(2)], SOL_LAB[sl], { ht: 1.8, anchor: 'start', dy: -0.6, lay: 'note' }); });
+      yMin = Math.min(yMin, ly - usedSol.size * mm(6));
+    }
     if (!TR) return;
     // guitare (profil en long)
     const rh = mm(7), xg = xL - mm(48), y0 = yMin - mm(9);
@@ -1197,6 +1219,9 @@
     ballastP: 'fill:#ece6da;stroke:#8d8170;stroke-width:.8',
     aff: 'fill:none;stroke:#a61e4d;stroke-width:.8;stroke-dasharray:6 2 1 2',
     sond: 'fill:#fff4d6;stroke:#7a5b00;stroke-width:.7',
+    sol_remblai: 'fill:url(#ID-sr);stroke:#333;stroke-width:.6', sol_argile: 'fill:url(#ID-sa);stroke:#333;stroke-width:.6', sol_sable: 'fill:url(#ID-ss);stroke:#333;stroke-width:.6',
+    sol_calc: 'fill:url(#ID-sc);stroke:#333;stroke-width:.6', sol_schisteA: 'fill:url(#ID-sh2);stroke:#333;stroke-width:.6', sol_schiste: 'fill:url(#ID-sh);stroke:#333;stroke-width:.6',
+    sol_quartz: 'fill:url(#ID-sq);stroke:#333;stroke-width:.6', sol_roche: 'fill:url(#ID-sk);stroke:#333;stroke-width:.6',
     guit: 'fill:none;stroke:#1e1e1e;stroke-width:.6',
     guitF: 'fill:none;stroke:#9a9a9a;stroke-width:.4',
     note: 'fill:none;stroke:#1e1e1e;stroke-width:.6',
@@ -1293,7 +1318,14 @@
     const e = r.ext, vw = e[2] - e[0] + 2 * pad, vh = e[3] - e[1] + 2 * pad;
     const pat = (k, size, bg, ln, w, rot) => `<pattern id="${id}-${k}" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot == null ? 45 : rot})"><rect width="${size}" height="${size}" fill="${bg}"/><line x1="0" y1="0" x2="0" y2="${size}" stroke="${ln}" stroke-width="${w}"/></pattern>`;
     const defs = '<defs>' + pat('b', 6, '#ffffff', '#9a9a9a', 0.6) + pat('p', 5, '#e8ebf0', '#a9b1bd', 0.7) + pat('d', 3, '#d9d9d9', '#888', 0.6, -45)
-      + pat('h', 8, '#f7f3e8', '#cdbb8e', 0.9) + pat('w', 9, '#ffffff', '#a6a6a6', 0.8) + pat('o', 5, '#f6c27a', '#e07b00', 0.8) + pat('k', 3, '#6e6e6e', '#3a3a3a', 0.6) + `<pattern id="${id}-s" width="34" height="22" patternUnits="userSpaceOnUse"><rect width="34" height="22" fill="#fff"/><path d="M2 4l8-2 6 4-2 7-9 1-4-5zM18 3l9 0 4 6-5 5-8-2zM6 14l8 1 3 6-9 1-4-4zM20 14l8 1 4 5-7 2-6-3z" fill="none" stroke="#9a9a9a" stroke-width=".7"/></pattern>`
+      + pat('h', 8, '#f7f3e8', '#cdbb8e', 0.9) + pat('w', 9, '#ffffff', '#a6a6a6', 0.8) + pat('o', 5, '#f6c27a', '#e07b00', 0.8) + `<pattern id="${id}-sr" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#efe6d3"/><circle cx="2" cy="2" r=".9" fill="#7b6a4a"/><circle cx="6" cy="5.5" r=".6" fill="#7b6a4a"/><path d="M4.5 1.5l1.5 1" stroke="#7b6a4a" stroke-width=".5"/></pattern>`
+      + `<pattern id="${id}-sa" width="6" height="4" patternUnits="userSpaceOnUse"><rect width="6" height="4" fill="#e9dcc4"/><path d="M0 1h6M0 3h3" stroke="#8a6b3c" stroke-width=".5"/></pattern>`
+      + `<pattern id="${id}-ss" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#f6ecc8"/><circle cx="1.5" cy="1.5" r=".5" fill="#9a8440"/><circle cx="4.5" cy="4" r=".5" fill="#9a8440"/></pattern>`
+      + `<pattern id="${id}-sc" width="10" height="6" patternUnits="userSpaceOnUse"><rect width="10" height="6" fill="#eef0e6"/><path d="M0 .3h10M0 3.3h10M3 .3v3M8 3.3v2.7" stroke="#6f7860" stroke-width=".5"/></pattern>`
+      + `<pattern id="${id}-sh2" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(20)"><rect width="7" height="7" fill="#dfe3e8"/><path d="M0 2h7M0 5h3" stroke="#5b6675" stroke-width=".55" stroke-dasharray="2 1"/></pattern>`
+      + `<pattern id="${id}-sh" width="6" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(20)"><rect width="6" height="4" fill="#cfd6df"/><path d="M0 1h6M0 3h6" stroke="#3f4a59" stroke-width=".55"/></pattern>`
+      + `<pattern id="${id}-sq" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#e6e1ee"/><path d="M0 8L8 0M-2 2L2 -2M6 10L10 6" stroke="#5c4e78" stroke-width=".6"/><path d="M0 0L8 8" stroke="#5c4e78" stroke-width=".3"/></pattern>`
+      + `<pattern id="${id}-sk" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#e4e4e4"/><path d="M0 4h8M4 0v4M0 8h8M8 4v4" stroke="#555" stroke-width=".5"/></pattern>` + pat('k', 3, '#6e6e6e', '#3a3a3a', 0.6) + `<pattern id="${id}-s" width="34" height="22" patternUnits="userSpaceOnUse"><rect width="34" height="22" fill="#fff"/><path d="M2 4l8-2 6 4-2 7-9 1-4-5zM18 3l9 0 4 6-5 5-8-2zM6 14l8 1 3 6-9 1-4-4zM20 14l8 1 4 5-7 2-6-3z" fill="none" stroke="#9a9a9a" stroke-width=".7"/></pattern>`
       + `<pattern id="${id}-g" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#d8d0bf"/><circle cx="1.5" cy="1.5" r=".9" fill="#8d8170"/><circle cx="4.5" cy="4" r=".7" fill="#a59a88"/></pattern>`
       + `<linearGradient id="${id}-c" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#8f8f8f"/><stop offset=".35" stop-color="#f4f4f4"/><stop offset=".55" stop-color="#e2e2e2"/><stop offset="1" stop-color="#7d7d7d"/></linearGradient>`
       + `<style>text{font-family:Arial,Helvetica,sans-serif;fill:#000}.dx{stroke:#ff0000;stroke-width:.45;fill:none}.dl{stroke:#ff0000;stroke-width:.6;fill:none}.da{fill:#000;stroke:none}.dt{fill:#000}.tt{letter-spacing:.04em}</style></defs>`;
