@@ -51,7 +51,7 @@
     if (M.cont) pieces.push([-dab, Ltot + dab]);
     else for (let i = 0; i < n; i++) pieces.push([i === 0 ? -dab : xs[i] + 0.04, i === n - 1 ? Ltot + dab : xs[i + 1] - 0.04]);
     sec.polys.forEach((pg) => {
-      mat = pg.mat === 'acier' ? 'acier' : pg.role === 'poutre' ? 'prefa' : 'beton';
+      mat = pg.mat === 'acier' ? 'acier' : pg.role === 'poutre' ? 'prefa' : pg.role === 'hourdis' ? 'hourdis' : 'beton';
       const cut = pg.mat === 'acier' ? 0.2 : 0;
       pieces.forEach(([x0, x1]) => extrude(pg.pts, x0 + cut, x1 - cut));
     });
@@ -176,7 +176,7 @@
   }
 
   const MAT = {
-    beton: [204, 212, 224], prefa: [190, 204, 224], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
+    beton: [204, 212, 224], hourdis: [232, 214, 176], prefa: [190, 204, 224], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
   };
 
   function render3D(model, cam, opt) {
