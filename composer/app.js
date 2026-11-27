@@ -79,6 +79,7 @@
     zout: '<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6M7 10h6"/>',
     dims: '<path d="M3 7v10M21 7v10M3 12h18M6 9.5L3 12l3 2.5M18 9.5l3 2.5-3 2.5"/>',
     v3d: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    pan: '<path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/>',
     wire: '<path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10" stroke-dasharray="2 2"/>',
     undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
     redo: '<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>',
@@ -707,6 +708,7 @@
   const TABLES = { justif: 'Justification', hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
   const hide3 = {};   // phases de construction masquées en 3D
+  let pan3 = false;   // outil « déplacer » de la vue 3D
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
   const isTable = () => view.startsWith('t:');
   const tagOf = (id) => (id === 'section' || id === 'gperm' ? 'tablier' : id);
@@ -739,17 +741,18 @@
       { // phases de construction (cases à cocher, dans l'ordre d'exécution) — seules les phases présentes dans l'ouvrage
         const have = new Set(model3.faces.map((f) => f.ph)), ph = $('#ph3');
         ph.innerHTML = '<b>Phasage de construction</b>' + C.PHASES.filter(([k]) => have.has(k)).map(([k, l], i) => `<label><i>${i + 1}</i><input type="checkbox" data-ph="${k}"${hide3[k] ? '' : ' checked'}>${esc(l)}</label>`).join('')
-          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button><button type="button" data-pha="play" class="ph3p">▶ Séquence de construction</button></div><div class="ph3s" id="ph3s"></div>';
+          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button><button type="button" data-pha="play" class="ph3p">▶ Séquence de construction</button></div><div class="ph3a"><button type="button" data-pha="video">⬇ Télécharger la vidéo</button></div><div class="ph3s" id="ph3s"></div>';
         ph.hidden = false;
         ph.onchange = (e) => { const k = e.target.dataset.ph; if (!k) return; hide3[k] = !e.target.checked; draw3D(); };
         ph.onclick = (e) => {
           const a = e.target.dataset.pha; if (!a) return;
           if (a === 'play') { playSeq(); return; }
+          if (a === 'video') { recordSeq(e.target); return; }
           stopSeq(); ph.querySelectorAll('input').forEach((c) => { c.checked = a === 'all'; hide3[c.dataset.ph] = a !== 'all'; }); draw3D();
         };
         ['pointerdown', 'wheel', 'dblclick'].forEach((t) => ph.addEventListener(t, (e) => e.stopPropagation()));
       }
-      $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser : déplacer · molette : zoom';
+      $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser, bouton du milieu ou outil ✥ : déplacer · molette : zoom';
       $('#axes2d').style.display = 'none';
       return;
     }
@@ -800,6 +803,57 @@
       if (e < keys.length * DUR + 1500) seq.raf = requestAnimationFrame(step); else stopSeq();
     };
     seq.raf = requestAnimationFrame(step);
+  }
+  /* vidéo de la séquence de construction (1920 × 1080, caméra fixe = vue courante) : chaque phase est rendue en SVG,
+     peinte sur un canevas avec un bandeau titre, et enregistrée par MediaRecorder (MP4 si le navigateur le permet, sinon WebM) */
+  async function recordSeq(btn) {
+    if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) { const st = $('#ph3s'); if (st) st.textContent = 'Enregistrement vidéo non pris en charge par ce navigateur'; return; }
+    stopSeq();
+    const boxes = [...$$('#ph3 input[data-ph]')], keys = boxes.map((c) => c.dataset.ph), labels = boxes.map((c) => c.parentElement.textContent.replace(/^\d+/, '').trim());
+    const Wv = 1920, Hv = 1080, HOLD = 1800, cv2 = document.createElement('canvas'); cv2.width = Wv; cv2.height = Hv;
+    const g = cv2.getContext('2d');
+    const old = btn.textContent; btn.disabled = true;
+    // vues de chaque phase, pré-rendues en images
+    const frames = [];
+    for (let k = 0; k <= keys.length; k++) {
+      btn.textContent = 'Préparation… ' + k + '/' + keys.length;
+      const hide = {}; keys.forEach((key, i) => { hide[key] = i >= k; });
+      let svg = C.render3D(model3, cam3, { width: Wv, height: Hv - 200, wire: false, sel: null, hide });
+      svg = svg.replace('<svg ', '<svg width="' + Wv + '" height="' + (Hv - 200) + '" ');
+      const img = new Image();
+      await new Promise((res) => { img.onload = res; img.onerror = res; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+      frames.push(img);
+    }
+    const titre = (S.projet && (S.projet.nom || S.projet.ouvrage)) || 'Ouvrage', fic = (S.projet && S.projet.ouvrage) || 'ouvrage';
+    const paint = (k) => {
+      g.fillStyle = '#ffffff'; g.fillRect(0, 0, Wv, Hv);
+      g.drawImage(frames[k], 0, 120);
+      g.fillStyle = '#1b2230'; g.font = '600 40px Arial, sans-serif'; g.fillText(k ? 'Phase ' + k + ' / ' + keys.length + ' — ' + labels[k - 1] : 'Séquence de construction', 60, 70);
+      g.fillStyle = '#5d6676'; g.font = '24px Arial, sans-serif'; g.fillText(String(titre).slice(0, 110), 60, 104);
+      // barre d'avancement
+      g.fillStyle = '#e6eaf0'; g.fillRect(60, Hv - 50, Wv - 120, 10); g.fillStyle = '#1f5fd1'; g.fillRect(60, Hv - 50, (Wv - 120) * k / keys.length, 10);
+      g.fillStyle = '#8a93a3'; g.font = '20px Arial, sans-serif'; g.fillText('BridgeAI Studios — Bridge Composer', 60, Hv - 64);
+    };
+    const mime = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+    const stream = cv2.captureStream(30), rec = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6e6 } : undefined), chunks = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    const done = new Promise((res) => { rec.onstop = res; });
+    paint(0); rec.start(250);
+    const t0 = performance.now(), total = (keys.length + 1) * HOLD + 1200;
+    await new Promise((res) => {
+      const tick = () => {
+        const e = performance.now() - t0, k = Math.min(keys.length, Math.floor(e / HOLD));
+        paint(k); btn.textContent = 'Enregistrement… ' + Math.round(100 * Math.min(1, e / total)) + ' %';
+        if (e < total) requestAnimationFrame(tick); else res();
+      };
+      requestAnimationFrame(tick);
+    });
+    rec.stop(); await done;
+    const ext = (rec.mimeType || mime).includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type: rec.mimeType || mime || 'video/webm' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = ('sequence-construction-' + String(fic).replace(/[^\w-]+/g, '_')).slice(0, 80) + '.' + ext;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    btn.disabled = false; btn.textContent = old;
   }
   function draw3D() {
     const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
@@ -876,11 +930,13 @@
   const unPtr = (ev) => { ptrs.delete(ev.pointerId); if (ptrs.size < 2) pinch = null; };
   cv.addEventListener('pointerup', unPtr, true); cv.addEventListener('pointercancel', unPtr, true);
   cv.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0 || view === 'diag' || ptrs.size > 1) return;
+    const mid = view === '3d' && ev.button === 1;   // bouton du milieu : déplacement en 3D
+    if ((ev.button !== 0 && !mid) || view === 'diag' || ptrs.size > 1) return;
+    if (mid) ev.preventDefault();
     const el = $('#svgHost svg'); if (!el) return;
     const m = el.getScreenCTM();
     drag = { x: ev.clientX, y: ev.clientY, vb: vb ? vb.slice() : null, k: 1 / m.a, moved: false, tag: ev.target.closest && ev.target.closest('[data-tag]'),
-      cam: Object.assign({}, cam3), pan: ev.shiftKey };
+      cam: Object.assign({}, cam3), pan: ev.shiftKey || mid || pan3 };
     cv.setPointerCapture(ev.pointerId);
   });
   let raf = 0;
@@ -1373,6 +1429,7 @@
       case 'closeT': closeTable(arg); return;
       case 'view': setView(arg); return;
       case 'fit': fitView(); return;
+      case 'pan': pan3 = !pan3; cv.classList.toggle('panmode', pan3); renderVtools(); return;
       case 'wire': wire = !wire; if (view === '3d') draw3D(); renderRibbon(); renderVtools(); return;
       case 'undo': undo(); return;
       case 'redo': redo(); return;
@@ -1392,8 +1449,8 @@
         .map(([k, ic, t]) => `<button class="vt${diagK === k ? ' on' : ''}" data-cmd="diag" data-arg="${k}" title="${t}" aria-label="${t}">${ico(ic)}</button>`).join('');
       return;
     }
-    const L = [['fit', 'Ajuster la vue (double-clic)'], ['zin', 'Zoom +'], ['zout', 'Zoom −']].concat(view === '3d' ? [['wire', 'Fil de fer']] : [['dims', 'Afficher les cotes']]);
-    $('#vtools').innerHTML = L.map(([c, t]) => `<button class="vt${(c === 'dims' && showDims) || (c === 'wire' && wire) ? ' on' : ''}" data-cmd="${c}" title="${t}" aria-label="${t}">${ico(c)}</button>`).join('');
+    const L = [['fit', 'Ajuster la vue (double-clic)'], ['zin', 'Zoom +'], ['zout', 'Zoom −']].concat(view === '3d' ? [['pan', 'Déplacer (pan) — sinon Maj + glisser ou bouton du milieu'], ['wire', 'Fil de fer']] : [['dims', 'Afficher les cotes']]);
+    $('#vtools').innerHTML = L.map(([c, t]) => `<button class="vt${(c === 'dims' && showDims) || (c === 'wire' && wire) || (c === 'pan' && pan3) ? ' on' : ''}" data-cmd="${c}" title="${t}" aria-label="${t}">${ico(c)}</button>`).join('');
   }
 
   /* délégation des clics de commande (ruban, propriétés, outils de vue, barre d'état) */
