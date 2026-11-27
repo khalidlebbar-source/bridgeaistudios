@@ -34,7 +34,7 @@
     poly(P, pts, lay);
   };
   /* titre de vue à la manière des plans KLE : « COUPE TRANSVERSALE » souligné, « Ech : 1/50 » dessous */
-  const title = (P, p, s, ech) => P.push({ k: 'title', p, s, sub: 'Ech : 1/' + ech });
+  const title = (P, p, s, ech) => P.push({ k: 'title', p, s, sub: 'Ech:1/' + ech });
   /* repère avec ligne d'attache */
   const leader = (P, from, to, s, anchor) => { line(P, from, to, 'lead'); text(P, to, s, { ht: 1.9, anchor: anchor || 'start', dy: 0.6, lay: 'note' }); };
 
@@ -459,7 +459,7 @@
     const ySeat = -(h + 0.30);
     // bossages et appareils d'appui
     if (part === 'tablier') {
-      title(P, [0, top + mm(26)], 'COUPE TRANSVERSALE COURANTE DU TABLIER', ech);
+      title(P, [0, top + mm(26)], o.titre || 'COUPE TRANSVERSALE COURANTE DU TABLIER', ech);
       return { P, ech, titre: 'COUPE TRANSVERSALE COURANTE — échelle 1/' + ech };
     }
     sec.bear.forEach((x) => { rect(P, x - 0.25, -h, x + 0.25, -h - 0.10, 'app'); rect(P, x - 0.32, -h - 0.10, x + 0.32, ySeat, 'vuB'); });
@@ -584,7 +584,7 @@
     tagFrom(P, iP, ref.id);
     P.sort((a, b) => (a.lay === 'sol' ? -1 : 0) - (b.lay === 'sol' ? -1 : 0));
     const tt = 'COUPE TRANSVERSALE SUR ' + (ref.kind === 'pile' ? 'PILE ' : 'CULÉE ') + ref.id;
-    title(P, [0, top + mm(26)], tt, ech);
+    title(P, [0, top + mm(26)], o.titre || tt, ech);
     return { P, ech, titre: tt + ' — échelle 1/' + ech, pile: ref.id };
   }
 
@@ -970,10 +970,9 @@
           const fs = p.ht * kp;
           T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
         } else if (p.k === 'title') {
-          const fs = 3.4 * kp, x = X(p.p[0]), y = Y(p.p[1]), w = p.s.length * fs * 0.6;
-          T(x, y, p.s, fs, 'middle', ' font-weight="700" font-style="italic" class="tt"');
-          out.push(`<path d="M${(x - w / 2).toFixed(1)} ${(y + fs * 0.25).toFixed(1)}h${w.toFixed(1)}" style="stroke:#1e1e1e;stroke-width:1"/>`);
-          T(x, y + fs * 1.15, p.sub, fs * 0.62, 'middle', ' font-style="italic"');
+          const fs = 4.6 * kp, x = X(p.p[0]), y = Y(p.p[1]), w = p.s.length * fs * 0.6;
+          T(x, y, p.s, fs, 'middle', ' class="tt"');
+          T(x, y + fs * 1.05, p.sub, fs * 0.5, 'middle');
         } else if (p.k === 'dim') {
           if (opt.dims === false) return;
           const off = p.off * kp, fs = 2.2 * kp, tk = 3;
@@ -1014,5 +1013,30 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(e[0] - pad).toFixed(1)} ${(e[1] - pad).toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(0)}" height="${vh.toFixed(0)}" data-ox="${(-bx[0] * s).toFixed(2)}" role="img">${defs}${r.out.join('')}</svg>`;
   }
 
-  return { elevScene, secScene, planScene, supScenes, toSVG };
+  /* coupe type d'une poutre préfabriquée (VIPP / PRAD) : 'appui' (âme épaissie à l'about) ou 'travee' — comme sur les plans KLE (1/20) */
+  function poutreScene(M, o) {
+    o = o || {};
+    const ech = o.ech || 20, mm = (v) => v * ech / 1000, P = [], sec = M.sec, i = sec.info || {};
+    if (!i.btab) return null;
+    const hb = i.hb, bt = i.btab, et = i.etab, gt = 0.10, b0 = i.b0, bw = i.bt, ht = i.ht, gs = 0.20, ap = o.where === 'appui';
+    const wv = ap ? bw : b0;   // largeur d'âme
+    const R_ = [[bt / 2, 0], [bt / 2, -et], [wv / 2, -et - gt]].concat(ap ? [] : [[wv / 2, -(hb - ht - gs)], [bw / 2, -(hb - ht)]]).concat([[bw / 2, -hb]]);
+    const pts = R_.concat(R_.slice().reverse().map((q) => [-q[0], q[1]]));
+    poly(P, pts, 'beton');
+    line(P, [0, mm(8)], [0, -hb - mm(8)], 'axe');
+    // cotes
+    dim(P, [-bt / 2, 0], [bt / 2, 0], 'h', 14, frn(bt));
+    dim(P, [-bt / 2, 0], [0, 0], 'h', 7, frn(bt / 2)); dim(P, [0, 0], [bt / 2, 0], 'h', 7, frn(bt / 2));
+    dim(P, [-bw / 2, -hb], [bw / 2, -hb], 'h', -8, frn(bw));
+    if (!ap) dim(P, [-b0 / 2, -hb / 2], [b0 / 2, -hb / 2], 'h', 0, frn(b0));
+    dim(P, [bt / 2, 0], [bt / 2, -hb], 'v', 14, frn(hb));
+    dim(P, [bt / 2, 0], [bt / 2, -et], 'v', 6, frn(et));
+    dim(P, [bt / 2, -et], [bt / 2, -et - gt], 'v', 6, frn(gt));
+    if (!ap) { dim(P, [-bw / 2, -(hb - ht)], [-bw / 2, -hb], 'v', -6, frn(ht)); dim(P, [-bw / 2, -(hb - ht - gs)], [-bw / 2, -(hb - ht)], 'v', -6, frn(gs)); }
+    text(P, [0, mm(18)], ap ? 'Sur appuis' : 'En travée', { ht: 2.6 });
+    title(P, [0, mm(34)], 'COUPE TYPE DES POUTRES', ech);
+    return { P, ech, titre: 'COUPE TYPE DES POUTRES — ' + (ap ? 'sur appuis' : 'en travée') };
+  }
+
+  return { elevScene, secScene, planScene, supScenes, poutreScene, toSVG };
 });

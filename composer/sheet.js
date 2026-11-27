@@ -124,41 +124,65 @@
   }
   const okImg = (img) => img && /^data:image\/(svg\+xml|png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(img);
 
-  /* opt : { dims } — orientation du cartouche dans M.S.cartouche.orient ('v' 210 × 297, 'h' 297 × 210) */
+  /* cartouche en bande au bas de la feuille (comme les plans KLE), laissé vierge : seul le titre du plan au milieu */
+  function cartoucheBande(box) {
+    const [x, y, w, h] = box;
+    return `<g data-tag="projet">` + R(x, y, w, h, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7')
+      + T(x + w / 2, y + h / 2 + 3.5, 'PLAN D’ENSEMBLE', { fs: 10, a: 'middle', ls: '.04em' }) + '</g>';
+  }
+
+  /* PLAN D'ENSEMBLE — disposition des plans KLE (PRO2334) :
+   *   en haut, la coupe longitudinale sur toute la largeur ;
+   *   à gauche, coupes types du tablier en travée et sur piles (1/50) ;
+   *   au centre, coupes types des poutres sur appuis et en travée (1/20) puis le NOTA ;
+   *   à droite, coupes types du tablier sur les deux culées (1/50) ;
+   *   cartouche en bande au bas de la feuille. */
   function sheetSVG(M, opt) {
     opt = opt || {};
-    const S = M.S, ct = S.cartouche || {}, orient = 'v', Z = layout(orient);   // cartouche toujours A4 vertical (210 × 297)
-    const piles = M.supports.filter((x) => x.kind === 'pile');
+    const S = M.S, ct = S.cartouche || {};
+    const piles = M.supports.filter((x) => x.kind === 'pile'), cul = M.supports.filter((x) => x.kind === 'culee');
     const pid = piles.length ? piles.reduce((a, b) => (b.H > a.H ? b : a)).id : null;
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
       + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
       + `<rect x="0" y="0" width="${SW}" height="${SH}" style="fill:#fff;stroke:none"/>`
       + R(FX0, FY0, FX1 - FX0, FY1 - FY0, 'fill:none;stroke:#1e1e1e;stroke-width:1');
-    const ech = [];
-    // coupes transversales (courante, sur pile, sur culée) : côte à côte en bas de la feuille, à une seule échelle ≥ 1/50
-    const SEC = [
-      ['secT', (e) => C.secScene(M, { ech: e, part: 'tablier' }), 'zt', 'tablier'],
-      ['secP', (e) => C.secScene(M, { ech: e, part: pid ? 'pile' : 'culee', id: pid }), 'zs', pid || 'C' + (M.supports.length - 1)],
-      ['secC', (e) => C.secScene(M, { ech: e, part: 'culee' }), 'zc', 'C0'],
-    ];
-    const size = (mk, id, e) => { const svg = C.toSVG(mk(e), { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
-    const mw = Z.cart[0] - GAP - FX0, H0 = FY1 - FY0;
-    const s50 = SEC.map(([, mk, id]) => size(mk, id, 50));
-    const hs = Math.min(0.56 * H0, Math.max(0.24 * H0, Math.max(...s50.map((q) => q[1])) + 4));
-    const yS = FY1 - hs, wsum = s50.reduce((a, q) => a + q[0], 0), wav = mw - 2 * GAP;
-    let xc = FX0;
-    SEC.forEach(([k], i) => { const w = wsum <= wav ? s50[i][0] + (wav - wsum) / 3 : wav * s50[i][0] / wsum; Z[k] = [xc, yS, w, hs - 3]; xc += w + GAP; });
-    const hl = yS - GAP - FY0;
-    Z.long = [FX0, FY0, mw, 0.6 * (hl - GAP)]; Z.plan = [FX0, FY0 + Z.long[3] + GAP, mw, hl - Z.long[3] - GAP];
-    { const r = placePair((e) => C.elevScene(M, { ech: e }), Z.long, (e) => C.planScene(M, { ech: e }), Z.plan, ECH.long, opt); ech.push(r.ech); s += r.svg; }
-    const fits = (e) => SEC.every(([k, mk, id]) => { const [w, h] = size(mk, id, e); return w <= Z[k][2] - 2 && h <= Z[k][3] - 2; });
-    const eSec = ECH.sec.find(fits) || 50;
-    SEC.forEach(([k, mk, id, tag]) => { const r = place(mk, Z[k], [eSec], id, opt, tag); ech.push(r.ech); s += r.svg; });
-    // NOTA au-dessus du cartouche, dans son propre cadre
-    const [cx, , cw] = Z.cart, top = Z.cart[1] - GAP, nb = notaBlock(S.nota, cx, cw, 3);
-    const nh = nb ? Math.min(nb.h, top - FY0) : 0;
-    if (nb) s += `<clipPath id="nclip"><rect x="${cx}" y="${top - nh}" width="${cw}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>` + R(cx, top - nh, cw, nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5');
-    s += okImg(ct.img) ? reserveA4(Z.cart, ct.img) : cartouche(M, Z.cart);
+    const ech = [], W = FX1 - FX0;
+    const cart = [FX0, FY1 - 46, W, 46];
+    const yB = cart[1] - GAP;                                   // bas de la zone de dessin
+    const size = (mk, id, e) => { const sc = mk(e); if (!sc) return [0, 0]; const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
+    const c0 = cul[0], c1 = cul[cul.length - 1];
+    const ttl = (sp) => sp ? 'COUPE TYPE DU TABLIER SUR ' + (sp.kind === 'pile' ? 'PILES' : 'CULÉE ' + sp.id) : '';
+    const L = [
+      ['zt', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TYPE DU TABLIER EN TRAVÉE' }), 'tablier'],
+      pid ? ['zs', (e) => C.secScene(M, { ech: e, part: 'pile', id: pid, titre: ttl(piles[0]) }), pid] : null,
+    ].filter(Boolean);
+    const Rr = [c0 && ['zc0', (e) => C.secScene(M, { ech: e, part: 'culee', id: c0.id, titre: ttl(c0) }), c0.id],
+      c1 && c1 !== c0 && ['zc1', (e) => C.secScene(M, { ech: e, part: 'culee', id: c1.id, titre: ttl(c1) }), c1.id]].filter(Boolean);
+    const hasB = !!(C.poutreScene && C.poutreScene(M, {}));
+    const Mid = hasB ? [['zb1', (e) => C.poutreScene(M, { ech: e, where: 'appui' }), 'section'], ['zb2', (e) => C.poutreScene(M, { ech: e, where: 'travee' }), 'section']] : [];
+    // hauteur de la coupe longitudinale : ce qu'il faut à son échelle, au plus 36 % de la feuille
+    const sec50 = L.concat(Rr).map(([id, mk]) => size(mk, id, 50));
+    const colH = (arr) => arr.reduce((a, q) => a + q[1] + GAP, 0);
+    const needS = Math.max(colH(sec50.slice(0, L.length)), colH(sec50.slice(L.length)));
+    const hLong = Math.max(0.22 * (yB - FY0), Math.min(0.36 * (yB - FY0), yB - FY0 - needS - GAP));
+    { const r = place((e) => C.elevScene(M, { ech: e }), [FX0, FY0, W, hLong], ECH.long, 'zl', opt, 'travees'); ech.push(r.ech); s += r.svg; }
+    const y1 = FY0 + hLong + GAP, Hc = yB - y1;
+    const wL = 0.395 * W, wM = 0.17 * W, wR = W - wL - wM - 2 * GAP;
+    const xs = [FX0, FX0 + wL + GAP, FX0 + wL + wM + 2 * GAP];
+    // une seule échelle pour les quatre coupes du tablier, la plus grande qui tient (jamais en dessous de 1/50)
+    const boxes = (arr, x, w, e) => { const hh = arr.map(([id, mk]) => size(mk, id, e)[1]), tot = hh.reduce((a, b) => a + b, 0) || 1; let y = y1; const sp = Math.max(0, Hc - tot - GAP * (arr.length - 1)) / Math.max(1, arr.length); return arr.map((q, k) => { const h = hh[k] + sp; const b = [x, y, w, Math.min(h, Hc)]; y += h + GAP; return b; }); };
+    const fitsCol = (arr, x, w, e) => { const hh = arr.map(([id, mk]) => size(mk, id, e)); return hh.every((q) => q[0] <= w - 2) && hh.reduce((a, q) => a + q[1], 0) + GAP * (arr.length - 1) <= Hc - 2; };
+    const eSec = ECH.sec.find((e) => fitsCol(L, xs[0], wL, e) && fitsCol(Rr, xs[2], wR, e)) || 50;
+    [[L, xs[0], wL], [Rr, xs[2], wR]].forEach(([arr, x, w]) => { const bb = boxes(arr, x, w, eSec); arr.forEach(([id, mk, tag], k) => { const r = place(mk, bb[k], [eSec], id, opt, tag); ech.push(r.ech); s += r.svg; }); });
+    // centre : coupes types des poutres (1/20) puis NOTA
+    const nb = notaBlock(S.nota, xs[1], wM, 2.6);
+    const nh = nb ? Math.min(nb.h, 0.45 * Hc) : 0;
+    if (Mid.length) {
+      const hm = Hc - nh - GAP, eB = [20, 25, 30, 40, 50].find((e) => Mid.reduce((a, [id, mk]) => a + size(mk, id, e)[1], 0) + GAP <= hm - 2 && Mid.every(([id, mk]) => size(mk, id, e)[0] <= wM - 2)) || 50;
+      Mid.forEach(([id, mk, tag], k) => { const r = place(mk, [xs[1], y1 + k * (hm / 2), wM, hm / 2 - GAP / 2], [eB], id, opt, tag); s += r.svg; });
+    }
+    if (nb) { const ty = yB - nh; s += `<clipPath id="nclip"><rect x="${xs[1]}" y="${ty}" width="${wM}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(ty)}</g>` + R(xs[1], ty, wM, nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5'); }
+    s += okImg(ct.img) ? reserveA4(cart, ct.img) : cartoucheBande(cart);
     return s + '</svg>';
   }
 
