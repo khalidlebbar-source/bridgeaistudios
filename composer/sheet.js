@@ -260,7 +260,7 @@
       const KP = !isC && C.cofPile ? C.cofPile(M, id) : null, KC = isC && C.cofCulee ? C.cofCulee(M, id) : null;
       if (KC) { kle = true;   // planche des culées : disposition et vues des plans KLE 0004 pl1 / pl2
         Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'culee', id, titre: 'COUPE TRANSVERSALE' }), id], ['cp', () => KC.cp, id], ['cs', () => KC.som, id]];
-        Rc = [['cl', () => KC.cl, id]].concat(D.mre ? [['cm', () => D.mre, id], ['cn', () => D.mrt, id]] : D.mr ? [['cm', fixed(D.mr), id]] : []);
+        Rc = [['cl', () => KC.cl, id]].concat(KC.mre ? [['cm', () => KC.mre, id]] : []).concat(D.mrt ? [['cn', () => D.mrt, id]] : []);
       } else if (KP) {   // planche des piles : disposition et vues du plan KLE 0003
         Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'pile', id, titre: 'COUPE TRANSVERSALE' }), id], ['cp', () => KP.cf, id], ['cs', () => KP.som, id]];
         Rc = [['cl', () => KP.cl, id]];
@@ -315,7 +315,7 @@
       const xL = X0 + gx; Lc.forEach(([id, mk, tag], k) => { put(mk, id, tag, 50, xL + (a[0] - a[2][k][0]) / 2, y, a[2][k][0], a[2][k][1]); y += a[2][k][1] + g0; });
       let yr = yTop + 6; const xR0 = xL + a[0] + gx;
       rows.forEach((r) => { const gi = r.items.length > 1 ? Math.max(4 * GAP, (X1 - xR0 - (r.w - 4 * GAP * (r.items.length - 1)) - gx / 2) / (r.items.length - 1)) : 0; let x = xR0;
-        r.items.forEach(([it, w, h]) => { put(it[1], it[0], it[2], 50, x, yr + (r.h - h), w, h); x += w + gi; }); yr += r.h + 6 * GAP; });
+        r.items.forEach(([it, w, h]) => { put(it[1], it[0], it[2], 50, x, yr, w, h); x += w + gi; }); yr += r.h + 6 * GAP; });
       return s + '</svg>';
     }
     const tw = cols.reduce((a, c) => a + c.w, 0), gx = Math.max(4 * GAP, (AW - tw) / (cols.length + 1));

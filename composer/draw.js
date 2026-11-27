@@ -298,21 +298,22 @@
     // repère longitudinal : u = 0 axe des appareils, u > 0 vers le remblai ; X(u) = −o·u pour mettre le tablier du côté de l'ouvrage
     const X = (u) => o * u, uF = -ea, uG = b - ea - tal - egg, uB = b - ea - tal, uT = b - ea;
     // ── COUPE LONGITUDINALE ──
-    {
-      const P = [];
+    const f2r = (v) => (Math.round(v * 100 + 1e-6) / 100).toFixed(2).replace(/^0\./, '.');
+    const clv = (mr) => {
+      const hgg = mr ? hE : g.hgg, P = [];
       poly(P, [[X(uF), 0], [X(uT), 0], [X(uT), -hs], [X(uF), -hs]], 'hachP');
       line(P, [X(uF), -0.35], [X(uT), -0.35], 'note');
       poly(P, nez > 0 ? [[X(uG - nez), hgg], [X(uB), hgg], [X(uB), 0], [X(uG), 0], [X(uG), hgg - 0.8], [X(uG - nez), hgg - 0.6]] : [[X(uG), hgg], [X(uB), hgg], [X(uB), 0], [X(uG), 0]], 'hachP');
-      if (g.dt) { const L = g.dt.L, d = 0.05 * L; poly(P, [[X(uB), 0.30], [X(uB + L), 0.30 - d], [X(uB + L), -d], [X(uB), 0]], 'hachP'); poly(P, [[X(uB), -0.06], [X(uB + L + 0.1), -d - 0.06], [X(uB + L + 0.1), -d]], 'vuT', false);
+      if (g.dt && !mr) { const L = g.dt.L, d = 0.05 * L; poly(P, [[X(uB), 0.30], [X(uB + L), 0.30 - d], [X(uB + L), -d], [X(uB), 0]], 'hachP'); poly(P, [[X(uB), -0.06], [X(uB + L + 0.1), -d - 0.06], [X(uB + L + 0.1), -d]], 'vuT', false);
         dh(P, X(uB), X(uB + L), 0.6, 1.2, f2c(L)); dv(P, X(uB + L), 0.30 - d, -d, X(uB + L) + o * 0.6, '.30'); }
       rect(P, -0.36, 0, 0.36, 0.07, 'vuB'); rect(P, -0.18, 0.07, 0.18, 0.15, 'vuB'); rect(P, -0.36, 0.15, 0.36, 0.22, 'vuB');
       let yb;
       if (pieux) {
-        const Lv = 6.0, yw = -hs - 2.6; rect(P, -f.D / 2, -hs, f.D / 2, -hs - Lv, 'col'); yb = -hs - Lv;
+        const Lv = 6.0, yw = -hs - 4.0; rect(P, -f.D / 2, -hs, f.D / 2, -hs - Lv, 'col'); yb = -hs - Lv;
         [1, -1].forEach((sg) => P.push({ k: 'poly', pts: Array.from({ length: 17 }, (_, n) => [-f.D / 2 + n * f.D / 16, yw + sg * 0.11 * Math.abs(Math.sin(n * Math.PI / 8))]), lay: 'brkO', closed: false }));
-        dh(P, -f.D / 2, f.D / 2, yw + 1.0, yw + 1.0, 'Ø' + f2c(f.D));
-        dv(P, X(uF), -hs, yb, X(uF) - o * 3.4, 'H_PIEUX=' + fr(f.Lp, 0) + 'm');
-        const c = [X(uF), -f.D / 2, f.D / 2, X(uT)].sort((p_, q_) => p_ - q_); for (let k = 0; k < 3; k++) dh(P, c[k], c[k + 1], -hs, -hs - 0.3);
+        dh(P, -f.D / 2, f.D / 2, -hs - 3.0, -hs - 3.0, 'Ø' + f2c(f.D));
+        if (!mr) dv(P, X(uF), -hs, yb, X(uF) - o * 3.4, 'H_PIEUX=' + fr(f.Lp, 0) + 'm');
+        const c = [X(uF), -f.D / 2, 0, f.D / 2, X(uT)].sort((p_, q_) => p_ - q_); for (let k = 0; k < 4; k++) dh(P, c[k], c[k + 1], -hs, -hs - 0.3);
       } else if (col) {
         const bp = col.D, yF = -sp.H, e = f.e || 1.5, gb = g.gros || 0;
         rect(P, -bp / 2, -hs, bp / 2, yF, 'vuB');
@@ -328,21 +329,32 @@
       { const c = [uF, 0, uG, uB, uT].map(X).sort((p_, q_) => p_ - q_); for (let k = 0; k < 4; k++) dh(P, c[k], c[k + 1], -0.35, -0.35); }
       if (nez > 0) { dh(P, 0, X(uG - nez), hgg, hgg + 0.6); dh(P, X(uG - nez), X(uB), hgg, hgg + 0.6); const xn = X(uG - nez) + o * 0.6; dv(P, X(uG - nez), hgg, hgg - 0.6, xn, '.60'); dv(P, X(uG - nez), hgg - 0.6, hgg - 0.8, xn, '.20'); }
       const xv = col && !pieux ? -o * (f.B / 2 + 0.5 + 1.6) : X(uF) - o * 2.6;
-      dv(P, X(uG), hgg, 0, xv, 'VAR : ' + f2c(hE) + ' à ' + f2c(hgg)); dv(P, X(uF), 0, -hs, xv);
+      if (!mr) { dv(P, X(uG), hgg, 0, xv, 'VAR : ' + f2r(hE) + ' à ' + f2r(g.hgg)); dv(P, X(uF), 0, -hs, xv); }
+      else {   // mur en retour suspendu vu de côté : 5.00 depuis l'arrière du garde-grève, .90 en about, biais jusqu'au pied arrière du sommier
+        const rt = g.retours, Lm = rt.L || 5, h2 = rt.h2 || 0.9;
+        P.push({ k: 'poly', pts: [[X(uB), hgg], [X(uB + Lm), hgg], [X(uB + Lm), hgg - h2], [X(uT), -hs]], lay: 'vuT', closed: false });
+        dh(P, X(uB + Lm), X(uB), hgg, hgg + 0.6, f2r(Lm));
+        const xm = X(uB + Lm) + o * 0.5; dv(P, X(uB + Lm), hgg, hgg - h2, xm, f2r(h2)); dv(P, X(uB + Lm), hgg - h2, -hs, xm, f2r(hgg - h2 + hs));
+        const x2 = X(uF) - o * 2.0; dv(P, X(uF), hgg, 0, x2, f2r(hgg)); dv(P, X(uF), 0, -hs, x2, f2r(hs)); dv(P, X(uF), hgg, -hs, x2 - o * 1.2, f2r(hgg + hs));
+      }
       line(P, [0, 1.6], [0, (yb || -hs - 6) - 0.3], 'axeC');
-      title(P, [0, hgg + 2.6], 'COUPE LONGITUDINALE', 50);
-      out.cl = { P, ech: 50, titre: 'COUPE LONGITUDINALE' };
-    }
+      title(P, [mr ? X(uB + 2.5) : 0, hgg + 2.6], mr ? 'MUR EN RETOUR : ELEVATION COTE BAS' : 'COUPE LONGITUDINALE', 50);
+      return P;
+    };
+    out.cl = { P: clv(false), ech: 50, titre: 'COUPE LONGITUDINALE' };
+    if (g.retours && g.retours.mode !== 'aucun') out.mre = { P: clv(true), ech: 50, titre: 'MUR EN RETOUR : ELEVATION COTE BAS' };
     // ── COUPE SUR PIEUX / SUR FÛTS ──
     {
       const P = [], Lc = so.L || W, halves = j ? [[-Lc / 2, -j], [j, Lc / 2]] : [[-Lc / 2, Lc / 2]];
       if (pieux) {
         const ys = (f.ys || []).slice().sort((p_, q_) => p_ - q_);
-        ys.forEach((y) => { circ(P, y, 0, f.D / 2, 'vuB', 28); line(P, [y, -0.9], [y, 0.9], 'axeC'); });
-        line(P, [-Lc / 2 - 0.5, 0], [Lc / 2 + 0.5, 0], 'axeC'); line(P, [0, 1.6], [0, -2.0], 'axeC');
+        ys.forEach((y) => { circ(P, y, 0, f.D / 2, 'hachP', 32); line(P, [y, -f.D / 2], [y, f.D / 2], 'axeC'); });
+        (j ? [-(Lc / 2 + j) / 2, (Lc / 2 + j) / 2] : []).forEach((m) => line(P, [m, 4.2], [m, -4.2], 'axeC'));
+        if (ys.length) { const yN = ys[ys.length - 1]; leader(P, [yN - 0.1, f.D / 2], [yN - 1.0, f.D / 2 + 0.4], 'PIEU COTE NORD', 'end'); }
+        line(P, [-Lc / 2 - 0.5, 0], [Lc / 2 + 0.5, 0], 'axeC'); line(P, [0, 5.2], [0, -5.2], 'axeC');
         { const r = [-Lc / 2].concat(ys, [Lc / 2]); for (let k = 0; k < r.length - 1; k++) dh(P, r[k], r[k + 1], -0.9, -0.9); }
-        if (ys.length > 2) dim(P, [ys[2] - f.D / 2 * 0.7, f.D / 2 * 0.7], [ys[2] + f.D / 2 * 0.7, -f.D / 2 * 0.7], 'h', 0, 'Ø' + f2c(f.D));
-        title(P, [0, 2.4], 'COUPE SUR PIEUX', 50);
+        if (ys.length > 2) { const c_ = Math.cos(0.44) * f.D / 2, s_ = Math.sin(0.44) * f.D / 2; line(P, [ys[2] - c_, -s_], [ys[2] + c_, s_], 'cote'); text(P, [ys[2] - 0.05, 0.12], f2c(f.D), { ht: 2.5, lay: 'note', rot: -25 }); }
+        title(P, [0, 6.4], 'COUPE SUR PIEUX', 50);
       } else if (col) {
         const Bf = f.B, gb = g.gros || 0, xs = (col.pos || []).slice().sort((p_, q_) => p_ - q_), bc = col.section === 'rect' ? col.b : col.D, dl = col.D;
         if (gb > 0) { rect(P, -f.L / 2 - 0.5, -Bf / 2 - 0.5, f.L / 2 + 0.5, Bf / 2 + 0.5, 'gros'); }
@@ -1340,10 +1352,15 @@
           out.mre = { P: mir(P.splice(0)), ech: 50, titre: 'MUR EN RETOUR : ELEVATION COTE BAS' };
           // coupe type : voile .50, tête avec bloc d'ancrage et corniche
           const cx = xd + 4.5, e = rt.e, yb = -hs;
-          poly(P, [[cx, yb], [cx + e, yb], [cx + e, hgg], [cx + e + 0.15, hgg], [cx + e + 0.15, hgg + 0.31], [cx - 0.26, hgg + 0.31], [cx - 0.26, hgg - 0.49], [cx, hgg - 0.49]], 'beton');
-          rect(P, cx - 0.26, hgg, cx + 0.15, hgg + 0.31, 'orH');
-          dim(P, [cx, yb], [cx + e, yb], 'h', -5, f2m(e)); dim(P, [cx + e + 0.15, yb], [cx + e + 0.15, hgg], 'v', 5, f2m(hgg - yb));
-          dim(P, [cx - 0.26, hgg + 0.31], [cx - 0.26, hgg], 'v', -5, f2m(0.31)); dim(P, [cx - 0.26, hgg], [cx - 0.26, hgg - 0.49], 'v', -5, f2m(0.49)); dim(P, [cx, hgg - 0.49], [cx, yb], 'v', -9, f2m(hgg - 0.49 - yb));
+          poly(P, [[cx, yb], [cx + e, yb], [cx + e, hgg + 0.31], [cx - 0.15, hgg + 0.31], [cx - 0.15, hgg - 0.49], [cx, hgg - 0.49]], 'beton');
+          rect(P, cx - 0.15, hgg, cx + 0.26, hgg + 0.31, 'orH');
+          P.push({ k: 'poly', pts: [[cx + e, hgg + 0.32], [cx + e + 0.18, hgg + 0.32], [cx + e + 0.29, hgg + 0.16], [cx + e + 0.27, hgg - 0.04], [cx + e + 0.18, hgg - 0.28], [cx + e + 0.04, hgg - 0.28], [cx + e + 0.04, hgg]], lay: 'orL', closed: false });
+          P.push({ k: 'poly', pts: [[cx + 0.20, hgg + 0.31], [cx + 0.20, hgg + 1.05], [cx + 0.30, hgg + 1.05], [cx + e + 0.0, hgg + 0.36]], lay: 'orL', closed: false });
+          dim(P, [cx - 0.15, hgg + 0.31], [cx + 0.26, hgg + 0.31], 'h', 7, f2m(0.41)); dim(P, [cx + 0.26, hgg + 0.31], [cx + e, hgg + 0.31], 'h', 7, f2m(e - 0.26));
+          dim(P, [cx - 0.15, hgg], [cx - 0.15, hgg + 0.31], 'v', -5, f2m(0.31)); dim(P, [cx + e + 0.3, hgg], [cx + e + 0.3, hgg + 0.32], 'v', 4, f2m(0.32));
+          dim(P, [cx - 0.15, hgg], [cx - 0.15, hgg - 0.49], 'v', -5, f2m(0.49)); dim(P, [cx - 0.15, hgg - 0.6], [cx, hgg - 0.6], 'h', -2, f2m(0.15));
+          dim(P, [cx, hgg - 0.49], [cx, yb], 'v', -9, f2m(hgg - 0.49 - yb)); dim(P, [cx + e, hgg], [cx + e, yb], 'v', 6, f2m(hgg - yb));
+          dim(P, [cx, yb], [cx + e, yb], 'h', -5, f2m(e));
           P.push({ k: 'title', p: [cx + e / 2, hgg + 2.0], s: 'MUR EN RETOUR : COUPE TYPE', sub: 'Ech:1/50' });
           out.mrt = { P: P.slice(), ech: 50, titre: 'MUR EN RETOUR : COUPE TYPE' };
           out.mr = { P: out.mre.P.concat(P), ech: 50, titre: 'Mur en retour : élévation et coupe type' };
@@ -1398,6 +1415,8 @@
     gcF: 'fill:none;stroke:#2020ff;stroke-width:.6',
     vuT: 'fill:none;stroke:#4a4a4a;stroke-width:.6',
     rep: 'fill:none;stroke:#e8590c;stroke-width:1.6',
+    cote: 'fill:none;stroke:#e00000;stroke-width:.9',
+    orL: 'fill:none;stroke:#f08a00;stroke-width:.9',
     arrowF: 'fill:#000;stroke:#000;stroke-width:.3',
     orH: 'fill:url(#ID-o);stroke:#1a1a1a;stroke-width:.7',
     ble: 'fill:none;stroke:#2020ff;stroke-width:1.1',
@@ -1497,7 +1516,7 @@
           }
         } else if (p.k === 'text') {
           const fs = p.ht * kp;
-          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
+          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.rot ? ` transform="rotate(${p.rot} ${X(p.p[0]).toFixed(2)} ${(Y(p.p[1]) - p.dy * kp).toFixed(2)})"` : '') + (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
         } else if (p.k === 'title') {
           const fs = 7 * kp, x = X(p.p[0]), y = Y(p.p[1]);
           T(x, y, p.s, fs, 'middle');
