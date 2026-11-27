@@ -775,7 +775,7 @@
     $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
-  /* séquence animée de la construction : les phases apparaissent une à une, la caméra tourne lentement autour de l'ouvrage */
+  /* séquence animée de la construction : les phases apparaissent une à une, caméra fixe */
   let seq = null;
   function stopSeq() {
     if (!seq) return; cancelAnimationFrame(seq.raf); seq = null;
@@ -785,19 +785,18 @@
   function playSeq() {
     if (seq) { stopSeq(); return; }
     const boxes = [...$$('#ph3 input[data-ph]')], keys = boxes.map((c) => c.dataset.ph), labels = boxes.map((c) => c.parentElement.textContent.replace(/^\d+/, '').trim());
-    const DUR = 1600, yaw0 = cam3.yaw, t0 = performance.now();
+    const DUR = 1600, t0 = performance.now();
     seq = { raf: 0, last: -1 };
     $('#ph3 .ph3p').textContent = '■ Arrêter';
     const step = (t) => {
       if (!seq || view !== '3d') { stopSeq(); return; }
       const e = t - t0, k = Math.min(keys.length, Math.floor(e / DUR) + 1);
-      cam3.yaw = yaw0 + 0.00012 * e;   // rotation lente
-      if (k !== seq.last) {
+      if (k !== seq.last) {   // caméra fixe : on ne redessine qu'au changement de phase
         seq.last = k;
         keys.forEach((key, i) => { hide3[key] = i >= k; boxes[i].checked = i < k; });
         const st = $('#ph3s'); if (st) st.textContent = 'Phase ' + k + ' / ' + keys.length + ' — ' + labels[k - 1];
+        draw3D();
       }
-      draw3D();
       if (e < keys.length * DUR + 1500) seq.raf = requestAnimationFrame(step); else stopSeq();
     };
     seq.raf = requestAnimationFrame(step);
