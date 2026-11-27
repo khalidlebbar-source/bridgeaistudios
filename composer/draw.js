@@ -262,7 +262,7 @@
       text(P, [x, zt], d.sondage || 'S', { ht: 2.2, dy: 2, lay: 'titre', bold: true });
       yMin = Math.min(yMin, zt - fin);
     });
-    if (usedSol.size) {   // légende des sols (une hachure par nature de sol)
+    if (false && usedSol.size) {   // légende des sols — non portée sur les plans de ponts (KLE) (une hachure par nature de sol)
       const lx = xL + mm(4); let ly = Math.min(yMin, ...(tn || [[0, 0]]).map((q) => q[1])) - mm(12);
       text(P, [lx, ly + mm(5)], 'LÉGENDE DES SOLS', { ht: 2, anchor: 'start', lay: 'note', bold: true });
       [...usedSol].forEach((sl, i) => { const yy = ly - i * mm(6); rect(P, lx, yy, lx + mm(8), yy - mm(4), 'sol_' + sl); text(P, [lx + mm(10), yy - mm(2)], SOL_LAB[sl], { ht: 1.8, anchor: 'start', dy: -0.6, lay: 'note' }); });
