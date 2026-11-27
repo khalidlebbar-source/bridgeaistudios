@@ -246,7 +246,7 @@
       return Object.assign({}, sc, { P });
     };
     const fixed = (sc, t) => sc ? () => (t ? Object.assign({}, sc, { P: sc.P.map((q) => (q.k === 'title' ? Object.assign({}, q, { s: t, sub: q.sub && q.sub.replace(/1\/\d+/, '1/50') }) : q)) }) : sc) : null;
-    let Lc = [], Rc = [], top = null, titre = '', sous = '';
+    let Lc = [], Rc = [], top = null, titre = '', sous = '', kle = false;
     if (which === 'tablier') {
       titre = 'TABLIER — COFFRAGE'; sous = S.tablier.type + (S.tablier.jumeaux ? ' — 2 tabliers jumelés' : '');
       top = ['cv', (e) => C.planScene(M, { ech: e }), 'trace'];
@@ -257,8 +257,11 @@
       const D = C.supScenes(M, id) || {}, isC = sp.kind === 'culee', fo = sp.fo || {};
       titre = isC ? 'CULÉES — COFFRAGE' : 'PILES — COFFRAGE';
       sous = isC ? 'Culée ' + id : (piles.length > 1 ? 'Piles ' + piles.map((p) => p.id).join(', ') : 'Pile ' + id);
-      const KP = !isC && C.cofPile ? C.cofPile(M, id) : null;
-      if (KP) {   // planche des piles : disposition et vues du plan KLE 0003
+      const KP = !isC && C.cofPile ? C.cofPile(M, id) : null, KC = isC && C.cofCulee ? C.cofCulee(M, id) : null;
+      if (KC) { kle = true;   // planche des culées : disposition et vues des plans KLE 0004 pl1 / pl2
+        Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'culee', id, titre: 'COUPE TRANSVERSALE' }), id], ['cp', () => KC.cp, id], ['cs', () => KC.som, id]];
+        Rc = [['cl', () => KC.cl, id]].concat(D.mre ? [['cm', () => D.mre, id], ['cn', () => D.mrt, id]] : D.mr ? [['cm', fixed(D.mr), id]] : []);
+      } else if (KP) {   // planche des piles : disposition et vues du plan KLE 0003
         Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'pile', id, titre: 'COUPE TRANSVERSALE' }), id], ['cp', () => KP.cf, id], ['cs', () => KP.som, id]];
         Rc = [['cl', () => KP.cl, id]];
       } else {
@@ -300,6 +303,19 @@
       const a = col(Lc, eL), b = col(Rc, 20), gh = Rc.length ? (AW - a[0] - b[0]) / 3 : (AW - a[0]) / 2;
       const stack = (arr, e_, x, w, q) => { const tot = q.reduce((t, v) => t + v[1], 0), g = Math.max(GAP, (AH - tot) / (arr.length + 1)); let y = yTop + Math.max(0, (AH - tot - g * (arr.length - 1)) / 2); arr.forEach(([id, mk, tag], k) => { put(mk, id, tag, e_, x + (w - q[k][0]) / 2, y, q[k][0], q[k][1]); y += q[k][1] + g; }); };
       stack(Lc, eL, X0 + gh, a[0], a[2]); if (Rc.length) stack(Rc, 20, X0 + 2 * gh + a[0], b[0], b[2]);
+      return s + '</svg>';
+    }
+    if (kle) {   // culées KLE : colonne gauche (coupe transversale, coupe sur pieux/fûts, sommier) ; à droite, en rangée en haut : coupe longitudinale, mur en retour
+      const a = col(Lc, 50), q = Rc.map(([id, mk]) => size(mk, id, 50));
+      const g0 = Math.max(1.5 * GAP, Math.min(3 * GAP, (AH - a[1]) / (Lc.length - 1)), (AH - a[1]) / (Lc.length + 1));
+      let y = yTop + Math.max(0, (AH - a[1] - g0 * (Lc.length - 1)) / 2);
+      const RW = AW - a[0] - 4 * GAP, rows = []; let cur = null;
+      Rc.forEach((it, k) => { const [w, h] = q[k]; if (!cur || cur.w + 4 * GAP + w > RW) { cur = { w: 0, h: 0, items: [] }; rows.push(cur); } cur.w += (cur.items.length ? 4 * GAP : 0) + w; cur.h = Math.max(cur.h, h); cur.items.push([it, w, h]); });
+      const gx = Math.max(4 * GAP, (AW - a[0] - Math.max(0, ...rows.map((r) => r.w))) / 3);
+      const xL = X0 + gx; Lc.forEach(([id, mk, tag], k) => { put(mk, id, tag, 50, xL + (a[0] - a[2][k][0]) / 2, y, a[2][k][0], a[2][k][1]); y += a[2][k][1] + g0; });
+      let yr = yTop + 6; const xR0 = xL + a[0] + gx;
+      rows.forEach((r) => { const gi = r.items.length > 1 ? Math.max(4 * GAP, (X1 - xR0 - (r.w - 4 * GAP * (r.items.length - 1)) - gx / 2) / (r.items.length - 1)) : 0; let x = xR0;
+        r.items.forEach(([it, w, h]) => { put(it[1], it[0], it[2], 50, x, yr + (r.h - h), w, h); x += w + gi; }); yr += r.h + 6 * GAP; });
       return s + '</svg>';
     }
     const tw = cols.reduce((a, c) => a + c.w, 0), gx = Math.max(4 * GAP, (AW - tw) / (cols.length + 1));
