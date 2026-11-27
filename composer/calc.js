@@ -228,7 +228,7 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'bc', 'sp', 'cp', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, bc: 6, sp: 10, cp: 40, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'bc', 'sp', 'cp', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2', 'rh', 'rl', 'rain'], { rh: 1, rl: 5, rain: 3, n: 12, D: 4, bc: 6, sp: 10, cp: 40, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
     out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
     out.piles.grp = [1, 2, 3].includes(+out.piles.grp) ? +out.piles.grp : 1;
     out.piles.face = ['A', 'B', 'C'].includes(out.piles.face) ? out.piles.face : (out.piles.dim.fruit > 0 ? 'B' : 'A');
@@ -245,7 +245,7 @@
     out.culees.par = Array.isArray(out.culees.par) ? out.culees.par.slice(0, 2).map((p) => (p && typeof p === 'object' ? {
       fond: ['superficielle', 'pieux'].includes(p.fond) ? p.fond : undefined, dim: dims(p.dim, CK, CM), fdim: dims(p.fdim, FK, FM),
       section: ['circ', 'carre', 'rect'].includes(p.section) ? p.section : undefined, pos: posA(p.pos) || undefined, pieuxPos: posA(p.pieuxPos) || undefined,
-      retours: typeof p.retours === 'string' ? p.retours : undefined,
+      retours: typeof p.retours === 'string' ? p.retours : undefined, nervure: typeof p.nervure === 'boolean' ? p.nervure : undefined,
     } : null)) : null;
     if (out.culees.par) out.culees.par.forEach((p) => { if (p) Object.keys(p).forEach((k) => p[k] === undefined && delete p[k]); });
     [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm', 'nl'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
@@ -788,7 +788,10 @@
       } else { V = ch.b * ch.h * ch.L; coff = (2 * ch.h + ch.b) * ch.L + 2 * ch.b * ch.h - (fut.kind === 'colonnes' ? fut.n * fut.D * fut.b * 0.8 : fut.kind === 'vy' ? 2 * fut.e * fut.bw : fut.e * fut.L); }
       parts.push({ des: (ch.kind === 'tete' ? 'Tête élargie ' : 'Chevêtre ') + fr(ch.b, 2) + ' × ' + fr(ch.h, 2) + ' m', V, coff, ratio: 150 });
     }
-    return { type: t, H, fut, ch, parts, lx, ly, V: sum(parts.map((p) => p.V)) };
+    // chevêtre à redans en sous-face (plans KLE PRO2334 : 1.00 + .50, retraits de 1.50) et rainures de fûts tous les 1,00 m
+    const redan = ch && ch.kind === 'chevetre' && dm.rh > 0 ? { h: Math.min(dm.rh, ch.h * 0.6), l: ov('rl', 1.5) } : null;
+    const rain = dm.rain > 0 ? dm.rain : 0;
+    return { type: t, H, fut, ch, parts, lx, ly, redan, rain, V: sum(parts.map((p) => p.V)) };
   }
 
   /* réglages propres à une culée (C0 ou dernière culée) : type de fondation, dimensions, positions des appuis — repris des plans */

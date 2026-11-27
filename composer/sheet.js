@@ -141,7 +141,8 @@
     opt = opt || {};
     const S = M.S, ct = S.cartouche || {};
     const piles = M.supports.filter((x) => x.kind === 'pile'), cul = M.supports.filter((x) => x.kind === 'culee');
-    const pid = piles.length ? piles.reduce((a, b) => (b.H > a.H ? b : a)).id : null;
+    // pile type : la hauteur la plus fréquente (les autres sont renvoyées par une note, ex. « 7m pour P1 »)
+    const pid = piles.length ? piles.map((p) => [p, piles.filter((q) => Math.abs(q.H - p.H) < 0.01).length]).sort((a, b) => b[1] - a[1] || b[0].H - a[0].H)[0][0].id : null;
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
       + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
       + `<rect x="0" y="0" width="${SW}" height="${SH}" style="fill:#fff;stroke:none"/>`
@@ -151,9 +152,9 @@
     const yB = cart[1] - GAP;                                   // bas de la zone de dessin
     const size = (mk, id, e) => { const sc = mk(e); if (!sc) return [0, 0]; const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
     const c0 = cul[0], c1 = cul[cul.length - 1];
-    const ttl = (sp) => sp ? 'COUPE TYPE DU TABLIER SUR ' + (sp.kind === 'pile' ? 'PILES' : 'CULÉE ' + sp.id) : '';
+    const ttl = (sp) => sp ? 'COUPE TYPE DU TABLIER SUR ' + (sp.kind === 'pile' ? 'PILES' : 'CULEE ' + sp.id) : '';
     const L = [
-      ['zt', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TYPE DU TABLIER EN TRAVÉE' }), 'tablier'],
+      ['zt', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TYPE DU TABLIER EN TRAVEE' }), 'tablier'],
       pid ? ['zs', (e) => C.secScene(M, { ech: e, part: 'pile', id: pid, titre: ttl(piles[0]) }), pid] : null,
     ].filter(Boolean);
     const Rr = [c0 && ['zc0', (e) => C.secScene(M, { ech: e, part: 'culee', id: c0.id, titre: ttl(c0) }), c0.id],
@@ -164,7 +165,7 @@
     const sec50 = L.concat(Rr).map(([id, mk]) => size(mk, id, 50));
     const colH = (arr) => arr.reduce((a, q) => a + q[1] + GAP, 0);
     const needS = Math.max(colH(sec50.slice(0, L.length)), colH(sec50.slice(L.length)));
-    const hLong = Math.max(0.22 * (yB - FY0), Math.min(0.36 * (yB - FY0), yB - FY0 - needS - GAP));
+    const hLong = Math.max(0.17 * (yB - FY0), Math.min(0.36 * (yB - FY0), yB - FY0 - needS - GAP));
     { const r = place((e) => C.elevScene(M, { ech: e }), [FX0, FY0, W, hLong], ECH.long, 'zl', opt, 'travees'); ech.push(r.ech); s += r.svg; }
     const y1 = FY0 + hLong + GAP, Hc = yB - y1;
     const wL = 0.395 * W, wM = 0.17 * W, wR = W - wL - wM - 2 * GAP;
