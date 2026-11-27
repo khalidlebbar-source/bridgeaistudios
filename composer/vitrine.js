@@ -30,6 +30,29 @@
         { fond: 'superficielle', nervure: false, section: 'rect', pos: pos8, dim: { D: 1.5, bc: 0.8, gb: 1.5 }, fdim: { B: 7.0, L: 21.02, e: 1.5 } },
       ],
     },
+    // reconnaissances géotechniques LPEE (dossier 2025-110-01955), sondages pressiométriques SCP1 à SCP5 — abscisses depuis l'axe de C0 (X Lambert − 292 709,96)
+    geo: { source: 'LPEE — SCP-01 à SCP-05 PRO2334 (2026)', sondages: [
+      { sondage: 'SCP1', type: 'pressiométrique', appui: 'C0', pk: 0.0, z: 172.406, x: 292709.96, y: 316207.02, nappe: 0, fin: 11.2,
+        lithologie: [{ z: 0, desc: 'Remblai' }, { z: 1.0, desc: 'Schiste' }, { z: 2.8, desc: 'Schiste à passage quartzitique' }, { z: 7.0, desc: 'Quartzite' }],
+        essais: [{ z: 1.5, pf: 0.34, pl: 0.79, em: 8.1 }, { z: 3.0, pf: 2.13, pl: 2.50, em: 33.7 }, { z: 4.5, pl: 4.73, em: 71.6, sup: 1 }, { z: 6.0, pl: 4.98, em: 457.7, sup: 1 },
+          { z: 7.5, pl: 4.99, em: 406.9, sup: 1 }, { z: 9.0, pl: 5.01, em: 853.7, sup: 1 }, { z: 10.5, pl: 5.03, em: 423.6, sup: 1 }] },
+      { sondage: 'SCP2', type: 'pressiométrique', appui: 'P1', pk: 29.98, z: 171.751, x: 292739.94, y: 316208.34, nappe: 0, fin: 10.5,
+        lithologie: [{ z: 0, desc: 'Remblai' }, { z: 0.5, desc: 'Argile brunâtre' }, { z: 1.7, desc: 'Schiste fracturé, remplissage argileux' }, { z: 2.0, desc: 'Schiste quartzitique fracturé' }, { z: 3.0, desc: 'Quartzite' }],
+        essais: [{ z: 2.5, pf: 3.74, pl: 5.00, em: 116.5, sup: 1 }, { z: 4.0, pl: 4.97, em: 829.1, sup: 1 }, { z: 5.5, pl: 4.99, em: 1044.2, sup: 1 }, { z: 7.0, pl: 5.00, em: 1168.7, sup: 1 },
+          { z: 8.5, pl: 5.02, em: 1424.1, sup: 1 }, { z: 10.0, pl: 5.03, em: 2281.4, sup: 1 }] },
+      { sondage: 'SCP3', type: 'pressiométrique', appui: 'P2', pk: 81.59, z: 172.39, x: 292791.55, y: 316210.10, nappe: 0, fin: 15.0,
+        lithologie: [{ z: 0, desc: 'Remblai (grave, limon et sable)' }, { z: 2.7, desc: 'Alternance d’argile et schiste' }, { z: 7.2, desc: 'Schiste fracturé, joints d’argile' }],
+        essais: [{ z: 1.5, pf: 0.54, pl: 0.82, em: 6.1 }, { z: 3.0, pf: 1.15, pl: 3.18, em: 32.0 }, { z: 4.5, pl: 4.96, em: 124.7, sup: 1 }, { z: 6.0, pl: 3.94, em: 36.8, sup: 1 },
+          { z: 7.5, pl: 4.98, em: 120.6, sup: 1 }, { z: 9.0, pl: 5.01, em: 400.5, sup: 1 }, { z: 10.5, pl: 5.03, em: 379.3, sup: 1 }, { z: 12.0, pl: 5.03, em: 203.1, sup: 1 }, { z: 13.5, pl: 5.04, em: 132.6, sup: 1 }] },
+      { sondage: 'SCP4', type: 'pressiométrique', appui: 'P3', pk: 113.29, z: 172.26, x: 292823.25, y: 316212.01, nappe: 0, fin: 14.0,
+        lithologie: [{ z: 0, desc: 'Remblai' }, { z: 2.1, desc: 'Blocs de quartzite' }, { z: 2.3, desc: 'Schiste altéré' }, { z: 3.7, desc: 'Schiste fracturé dur' }],
+        essais: [{ z: 1.5, pf: 0.35, pl: 0.49, em: 3.2 }, { z: 3.0, pf: 0.63, pl: 1.08, em: 11.2 }, { z: 4.5, pl: 4.94, em: 75.5, sup: 1 }, { z: 6.0, pl: 4.98, em: 752.0, sup: 1 },
+          { z: 7.5, pl: 4.98, em: 300.4, sup: 1 }, { z: 9.0, pl: 5.01, em: 496.4, sup: 1 }, { z: 10.5, pl: 5.02, em: 345.7, sup: 1 }, { z: 12.0, pl: 5.05, em: 247.0, sup: 1 }, { z: 13.5, pl: 5.06, em: 295.8, sup: 1 }] },
+      { sondage: 'SCP5', type: 'pressiométrique', appui: 'C4', pk: 143.27, z: 171.021, x: 292853.23, y: 316213.33, nappe: 0, fin: 13.0,
+        lithologie: [{ z: 0, desc: 'Remblai (béton, tuf, argile, blocs)' }, { z: 2.0, desc: 'Schiste altéré argileux' }, { z: 5.0, desc: 'Schiste fracturé' }, { z: 6.5, desc: 'Schiste fracturé dur à la base' }],
+        essais: [{ z: 1.5, pf: 0.39, pl: 0.53, em: 3.9, sup: 1 }, { z: 4.5, pf: 2.13, pl: 3.57, em: 26.7 }, { z: 6.0, pf: 3.38, pl: 4.96, em: 107.0 }, { z: 7.5, pl: 4.98, em: 133.5, sup: 1 },
+          { z: 9.0, pl: 5.01, em: 180.9, sup: 1 }, { z: 10.5, pl: 5.02, em: 379.5, sup: 1 }, { z: 12.0, pl: 5.03, em: 438.2, sup: 1 }] },
+    ], reco: 'Essais à 1,50 m et 4,50 m de SCP5 : module affaibli par le remaniement ; éboulement à 3,00 m (SCP5). Nappe non rencontrée.' },
     fond: { piles: 'superficielle', culees: 'pieux', sigma: 1.45, diam: 1.2, long: 15 },
     equip: { retenue: 'BN4', corniches: true, etancheite: true, revetement: 0.06 },
     hyp: { betonTab: 'C40/50', betonApp: 'C30/37', betonFond: 'C30/37' },
@@ -60,7 +83,7 @@
     };
     S.fond = Object.assign({}, S.fond, { piles: o.fondPiles || 'superficielle', culees: o.fondCulees || 'pieux' });
     S.hyp = { betonTab: ppba ? 'C35/45' : 'C40/50', betonApp: 'C30/37', betonFond: 'C30/37' };
-    delete S.trace;
+    delete S.trace; delete S.geo;
     return S;
   }
   root.COMP = root.COMP || {};

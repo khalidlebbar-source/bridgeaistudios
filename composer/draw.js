@@ -180,12 +180,12 @@
     });
     const yT = 1.6 + mm(n > 1 ? 38 : 30);
     title(P, [Ltot / 2, yT], 'COUPE LONGITUDINALE', ech);
-    if (TR || (S.geo && S.geo.sondages && S.geo.sondages.length)) tracer(P, M, ZT, xL, xR, mm, ySeat);
+    if (TR || (S.geo && S.geo.sondages && S.geo.sondages.length)) tracer(P, M, ZT, xL, xR, mm, ySeat, tn);
     return { P, ech, titre: 'COUPE LONGITUDINALE — échelle 1/' + ech, abs: !!TR };
   }
 
   /* passage en altitudes réelles (cisaillement y += Z(x)) puis habillage : cotes, PHE, gabarit, sondages, guitare */
-  function tracer(P, M, ZT, xL, xR, mm, ySeat) {
+  function tracer(P, M, ZT, xL, xR, mm, ySeat, tn) {
     const TR = M.trace, S = M.S, t = S.trace, f2 = (v) => fr(v, 2);
     if (TR) {
       const sh = (q) => [q[0], q[1] + ZT(q[0])];
@@ -219,18 +219,29 @@
     }
     // sondages
     const SD = (S.geo && S.geo.sondages || []).filter((d) => Number.isFinite(+d.pk) && d.pk !== null && d.pk !== '' && Number.isFinite(+d.z) && +d.z !== 0);
+    const tnAtX = (x) => { if (!tn || !tn.length) return 0; if (x <= tn[0][0]) return tn[0][1]; for (let i = 0; i < tn.length - 1; i++) if (x <= tn[i + 1][0]) { const a = tn[i], b = tn[i + 1]; return a[1] + (b[1] - a[1]) * (x - a[0]) / Math.max(1e-9, b[0] - a[0]); } return tn[tn.length - 1][1]; };
     SD.forEach((d) => {
-      const x = (+d.pk) - (TR ? t.pk0 : 0), zt = +d.z, fin = +d.fin || Math.max(1, ...(d.lithologie || []).map((c) => +c.z || 0)), w = mm(2.2);
-      if (!TR) return;
+      let x = (+d.pk) - (TR ? t.pk0 : 0);
+      { // sondage au droit d'un appui : dessiné à côté, vers l'intérieur de l'ouvrage (repère d'implantation conservé)
+        const sp = M.supports.find((q) => Math.abs(q.x - x) < 3 + (q.fo && (q.fo.B || q.fo.Lx) ? (q.fo.B || q.fo.Lx) / 2 : 0));
+        if (sp) { const sg = sp.j === 0 ? 1 : sp.kind === 'culee' ? -1 : 1, x0 = x; x = sp.x + sg * (((sp.fo && (sp.fo.B || sp.fo.Lx)) || 3) / 2 + mm(16)); line(P, [x0, tnAtX(x0)], [x, tnAtX(x)], 'lead'); }
+      }
+      const zN = +d.z, fin = +d.fin || Math.max(1, ...(d.lithologie || []).map((c) => +c.z || 0)), w = mm(2.2);
+      // sans tracé : la tête du sondage est calée sur le terrain dessiné, les cotes NGM restent celles du sondage
+      const dz = TR ? 0 : tnAtX(x) - zN, zt = zN + dz, fz = (z) => f2(z - dz);
       rect(P, x - w / 2, zt, x + w / 2, zt - fin, 'sond');
       const L = (d.lithologie || []).slice().sort((a, b) => a.z - b.z);
       L.forEach((c, k) => {
         const z1 = zt - c.z, z2 = zt - (k + 1 < L.length ? L[k + 1].z : fin);
         if (k) line(P, [x - w / 2, z1], [x + w / 2 + mm(1.5), z1], 'note');
         text(P, [x + w / 2 + mm(1.2), (z1 + z2) / 2], String(c.desc || '').slice(0, 34), { ht: 1.5, anchor: 'start', dy: -0.5, lay: 'note' });
-        text(P, [x - w / 2 - mm(0.8), z1], f2(zt - c.z), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+        text(P, [x - w / 2 - mm(0.8), z1], fz(zt - c.z), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
       });
-      text(P, [x - w / 2 - mm(0.8), zt - fin], f2(zt - fin), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+      text(P, [x - w / 2 - mm(0.8), zt - fin], fz(zt - fin), { ht: 1.4, anchor: 'end', dy: -0.5, lay: 'note' });
+      // essais pressiométriques : pl* et EM (MPa) à chaque profondeur d'essai, cotés à gauche du sondage
+      (d.essais || []).forEach((e) => { const ze = zt - e.z; line(P, [x - w / 2, ze], [x - w / 2 - mm(1), ze], 'note'); text(P, [x - w / 2 - mm(9), ze], (e.sup ? '>' : '') + fr(e.pl, 2) + ' / ' + fr(+e.em || +e.EM || 0, 1), { ht: 1.5, anchor: 'end', dy: -0.45, lay: 'note' }); });
+      if ((d.essais || []).length) text(P, [x - w / 2 - mm(9), zt], 'pl (MPa) / EM (MPa)', { ht: 1.5, anchor: 'end', dy: 1.6, lay: 'note' });
+      text(P, [x, zt], 'Z = ' + f2(zN), { ht: 1.4, dy: 5.2, lay: 'note' });
       if (+d.nappe > 0) { const zn = zt - d.nappe; poly(P, [[x - mm(1.6), zn + mm(1.4)], [x + mm(1.6), zn + mm(1.4)], [x, zn]], 'eauF'); }
       text(P, [x, zt], d.sondage || 'S', { ht: 2.2, dy: 2, lay: 'titre', bold: true });
       yMin = Math.min(yMin, zt - fin);
