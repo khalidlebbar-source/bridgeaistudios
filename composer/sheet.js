@@ -173,29 +173,43 @@
     const nh = nb ? Math.min(nb.h, top - FY0) : 0;
     if (nb) s += `<clipPath id="nclip"><rect x="${cart[0]}" y="${top - nh}" width="${cart[2]}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>` + R(cart[0], top - nh, cart[2], nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5');
     s += okImg(ct.img) ? reserveA4(cart, ct.img) : cartoucheA4(cart, k, n);
-    const placeCol = (arr, x, w, y0, y1, scales) => {
-      const e = scales.find((e_) => { const hh = arr.map(([id, mk]) => size(mk, id, e_)); return hh.every((q) => q[0] <= w - 2) && hh.reduce((a, q) => a + q[1], 0) + GAP * (arr.length - 1) <= y1 - y0 - 2; }) || scales[scales.length - 1];
-      const hh = arr.map(([id, mk]) => size(mk, id, e)[1]), sp = Math.max(0, (y1 - y0) - hh.reduce((a, b) => a + b, 0) - GAP * (arr.length - 1)) / Math.max(1, arr.length);
-      let y = y0; arr.forEach(([id, mk, tag], q) => { const h = hh[q] + sp; s += place(mk, [x, y, w, Math.min(h, y1 - y0)], [e], id, opt, tag).svg; y += h + GAP; });
+    // mise en page : les blocs sont calculés à leur échelle, puis centrés entre le cadre et le cartouche, espaces répartis
+    const X0 = FX0 + 4, X1 = cart[0] - GAP - 4, Y0 = FY0 + 4, Y1 = FY1 - 4, AW = X1 - X0, AH = Y1 - Y0;
+    const put = (mk, id, tag, e, x, y, w, h) => { s += place(mk, [x, y, w, h], [e], id, opt, tag).svg; };
+    const colSize = (arr, e) => { const q = arr.map(([id, mk]) => size(mk, id, e)); return [Math.max(0, ...q.map((v) => v[0])), q.reduce((a, v) => a + v[1], 0) + GAP * Math.max(0, arr.length - 1), q]; };
+    const drawCol = (arr, e, x, w, y, h) => {   // pile verticale centrée dans [x, x+w] × [y, y+h], espaces égaux
+      const q = arr.map(([id, mk]) => size(mk, id, e)), tot = q.reduce((a, v) => a + v[1], 0), g = Math.max(GAP, (h - tot) / (arr.length + 1));
+      let yy = y + Math.max(0, (h - tot - g * (arr.length - 1)) / 2);
+      arr.forEach(([id, mk, tag], k_) => { put(mk, id, tag, e, x, yy, w, q[k_][1]); yy += q[k_][1] + g; });
     };
     if (k === 1) {
-      const cols = [L, Mid].concat(P_.one ? [Rr] : []).filter((c) => c.length);
-      const need = Math.max(P_.hL, P_.one ? P_.hR : 0);
-      const hLong = Math.max(0.17 * (FY1 - FY0), Math.min(0.40 * (FY1 - FY0), FY1 - FY0 - need - GAP));
-      s += place((e) => C.elevScene(M, { ech: e }), [FX0, FY0, mw, hLong], ECH.long, 'zl', opt, 'travees').svg;
-      const y1 = FY0 + hLong + GAP;
-      const wM = Mid.length ? Math.max(...Mid.map(([id, mk]) => size(mk, id, 20)[0])) + 6 : 0;
-      const wR = P_.one ? Math.max(...Rr.map(([id, mk]) => size(mk, id, 50)[0])) + 4 : 0;
-      const wL = mw - wM - wR - GAP * (cols.length - 1);
-      let x = FX0;
-      placeCol(L, x, wL, y1, FY1, ECH.sec); x += wL + GAP;
-      if (Mid.length) { placeCol(Mid, x, wM, y1, FY1, [20, 25, 30, 40, 50]); x += wM + GAP; }
-      if (P_.one) placeCol(Rr, x, wR, y1, FY1, ECH.sec);
+      const cols = [[L, ECH.sec], [Mid, [20, 25, 30, 40, 50]]].concat(P_.one ? [[Rr, ECH.sec]] : []).filter((c) => c[0].length);
+      // échelles des coupes : la plus grande qui tient en largeur, puis en hauteur avec la coupe longitudinale au minimum
+      const longH = (e) => size((e_) => C.elevScene(M, { ech: e_ }), 'zl', e);
+      const eLong = ECH.long.find((e) => { const [w, h] = longH(e); return w <= AW && h <= 0.36 * AH; }) || ECH.long[ECH.long.length - 1];
+      const [wLo, hLo] = longH(eLong);
+      const choose = () => {
+        for (const eS of ECH.sec) for (const eB of [20, 25, 30, 40, 50]) {
+          const sz = cols.map(([arr, sc]) => colSize(arr, sc === ECH.sec ? eS : eB));
+          const w = sz.reduce((a, v) => a + v[0], 0) + 3 * GAP * (sz.length - 1), h = Math.max(...sz.map((v) => v[1]));
+          if (w <= AW && h + hLo + 3 * GAP <= AH) return { eS, eB, sz, w, h };
+        }
+        const sz = cols.map(([arr, sc]) => colSize(arr, sc === ECH.sec ? 50 : 50));
+        return { eS: 50, eB: 50, sz, w: sz.reduce((a, v) => a + v[0], 0) + 3 * GAP * (sz.length - 1), h: Math.max(...sz.map((v) => v[1])) };
+      };
+      const ch = choose(), free = Math.max(0, AH - hLo - ch.h), gv = free / 3;
+      put((e) => C.elevScene(M, { ech: e }), 'zl', 'travees', eLong, X0 + (AW - wLo) / 2, Y0 + gv, wLo, hLo);
+      const yR = Y0 + gv + hLo + gv, gh = cols.length > 1 ? Math.max(3 * GAP, (AW - ch.sz.reduce((a, v) => a + v[0], 0)) / (cols.length + 1)) : 0;
+      let x = X0 + (AW - ch.sz.reduce((a, v) => a + v[0], 0) - gh * (cols.length - 1)) / 2;
+      cols.forEach(([arr, sc], q) => { drawCol(arr, sc === ECH.sec ? ch.eS : ch.eB, x, ch.sz[q][0], yR, ch.h); x += ch.sz[q][0] + gh; });
     } else {
-      // planche 2 : coupes sur culées côte à côte (ou l'une sous l'autre si elles ne tiennent pas en largeur)
-      const side = Rr.length > 1 && Rr.every(([id, mk]) => size(mk, id, 50)[0] <= (mw - GAP) / 2 - 2);
-      if (side) Rr.forEach((r, q) => placeCol([r], FX0 + q * ((mw + GAP) / 2), (mw - GAP) / 2, FY0 + 10, FY1, ECH.sec));
-      else placeCol(Rr, FX0, mw, FY0 + 10, FY1, ECH.sec);
+      // planche 2 : coupes sur culées, centrées
+      const eS = ECH.sec.find((e) => { const q = Rr.map(([id, mk]) => size(mk, id, e)); return q.reduce((a, v) => a + v[0], 0) + 4 * GAP <= AW && Math.max(...q.map((v) => v[1])) <= AH; });
+      if (eS) {
+        const q = Rr.map(([id, mk]) => size(mk, id, eS)), tw = q.reduce((a, v) => a + v[0], 0), g = (AW - tw) / (Rr.length + 1);
+        const hM = Math.max(...q.map((v) => v[1])), yT = Y0 + (AH - hM) / 2;   // titres alignés
+        let x = X0 + g; Rr.forEach(([id, mk, tag], k_) => { put(mk, id, tag, eS, x, yT, q[k_][0], q[k_][1]); x += q[k_][0] + g; });
+      } else { const [w] = colSize(Rr, 50); drawCol(Rr, 50, X0 + (AW - w) / 2, w, Y0, AH); }
     }
     return s + '</svg>';
   }
