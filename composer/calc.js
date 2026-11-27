@@ -52,9 +52,9 @@
     VIPP: {
       nom: 'VIPP', titre: 'Poutres préfabriquées précontraintes par post-tension', famille: 'poutres', iso: true, cont: false, contDef: false,
       dom: { route: [30, 50], rail: [25, 45] },
-      lam: { route: { iso: 16 }, rail: { iso: 13 } },
+      lam: { route: { iso: 16 }, rail: { iso: 16 } },
       hmin: { route: 1.5, rail: 1.9 }, ratio: { route: 120, rail: 130 }, ratioH: { route: 160, rail: 180 }, prec: { route: 50, rail: 55 },
-      ref: 'SETRA, guide VIPP (1996) : L/16 à L/18 — plans KLE PRO2334 : 2,28 + 0,24 = 2,52 m pour 40 m.',
+      ref: 'SETRA, guide VIPP (1996) : L/16 à L/18 — plans KLE PRO2334 (pont-rail LGV) : 2,28 + 0,24 = 2,52 m pour 40 m, soit L/16.',
     },
     PRAD: {
       nom: 'PRAD', titre: 'Poutres précontraintes par adhérence', famille: 'poutres', iso: true, cont: false, contDef: false,
@@ -224,7 +224,7 @@
     out.culees.dalleTransition = !!out.culees.dalleTransition;
     // dimensions imposées par l'utilisateur (0 ou vide : valeur automatique)
     const dims = (o, keys, max) => { const d = {}; keys.forEach((k) => { const v = num(o && o[k], 0); if (v > 0) d[k] = Math.min(v, max[k] || 30); }); return d; };
-    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'bc', 'sp', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, bc: 6, sp: 10, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
+    out.piles.dim = dims(out.piles.dim, ['e', 'e1', 'Lv', 'nl', 'fruit', 'D', 'bc', 'sp', 'cp', 'n', 'hch', 'bch', 'Lch', 'a', 'bf', 'h2'], { n: 12, D: 4, bc: 6, sp: 10, cp: 40, e: 5, e1: 5, a: 6, hch: 5, bch: 8, Lch: 40, Lv: 40, h2: 5, nl: 3, fruit: 25 });
     out.piles.bout = ['droit', 'arrondi', 'pointu'].includes(out.piles.bout) ? out.piles.bout : 'droit';
     out.piles.grp = [1, 2, 3].includes(+out.piles.grp) ? +out.piles.grp : 1;
     out.piles.face = ['A', 'B', 'C'].includes(out.piles.face) ? out.piles.face : (out.piles.dim.fruit > 0 ? 'B' : 'A');
@@ -696,7 +696,7 @@
         let sp = ov('sp', r05(bD + 0.60));                                            // entraxe des deux fûts d'une paire (vide 0,60 m)
         const c = np > 1 ? (2 * cMax - sp) / (np - 1) : 0;
         if (np > 1 && c - sp < bD + 0.3) sp = Math.max(bD + 0.3, (2 * cMax - (np - 1) * (bD + 0.3)) / np);
-        const c2 = np > 1 ? (2 * cMax - sp) / (np - 1) : 0;
+        const c2 = np > 1 ? ov('cp', (2 * cMax - sp) / (np - 1)) : 0;                // entraxe des paires (ex. tabliers jumeaux PRO2334 : 10,52)
         pos = []; for (let k = 0; k < np; k++) { const xc = -(np - 1) * c2 / 2 + k * c2; pos.push(xc - sp / 2, xc + sp / 2); }
         s = sp;
       } else { s = nc > 1 ? (Lc - 2 * ax) / (nc - 1) : 0; pos = Array.from({ length: nc }, (_, i) => -(nc - 1) * s / 2 + i * s); }

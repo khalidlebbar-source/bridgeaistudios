@@ -533,13 +533,15 @@
         text(P, [0, yb], 'barbacanes Ø100 tous les 1,50 m', { ht: 1.8, dy: 3, lay: 'note' });
       }
       const f = ref.fo;
-      const ytn = yft + 0.6, half = Math.max(W / 2, (f.mode === 'pieux' ? f.Ly : f.L) / 2) + 1.5;
+      const ytn = yft + 0.6, half = Math.max(W / 2, (f.mode === 'pieux' ? f.Ly : f.L) / 2 + (f.split ? Math.max(...f.split.centers.map(Math.abs)) : 0)) + 1.5;
       let yLow;
       if (f.mode === 'superficielle') {
-        rect(P, -f.L / 2, yft, f.L / 2, yft - f.e, 'beton');
-        rect(P, -f.L / 2 - 0.1, yft - f.e, f.L / 2 + 0.1, yft - f.e - 0.1, 'prop');
-        dim(P, [-f.L / 2, yft - f.e - 0.1], [f.L / 2, yft - f.e - 0.1], 'h', -6, frn(f.L));
-        dim(P, [f.L / 2, yft], [f.L / 2, yft - f.e], 'v', 6, frn(f.e));
+        (f.split ? f.split.centers : [0]).forEach((c0, i) => {
+          rect(P, c0 - f.L / 2, yft, c0 + f.L / 2, yft - f.e, 'beton');
+          rect(P, c0 - f.L / 2 - 0.1, yft - f.e, c0 + f.L / 2 + 0.1, yft - f.e - 0.1, 'prop');
+          dim(P, [c0 - f.L / 2, yft - f.e - 0.1], [c0 + f.L / 2, yft - f.e - 0.1], 'h', -6, frn(f.L));
+          if (!i) dim(P, [c0 + f.L / 2, yft], [c0 + f.L / 2, yft - f.e], 'v', 6, frn(f.e));
+        });
         yLow = yft - f.e - 0.1;
       } else {
         const Lv = Math.min(f.Lp, 4), cs = f.split ? f.split.centers : [0];
@@ -866,14 +868,14 @@
     vuB: 'fill:#ececec;stroke:#2b2b2b;stroke-width:.8',
     vuL: 'fill:#fbfaf6;stroke:#3a3a3a;stroke-width:.7',
     cornE: 'fill:#8a8a8a;stroke:#2b2b2b;stroke-width:.6',
-    gcF: 'fill:none;stroke:#7048e8;stroke-width:.6',
+    gcF: 'fill:none;stroke:#3b5bdb;stroke-width:.6',
     vuT: 'fill:none;stroke:#4a4a4a;stroke-width:.6',
     col: 'fill:url(#ID-c);stroke:#2b2b2b;stroke-width:.8',
     acier: 'fill:#9fb3cc;stroke:#1f3a5f;stroke-width:.9',
     acierL: 'fill:none;stroke:#1f3a5f;stroke-width:1.3;stroke-dasharray:6 3',
     vu: 'fill:none;stroke:#6f6f6f;stroke-width:.7;stroke-dasharray:4 2.5',
-    axe: 'fill:none;stroke:#d6336c;stroke-width:.7;stroke-dasharray:14 3 2 3',
-    tn: 'fill:none;stroke:#2b2b2b;stroke-width:1.1',
+    axe: 'fill:none;stroke:#e100e1;stroke-width:.7;stroke-dasharray:14 3 2 3',      // axes magenta (plans KLE)
+    tn: 'fill:none;stroke:#2f9e44;stroke-width:1.1',                                 // terrain naturel vert (plans KLE)
     sol: 'fill:none;stroke:none',
     remblai: 'fill:none;stroke:none',
     perre: 'fill:none;stroke:#8a6a2a;stroke-width:2.4;stroke-dasharray:3 2',
@@ -885,8 +887,8 @@
     rev: 'fill:#9b9b9b;stroke:#444;stroke-width:.4',
     etan: 'fill:none;stroke:#111;stroke-width:1.4',
     four: 'fill:#fff;stroke:#1e1e1e;stroke-width:.6',
-    gc: 'fill:none;stroke:#7048e8;stroke-width:1.5;stroke-linecap:round',
-    gcR: 'fill:#d0bfff;stroke:#7048e8;stroke-width:.8',
+    gc: 'fill:none;stroke:#3b5bdb;stroke-width:1.5;stroke-linecap:round',
+    gcR: 'fill:#c5d0fa;stroke:#3b5bdb;stroke-width:.8',
     equip: 'fill:#d8dde4;stroke:#3d4a5c;stroke-width:.8',
     trottoir: 'fill:#dde3ea;stroke:#3d4a5c;stroke-width:.8',
     ballast: 'fill:url(#ID-g);stroke:#6e6455;stroke-width:.7',
@@ -943,7 +945,7 @@
               dd += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
               for (let t = sp / 2; t < L; t += sp) { const x = x1 + (x2 - x1) * t / L, y = y1 + (y2 - y1) * t / L; dd += `M${x.toFixed(1)} ${y.toFixed(1)}l${(-tl * 0.7).toFixed(1)} ${(tl * 0.7).toFixed(1)}`; }
             }
-            if (dd) out.push(`<path d="${dd}" style="fill:none;stroke:#3a3a3a;stroke-width:.5"/>`);
+            if (dd) out.push(`<path d="${dd}" style="fill:none;stroke:#2f9e44;stroke-width:.5"/>`);
           }
         } else if (p.k === 'text') {
           const fs = p.ht * kp;

@@ -126,7 +126,7 @@
       // fondation
       const f = s.fo;
       mat = 'fond';
-      if (f.mode === 'superficielle') box(xf - f.B / 2, xf + f.B / 2, -f.L / 2, f.L / 2, yft, yft - f.e);
+      if (f.mode === 'superficielle') (f.split ? f.split.centers : [0]).forEach((cy) => box(xf - f.B / 2, xf + f.B / 2, cy - f.L / 2, cy + f.L / 2, yft, yft - f.e));
       else {
         const zb = f.e === 0 ? (g.sommier ? ySeat - g.sommier.h : yft) : yft - f.e;
         const cys = f.split ? f.split.centers : [0];

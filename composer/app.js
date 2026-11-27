@@ -11,7 +11,15 @@
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const show = (v) => (v === 0 || v ? String(v).replace('.', ',') : '');
 
-  let S = load() || C.normalize(C.defaults('route'));
+  /* à l'ouverture, le projet vitrine (PRO2334, KLE) s'affiche toujours en premier ; le dernier projet du visiteur reste disponible (« Reprendre ») */
+  const PREVKEY = 'bas-composer-precedent';
+  const VIT = C.vitrine ? C.normalize(C.vitrine) : null;
+  const prevS = load();
+  if (VIT && prevS && prevS.projet && prevS.projet.nom !== VIT.projet.nom) { try { localStorage.setItem(PREVKEY, JSON.stringify(prevS)); } catch (e) { /* stockage indisponible */ } }
+  const keepPrev = /[?&]reprendre\b/.test(location.search);
+  let S = (keepPrev && (prevS || loadPrev())) || VIT || prevS || C.normalize(C.defaults('route'));
+  const vitShown = !!VIT && S === VIT;
+  function loadPrev() { try { const t = localStorage.getItem(PREVKEY); return t ? C.normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
   let M = null, view = 'plan', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
   const openT = [];
   const expanded = new Set(['tablier', 'travees', 'appuis']);
@@ -1836,6 +1844,18 @@
   recompute(true);
   try { if (JSON.parse(localStorage.getItem(UIKEY) || '{}').ai) aiShow(true); } catch (e) { /* idem */ }
   window.addEventListener('resize', placePop);
-  /* première visite (ou lien …?nouveau) : on propose l’assistant de création */
-  if ((firstVisit && !/[?&]demo\b/.test(location.search)) || /[?&]nouveau\b/.test(location.search)) setTimeout(() => run('new'), 150);
+  /* lien …?nouveau : assistant de création (la vitrine reste affichée à l'ouverture) */
+  void firstVisit;
+  if (/[?&]nouveau\b/.test(location.search)) setTimeout(() => run('new'), 150);
+  { const pv = vitShown ? loadPrev() : null;
+    if (pv) {
+      const d = document.createElement('div');
+      d.className = 'reprise';
+      d.innerHTML = `<span>Projet présenté : <b>${esc(VIT.projet.nom)}</b> (KLE Ingénierie).</span> <button type="button">Reprendre mon projet « ${esc(pv.projet.nom)} »</button><button type="button" aria-label="Fermer">×</button>`;
+      const [b1, b2] = d.querySelectorAll('button');
+      b1.onclick = () => { S = pv; d.remove(); recompute(true); };
+      b2.onclick = () => d.remove();
+      document.body.appendChild(d);
+      setTimeout(() => d.remove(), 20000);
+    } }
 })();
