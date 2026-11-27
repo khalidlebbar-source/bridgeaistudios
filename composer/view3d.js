@@ -15,7 +15,7 @@
 
   function build3D(M) {
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
-    const ySeat = -(h + 0.30);
+    const ySeat = -(h + C.seatDrop(M.S, M.W));
     let tag = null, mat = 'beton';
     const face = (p) => F.push({ p, mat, tag });
     /* parallélépipède [x0, x1] × [y0, y1] × [z0, z1] */
@@ -65,7 +65,7 @@
 
     // ── appuis ──
     M.supports.forEach((s) => {
-      const g = s.geo, yft = ySeat - s.H;
+      const g = s.geo; let yS = ySeat, yft = ySeat - s.H;
       tag = s.id; mat = 'beton';
       let xf = s.x;
       if (s.kind === 'pile') {
@@ -80,7 +80,13 @@
               for (let i = 0; i < pts.length; i++) { const a = pts[i], c = pts[(i + 1) % pts.length]; face([[x0, a[0], a[1]], [x1, a[0], a[1]], [x1, c[0], c[1]], [x0, c[0], c[1]]]); }
             };
             ex(s.x - b / 2, s.x + b / 2);
-          } else if (M.sec.jumeaux) { const j = M.sec.joint / 2; box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, -j, ySeat, ySeat - g.ch.h); box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, j, g.ch.L / 2, ySeat, ySeat - g.ch.h); }
+          } else if (M.sec.jumeaux || g.redan) {   // chevêtre par demi-tablier, redans en sous-face (plans KLE)
+            const j = M.sec.jumeaux ? M.sec.joint / 2 : 0, rd = g.redan, yR = ySeat - g.ch.h + (rd ? rd.h : 0), yB = ySeat - g.ch.h;
+            (j ? [[-g.ch.L / 2, -j], [j, g.ch.L / 2]] : [[-g.ch.L / 2, g.ch.L / 2]]).forEach(([a, b2]) => {
+              const pts = rd ? [[a, ySeat], [a, yR], [a + rd.l, yR], [a + rd.l, yB], [b2 - rd.l, yB], [b2 - rd.l, yR], [b2, yR], [b2, ySeat]] : [[a, ySeat], [a, yB], [b2, yB], [b2, ySeat]];
+              extrude(pts, s.x - g.ch.b / 2, s.x + g.ch.b / 2);
+            });
+          }
           else box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, g.ch.L / 2, ySeat, ySeat - g.ch.h);
           zTop = ySeat - g.ch.h;
         }
@@ -98,6 +104,29 @@
         else (f.pos || Array.from({ length: f.n }, (_, i) => -(f.n - 1) * f.s / 2 + i * f.s)).forEach((y) => { if (f.sec && f.sec !== 'circ' && f.sec !== 'ellip') box(s.x - f.D / 2, s.x + f.D / 2, y - (f.b || f.D) / 2, y + (f.b || f.D) / 2, zTop, yft); else cyl(s.x, y, f.D, yft, zTop); });
       } else {
         const o = s.j === 0 ? -1 : 1;
+        if (g.type === 'enterree' && g.tal > 0) {
+          // culée des plans KLE : extrusion du profil (garde-grève à nez, sommier à talon, dalle de transition sur le talon,
+          // murs en retour suspendus à sous-face inclinée), découpée au joint des tabliers jumelés
+          const R = C.culeeProfil(s), X = (u) => s.x + o * u, z0 = -g.hgg, j = M.sec.jumeaux ? M.sec.joint / 2 : 0;
+          yS = z0; yft = z0 - s.H;
+          const halves = (L) => (j ? [[-L / 2, -j], [j, L / 2]] : [[-L / 2, L / 2]]);
+          const extY = (pts, y0, y1) => {
+            const Q = pts.map((q) => [X(q[0]), z0 + q[1]]);
+            face(Q.map((q) => [q[0], y0, q[1]])); face(Q.slice().reverse().map((q) => [q[0], y1, q[1]]));
+            for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; face([[a[0], y0, a[1]], [c[0], y0, c[1]], [c[0], y1, c[1]], [a[0], y1, a[1]]]); }
+          };
+          const em = g.retours.e || 0.5, Ls = g.sommier.L || W;
+          const dtSpans = j ? [[-W / 2 + em + 0.80, -j - 0.20], [j + 0.20, W / 2 - em - 0.80]] : [[-W / 2 + em + 0.80, W / 2 - em - 0.80]];
+          R.cut.forEach((c) => {
+            mat = c.lay === 'prop' ? 'fond' : 'beton';
+            const spans = c.role === 'som' ? halves(Ls) : c.role === 'gg' ? halves(W) : dtSpans;
+            spans.forEach(([a, b2]) => extY(c.pts, a, b2));
+          });
+          mat = 'beton';
+          R.seen.filter((c) => c.role === 'mr').forEach((c) => { extY(c.pts, W / 2 - em, W / 2); extY(c.pts, -W / 2, -W / 2 + em); });
+          xf = X(R.uc);
+          if (g.colonnes) (g.colonnes.pos || Array.from({ length: g.colonnes.n }, (_, i) => -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s)).forEach((y) => { if (g.colonnes.section === 'circ') cyl(xf, y, g.colonnes.D, yft, z0 - g.sommier.h); else { const b = g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D; box(xf - g.colonnes.D / 2, xf + g.colonnes.D / 2, y - b / 2, y + b / 2, z0 - g.sommier.h, yft); } });
+        } else {
         const front = s.x + o * (dab + 0.05), back = front + o * g.egg;
         if (g.egg > 0) box(front, back, -W / 2, W / 2, 0, ySeat);          // garde-grève
         let zr0;
@@ -124,13 +153,15 @@
           else [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * Lw / 2, sg * (Lw / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
         }
         if (g.dt) box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70);
+        }
       }
       // fondation
       const f = s.fo;
       mat = 'fond';
-      if (f.mode === 'superficielle') (f.split ? f.split.centers : [0]).forEach((cy) => box(xf - f.B / 2, xf + f.B / 2, cy - f.L / 2, cy + f.L / 2, yft, yft - f.e));
+      if (f.mode === 'superficielle' && s.kind === 'culee' && M.sec.jumeaux && !f.split) { const j = M.sec.joint / 2; box(xf - f.B / 2, xf + f.B / 2, -f.L / 2, -j, yft, yft - f.e); box(xf - f.B / 2, xf + f.B / 2, j, f.L / 2, yft, yft - f.e); if (g.gros > 0) box(xf - f.B / 2 - 0.5, xf + f.B / 2 + 0.5, -f.L / 2 - 0.5, f.L / 2 + 0.5, yft - f.e, yft - f.e - g.gros); }
+      else if (f.mode === 'superficielle') (f.split ? f.split.centers : [0]).forEach((cy) => box(xf - f.B / 2, xf + f.B / 2, cy - f.L / 2, cy + f.L / 2, yft, yft - f.e));
       else {
-        const zb = f.e === 0 ? (g.sommier ? ySeat - g.sommier.h : yft) : yft - f.e;
+        const zb = f.e === 0 ? (g.sommier ? yS - g.sommier.h : yft) : yft - f.e;
         const cys = f.split ? f.split.centers : [0];
         if (f.e > 0) cys.forEach((cy) => box(xf - f.Lx / 2, xf + f.Lx / 2, cy - f.Ly / 2, cy + f.Ly / 2, yft, zb));
         mat = 'pieu';
@@ -183,10 +214,10 @@
       const d = 'M' + o.pr.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
       const t = o.fc.tag ? ` data-tag="${o.fc.tag}"` : '';
       const on = sel && o.fc.tag === sel;
-      if (opt.wire) return `<path${t} d="${d}" fill="none" stroke="${on ? '#e8590c' : '#33415a'}" stroke-width="${on ? 1.4 : 0.6}"/>`;
+      if (opt.wire) return `<path${t} d="${d}" fill="none" stroke="${on ? '#1f5fd1' : '#33415a'}" stroke-width="${on ? 1.4 : 0.6}"/>`;
       const c = MAT[o.fc.mat] || MAT.beton, k = 0.62 + 0.38 * o.lam;
-      const rgb = on ? [Math.min(255, 250 * k), Math.min(255, 170 * k), Math.min(255, 120 * k)] : c.map((v) => Math.min(255, v * k));
-      return `<path${t} d="${d}" fill="rgb(${rgb.map(Math.round).join(',')})" stroke="${on ? '#c2410c' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
+      const rgb = c.map((v, i) => Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)));   // sélection : léger voile bleu, couleurs conservées
+      return `<path${t} d="${d}" fill="rgb(${rgb.map(Math.round).join(',')})" stroke="${on ? '#1f5fd1' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
     }).join('');
     // trièdre
     const ax = (v) => { const X = v[0], Y = v[1], Z = v[2]; const x1 = X * cyw - Y * syw, y1 = X * syw + Y * cyw; return [x1 * 22, -(Z * cp + y1 * sp) * 22]; };

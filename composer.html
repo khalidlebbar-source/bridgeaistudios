@@ -151,12 +151,12 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .canvas.drag{cursor:grabbing}
 #svgHost svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .canvas [data-tag]{cursor:pointer}
-.canvas path[data-tag]:hover{stroke:var(--acc) !important}
-.canvas path[data-tag].sel{stroke:#e8590c !important;stroke-width:2.2 !important}
-.canvas text[data-tag].sel{fill:#e8590c !important}
+.canvas path[data-tag]:hover{filter:drop-shadow(0 0 1.2px #1f5fd1)}
+.canvas path[data-tag].sel{filter:drop-shadow(0 0 1.6px #1f5fd1)}   /* sélection : halo, les couleurs du plan sont conservées */
+.canvas text[data-tag].sel{filter:drop-shadow(0 0 1.2px #1f5fd1)}
 .canvas svg.sheet{background:#8a919c}
 .canvas svg.sheet text[data-tag]{cursor:pointer}
-.canvas svg.sheet svg path[data-tag].sel{stroke-width:1.6 !important}
+
 .axes{position:absolute;left:10px;bottom:8px;pointer-events:none;width:46px;height:46px}
 .vinfo{position:absolute;left:10px;top:8px;pointer-events:none;font-size:11px;color:var(--mute);text-align:right;background:rgba(255,255,255,.85);padding:2px 4px;border-radius:2px}
 .hsplit{cursor:row-resize;background:var(--chrome);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
@@ -555,18 +555,18 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <input type="file" id="fCart" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" class="sr">
 <div id="print" aria-hidden="true"></div>
 
-<script src="composer/calc.js?v=36"></script>
-<script src="composer/draw.js?v=40"></script>
+<script src="composer/calc.js?v=38"></script>
+<script src="composer/draw.js?v=42"></script>
 <script src="composer/sheet.js?v=28"></script>
 <script src="composer/dxf.js?v=15"></script>
-<script src="composer/view3d.js?v=21"></script>
+<script src="composer/view3d.js?v=22"></script>
 <script src="composer/analysis.js?v=13"></script>
 <script src="composer/diag.js?v=13"></script>
 <script src="composer/voice.js?v=13"></script>
 <script src="composer/nlp.js?v=14"></script>
 <script src="composer/justif.js?v=13"></script>
 <script src="composer/wizard.js?v=14"></script>
-<script src="composer/vitrine.js?v=4"></script>
-<script src="composer/app.js?v=36"></script>
+<script src="composer/vitrine.js?v=5"></script>
+<script src="composer/app.js?v=37"></script>
 </body>
 </html>

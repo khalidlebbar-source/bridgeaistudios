@@ -205,6 +205,8 @@
     if (!T.iso) out.tablier.continu = true;
     out.tablier.dalleContinuite = out.tablier.dalleContinuite !== false;
     out.tablier.jumeaux = !!out.tablier.jumeaux;
+    out.tablier.dab = out.tablier.dab > 0 ? clamp(num(out.tablier.dab, 0.6), 0.3, 2) : undefined;
+    out.tablier.hp = out.tablier.hp > 0 ? clamp(num(out.tablier.hp, 0), 0.5, 5) : undefined;
     out.tablier.joint = clamp(num(out.tablier.joint, 0.02), 0.01, 2);
     out.tablier.pos = Array.isArray(out.tablier.pos) ? out.tablier.pos.map((v) => num(v, NaN)).filter(Number.isFinite).slice(0, 40).sort((a, b) => a - b) : null;
     if (out.tablier.pos && out.tablier.pos.length < 2) out.tablier.pos = null;
@@ -236,7 +238,7 @@
     out.piles.col = ['circ', 'carre', 'rect', 'octo', 'ellip'].includes(out.piles.col) ? out.piles.col : 'circ';
     out.piles.paires = !!out.piles.paires;
     out.piles.vform = out.piles.vform === 'Y' ? 'Y' : 'V';
-    const CK = ['egg', 'D', 'bc', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb', 'h2r', 'Ldt'], CM = { D: 4, bc: 4, n: 24, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8, h2r: 5, Ldt: 8 };
+    const CK = ['egg', 'D', 'bc', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb', 'h2r', 'Ldt', 'tal', 'nez'], CM = { tal: 1.5, nez: 0.6, D: 4, bc: 4, n: 24, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8, h2r: 5, Ldt: 8 };
     out.culees.dim = dims(out.culees.dim, CK, CM);
     const posA = (a) => (Array.isArray(a) ? a.map((v) => num(v, NaN)).filter(Number.isFinite).slice(0, 30) : null);
     out.culees.pos = posA(out.culees.pos); out.culees.pieuxPos = posA(out.culees.pieuxPos);
@@ -802,6 +804,10 @@
     delete cu.par;
     return Object.assign({}, S, { culees: cu, fond: Object.assign({}, S.fond, p.fond ? { culees: p.fond } : {}) });
   }
+  /* about du tablier (axe des appareils → extrémité) et descente sous le tablier jusqu'à l'arase des appuis :
+     route : bossage + appareil .20 sous la poutre de rive, abaissée par le dévers en toit 2,5 % (plans KLE) ; rail : .30 */
+  function aboutD(S) { return S.tablier && S.tablier.dab > 0 ? S.tablier.dab : 0.6; }
+  function seatDrop(S, W) { return S.usage === 'rail' ? 0.30 : 0.20 + 0.025 * Math.max(0, W / 2 - 0.75); }
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
     const rail = S.usage === 'rail', t = S.culees.type, parts = [], dm = S.culees.dim || {};
     const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
@@ -810,9 +816,9 @@
     const dtOn = !!S.culees.dalleTransition && !rail, ggOn = t !== 'enterree' || S.culees.gg !== false;
     const dispo = ggOn ? (dtOn ? 4 : 2) : (dtOn ? 3 : 1);
     const avecGG = dispo === 2 || dispo === 4, avecDT = (dispo === 3 || dispo === 4) && !rail;
-    const egg = avecGG ? ov('egg', rail ? 0.40 : 0.30) : 0, hgg = h + 0.30;
+    const egg = avecGG ? ov('egg', rail ? 0.40 : 0.30) : 0, hgg = h + seatDrop(S, W);
     const bt = (iso ? 2.6 : 1.6) + (rail ? 0.2 : 0);
-    const dab = 0.6;
+    const dab = aboutD(S);
     if (avecGG) parts.push({ des: 'Mur garde-grève ' + fr(egg, 2) + ' × ' + fr(hgg, 2) + ' m', V: egg * hgg * W, coff: 2 * hgg * W + 2 * egg * hgg, ratio: 120 });
     const Ht = H + hgg;
     let lx, ly = W, sommier = null, mur = null, colonnes = null, retours, Bmin = 0, gros = 0, nervure = null;
@@ -891,7 +897,9 @@
       parts.push({ des: 'Corbeau d’appui de dalle', V: 0.30 * 0.30 * W, coff: 0.6 * W, ratio: 120 });
     }
     const Vrem = W * Ht * Math.max(3, 0.6 * Ht) * (t === 'enterree' ? 0.5 : 1);
-    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote, Bmin, gros, pat: dm.pat > 0 ? dm.pat : 0, dispo, nervure };
+    // talon du sommier derrière le garde-grève (appui de la dalle de transition) et nez du garde-grève — plans KLE (PRO2334 C0)
+    const tal = t === 'enterree' && sommier ? (dm.tal > 0 ? dm.tal : 0) : 0, nez = egg > 0 && dm.nez > 0 ? dm.nez : 0;
+    return { type: t, H, Ht, hgg, egg, dab, sommier, mur, colonnes, retours, dt, parts, lx, ly, V: sum(parts.map((p) => p.V)), Vrem, cote, Bmin, gros, pat: dm.pat > 0 ? dm.pat : 0, dispo, nervure, tal, nez };
   }
 
 
@@ -900,8 +908,27 @@
      le dessus de la fondation est en z = −H, le dessus du tablier en z = hgg.
      Renvoie les contours coupés (cut) et vus (seen), l'emprise de la fondation [u0, u1] et son centre uc. */
   function culeeProfil(sp) {
-    const g = sp.geo, f = sp.fo, H = sp.H, hgg = g.hgg, ug = g.dab + 0.05, ub = ug + g.egg;
-    const cut = [], seen = [], P = (a, pts, lay) => a.push({ pts, lay });
+    const g = sp.geo, f = sp.fo, H = sp.H, hgg = g.hgg, nez = g.nez || 0, ug = g.dab + 0.05 + nez, ub = ug + g.egg, tal = g.tal || 0;
+    const cut = [], seen = [], P = (a, pts, lay, role) => a.push({ pts, lay, role });
+    if (tal > 0) {
+      // plans KLE : garde-grève à nez (.60 en tête, chanfrein .20), sommier prolongé d'un talon derrière le garde-grève,
+      // dalle de transition posée sur ce talon (pente 5 %), mur en retour suspendu à sous-face inclinée jusqu'à l'arrière du sommier
+      const so = g.sommier, bs = so.b, hs = so.h, ut = ub + tal;
+      P(cut, nez > 0 ? [[ug - nez, hgg], [ub, hgg], [ub, 0], [ug, 0], [ug, hgg - 0.80], [ug - nez, hgg - 0.60]] : [[ug, hgg], [ub, hgg], [ub, 0], [ug, 0]], 'beton', 'gg');
+      P(cut, [[ut - bs, 0], [ut, 0], [ut, -hs], [ut - bs, -hs]], 'beton', 'som');
+      if (g.dt) {
+        const L = g.dt.L, d = 0.05 * L;
+        P(cut, [[ub, 0.30], [ub + L, 0.30 - d], [ub + L, -d], [ub, 0]], 'beton', 'dt');
+        P(cut, [[ut, -0.05 * tal], [ub + L, -d], [ub + L, -d - 0.08], [ut, -0.05 * tal - 0.08]], 'prop', 'prop');
+      }
+      const uc = f.mode === 'pieux' && !(f.e > 0) ? 0 : ut - bs / 2, B = f.mode === 'pieux' ? (f.e > 0 ? f.Lx : 0) : f.B;
+      const nv = g.nervure, zc = nv ? -H + nv.h : -H;
+      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, zc], [uc - g.colonnes.D / 2, zc]], g.colonnes.section !== 'circ' ? 'vuB' : 'col');
+      const rt = g.retours;
+      if (rt.mode === 'AV') P(seen, [[ut - bs, 0], [ut, 0], [ut, hgg], [ut - bs, hgg]], 'vuL', 'mr');
+      else if (rt.mode !== 'aucun') P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ut, -hs]], 'vuL', 'mr');
+      return { cut, seen, u0: uc - B / 2, u1: uc + B / 2, uc, ug, ub, uf: null, uE: null, hgg, back: [[ut, -hs]], B, tal, ut };
+    }
     if (g.dt && g.egg > 0) {
       P(cut, [[ug, hgg], [ub, hgg], [ub, hgg - 0.40], [ub + 0.30, hgg - 0.40], [ub + 0.30, hgg - 0.70], [ub, hgg - 0.85], [ub, 0], [ug, 0]], 'beton');
       const L = g.dt.L, d = 0.05 * L;
@@ -1066,7 +1093,7 @@
       }
     }
     const iso = !cont;
-    const dab = 0.6, Ldeck = Ltot + 2 * dab;
+    const dab = aboutD(S), Ldeck = Ltot + 2 * dab;
     const surf = W * Ltot;
     if (cont && n > 2) {
       const Lint = Math.max.apply(null, tr.slice(1, -1)), rr = Math.max(tr[0], tr[n - 1]) / Lint;
@@ -1284,7 +1311,7 @@
 
   return {
     fr, frn, TYPES, TYPE_KEYS, CLASSES_BETON, hypDefaults, PILES, CULEES, PRIX, HEB, ELASTO,
-    defaults, normalize, compute, typeStatus, predimH, profilEnTravers, lrAt, xyAt, tnAt, normTrace, culeeProfil,
+    defaults, normalize, compute, seatDrop, aboutD, typeStatus, predimH, profilEnTravers, lrAt, xyAt, tnAt, normTrace, culeeProfil,
     _int: { eta, etaInt, axleMax, lm71, sw2, area, coffLen, appareil, kCont },
   };
 });

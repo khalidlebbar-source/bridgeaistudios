@@ -41,14 +41,22 @@
   /* titre de vue à la manière des plans KLE : « COUPE TRANSVERSALE » souligné, « Ech : 1/50 » dessous */
   const title = (P, p, s, ech) => P.push({ k: 'title', p, s, sub: 'Ech:1/' + ech });
   /* repère avec ligne d'attache */
-  const leader = (P, from, to, s, anchor) => { line(P, from, to, 'lead'); text(P, to, s, { ht: 2.6, anchor: anchor || 'start', dy: 0.6, lay: 'note' }); };
+  let curEch = 50;   // échelle de la scène en cours (taille des flèches de repère)
+  /* repère à la manière des plans : flèche pleine sur l'objet, trait, épaulement horizontal, texte */
+  const leader = (P, from, to, s, anchor) => {
+    const k = curEch / 1000, sd = anchor === 'end' ? -1 : 1, dx = from[0] - to[0], dy = from[1] - to[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const ah = 1.8 * k, aw = 0.4 * k, sh = [to[0] + sd * 3 * k, to[1]];
+    line(P, from, to, 'lead'); line(P, to, sh, 'lead');
+    poly(P, [from, [from[0] - ux * ah - uy * aw, from[1] - uy * ah + ux * aw], [from[0] - ux * ah + uy * aw, from[1] - uy * ah - ux * aw]], 'arrowF');
+    text(P, [sh[0] + sd * 0.8 * k, sh[1]], s, { ht: 2.6, anchor: anchor || 'start', dy: -0.9, lay: 'note' });
+  };
 
   /* ───────── Élévation (coupe longitudinale) ───────── */
   function elevScene(M, o) {
     const P = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, S = M.S;
     const ech = (o && o.ech) || pickScale(Ltot + 2 * dab + 24, 400, [50, 100, 150, 200, 250, 500, 1000, 2000]);
     const mm = (v) => v * ech / 1000;
-    const ySeat = -(h + 0.30);
+    const ySeat = -(h + C.seatDrop(M.S, M.W));
     const T = M.T, fam = T.famille, rail = S.usage === 'rail';
     const yInner = fam === 'poutres' ? -sec.info.eh : fam === 'mixte' ? -sec.info.hs : null;
 
@@ -376,7 +384,7 @@
       for (let k = 0; k < bx.length - 1; k++) {
         const xa = bx[k] + i.btab / 2, xb = bx[k + 1] - i.btab / 2;
         if (sec.jumeaux && bx[k] < 0 && bx[k + 1] > 0) continue;
-        if (xb - xa > 0.1) rect(P, xa - 0.06, -i.eh, xb + 0.06, -i.eh - 0.06, 'pred');
+        if (xb - xa > 0.1) rect(P, xa - 0.06, -i.eh, xb + 0.06, -i.eh + 0.06, 'pred');   // prédalle posée sur les tables (appui .060), dans l'épaisseur du hourdis
       }
     }
     const lc = sec.jumeaux ? (S.tablier.lcentre || 1.02) : 0;
@@ -440,37 +448,38 @@
       }
       [-1, 1].forEach((o) => {
         const xe = o * W / 2, tw = o < 0 ? tG : tD, xin = o < 0 ? x1 : x2, hc = S.equip.corniches ? 0.25 : 0;
-        // corniche préfabriquée (sombre, arrondie) au nu extérieur
+        // corniche préfabriquée arrondie, débordant du nu (BLE) et enveloppant la rive du hourdis — plan KLE
+        const ht = 0.24, xe2 = xe;
         if (S.equip.corniches) {
-          const c = [[xe - o * 0.25, 0.30], [xe - o * 0.25, -0.05], [xe, -0.05]];
-          for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + k * Math.PI / 8; c.push([xe + o * 0.17 * Math.cos(a), 0.125 + 0.175 * Math.sin(a)]); }
-          poly(P, c.concat([[xe, 0.30]]), 'corn');
-          poly(P, [[xe, -0.05], [xe, -0.18], [xe + o * 0.04, -0.20]], 'corn', false);
+          const c = [[xe2 - o * 0.23, ht]];
+          for (let k = 0; k <= 14; k++) { const a = (80 - k * 170 / 14) * Math.PI / 180; c.push([xe2 + o * (0.05 + 0.27 * Math.cos(a)), -0.05 + 0.30 * Math.sin(a)]); }
+          c.push([xe2, -0.35], [xe2, 0], [xe2 - o * 0.23, 0]);
+          poly(P, c, 'corn');
         }
-        // trottoir : bloc d'ancrage de la barrière (orange), fourreaux, longrine de relevage L.R
-        if (tw > hc + 0.05) {
-          const xa = xe - o * hc, ht = 0.24;
-          rect(P, xa, 0, xin, ht, 'vuB');
-          rect(P, xa, 0.0, xa - o * 0.30, ht, 'equip');
-          const nf = Math.max(1, Math.min(4, Math.floor((Math.abs(xin - xa) - 0.55) / 0.19)));
-          for (let k = 0; k < nf; k++) circ(P, xa - o * (0.48 + k * 0.19), ht / 2, 0.065, 'four');
-          rect(P, xin, 0, xin + o * 0.07, 0.10, 'corn');
-          leader(P, [xin + o * 0.05, 0.10], [xin + o * 0.75, 0.75], 'L.R', o < 0 ? 'start' : 'end');
+        // trottoir : bloc d'ancrage BN4 (orange hachuré), fourreaux, longrine de relevage L.R
+        if (tw > 0.7) {
+          const xa = xe2 - o * 0.23, xo = xe2 - o * 0.65;
+          rect(P, xo, 0, xin + o * 0.12, ht, 'vuB');
+          rect(P, xa, 0, xo, ht, 'orH');
+          const nf = Math.max(1, Math.min(4, Math.floor((Math.abs(xin - xo) - 0.35) / 0.22)));
+          for (let k = 0; k < nf; k++) circ(P, xo - o * (0.17 + k * 0.22), ht / 2, 0.065, 'four', 18);
+          rect(P, xin + o * 0.12, 0, xin, ht, 'lr');
+          leader(P, [xin + o * 0.03, ht * 0.7], [xin + o * 0.55, ht + 0.75], 'L.R', o < 0 ? 'start' : 'end');
         }
-        const yb = tw > hc + 0.05 ? 0.24 : 0;
-        if (S.equip.retenue === 'BN4') {               // barrière BN4 sur son bloc d'ancrage
-          const xp = xe - o * (hc + 0.15);
-          poly(P, [[xp, yb], [xp, yb + 1.0], [xp - o * 0.10, yb + 1.0], [xp - o * 0.16, yb + 0.20], [xp, yb + 0.20]], 'gcN', false);
-          [0.45, 0.65, 0.85].forEach((z) => rect(P, xp - o * 0.03, yb + z - 0.03, xp - o * 0.09, yb + z + 0.03, 'gcN'));
-          leader(P, [xp - o * 0.05, yb + 0.95], [xp - o * 0.5, yb + 1.35], 'BN4', o < 0 ? 'start' : 'end');
+        const yb = tw > 0.7 ? ht : 0;
+        if (S.equip.retenue === 'BN4') {               // barrière BN4 : poteau sur le bloc d'ancrage, entretoises côté chaussée
+          const xb0 = xe2 - o * 0.27, xp = xe2 - o * 0.52, yt = yb + 1.0;
+          poly(P, [[xb0, yb], [xp, yb], [xp, yt], [xp + o * 0.12, yt]], 'bn4');
+          [0.30, 0.55, 0.80].forEach((z) => rect(P, xp, yb + z - 0.035, xp - o * 0.07, yb + z + 0.035, 'bn4'));
+          rect(P, xp + o * 0.02, yt - 0.02, xp - o * 0.07, yt + 0.04, 'bn4');
+          leader(P, [xp - o * 0.03, yb + 0.70], [xp - o * 0.65, yb + 1.25], 'BN4', o < 0 ? 'start' : 'end');
         } else if (S.equip.retenue === 'GBA') {
           const xp = xin - o * 0.30;
           poly(P, [[xp - 0.30, yb], [xp + 0.30, yb], [xp + 0.12, yb + 0.25], [xp + 0.08, yb + 0.80], [xp - 0.08, yb + 0.80], [xp - 0.12, yb + 0.25]], 'beton');
         }
-        // garde-corps BLE sur la corniche
-        const xg = xe - o * 0.03;
-        poly(P, [[xg, 0.30], [xg, 1.95], [xg + o * 0.07, 2.18]], 'gc', false);
-        leader(P, [xg, 1.70], [xg - o * 0.55, 2.10], 'BLE', o < 0 ? 'start' : 'end');
+        // garde-corps BLE (montant double) sur la corniche, tête inclinée vers l'extérieur
+        [0, 0.035].forEach((d) => poly(P, [[xe2 - o * d, ht], [xe2 - o * d, ht + 1.95], [xe2 + o * (0.10 - d), ht + 2.18]], 'ble', false));
+        leader(P, [xe2 - o * 0.02, ht + 1.55], [xe2 - o * 0.55, ht + 1.95], 'BLE', o < 0 ? 'start' : 'end');
       });
       top = 2.3;
     }
@@ -527,10 +536,10 @@
       }
       // prédalle cotée (deuxième travée de prédalles depuis la gauche)
       if (bx.length > 2 && part === 'tablier') {
-        const i = sec.info, xa = bx[1] + i.btab / 2, xb = bx[2] - i.btab / 2, yp = -i.eh - 0.06 + dyx((xa + xb) / 2) - 0.25;
+        const i = sec.info, xa = bx[1] + i.btab / 2, xb = bx[2] - i.btab / 2, yp = -i.eh + dyx((xa + xb) / 2) - 0.35;
         dim(P, [xa - 0.06, yp], [xa, yp], 'h', 0, f3(0.06)); dim(P, [xa, yp], [xb, yp], 'h', 0, f3(xb - xa)); dim(P, [xb, yp], [xb + 0.06, yp], 'h', 0, f3(0.06));
         dim(P, [xa - 0.06, yp - 0.35], [xb + 0.06, yp - 0.35], 'h', 0, f3(xb - xa + 0.12));
-        dim(P, [bx[0] + i.btab / 2 + 0.3, -i.eh + dyx(bx[0] + i.btab / 2 + 0.3)], [bx[0] + i.btab / 2 + 0.3, -i.eh - 0.06 + dyx(bx[0] + i.btab / 2 + 0.3)], 'v', 0, f3(0.06));
+        dim(P, [bx[0] + i.btab / 2 + 0.3, -i.eh + 0.06 + dyx(bx[0] + i.btab / 2 + 0.3)], [bx[0] + i.btab / 2 + 0.3, -i.eh + dyx(bx[0] + i.btab / 2 + 0.3)], 'v', 0, f3(0.06));
       }
     }
     tagFrom(P, iEq, 'equip');
@@ -851,6 +860,31 @@
         line(P, [0, fl.yl - 0.5], [0, yb + hd + 0.8], 'axe');
         tagFrom(P, 0, id);
         title(P, [0, yb + hd + 2.2], 'COUPE LONGITUDINALE À L’AXE — ' + nm, 50);
+      } else if (C.culeeProfil(sp).tal > 0) {
+        // coupe longitudinale des plans KLE (PRO2334 C0) : remblai à gauche, garde-grève à nez, sommier à talon,
+        // dalle de transition posée sur le talon, appareil, pieu ou poteau — cotes du plan
+        curEch = 50;
+        const R = C.culeeProfil(sp), X = (q) => [-q[0], q[1]], so = g.sommier, hs = so.h, hgg = g.hgg, hE = S.usage === 'rail' ? hgg : hgg - 0.025 * M.W / 2;
+        R.cut.forEach((c) => poly(P, c.pts.map(X), c.lay === 'prop' ? 'vuT' : 'beton'));
+        const uF = R.ut - so.b, nz = g.nez || 0;
+        rect(P, -0.30, 0, 0.30, 0.06, 'vuB'); rect(P, -0.20, 0.06, 0.20, 0.12, 'vuB'); rect(P, -0.30, 0.12, 0.30, 0.18, 'vuB');   // appareil
+        if (f.mode === 'pieux') { const Lv = 6.0; rect(P, -f.D / 2, -hs, f.D / 2, -hs - Lv, 'col'); const yw = -hs - Lv * 0.58;
+          [1, -1].forEach((sg) => P.push({ k: 'poly', pts: Array.from({ length: 17 }, (_, n) => [-f.D / 2 + n * f.D / 16, yw + sg * 0.11 * Math.abs(Math.sin(n * Math.PI / 8))]), lay: 'brkO', closed: false }));
+          dim(P, [-f.D / 2, yw + 1.1], [f.D / 2, yw + 1.1], 'h', 0, 'Ø' + frn(f.D)); dim(P, [-uF + 2.2, -hs], [-uF + 2.2, -hs - Lv], 'v', 0, 'H_PIEUX=' + fr(f.Lp, 0) + 'm'); }
+        else if (g.colonnes) { rect(P, -(R.uc) - g.colonnes.D / 2, -hs, -(R.uc) + g.colonnes.D / 2, -sp.H, 'vuB'); }
+        line(P, [0, hgg - 1.3], [0, -hs - 8], 'axeC');
+        const xR = -uF + 6.5, f2 = (v) => (Math.round(v * 100 + 1e-6) / 100).toFixed(2).replace(/^0\./, '.');
+        dim(P, [xR, hgg], [xR, 0], 'v', 0, 'VAR : ' + f2(hE) + ' à ' + f2(hgg)); dim(P, [xR, 0], [xR, -hs], 'v', 0, frn(hs));
+        const yT = hgg + 0.5;
+        dim(P, [-R.ub, hgg], [-(R.ug - nz), hgg], 'h', (yT - hgg) * 20, frn(R.ub - R.ug + nz)); dim(P, [-(R.ug - nz), hgg], [0, hgg], 'h', (yT - hgg) * 20, frn(R.ug - nz));
+        if (nz > 0) { dim(P, [-(R.ug - nz) + 0.6, hgg], [-(R.ug - nz) + 0.6, hgg - 0.60], 'v', 0, frn(0.60)); dim(P, [-(R.ug - nz) + 0.6, hgg - 0.60], [-(R.ug - nz) + 0.6, hgg - 0.80], 'v', 0, frn(0.20)); }
+        if (g.dt) { const L = g.dt.L; dim(P, [-R.ub - L, 0.30 - 0.05 * L], [-R.ub, 0.30], 'h', 18, frn(L)); dim(P, [-R.ub - L - 0.8, 0.30 - 0.05 * L], [-R.ub - L - 0.8, -0.05 * L], 'v', 0, frn(0.30)); }
+        const ch = [-R.ut, -R.ub, -R.ug, 0, -uF].sort((p_, q_) => p_ - q_), yc = -0.25;
+        for (let k = 0; k < ch.length - 1; k++) dim(P, [ch[k], 0], [ch[k + 1], 0], 'h', (yc - 0) * 20, frn(ch[k + 1] - ch[k]));
+        if (f.mode === 'pieux') { const c2 = [-R.ut, -f.D / 2, 0, f.D / 2, -uF]; for (let k = 0; k < c2.length - 1; k++) dim(P, [c2[k], -hs], [c2[k + 1], -hs], 'h', -0.4 * 20, frn(c2[k + 1] - c2[k])); }
+        dim(P, [-R.ut, -hs], [-uF, -hs], 'h', -1.6 * 20, frn(so.b));
+        P.push({ k: 'title', p: [-R.ub, hgg + 2.4], s: 'COUPE LONGITUDINALE', sub: 'Ech:1/50' });
+        tagFrom(P, 0, id);
       } else {
         const o = sp.j === 0 ? -1 : 1, R = C.culeeProfil(sp), X = (u) => o * u, Q = (q) => [X(q[0]), q[1] + H];
         const rt = g.retours, hgg = g.hgg, so = g.sommier, hs = so.h, yTop = H + hgg, rem = g.type === 'remblayee';
@@ -1027,7 +1061,33 @@
       if (rt.mode !== 'aucun') {
         const P = [];
         const src = R.seen.find((c) => c.lay === 'vuL');
-        if (src) {
+        if (src && R.tal > 0) {
+          // élévation côté bas comme sur le plan KLE : remblai à gauche (u → −u), mur suspendu, garde-grève et sommier coupés
+          curEch = 50;
+          const hgg0 = hgg, hE = S.usage === 'rail' ? hgg0 : hgg0 - 0.025 * M.W / 2;   // hauteur à la rive (dévers) : 2.72 sur le plan
+          const X = (q) => [-q[0], q[1] > hgg0 - 1.0 ? q[1] - (hgg0 - hE) : q[1]], hs = g.sommier.h;
+          { const hgg = hE, f2m = (v) => (Math.round(v * 100 + 1e-6) / 100).toFixed(2).replace(/^0\./, '.');   // cotes à la rive
+          poly(P, src.pts.map(X), 'vuT');
+          R.cut.filter((c) => c.role === 'gg' || c.role === 'som').forEach((c) => poly(P, c.pts.map(X), 'beton'));
+          const uL = R.ub + rt.L, z2 = hgg - (rt.h2 || 0.9);
+          rect(P, -0.6, -hs, 0.6, -hs - 3.2, 'col'); line(P, [0, hgg - 1.2], [0, -hs - 3.6], 'axeC');
+          const yT = hgg + 0.45;
+          dim(P, [-uL, hgg], [-R.ub, hgg], 'h', (yT - hgg) * 20, f2m(rt.L)); dim(P, [-R.ub, hgg], [-(R.ug - (g.nez || 0)), hgg], 'h', (yT - hgg) * 20, f2m(R.ub - R.ug + (g.nez || 0))); dim(P, [-(R.ug - (g.nez || 0)), hgg], [0, hgg], 'h', (yT - hgg) * 20, f2m(R.ug - (g.nez || 0)));
+          dim(P, [-uL, hgg], [-uL, z2], 'v', -6, f2m(hgg - z2)); dim(P, [-uL, z2], [-uL, -hs], 'v', -6, f2m(z2 + hs));
+          const xr = R.bs !== undefined ? 0 : 0; void xr;
+          const xd = -(R.ut - g.sommier.b) + 2.2;
+          dim(P, [xd, hgg], [xd, 0], 'v', 0, f2m(hgg)); dim(P, [xd, 0], [xd, -hs], 'v', 0, f2m(hs)); dim(P, [xd + 1.2, hgg], [xd + 1.2, -hs], 'v', 0, f2m(hgg + hs));
+          P.push({ k: 'title', p: [-uL / 2, hgg + 2.0], s: 'MUR EN RETOUR : ELEVATION COTE BAS', sub: 'Ech:1/50' });
+          // coupe type : voile .50, tête avec bloc d'ancrage et corniche
+          const cx = xd + 4.5, e = rt.e, yb = -hs;
+          poly(P, [[cx, yb], [cx + e, yb], [cx + e, hgg], [cx + e + 0.15, hgg], [cx + e + 0.15, hgg + 0.31], [cx - 0.26, hgg + 0.31], [cx - 0.26, hgg - 0.49], [cx, hgg - 0.49]], 'beton');
+          rect(P, cx - 0.26, hgg, cx + 0.15, hgg + 0.31, 'orH');
+          dim(P, [cx, yb], [cx + e, yb], 'h', -5, f2m(e)); dim(P, [cx + e + 0.15, yb], [cx + e + 0.15, hgg], 'v', 5, f2m(hgg - yb));
+          dim(P, [cx - 0.26, hgg + 0.31], [cx - 0.26, hgg], 'v', -5, f2m(0.31)); dim(P, [cx - 0.26, hgg], [cx - 0.26, hgg - 0.49], 'v', -5, f2m(0.49)); dim(P, [cx, hgg - 0.49], [cx, yb], 'v', -9, f2m(hgg - 0.49 - yb));
+          P.push({ k: 'title', p: [cx + e / 2, hgg + 2.0], s: 'MUR EN RETOUR : COUPE TYPE', sub: 'Ech:1/50' });
+          out.mr = { P, ech: 50, titre: 'Mur en retour : élévation et coupe type' };
+          }
+        } else if (src) {
           const pts = src.pts.map((q) => [q[0], q[1] + H]);
           poly(P, pts, 'beton');
           const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
@@ -1070,13 +1130,18 @@
   const STY = {
     beton: 'fill:url(#ID-b);stroke:#1a1a1a;stroke-width:1.1',
     prefa: 'fill:#cdcdcd;stroke:#1a1a1a;stroke-width:1.1',
-    pred: 'fill:#9a9a9a;stroke:#4d4d4d;stroke-width:.5',
+    pred: 'fill:url(#ID-d);stroke:#1a1a1a;stroke-width:.6',
     vuB: 'fill:#ffffff;stroke:#1e1e1e;stroke-width:.8',
     vuL: 'fill:#fbfaf6;stroke:#3a3a3a;stroke-width:.7',
     cornE: 'fill:#8a8a8a;stroke:#2b2b2b;stroke-width:.6',
     gcF: 'fill:none;stroke:#2020ff;stroke-width:.6',
     vuT: 'fill:none;stroke:#4a4a4a;stroke-width:.6',
     rep: 'fill:none;stroke:#e8590c;stroke-width:1.6',
+    arrowF: 'fill:#000;stroke:#000;stroke-width:.3',
+    orH: 'fill:url(#ID-o);stroke:#1a1a1a;stroke-width:.7',
+    ble: 'fill:none;stroke:#2020ff;stroke-width:1.1',
+    bn4: 'fill:#fff;stroke:#666;stroke-width:.7',
+    lr: 'fill:url(#ID-k);stroke:#1a1a1a;stroke-width:.7',
     pente: 'fill:none;stroke:#ff0000;stroke-width:.9',
     rain: 'fill:none;stroke:#7b2fbe;stroke-width:.9',
     brkO: 'fill:none;stroke:#e8590c;stroke-width:.9',
@@ -1194,7 +1259,7 @@
             if (y2 - y1 > 2.2 * ah) out.push(`<path d="${arr(xa, y1, 0, -1)}${arr(xa, y2, 0, 1)}" class="da"/>`);
             else out.push(`<path d="${arr(xa, y1, 0, 1)}${arr(xa, y2, 0, -1)}" class="da"/><path d="M${xa.toFixed(1)} ${(y1 - 2 * ah).toFixed(1)}V${(y2 + 2 * ah).toFixed(1)}" class="dl"/>`);
             g(xa, y1); g(xa, y2);
-            const w = String(p.s).length * fs * 0.55, ym = w < y2 - y1 - 1 ? (y1 + y2) / 2 : y1 - w / 2 - 2, xt = xa - 1.6;
+            const w = String(p.s).length * fs * 0.55, ym = w < y2 - y1 - 1 ? (y1 + y2) / 2 : y2 + w / 2 + 2, xt = xa - 1.6;
             g(xt - fs, ym - w / 2); g(xt, ym + w / 2);
             out.push(`<text x="${xt.toFixed(1)}" y="${ym.toFixed(1)}" font-size="${fs.toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${xt.toFixed(1)} ${ym.toFixed(1)})" class="dt">${esc(p.s)}</text>`);
           }
@@ -1212,7 +1277,7 @@
     const e = r.ext, vw = e[2] - e[0] + 2 * pad, vh = e[3] - e[1] + 2 * pad;
     const pat = (k, size, bg, ln, w, rot) => `<pattern id="${id}-${k}" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot == null ? 45 : rot})"><rect width="${size}" height="${size}" fill="${bg}"/><line x1="0" y1="0" x2="0" y2="${size}" stroke="${ln}" stroke-width="${w}"/></pattern>`;
     const defs = '<defs>' + pat('b', 6, '#ffffff', '#9a9a9a', 0.6) + pat('p', 5, '#e8ebf0', '#a9b1bd', 0.7) + pat('d', 3, '#d9d9d9', '#888', 0.6, -45)
-      + pat('h', 8, '#f7f3e8', '#cdbb8e', 0.9) + pat('w', 9, '#ffffff', '#a6a6a6', 0.8) + `<pattern id="${id}-s" width="34" height="22" patternUnits="userSpaceOnUse"><rect width="34" height="22" fill="#fff"/><path d="M2 4l8-2 6 4-2 7-9 1-4-5zM18 3l9 0 4 6-5 5-8-2zM6 14l8 1 3 6-9 1-4-4zM20 14l8 1 4 5-7 2-6-3z" fill="none" stroke="#9a9a9a" stroke-width=".7"/></pattern>`
+      + pat('h', 8, '#f7f3e8', '#cdbb8e', 0.9) + pat('w', 9, '#ffffff', '#a6a6a6', 0.8) + pat('o', 5, '#f6c27a', '#e07b00', 0.8) + pat('k', 3, '#6e6e6e', '#3a3a3a', 0.6) + `<pattern id="${id}-s" width="34" height="22" patternUnits="userSpaceOnUse"><rect width="34" height="22" fill="#fff"/><path d="M2 4l8-2 6 4-2 7-9 1-4-5zM18 3l9 0 4 6-5 5-8-2zM6 14l8 1 3 6-9 1-4-4zM20 14l8 1 4 5-7 2-6-3z" fill="none" stroke="#9a9a9a" stroke-width=".7"/></pattern>`
       + `<pattern id="${id}-g" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#d8d0bf"/><circle cx="1.5" cy="1.5" r=".9" fill="#8d8170"/><circle cx="4.5" cy="4" r=".7" fill="#a59a88"/></pattern>`
       + `<linearGradient id="${id}-c" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#8f8f8f"/><stop offset=".35" stop-color="#f4f4f4"/><stop offset=".55" stop-color="#e2e2e2"/><stop offset="1" stop-color="#7d7d7d"/></linearGradient>`
       + `<style>text{font-family:Arial,Helvetica,sans-serif;fill:#000}.dx{stroke:#ff0000;stroke-width:.45;fill:none}.dl{stroke:#ff0000;stroke-width:.6;fill:none}.da{fill:#000;stroke:none}.dt{fill:#000}.tt{letter-spacing:.04em}</style></defs>`;
@@ -1228,7 +1293,7 @@
     o = o || {};
     const S = M.S, sec = M.sec, i = sec.info || {};
     if (!i.btab || S.tablier.type !== 'VIPP') return null;
-    const ech = o.ech || 20, ap = o.where === 'appui', P = [];
+    const ech = o.ech || 20, ap = o.where === 'appui', P = []; curEch = ech;
     const H = S.tablier.hp || rnd2(i.hb + 0.02), B = 1.50, dv = 0.02;          // hauteur à l'axe, demi-dévers sur la table
     const yTL = H - dv, yTR = H + dv, yL = yTL - 0.12, yR = yTR - 0.12;           // dessus et sous-face des bords de table
     const xgL = -B / 2 + 0.525, xgR = B / 2 - 0.503, ygL = yL - 0.05, ygR = yR - 0.07;

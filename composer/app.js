@@ -763,7 +763,7 @@
   }
   function draw3D() {
     const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
-    $('#svgHost').innerHTML = C.render3D(model3, cam3, { width: w, height: h, wire, sel: tagOf(selId) });
+    $('#svgHost').innerHTML = C.render3D(model3, cam3, { width: w, height: h, wire, sel: picked ? tagOf(selId) : null });
   }
   function applyVB() { const el = $('#svgHost svg'); if (el && view !== '3d') el.setAttribute('viewBox', vb.map((v) => v.toFixed(2)).join(' ')); }
   function applySel() {
@@ -883,7 +883,7 @@
     renderView(); renderRibbon();
   }
   let lastGraphic = 'plan';
-  function setView(v) { view = v; if (!v.startsWith('t:')) lastGraphic = v; renderView(); renderRibbon(); }
+  function setView(v) { if (v !== view) picked = false; view = v; if (!v.startsWith('t:')) lastGraphic = v; renderView(); renderRibbon(); }
 
   /* ───────── Justification : chaîne des modules du site (méthodologie KLE, parties B à F) ───────── */
   const JZ = { key: null, sum: null, err: null, busy: false, map: null, id: 0, worker: null, cb: {} };
