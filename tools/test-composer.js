@@ -122,5 +122,14 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   ['circ', 'carre', 'rect', 'octo', 'ellip'].forEach((c) => { const S = C.defaults('route'); S.travees = [25, 30, 25]; S.piles.type = 'colonnes'; Object.assign(S.piles, { col: c, paires: c === 'carre' }); chk(S); });
   ok(ok_, 'bibliothèque d’appuis (culées KLE et PP73, 9 voiles PP73, 5 sections de colonnes) sans valeur invalide');
 }
+{ // deux tabliers jumelés avec joint longitudinal
+  const S = C.defaults('route'); S.travees = [30, 40, 30]; S.tablier.type = 'VIPP'; S.profil.roulable = 17; S.tablier.jumeaux = true; S.tablier.joint = 0.02;
+  const Mx = C.compute(C.normalize(S)), j = Mx.sec.joint / 2;
+  const sep = Mx.sec.polys.every((pg) => { const xs = pg.pts.map((q) => q[0]); return Math.max(...xs) <= j + 1e-9 ? Math.max(...xs) <= -j + 1e-9 || Math.min(...xs) >= -j - 1e-9 : Math.min(...xs) >= j - 1e-9; });
+  const v = [C.toSVG(C.elevScene(Mx), { id: 'e' }), C.toSVG(C.planScene(Mx), { id: 'p' }), C.toSVG(C.secScene(Mx, { part: 'pile' }), { id: 's' }), C.toSVG(C.secScene(Mx, { part: 'culee' }), { id: 'c' })];
+  ok(Mx.sec.jumeaux && sep && Mx.sec.bear.length % 2 === 0 && !v.some(bad), 'deux tabliers jumelés : section coupée au joint, poutres par demi-tablier, vues valides');
+  const Mv = C.compute(C.normalize(require('../composer/vitrine.js').vitrine));
+  ok(Mv.sec.jumeaux && Math.abs(Mv.sec.joint - 0.02) < 1e-9, 'vitrine PRO2334 : 2 tabliers jumelés, joint 0,02');
+}
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');
 process.exit(fails ? 1 : 0);

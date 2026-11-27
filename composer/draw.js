@@ -297,6 +297,7 @@
     if (tg > 0) { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab + (Ltot + 2 * dab) * i / k, W / 2 - tg)); poly(P, A, 'vuT', false); }
     if (td > 0) { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab + (Ltot + 2 * dab) * i / k, -W / 2 + td)); poly(P, A, 'vuT', false); }
     { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab - 10 + (Ltot + 2 * dab + 20) * i / k, 0)); poly(P, A, 'axe', false); }
+    if (M.sec.jumeaux) [-1, 1].forEach((sg) => { const A = [], k = 40; for (let i = 0; i <= k; i++) A.push(at(-dab + (Ltot + 2 * dab) * i / k, sg * Math.max(M.sec.joint / 2, 0.05))); poly(P, A, 'vuT', false); });   // joint longitudinal entre tabliers jumelés
     tagFrom(P, i0, 'tablier');
     // appuis
     M.supports.forEach((sp) => {
@@ -353,16 +354,25 @@
     sec.polys.forEach((p) => poly(P, p.pts, p.mat === 'acier' ? 'acier' : (p.role === 'poutre' ? 'prefa' : 'beton')));
     if (fam === 'poutres' && sec.info.btab) {        // prédalles entre tables de poutres
       const i = sec.info;
-      for (let k = 0; k < sec.nbPoutres - 1; k++) {
-        const xa = i.x0 + k * sec.entraxe + i.btab / 2, xb = i.x0 + (k + 1) * sec.entraxe - i.btab / 2;
+      const bx = sec.bear;
+      for (let k = 0; k < bx.length - 1; k++) {
+        const xa = bx[k] + i.btab / 2, xb = bx[k + 1] - i.btab / 2;
+        if (sec.jumeaux && bx[k] < 0 && bx[k + 1] > 0) continue;
         if (xb - xa > 0.1) rect(P, xa - 0.04, -i.eh, xb + 0.04, -i.eh - 0.06, 'pred');
       }
+    }
+    if (sec.jumeaux) {   // joint longitudinal entre tabliers jumelés
+      line(P, [0, 0.6], [0, -h - 0.4], 'axe');
+      const jj = sec.joint / 2;
+      rect(P, -jj - 0.30, 0.12, -jj, 0.40, 'equip'); rect(P, jj, 0.12, jj + 0.30, 0.40, 'equip');   // longrines au centre (bord des tabliers)
+      leader(P, [0, -0.1], [1.4, 1.2], 'joint ' + frn(sec.joint)); leader(P, [-jj - 0.15, 0.40], [-1.6, 1.4], 'Longrine au centre', 'end');
     }
     tagFrom(P, 0, 'tablier');
     if (fam === 'poutres') {                          // entretoise d'about vue
       const i = sec.info;
-      for (let k = 0; k < sec.nbPoutres - 1; k++) {
-        const xa = i.x0 + k * sec.entraxe + i.b0 / 2, xb = i.x0 + (k + 1) * sec.entraxe - i.b0 / 2;
+      for (let k = 0; k < sec.bear.length - 1; k++) {
+        if (sec.jumeaux && sec.bear[k] < 0 && sec.bear[k + 1] > 0) continue;   // pas d'entretoise à travers le joint
+        const xa = sec.bear[k] + i.b0 / 2, xb = sec.bear[k + 1] - i.b0 / 2;
         rect(P, xa, -i.eh - i.etab - 0.10, xb, -(h - 0.25), 'vu');
       }
     }
@@ -441,8 +451,9 @@
     dim(P, [W / 2, 0], [W / 2, -h], 'v', 9, frn(h));
     // entraxes des poutres (comme sur les plans)
     if (fam === 'poutres' && sec.info.x0 != null) {
-      const xsP = [-W / 2]; for (let k = 0; k < sec.nbPoutres; k++) xsP.push(sec.info.x0 + k * sec.entraxe); xsP.push(W / 2);
-      for (let k = 0; k < xsP.length - 1; k++) dim(P, [xsP[k], -h], [xsP[k + 1], -h], 'h', -4, frn(xsP[k + 1] - xsP[k]));
+      const xsP = [-W / 2].concat(sec.bear); if (sec.jumeaux) xsP.push(-sec.joint / 2, sec.joint / 2); xsP.push(W / 2); xsP.sort((a, b) => a - b);
+      for (let k = 0; k < xsP.length - 1; k++) if (xsP[k + 1] - xsP[k] > 0.05) dim(P, [xsP[k], -h], [xsP[k + 1], -h], 'h', -4, frn(xsP[k + 1] - xsP[k]));
+      if (sec.jumeaux) dim(P, [-sec.joint / 2, 0], [sec.joint / 2, 0], 'h', 8, frn(sec.joint));
     }
     tagFrom(P, iEq, 'equip');
     const ySeat = -(h + 0.30);
@@ -477,12 +488,13 @@
         if (g.ch.kind === 'marteau') {
           const L = g.ch.L, bf = g.ch.bf;
           poly(P, [[-L / 2, ySeat], [L / 2, ySeat], [L / 2, ySeat - g.ch.h2], [bf / 2, ySeat - g.ch.h], [-bf / 2, ySeat - g.ch.h], [-L / 2, ySeat - g.ch.h2]], 'beton');
-        } else rect(P, -g.ch.L / 2, ySeat, g.ch.L / 2, ySeat - g.ch.h, 'beton');
+        } else if (sec.jumeaux) { const j = sec.joint / 2; rect(P, -g.ch.L / 2, ySeat, -j, ySeat - g.ch.h, 'beton'); rect(P, j, ySeat, g.ch.L / 2, ySeat - g.ch.h, 'beton'); }
+        else rect(P, -g.ch.L / 2, ySeat, g.ch.L / 2, ySeat - g.ch.h, 'beton');
         yTop = ySeat - g.ch.h;
         if (fam === 'poutres' && sec.nbPoutres >= 2 && ref.kind === 'pile') {   // butée de sécurité (et non blocage)
-          const k = Math.floor((sec.nbPoutres - 1) / 2), xb = sec.info.x0 + (k + 0.5) * sec.entraxe;
-          rect(P, xb - 0.40, ySeat, xb + 0.40, ySeat + 0.73, 'vuB');
-          leader(P, [xb + 0.2, ySeat + 0.5], [xb + 1.2, ySeat + 1.1], 'Butée de sécurité');
+          const bx = sec.bear, mid = (a) => (bx[a] + bx[a + 1]) / 2, nh = Math.floor(bx.length / 2);
+          const xbs = sec.jumeaux ? [mid(Math.max(0, Math.floor((nh - 1) / 2))), mid(Math.min(bx.length - 2, nh + Math.floor((nh - 1) / 2)))] : [mid(Math.floor((bx.length - 1) / 2) - (bx.length % 2 ? 0 : 0))];
+          xbs.forEach((xb, q) => { rect(P, xb - 0.40, ySeat, xb + 0.40, ySeat + 0.73, 'vuB'); if (!q) leader(P, [xb + 0.2, ySeat + 0.5], [xb + 1.2, ySeat + 1.1], 'Butée de sécurité'); });
         }
         dim(P, [g.ch.L / 2, ySeat], [g.ch.L / 2, ySeat - g.ch.h], 'v', 6, frn(g.ch.h));
       }
@@ -869,20 +881,20 @@
   /* Habillage des plans KLE : béton coupé hachuré, colonnes ombrées, cotes rouges, axes magenta,
      corniches préfabriquées sombres, équipements violets. #ID- est remplacé par l'identifiant du dessin. */
   const STY = {
-    beton: 'fill:url(#ID-b);stroke:#1e1e1e;stroke-width:.9',
-    prefa: 'fill:url(#ID-p);stroke:#1e1e1e;stroke-width:.9',
-    pred: 'fill:url(#ID-d);stroke:#1e1e1e;stroke-width:.5',
-    vuB: 'fill:#ececec;stroke:#2b2b2b;stroke-width:.8',
+    beton: 'fill:url(#ID-b);stroke:#4d4d4d;stroke-width:.9',
+    prefa: 'fill:#cdcdcd;stroke:#4d4d4d;stroke-width:.9',
+    pred: 'fill:#9a9a9a;stroke:#4d4d4d;stroke-width:.5',
+    vuB: 'fill:#ffffff;stroke:#1e1e1e;stroke-width:.8',
     vuL: 'fill:#fbfaf6;stroke:#3a3a3a;stroke-width:.7',
     cornE: 'fill:#8a8a8a;stroke:#2b2b2b;stroke-width:.6',
-    gcF: 'fill:none;stroke:#3b5bdb;stroke-width:.6',
+    gcF: 'fill:none;stroke:#2020ff;stroke-width:.6',
     vuT: 'fill:none;stroke:#4a4a4a;stroke-width:.6',
     col: 'fill:url(#ID-c);stroke:#2b2b2b;stroke-width:.8',
     acier: 'fill:#9fb3cc;stroke:#1f3a5f;stroke-width:.9',
     acierL: 'fill:none;stroke:#1f3a5f;stroke-width:1.3;stroke-dasharray:6 3',
     vu: 'fill:none;stroke:#6f6f6f;stroke-width:.7;stroke-dasharray:4 2.5',
-    axe: 'fill:none;stroke:#e100e1;stroke-width:.7;stroke-dasharray:14 3 2 3',      // axes magenta (plans KLE)
-    tn: 'fill:none;stroke:#2f9e44;stroke-width:1.1',                                 // terrain naturel vert (plans KLE)
+    axe: 'fill:none;stroke:#ff00bf;stroke-width:.7;stroke-dasharray:14 3 2 3',      // axes magenta (plans KLE)
+    tn: 'fill:none;stroke:#2eb800;stroke-width:1.1',                                 // terrain naturel vert (plans KLE)
     sol: 'fill:none;stroke:none',
     remblai: 'fill:none;stroke:none',
     perre: 'fill:none;stroke:#8a6a2a;stroke-width:2.4;stroke-dasharray:3 2',
@@ -890,13 +902,13 @@
     pieuP: 'fill:none;stroke:#e8590c;stroke-width:.8;stroke-dasharray:5 3',
     prop: 'fill:#cfcfcf;stroke:#555;stroke-width:.4',
     app: 'fill:#222;stroke:#111;stroke-width:.5',
-    corn: 'fill:#575757;stroke:#1e1e1e;stroke-width:.7',
+    corn: 'fill:#6e6e6e;stroke:#1e1e1e;stroke-width:.7',
     rev: 'fill:#9b9b9b;stroke:#444;stroke-width:.4',
     etan: 'fill:none;stroke:#111;stroke-width:1.4',
     four: 'fill:#fff;stroke:#1e1e1e;stroke-width:.6',
-    gc: 'fill:none;stroke:#3b5bdb;stroke-width:1.5;stroke-linecap:round',
-    gcR: 'fill:#c5d0fa;stroke:#3b5bdb;stroke-width:.8',
-    equip: 'fill:#d8dde4;stroke:#3d4a5c;stroke-width:.8',
+    gc: 'fill:none;stroke:#2020ff;stroke-width:1.5;stroke-linecap:round',
+    gcR: 'fill:#d6d6ff;stroke:#2020ff;stroke-width:.8',
+    equip: 'fill:#f2b25c;stroke:#7a4a10;stroke-width:.8',
     trottoir: 'fill:#dde3ea;stroke:#3d4a5c;stroke-width:.8',
     ballast: 'fill:url(#ID-g);stroke:#6e6455;stroke-width:.7',
     lead: 'fill:none;stroke:#1e1e1e;stroke-width:.5',
@@ -952,11 +964,11 @@
               dd += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
               for (let t = sp / 2; t < L; t += sp) { const x = x1 + (x2 - x1) * t / L, y = y1 + (y2 - y1) * t / L; dd += `M${x.toFixed(1)} ${y.toFixed(1)}l${(-tl * 0.7).toFixed(1)} ${(tl * 0.7).toFixed(1)}`; }
             }
-            if (dd) out.push(`<path d="${dd}" style="fill:none;stroke:#2f9e44;stroke-width:.5"/>`);
+            if (dd) out.push(`<path d="${dd}" style="fill:none;stroke:#2eb800;stroke-width:.5"/>`);
           }
         } else if (p.k === 'text') {
           const fs = p.ht * kp;
-          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#c2255c"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
+          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
         } else if (p.k === 'title') {
           const fs = 3.4 * kp, x = X(p.p[0]), y = Y(p.p[1]), w = p.s.length * fs * 0.6;
           T(x, y, p.s, fs, 'middle', ' font-weight="700" font-style="italic" class="tt"');
@@ -994,11 +1006,11 @@
     if (!opt.scale && extra > 0) { s = Math.max(0.5, (Wpx - 2 * pad - extra) / bw); r = render(s); }
     const e = r.ext, vw = e[2] - e[0] + 2 * pad, vh = e[3] - e[1] + 2 * pad;
     const pat = (k, size, bg, ln, w, rot) => `<pattern id="${id}-${k}" width="${size}" height="${size}" patternUnits="userSpaceOnUse" patternTransform="rotate(${rot == null ? 45 : rot})"><rect width="${size}" height="${size}" fill="${bg}"/><line x1="0" y1="0" x2="0" y2="${size}" stroke="${ln}" stroke-width="${w}"/></pattern>`;
-    const defs = '<defs>' + pat('b', 5, '#efefef', '#b3b3b3', 0.7) + pat('p', 5, '#e8ebf0', '#a9b1bd', 0.7) + pat('d', 3, '#d9d9d9', '#888', 0.6, -45)
+    const defs = '<defs>' + pat('b', 5, '#e6e6e6', '#b0b0b0', 0.7) + pat('p', 5, '#e8ebf0', '#a9b1bd', 0.7) + pat('d', 3, '#d9d9d9', '#888', 0.6, -45)
       + pat('h', 8, '#f7f3e8', '#cdbb8e', 0.9)
       + `<pattern id="${id}-g" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#d8d0bf"/><circle cx="1.5" cy="1.5" r=".9" fill="#8d8170"/><circle cx="4.5" cy="4" r=".7" fill="#a59a88"/></pattern>`
       + `<linearGradient id="${id}-c" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#8f8f8f"/><stop offset=".35" stop-color="#f4f4f4"/><stop offset=".55" stop-color="#e2e2e2"/><stop offset="1" stop-color="#7d7d7d"/></linearGradient>`
-      + `<style>text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}.dx{stroke:#e03131;stroke-width:.45;fill:none}.dl{stroke:#e03131;stroke-width:.7;fill:none}.dt{fill:#1e1e1e}.tt{letter-spacing:.04em}</style></defs>`;
+      + `<style>text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}.dx{stroke:#ff0000;stroke-width:.45;fill:none}.dl{stroke:#ff0000;stroke-width:.7;fill:none}.dt{fill:#1e1e1e}.tt{letter-spacing:.04em}</style></defs>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(e[0] - pad).toFixed(1)} ${(e[1] - pad).toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" width="${vw.toFixed(0)}" height="${vh.toFixed(0)}" data-ox="${(-bx[0] * s).toFixed(2)}" role="img">${defs}${r.out.join('')}</svg>`;
   }
 

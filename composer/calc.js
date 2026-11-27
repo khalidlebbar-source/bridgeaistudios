@@ -204,6 +204,8 @@
     out.tablier.continu = !!out.tablier.continu && T.cont;
     if (!T.iso) out.tablier.continu = true;
     out.tablier.dalleContinuite = out.tablier.dalleContinuite !== false;
+    out.tablier.jumeaux = !!out.tablier.jumeaux;
+    out.tablier.joint = clamp(num(out.tablier.joint, 0.02), 0.01, 2);
     out.tablier.pos = Array.isArray(out.tablier.pos) ? out.tablier.pos.map((v) => num(v, NaN)).filter(Number.isFinite).slice(0, 40).sort((a, b) => a - b) : null;
     if (out.tablier.pos && out.tablier.pos.length < 2) out.tablier.pos = null;
     let tr = (Array.isArray(out.travees) ? out.travees : String(out.travees).split(/[;\s]+/)).map((v) => num(v, NaN)).filter((v) => Number.isFinite(v));
@@ -487,7 +489,11 @@
       const vipp = S.tablier.type === 'VIPP';
       const eh = vipp ? (rail ? 0.25 : 0.24) : (rail ? 0.25 : 0.22);
       const rive = vipp ? 0.75 : 0.40;
-      const posP = Array.isArray(S.tablier.pos) && S.tablier.pos.length >= 2 ? S.tablier.pos : null;   // axes des poutres imposés (plans)
+      let posP = Array.isArray(S.tablier.pos) && S.tablier.pos.length >= 2 ? S.tablier.pos : null;   // axes des poutres imposés (plans)
+      if (!posP && S.tablier.jumeaux && vipp) {        // tabliers jumelés : poutres réparties dans chaque demi-tablier
+        const j = S.tablier.joint, Wh = (W - j) / 2, nh = Math.max(2, Math.round((Wh - 2 * rive) / 3.0) + 1), bh = (Wh - 2 * rive) / (nh - 1);
+        posP = []; for (let i = 0; i < nh; i++) posP.push(-W / 2 + rive + i * bh); for (let i = nh - 1; i >= 0; i--) posP.push(W / 2 - rive - i * bh);
+      }
       const n = posP ? posP.length : vipp ? Math.max(2, Math.round((W - 2 * rive) / 3.0) + 1) : Math.max(3, Math.ceil(W / 1.4));
       const b = posP ? (posP[n - 1] - posP[0]) / (n - 1) : vipp ? (W - 2 * rive) / (n - 1) : W / n, x0 = posP ? posP[0] : vipp ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
       const xP = (i) => (posP ? posP[i] : x0 + b * i);
@@ -527,7 +533,34 @@
       nbPoutres = 2; entraxe = a;
       Object.assign(info, { hs, te, hp: rnd(hp, 2), a, bfs, bfi, kgm2: Math.round(q), Bn: a + bfi });
     }
-    return { polys, h, Abet, Aprefa, coff, coffPrefa, kgCharp, kgProf, bear, nbPoutres, entraxe, info };
+    let polysOut = polys;
+    if (S.tablier.jumeaux) {   // deux tabliers jumelés séparés par un joint longitudinal : on coupe les éléments continus sur l'axe
+      const j = S.tablier.joint / 2;
+      polysOut = [];
+      polys.forEach((pg) => {
+        const xs = pg.pts.map((q) => q[0]);
+        if (Math.min(...xs) < -j && Math.max(...xs) > j) {
+          [clipX(pg.pts, -1e9, -j), clipX(pg.pts, j, 1e9)].forEach((pts) => { if (pts.length >= 3) polysOut.push(Object.assign({}, pg, { pts })); });
+        } else polysOut.push(pg);
+      });
+      Abet -= S.tablier.joint * (info.eh || 0.25); info.joint = S.tablier.joint;
+    }
+    return { polys: polysOut, h, Abet, Aprefa, coff, coffPrefa, kgCharp, kgProf, bear, nbPoutres, entraxe, info, jumeaux: !!S.tablier.jumeaux, joint: S.tablier.jumeaux ? S.tablier.joint : 0 };
+  }
+  /* découpe d'un polygone par la bande verticale x0 ≤ x ≤ x1 (Sutherland–Hodgman sur deux droites) */
+  function clipX(pts, x0, x1) {
+    const cut = (P, inside, ix) => {
+      const out = [];
+      for (let i = 0; i < P.length; i++) {
+        const a = P[i], b = P[(i + 1) % P.length], ia = inside(a), ib = inside(b);
+        if (ia) out.push(a);
+        if (ia !== ib) { const x = ix, t = (x - a[0]) / (b[0] - a[0]); out.push([x, a[1] + t * (b[1] - a[1])]); }
+      }
+      return out;
+    };
+    let r = cut(pts, (q) => q[0] >= x0, x0);
+    r = r.length ? cut(r, (q) => q[0] <= x1, x1) : r;
+    return r;
   }
 
   /* ───────── Lignes d'influence (triangle) et charges roulantes ───────── */

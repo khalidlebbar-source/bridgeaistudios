@@ -20,7 +20,7 @@
   let S = (keepPrev && (prevS || loadPrev())) || VIT || prevS || C.normalize(C.defaults('route'));
   const vitShown = !!VIT && S === VIT;
   function loadPrev() { try { const t = localStorage.getItem(PREVKEY); return t ? C.normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
-  let M = null, view = 'plan', menu = 'resultats', selId = 'tablier', showDims = true, wire = false, diagK = 'M';
+  let M = null, view = 'plan', menu = 'resultats', selId = 'tablier', picked = false, showDims = true, wire = false, diagK = 'M';
   const openT = [];
   const expanded = new Set(['tablier', 'travees', 'appuis']);
   try { const u = JSON.parse(localStorage.getItem(UIKEY) || '{}'); if (u.tw && u.tw <= 300) document.documentElement.style.setProperty('--tree-w', u.tw + 'px'); if (u.pw) document.documentElement.style.setProperty('--prop-w', u.pw + 'px'); } catch (e) { /* préférences indisponibles */ }
@@ -211,7 +211,7 @@
   const ED = $('#ed');
   let edId = null;
   const isEdId = (id) => /^[CP]\d+$/.test(id) || ['tablier', 'section', 'profil', 'equip'].includes(id);
-  function openEditor(id) { edId = /^(section|profil|equip)$/.test(id) ? 'tablier' : id; selId = edId; closePop(); ED.hidden = false; renderEditor(); applySel(); }
+  function openEditor(id) { edId = /^(section|profil|equip)$/.test(id) ? 'tablier' : id; selId = edId; picked = true; closePop(); ED.hidden = false; renderEditor(); applySel(); }
   function closeEditor() { ED.hidden = true; edId = null; }
   /* détail d'élévation autour d'un appui : coupe longitudinale recadrée */
   function elevDetail(sp) {
@@ -564,6 +564,8 @@
         + pNum('Hauteur imposée', 'tablier.h', 'm', { val: S.tablier.h || '', ph: fr(m.pd.h, 2) + ' (auto)' })
         + pChk('Travées continues', 'tablier.continu', !(T.iso && T.cont && n > 1))
         + (T.famille === 'poutres' ? pChk('Hourdis continu sur appuis', 'tablier.dalleContinuite', n <= 1) : '')
+        + pChk('Deux tabliers jumelés (joint longitudinal)', 'tablier.jumeaux')
+        + (S.tablier.jumeaux ? pNum('Largeur du joint', 'tablier.joint', 'm', { val: S.tablier.joint }) : '')
         + G('Prédimensionnement') + pNote('h = <b>' + fr(m.h, 2) + ' m</b>' + (m.hAuto ? ' — ' + esc(m.pd.regle) : ' (imposée ; prédimensionnement ' + fr(m.pd.h, 2) + ' m)') + '.<br>' + esc(T.ref));
     } else if (id === 'section') {
       sub = 'Coupe transversale';
@@ -769,7 +771,7 @@
     if (isTable()) { $$('#res [data-pick]').forEach((r) => r.classList.toggle('selr', r.dataset.pick === selId)); return; }
     if (view === '3d') { draw3D(); return; }
     $$('#svgHost .sel').forEach((e) => e.classList.remove('sel'));
-    $$(`#svgHost [data-tag="${tagOf(selId)}"]`).forEach((e) => e.classList.add('sel'));
+    if (picked) $$(`#svgHost [data-tag="${tagOf(selId)}"]`).forEach((e) => e.classList.add('sel'));   // pas de surlignage tant que l'utilisateur n'a rien choisi : le plan garde ses couleurs
   }
   function fitView() {
     if (view === 'diag' || isTable()) return;
@@ -1231,7 +1233,7 @@
   function select(id, o) {
     o = o || {};
     const v0 = view;
-    selId = id;
+    selId = id; picked = true;
     if (id === 'hyp') { if (!openT.includes('hyp')) openT.push('hyp'); view = 't:hyp'; }
     const p = parentOf(id, treeModel());
     if (p) expanded.add(p);

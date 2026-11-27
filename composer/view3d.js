@@ -80,7 +80,8 @@
               for (let i = 0; i < pts.length; i++) { const a = pts[i], c = pts[(i + 1) % pts.length]; face([[x0, a[0], a[1]], [x1, a[0], a[1]], [x1, c[0], c[1]], [x0, c[0], c[1]]]); }
             };
             ex(s.x - b / 2, s.x + b / 2);
-          } else box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, g.ch.L / 2, ySeat, ySeat - g.ch.h);
+          } else if (M.sec.jumeaux) { const j = M.sec.joint / 2; box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, -j, ySeat, ySeat - g.ch.h); box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, j, g.ch.L / 2, ySeat, ySeat - g.ch.h); }
+          else box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, g.ch.L / 2, ySeat, ySeat - g.ch.h);
           zTop = ySeat - g.ch.h;
         }
         const f = g.fut;
@@ -102,7 +103,8 @@
         let zr0;
         if (g.type === 'enterree') {
           const xin = back - o * g.sommier.b;
-          box(back, xin, -g.sommier.L / 2, g.sommier.L / 2, ySeat, ySeat - g.sommier.h);
+          if (M.sec.jumeaux) { const j = M.sec.joint / 2; box(back, xin, -g.sommier.L / 2, -j, ySeat, ySeat - g.sommier.h); box(back, xin, j, g.sommier.L / 2, ySeat, ySeat - g.sommier.h); }
+          else box(back, xin, -g.sommier.L / 2, g.sommier.L / 2, ySeat, ySeat - g.sommier.h);
           xf = (back + xin) / 2;
           if (g.colonnes) (g.colonnes.pos || Array.from({ length: g.colonnes.n }, (_, i) => -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s)).forEach((y) => { if (g.colonnes.section === 'circ') cyl(xf, y, g.colonnes.D, yft, ySeat - g.sommier.h); else { const b = g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D; box(xf - g.colonnes.D / 2, xf + g.colonnes.D / 2, y - b / 2, y + b / 2, ySeat - g.sommier.h, yft); } });
           zr0 = ySeat - g.sommier.h + 0.3;

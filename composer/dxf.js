@@ -18,9 +18,9 @@
   'use strict';
 
   const LAYERS = [
-    ['1-COUPE', 7], ['1-PREFA', 30], ['1-CHARPENTE', 5], ['1-VU', 8, 'TIRETS'], ['1-AXES', 1, 'AXES'], ['1-TN', 32],
-    ['1-REMBLAI', 42], ['1-PIEUX', 7, 'TIRETS'], ['1-APPUIS', 6], ['1-EQUIPEMENTS', 4], ['1-COTATION', 1],
-    ['1-TEXTE', 7], ['1-TITRE', 2], ['1-CARTOUCHE', 7], ['1-CORNICHES', 8], ['1-REVETEMENT', 9], ['1-RETENUE', 200],
+    ['1-COUPE', 7], ['1-PREFA', 8], ['1-CHARPENTE', 5], ['1-VU', 8, 'TIRETS'], ['1-AXES', 6, 'AXES'], ['1-TN', 3],
+    ['1-REMBLAI', 42], ['1-PIEUX', 7, 'TIRETS'], ['1-APPUIS', 6], ['1-EQUIPEMENTS', 30], ['1-COTATION', 1],
+    ['1-TEXTE', 7], ['1-TITRE', 7], ['1-CARTOUCHE', 7], ['1-CORNICHES', 8], ['1-REVETEMENT', 9], ['1-RETENUE', 5],
     ['1-HYDRAULIQUE', 5], ['1-GEOTECHNIQUE', 30], ['1-GUITARE', 7],
   ];
   const LAY = {

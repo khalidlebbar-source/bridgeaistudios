@@ -18,7 +18,7 @@
     usage: 'route',
     classe: 1,
     profil: { roulable: 17.02, trottoirG: 2.0, trottoirD: 2.0 },
-    tablier: { type: 'VIPP', h: 2.52, continu: false, pos: [-9.76, -6.76, -3.76, -0.76, 0.76, 3.76, 6.76, 9.76] },
+    tablier: { type: 'VIPP', h: 2.52, continu: false, jumeaux: true, joint: 0.02, pos: [-9.76, -6.76, -3.76, -0.76, 0.76, 3.76, 6.76, 9.76] },
     travees: [30, 41.7, 41.7, 30],
     biais: 100,
     piles: { type: 'colonnes', col: 'carre', paires: true, hauteurs: [8.5, 7.5, 7.5], dim: { D: 1.5, n: 4, sp: 3.0, cp: 10.52, hch: 1.5, bch: 2.6 }, fdim: { B: 5.5, L: 5.5, e: 1.5 } },
