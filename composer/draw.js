@@ -185,6 +185,105 @@
   }
 
   /* passage en altitudes réelles (cisaillement y += Z(x)) puis habillage : cotes, PHE, gabarit, sondages, guitare */
+  /* ───────── Plans de coffrage KLE (PRO2334 0003) : vues de la pile type ─────────
+     cl : coupe longitudinale ; cf : coupe sur fûts ; som : chevêtre (« sommier ») en vue en plan. Échelle 1/50. */
+  const f2c = (v) => frn(v), f3c = (v) => Math.abs(v).toFixed(3).replace(/^0\./, '.');
+  function cofPile(M, id) {
+    const sp = M.supports.find((x) => x.id === id); if (!sp || sp.kind !== 'pile') return null;
+    curEch = 50;
+    const g = sp.geo, f = sp.fo, ch = g.ch || { b: 2.6, h: 1.5, L: M.W }, fut = g.fut, sec = M.sec, S = M.S;
+    const piles = M.supports.filter((q) => q.kind === 'pile'), oth = piles.filter((q) => Math.abs(q.H - sp.H) > 0.01);
+    const hF = sp.H - ch.h, D = fut.b || fut.D, mm = (v) => v * 50 / 1000;
+    const dh = (P, x1, x2, y, yl, s_) => dim(P, [x1, y], [x2, y], 'h', (yl - y) * 20, s_ == null ? f2c(x2 - x1) : s_);
+    const dv = (P, x, y1, y2, xl, s_) => dim(P, [x, y1], [x, y2], 'v', (xl - x) * 20, s_ == null ? f2c(Math.abs(y2 - y1)) : s_);
+    const out = {};
+    // ── COUPE LONGITUDINALE ──
+    {
+      const P = [], b = ch.b, h = ch.h, yS = 0, yC = -h, yF = yC - hF, yB = yF - f.e, ea = b / 2 - 0.45, rd = g.redan;
+      rect(P, -b / 2, yS, b / 2, yC, 'hachP');
+      if (rd) line(P, [-b / 2, yC + rd.h], [b / 2, yC + rd.h], 'note');
+      [-1, 1].forEach((sg) => { const x = sg * ea; rect(P, x - 0.36, yS, x + 0.36, yS + 0.07, 'vuB'); rect(P, x - 0.18, yS + 0.07, x + 0.18, yS + 0.17, 'vuB'); rect(P, x - 0.36, yS + 0.17, x + 0.36, yS + 0.27, 'vuB'); line(P, [x, yS + 0.05], [x, yS - 0.6], 'vuT'); });
+      rect(P, -D / 2, yC, D / 2, yF, 'vuB');
+      for (let y = yC - 1; y > yF + 0.05; y -= 1) { line(P, [-D / 2, y], [D / 2, y], 'rain'); line(P, [-D / 2, y - 0.05], [D / 2, y - 0.05], 'rain'); }
+      rect(P, -f.B / 2, yF, f.B / 2, yB, 'hachP'); rect(P, -f.B / 2 - 0.1, yB, f.B / 2 + 0.1, yB - 0.1, 'vuB');
+      line(P, [0, yS + 0.6], [0, yB - 0.7], 'axeC');
+      dh(P, -b / 2, -ea, yS + 0.3, yS + 1.55, '.45'); dh(P, -ea, ea, yS + 0.3, yS + 1.55); dh(P, ea, b / 2, yS + 0.3, yS + 1.55, '.45');
+      dh(P, -ea, 0, yS + 0.3, yS + 0.95, f2c(ea)); dh(P, 0, ea, yS + 0.3, yS + 0.95, f2c(ea));
+      dh(P, -b / 2, b / 2, yC, yC - 1.0);
+      dh(P, -D / 2, D / 2, yF, yF + 0.75);
+      dh(P, -f.B / 2, f.B / 2, yB - 0.1, yB - 1.5);
+      const xr = f.B / 2 + 0.95;
+      dv(P, b / 2, yS, yC, xr); dv(P, b / 2, yC, yF, xr); dv(P, f.B / 2, yF, yB, xr);
+      for (let y = yC, k = 0; y > yF + 1e-6; y -= 1, k++) dv(P, -D / 2, y, Math.max(yF, y - 1), -D / 2 - 0.45, f2c(Math.min(1, y - yF)));
+      leader(P, [D / 2 - 0.15, yC - 4.05], [D / 2 + 0.6, yC - 4.05], 'Rainure :');
+      text(P, [D / 2 + 0.9, yC - 4.05], '+ 5cm largeur', { ht: 2.4, anchor: 'start', dy: -4.2, lay: 'note' });
+      text(P, [D / 2 + 0.9, yC - 4.05], '+ 3cm de profondeur', { ht: 2.4, anchor: 'start', dy: -7.6, lay: 'note' });
+      dv(P, D / 2 - 0.15, yC - 3.0, yC - 3.05, D / 2 - 0.15, '.05');
+      if (oth.length) leader(P, [xr + 0.35, (yC + yF) / 2 + 0.3], [xr + 0.9, (yC + yF) / 2 - 0.3], oth.map((q) => fr(q.H - ch.h, 0) + 'm pour ' + q.id).join(', '));
+      title(P, [0, yS + 3.0], 'COUPE LONGITUDINALE', 50);
+      out.cl = { P, ech: 50, titre: 'COUPE LONGITUDINALE' };
+    }
+    // ── COUPE SUR FUTS ──
+    {
+      const P = [], cs = f.split ? f.split.centers : [0], Bf = f.B, Lf = f.L, xs = (fut.pos || []).slice().sort((a, b) => a - b);
+      cs.forEach((c, k) => {
+        rect(P, c - Lf / 2 - 0.08, -Bf / 2 - 0.08, c + Lf / 2 + 0.08, Bf / 2 + 0.08, 'vuT');
+        rect(P, c - Lf / 2, -Bf / 2, c + Lf / 2, Bf / 2, 'vuB');
+        line(P, [c, -Bf / 2], [c, Bf / 2], 'axeC');
+        const cx = xs.filter((x) => Math.abs(x - c) < Lf / 2);
+        cx.forEach((x) => rect(P, x - D / 2, -D / 2, x + D / 2, D / 2, 'hachP'));
+        if (cx.length) {
+          const a0 = Math.min(...cx) - D / 2, a1 = Math.max(...cx) + D / 2, yt = Bf / 2 + 0.75;
+          dh(P, c - Lf / 2, a0, Bf / 2, yt); dh(P, a0, a1, Bf / 2, yt); dh(P, a1, c + Lf / 2, Bf / 2, yt);
+          const r = [a0]; cx.forEach((x, q) => { if (q) r.push(cx[q - 1] + D / 2, x - D / 2); }); r.push(a1); const rr = [a0, cx[0] + D / 2]; for (let q = 1; q < cx.length; q++) rr.push(cx[q] - D / 2, cx[q] + D / 2);
+          for (let q = 0; q < rr.length - 1; q++) dh(P, rr[q], rr[q + 1], D / 2, D / 2 + 2.25 - D / 2);
+          dh(P, a0, a1, -D / 2, -D / 2 - 0.8);
+          const xe = k === 0 ? c - Lf / 2 - 1.4 : c + Lf / 2 + 1.4;
+          dv(P, k === 0 ? c - Lf / 2 : c + Lf / 2, Bf / 2, D / 2, xe); dv(P, k === 0 ? c - Lf / 2 : c + Lf / 2, D / 2, -D / 2, xe); dv(P, k === 0 ? c - Lf / 2 : c + Lf / 2, -D / 2, -Bf / 2, xe);
+          dv(P, k === 0 ? c + Lf / 2 : c - Lf / 2, Bf / 2, -Bf / 2, k === 0 ? c + Lf / 2 + 1.35 : c - Lf / 2 - 1.35);
+        }
+        dh(P, c - Lf / 2, c + Lf / 2, -Bf / 2, -Bf / 2 - 1.3);
+      });
+      if (cs.length > 1) { const i0 = xs.filter((x) => x < 0), i1 = xs.filter((x) => x > 0); if (i0.length && i1.length) dh(P, Math.max(...i0) + D / 2, Math.min(...i1) - D / 2, -D / 2, -D / 2 - 0.8); }
+      const xL = Math.min(...cs) - Lf / 2 - 3.5, xR = Math.max(...cs) + Lf / 2 + 3.5;
+      line(P, [xL, 0], [xR, 0], 'axeC'); line(P, [0, Bf / 2 + 0.9], [0, -Bf / 2 - 2.2], 'axeC');
+      title(P, [0, Bf / 2 + 2.2], 'COUPE SUR FUTS', 50);
+      out.cf = { P, ech: 50, titre: 'COUPE SUR FUTS' };
+    }
+    // ── CHEVÊTRE : VUE EN PLAN ──
+    {
+      const P = [], L = ch.L, b = ch.b, j = sec.jumeaux ? sec.joint / 2 : 0, bx = sec.bear, ea = b / 2 - 0.45, eh = 0.575;
+      (j ? [[-L / 2, -j], [j, L / 2]] : [[-L / 2, L / 2]]).forEach(([a, c]) => rect(P, a, -b / 2, c, b / 2, 'vuB'));
+      [-ea, 0, ea].forEach((y) => line(P, [-L / 2, y], [L / 2, y], 'axeC'));
+      line(P, [0, b / 2 + 0.6], [0, -b / 2 - 2.2], 'axeC');
+      const deck = (x) => (j && x > 0 ? 1 : 0), nb = (x, d) => bx.some((q) => q !== x && deck(q) === deck(x) && Math.sign(q - x) === d && Math.abs(q - x) < 4);
+      const mid = (a) => (bx[a] + bx[a + 1]) / 2, nh = Math.floor(bx.length / 2), buts = j ? [mid(Math.max(0, Math.floor((nh - 1) / 2))), mid(Math.min(bx.length - 2, nh + Math.floor((nh - 1) / 2)))] : [mid(Math.floor((bx.length - 1) / 2))];
+      bx.forEach((x) => [-ea, ea].forEach((y) => {
+        rect(P, x - 0.30, y - 0.30, x + 0.30, y + 0.30, 'vuB'); rect(P, x - 0.18, y - 0.18, x + 0.18, y + 0.18, 'app2');
+        [-1, 1].forEach((d) => { if (nb(x, d)) rect(P, x + d * eh - 0.13, y - 0.13, x + d * eh + 0.13, y + 0.13, 'verin'); });
+        line(P, [x, y - 0.3], [x, y + 0.3], 'axeC');
+      }));
+      buts.forEach((xb, q) => {
+        rect(P, xb - 0.67, -1.10, xb + 0.67, 1.10, 'vuB');
+        const k = bx.findIndex((v, n) => n < bx.length - 1 && v < xb && bx[n + 1] > xb), x1 = bx[k] - eh - 0.13, x2 = bx[k + 1] + eh + 0.13;
+        poly(P, [[x1, -ea], [x1, ea], [xb - 0.67, ea], [xb - 0.67, -ea]], 'zoneO', true); poly(P, [[xb + 0.67, -ea], [xb + 0.67, ea], [x2, ea], [x2, -ea]], 'zoneO', true);
+        dh(P, xb - 0.67, xb + 0.67, -0.45, -0.45, '1.34'); dv(P, xb + 0.4, 1.10, -1.10, xb + 0.4, '2.20');
+        dv(P, xb, b / 2, 1.10, xb, '.20'); dv(P, xb, -1.10, -b / 2, xb, '.20');
+        if (q === buts.length - 1) { leader(P, [xb + 0.67, 1.1], [xb + 1.6, b / 2 + 1.0], 'Butée de sécurité'); text(P, [xb + 1.75, b / 2 + 1.0], '(et non blocage)', { ht: 2.4, anchor: 'start', dy: -3.6, lay: 'note' }); }
+      });
+      const x0 = bx[0]; leader(P, [x0 + eh, ea + 0.13], [x0 - 0.6, b / 2 + 1.0], 'BOSSAGE DE VERINAGE', 'end');
+      { const xq = bx[bx.length - 3]; leader(P, [xq, -ea - 0.3], [xq - 1.0, -b / 2 - 0.9], 'Bossages :'); ['Voir dimensions', 'sur plan des', 'equipements'].forEach((t_, n) => text(P, [xq - 1.0, -b / 2 - 0.9], t_, { ht: 2.2, anchor: 'start', dy: -3.4 * (n + 1), lay: 'note' })); }
+      dv(P, -L / 2, b / 2, -b / 2, -L / 2 - 0.6);
+      const xr = L / 2 + 0.6; dv(P, L / 2, b / 2, ea, xr, '.45'); dv(P, L / 2, ea, 0, xr); dv(P, L / 2, 0, -ea, xr); dv(P, L / 2, -ea, -b / 2, xr, '.45');
+      const yb = -b / 2 - 2.2, ch_ = [-L / 2].concat(bx, j ? [-j, j] : [], [L / 2]).sort((a, c) => a - c);
+      for (let q = 0; q < ch_.length - 1; q++) if (ch_[q + 1] - ch_[q] > 0.05) dh(P, ch_[q], ch_[q + 1], -b / 2, yb, f3c(ch_[q + 1] - ch_[q]));
+      if (bx.length > 1) { const y_ = -b / 2 - 0.55, x1 = bx[0], x2 = bx[1]; dh(P, x1, x1 + eh, -b / 2, y_, '.575'); dh(P, x1 + eh, x2 - eh, -b / 2, y_, f3c(x2 - x1 - 2 * eh)); dh(P, x2 - eh, x2, -b / 2, y_, '.575'); }
+      title(P, [0, b / 2 + 2.4], (S.usage === 'rail' ? 'CHEVETRE' : 'SOMMIER') + ' : VUE EN PLAN', 50);
+      out.som = { P, ech: 50, titre: 'SOMMIER : VUE EN PLAN' };
+    }
+    return out;
+  }
+
   /* nature de sol d'après la description du log : une hachure par nature */
   const SOL_LAB = { remblai: 'Remblai', argile: 'Argile, limon', sable: 'Sable, grave', calc: 'Calcaire, tuf', schisteA: 'Schiste altéré / argileux', schiste: 'Schiste, schiste fracturé', quartz: 'Quartzite, blocs de quartzite', roche: 'Rocher' };
   function solType(desc) {
@@ -1202,6 +1301,9 @@
     pieuP: 'fill:none;stroke:#e8590c;stroke-width:.8;stroke-dasharray:5 3',
     prop: 'fill:#cfcfcf;stroke:#555;stroke-width:.4',
     app: 'fill:#222;stroke:#111;stroke-width:.5',
+    app2: 'fill:#7a7a7a;stroke:#111;stroke-width:.5',
+    verin: 'fill:#7a7a7a;stroke:#111;stroke-width:.5',
+    zoneO: 'fill:none;stroke:#e8590c;stroke-width:.8',
     corn: 'fill:#6e6e6e;stroke:#1e1e1e;stroke-width:.7',
     rev: 'fill:#9b9b9b;stroke:#444;stroke-width:.4',
     etan: 'fill:none;stroke:#111;stroke-width:1.4',
@@ -1411,5 +1513,5 @@
     return { P, ech, titre: 'COUPE TYPE DES POUTRES PPBA — ' + (ap ? 'sur appuis' : 'en travée') };
   }
 
-  return { elevScene, secScene, planScene, supScenes, poutreScene, toSVG };
+  return { elevScene, secScene, planScene, supScenes, poutreScene, cofPile, toSVG };
 });

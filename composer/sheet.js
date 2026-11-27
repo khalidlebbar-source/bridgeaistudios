@@ -257,10 +257,16 @@
       const D = C.supScenes(M, id) || {}, isC = sp.kind === 'culee', fo = sp.fo || {};
       titre = isC ? 'CULÉES — COFFRAGE' : 'PILES — COFFRAGE';
       sous = isC ? 'Culée ' + id : (piles.length > 1 ? 'Piles ' + piles.map((p) => p.id).join(', ') : 'Pile ' + id);
+      const KP = !isC && C.cofPile ? C.cofPile(M, id) : null;
+      if (KP) {   // planche des piles : disposition et vues du plan KLE 0003
+        Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'pile', id, titre: 'COUPE TRANSVERSALE' }), id], ['cp', () => KP.cf, id], ['cs', () => KP.som, id]];
+        Rc = [['cl', () => KP.cl, id]];
+      } else {
       Lc = [['ct', (e) => C.secScene(M, { ech: e, part: isC ? 'culee' : 'pile', id, titre: 'COUPE TRANSVERSALE' }), id],
         D.pl && ['cp', fixed(rot(D.pl), isC ? (fo.mode === 'pieux' && !(fo.e > 0) ? 'COUPE SUR PIEUX' : 'COUPE SUR FUTS') : 'COUPE SUR FUTS'), id],
         D.top && ['cs', fixed(rot(D.top), (isC ? 'SOMMIER' : 'CHEVETRE') + ' : VUE EN PLAN'), id]].filter(Boolean);
       Rc = [D.lo && ['cl', fixed(D.lo, 'COUPE LONGITUDINALE'), id], isC && D.mr && ['cm', fixed(D.mr), id]].filter(Boolean);
+      }
     }
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
       + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
