@@ -296,13 +296,13 @@
       const on = sel && o.fc.tag === sel;
       if (opt.wire) return `<path${t} d="${d}" fill="none" stroke="${on ? '#1f5fd1' : '#33415a'}" stroke-width="${on ? 1.4 : 0.6}"/>`;
       const c = MAT[o.fc.mat] || MAT.beton, k = 0.62 + 0.38 * o.lam;
-      const rgb = c.map((v, i) => Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)));   // sélection : léger voile bleu, couleurs conservées
+      const rgb = c.map((v, i) => { const w = Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)); return w + (255 - w) * 0.35; });   // remplissage allégé (35 % vers le blanc)   // sélection : léger voile bleu, couleurs conservées
       const fill = `rgb(${rgb.map(Math.round).join(',')})`;
       let ed = '';
       const p3 = o.fc.p;
       for (let j = 0; j < p3.length; j++) if (!(o.fc.hz != null && Math.abs(p3[j][2] - o.fc.hz) < 1e-3 && Math.abs(p3[(j + 1) % p3.length][2] - o.fc.hz) < 1e-3) && feat(key(p3[j], p3[(j + 1) % p3.length]), o.fc.mat)) { const a = o.pr[j], c = o.pr[(j + 1) % o.pr.length]; ed += `M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${c[0].toFixed(1)} ${c[1].toFixed(1)}`; }
       return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.9" stroke-linejoin="round"/>`
-        + (ed ? `<path d="${ed}" fill="none" stroke="${on ? '#1f5fd1' : '#2c3442'}" stroke-width="${on ? 1.3 : 0.9}" stroke-linecap="round" style="pointer-events:none"/>` : '');
+        + (ed ? `<path d="${ed}" fill="none" stroke="${on ? '#1f5fd1' : '#3a4250'}" stroke-width="${on ? 1.3 : 0.8}" stroke-linecap="round" style="pointer-events:none"/>` : '');
     }).join('');
     // trièdre
     const ax = (v) => { const X = v[0], Y = v[1], Z = v[2]; const x1 = X * cyw - Y * syw, y1 = X * syw + Y * cyw; return [x1 * 22, -(Z * cp + y1 * sp) * 22]; };
