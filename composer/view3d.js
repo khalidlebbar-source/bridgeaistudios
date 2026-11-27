@@ -17,7 +17,7 @@
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
     const ySeat = -(h + C.seatDrop(M.S, M.W));
     let tag = null, mat = 'beton';
-    const face = (p) => F.push({ p, mat, tag });
+    const face = (p, ne) => F.push({ p, mat, tag, ne });
     /* parallélépipède [x0, x1] × [y0, y1] × [z0, z1] */
     const box = (x0, x1, y0, y1, z0, z1) => {
       if (x0 > x1) [x0, x1] = [x1, x0];
@@ -32,11 +32,11 @@
     };
     /* prisme vertical octogonal (colonne, pieu) */
     const cyl = (xc, yc, D, z0, z1) => {
-      const k = 8, r = D / 2, ring = [];
+      const k = 28, r = D / 2, ring = [];   // cylindre lissé : facettes fines sans arêtes dessinées
       for (let i = 0; i < k; i++) { const a = (i + 0.5) * 2 * Math.PI / k; ring.push([xc + r * Math.cos(a), yc + r * Math.sin(a)]); }
       face(ring.map((q) => [q[0], q[1], z0]));
       face(ring.slice().reverse().map((q) => [q[0], q[1], z1]));
-      for (let i = 0; i < k; i++) { const a = ring[i], b = ring[(i + 1) % k]; face([[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]]); }
+      for (let i = 0; i < k; i++) { const a = ring[i], b = ring[(i + 1) % k]; face([[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]], true); }
     };
     /* extrusion d'une section (points [y, z]) entre x0 et x1 */
     const extrude = (pts, x0, x1) => {
@@ -217,7 +217,9 @@
       if (opt.wire) return `<path${t} d="${d}" fill="none" stroke="${on ? '#1f5fd1' : '#33415a'}" stroke-width="${on ? 1.4 : 0.6}"/>`;
       const c = MAT[o.fc.mat] || MAT.beton, k = 0.62 + 0.38 * o.lam;
       const rgb = c.map((v, i) => Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)));   // sélection : léger voile bleu, couleurs conservées
-      return `<path${t} d="${d}" fill="rgb(${rgb.map(Math.round).join(',')})" stroke="${on ? '#1f5fd1' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
+      const fill = `rgb(${rgb.map(Math.round).join(',')})`;
+      if (o.fc.ne) return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.6" stroke-linejoin="round"/>`;   // facette de cylindre : pas d'arête
+      return `<path${t} d="${d}" fill="${fill}" stroke="${on ? '#1f5fd1' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
     }).join('');
     // trièdre
     const ax = (v) => { const X = v[0], Y = v[1], Z = v[2]; const x1 = X * cyw - Y * syw, y1 = X * syw + Y * cyw; return [x1 * 22, -(Z * cp + y1 * sp) * 22]; };
