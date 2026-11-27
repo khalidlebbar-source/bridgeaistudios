@@ -208,7 +208,10 @@
       void view;
       out.push({ pr, d, lam, fc });
     });
-    out.sort((a, c) => c.d - a.d);
+    // tri du peintre par couches : vu de dessus, appuis puis poutres puis hourdis (le hourdis masque les poutres) ;
+    // vu de dessous, ordre inverse. Évite que des faces longues de poutres passent devant le hourdis.
+    const above = cam.pitch > 0, lay = (fc) => (fc.mat === 'hourdis' ? 2 : fc.mat === 'prefa' || fc.mat === 'acier' ? 1 : 0);
+    out.sort((a, c) => { const la = lay(a.fc), lc = lay(c.fc); if (la !== lc) return above ? la - lc : lc - la; return c.d - a.d; });
     const sel = opt.sel;
     const paths = out.map((o) => {
       const d = 'M' + o.pr.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join('L') + 'Z';
