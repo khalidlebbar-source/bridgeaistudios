@@ -619,12 +619,46 @@
   }
   function renderProps() { const p = propsHTML(); const sp = /^[CP]\d+$/.test(selId) && M.supports.find((x) => x.id === selId); $('#props').innerHTML = galleryHTML(selId) + (sp ? sketchHTML(sp) : '') + p.h; $('#propSub').textContent = p.sub; if (typeof placePop === 'function') placePop(); }
 
+  /* ───────── Panneau de contrôle (à gauche du plan d'ensemble et des plans de coffrage) :
+     on configure l'ouvrage ici, toutes les planches se mettent à jour ───────── */
+  const pcOpen = new Set(), pcShut = new Set();
+  const pcShown = () => view.startsWith('plan') || view.startsWith('cof:');
+  function renderPC() {
+    const el = $('#pc'); if (!el || el.hidden) return;
+    const rail = S.usage === 'rail', n = S.travees.length, tab = (x) => `<table class="pg"><tbody>${x}</tbody></table>`;
+    const sec = (k, t, sub, body) => `<details class="pcs" data-pc="${k}"${pcShut.has(k) ? '' : ' open'}><summary>${t}${sub ? `<span>${sub}</span>` : ''}</summary>${body}</details>`;
+    let h = `<div class="pch"><b>PANNEAU DE CONTRÔLE</b><small>${esc(S.projet.ouvrage || S.projet.nom || 'Ouvrage')} — ${n} travée${n > 1 ? 's' : ''} · ${fr(M.Ltot, 2)} m · W ${fr(M.W, 2)} m</small></div>`;
+    h += sec('gen', 'Général', '', tab(
+      pSel('Type d’ouvrage', 'usage', [['route', 'Pont-route'], ['rail', 'Pont-rail']])
+      + pSel('Tablier', 'tablier.type', C.TYPE_KEYS.map((k) => [k, C.TYPES[k].nom]))
+      + `<tr><td>Nombre de travées</td><td class="v"><div class="pcn"><button type="button" class="mini" data-cmd="delSpan"${n <= 1 ? ' disabled' : ''} title="Retirer la dernière travée">−</button><b>${n}</b><button type="button" class="mini" data-cmd="addSpan"${n >= 12 ? ' disabled' : ''} title="Ajouter une travée">+</button></div></td></tr>`
+      + S.travees.map((L, i) => pNum('Travée ' + (i + 1) + ' (' + M.supports[i].id + ' → ' + M.supports[i + 1].id + ')', 'travees.' + i, 'm')).join('')
+      + pNum('Biais', 'biais', 'gr')
+      + (rail ? pNum('Nombre de voies', 'profil.nbVoiesFer', '') + pNum('Entraxe des voies', 'profil.entraxe', 'm')
+        : pNum('Trottoir gauche', 'profil.trottoirG', 'm') + pNum('Chaussée (roulable)', 'profil.roulable', 'm') + pNum('Trottoir droit', 'profil.trottoirD', 'm'))
+      + pRO('Largeur du tablier W', '<b>' + fr(M.W, 2) + ' m</b>')
+      + pChk('Deux tabliers jumelés', 'tablier.jumeaux') + (S.tablier.jumeaux ? pNum('Largeur du joint', 'tablier.joint', 'm', { val: S.tablier.joint }) : '')
+      + pNum('Hauteur du tablier', 'tablier.h', 'm', { val: S.tablier.h || '', ph: fr(M.pd.h, 2) + ' (auto)' })));
+    const sup = (kind, t, opts) => {
+      const L = M.supports.filter((x) => x.kind === kind); if (!L.length) return '';
+      return sec(kind, t, L.length + (kind === 'pile' ? ' pile' : ' culée') + (L.length > 1 ? 's' : ''), tab(opts) + '<ul class="pcl">' + L.map((x) => {
+        const o = pcOpen.has(x.id);
+        return `<li class="${selId === x.id ? 'sel' : ''}"><div class="pcr" data-pcs="${x.id}"><span class="tw ${o ? 'o' : 'c'}"></span><b>${x.id}</b><span>H ${fr(x.H, 2)} m · ${x.fo.mode === 'pieux' ? x.fo.n + ' pieux Ø' + fr(x.fo.D, 2) : 'semelle ' + fr(x.fo.B, 2) + ' × ' + fr(x.fo.L, 2)}</span></div>`
+          + (o ? `<div class="pcd">${sketchHTML(x)}${tab(supDims(x))}</div>` : '') + '</li>';
+      }).join('') + '</ul>');
+    };
+    h += sup('pile', 'Piles', pSel('Type', 'piles.type', Object.keys(C.PILES).map((k) => [k, C.PILES[k].nom])) + pSel('Fondation', 'fond.piles', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']]));
+    h += sup('culee', 'Culées', pSel('Type', 'culees.type', Object.keys(C.CULEES).map((k) => [k, C.CULEES[k].nom])) + pSel('Fondation', 'fond.culees', [['superficielle', 'Semelles'], ['pieux', 'Pieux forés']])
+      + (rail ? '' : pChk('Dalles de transition', 'culees.dalleTransition')));
+    const sc = el.scrollTop; el.innerHTML = h; el.scrollTop = sc;
+  }
+
   /* conserve la saisie en cours (focus, texte brut, curseur) pendant un rendu */
   let rendering = false;
   function keepFocus(fn) {
     const a = document.activeElement, k = a && a.dataset ? a.dataset.k : null;
     const isTxt = a && (a.type === 'text' || a.tagName === 'TEXTAREA');
-    const raw = k ? a.value : null, pos = k && isTxt ? a.selectionStart : null, zone = k && a.closest ? a.closest('#ribbon,#props,#res,#edIn') : null;
+    const raw = k ? a.value : null, pos = k && isTxt ? a.selectionStart : null, zone = k && a.closest ? a.closest('#ribbon,#props,#res,#edIn,#pc') : null;
     const scr = zone ? zone.scrollTop : 0;
     rendering = true;
     try { fn(); } finally { rendering = false; }
@@ -729,7 +763,7 @@
     renderTabs();
     const tp = $('#tpane');
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
-    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d'; cv.parentElement.classList.toggle('split3', view === '3d'); if (view !== '3d') stopSeq();
+    cv.hidden = false; tp.hidden = true; { const sh = pcShown(), pe = $('#pc'), was = !pe.hidden; pe.hidden = !sh; cv.parentElement.classList.toggle('splitL', sh); if (sh && !was) renderPC(); } $('#ph3').hidden = view !== '3d'; cv.parentElement.classList.toggle('split3', view === '3d'); if (view !== '3d') stopSeq();
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
     if (view === 'diag') {
       $('#axes2d').style.display = 'none';
@@ -1361,7 +1395,7 @@
     if (M.trace) { S.piles.hauteurs = M.S.piles.hauteurs.slice(); S.culees.hauteurs = M.S.culees.hauteurs.slice(); S.biais = M.S.biais; }
     try { M.an = C.analyse(M); } catch (err) { console.error(err); M.an = null; }
     if (full !== 'nohist') pushHist();
-    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); renderEditor(); });
+    keepFocus(() => { renderTree(); renderProps(); renderRibbon(); renderView(); renderEditor(); renderPC(); });
     renderStatus();
     save();
   }
@@ -1378,7 +1412,7 @@
       else if (/^P\d+$/.test(id) && view === 'sec' && !$(`#svgHost [data-tag="${id}"]`)) view = 'elev';
       if (!isTable()) lastGraphic = view;
     }
-    renderTree(); renderProps(); renderRibbon();
+    renderTree(); renderProps(); renderRibbon(); renderPC();
     if (o.pop !== false && !isTable()) { if (isEdId(id) && o.at !== undefined) openEditor(id); else openPop(o.at); }
     if (view !== v0) renderView(); else applySel();
     if (o.reveal) { const n = $(`#tree [data-node="${id}"]`); if (n) n.scrollIntoView({ block: 'nearest' }); }
@@ -1557,7 +1591,10 @@
     el.value = ['tablier.h', 'profil.largeurForcee', 'hyp.kExc', 'hyp.qTrottoir'].includes(el.dataset.k) || /\.dim\./.test(el.dataset.k) ? (v ? show(v) : '') : show(v);
     recompute(false);
   };
-  ['#props', '#ribbon', '#res', '#edIn'].forEach((s) => {
+  { const pc = $('#pc');
+    pc.addEventListener('click', (ev) => { const r = ev.target.closest('[data-pcs]'); if (!r) return; const id = r.dataset.pcs; if (pcOpen.has(id)) pcOpen.delete(id); else pcOpen.add(id); select(id, { pop: false, keepView: true }); });
+    pc.addEventListener('toggle', (ev) => { const d = ev.target; if (d.dataset && d.dataset.pc) { if (d.open) pcShut.delete(d.dataset.pc); else pcShut.add(d.dataset.pc); } }, true); }
+  ['#props', '#ribbon', '#res', '#edIn', '#pc'].forEach((s) => {
     const r = $(s);
     r.addEventListener('input', onInput); r.addEventListener('change', onChange); r.addEventListener('focusout', onBlur);
     r.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' && ev.target.tagName === 'INPUT' && ev.target.dataset && ev.target.dataset.k) ev.target.blur(); });

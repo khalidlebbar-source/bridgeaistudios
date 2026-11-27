@@ -153,6 +153,31 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .canvas [data-tag]{cursor:pointer}
 .canvas.panmode{cursor:move}
 .stage.split3>.canvas{right:320px}
+.stage.splitL>.canvas{left:300px}
+.pc{position:absolute;top:0;left:0;bottom:0;width:300px;padding-bottom:64px;box-sizing:border-box;border-right:1px solid var(--line);background:#f7f8fa;overflow-y:auto;font-size:12.5px;color:#1b2230;z-index:2}
+.pc .pch{padding:10px 12px 8px;background:#fff;border-bottom:1px solid #e6eaf0;position:sticky;top:0;z-index:1}
+.pc .pch b{display:block;font-size:13px;letter-spacing:.06em}
+.pc .pch small{color:#6b7383;font-size:11.5px}
+.pc .pcs{border-bottom:1px solid #e6eaf0;background:#fff}
+.pc .pcs>summary{cursor:pointer;list-style:none;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1b2230;display:flex;align-items:center;gap:6px}
+.pc .pcs>summary::-webkit-details-marker{display:none}
+.pc .pcs>summary::before{content:"";width:0;height:0;border-left:5px solid #6b7383;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.pc .pcs[open]>summary::before{transform:rotate(90deg)}
+.pc .pcs>summary span{margin-left:auto;font-weight:500;letter-spacing:0;text-transform:none;color:#6b7383}
+.pc .pcn{display:flex;align-items:center;gap:8px}
+.pc .pcn b{min-width:18px;text-align:center}
+.pc .pcn button{width:24px;height:22px;padding:0}
+.pc .pcl{list-style:none;margin:0;padding:4px 0 6px}
+.pc .pcr{display:flex;align-items:center;gap:7px;padding:4px 12px;cursor:pointer}
+.pc .pcr:hover{background:#eef2f8}
+.pc li.sel>.pcr{background:#e3ecfb}
+.pc .pcr b{min-width:24px}
+.pc .pcr span:last-child{color:#6b7383;font-size:11.5px}
+.pc .pcr .tw{width:0;height:0;border-left:5px solid #8a93a3;border-top:4px solid transparent;border-bottom:4px solid transparent}
+.pc .pcr .tw.o{transform:rotate(90deg)}
+.pc .pcd{padding:4px 8px 8px}
+.pc .pcd .sk{margin-bottom:6px}
+@media(max-width:760px){.stage.splitL>.canvas{left:0;top:46%}.pc{bottom:auto;height:46%;width:auto;right:0;border-right:0;border-bottom:1px solid var(--line)}}
 .ph3{position:absolute;top:0;right:0;bottom:0;width:320px;border-left:1px solid var(--line);background:#f7f8fa;overflow-y:auto;font-size:12.5px;color:#1b2230;display:flex;flex-direction:column}
 .ph3 .p3h{padding:8px 12px 6px;background:#fff;border-bottom:1px solid var(--line2,#e6eaf0)}
 .ph3 .p3h b{display:block;font-size:13px;letter-spacing:.01em}
@@ -576,6 +601,7 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
       <div class="vtools" id="vtools"></div>
     </div>
     <div class="stage">
+      <aside class="pc" id="pc" hidden aria-label="Panneau de contrôle"></aside>
       <div class="canvas" id="cv">
         <div id="svgHost"></div>
         <svg class="axes" id="axes2d" viewBox="0 0 46 46" aria-hidden="true"><path d="M8 38h30M8 38V8" stroke="#c92a2a" stroke-width="1.4" fill="none"/><path d="M38 38l-5-3v6zM8 8l-3 5h6z" fill="#c92a2a"/><text x="40" y="41" font-size="9" fill="#c92a2a">X</text><text x="11" y="9" font-size="9" fill="#c92a2a">Z</text></svg>
@@ -614,6 +640,6 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <script src="composer/justif.js?v=13"></script>
 <script src="composer/wizard.js?v=16"></script>
 <script src="composer/vitrine.js?v=7"></script>
-<script src="composer/app.js?v=50"></script>
+<script src="composer/app.js?v=51"></script>
 </body>
 </html>
