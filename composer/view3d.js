@@ -17,8 +17,8 @@
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
     const ySeat = -(h + C.seatDrop(M.S, M.W));
     let tag = null, mat = 'beton';
-    let hz = null, ph = null;   // phase de construction (cases à cocher de la vue 3D)
-    const PH_MAT = { pieu: 'pieux', gros: 'fond', fond: 'fond', app: 'app', prefa: 'poutres', hourdis: 'hourdis', dt: 'dt', acier: 'poutres' };
+    let hz = null, ph = null, inside = null;   // phase de construction (cases à cocher de la vue 3D)
+    const PH_MAT = { pieu: 'pieux', gros: 'gros', fond: 'semelles', app: 'app', prefa: 'poutres', hourdis: 'hourdis', dt: 'dt', acier: 'poutres', pred: 'predalles' };
     /* face orientée : inw = direction vers l'intérieur du solide ; la face est retournée pour que sa normale (Newell) pointe vers l'intérieur,
        ce qui permet d'éliminer les faces arrière au rendu (et de tracer les contours de silhouette) */
     const face = (p, ne, inw) => {
@@ -28,7 +28,7 @@
         if (nx * inw[0] + ny * inw[1] + nz * inw[2] < 0) p = p.slice().reverse();
       }
       const under = hz != null && p.every((q) => Math.abs(q[2] - hz) < 1e-6);   // dessus de table de poutre collé sous le hourdis
-      F.push({ p, mat, tag, ne, hz, or: !!inw, ph: ph || PH_MAT[mat] || 'appuis', under });
+      F.push({ p, mat, tag, ne, hz, or: !!inw, ph: ph || PH_MAT[mat] || 'futs', under, inside });
     };
     const area2 = (Q) => { let A = 0; for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; A += a[0] * c[1] - c[0] * a[1]; } return A; };
     const inN = (a, c, A) => { const du = c[0] - a[0], dv = c[1] - a[1]; return A > 0 ? [-dv, du] : [dv, -du]; };   // normale intérieure d'une arête du profil
@@ -97,7 +97,16 @@
       const jx = (M.joints || []).map((jj) => jj.x).filter((x) => x > -dab + 0.1 && x < Ltot + dab - 0.1).sort((p_, q_) => p_ - q_);
       const hp = [-dab].concat(jx.flatMap((x) => [x - 0.04, x + 0.04]), [Ltot + dab]), hPieces = [];
       for (let k = 0; k < hp.length; k += 2) hPieces.push([hp[k], hp[k + 1]]);
-      (pg.role === 'hourdis' && M.T.famille === 'poutres' ? hPieces : pieces).forEach(([x0, x1]) => {
+      // bandes de continuité (dallettes) sur les appuis intermédiaires sans joint : 1,00 m de part et d'autre de l'axe
+      const LB = 1.0, bands = xs.slice(1, -1).filter((x) => !jx.some((j) => Math.abs(j - x) < 0.2));
+      const hSeg = [];
+      hPieces.forEach(([a, b]) => {
+        const cuts = bands.filter((x) => x > a && x < b).flatMap((x) => [x - LB, x + LB]);
+        const pts_ = [a].concat(cuts, [b]);
+        for (let k = 0; k < pts_.length - 1; k++) hSeg.push([pts_[k], pts_[k + 1], k % 2 ? 'hourdisB' : 'hourdis']);
+      });
+      (pg.role === 'hourdis' && M.T.famille === 'poutres' ? hSeg : pieces).forEach(([x0, x1, phx]) => {
+        ph = phx || null;
         const a0 = x0 + cut, a1 = x1 - cut, ns = Math.max(1, Math.ceil((a1 - a0) / 3));
         for (let k = 0; k < ns; k++) parts.forEach((q) => {   // faces des tronçons sans arêtes (pas de quadrillage), arêtes gardées aux abouts
           const xa = a0 + (a1 - a0) * k / ns, xb = a0 + (a1 - a0) * (k + 1) / ns;
@@ -109,7 +118,22 @@
         });
       });
     });
-    hz = null;
+    hz = null; ph = null;
+    // prédalles (.06) entre tables de poutres, posées de .06 sur chaque table
+    if (M.T.famille === 'poutres' && sec.info && sec.info.btab) {
+      const i = sec.info, bx = sec.bear; mat = 'pred'; ph = 'predalles';
+      // découpées aux limites des bandes de continuité : chaque morceau n'est dessiné que si le hourdis qui le recouvre est masqué
+      const bandsP = xs.slice(1, -1), LBp = 1.0;
+      pieces.forEach(([x0, x1]) => {
+        const c_ = bandsP.flatMap((x) => [x - LBp, x + LBp]).filter((x) => x > x0 + 0.05 && x < x1 - 0.05), q_ = [x0 + 0.05].concat(c_, [x1 - 0.05]);
+        for (let m = 0; m < q_.length - 1; m++) {
+          const xm = (q_[m] + q_[m + 1]) / 2; inside = bandsP.some((x) => Math.abs(xm - x) < LBp) ? 'hourdisB' : 'hourdis';
+          for (let k = 0; k < bx.length - 1; k++) { if (sec.jumeaux && bx[k] < 0 && bx[k + 1] > 0) continue; const ya = bx[k] + i.btab / 2 - 0.06, yb = bx[k + 1] - i.btab / 2 + 0.06; if (yb - ya > 0.2) box(q_[m], q_[m + 1], ya, yb, -i.eh, -i.eh + 0.06); }
+        }
+      });
+      inside = null;
+      ph = null;
+    }
     // entretoises d'about (sur appuis) entre poutres d'un même tablier
     if (M.T.famille === 'poutres' && sec.info && sec.info.btab) {
       const i = sec.info, bx = sec.bear, zt = -i.eh - i.etab - 0.10, zb = -(h - 0.25), ee = 0.40;
@@ -138,6 +162,7 @@
       if (s.kind === 'pile') {
         let zTop = ySeat;
         if (g.ch) {
+          ph = 'chev';
           if (g.ch.kind === 'marteau') {
             const L = g.ch.L, bf = g.ch.bf, b = g.ch.b;
             const pts = [[-L / 2, ySeat], [-L / 2, ySeat - g.ch.h2], [-bf / 2, ySeat - g.ch.h], [bf / 2, ySeat - g.ch.h], [L / 2, ySeat - g.ch.h2], [L / 2, ySeat]];
@@ -151,7 +176,7 @@
             });
           }
           else box(s.x - g.ch.b / 2, s.x + g.ch.b / 2, -g.ch.L / 2, g.ch.L / 2, ySeat, ySeat - g.ch.h);
-          zTop = ySeat - g.ch.h;
+          zTop = ySeat - g.ch.h; ph = null;
         }
         const f = g.fut;
         if (f.kind === 'voile') box(s.x - f.e / 2, s.x + f.e / 2, -f.L / 2, f.L / 2, zTop, yft);
@@ -188,7 +213,7 @@
           R.cut.filter((c) => c.role !== 'prop').forEach((c) => {   // béton de propreté non représenté en 3D
             mat = c.role === 'dt' ? 'dt' : 'beton';
             const spans = c.role === 'som' ? halves(Ls) : c.role === 'gg' ? halves(W) : dtSpans;
-            ph = c.role === 'gg' ? 'gg' : null;
+            ph = c.role === 'gg' ? 'gg' : c.role === 'som' ? 'chev' : null;
             spans.forEach(([a, b2]) => extY(c.pts, a, b2));
           });
           mat = 'beton'; ph = 'gg';
@@ -202,14 +227,16 @@
         let zr0;
         if (g.type === 'enterree') {
           const xin = back - o * g.sommier.b;
+          ph = 'chev';
           if (M.sec.jumeaux) { const j = M.sec.joint / 2; box(back, xin, -g.sommier.L / 2, -j, ySeat, ySeat - g.sommier.h); box(back, xin, j, g.sommier.L / 2, ySeat, ySeat - g.sommier.h); }
           else box(back, xin, -g.sommier.L / 2, g.sommier.L / 2, ySeat, ySeat - g.sommier.h);
+          ph = null;
           xf = (back + xin) / 2;
           if (g.colonnes) (g.colonnes.pos || Array.from({ length: g.colonnes.n }, (_, i) => -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s)).forEach((y) => { if (g.colonnes.section === 'circ') cyl(xf, y, g.colonnes.D, yft, ySeat - g.sommier.h); else { const b = g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D; box(xf - g.colonnes.D / 2, xf + g.colonnes.D / 2, y - b / 2, y + b / 2, ySeat - g.sommier.h, yft); } });
           zr0 = ySeat - g.sommier.h + 0.3;
         } else {
           const R = C.culeeProfil(s), X = (u) => s.x + o * u, so = g.sommier, hs = so.h;
-          box(X(R.uf), X(R.uf + so.b), -W / 2, W / 2, ySeat, ySeat - hs);
+          ph = 'chev'; box(X(R.uf), X(R.uf + so.b), -W / 2, W / 2, ySeat, ySeat - hs); ph = null;
           box(X(R.uf), X(R.uf + g.mur.e), -W / 2, W / 2, ySeat - hs, yft);
           xf = X(R.uc);
           const rt = g.retours, er = rt.e;
@@ -250,7 +277,7 @@
   }
 
   const MAT = {
-    beton: [204, 212, 224], hourdis: [232, 214, 176], dt: [168, 132, 214], gros: [150, 132, 108], prefa: [160, 163, 168], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
+    beton: [204, 212, 224], hourdis: [232, 214, 176], dt: [168, 132, 214], pred: [196, 186, 160], gros: [150, 132, 108], prefa: [160, 163, 168], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
   };
 
   function render3D(model, cam, opt) {
@@ -272,7 +299,8 @@
     const hide = opt.hide || null;
     model.faces.forEach((fc) => {
       if (hide && hide[fc.ph]) return;   // phase de construction masquée
-      if (fc.under && !(hide && hide.hourdis)) return;   // invisible sous le hourdis
+      if (fc.under && !(hide && hide.hourdis)) return;
+      if (fc.inside && !(hide && hide[fc.inside])) return;   // prédalle noyée dans le hourdis visible   // invisible sous le hourdis
       const pr = fc.p.map(P);
       let d = 0; pr.forEach((q) => { d += q[2]; }); d /= pr.length;
       // normale de la face (Newell)
@@ -303,7 +331,7 @@
     };
     // le gros béton (sous tout le reste) est dessiné en premier : ses faces de contact ne passent pas devant la semelle
     // poutres et entretoises sous le hourdis : légèrement reculées vu de dessus (avancées vu de dessous) pour ne pas percer la dalle
-    const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : o.fc.mat === 'prefa' ? (cam.pitch > 0 ? 0.8 : -0.8) : 0);
+    const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : (o.fc.mat === 'prefa' || o.fc.mat === 'pred') ? (cam.pitch > 0 ? 0.8 : -0.8) : 0);
     out.sort((a, c) => (c.d + bias(c)) - (a.d + bias(a)));
     const sel = opt.sel;
     const paths = out.map((o) => {
@@ -331,7 +359,8 @@
   }
 
   /* phases de construction, dans l'ordre */
-  const PHASES = [['pieux', 'Pieux'], ['fond', 'Gros béton, semelles'], ['appuis', 'Fûts, chevêtres, sommiers'], ['app', 'Bossages, appareils'], ['poutres', 'Poutres'],
-    ['entretoises', 'Entretoises'], ['hourdis', 'Hourdis'], ['gg', 'Garde-grève, murs en retour'], ['dt', 'Dalles de transition']];
+  const PHASES = [['pieux', 'Pieux'], ['gros', 'Gros béton'], ['semelles', 'Semelles'], ['futs', 'Fûts'], ['chev', 'Chevêtres et sommiers'], ['gg', 'Garde-grève & murs en retour'],
+    ['app', 'Bossages et AA'], ['poutres', 'Poutres'], ['entretoises', 'Entretoises'], ['predalles', 'Prédalles'], ['hourdis', 'Hourdis (sans la bande de continuité)'],
+    ['hourdisB', 'Hourdis (bande de continuité)'], ['dt', 'Dalles de transition']];
   return { build3D, render3D, PHASES };
 });
