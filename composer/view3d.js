@@ -149,7 +149,7 @@
           const em = g.retours.e || 0.5, Ls = g.sommier.L || W;
           const dtSpans = j ? [[-W / 2 + em + 0.80, -j - 0.20], [j + 0.20, W / 2 - em - 0.80]] : [[-W / 2 + em + 0.80, W / 2 - em - 0.80]];
           R.cut.filter((c) => c.role !== 'prop').forEach((c) => {   // béton de propreté non représenté en 3D
-            mat = 'beton';
+            mat = c.role === 'dt' ? 'dt' : 'beton';
             const spans = c.role === 'som' ? halves(Ls) : c.role === 'gg' ? halves(W) : dtSpans;
             spans.forEach(([a, b2]) => extY(c.pts, a, b2));
           });
@@ -183,7 +183,7 @@
           if (g.retours.mode === 'AV') [-1, 1].forEach((sg) => box(back, back - o * g.sommier.b, sg * Lw / 2, sg * (Lw / 2 - er), 0, ySeat));
           else [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * Lw / 2, sg * (Lw / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
         }
-        if (g.dt) box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70);
+        if (g.dt) { mat = 'dt'; box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70); mat = 'beton'; }
         }
       }
       // fondation
@@ -207,7 +207,7 @@
   }
 
   const MAT = {
-    beton: [204, 212, 224], hourdis: [232, 214, 176], prefa: [190, 204, 224], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
+    beton: [204, 212, 224], hourdis: [232, 214, 176], dt: [168, 132, 214], prefa: [190, 204, 224], acier: [120, 150, 196], app: [40, 44, 54], fond: [214, 208, 196], pieu: [222, 216, 204],
   };
 
   function render3D(model, cam, opt) {
