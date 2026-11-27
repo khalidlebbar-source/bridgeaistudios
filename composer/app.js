@@ -716,7 +716,9 @@
 
   function renderTabs() {
     const nW = M ? M.warn.length : 0;
-    let h = VIEWS.map(([v, l]) => `<button class="dtab${view === v ? ' on' : ''}" data-cmd="view" data-arg="${v}">${l}</button>`).join('');
+    const nP = M && C.sheetCount ? C.sheetCount(M) : 1;
+    const V2 = [].concat(nP > 1 ? Array.from({ length: nP }, (_, i) => [i ? 'plan' + (i + 1) : 'plan', 'Plan d’ensemble — planche ' + (i + 1)]) : [['plan', 'Plan d’ensemble']], VIEWS.slice(1));
+    let h = V2.map(([v, l]) => `<button class="dtab${view === v ? ' on' : ''}" data-cmd="view" data-arg="${v}">${l}</button>`).join('');
     h += openT.map((k) => `<span class="dtab tt${view === 't:' + k ? ' on' : ''}" data-cmd="tab" data-arg="${k}" role="button" tabindex="0">${ico(k)}${TABLES[k]}${k === 'msg' && nW ? `<span class="bd">${nW}</span>` : ''}<button class="dx" data-cmd="closeT" data-arg="${k}" title="Fermer" aria-label="Fermer ${TABLES[k]}">×</button></span>`).join('');
     $('#dtabsList').innerHTML = h;
     renderVtools();
@@ -744,12 +746,13 @@
       $('#axes2d').style.display = 'none';
       return;
     }
-    $('#axes2d').style.display = view === 'plan' ? 'none' : '';
+    if (/^plan\d+$/.test(view) && C.sheetCount && +view.slice(4) > C.sheetCount(M)) view = 'plan';
+    $('#axes2d').style.display = view.startsWith('plan') ? 'none' : '';
     let svg;
-    if (view === 'plan') {
+    if (view.startsWith('plan')) {
       const nko = JZ.sum && JZ.key === Skey() ? JZ.sum.verdicts.filter((v) => v.statut !== 'ok').length : null;
       scene = null;
-      svg = C.sheetSVG(M, { dims: showDims, justif: nko == null ? null : { ok: !nko, nko } });
+      svg = C.sheetSVG(M, { dims: showDims, planche: +(view.slice(4) || 1), justif: nko == null ? null : { ok: !nko, nko } });
     } else {
       scene = view === 'elev' ? C.elevScene(M) : view === 'vplan' ? C.planScene(M) : C.secScene(M);
       const opt = { width: cw, id: view === 'elev' ? 've' : view === 'vplan' ? 'vp' : 'vs', kp: 3.3, pad: 18, dims: showDims };
@@ -763,7 +766,7 @@
     vbBase = el.getAttribute('viewBox').split(/\s+/).map(Number);
     vb = vbBase.slice();
     applySel();
-    $('#vinfo').textContent = view === 'plan' ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
+    $('#vinfo').textContent = view.startsWith('plan') ? 'Plan d’ensemble A0 · cliquez une vue ou un élément pour le modifier'
       : ({ elev: 'Coupe longitudinale', vplan: 'Vue en plan', sec: 'Coupe transversale' })[view] + ' · plan DXF 1/' + scene.ech + ' · molette : zoom · glisser : déplacer';
   }
   /* séquence animée de la construction : les phases apparaissent une à une, caméra fixe */
@@ -1418,7 +1421,7 @@
         if (S.cartouche && S.cartouche.img) { S.cartouche = Object.assign({}, S.cartouche, { img: '', nom: '' }); view = 'plan'; lastGraphic = 'plan'; break; }
         $('#fCart').click(); return;
       case 'pdf': buildPrint(); window.print(); return;
-      case 'sheetSvg': download('plan-ensemble-' + slug() + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims }), 'image/svg+xml'); return;
+      case 'sheetSvg': { const nP = C.sheetCount ? C.sheetCount(M) : 1; for (let k = 1; k <= nP; k++) setTimeout(() => download('plan-ensemble-' + slug() + (nP > 1 ? '-planche-' + k : '') + '.svg', '<?xml version="1.0" encoding="UTF-8"?>\n' + C.sheetSVG(M, { dims: showDims, planche: k }), 'image/svg+xml'), 400 * (k - 1)); return; }
       case 'dxf': download('composer-' + slug() + '.dxf', C.buildDXF(M, { date: today() }), 'application/dxf'); return;
       case 'home': location.href = 'index.html'; return;
       case 'usage': setUsage(arg); break;

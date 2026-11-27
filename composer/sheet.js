@@ -124,68 +124,81 @@
   }
   const okImg = (img) => img && /^data:image\/(svg\+xml|png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(img);
 
-  /* cartouche en bande au bas de la feuille (comme les plans KLE), laissé vierge : seul le titre du plan au milieu */
-  function cartoucheBande(box) {
+  /* cartouche A4 vertical, vierge : titre du plan et numéro de planche au milieu */
+  function cartoucheA4(box, k, n) {
     const [x, y, w, h] = box;
     return `<g data-tag="projet">` + R(x, y, w, h, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7')
-      + T(x + w / 2, y + h / 2 + 3.5, 'PLAN D’ENSEMBLE', { fs: 10, a: 'middle', ls: '.04em' }) + '</g>';
+      + T(x + w / 2, y + h / 2, 'PLAN D’ENSEMBLE', { fs: 11, a: 'middle', ls: '.04em' })
+      + (n > 1 ? T(x + w / 2, y + h / 2 + 12, 'PLANCHE ' + k + ' / ' + n, { fs: 7, a: 'middle', ls: '.06em' }) : '') + '</g>';
   }
 
-  /* PLAN D'ENSEMBLE — disposition des plans KLE (PRO2334) :
-   *   en haut, la coupe longitudinale sur toute la largeur ;
-   *   à gauche, coupes types du tablier en travée et sur piles (1/50) ;
-   *   au centre, coupes types des poutres sur appuis et en travée (1/20) puis le NOTA ;
-   *   à droite, coupes types du tablier sur les deux culées (1/50) ;
-   *   cartouche en bande au bas de la feuille. */
-  function sheetSVG(M, opt) {
+  /* PLAN D'ENSEMBLE — disposition des plans KLE (PRO2334), cartouche A4 vertical en bas à droite, NOTA au-dessus :
+   *   planche 1 : coupe longitudinale en tête ; coupes types du tablier en travée et sur piles (1/50) ; coupes types des poutres (1/20) ;
+   *               coupes types sur culées à droite si la place le permet ;
+   *   planche 2 (si besoin) : coupes types du tablier sur les culées. */
+  function plan(M, opt) {
     opt = opt || {};
-    const S = M.S, ct = S.cartouche || {};
+    const S = M.S;
     const piles = M.supports.filter((x) => x.kind === 'pile'), cul = M.supports.filter((x) => x.kind === 'culee');
-    // pile type : la hauteur la plus fréquente (les autres sont renvoyées par une note, ex. « 7m pour P1 »)
     const pid = piles.length ? piles.map((p) => [p, piles.filter((q) => Math.abs(q.H - p.H) < 0.01).length]).sort((a, b) => b[1] - a[1] || b[0].H - a[0].H)[0][0].id : null;
-    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
-      + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
-      + `<rect x="0" y="0" width="${SW}" height="${SH}" style="fill:#fff;stroke:none"/>`
-      + R(FX0, FY0, FX1 - FX0, FY1 - FY0, 'fill:none;stroke:#1e1e1e;stroke-width:1');
-    const ech = [], W = FX1 - FX0;
-    const cart = [FX0, FY1 - 46, W, 46];
-    const yB = cart[1] - GAP;                                   // bas de la zone de dessin
     const size = (mk, id, e) => { const sc = mk(e); if (!sc) return [0, 0]; const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
     const c0 = cul[0], c1 = cul[cul.length - 1];
     const ttl = (sp) => sp ? 'COUPE TYPE DU TABLIER SUR ' + (sp.kind === 'pile' ? 'PILES' : 'CULEE ' + sp.id) : '';
-    const L = [
-      ['zt', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TYPE DU TABLIER EN TRAVEE' }), 'tablier'],
-      pid ? ['zs', (e) => C.secScene(M, { ech: e, part: 'pile', id: pid, titre: ttl(piles[0]) }), pid] : null,
-    ].filter(Boolean);
+    const L = [['zt', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TYPE DU TABLIER EN TRAVEE' }), 'tablier'],
+      pid ? ['zs', (e) => C.secScene(M, { ech: e, part: 'pile', id: pid, titre: ttl(piles[0]) }), pid] : null].filter(Boolean);
     const Rr = [c0 && ['zc0', (e) => C.secScene(M, { ech: e, part: 'culee', id: c0.id, titre: ttl(c0) }), c0.id],
       c1 && c1 !== c0 && ['zc1', (e) => C.secScene(M, { ech: e, part: 'culee', id: c1.id, titre: ttl(c1) }), c1.id]].filter(Boolean);
     const hasB = !!(C.poutreScene && C.poutreScene(M, {}));
     const Mid = hasB ? [['zb1', (e) => C.poutreScene(M, { ech: e, where: 'appui' }), 'section'], ['zb2', (e) => C.poutreScene(M, { ech: e, where: 'travee' }), 'section']] : [];
-    // hauteur de la coupe longitudinale : ce qu'il faut à son échelle, au plus 36 % de la feuille
-    const sec50 = L.concat(Rr).map(([id, mk]) => size(mk, id, 50));
-    const colH = (arr) => arr.reduce((a, q) => a + q[1] + GAP, 0);
-    const needS = Math.max(colH(sec50.slice(0, L.length)), colH(sec50.slice(L.length)));
-    const hLong = Math.max(0.17 * (yB - FY0), Math.min(0.36 * (yB - FY0), yB - FY0 - needS - GAP));
-    { const r = place((e) => C.elevScene(M, { ech: e }), [FX0, FY0, W, hLong], ECH.long, 'zl', opt, 'travees'); ech.push(r.ech); s += r.svg; }
-    const y1 = FY0 + hLong + GAP, Hc = yB - y1;
-    const wL = 0.395 * W, wM = 0.17 * W, wR = W - wL - wM - 2 * GAP;
-    const xs = [FX0, FX0 + wL + GAP, FX0 + wL + wM + 2 * GAP];
-    // une seule échelle pour les quatre coupes du tablier, la plus grande qui tient (jamais en dessous de 1/50)
-    const boxes = (arr, x, w, e) => { const hh = arr.map(([id, mk]) => size(mk, id, e)[1]), tot = hh.reduce((a, b) => a + b, 0) || 1; let y = y1; const sp = Math.max(0, Hc - tot - GAP * (arr.length - 1)) / Math.max(1, arr.length); return arr.map((q, k) => { const h = hh[k] + sp; const b = [x, y, w, Math.min(h, Hc)]; y += h + GAP; return b; }); };
-    const fitsCol = (arr, x, w, e) => { const hh = arr.map(([id, mk]) => size(mk, id, e)); return hh.every((q) => q[0] <= w - 2) && hh.reduce((a, q) => a + q[1], 0) + GAP * (arr.length - 1) <= Hc - 2; };
-    const eSec = ECH.sec.find((e) => fitsCol(L, xs[0], wL, e) && fitsCol(Rr, xs[2], wR, e)) || 50;
-    [[L, xs[0], wL], [Rr, xs[2], wR]].forEach(([arr, x, w]) => { const bb = boxes(arr, x, w, eSec); arr.forEach(([id, mk, tag], k) => { const r = place(mk, bb[k], [eSec], id, opt, tag); ech.push(r.ech); s += r.svg; }); });
-    // centre : coupes types des poutres (1/20) puis NOTA
-    const nb = notaBlock(S.nota, xs[1], wM, 2.6);
-    const nh = nb ? Math.min(nb.h, 0.45 * Hc) : 0;
-    if (Mid.length) {
-      const hm = Hc - nh - GAP, eB = [20, 25, 30, 40, 50].find((e) => Mid.reduce((a, [id, mk]) => a + size(mk, id, e)[1], 0) + GAP <= hm - 2 && Mid.every(([id, mk]) => size(mk, id, e)[0] <= wM - 2)) || 50;
-      Mid.forEach(([id, mk, tag], k) => { const r = place(mk, [xs[1], y1 + k * (hm / 2), wM, hm / 2 - GAP / 2], [eB], id, opt, tag); s += r.svg; });
+    const cart = [FX1 - 210, FY1 - 297, 210, 297], mw = cart[0] - GAP - FX0;
+    const sL = L.map(([id, mk]) => size(mk, id, 50)), sR = Rr.map(([id, mk]) => size(mk, id, 50)), sM = Mid.map(([id, mk]) => size(mk, id, 20));
+    const wLn = Math.max(0, ...sL.map((q) => q[0])), wRn = Math.max(0, ...sR.map((q) => q[0])), wMn = Math.max(0, ...sM.map((q) => q[0]));
+    const hL = sL.reduce((a, q) => a + q[1] + GAP, 0), hR = sR.reduce((a, q) => a + q[1] + GAP, 0);
+    const hLongMin = 0.17 * (FY1 - FY0);
+    const one = wLn + wRn + wMn + 3 * GAP <= mw && Math.max(hL, hR) <= FY1 - FY0 - hLongMin - GAP;
+    return { L, Rr, Mid, cart, mw, one, n: one || !Rr.length ? 1 : 2, size, hL, hR };
+  }
+  function sheetCount(M) { return plan(M, {}).n; }
+
+  function sheetSVG(M, opt) {
+    opt = opt || {};
+    const S = M.S, ct = S.cartouche || {}, P_ = plan(M, opt), n = P_.n, k = Math.min(n, Math.max(1, opt.planche || 1));
+    const { L, Rr, Mid, cart, mw, size } = P_;
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" width="${SW}mm" height="${SH}mm" role="img" class="sheet">`
+      + `<style>.sheet text{font-family:'Arial Narrow','Segoe UI',Arial,sans-serif;fill:#14171f}</style>`
+      + `<rect x="0" y="0" width="${SW}" height="${SH}" style="fill:#fff;stroke:none"/>`
+      + R(FX0, FY0, FX1 - FX0, FY1 - FY0, 'fill:none;stroke:#1e1e1e;stroke-width:1');
+    // NOTA au-dessus du cartouche, dans son cadre
+    const top = cart[1] - GAP, nb = notaBlock(S.nota, cart[0], cart[2], 3);
+    const nh = nb ? Math.min(nb.h, top - FY0) : 0;
+    if (nb) s += `<clipPath id="nclip"><rect x="${cart[0]}" y="${top - nh}" width="${cart[2]}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(top - nh)}</g>` + R(cart[0], top - nh, cart[2], nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5');
+    s += okImg(ct.img) ? reserveA4(cart, ct.img) : cartoucheA4(cart, k, n);
+    const placeCol = (arr, x, w, y0, y1, scales) => {
+      const e = scales.find((e_) => { const hh = arr.map(([id, mk]) => size(mk, id, e_)); return hh.every((q) => q[0] <= w - 2) && hh.reduce((a, q) => a + q[1], 0) + GAP * (arr.length - 1) <= y1 - y0 - 2; }) || scales[scales.length - 1];
+      const hh = arr.map(([id, mk]) => size(mk, id, e)[1]), sp = Math.max(0, (y1 - y0) - hh.reduce((a, b) => a + b, 0) - GAP * (arr.length - 1)) / Math.max(1, arr.length);
+      let y = y0; arr.forEach(([id, mk, tag], q) => { const h = hh[q] + sp; s += place(mk, [x, y, w, Math.min(h, y1 - y0)], [e], id, opt, tag).svg; y += h + GAP; });
+    };
+    if (k === 1) {
+      const cols = [L, Mid].concat(P_.one ? [Rr] : []).filter((c) => c.length);
+      const need = Math.max(P_.hL, P_.one ? P_.hR : 0);
+      const hLong = Math.max(0.17 * (FY1 - FY0), Math.min(0.40 * (FY1 - FY0), FY1 - FY0 - need - GAP));
+      s += place((e) => C.elevScene(M, { ech: e }), [FX0, FY0, mw, hLong], ECH.long, 'zl', opt, 'travees').svg;
+      const y1 = FY0 + hLong + GAP;
+      const wM = Mid.length ? Math.max(...Mid.map(([id, mk]) => size(mk, id, 20)[0])) + 6 : 0;
+      const wR = P_.one ? Math.max(...Rr.map(([id, mk]) => size(mk, id, 50)[0])) + 4 : 0;
+      const wL = mw - wM - wR - GAP * (cols.length - 1);
+      let x = FX0;
+      placeCol(L, x, wL, y1, FY1, ECH.sec); x += wL + GAP;
+      if (Mid.length) { placeCol(Mid, x, wM, y1, FY1, [20, 25, 30, 40, 50]); x += wM + GAP; }
+      if (P_.one) placeCol(Rr, x, wR, y1, FY1, ECH.sec);
+    } else {
+      // planche 2 : coupes sur culées côte à côte (ou l'une sous l'autre si elles ne tiennent pas en largeur)
+      const side = Rr.length > 1 && Rr.every(([id, mk]) => size(mk, id, 50)[0] <= (mw - GAP) / 2 - 2);
+      if (side) Rr.forEach((r, q) => placeCol([r], FX0 + q * ((mw + GAP) / 2), (mw - GAP) / 2, FY0 + 10, FY1, ECH.sec));
+      else placeCol(Rr, FX0, mw, FY0 + 10, FY1, ECH.sec);
     }
-    if (nb) { const ty = yB - nh; s += `<clipPath id="nclip"><rect x="${xs[1]}" y="${ty}" width="${wM}" height="${nh}"/></clipPath><g clip-path="url(#nclip)">${nb.draw(ty)}</g>` + R(xs[1], ty, wM, nh, 'fill:none;stroke:#1e1e1e;stroke-width:.5'); }
-    s += okImg(ct.img) ? reserveA4(cart, ct.img) : cartoucheBande(cart);
     return s + '</svg>';
   }
 
-  return { sheetSVG, SHEET: { W: SW, H: SH, layout } };
+  return { sheetSVG, sheetCount, SHEET: { W: SW, H: SH, layout } };
 });
