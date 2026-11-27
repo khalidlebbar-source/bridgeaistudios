@@ -17,7 +17,19 @@
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
     const ySeat = -(h + C.seatDrop(M.S, M.W));
     let tag = null, mat = 'beton';
-    const face = (p, ne) => F.push({ p, mat, tag, ne });
+    let hz = null;
+    /* face orientée : inw = direction vers l'intérieur du solide ; la face est retournée pour que sa normale (Newell) pointe vers l'intérieur,
+       ce qui permet d'éliminer les faces arrière au rendu (et de tracer les contours de silhouette) */
+    const face = (p, ne, inw) => {
+      if (inw) {
+        let nx = 0, ny = 0, nz = 0;
+        for (let i = 0; i < p.length; i++) { const a = p[i], c = p[(i + 1) % p.length]; nx += (a[1] - c[1]) * (a[2] + c[2]); ny += (a[2] - c[2]) * (a[0] + c[0]); nz += (a[0] - c[0]) * (a[1] + c[1]); }
+        if (nx * inw[0] + ny * inw[1] + nz * inw[2] < 0) p = p.slice().reverse();
+      }
+      F.push({ p, mat, tag, ne, hz, or: !!inw });
+    };
+    const area2 = (Q) => { let A = 0; for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; A += a[0] * c[1] - c[0] * a[1]; } return A; };
+    const inN = (a, c, A) => { const du = c[0] - a[0], dv = c[1] - a[1]; return A > 0 ? [-dv, du] : [dv, -du]; };   // normale intérieure d'une arête du profil
     /* parallélépipède [x0, x1] × [y0, y1] × [z0, z1] */
     const box = (x0, x1, y0, y1, z0, z1) => {
       if (x0 > x1) [x0, x1] = [x1, x0];
@@ -28,35 +40,37 @@
       if (nx * ny > 1) {
         for (let i = 0; i < nx; i++) for (let k = 0; k < ny; k++) {
           const a = x0 + (x1 - x0) * i / nx, b = x0 + (x1 - x0) * (i + 1) / nx, c = y0 + (y1 - y0) * k / ny, d = y0 + (y1 - y0) * (k + 1) / ny;
-          face([[a, c, z0], [b, c, z0], [b, d, z0], [a, d, z0]], true);
-          face([[a, c, z1], [a, d, z1], [b, d, z1], [b, c, z1]], true);
-          face([[a, c, z0], [a, c, z1], [b, c, z1], [b, c, z0]], true);
-          face([[a, d, z0], [b, d, z0], [b, d, z1], [a, d, z1]], true);
-          face([[a, c, z0], [a, d, z0], [a, d, z1], [a, c, z1]], true);
-          face([[b, c, z0], [b, c, z1], [b, d, z1], [b, d, z0]], true);
+          face([[a, c, z0], [b, c, z0], [b, d, z0], [a, d, z0]], true, [0, 0, 1]);
+          face([[a, c, z1], [a, d, z1], [b, d, z1], [b, c, z1]], true, [0, 0, -1]);
+          if (k === 0) face([[a, c, z0], [a, c, z1], [b, c, z1], [b, c, z0]], true, [0, 1, 0]);
+          if (k === ny - 1) face([[a, d, z0], [b, d, z0], [b, d, z1], [a, d, z1]], true, [0, -1, 0]);
+          if (i === 0) face([[a, c, z0], [a, d, z0], [a, d, z1], [a, c, z1]], true, [1, 0, 0]);
+          if (i === nx - 1) face([[b, c, z0], [b, c, z1], [b, d, z1], [b, d, z0]], true, [-1, 0, 0]);
         }
         return;
       }
-      face([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]]);
-      face([[x0, y0, z1], [x0, y1, z1], [x1, y1, z1], [x1, y0, z1]]);
-      face([[x0, y0, z0], [x0, y0, z1], [x1, y0, z1], [x1, y0, z0]]);
-      face([[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]]);
-      face([[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]]);
-      face([[x1, y0, z0], [x1, y0, z1], [x1, y1, z1], [x1, y1, z0]]);
+      face([[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]], false, [0, 0, 1]);
+      face([[x0, y0, z1], [x0, y1, z1], [x1, y1, z1], [x1, y0, z1]], false, [0, 0, -1]);
+      face([[x0, y0, z0], [x0, y0, z1], [x1, y0, z1], [x1, y0, z0]], false, [0, 1, 0]);
+      face([[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]], false, [0, -1, 0]);
+      face([[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]], false, [1, 0, 0]);
+      face([[x1, y0, z0], [x1, y0, z1], [x1, y1, z1], [x1, y1, z0]], false, [-1, 0, 0]);
     };
     /* prisme vertical octogonal (colonne, pieu) */
     const cyl = (xc, yc, D, z0, z1) => {
       const k = 28, r = D / 2, ring = [];   // cylindre lissé : facettes fines sans arêtes dessinées
       for (let i = 0; i < k; i++) { const a = (i + 0.5) * 2 * Math.PI / k; ring.push([xc + r * Math.cos(a), yc + r * Math.sin(a)]); }
-      face(ring.map((q) => [q[0], q[1], z0]));
-      face(ring.slice().reverse().map((q) => [q[0], q[1], z1]));
-      for (let i = 0; i < k; i++) { const a = ring[i], b = ring[(i + 1) % k]; face([[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]], true); }
+      const sz = z1 > z0 ? 1 : -1;
+      face(ring.map((q) => [q[0], q[1], z0]), false, [0, 0, sz]);
+      face(ring.slice().reverse().map((q) => [q[0], q[1], z1]), false, [0, 0, -sz]);
+      for (let i = 0; i < k; i++) { const a = ring[i], b = ring[(i + 1) % k]; face([[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]], true, [xc - (a[0] + b[0]) / 2, yc - (a[1] + b[1]) / 2, 0]); }
     };
     /* extrusion d'une section (points [y, z]) entre x0 et x1 */
     const extrude = (pts, x0, x1) => {
-      face(pts.map((q) => [x0, q[0], q[1]]));
-      face(pts.slice().reverse().map((q) => [x1, q[0], q[1]]));
-      for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; face([[x0, a[0], a[1]], [x1, a[0], a[1]], [x1, b[0], b[1]], [x0, b[0], b[1]]]); }
+      const A = area2(pts), sx = x1 > x0 ? 1 : -1;
+      face(pts.map((q) => [x0, q[0], q[1]]), false, [sx, 0, 0]);
+      face(pts.slice().reverse().map((q) => [x1, q[0], q[1]]), false, [-sx, 0, 0]);
+      for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = inN(a, b, A); face([[x0, a[0], a[1]], [x1, a[0], a[1]], [x1, b[0], b[1]], [x0, b[0], b[1]]], false, [0, n[0], n[1]]); }
     };
 
     // ── tablier ──
@@ -72,18 +86,24 @@
     };
     sec.polys.forEach((pg) => {
       mat = pg.mat === 'acier' ? 'acier' : pg.role === 'poutre' ? 'prefa' : pg.role === 'hourdis' ? 'hourdis' : 'beton';
+      hz = pg.role === 'poutre' && sec.info && sec.info.eh ? -sec.info.eh : null;
       const cut = pg.mat === 'acier' ? 0.2 : 0, ys = pg.pts.map((q) => q[0]), ya = Math.min(...ys), yb = Math.max(...ys);
       const nb = pg.role === 'poutre' ? 1 : Math.max(1, Math.ceil((yb - ya) / 1.5));
+      const cutsY = Array.from({ length: Math.max(0, nb - 1) }, (_, k) => ya + (yb - ya) * (k + 1) / nb);
       const parts = nb === 1 ? [pg.pts] : Array.from({ length: nb }, (_, k) => band(pg.pts, ya + (yb - ya) * k / nb, ya + (yb - ya) * (k + 1) / nb)).filter((q) => q.length >= 3);
       pieces.forEach(([x0, x1]) => {
         const a0 = x0 + cut, a1 = x1 - cut, ns = Math.max(1, Math.ceil((a1 - a0) / 3));
         for (let k = 0; k < ns; k++) parts.forEach((q) => {   // faces des tronçons sans arêtes (pas de quadrillage), arêtes gardées aux abouts
           const xa = a0 + (a1 - a0) * k / ns, xb = a0 + (a1 - a0) * (k + 1) / ns;
-          face(q.map((v) => [xa, v[0], v[1]]), k > 0 || nb > 1); face(q.slice().reverse().map((v) => [xb, v[0], v[1]]), k < ns - 1 || nb > 1);
-          for (let i = 0; i < q.length; i++) { const u = q[i], w = q[(i + 1) % q.length]; face([[xa, u[0], u[1]], [xb, u[0], u[1]], [xb, w[0], w[1]], [xa, w[0], w[1]]], true); }
+          const Aq = area2(q);
+          if (k === 0) face(q.map((v) => [xa, v[0], v[1]]), true, [1, 0, 0]); if (k === ns - 1) face(q.slice().reverse().map((v) => [xb, v[0], v[1]]), true, [-1, 0, 0]);
+          for (let i = 0; i < q.length; i++) { const u = q[i], w = q[(i + 1) % q.length];
+            if (nb > 1 && Math.abs(u[0] - w[0]) < 1e-9 && cutsY.some((yc) => Math.abs(u[0] - yc) < 1e-9)) continue;   // paroi interne entre bandes
+            const n = inN(u, w, Aq); face([[xa, u[0], u[1]], [xb, u[0], u[1]], [xb, w[0], w[1]], [xa, w[0], w[1]]], true, [0, n[0], n[1]]); }
         });
       });
     });
+    hz = null;
     // entretoises d'about (sur appuis) entre poutres d'un même tablier
     if (M.T.famille === 'poutres' && sec.info && sec.info.btab) {
       const i = sec.info, bx = sec.bear, zt = -i.eh - i.etab - 0.10, zb = -(h - 0.25), ee = 0.40;
@@ -114,11 +134,7 @@
           if (g.ch.kind === 'marteau') {
             const L = g.ch.L, bf = g.ch.bf, b = g.ch.b;
             const pts = [[-L / 2, ySeat], [-L / 2, ySeat - g.ch.h2], [-bf / 2, ySeat - g.ch.h], [bf / 2, ySeat - g.ch.h], [L / 2, ySeat - g.ch.h2], [L / 2, ySeat]];
-            const ex = (x0, x1) => {
-              face(pts.map((q) => [x0, q[0], q[1]]));
-              face(pts.slice().reverse().map((q) => [x1, q[0], q[1]]));
-              for (let i = 0; i < pts.length; i++) { const a = pts[i], c = pts[(i + 1) % pts.length]; face([[x0, a[0], a[1]], [x1, a[0], a[1]], [x1, c[0], c[1]], [x0, c[0], c[1]]]); }
-            };
+            const ex = (x0, x1) => extrude(pts, x0, x1);
             ex(s.x - b / 2, s.x + b / 2);
           } else if (M.sec.jumeaux || g.redan) {   // chevêtre par demi-tablier, redans en sous-face (plans KLE)
             const j = M.sec.jumeaux ? M.sec.joint / 2 : 0, rd = g.redan, yR = ySeat - g.ch.h + (rd ? rd.h : 0), yB = ySeat - g.ch.h;
@@ -156,9 +172,9 @@
             extY1(pts, y0, y1, false, false);
           };
           const extY1 = (pts, y0, y1, n0, n1) => {
-            const Q = pts.map((q) => [X(q[0]), z0 + q[1]]);
-            face(Q.map((q) => [q[0], y0, q[1]]), n0); face(Q.slice().reverse().map((q) => [q[0], y1, q[1]]), n1);
-            for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; face([[a[0], y0, a[1]], [c[0], y0, c[1]], [c[0], y1, c[1]], [a[0], y1, a[1]]], n0 || n1); }
+            const Q = pts.map((q) => [X(q[0]), z0 + q[1]]), A = area2(Q), sy = y1 > y0 ? 1 : -1;
+            if (!n0) face(Q.map((q) => [q[0], y0, q[1]]), false, [0, sy, 0]); if (!n1) face(Q.slice().reverse().map((q) => [q[0], y1, q[1]]), false, [0, -sy, 0]);
+            for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length], n = inN(a, c, A); face([[a[0], y0, a[1]], [c[0], y0, c[1]], [c[0], y1, c[1]], [a[0], y1, a[1]]], n0 || n1, [n[0], 0, n[1]]); }
           };
           const em = g.retours.e || 0.5, Ls = g.sommier.L || W;
           const dtSpans = j ? [[-W / 2 + em + 0.80, -j - 0.20], [j + 0.20, W / 2 - em - 0.80]] : [[-W / 2 + em + 0.80, W / 2 - em - 0.80]];
@@ -239,6 +255,7 @@
     // direction de vue (vers l'observateur) et lumière dans le repère monde
     const view = [syw * cp * -1, -cyw * cp, -sp].map((v) => -v);
     const L = [-0.35, -0.55, 0.76];
+    const gV = [syw * cp, cyw * cp, -sp];   // direction qui s'éloigne de l'observateur
     const out = [];
     model.faces.forEach((fc) => {
       const pr = fc.p.map(P);
@@ -250,10 +267,25 @@
         nx += (a[1] - c[1]) * (a[2] + c[2]); ny += (a[2] - c[2]) * (a[0] + c[0]); nz += (a[0] - c[0]) * (a[1] + c[1]);
       }
       const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      if (fc.or && !opt.wire && nx * gV[0] + ny * gV[1] + nz * gV[2] <= 1e-9) return;   // face arrière : non dessinée
       const lam = Math.abs(nx * L[0] + ny * L[1] + nz * L[2]);
       void view;
-      out.push({ pr, d, lam, fc });
+      let ar = 0; for (let i = 0; i < pr.length; i++) { const a = pr[i], c = pr[(i + 1) % pr.length]; ar += a[0] * c[1] - c[0] * a[1]; }
+      out.push({ pr, d, lam, fc, n: [nx, ny, nz], sg: Math.sign(ar) });
     });
+    // arêtes de contour : bords libres, plis (> 25°) et silhouettes (cylindres) — les joints de découpe restent invisibles
+    const key = (a, c) => { const ka = a.map((v) => Math.round(v * 1000)).join(','), kc = c.map((v) => Math.round(v * 1000)).join(','); return ka < kc ? ka + '|' + kc : kc + '|' + ka; };
+    const E = new Map();
+    out.forEach((o) => { const p = o.fc.p; for (let j = 0; j < p.length; j++) { const k = key(p[j], p[(j + 1) % p.length]); (E.get(k) || E.set(k, []).get(k)).push(o); } });
+    const feat = (k, mt) => {   // évalué entre faces d'un même matériau (un bord de poutre sous le hourdis n'est pas une arête du hourdis)
+      const L_ = E.get(k).filter((o) => o.fc.mat === mt); if (L_.length <= 1) return true;
+      for (let a = 0; a < L_.length; a++) for (let c = a + 1; c < L_.length; c++) {
+        const A = L_[a], B = L_[c], dt = Math.abs(A.n[0] * B.n[0] + A.n[1] * B.n[1] + A.n[2] * B.n[2]);
+        if (dt < 0.9) return true;
+        if (dt < 0.999 && A.sg !== B.sg) return true;
+      }
+      return false;
+    };
     // le gros béton (sous tout le reste) est dessiné en premier : ses faces de contact ne passent pas devant la semelle
     const bias = (o) => (o.fc.mat === 'gros' && cam.pitch > 0 ? 1e4 : 0);
     out.sort((a, c) => (c.d + bias(c)) - (a.d + bias(a)));
@@ -266,8 +298,11 @@
       const c = MAT[o.fc.mat] || MAT.beton, k = 0.62 + 0.38 * o.lam;
       const rgb = c.map((v, i) => Math.min(255, v * k * (on ? 0.75 : 1) + (on ? [31, 95, 209][i] * 0.25 : 0)));   // sélection : léger voile bleu, couleurs conservées
       const fill = `rgb(${rgb.map(Math.round).join(',')})`;
-      if (o.fc.ne) return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="1.1" stroke-linejoin="round"/>`;   // facette de cylindre : pas d'arête
-      return `<path${t} d="${d}" fill="${fill}" stroke="${on ? '#1f5fd1' : '#3a4558'}" stroke-width="${on ? 0.9 : 0.45}" stroke-linejoin="round"/>`;
+      let ed = '';
+      const p3 = o.fc.p;
+      for (let j = 0; j < p3.length; j++) if (!(o.fc.hz != null && Math.abs(p3[j][2] - o.fc.hz) < 1e-3 && Math.abs(p3[(j + 1) % p3.length][2] - o.fc.hz) < 1e-3) && feat(key(p3[j], p3[(j + 1) % p3.length]), o.fc.mat)) { const a = o.pr[j], c = o.pr[(j + 1) % o.pr.length]; ed += `M${a[0].toFixed(1)} ${a[1].toFixed(1)}L${c[0].toFixed(1)} ${c[1].toFixed(1)}`; }
+      return `<path${t} d="${d}" fill="${fill}" stroke="${fill}" stroke-width="0.9" stroke-linejoin="round"/>`
+        + (ed ? `<path d="${ed}" fill="none" stroke="${on ? '#1f5fd1' : '#2c3442'}" stroke-width="${on ? 1.3 : 0.9}" stroke-linecap="round" style="pointer-events:none"/>` : '');
     }).join('');
     // trièdre
     const ax = (v) => { const X = v[0], Y = v[1], Z = v[2]; const x1 = X * cyw - Y * syw, y1 = X * syw + Y * cyw; return [x1 * 22, -(Z * cp + y1 * sp) * 22]; };
