@@ -151,6 +151,12 @@ table.pg{width:100%;border-collapse:collapse;table-layout:fixed}
 .canvas.drag{cursor:grabbing}
 #svgHost svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .canvas [data-tag]{cursor:pointer}
+.ph3{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.94);border:1px solid #d5dbe5;border-radius:8px;padding:8px 10px 6px;font-size:12px;color:#1b2230;box-shadow:0 2px 8px rgba(20,30,50,.08);z-index:3;min-width:190px}
+.ph3 b{display:block;font-size:11px;letter-spacing:.04em;color:#5d6676;margin-bottom:4px;text-transform:uppercase}
+.ph3 label{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer;white-space:nowrap}
+.ph3 label i{font-style:normal;color:#8a93a3;width:14px;text-align:right}
+.ph3 .ph3a{display:flex;gap:8px;margin-top:5px;border-top:1px solid #e6eaf0;padding-top:5px}
+.ph3 .ph3a button{font:inherit;font-size:11px;background:none;border:0;color:#1f5fd1;cursor:pointer;padding:0}
 .canvas path[data-tag]:hover{filter:drop-shadow(0 0 1.2px #1f5fd1)}
 .canvas path[data-tag].sel{filter:drop-shadow(0 0 1.6px #1f5fd1)}   /* sélection : halo, les couleurs du plan sont conservées */
 .canvas text[data-tag].sel{filter:drop-shadow(0 0 1.2px #1f5fd1)}
@@ -534,6 +540,7 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
         <div id="svgHost"></div>
         <svg class="axes" id="axes2d" viewBox="0 0 46 46" aria-hidden="true"><path d="M8 38h30M8 38V8" stroke="#c92a2a" stroke-width="1.4" fill="none"/><path d="M38 38l-5-3v6zM8 8l-3 5h6z" fill="#c92a2a"/><text x="40" y="41" font-size="9" fill="#c92a2a">X</text><text x="11" y="9" font-size="9" fill="#c92a2a">Z</text></svg>
         <div class="vinfo" id="vinfo"></div>
+        <div class="ph3" id="ph3" hidden></div>
       </div>
       <div class="tpane" id="tpane" hidden><div class="dock-b" id="res"></div></div>
       <aside class="pop" id="pop" hidden aria-label="Propriétés"><div class="pop-h"><b id="propSub"></b><button type="button" class="pop-x" id="popX" aria-label="Fermer">×</button></div><div class="props" id="props"></div></aside>
@@ -559,7 +566,7 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <script src="composer/draw.js?v=42"></script>
 <script src="composer/sheet.js?v=28"></script>
 <script src="composer/dxf.js?v=15"></script>
-<script src="composer/view3d.js?v=35"></script>
+<script src="composer/view3d.js?v=36"></script>
 <script src="composer/analysis.js?v=13"></script>
 <script src="composer/diag.js?v=13"></script>
 <script src="composer/voice.js?v=13"></script>
@@ -567,6 +574,6 @@ table.t{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100
 <script src="composer/justif.js?v=13"></script>
 <script src="composer/wizard.js?v=14"></script>
 <script src="composer/vitrine.js?v=5"></script>
-<script src="composer/app.js?v=37"></script>
+<script src="composer/app.js?v=38"></script>
 </body>
 </html>

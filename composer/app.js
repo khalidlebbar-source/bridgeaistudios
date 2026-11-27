@@ -706,6 +706,7 @@
   const VIEWS = [['plan', 'Plan d’ensemble'], ['3d', 'Vue 3D']];
   const TABLES = { justif: 'Justification', hyp: 'Hypothèses', predim: 'Prédimensionnement', ddc: 'Descente de charges', efforts: 'Efforts longitudinaux', appuis: 'Appuis & fondations', metre: 'Métrés & coût', msg: 'Messages' };
   let vbBase = null, vb = null, scene = null, model3 = null;
+  const hide3 = {};   // phases de construction masquées en 3D
   const cam3 = { yaw: -0.62, pitch: 0.42, zoom: 1, panX: 0, panY: 0 };
   const isTable = () => view.startsWith('t:');
   const tagOf = (id) => (id === 'section' || id === 'gperm' ? 'tablier' : id);
@@ -723,7 +724,7 @@
     renderTabs();
     const tp = $('#tpane');
     if (isTable()) { cv.hidden = true; tp.hidden = false; renderTable(); return; }
-    cv.hidden = false; tp.hidden = true;
+    cv.hidden = false; tp.hidden = true; $('#ph3').hidden = view !== '3d';
     const cw = Math.max(260, cv.clientWidth), ch = Math.max(180, cv.clientHeight);
     if (view === 'diag') {
       $('#axes2d').style.display = 'none';
@@ -735,6 +736,15 @@
     if (view === '3d') {
       model3 = C.build3D(M);
       draw3D();
+      { // phases de construction (cases à cocher, dans l'ordre d'exécution) — seules les phases présentes dans l'ouvrage
+        const have = new Set(model3.faces.map((f) => f.ph)), ph = $('#ph3');
+        ph.innerHTML = '<b>Phasage de construction</b>' + C.PHASES.filter(([k]) => have.has(k)).map(([k, l], i) => `<label><i>${i + 1}</i><input type="checkbox" data-ph="${k}"${hide3[k] ? '' : ' checked'}>${esc(l)}</label>`).join('')
+          + '<div class="ph3a"><button type="button" data-pha="all">Tout</button><button type="button" data-pha="none">Rien</button></div>';
+        ph.hidden = false;
+        ph.onchange = (e) => { const k = e.target.dataset.ph; if (!k) return; hide3[k] = !e.target.checked; draw3D(); };
+        ph.onclick = (e) => { const a = e.target.dataset.pha; if (!a) return; ph.querySelectorAll('input').forEach((c) => { c.checked = a === 'all'; hide3[c.dataset.ph] = a !== 'all'; }); draw3D(); };
+        ['pointerdown', 'wheel', 'dblclick'].forEach((t) => ph.addEventListener(t, (e) => e.stopPropagation()));
+      }
       $('#vinfo').textContent = 'Vue 3D · glisser : rotation · Maj + glisser : déplacer · molette : zoom';
       $('#axes2d').style.display = 'none';
       return;
@@ -763,7 +773,7 @@
   }
   function draw3D() {
     const w = Math.max(260, cv.clientWidth), h = Math.max(180, cv.clientHeight);
-    $('#svgHost').innerHTML = C.render3D(model3, cam3, { width: w, height: h, wire, sel: picked ? tagOf(selId) : null });
+    $('#svgHost').innerHTML = C.render3D(model3, cam3, { width: w, height: h, wire, sel: picked ? tagOf(selId) : null, hide: hide3 });
   }
   function applyVB() { const el = $('#svgHost svg'); if (el && view !== '3d') el.setAttribute('viewBox', vb.map((v) => v.toFixed(2)).join(' ')); }
   function applySel() {

@@ -17,17 +17,18 @@
     const F = [], h = M.h, sec = M.sec, n = M.xs.length - 1, xs = M.xs, dab = M.dab, Ltot = M.Ltot, W = M.W;
     const ySeat = -(h + C.seatDrop(M.S, M.W));
     let tag = null, mat = 'beton';
-    let hz = null;
+    let hz = null, ph = null;   // phase de construction (cases à cocher de la vue 3D)
+    const PH_MAT = { pieu: 'pieux', gros: 'fond', fond: 'fond', app: 'app', prefa: 'poutres', hourdis: 'hourdis', dt: 'dt', acier: 'poutres' };
     /* face orientée : inw = direction vers l'intérieur du solide ; la face est retournée pour que sa normale (Newell) pointe vers l'intérieur,
        ce qui permet d'éliminer les faces arrière au rendu (et de tracer les contours de silhouette) */
     const face = (p, ne, inw) => {
-      if (hz != null && p.every((q) => Math.abs(q[2] - hz) < 1e-6)) return;   // dessus de table de poutre collé sous le hourdis : jamais visible
       if (inw) {
         let nx = 0, ny = 0, nz = 0;
         for (let i = 0; i < p.length; i++) { const a = p[i], c = p[(i + 1) % p.length]; nx += (a[1] - c[1]) * (a[2] + c[2]); ny += (a[2] - c[2]) * (a[0] + c[0]); nz += (a[0] - c[0]) * (a[1] + c[1]); }
         if (nx * inw[0] + ny * inw[1] + nz * inw[2] < 0) p = p.slice().reverse();
       }
-      F.push({ p, mat, tag, ne, hz, or: !!inw });
+      const under = hz != null && p.every((q) => Math.abs(q[2] - hz) < 1e-6);   // dessus de table de poutre collé sous le hourdis
+      F.push({ p, mat, tag, ne, hz, or: !!inw, ph: ph || PH_MAT[mat] || 'appuis', under });
     };
     const area2 = (Q) => { let A = 0; for (let i = 0; i < Q.length; i++) { const a = Q[i], c = Q[(i + 1) % Q.length]; A += a[0] * c[1] - c[0] * a[1]; } return A; };
     const inN = (a, c, A) => { const du = c[0] - a[0], dv = c[1] - a[1]; return A > 0 ? [-dv, du] : [dv, -du]; };   // normale intérieure d'une arête du profil
@@ -112,20 +113,21 @@
     // entretoises d'about (sur appuis) entre poutres d'un même tablier
     if (M.T.famille === 'poutres' && sec.info && sec.info.btab) {
       const i = sec.info, bx = sec.bear, zt = -i.eh - i.etab - 0.10, zb = -(h - 0.25), ee = 0.40;
-      mat = 'prefa';
+      mat = 'prefa'; ph = 'entretoises';
       pieces.forEach(([x0, x1]) => [[x0 + 0.10, x0 + 0.10 + ee], [x1 - 0.10 - ee, x1 - 0.10]].forEach(([a, b2]) => {
         for (let k = 0; k < bx.length - 1; k++) {
           if (sec.jumeaux && bx[k] < 0 && bx[k + 1] > 0) continue;
           box(a, b2, bx[k] + i.b0 / 2, bx[k + 1] - i.b0 / 2, zt, zb);
         }
       }));
+      ph = null;
     }
 
     // ── appareils d'appui et bossages ──
     tag = null;
     M.lines.forEach((l) => sec.bear.forEach((y) => {
       mat = 'app'; box(l.x - 0.2, l.x + 0.2, y - 0.2, y + 0.2, -h, -h - 0.12);
-      mat = 'beton'; box(l.x - 0.3, l.x + 0.3, y - 0.3, y + 0.3, -h - 0.12, ySeat);
+      mat = 'beton'; ph = 'app'; box(l.x - 0.3, l.x + 0.3, y - 0.3, y + 0.3, -h - 0.12, ySeat); ph = null;
     }));
 
     // ── appuis ──
@@ -186,15 +188,17 @@
           R.cut.filter((c) => c.role !== 'prop').forEach((c) => {   // béton de propreté non représenté en 3D
             mat = c.role === 'dt' ? 'dt' : 'beton';
             const spans = c.role === 'som' ? halves(Ls) : c.role === 'gg' ? halves(W) : dtSpans;
+            ph = c.role === 'gg' ? 'gg' : null;
             spans.forEach(([a, b2]) => extY(c.pts, a, b2));
           });
-          mat = 'beton';
+          mat = 'beton'; ph = 'gg';
           R.seen.filter((c) => c.role === 'mr').forEach((c) => { extY(c.pts, W / 2 - em, W / 2); extY(c.pts, -W / 2, -W / 2 + em); });
+          ph = null;
           xf = X(R.uc);
           if (g.colonnes) (g.colonnes.pos || Array.from({ length: g.colonnes.n }, (_, i) => -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s)).forEach((y) => { if (g.colonnes.section === 'circ') cyl(xf, y, g.colonnes.D, yft, z0 - g.sommier.h); else { const b = g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D; box(xf - g.colonnes.D / 2, xf + g.colonnes.D / 2, y - b / 2, y + b / 2, z0 - g.sommier.h, yft); } });
         } else {
         const front = s.x + o * (dab + 0.05), back = front + o * g.egg;
-        if (g.egg > 0) box(front, back, -W / 2, W / 2, 0, ySeat);          // garde-grève
+        if (g.egg > 0) { ph = 'gg'; box(front, back, -W / 2, W / 2, 0, ySeat); ph = null; }          // garde-grève
         let zr0;
         if (g.type === 'enterree') {
           const xin = back - o * g.sommier.b;
@@ -209,15 +213,18 @@
           box(X(R.uf), X(R.uf + g.mur.e), -W / 2, W / 2, ySeat - hs, yft);
           xf = X(R.uc);
           const rt = g.retours, er = rt.e;
+          ph = 'gg';
           if (rt.mode === 'U') [-1, 1].forEach((sg) => box(X(R.uf), X(R.uE), sg * W / 2, sg * (W / 2 - er), 0, yft));
           else [-1, 1].forEach((sg) => box(back, back + o * rt.L, sg * W / 2, sg * (W / 2 - er), 0, ySeat - hs - 0.3));
+          ph = null;
           zr0 = null;
         }
         if (zr0 !== null && g.retours.mode !== 'aucun') {
-          const er = g.retours.e, Lr = g.retours.L, Lw = (g.sommier && g.sommier.L) || W;
+          const er = g.retours.e, Lr = g.retours.L, Lw = (g.sommier && g.sommier.L) || W; ph = 'gg';
           if (g.retours.mode === 'AV') [-1, 1].forEach((sg) => box(back, back - o * g.sommier.b, sg * Lw / 2, sg * (Lw / 2 - er), 0, ySeat));
           else [-1, 1].forEach((sg) => box(back, back + o * Lr, sg * Lw / 2, sg * (Lw / 2 - er), 0, Math.max(zr0, -g.retours.h - 0.5)));
         }
+        ph = null;
         if (g.dt) { mat = 'dt'; box(back, back + o * g.dt.L, -g.dt.B / 2, g.dt.B / 2, -0.40, -0.70); mat = 'beton'; }
         }
       }
@@ -262,7 +269,10 @@
     const L = [-0.35, -0.55, 0.76];
     const gV = [syw * cp, cyw * cp, -sp];   // direction qui s'éloigne de l'observateur
     const out = [];
+    const hide = opt.hide || null;
     model.faces.forEach((fc) => {
+      if (hide && hide[fc.ph]) return;   // phase de construction masquée
+      if (fc.under && !(hide && hide.hourdis)) return;   // invisible sous le hourdis
       const pr = fc.p.map(P);
       let d = 0; pr.forEach((q) => { d += q[2]; }); d /= pr.length;
       // normale de la face (Newell)
@@ -320,5 +330,8 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wv} ${Hv}" role="img" aria-label="Vue 3D de l'ouvrage"><g>${paths}</g><g style="pointer-events:none;font-family:'Segoe UI',Arial,sans-serif">${tri}</g></svg>`;
   }
 
-  return { build3D, render3D };
+  /* phases de construction, dans l'ordre */
+  const PHASES = [['pieux', 'Pieux'], ['fond', 'Gros béton, semelles'], ['appuis', 'Fûts, chevêtres, sommiers'], ['app', 'Bossages, appareils'], ['poutres', 'Poutres'],
+    ['entretoises', 'Entretoises'], ['hourdis', 'Hourdis'], ['gg', 'Garde-grève, murs en retour'], ['dt', 'Dalles de transition']];
+  return { build3D, render3D, PHASES };
 });
