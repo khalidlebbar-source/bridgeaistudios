@@ -408,6 +408,200 @@
     return out;
   }
 
+  /* ───────── Plan de coffrage du tablier KLE (PRO2334 0007a8 / 0008) ─────────
+     kind 'rive' | 'centr' : vues de la planche « tablier des travées de rive / centrales ». */
+  function cofTablier(M, kind) {
+    const S = M.S, sec = M.sec, i = sec.info || {};
+    if (M.T.famille !== 'poutres' || !i.btab || S.tablier.type !== 'VIPP') return null;
+    const W = M.W, j = sec.jumeaux ? sec.joint / 2 : 0, bx = sec.bear.slice().sort((a, b) => a - b), dab = M.dab || 0.8, gap = 0.10;
+    const sups = M.supports.slice().sort((a, b) => a.x - b.x), out = {};
+    const f2r = (v) => (Math.round(Math.abs(v) * 100 + 1e-6) / 100).toFixed(2).replace(/^0\./, '.'), f3r = (v) => Math.abs(v).toFixed(3).replace(/^0\./, '.');
+    const dh = (P, x1, x2, y, yl, s_) => dim(P, [Math.min(x1, x2), y], [Math.max(x1, x2), y], 'h', (yl - y) * 1000 / curEch, s_ == null ? f2r(x2 - x1) : s_);
+    const dv = (P, x, y1, y2, xl, s_) => dim(P, [x, Math.min(y1, y2)], [x, Math.max(y1, y2)], 'v', (xl - x) * 1000 / curEch, s_ == null ? f2r(y2 - y1) : s_);
+    // poutres de chaque travée : about .80 sur culée, joint .10 sur pile
+    const beams = [];
+    for (let k = 0; k < sups.length - 1; k++) {
+      const a = sups[k], b = sups[k + 1];
+      const e0 = a.kind === 'culee' ? a.x - dab : a.x + gap / 2, e1 = b.kind === 'culee' ? b.x + dab : b.x - gap / 2;
+      beams.push({ k, e0, e1, b0: a.kind === 'culee' ? a.x : e0 + dab, b1: b.kind === 'culee' ? b.x : e1 - dab, c0: a.kind === 'culee', c1: b.kind === 'culee', L: e1 - e0 });
+    }
+    const rives = beams.filter((q) => q.c0 || q.c1), centr = beams.filter((q) => !q.c0 && !q.c1);
+    const B = kind === 'centr' ? (centr[0] || null) : rives[0];
+    if (!B) return null;
+    const TR = 9.30, ea = 0.60, ee = 0.40;                       // transition d'âme, about, entretoise d'about
+    // prédalles d'une poutre : D .60 à l'about culée, C 1.30 à cheval sur le joint de pile, B pour l'appoint, A 1.00 courantes
+    const pred = (q) => {
+      const r = []; let x = q.e0, xe = q.e1;
+      if (q.c0) r.push(['D', x, x + 0.60]); x += ea + ee;   // côté pile : la prédalle C de la travée précédente couvre le joint
+      const tail = []; if (q.c1) { tail.push(['D', xe - 0.60, xe]); xe -= ea + ee; } else { tail.push(['C', xe - 0.60, xe + gap + 0.60]); xe -= ea + ee; }
+      const n = Math.floor((xe - x) / 1.0 + 1e-6), rem = xe - x - n;
+      for (let m = 0; m < n; m++) r.push(['A', x + m, x + m + 1]);
+      if (rem > 0.05) r.push([rem < 0.78 ? 'B1' : 'B2', xe - rem, xe]);
+      return r.concat(tail);
+    };
+    // ── VUE EN PLAN (1/2 tablier) 1/100 ──
+    {
+      curEch = 100; const P = [], x0 = sups[0].x - dab, xm = (sups[0].x + sups[sups.length - 1].x) / 2, xM = xm + 2.2;
+      const clip = (a) => Math.min(a, xM), half = j ? [[-W / 2, -j], [j, W / 2]] : [[-W / 2, W / 2]];
+      const yb = (b) => -b;                                     // y du plan : rive gauche en haut
+      half.forEach(([a, c]) => { line(P, [x0, yb(a)], [xM, yb(a)], 'epais'); line(P, [x0, yb(c)], [xM, yb(c)], 'epais'); line(P, [x0, yb(a)], [x0, yb(c)], 'epais'); });
+      beams.filter((q) => q.e0 < xM).forEach((q) => {
+        const xe = clip(q.e1);
+        bx.forEach((b) => {
+          const y = yb(b);
+          line(P, [q.e0, y - 0.75], [xe, y - 0.75], 'note'); line(P, [q.e0, y + 0.75], [xe, y + 0.75], 'note');
+          // âme (orange) : .40 aux abouts, .23 en partie courante après 9.30 de transition
+          const w = (x) => { const d = Math.min(x - q.e0, q.e1 - x) - ea - ee; return d <= 0 ? 0.20 : d >= TR ? 0.115 : 0.20 - (0.085 * d) / TR; };
+          [-1, 1].forEach((sg) => { const pts = []; for (let x = q.e0 + ea + ee; x <= xe + 1e-6; x += 0.5) pts.push([x, y + sg * w(x)]); P.push({ k: 'poly', pts, lay: 'orL', closed: false }); });
+          [q.e0 + ea, q.e0 + ea + ee].concat(q.e1 < xM ? [q.e1 - ea - ee, q.e1 - ea] : []).forEach((x) => line(P, [x, y - 0.69], [x, y + 0.69], 'orL'));
+        });
+        // prédalles entre poutres voisines d'un même demi-tablier
+        for (let m = 0; m < bx.length - 1; m++) {
+          if (j && bx[m] < 0 && bx[m + 1] > 0) continue;
+          const ya = yb(bx[m]) - 0.69, yc = yb(bx[m + 1]) + 0.69, lower = j && bx[m] > 0;
+          pred(q).forEach(([t, a, c]) => {
+            if (a >= xM) return; c = Math.min(c, xM); rect(P, a, ya, c, yc, 'vuB'); line(P, [a, ya], [c, ya], 'epais'); line(P, [a, yc], [c, yc], 'epais');
+            if (c - a > 0.3) { const xc = (a + c) / 2, ym = (ya + yc) / 2; circ(P, xc, ym, 0.17, 'cercR', 16); text(P, [xc, ym], t.charAt(0), { ht: 1.6, dy: lower ? 0.55 : -0.55, fill: '#e00000', rot: lower ? 180 : 0 }); }
+          });
+        }
+        bx.forEach((b) => line(P, [q.e0, yb(b)], [xe, yb(b)], 'axeC'));
+      });
+      sups.filter((sp) => sp.x <= xM).forEach((sp) => line(P, [sp.x, yb(-W / 2) + 0.4], [sp.x, yb(W / 2) - 0.4], 'axeC'));
+      beams.filter((q) => (q.b0 + q.b1) / 2 < xM).forEach((q) => line(P, [(q.b0 + q.b1) / 2, yb(bx[0]) + 0.8], [(q.b0 + q.b1) / 2, yb(bx[bx.length - 1]) - 0.8], 'axeC'));
+      // cotes : about / appuis en haut, travées en bas, entraxes à gauche
+      const yT = yb(-W / 2) + 1.3, cx = [];
+      beams.forEach((q) => { cx.push(q.e0, q.b0, q.b1, q.e1); }); const ch = cx.filter((x) => x <= xM + 1e-6).filter((x, n, a) => n === 0 || Math.abs(x - a[n - 1]) > 1e-6);
+      for (let n = 0; n < ch.length - 1; n++) dh(P, ch[n], ch[n + 1], yb(-W / 2), yT);
+      const sx = [x0].concat(sups.map((sp) => sp.x).filter((x) => x <= xM));
+      for (let n = 0; n < sx.length - 1; n++) dh(P, sx[n], sx[n + 1], yb(W / 2), yb(W / 2) - 1.0);
+      const yy = [-W / 2].concat(bx, j ? [-j, j] : [], [W / 2]).sort((a, b) => a - b);
+      for (let n = 0; n < yy.length - 1; n++) dv(P, x0, yb(yy[n]), yb(yy[n + 1]), x0 - 1.1);
+      half.forEach(([a, c]) => dv(P, x0, yb(a), yb(c), x0 - 2.6));
+      { const q = beams[0], pr = pred(q), A1 = pr.find((r) => r[0] === 'A'), D1 = pr[0]; const y1 = yb(bx[0]) - 0.69, y2 = yb(bx[bx.length - 1]) + 0.69;
+        if (A1) { dh(P, A1[1] + 3, A1[2] + 3, y1, y1 + 0.35); dh(P, A1[1] + 3, A1[2] + 3, y2, y2 - 0.35); }
+        if (D1) { dh(P, D1[1], D1[2], y1, y1 + 0.35); dh(P, D1[1], D1[2], y2, y2 - 0.35); } }
+      { const q = beams.find((r) => !r.c1); if (q) { const pr = pred(q), C1 = pr[pr.length - 1], Bq = pr.find((r) => r[0].charAt(0) === 'B'); const y1 = yb(bx[0]) - 0.69, y2 = yb(bx[bx.length - 1]) + 0.69;
+        [y1, y2].forEach((y, n) => { const yl = y + (n ? -0.35 : 0.35); dh(P, C1[1], C1[2], y, yl); if (Bq) dh(P, Bq[1], Bq[2], y, yl); }); } }
+      title(P, [(x0 + xM) / 2, yb(-W / 2) + 3.0], 'VUE EN PLAN (1/2 Tablier)', 100);
+      out.vp = { P, ech: 100, titre: 'VUE EN PLAN (1/2 Tablier)' };
+    }
+    // ── COUPE TYPE DES POUTRES (sur appuis / en travée) 1/20 ──
+    {
+      const a = poutreScene(M, { ech: 20, where: 'appui' }), t = poutreScene(M, { ech: 20, where: 'travee' });
+      if (a && t) {
+        const P = [], H0 = (S.tablier.hp || 2.3), dy = -(H0 + 1.25);
+        a.P.forEach((q) => { if (q.k !== 'title') P.push(q); });
+        t.P.forEach((q) => { if (q.k === 'title') return; q = Object.assign({}, q); const m = (v) => [v[0], v[1] + dy];
+          if (q.pts) q.pts = q.pts.map(m); if (q.a) { q.a = m(q.a); q.b = m(q.b); } if (q.p) q.p = m(q.p); if (q.o) q.o = m(q.o); if (q.c) q.c = m(q.c); P.push(q); });
+        const H = (S.tablier.hp || 2.3);
+        text(P, [0, H + 0.42], 'Sur Appuis', { ht: 3.2, lay: 'note' }); text(P, [0, H + 0.42 + dy], 'En travée', { ht: 3.2, lay: 'note' });
+        curEch = 20; title(P, [0, H + 0.95], 'COUPE TYPE DES POUTRES', 20);
+        out.ctp = { P, ech: 20, titre: 'COUPE TYPE DES POUTRES' };
+      }
+    }
+    // ── PRÉDALLES : VUE EN PLAN 1/20 ──
+    {
+      curEch = 20; const P = [], used = new Set(); beams.forEach((q) => pred(q).forEach((r) => used.add(r[0])));
+      const T = [['A', 1.00], ['B1', 0.75], ['B2', 0.80], ['C', 1.30], ['D', 0.60]].filter((t) => used.has(t[0]) || t[0] === 'B2'), Lp = 1.62;
+      let x = 0; const y0 = 0, xw = T.reduce((a, t) => a + t[1] + 0.45, -0.45);
+      T.forEach(([t, w], n) => {
+        const P0 = P.length;
+        rect(P, x, 0, x + w, Lp, 'vuB'); dh(P, x, x + w, Lp, Lp + 0.12, f2r(w)); dv(P, x, 0, Lp, x - 0.18, f2r(Lp));
+        text(P, [x + w / 2, Lp + 0.30], 'TYPE ' + t + (t === 'D' ? ' (=B2)' : ''), { ht: 2.6, lay: 'note' });
+        if (t === 'C') { text(P, [x + w / 2, Lp / 2], 'au niveau de la', { ht: 2.0, lay: 'note' }); text(P, [x + w / 2, Lp / 2], 'dalette de continuité', { ht: 2.0, lay: 'note', dy: -2.8 }); }
+        for (let q = P0; q < P.length; q++) { const e = P[q]; const m = (v) => [v[0], v[1] + y0]; if (e.pts) e.pts = e.pts.map(m); if (e.a) { e.a = m(e.a); e.b = m(e.b); } if (e.p) e.p = m(e.p); }
+        x += w + 0.45;
+      });
+      title(P, [xw / 2, Lp + 0.75], 'PRÉDALLES - VUE EN PLAN', 20);
+      out.pr = { P, ech: 20, titre: 'PRÉDALLES - VUE EN PLAN' };
+    }
+    // ── CONTRE CORNICHE / LONGRINE AU CENTRE : COUPES DROITES 1/20 ──
+    {
+      curEch = 20; const P = [], ed = 0.24, p_ = 0.025;
+      poly(P, [[0, 0], [1.46, p_ * 1.46 * -1 + 0.0 + 0.0365 * 0], [1.46, -0.24 - 0.0365], [0, -0.24 - 0.02], [0, -0.24]].map((v, n) => n === 1 ? [1.46, -0.0365 * 0.0 - p_ * 1.46 * 0] : v), 'hachD');
+      P.pop(); poly(P, [[0, -0.24], [0, 0], [1.46, 0.0365 * -0], [1.46, -0.24 - 0.0365 * 0.5], [0, -0.24 - 0.0]], 'hachD');
+      poly(P, [[ed, 0], [ed, 0.31], [ed + 0.41, 0.30], [ed + 0.41, 0]], 'hachD');
+      P.push({ k: 'poly', pts: [[0, -0.28], [0, -0.47], [0.65, -0.52], [0.70, -0.57], [0.70, -0.72]], lay: 'note', closed: false });
+      P.push({ k: 'poly', pts: [[1.20, -0.72], [1.20, -0.58], [1.25, -0.53], [1.46, -0.52]], lay: 'note', closed: false });
+      line(P, [-0.12, -0.72], [1.46, -0.72], 'tn'); line(P, [1.46, 0.12], [1.46, -0.72], 'tn'); line(P, [0, -0.72], [0, -0.24], 'note');
+      dh(P, 0, ed, 0.31, 0.55, '.24'); dh(P, ed, ed + 0.41, 0.31, 0.55, '.41'); dv(P, ed, 0, 0.31, ed - 0.18, '.31'); dv(P, ed + 0.41, 0, 0.30, ed + 0.62, '.30'); dv(P, 0, 0, -0.24, -0.15, '.24');
+      leader(P, [1.05, 0.08], [1.40, 0.08], '2.5%', 'end');
+      title(P, [0.73, 0.95], 'CONTRE CORNICHE : COUPE DROITE', 20);
+      out.cc = { P, ech: 20, titre: 'CONTRE CORNICHE : COUPE DROITE' };
+    }
+    {
+      curEch = 20; const P = [];
+      poly(P, [[0, 0], [1.42, 0.035], [1.42, -0.24 + 0.035], [0, -0.24]], 'hachD');
+      rect(P, 1.42 - 0.36, 0.035, 1.42 - 0.07, 0.035 + 0.29, 'hachD');
+      P.push({ k: 'poly', pts: [[0, -0.40], [0.15, -0.40], [0.30, -0.55], [0.30, -0.84]], lay: 'note', closed: false });
+      P.push({ k: 'poly', pts: [[0.60, -0.84], [0.60, -0.56], [0.75, -0.40], [1.42, -0.24 + 0.035]], lay: 'note', closed: false });
+      line(P, [0, 0.35], [0, -0.84], 'tn'); line(P, [0, -0.84], [1.0, -0.84], 'note');
+      dh(P, 1.42 - 0.36, 1.42 - 0.07, 0.035 + 0.29, 0.62, '.29'); dv(P, 1.42 - 0.36, 0.035, 0.325, 1.42 - 0.53, '.29'); dv(P, 1.42 - 0.07, 0.035, 0.315, 1.42 + 0.18, '.28');
+      title(P, [0.71, 1.0], 'LONGRINE AU CENTRE : COUPE DROITE', 20);
+      out.lg = { P, ech: 20, titre: 'LONGRINE AU CENTRE : COUPE DROITE' };
+    }
+    // ── POUTRE : ÉLÉVATION et VUE EN PLAN 1/50 ──
+    {
+      curEch = 50; const L = B.L, x0 = 0, x1 = L, ht = 0.12, hw = 1.72, hg = 0.246, hT = 0.21, H = ht + hw + hg + hT, xs = [x0, x0 + ea, x0 + ea + ee, x0 + ea + ee + TR, x1 - ea - ee - TR, x1 - ea - ee, x1 - ea, x1];
+      const P = [], yT = H, yF = H - ht, yW = hT + hg, yb_ = hT;
+      rect(P, x0, yF, x1, yT, 'vuB'); line(P, [x0, yF - 0.04], [x1, yF - 0.04], 'note');
+      line(P, [x0, 0], [x1, 0], 'vuT'); line(P, [x0, yb_], [x1, yb_], 'vuT');
+      P.push({ k: 'poly', pts: [[xs[2], yW + 0.0], [xs[3], yW - 0.05], [xs[4], yW - 0.05], [xs[5], yW]], lay: 'note', closed: false });
+      P.push({ k: 'poly', pts: [[xs[2], yF - 0.04], [xs[3], yF - 0.12], [xs[4], yF - 0.12], [xs[5], yF - 0.04]], lay: 'note', closed: false });
+      [[xs[2], xs[3], 1], [xs[5], xs[4], -1]].forEach(([a, c, sg]) => { for (let n = 1; n <= 18; n++) { const t = 1 - Math.pow(1 - n / 19, 1.6); const x = a + (c - a) * t; line(P, [x, yW], [x, yF - 0.06], 'vuT'); } });
+      line(P, [xs[3], yW - 0.05], [xs[3], yF - 0.12], 'note'); line(P, [xs[4], yW - 0.05], [xs[4], yF - 0.12], 'note');
+      [[xs[1], xs[2]], [xs[5], xs[6]]].forEach(([a, c]) => rect(P, a, 0, c, yT, 'grisF'));
+      line(P, [x0, yb_ + 0.03], [x0, yT], 'note'); line(P, [x1, yb_ + 0.03], [x1, yT], 'note');
+      [B.b0 - B.e0, B.b1 - B.e0].forEach((xa, n) => { rect(P, xa - 0.30, -0.05, xa + 0.30, 0, 'grisF'); leader(P, [xa + (n ? -0.3 : 0.3), -0.03], [xa + (n ? -1.2 : 1.2), -0.25], 'BOSSAGE PREFA', n ? 'end' : 'start'); line(P, [xa, -0.3], [xa, yT + 0.2], 'axeC'); });
+      line(P, [L / 2, -0.2], [L / 2, yT + 0.3], 'note');
+      dh(P, x0, x1, yT, yT + 0.75); dh(P, x0, B.b0 - B.e0, yT, yT + 0.45); dh(P, B.b0 - B.e0, B.b1 - B.e0, yT, yT + 0.45); dh(P, B.b1 - B.e0, x1, yT, yT + 0.45);
+      for (let n = 0; n < xs.length - 1; n++) dh(P, xs[n], xs[n + 1], 0, -0.6, n >= 2 && n <= 4 ? f3r(xs[n + 1] - xs[n]) : null);
+      [[x0, -0.55], [x1, 0.55]].forEach(([x, o]) => { dv(P, x, yT, yF, x + o); dv(P, x, yF, yW, x + o); dv(P, x, yW, yb_, x + o, f3r(hg)); dv(P, x, yb_, 0, x + o); });
+      title(P, [L / 2, yT + 1.5], 'POUTRE : ELEVATION', 50);
+      out.pe = { P, ech: 50, titre: 'POUTRE : ELEVATION' };
+      const Q = [];
+      rect(Q, x0, -0.75, x1, 0.75, 'vuB'); line(Q, [x0, -0.40], [x1, -0.40], 'orL'); line(Q, [x0, 0.40], [x1, 0.40], 'orL');
+      const w = (x) => { const d = Math.min(x - x0, x1 - x) - ea - ee; return d <= 0 ? 0.20 : d >= TR ? 0.115 : 0.20 - 0.085 * d / TR; };
+      const top = [], bot = []; for (let x = xs[2]; x <= xs[5] + 1e-6; x += 0.25) { top.push([x, w(x)]); bot.unshift([x, -w(x)]); }
+      poly(Q, top.concat(bot), 'grisF');
+      [[xs[1], xs[2]], [xs[5], xs[6]]].forEach(([a, c]) => rect(Q, a, -0.75, c, 0.75, 'grisF'));
+      rect(Q, x0 + 0.05, -0.20, xs[1], 0.20, 'vuB'); rect(Q, xs[6], -0.20, x1 - 0.05, 0.20, 'vuB');
+      line(Q, [x0 - 0.3, 0], [x1 + 0.3, 0], 'axeC'); [B.b0 - B.e0, B.b1 - B.e0, L / 2].forEach((x) => line(Q, [x, -1.0], [x, 1.0], 'axeC'));
+      for (let n = 0; n < xs.length - 1; n++) dh(Q, xs[n], xs[n + 1], 0.75, 1.25, n >= 2 && n <= 4 ? f3r(xs[n + 1] - xs[n]) : null);
+      dh(Q, x0, B.b0 - B.e0, -0.75, -1.25); dh(Q, B.b0 - B.e0, B.b1 - B.e0, -0.75, -1.25); dh(Q, B.b1 - B.e0, x1, -0.75, -1.25); dh(Q, x0, x1, -0.75, -1.75);
+      [[x0, -0.55, -1.0], [x1, 0.55, 1.0]].forEach(([x, o, o2]) => { dv(Q, x, -0.75, 0, x + o); dv(Q, x, 0, 0.75, x + o); dv(Q, x, -0.75, 0.75, x + o2); dv(Q, x + (o < 0 ? 0.12 : -0.12), -0.20, 0.20, x + (o < 0 ? 0.12 : -0.12), '.40'); });
+      [xs[3], L / 2, xs[4]].forEach((x) => dv(Q, x, -0.115, -0.75, x, '.23'));
+      title(Q, [L / 2, 2.2], 'POUTRE : VUE EN PLAN', 50);
+      out.pp = { P: Q, ech: 50, titre: 'POUTRE : VUE EN PLAN' };
+    }
+    // ── DÉTAIL DES TROUS DE LEVAGE 1/20 (planche de rive) ; « identique » sur la planche centrale ──
+    if (kind !== 'centr') {
+      curEch = 20; const P = [];
+      rect(P, 0, -1.92, 2.92, 0, 'vuT');
+      poly(P, [[0, -0.71], [0.77, -0.71], [0.77, 0], [1.28, 0], [1.28, -0.71], [2.92, -0.71], [2.92, -1.22], [1.28, -1.22], [1.28, -1.92], [0.77, -1.92], [0.77, -1.22], [0, -1.22]], 'grisF');
+      line(P, [1.02, 0], [1.02, -1.92], 'note'); line(P, [0, -0.965], [2.92, -0.965], 'note');
+      rect(P, 1.45, -0.71, 1.62, -1.22, 'vuB'); for (let n = 1; n < 6; n++) line(P, [1.45 + n * 0.028, -0.71], [1.45 + n * 0.028, -1.22], 'note');
+      circ(P, 1.535, -0.965 + 0.66, 0.075, 'note', 18); circ(P, 1.535, -0.965 - 0.66, 0.075, 'note', 18);
+      dv(P, 1.88, -0.965, -0.965 + 0.66, 1.88, '.45'); dv(P, 1.88, -0.965 - 0.66, -0.965, 1.88, '.45');
+      dh(P, 1.02, 1.54, -0.62, -0.62, '.40'); dv(P, 0.26, -0.71, -1.22, 0.26, '.40');
+      [[0.62, '1'], [2.34, '1']].forEach(([x, t]) => { circ(P, x, -0.965, 0.1, 'note', 18); text(P, [x, -0.965], t, { ht: 3, dy: -1.0, fill: '#e00000' }); });
+      text(P, [0.95, -0.965], '7 DX10', { ht: 2.6, dy: 1.2 }); text(P, [1.95, -0.965], '7 DX10', { ht: 2.6, dy: 1.2 });
+      leader(P, [1.56, -1.30], [1.80, -1.80], 'Réservation Ø120 mm');
+      line(P, [2.95, 0], [2.95, -1.92], 'tn');
+      // élévation : réservation et épingles
+      const X = 3.6; rect(P, X, -1.92, X + 2.73, 0, 'vuT'); line(P, [X, -0.12], [X + 2.73, -0.12], 'epais'); line(P, [X + 0.77, -0.12], [X + 0.77, -1.65], 'epais'); line(P, [X + 1.28, -0.12], [X + 1.28, -1.65], 'epais'); line(P, [X + 0.77, -1.65], [X + 1.28, -1.65], 'epais');
+      for (let n = 0; n < 5; n++) poly(P, [[X + 0.18, -0.30 - n * 0.30], [X + 1.64, -0.52 - n * 0.30], [X + 1.64, -0.58 - n * 0.30], [X + 0.18, -0.36 - n * 0.30]], 'lilas');
+      line(P, [X + 0.77, 0], [X + 0.77, -1.92], 'axeC'); line(P, [X + 1.02, 0], [X + 1.02, -1.92], 'axeC');
+      circ(P, X + 1.53, -0.82, 0.06, 'note', 18); P.push({ k: 'poly', pts: [[X + 1.41, -1.20], [X + 1.41, -0.82], [X + 1.45, -0.74], [X + 1.53, -0.71], [X + 1.61, -0.74], [X + 1.65, -0.82], [X + 1.65, -1.20]], lay: 'cote', closed: false });
+      dh(P, X + 1.02, X + 1.53, -0.62, -0.62, '.40'); dv(P, X + 2.0, -0.82, -1.92, X + 2.0, '1,10');
+      leader(P, [X + 1.56, -0.76], [X + 1.85, -0.50], 'Réservation Ø120 mm'); leader(P, [X + 1.65, -1.05], [X + 2.25, -1.05], '7 DX10 (1)');
+      line(P, [X + 2.76, 0.2], [X + 2.76, -2.05], 'tn');
+      title(P, [X - 0.3, 0.65], 'Detail des trous de levage', 20);
+      out.lev = { P, ech: 20, titre: 'Detail des trous de levage' };
+    }
+    return out;
+  }
+
   /* nature de sol d'après la description du log : une hachure par nature */
   const SOL_LAB = { remblai: 'Remblai', argile: 'Argile, limon', sable: 'Sable, grave', calc: 'Calcaire, tuf', schisteA: 'Schiste altéré / argileux', schiste: 'Schiste, schiste fracturé', quartz: 'Quartzite, blocs de quartzite', roche: 'Rocher' };
   function solType(desc) {
@@ -629,6 +823,10 @@
     const tb = fam === 'poutres' ? sec.info.eh + sec.info.etab + 0.10 : 0;
     sec.polys.forEach((pg) => {
       let pts = pg.pts;
+      if (o.appui && pg.role === 'poutre' && fam === 'poutres' && sec.info.b0) {   // section sur appuis : âme épaissie à .40
+        const xb = (Math.min(...pts.map((q) => q[0])) + Math.max(...pts.map((q) => q[0]))) / 2;
+        pts = pts.map((q) => (Math.abs(Math.abs(q[0] - xb) - sec.info.b0 / 2) < 0.004 ? [xb + Math.sign(q[0] - xb) * 0.20, q[1]] : q));
+      }
       if (pv && pg.role === 'poutre' && fam === 'poutres') {
         const xb = (Math.min(...pts.map((q) => q[0])) + Math.max(...pts.map((q) => q[0]))) / 2;
         pts = pts.map((q) => [q[0], q[1] + (q[1] >= -tb - 1e-9 ? dyx(q[0]) : dyx(xb))]);   // table inclinée, âme et talon translatés
@@ -1417,6 +1615,11 @@
     rep: 'fill:none;stroke:#e8590c;stroke-width:1.6',
     cote: 'fill:none;stroke:#e00000;stroke-width:.9',
     orL: 'fill:none;stroke:#f08a00;stroke-width:.9',
+    grisF: 'fill:#c8c8c8;stroke:#1e1e1e;stroke-width:.8',
+    cercR: 'fill:none;stroke:#e00000;stroke-width:.6',
+    lilas: 'fill:#c9c9ea;stroke:none',
+    epais: 'fill:none;stroke:#000;stroke-width:1.6',
+    tn: 'fill:none;stroke:#1fa21f;stroke-width:.9',
     arrowF: 'fill:#000;stroke:#000;stroke-width:.3',
     orH: 'fill:url(#ID-o);stroke:#1a1a1a;stroke-width:.7',
     ble: 'fill:none;stroke:#2020ff;stroke-width:1.1',
@@ -1516,7 +1719,7 @@
           }
         } else if (p.k === 'text') {
           const fs = p.ht * kp;
-          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.rot ? ` transform="rotate(${p.rot} ${X(p.p[0]).toFixed(2)} ${(Y(p.p[1]) - p.dy * kp).toFixed(2)})"` : '') + (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
+          T(X(p.p[0]), Y(p.p[1]) - p.dy * kp, p.s, fs, p.anchor, (p.fill ? ` fill="${p.fill}"` : '') + (p.rot ? ` transform="rotate(${p.rot} ${X(p.p[0]).toFixed(2)} ${(Y(p.p[1]) - p.dy * kp).toFixed(2)})"` : '') + (p.bold ? ' font-weight="700"' : '') + (p.lay === 'titre' ? ' fill="#000"' : '') + (p.tag ? ` data-tag="${p.tag}"` : ''));
         } else if (p.k === 'title') {
           const fs = 7 * kp, x = X(p.p[0]), y = Y(p.p[1]);
           T(x, y, p.s, fs, 'middle');
@@ -1656,5 +1859,5 @@
     return { P, ech, titre: 'COUPE TYPE DES POUTRES PPBA — ' + (ap ? 'sur appuis' : 'en travée') };
   }
 
-  return { elevScene, secScene, planScene, supScenes, poutreScene, cofPile, cofCulee, toSVG };
+  return { elevScene, secScene, planScene, supScenes, poutreScene, cofPile, cofCulee, cofTablier, toSVG };
 });

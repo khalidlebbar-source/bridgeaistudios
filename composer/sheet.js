@@ -217,8 +217,75 @@
   /* ───────── PLANS DE COFFRAGE (tablier, piles, culées) — disposition des plans KLE PRO2334 (0003, 0004 pl1/pl2) :
        colonne de gauche : coupe transversale, coupe sur fûts / pieux, vue en plan du sommier ;
        colonne de droite : coupe longitudinale, mur en retour (élévation et coupe type) ; cartouche A4 et NOTA à droite. ───────── */
+  /* planche « tablier des travées de rive / centrales » comme les plans KLE 0007a8 / 0008 */
+  function tablierKLE(M, KT, centr, G) {
+    const { X0, X1, Y0, Y1, cart, topN, opt, put, size } = G, AW = X1 - X0;
+    let out = '';
+    const sc = (v) => () => v;
+    const fit = (v, box, scales, id) => { if (!v) return [0, 0]; for (const e of scales) { const [w, h] = size(sc(v), id, e); if (w <= box[2] && h <= box[3]) return [w, h, e]; } const e = scales[scales.length - 1]; const [w, h] = size(sc(v), id, e); return [w, h, e]; };
+    const draw = (v, id, tag, x, y, wh) => { if (!v) return; const v2 = Object.assign({}, v, { P: v.P.map((q) => (q.k === 'title' && q.sub ? Object.assign({}, q, { sub: q.sub.replace(/1\/\d+/, '1/' + wh[2]) }) : q)) }); put(sc(v2), id, tag, wh[2], x, y, wh[0], wh[1]); };
+    // colonne droite au-dessus du NOTA : coupe type des poutres, prédalles
+    const RX = cart[0], RW = cart[2], RH = topN - Y0 - 8;
+    const a1 = fit(KT.ctp, [0, 0, RW - 4, RH], [20, 25, 50], 'ktc'), a2 = [0, 0, 20];
+    draw(KT.ctp, 'ktc', 'section', RX + (RW - a1[0]) / 2, Y0 + Math.max(4, (RH - a1[1]) / 2), a1);
+    // zone principale : vue en plan ; coupes sur appuis / mi-travée et détails ; poutre élévation et vue en plan
+    const vp = fit(KT.vp, [0, 0, AW, 300], [100, 200], 'ktp');
+    const ca = (e) => C.secScene(M, { ech: e, part: 'tablier', appui: true, titre: 'COUPE BIAISE SUR APPUIS' }), cm = (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE DROITE A MI TRAVEE' });
+    const sA = size(ca, 'kta', 50), sM = size(cm, 'ktm', 50);
+    const cc = fit(KT.cc, [0, 0, 140, 120], [20, 25, 50], 'ktx'), lg = fit(KT.lg, [0, 0, 140, 120], [20, 25, 50], 'kty');
+    const lev = KT.lev ? fit(KT.lev, [0, 0, 330, 160], [20, 25, 50], 'ktl') : null;
+    
+    const pe = fit(KT.pe, [0, 0, AW, 200], [50, 100], 'kte'), pp = fit(KT.pp, [0, 0, AW, 200], [50, 100], 'ktq');
+    // rangée 2 : coupe sur appuis | coupe à mi-travée ; rangée 3 : contre corniche, longrine, prédalles, levage ; puis la poutre
+    const W3 = AW - cc[0] - lg[0] - (lev ? lev[0] : 0) - 50;
+    a2.splice(0, 3, ...fit(KT.pr, [0, 0, W3, 150], [20, 25, 50], 'ktr'));
+    const r2h = Math.max(sA[1], sM[1]), r3h = Math.max(cc[1], lg[1], a2[1], lev ? lev[1] : 0);
+    const used = vp[1] + r2h + r3h + pe[1] + pp[1], g = Math.max(3, (Y1 - Y0 - used) / 6);
+    let y = Y0 + g;
+    draw(KT.vp, 'ktp', 'trace', X0 + (AW - vp[0]) / 2, y, vp); y += vp[1] + g;
+    const g2 = Math.max(2, (AW - sA[0] - sM[0]) / 3);
+    put(ca, 'kta', 'tablier', 50, X0 + g2, y, sA[0], sA[1]); put(cm, 'ktm', 'tablier', 50, X0 + 2 * g2 + sA[0], y, sM[0], sM[1]);
+    y += r2h + g;
+    const ws = [cc, lg, a2].concat(lev ? [lev] : []), g3 = Math.max(4, (AW - ws.reduce((a, v) => a + v[0], 0)) / (ws.length + 1));
+    let x = X0 + g3;
+    [[KT.cc, 'ktx', cc], [KT.lg, 'kty', lg], [KT.pr, 'ktr', a2]].concat(lev ? [[KT.lev, 'ktl', lev]] : []).forEach(([v, id, wh]) => { draw(v, id, 'section', x, y, wh); x += wh[0] + g3; });
+    y += r3h + g;
+    const tw = 230, room = AW - Math.max(pe[0], pp[0]), xP = centr || room < tw + 20 ? X0 + (AW - Math.max(pe[0], pp[0])) / 2 : X0 + (room - tw) / 3;
+    draw(KT.pe, 'kte', 'section', xP + (Math.max(pe[0], pp[0]) - pe[0]) / 2, y, pe);
+    draw(KT.pp, 'ktq', 'section', xP + (Math.max(pe[0], pp[0]) - pp[0]) / 2, y + pe[1] + g, pp);
+    if (!centr) out += nomenclature(X1 - (room - tw) / 3 - tw, y + (pe[1] + g + pp[1] - tw * 114 / 270) / 2, tw);
+    if (centr) out += `<g>${R(RX + 4, topN - 22, RW - 8, 16, 'fill:#fff;stroke:#1e1e1e;stroke-width:.4')}${T(RX + 7, topN - 16, 'DETAIL DE LEVAGE :', { fs: 3 })}${T(RX + 7, topN - 10, 'Identique aux poutres de rive', { fs: 3 })}</g>`;
+    return out;
+  }
+  /* nomenclature générale des aciers (trous de levage), comme le tableau KLE */
+  function nomenclature(x, y, w) {
+    const k = w / 270, X = [0, 16, 32, 48, 72, 96, 120, 145, 168, 220, 237, 262, 270].map((v) => x + v * k);
+    const Y = [0, 18, 46, 80, 100, 114].map((v) => y + v * k), ym = Y[1] + 14 * k;
+    let s = `<g data-tag="nomenclature">` + R(x, y, w, Y[5] - y, 'fill:#fff;stroke:#1e1e1e;stroke-width:.7');
+    const L = (x1, y1, x2, y2) => { s += `<path d="M${x1.toFixed(2)} ${y1.toFixed(2)}L${x2.toFixed(2)} ${y2.toFixed(2)}" style="fill:none;stroke:#1e1e1e;stroke-width:.45"/>`; };
+    [1, 2, 3, 4].forEach((n) => L(x, Y[n], x + w, Y[n])); L(X[3], ym, X[6], ym);
+    for (let n = 1; n < 12; n++) L(X[n], n === 4 || n === 5 ? ym : Y[1], X[n], Y[4]);
+    const t = (xx, yy, str, fs, a) => { s += T(xx, yy, str, { fs: fs * k * 2.2, a: a || 'middle' }); };
+    const cx = (n) => (X[n] + X[n + 1]) / 2, yc = (a, b) => (a + b) / 2 + 1.6 * k;
+    t(x + w / 2, Y[0] + 12 * k, 'Nomenclature générale des aciers .', 4.2);
+    t(cx(0), yc(Y[1], Y[2]) + 1.5 * k, 'N°', 3.2); t(cx(1), yc(Y[1], Y[2]), 'TYPE', 2.0); t(cx(2), yc(Y[1], Y[2]) + 1.5 * k, 'Ø', 3.2);
+    t((X[3] + X[6]) / 2, Y[1] + 9 * k, 'Nombre', 2.6); t(cx(3), Y[2] - 4 * k, 'Par Elément', 1.4); t(cx(4), Y[2] - 4 * k, "d'éléments", 1.4); t(cx(5), Y[2] - 4 * k, 'Total', 1.4);
+    t(cx(6), yc(Y[1], Y[2]), 'Esp', 2.6); t(cx(7), Y[1] + 12 * k, 'Long.', 2.4); t(cx(7), Y[1] + 22 * k, 'Unitaire', 2.4); t(cx(8), yc(Y[1], Y[2]), 'Façonnage', 3.0);
+    t(cx(9), Y[1] + 10 * k, 'Mandrin', 1.4); t(cx(9), Y[1] + 17 * k, '(cm)', 1.4); t(cx(10), Y[1] + 12 * k, 'Long.', 2.4); t(cx(10), Y[1] + 22 * k, 'TOTALE', 2.4);
+    [[Y[2], Y[3], ['1', 'DX', '10', '7', '1', '7', '', '0.885', '', '3.0', '6.195']], [Y[3], Y[4], ['2', 'DX', '10', '9', '1', '9', '', '0.340', '', '', '3.060']]].forEach(([a, b, v]) => {
+      v.forEach((txt, n) => { if (txt) t(cx(n), yc(a, b) + 1.5 * k, txt, n === 9 ? 2.0 : 3.6); });
+    });
+    const fx = X[8] + 6 * k, fw = X[9] - X[8] - 12 * k, m1 = (Y[2] + Y[3]) / 2;
+    s += `<path d="M${(fx + 10 * k).toFixed(2)} ${(m1 - 10 * k).toFixed(2)}H${(fx + fw).toFixed(2)}M${(fx + 10 * k).toFixed(2)} ${(m1 + 10 * k).toFixed(2)}H${(fx + fw).toFixed(2)}M${(fx + 10 * k).toFixed(2)} ${(m1 - 10 * k).toFixed(2)}A${10 * k} ${10 * k} 0 0 0 ${(fx + 10 * k).toFixed(2)} ${(m1 + 10 * k).toFixed(2)}" style="fill:none;stroke:#1e1e1e;stroke-width:.45"/>`;
+    t(fx + fw / 2 + 5 * k, m1 - 12 * k, '0.300', 1.4); t(fx + fw / 2 + 5 * k, m1 + 16 * k, '0.295', 1.4);
+    const m2 = (Y[3] + Y[4]) / 2; L(fx + 6 * k, m2 + 3 * k, fx + fw - 4 * k, m2 + 3 * k); t(fx + fw / 2, m2, '0.340', 1.4);
+    t(x + 6 * k, Y[5] - 4 * k, '* : LONGUEUR MOYENNE', 2.0, 'start'); t(x + w * 0.62, Y[5] - 4 * k, 'Diamètre moyen : 10.0', 3.0);
+    return s + '</g>';
+  }
+
   function coffrageList(M) {
-    const L = [['cof:tablier', 'Coffrage tablier']];
+    const L = [['cof:tablier', C.cofTablier && C.cofTablier(M, 'centr') ? 'Coffrage tablier — travées de rive' : 'Coffrage tablier']];
+    if (C.cofTablier && C.cofTablier(M, 'centr')) L.push(['cof:tablier2', 'Coffrage tablier — travées centrales']);
     if (M.supports.some((x) => x.kind === 'pile')) L.push(['cof:piles', 'Coffrage piles']);
     M.supports.filter((x) => x.kind === 'culee').forEach((c) => L.push(['cof:' + c.id, 'Coffrage culée ' + c.id]));
     return L;
@@ -247,8 +314,9 @@
     };
     const fixed = (sc, t) => sc ? () => (t ? Object.assign({}, sc, { P: sc.P.map((q) => (q.k === 'title' ? Object.assign({}, q, { s: t, sub: q.sub && q.sub.replace(/1\/\d+/, '1/50') }) : q)) }) : sc) : null;
     let Lc = [], Rc = [], top = null, titre = '', sous = '', kle = false;
-    if (which === 'tablier') {
-      titre = 'TABLIER — COFFRAGE'; sous = S.tablier.type + (S.tablier.jumeaux ? ' — 2 tabliers jumelés' : '');
+    if (which === 'tablier' || which === 'tablier2') {
+      titre = 'TABLIER — COFFRAGE';
+      if (C.cofTablier && C.cofTablier(M, 'centr')) titre = which === 'tablier2' ? 'TABLIER DES TRAVÉES CENTRALES' : 'TABLIER DES TRAVÉES DE RIVE'; sous = S.tablier.type + (S.tablier.jumeaux ? ' — 2 tabliers jumelés' : '');
       top = ['cv', (e) => C.planScene(M, { ech: e }), 'trace'];
       Lc = [['ct', (e) => C.secScene(M, { ech: e, part: 'tablier', titre: 'COUPE TRANSVERSALE EN TRAVEE' }), 'tablier']];
       if (C.poutreScene && C.poutreScene(M, {})) Rc = [['cb1', (e) => C.poutreScene(M, { ech: e, where: 'appui' }), 'section'], ['cb2', (e) => C.poutreScene(M, { ech: e, where: 'travee' }), 'section']];
@@ -281,6 +349,8 @@
     const X0 = FX0 + 4, X1 = cart[0] - GAP - 4, Y0 = FY0 + 4, Y1 = FY1 - 4, AW = X1 - X0;
     const size = (mk, id, e) => { const sc = mk(e); if (!sc) return [0, 0]; const svg = C.toSVG(sc, { scale: K * 1000 / e, kp: K, pad: 2 * K, id, dims: opt.dims !== false }); const vb = svg.match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number); return [vb[2] / K, vb[3] / K]; };
     const put = (mk, id, tag, e, x, y, w, h) => { s += place(mk, [x, y, w, h], [e], id, opt, tag).svg; };
+    const KT = (which === 'tablier' || which === 'tablier2') && C.cofTablier ? C.cofTablier(M, which === 'tablier2' ? 'centr' : 'rive') : null;
+    if (KT) { const ex = tablierKLE(M, KT, which === 'tablier2', { X0, X1, Y0, Y1, cart, topN: topN - nh, opt, put, size }); return s + ex + '</svg>'; }
     let yTop = Y0;
     if (top) {   // vue en plan du tablier sur toute la largeur
       const eT = ECH.long.find((e) => { const [w, h] = size(top[1], top[0], e); return w <= AW && h <= 0.3 * (Y1 - Y0); }) || 500;
