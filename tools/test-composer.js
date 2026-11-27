@@ -131,5 +131,13 @@ C.compute(dp).supports.forEach((s) => ok(s.fo.Npieu <= s.fo.Q + 1e-6, `${s.id} :
   const Mv = C.compute(C.normalize(require('../composer/vitrine.js').vitrine));
   ok(Mv.sec.jumeaux && Math.abs(Mv.sec.joint - 0.02) < 1e-9, 'vitrine PRO2334 : 2 tabliers jumelés, joint 0,02');
 }
+{ // gabarit KLE paramétrique (modèle PRO2334) : VIPP et PPBA, tablier unique ou jumelé
+  const G = require('../composer/vitrine.js').gabaritKLE; let okG = true;
+  [{ type: 'VIPP' }, { type: 'PPBA' }, { type: 'VIPP', jumeaux: true }, { type: 'PPBA', travees: [15, 18, 18, 15], biais: 80 }, { type: 'VIPP', travees: [35] }].forEach((o) => {
+    const Mx = C.compute(C.normalize(G(o))); const v = [C.sheetSVG(Mx, {}), C.toSVG(C.elevScene(Mx), { id: 'e' })];
+    if (v.some(bad) || Mx.T.nom !== o.type || C.build3D(Mx).faces.length < 500) okG = false;
+  });
+  ok(okG, 'gabarit KLE : 5 ponts à poutres VIPP / PPBA générés (plan d’ensemble, 3D) sans valeur invalide');
+}
 console.log(fails ? fails + ' échec(s)' : 'Tous les contrôles passent.');
 process.exit(fails ? 1 : 0);

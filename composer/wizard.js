@@ -11,6 +11,8 @@
 
   /* Modèles de départ — valeurs courantes de bureau d'études */
   const PRESETS = [
+    { k: 'kleVIPP', t: 'Pont à poutres VIPP — modèle KLE', d: 'Conception PRO2334 : culées à talon, DT, piles à colonnes, 30-40-40-30 m', usage: 'route', gab: 'VIPP' },
+    { k: 'klePPBA', t: 'Pont à poutres PPBA — modèle KLE', d: 'Poutres BA préfabriquées, conception PRO2334, 20-25-20 m', usage: 'route', gab: 'PPBA' },
     { k: 'vipp', t: 'Pont-route à poutres VIPP', d: '4 travées 30-40-40-30 m, piles colonnes', usage: 'route', p: {} },
     { k: 'psida', t: 'Passage inférieur dalle PSI-DA', d: '3 travées 10-14-10 m, continu', usage: 'route',
       p: { tablier: { type: 'PSIDA', h: 0, continu: true }, travees: [10, 14, 10], piles: { type: 'voile', hauteurs: [5.5, 5.5] }, culees: { type: 'remblayee', hauteurs: [6, 6], dalleTransition: true } } },
@@ -34,6 +36,12 @@
   ];
 
   function presetState(pr, keepProjet) {
+    if (pr.gab && C.gabaritKLE) {   // gabarit paramétrique KLE (modèle PRO2334)
+      const S = C.gabaritKLE({ type: pr.gab });
+      if (keepProjet && !(C.vitrine && keepProjet.nom === C.vitrine.projet.nom)) S.projet = Object.assign({}, S.projet, keepProjet);
+      S.hyp = Object.assign(C.hypDefaults(S.usage, S.tablier.type), S.hyp);
+      return C.normalize(S);
+    }
     const D = C.defaults(pr.usage), p = clone(pr.p);
     ['projet', 'profil', 'tablier', 'piles', 'culees', 'fond', 'equip'].forEach((k) => { if (p[k]) p[k] = Object.assign({}, D[k], p[k]); });
     const S = Object.assign(D, p);
@@ -43,7 +51,7 @@
   }
 
   function wizard(S0, onDone) {
-    let desc = '', lastR = null, step = 0, preset = 'vipp', S = presetState(PRESETS[0]), M = null, gen = { L: 140, n: 4, r: 0.75 };
+    let desc = '', lastR = null, step = 0, preset = 'kleVIPP', S = presetState(PRESETS[0]), M = null, gen = { L: 140, n: 4, r: 0.75 };
     S.projet = Object.assign({}, S.projet, { nom: S0 && S0.projet ? S0.projet.nom : S.projet.nom });
     const back = document.createElement('div');
     back.className = 'wz-back';
@@ -133,7 +141,7 @@
             v: r.t, t: r.T.nom, d: r.T.titre,
             badge: `<span class="wb ${r.st.k}">${r.st.k === 'ok' ? 'Domaine ' + r.st.txt : r.st.txt}</span><span class="wk">h ${r.h ? fx(r.h, 2) : '–'} m · ${r.cost ? f0(r.cost) : '–'} ${esc(S.devise)}/m²${r.cost && Math.abs(r.cost - best) < 1 ? ' <i>le plus économique</i>' : ''}</span>`,
           })), S.tablier.type, 'c2 tall')
-          + h3('Continuité') + `<div class="wchk">${T.cont && T.iso ? chk('Tablier continu sur appuis', 'tablier.continu') : `<span class="wnote">${T.iso ? 'Travées isostatiques (type non continu)' : 'Tablier continu (imposé par le type)'}</span>`}${T.famille === 'poutres' ? chk('Dalle de continuité (hourdis continu)', 'tablier.dalleContinuite') : ''}</div>`
+          + h3('Continuité') + `<div class="wchk">${T.cont && T.iso ? chk('Tablier continu sur appuis', 'tablier.continu') : `<span class="wnote">${T.iso ? 'Travées isostatiques (type non continu)' : 'Tablier continu (imposé par le type)'}</span>`}${T.famille === 'poutres' ? chk('Dalle de continuité (hourdis continu)', 'tablier.dalleContinuite') + chk('Deux tabliers jumelés (joint longitudinal)', 'tablier.jumeaux') : ''}</div>`
           + '<div class="wgrid">' + num('Hauteur imposée', 'tablier.h', 'm', { v: S.tablier.h || '', ph: M ? 'auto ' + fx(M.kpi.h, 2) : 'auto', help: 'vide = prédimensionnement' }) + '</div>';
       }
       if (k === 'appuis') {
@@ -221,7 +229,8 @@
       if (k === 'preset') {
         const pr = PRESETS.find((p) => p.k === v), keep = { nom: S.projet.nom, ouvrage: S.projet.ouvrage, lieu: S.projet.lieu, moa: S.projet.moa, ref: S.projet.ref };
         const dflt = [C.defaults('route').projet.nom, C.defaults('rail').projet.nom];
-        if (dflt.includes(keep.nom)) delete keep.nom;
+        if (dflt.includes(keep.nom) || /modèle KLE$/.test(keep.nom || '')) delete keep.nom;
+        if (C.vitrine && S.projet.nom === C.vitrine.projet.nom) Object.keys(keep).forEach((q) => delete keep[q]);   // ne pas reprendre l'identité du projet vitrine
         preset = v; S = presetState(pr, keep);
         gen = { L: S.travees.reduce((a, b) => a + b, 0), n: S.travees.length, r: S.travees.length > 2 ? Math.round(S.travees[0] / S.travees[1] * 100) / 100 : 1 };
         return;

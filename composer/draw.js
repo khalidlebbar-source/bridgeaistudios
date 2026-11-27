@@ -436,11 +436,16 @@
       if (rev > 0) {
         const zones = lc ? [[x1, -lc / 2], [lc / 2, x2]] : [[x1, x2]];
         zones.forEach(([a, b]) => { rect(P, a, 0.005, b, rev, 'rev'); if (S.equip.etancheite) line(P, [a, 0.003], [b, 0.003], 'etan'); });
-        const xr = lc ? (lc / 2 + x2) / 2 : x2 - w * 0.25;
+        const xr = lc ? (lc / 2 + x2) / 2 : w * 0.16;
         [-1, 1].forEach((o) => {
-          leader(P, [o * xr - 0.25 * o, rev], [o * xr - o * 1.6, rev + 0.75], 'Revêtement ' + fr(rev * 100, 0) + 'cm', o < 0 ? 'start' : 'end');
-          if (S.equip.etancheite) leader(P, [o * xr - 0.6 * o, 0.0], [o * xr - o * 1.6, rev + 0.45], 'Etanchéité 5mm', o < 0 ? 'start' : 'end');
-          const xa = o * (lc ? (lc / 2 + x2) / 2 + 1.6 : w * 0.25), xb = xa + o * 1.2;   // flèche de pente
+          if (lc) {
+            leader(P, [o * xr - 0.25 * o, rev], [o * xr - o * 1.6, rev + 0.75], 'Revêtement ' + fr(rev * 100, 0) + 'cm', o < 0 ? 'start' : 'end');
+            if (S.equip.etancheite) leader(P, [o * xr - 0.6 * o, 0.0], [o * xr - o * 1.6, rev + 0.45], 'Etanchéité 5mm', o < 0 ? 'start' : 'end');
+          } else if (o > 0) {   // tablier unique : repères d'un seul côté
+            leader(P, [xr, rev], [xr + 0.5, rev + 0.95], 'Revêtement ' + fr(rev * 100, 0) + 'cm');
+            if (S.equip.etancheite) leader(P, [xr - 0.35, 0.0], [xr + 0.5, rev + 0.65], 'Etanchéité 5mm');
+          }
+          const xa = o * (lc ? (lc / 2 + x2) / 2 + 1.6 : o > 0 ? w * 0.36 : w * 0.30), xb = xa + o * 1.2;   // flèche de pente
           line(P, [xa, rev + 0.32], [xb, rev + 0.32 - 1.2 * pv], 'pente');
           line(P, [xb, rev + 0.32 - 1.2 * pv], [xb - o * 0.18, rev + 0.36 - 1.2 * pv], 'pente');
           text(P, [(xa + xb) / 2, rev + 0.36], '2.5%', { ht: 2.4, dy: 0.6, lay: 'note' });
@@ -732,9 +737,9 @@
         }
       } else {
         const Lv = Math.min(f.Lp, f.e > 0 ? 4 : 4.3), cs = f.split ? f.split.centers : [0];
-        if (!(f.e > 0) && sec.jumeaux) {
+        if (!(f.e > 0) && ref.kind === 'culee') {
           // pieux directement sous le sommier (plan C0) : fûts cylindriques, coupure, cotes par demi-sommier
-          const j = sec.joint / 2, Lc = g.ch ? g.ch.L : W, ys = Array.from({ length: f.m }, (_, i) => pieY(f, i)), yb = yft - Lv;
+          const j = sec.jumeaux ? sec.joint / 2 : 0, Lc = g.ch ? g.ch.L : W, ys = Array.from({ length: f.m }, (_, i) => pieY(f, i)), yb = yft - Lv;
           ys.forEach((x, i) => {
             rect(P, x - f.D / 2, yft, x + f.D / 2, yb, 'col');
             line(P, [x, yft], [x, yb], 'axeC');
@@ -742,7 +747,7 @@
             [1, -1].forEach((sg) => P.push({ k: 'poly', pts: Array.from({ length: 17 }, (_, n) => [x - d + n * d / 8, yw + sg * 0.11 * Math.abs(Math.sin(n * Math.PI / 8))]), lay: 'brkO', closed: false }));
             void i;
           });
-          [[-Lc / 2, -j], [j, Lc / 2]].forEach(([xa, xb], q) => {
+          (sec.jumeaux ? [[-Lc / 2, -j], [j, Lc / 2]] : [[-Lc / 2, Lc / 2]]).forEach(([xa, xb], q) => {
             const px = ys.filter((x) => x > xa && x < xb), r = [xa].concat(px, [xb]), yd = yft - 0.35;
             for (let k = 0; k < r.length - 1; k++) dh(r[k], yft, r[k + 1], yft, yd);
             dh(xa, yft, xb, yft, yd - 0.9, frn(xb - xa));
@@ -1292,7 +1297,8 @@
   function poutreScene(M, o) {
     o = o || {};
     const S = M.S, sec = M.sec, i = sec.info || {};
-    if (!i.btab || S.tablier.type !== 'VIPP') return null;
+    if (!i.btab || !['VIPP', 'PPBA'].includes(S.tablier.type)) return null;
+    if (S.tablier.type === 'PPBA') return poutrePPBA(M, o);
     const ech = o.ech || 20, ap = o.where === 'appui', P = []; curEch = ech;
     const H = S.tablier.hp || rnd2(i.hb + 0.02), B = 1.50, dv = 0.02;          // hauteur à l'axe, demi-dévers sur la table
     const yTL = H - dv, yTR = H + dv, yL = yTL - 0.12, yR = yTR - 0.12;           // dessus et sous-face des bords de table
@@ -1344,6 +1350,23 @@
     return { P, ech, titre: 'COUPE TYPE DES POUTRES — ' + (ap ? 'sur appuis' : 'en travée') };
   }
   const rnd2 = (v) => Math.round(v * 100) / 100;
+  /* coupe type d'une poutre PPBA (programme PPBA KLE) : table 1,20 (.12 / .17), âme .40, talon .65 (.40 + gousset .10) */
+  function poutrePPBA(M, o) {
+    const ech = o.ech || 20, ap = o.where === 'appui', P = [], i = M.sec.info; curEch = ech;
+    const H = rnd2(i.hb), B = i.btab, hs1 = i.etab, hs2 = i.etab + i.gtab, b0 = i.b0, bt = i.bt, ht1 = i.ht, ht2 = i.ht + i.gs;
+    const R_ = [[B / 2, H], [B / 2, H - hs1], [b0 / 2, H - hs2], [b0 / 2, ht2], [bt / 2, ht1], [bt / 2, 0]];
+    poly(P, R_.concat(R_.slice().reverse().map((q) => [-q[0], q[1]])), 'hachP');
+    if (ap) { poly(P, [[-B / 2, H - hs1], [-B / 2, 0.25], [-bt / 2, 0.25]], 'vuT', false); poly(P, [[B / 2, H - hs1], [B / 2, 0.25], [bt / 2, 0.25]], 'vuT', false); }
+    line(P, [0, H + 0.02], [0, 0], 'axeC');
+    const dh = (x1, y1, x2, y2, yl, s_) => dim(P, [x1, y1], [x2, y2], 'h', (yl - Math.max(y1, y2)) * 1000 / ech, s_ || frn(Math.abs(x2 - x1)));
+    const dv = (x1, y1, x2, y2, xl, s_) => dim(P, [x1, y1], [x2, y2], 'v', (xl - x1) * 1000 / ech, s_ || frn(Math.abs(y2 - y1)));
+    dh(-B / 2, H, B / 2, H, H + 0.25); dh(-B / 2, H, 0, H, H + 0.12); dh(0, H, B / 2, H, H + 0.12);
+    dh(-b0 / 2, H / 2, b0 / 2, H / 2, H / 2); dh(-bt / 2, 0, bt / 2, 0, -0.15);
+    dv(B / 2, H, B / 2, H - hs1, B / 2 + 0.12); dv(B / 2, H - hs1, B / 2, H - hs2, B / 2 + 0.12); dv(B / 2, H - hs2, B / 2, ht2, B / 2 + 0.12); dv(B / 2, ht2, B / 2, ht1, B / 2 + 0.12); dv(B / 2, ht1, B / 2, 0, B / 2 + 0.12);
+    dv(-B / 2, H, -B / 2, 0, -B / 2 - 0.2);
+    P.push({ k: 'title', p: [0, H + 0.85], s: 'COUPE TYPE DES POUTRES', sub: 'Ech:1/' + ech, sub2: ap ? 'Sur Appuis' : 'En travée' });
+    return { P, ech, titre: 'COUPE TYPE DES POUTRES PPBA — ' + (ap ? 'sur appuis' : 'en travée') };
+  }
 
   return { elevScene, secScene, planScene, supScenes, poutreScene, toSVG };
 });

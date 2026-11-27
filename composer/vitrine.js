@@ -35,7 +35,36 @@
     hyp: { betonTab: 'C40/50', betonApp: 'C30/37', betonFond: 'C30/37' },
     nota: 'Les cotes sont exprimées en mètres et les niveaux en m NGM, sauf indication contraire.\nBéton : tablier C40/50 ; culées et piles C30/37.\nToute paroi en contact avec le sol est à badigeonner.\nLes arêtes vues seront chanfreinées à 2 cm × 2 cm.\nRéceptionner les fonds de fouille de toutes les semelles par le laboratoire ; rattraper le bon sol (rocheux) par gros béton si nécessaire.\nBlindage à réaliser lors des fouilles : caniveaux à dévier pendant les travaux et à reconstruire ; les fouilles ne doivent en aucun cas affecter la GBA, qui doit rester intacte.',
   };
+  /* ───────── Gabarit KLE paramétrique : un pont à poutres neuf construit sur le modèle PRO2334 ─────────
+     Même conception et même habillage (culées enterrées à talon et nez, garde-grève, DT sur talon, murs en retour suspendus,
+     piles à colonnes et chevêtre à redans, dévers en toit, BN4/BLE, NOTA KLE), sans aucune valeur propre à PRO2334 :
+     nombre et entraxe des poutres, hauteur du tablier, appuis et fondations sont recalculés à partir des données saisies.
+     o : { type: 'VIPP' | 'PPBA', travees, roulable, trottoirG, trottoirD, jumeaux, joint, biais, hPiles, hCulees, fondPiles, fondCulees } */
+  function gabaritKLE(o) {
+    o = o || {};
+    const type = o.type === 'PPBA' ? 'PPBA' : 'VIPP', ppba = type === 'PPBA';
+    const travees = o.travees || (ppba ? [20, 25, 20] : [30, 40, 40, 30]), np = travees.length - 1;
+    const jum = !!o.jumeaux, tg = o.trottoirG != null ? o.trottoirG : (jum ? 2.0 : 1.25), td = o.trottoirD != null ? o.trottoirD : (jum ? 2.0 : 1.25);
+    const roul = o.roulable || (jum ? 17.02 : 8.0);
+    const hp = o.hPiles || Array.from({ length: np }, () => (ppba ? 6.0 : 7.5));
+    const S = JSON.parse(JSON.stringify(V));
+    S.projet = { nom: 'Pont-route à poutres ' + type + ' — modèle KLE', ouvrage: 'OA', moa: '', lieu: '', ref: '', phase: 'Avant-projet', indice: '00', date: '', bet: 'KLE Ingénierie', dessine: '', verifie: '', valide: '' };
+    S.profil = { roulable: roul, trottoirG: tg, trottoirD: td };
+    S.tablier = { type, h: 0, continu: false, dalleContinuite: true, jumeaux: jum, joint: o.joint || 0.02, dab: 0.80 };
+    S.travees = travees.slice();
+    S.biais = o.biais || 100;
+    S.piles = { type: 'colonnes', col: 'carre', paires: jum, hauteurs: hp.slice(0, np), dim: { D: ppba ? 1.2 : 1.5, hch: ppba ? 1.2 : 1.5, rh: 0.5, rl: 1.5, rain: 1.0 }, fdim: {} };
+    S.culees = {
+      type: 'enterree', chev: 'L', retours: 'suspendus', section: 'circ', gg: true, dalleTransition: true, hauteurs: o.hCulees || [1.5, 1.5],
+      dim: { D: ppba ? 1.0 : 1.2, hs: ppba ? 1.2 : 1.5, bs: 2.6, egg: ppba ? 0.3 : 0.4, Lmr: ppba ? 4.0 : 5.0, em: 0.5, h2r: 0.9, Ldt: 4.0, tal: 0.3, nez: 0.2 },
+    };
+    S.fond = Object.assign({}, S.fond, { piles: o.fondPiles || 'superficielle', culees: o.fondCulees || 'pieux' });
+    S.hyp = { betonTab: ppba ? 'C35/45' : 'C40/50', betonApp: 'C30/37', betonFond: 'C30/37' };
+    delete S.trace;
+    return S;
+  }
   root.COMP = root.COMP || {};
   root.COMP.vitrine = V;
-  if (typeof module === 'object' && module.exports) module.exports = { vitrine: V };
+  root.COMP.gabaritKLE = gabaritKLE;
+  if (typeof module === 'object' && module.exports) module.exports = { vitrine: V, gabaritKLE };
 })(typeof self !== 'undefined' ? self : this);

@@ -103,6 +103,7 @@
     PSIDA: '<path d="M3 6h54v2l-9 3v7H12v-7l-9-3z"/>',
     PSIDP: '<path d="M3 6h54v2l-9 3v7H12v-7l-9-3z"/><path d="M14 10q16 9 32 0" stroke-dasharray="2 2"/>',
     VIPP: '<path d="M3 5h54v3H3z"/><path d="M12 8v8m-4 0h8v3H8zM30 8v8m-4 0h8v3h-8zM48 8v8m-4 0h8v3h-8z"/>',
+    PPBA: '<path d="M3 5h54v3H3z"/><path d="M10 8v9m-3 0h6v2H7zM22 8v9m-3 0h6v2h-6zM34 8v9m-3 0h6v2h-6zM46 8v9m-3 0h6v2h-6z"/>',
     PRAD: '<path d="M3 5h54v3H3z"/><path d="M9 8v7h-3v3h6v-3h-3M21 8v7h-3v3h6v-3h-3M33 8v7h-3v3h6v-3h-3M45 8v7h-3v3h6v-3h-3"/>',
     PRP: '<path d="M4 5h52v13H4z"/><path d="M9 9h4M11 9v9M9 18h4M21 9h4M23 9v9M21 18h4M35 9h4M37 9v9M35 18h4M47 9h4M49 9v9M47 18h4"/>',
     MIXTE: '<path d="M3 5h54v2l-8 2H11l-8-2z"/><path d="M15 9h6M18 9v10M14 19h8M39 9h6M42 9v10M38 19h8"/>',
@@ -182,7 +183,7 @@
   document.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('.dd')) $$('.dd.open').forEach((d) => d.classList.remove('open')); }, true);
   /* fenêtre de propriétés flottante, ouverte au clic sur un élément de la feuille */
   const pop = $('#pop');
-  const GAL_LAB = { PSIDA: 'PSI-DA', PSIDP: 'PSI-DP', VIPP: 'VIPP', PRAD: 'PRAD', PRP: 'PRP', MIXTE: 'Bipoutre' };
+  const GAL_LAB = { PSIDA: 'PSI-DA', PSIDP: 'PSI-DP', VIPP: 'VIPP', PPBA: 'PPBA', PRAD: 'PRAD', PRP: 'PRP', MIXTE: 'Bipoutre' };
   function galleryHTML(id) {
     const g = (title, items, cls) => `<div class="gal${cls ? ' ' + cls : ''}"><div class="gal-t">${title}</div>${items}</div>`;
     const it = (cmd, arg, on, icon, l, sub) => `<button class="${on ? 'on' : ''}" data-cmd="${cmd}" data-arg="${arg}">${icon}<span>${l}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;

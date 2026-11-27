@@ -63,6 +63,13 @@
       hmin: { route: 0.6, rail: 0.8 }, ratio: { route: 110, rail: 120 }, ratioH: { route: 150, rail: 170 }, prec: { route: 35, rail: 40 },
       ref: 'SETRA, guide PRAD (1996) : élancement de l’ordre de L/18 à L/22.',
     },
+    PPBA: {
+      nom: 'PPBA', titre: 'Poutres préfabriquées en béton armé', famille: 'poutres', iso: true, cont: false, contDef: false,
+      dom: { route: [10, 30], rail: [8, 22] },
+      lam: { route: { iso: 16 }, rail: { iso: 13 } },
+      hmin: { route: 0.9, rail: 1.1 }, ratio: { route: 150, rail: 170 }, ratioH: { route: 160, rail: 180 }, prec: { route: 0, rail: 0 },
+      ref: 'Modèle KLE (programme PPBA) : poutres en T à talon, table 1,20, hourdis 0,20 coulé sur prédalles — 1,45 + 0,20 = 1,65 m pour 26,5 m, soit L/16.',
+    },
     PRP: {
       nom: 'PRP', titre: 'Poutrelles métalliques enrobées', famille: 'prp', iso: true, cont: true, contDef: false,
       dom: { route: [8, 30], rail: [6, 25] },
@@ -488,20 +495,25 @@
       const nb = Math.max(2, Math.ceil((W - 1.0) / 3.0) + 1), spb = (W - 1.0) / (nb - 1);
       for (let i = 0; i < nb; i++) bear.push(-(W - 1.0) / 2 + i * spb);
     } else if (T.famille === 'poutres') {
-      const vipp = S.tablier.type === 'VIPP';
-      const eh = vipp ? (rail ? 0.25 : 0.24) : (rail ? 0.25 : 0.22);
-      const rive = vipp ? 0.75 : 0.40;
+      /* familles de poutres des plans KLE :
+         VIPP (PRO2334) : table 1,50 (bords .12, sous-face + goussets jusqu'à .29), âme .23 (travée), talon .80 × .21 + gousset .35, hourdis .24, rive .75, entraxe ≈ 3,00
+         PPBA (programme PPBA KLE) : table 1,20 (.12 / .17), âme .40, talon .65 × .40 + gousset .10, hourdis .20, rive .60, entraxe ≈ 2,20
+         PRAD : poutre en I compacte */
+      const ty = S.tablier.type, vipp = ty === 'VIPP', ppba = ty === 'PPBA';
+      const K = vipp ? { eh: rail ? 0.25 : 0.24, rive: 0.75, ent: 3.0, b0: 0.23, bt: rail ? 0.90 : 0.80, ht: 0.21, gs: 0.35, tab: 1.50, etab: 0.12, gtab: 0.17 }
+        : ppba ? { eh: 0.20, rive: 0.60, ent: 2.20, b0: 0.40, bt: 0.65, ht: 0.40, gs: 0.10, tab: 1.20, etab: 0.12, gtab: 0.05 }
+          : { eh: rail ? 0.25 : 0.22, rive: 0.40, ent: 1.40, b0: 0.22, bt: 0.70, ht: 0.20, gs: 0.10, tab: 1.20, etab: 0.10, gtab: 0.06 };
+      const eh = K.eh, rive = K.rive, kle = vipp || ppba;
       let posP = Array.isArray(S.tablier.pos) && S.tablier.pos.length >= 2 ? S.tablier.pos : null;   // axes des poutres imposés (plans)
-      if (!posP && S.tablier.jumeaux && vipp) {        // tabliers jumelés : poutres réparties dans chaque demi-tablier
-        const j = S.tablier.joint, Wh = (W - j) / 2, nh = Math.max(2, Math.round((Wh - 2 * rive) / 3.0) + 1), bh = (Wh - 2 * rive) / (nh - 1);
+      if (!posP && S.tablier.jumeaux && kle) {        // tabliers jumelés : poutres réparties dans chaque demi-tablier
+        const j = S.tablier.joint, Wh = (W - j) / 2, nh = Math.max(2, Math.round((Wh - 2 * rive) / K.ent) + 1), bh = (Wh - 2 * rive) / (nh - 1);
         posP = []; for (let i = 0; i < nh; i++) posP.push(-W / 2 + rive + i * bh); for (let i = nh - 1; i >= 0; i--) posP.push(W / 2 - rive - i * bh);
       }
-      const n = posP ? posP.length : vipp ? Math.max(2, Math.round((W - 2 * rive) / 3.0) + 1) : Math.max(3, Math.ceil(W / 1.4));
-      const b = posP ? (posP[n - 1] - posP[0]) / (n - 1) : vipp ? (W - 2 * rive) / (n - 1) : W / n, x0 = posP ? posP[0] : vipp ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
+      const n = posP ? posP.length : kle ? Math.max(2, Math.round((W - 2 * rive) / K.ent) + 1) : Math.max(3, Math.ceil(W / 1.4));
+      const b = posP ? (posP[n - 1] - posP[0]) / (n - 1) : kle ? (W - 2 * rive) / (n - 1) : W / n, x0 = posP ? posP[0] : kle ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
       const xP = (i) => (posP ? posP[i] : x0 + b * i);
-      // VIPP : table 1,50, âme 0,24, talon 0,80 (rail 0,90) ; PRAD : poutre en I compacte
-      const b0 = vipp ? 0.24 : 0.22, bt = vipp ? (rail ? 0.90 : 0.80) : 0.70, ht = vipp ? 0.25 : 0.20, gs = vipp ? 0.20 : 0.10;
-      const btab = vipp ? Math.min(1.50, b - 0.30) : Math.min(b - 0.05, 1.20), etab = vipp ? 0.12 : 0.10, gtab = vipp ? 0.10 : 0.06;
+      const b0 = K.b0, bt = K.bt, ht = K.ht, gs = K.gs;
+      const btab = kle ? Math.min(K.tab, b - 0.30) : Math.min(b - 0.05, K.tab), etab = K.etab, gtab = K.gtab;
       const ptsH = [[-W / 2, 0], [W / 2, 0], [W / 2, -eh], [-W / 2, -eh]];
       add(ptsH, 'beton', 'hourdis');
       let Ab = 0, cb = 0;
@@ -515,7 +527,7 @@
       }
       Abet = W * eh; Aprefa = Ab; coff = (W - n * btab) + 2 * eh; coffPrefa = cb;
       nbPoutres = n; entraxe = b;
-      Object.assign(info, { eh, hb, b0, bt, ht, btab, etab, x0, rive, Bn: W - 2 * rive + bt });
+      Object.assign(info, { eh, hb, b0, bt, ht, gs, btab, etab, gtab, x0, rive, Bn: W - 2 * rive + bt });
     } else { // mixte
       const hs = rail ? 0.35 : 0.28, te = rail ? 0.30 : 0.25;
       const a = Math.max(2.5, Math.round(0.55 * W * 10) / 10);
