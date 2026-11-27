@@ -204,6 +204,8 @@
     out.tablier.continu = !!out.tablier.continu && T.cont;
     if (!T.iso) out.tablier.continu = true;
     out.tablier.dalleContinuite = out.tablier.dalleContinuite !== false;
+    out.tablier.pos = Array.isArray(out.tablier.pos) ? out.tablier.pos.map((v) => num(v, NaN)).filter(Number.isFinite).slice(0, 40).sort((a, b) => a - b) : null;
+    if (out.tablier.pos && out.tablier.pos.length < 2) out.tablier.pos = null;
     let tr = (Array.isArray(out.travees) ? out.travees : String(out.travees).split(/[;\s]+/)).map((v) => num(v, NaN)).filter((v) => Number.isFinite(v));
     if (!tr.length) tr = D.travees.slice();
     out.travees = tr.slice(0, 12).map((v) => clamp(rnd(v, 2), 3, 150));
@@ -217,7 +219,7 @@
     else out.culees.retours = ['AR', 'AV', 'suspendus', 'aucun'].includes(out.culees.retours) ? out.culees.retours : 'AR';
     out.culees.gg = out.culees.gg !== false;
     out.culees.chev = out.culees.chev === 'C' ? 'C' : 'L';
-    out.culees.section = out.culees.section === 'carre' ? 'carre' : 'circ';
+    out.culees.section = ['carre', 'rect'].includes(out.culees.section) ? out.culees.section : 'circ';
     const hc = (Array.isArray(out.culees.hauteurs) ? out.culees.hauteurs : []).map((v) => clamp(num(v, 3.5), 0.5, 15));
     while (hc.length < 2) hc.push(hc.length ? hc[0] : 3.5);
     out.culees.hauteurs = hc.slice(0, 2);
@@ -232,9 +234,18 @@
     out.piles.col = ['circ', 'carre', 'rect', 'octo', 'ellip'].includes(out.piles.col) ? out.piles.col : 'circ';
     out.piles.paires = !!out.piles.paires;
     out.piles.vform = out.piles.vform === 'Y' ? 'Y' : 'V';
-    out.culees.dim = dims(out.culees.dim, ['egg', 'D', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb'], { D: 4, n: 12, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8 });
+    const CK = ['egg', 'D', 'bc', 'n', 'hs', 'bs', 'Lmr', 'em', 'ef', 'a1', 'pat', 'gb', 'h2r', 'Ldt'], CM = { D: 4, bc: 4, n: 24, hs: 5, bs: 6, Lmr: 15, ef: 4, egg: 1.5, em: 2, a1: 3, pat: 6, gb: 8, h2r: 5, Ldt: 8 };
+    out.culees.dim = dims(out.culees.dim, CK, CM);
+    const posA = (a) => (Array.isArray(a) ? a.map((v) => num(v, NaN)).filter(Number.isFinite).slice(0, 30) : null);
+    out.culees.pos = posA(out.culees.pos); out.culees.pieuxPos = posA(out.culees.pieuxPos);
     const FK = ['B', 'L', 'e', 'nr', 'm', 's', 'Lx', 'Ly'], FM = { B: 40, L: 60, e: 5, nr: 8, m: 20, s: 10, Lx: 40, Ly: 60 };
     out.piles.fdim = dims(out.piles.fdim, FK, FM); out.culees.fdim = dims(out.culees.fdim, FK, FM);
+    out.culees.par = Array.isArray(out.culees.par) ? out.culees.par.slice(0, 2).map((p) => (p && typeof p === 'object' ? {
+      fond: ['superficielle', 'pieux'].includes(p.fond) ? p.fond : undefined, dim: dims(p.dim, CK, CM), fdim: dims(p.fdim, FK, FM),
+      section: ['circ', 'carre', 'rect'].includes(p.section) ? p.section : undefined, pos: posA(p.pos) || undefined, pieuxPos: posA(p.pieuxPos) || undefined,
+      retours: typeof p.retours === 'string' ? p.retours : undefined,
+    } : null)) : null;
+    if (out.culees.par) out.culees.par.forEach((p) => { if (p) Object.keys(p).forEach((k) => p[k] === undefined && delete p[k]); });
     [out.piles.dim, out.culees.dim, out.piles.fdim, out.culees.fdim].forEach((d) => ['n', 'nr', 'm', 'nl'].forEach((k) => { if (d[k]) d[k] = Math.max(1, Math.round(d[k])); }));
     const p = out.profil;
     p.roulable = clamp(num(p.roulable, 8), 3, 30);
@@ -476,8 +487,10 @@
       const vipp = S.tablier.type === 'VIPP';
       const eh = vipp ? (rail ? 0.25 : 0.24) : (rail ? 0.25 : 0.22);
       const rive = vipp ? 0.75 : 0.40;
-      const n = vipp ? Math.max(2, Math.round((W - 2 * rive) / 3.0) + 1) : Math.max(3, Math.ceil(W / 1.4));
-      const b = vipp ? (W - 2 * rive) / (n - 1) : W / n, x0 = vipp ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
+      const posP = Array.isArray(S.tablier.pos) && S.tablier.pos.length >= 2 ? S.tablier.pos : null;   // axes des poutres imposés (plans)
+      const n = posP ? posP.length : vipp ? Math.max(2, Math.round((W - 2 * rive) / 3.0) + 1) : Math.max(3, Math.ceil(W / 1.4));
+      const b = posP ? (posP[n - 1] - posP[0]) / (n - 1) : vipp ? (W - 2 * rive) / (n - 1) : W / n, x0 = posP ? posP[0] : vipp ? -W / 2 + rive : -W / 2 + b / 2, hb = h - eh;
+      const xP = (i) => (posP ? posP[i] : x0 + b * i);
       // VIPP : table 1,50, âme 0,24, talon 0,80 (rail 0,90) ; PRAD : poutre en I compacte
       const b0 = vipp ? 0.24 : 0.22, bt = vipp ? (rail ? 0.90 : 0.80) : 0.70, ht = vipp ? 0.25 : 0.20, gs = vipp ? 0.20 : 0.10;
       const btab = vipp ? Math.min(1.50, b - 0.30) : Math.min(b - 0.05, 1.20), etab = vipp ? 0.12 : 0.10, gtab = vipp ? 0.10 : 0.06;
@@ -485,7 +498,7 @@
       add(ptsH, 'beton', 'hourdis');
       let Ab = 0, cb = 0;
       for (let i = 0; i < n; i++) {
-        const x = x0 + b * i, y0 = -eh, ya = y0 - etab, yb = ya - gtab, y1 = -(h - ht - gs), y2 = -(h - ht), y3 = -h;
+        const x = xP(i), y0 = -eh, ya = y0 - etab, yb = ya - gtab, y1 = -(h - ht - gs), y2 = -(h - ht), y3 = -h;
         const pts = [[x - btab / 2, y0], [x + btab / 2, y0], [x + btab / 2, ya], [x + b0 / 2, yb], [x + b0 / 2, y1], [x + bt / 2, y2], [x + bt / 2, y3],
           [x - bt / 2, y3], [x - bt / 2, y2], [x - b0 / 2, y1], [x - b0 / 2, yb], [x - btab / 2, ya]];
         add(pts, 'beton', 'poutre');
@@ -745,6 +758,14 @@
     return { type: t, H, fut, ch, parts, lx, ly, V: sum(parts.map((p) => p.V)) };
   }
 
+  /* réglages propres à une culée (C0 ou dernière culée) : type de fondation, dimensions, positions des appuis — repris des plans */
+  function culeeS(S, k) {
+    const p = (S.culees.par || [])[k];
+    if (!p) return S;
+    const cu = Object.assign({}, S.culees, p, { dim: Object.assign({}, S.culees.dim, p.dim || {}), fdim: Object.assign({}, S.culees.fdim, p.fdim || {}) });
+    delete cu.par;
+    return Object.assign({}, S, { culees: cu, fond: Object.assign({}, S.fond, p.fond ? { culees: p.fond } : {}) });
+  }
   function culeeGeom(S, h, H, W, Lsup, iso, PT, cote) {
     const rail = S.usage === 'rail', t = S.culees.type, parts = [], dm = S.culees.dim || {};
     const ov = (k, v) => (dm[k] > 0 ? dm[k] : v);
@@ -760,17 +781,19 @@
     const Ht = H + hgg;
     let lx, ly = W, sommier = null, mur = null, colonnes = null, retours, Bmin = 0, gros = 0, nervure = null;
     if (t === 'enterree') {
-      const section = S.culees.section === 'carre' ? 'carre' : 'circ';
+      const section = ['carre', 'rect'].includes(S.culees.section) ? S.culees.section : 'circ';
       const bs = ov('bs', Math.max(bt, dab + 0.05 + egg + 0.6)), hs = ov('hs', r10(Math.max(1.2, 0.14 * W)));
       const Hc = H - hs;
       let Lc = W;
       if (Hc > 0.5) {
-        const D = ov('D', rail ? 1.40 : 1.20), nc = ov('n', Math.max(2, Math.round((W - 2 * D) / 2.7) + 1));
-        const s_ = nc > 1 ? (W - 2 * D) / (nc - 1) : 0;
-        colonnes = { D, n: nc, H: Hc, s: s_, section };
+        const D = ov('D', rail ? 1.40 : 1.20), bc = section === 'rect' ? ov('bc', D) : D;
+        const posC = Array.isArray(S.culees.pos) && S.culees.pos.length >= 2 ? S.culees.pos.slice().sort((a, b) => a - b) : null;
+        const nc = posC ? posC.length : ov('n', Math.max(2, Math.round((W - 2 * D) / 2.7) + 1));
+        const s_ = posC ? (posC[nc - 1] - posC[0]) / (nc - 1) : nc > 1 ? (W - 2 * D) / (nc - 1) : 0;
+        colonnes = { D, b: bc, n: nc, H: Hc, s: s_, section, pos: posC || Array.from({ length: nc }, (_, i) => -(nc - 1) * s_ / 2 + i * s_) };
         if (S.culees.chev === 'C') Lc = r05((nc - 1) * s_ + D + 0.20);     // chevêtre court : Lc ≥ (n − 1) e + Φ + 0,20 (PP73, exemple 1)
-        const A = section === 'carre' ? D * D : Math.PI * D * D / 4, per = section === 'carre' ? 4 * D : Math.PI * D;
-        parts.push({ des: nc + (section === 'carre' ? ' poteaux ' + fr(D, 2) + ' × ' + fr(D, 2) : ' colonnes Ø ' + fr(D, 2)) + ' m (enterrés)', V: nc * A * Hc, coff: nc * per * Hc, ratio: 160 });
+        const A = section === 'circ' ? Math.PI * D * D / 4 : D * bc, per = section === 'circ' ? Math.PI * D : 2 * (D + bc);
+        parts.push({ des: nc + (section === 'carre' ? ' poteaux ' + fr(D, 2) + ' × ' + fr(D, 2) : section === 'rect' ? ' poteaux ' + fr(bc, 2) + ' × ' + fr(D, 2) : ' colonnes Ø ' + fr(D, 2)) + ' m (enterrés)', V: nc * A * Hc, coff: nc * per * Hc, ratio: 160 });
         lx = D; ly = W;
       } else lx = bs;
       sommier = { b: bs, h: hs, L: Lc, court: Lc < W - 1e-6 };
@@ -787,7 +810,7 @@
         parts.push({ des: 'Murettes latérales 2 × ' + fr(bs, 2) + ' m, ép. ' + fr(em, 2), V: 2 * bs * hgg * em, coff: 4 * bs * hgg, ratio: 80 });
       } else if (mr === 'suspendus') {
         const Lmr = ov('Lmr', clamp(r05(0.55 * (hgg + hs + 4)), 3, 6.5)), hmr = hgg + hs, em = ov('em', rail ? 0.60 : 0.50);
-        retours = { mode: 'suspendus', L: Lmr, h: hmr, e: em, h2: 0.9 };
+        retours = { mode: 'suspendus', L: Lmr, h: hmr, e: em, h2: ov('h2r', 0.9) };
         parts.push({ des: 'Murs en retour suspendus 2 × ' + fr(Lmr, 2) + ' m, ép. ' + fr(em, 2), V: 2 * Lmr * (hmr + 0.9) / 2 * em, coff: 2 * Lmr * (hmr + 0.9), ratio: 90 });
       } else retours = { mode: 'aucun', L: 0, h: 0, e: 0 };
       if (colonnes && S.fond.culees !== 'pieux' && S.culees.nervure !== false) {   // nervure sur semelle filante (PP73 1.2.3 § 1.1)
@@ -796,6 +819,8 @@
         colonnes.H = Hc - nervure.h;
         parts.push({ des: 'Nervure ' + fr(bn, 2) + ' × ' + fr(nervure.h, 2) + ' × ' + fr(nervure.L, 2) + ' m', V: bn * nervure.h * nervure.L, coff: 2 * nervure.h * nervure.L, ratio: 100 });
       }
+      gros = ov('gb', 0);
+      if (gros > 0) parts.push({ des: 'Gros béton sous semelle, ép. ' + fr(gros, 2) + ' m', V: 0, coff: 0, ratio: 0 });
     } else {
       /* culée remblayée (plans KLE : Ardoum, Kert, PK386, Grou) : mur de front épais, élargi en tête en sommier côté pont,
          gousset côté remblai, semelle excentrée (patin côté brèche, talon sous le remblai), murs en retour en U sur la semelle ou suspendus */
@@ -824,7 +849,7 @@
     }
     let dt = null;
     if (avecDT) {
-      const Ldt = Ht > 9 ? 5.0 : 4.0, Bdt = PT.roulable || W;
+      const Ldt = ov('Ldt', Ht > 9 ? 5.0 : 4.0), Bdt = PT.roulable || W;
       dt = { L: Ldt, e: 0.30, B: Bdt };
       parts.push({ des: 'Dalle de transition ' + fr(Ldt, 2) + ' m × 0,30', V: Ldt * 0.30 * Bdt, coff: 2 * 0.30 * Ldt + 0.30 * Bdt, ratio: 100 });
       parts.push({ des: 'Corbeau d’appui de dalle', V: 0.30 * 0.30 * W, coff: 0.6 * W, ratio: 120 });
@@ -884,7 +909,7 @@
       P(cut, [[ub - bs, 0], [ub, 0], [ub, -hs], [ub - bs, -hs]], 'beton');
       const nv = g.nervure, zc = nv ? -H + nv.h : -H;
       if (nv) P(cut, [[uc - nv.b / 2, -H + nv.h], [uc + nv.b / 2, -H + nv.h], [uc + nv.b / 2, -H], [uc - nv.b / 2, -H]], 'beton');
-      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, zc], [uc - g.colonnes.D / 2, zc]], g.colonnes.section === 'carre' ? 'vuB' : 'col');
+      if (g.colonnes) P(seen, [[uc - g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, -hs], [uc + g.colonnes.D / 2, zc], [uc - g.colonnes.D / 2, zc]], g.colonnes.section !== 'circ' ? 'vuB' : 'col');
       const rt = g.retours;
       if (rt.mode === 'AV') P(seen, [[ub - bs, 0], [ub, 0], [ub, hgg], [ub - bs, hgg]], 'vuL');
       else if (rt.mode !== 'aucun') P(seen, [[ub, hgg], [ub + rt.L, hgg], [ub + rt.L, hgg - (rt.h2 || 0.9)], [ub, -hs]], 'vuL');
@@ -936,9 +961,14 @@
       e = opt.sansMassif ? 0 : (o.e || e);
       Wm = GB * Lx * Ly * e;
     }
+    let ys = null;
+    if (Array.isArray(opt.ys) && opt.ys.length >= 1) {        // positions transversales des pieux imposées (une file)
+      ys = opt.ys.slice().sort((a, b) => a - b); nr = 1; m = ys.length; n = m;
+      Ly = Math.max(Ly, ys[m - 1] - ys[0] + D + 0.6); sy = m > 1 ? (ys[m - 1] - ys[0]) / (m - 1) : 0;
+    }
     const Vp = n * Math.PI * D * D / 4 * F.long;
     return {
-      mode, D, n, nr, m, s, sy, Lp: F.long, Lx: r10(Lx), Ly: r10(Ly), e, V: opt.sansMassif ? 0 : Lx * Ly * e,
+      mode, D, n, nr, m, s, sy, ys, Lp: F.long, Lx: r10(Lx), Ly: r10(Ly), e, V: opt.sansMassif ? 0 : Lx * Ly * e,
       coff: opt.sansMassif ? 0 : 2 * (Lx + Ly) * e, ratio: 100, prop: opt.sansMassif ? 0 : Lx * Ly * 0.10,
       fouilles: opt.sansMassif ? 0 : (Lx + 1) * (Ly + 1) * (e + 0.6), Vp, mlPieux: n * F.long, Npieu: (N + Wm) / n, Q,
     };
@@ -1056,13 +1086,14 @@
       const Q = tq.Q;
       const H = isC ? S.culees.hauteurs[j === 0 ? 0 : 1] : S.piles.hauteurs[j - 1];
       const twoLines = L_.length > 1;
-      const geo = isC ? culeeGeom(S, h, H, W, Lsup, iso, PT, j === 0 ? 'G' : 'D') : pileGeom(S, H, Lsup, twoLines, W);
+      const Sx = isC ? culeeS(S, j === 0 ? 0 : 1) : S;
+      const geo = isC ? culeeGeom(Sx, h, H, W, Lsup, iso, PT, j === 0 ? 'G' : 'D') : pileGeom(S, H, Lsup, twoLines, W);
       const Gapp = GB * geo.V;
       const N = G + Q + Gapp; // ELS caractéristique en tête de fondation
-      const mode = isC ? S.fond.culees : S.fond.piles;
+      const mode = isC ? Sx.fond.culees : S.fond.piles;
       let fo;
       if (isC && mode === 'pieux' && geo.type === 'enterree' && !geo.colonnes) {
-        fo = fondation(S, N, geo.sommier.b, W, 'pieux', { min: 3, uneRangee: true, sansMassif: true, ov: S.culees.fdim });
+        fo = fondation(Sx, N, geo.sommier.b, W, 'pieux', { min: 3, uneRangee: true, sansMassif: true, ov: Sx.culees.fdim, ys: Sx.culees.pieuxPos });
         if (fo.Lx > geo.sommier.b + 1e-6) { // sommier élargi pour deux rangées de pieux
           const sp = geo.parts.find((p) => /^Sommier/.test(p.des)), b0 = geo.sommier.b;
           geo.sommier.b = fo.Lx;
@@ -1083,10 +1114,10 @@
           split: { n: np, centers }, V: sub.V * np, coff: sub.coff * np, prop: sub.prop * np, fouilles: sub.fouilles * np,
           n: (sub.n || 0) * np, mlPieux: (sub.mlPieux || 0) * np, Vp: (sub.Vp || 0) * np,
         });
-      } else fo = fondation(S, N, geo.lx, geo.ly, mode, {
+      } else fo = fondation(Sx, N, geo.lx, geo.ly, mode, {
         min: 4, excentre: isC, colonnes: (geo.fut && geo.fut.kind === 'colonnes') || !!geo.colonnes,
         Bmin: isC ? Math.max(r10(0.65 * geo.Ht), geo.Bmin || 0) : 0,    // semelle de culée (poussée des terres) : ≈ 0,65 Ht (PRO2334 : 7,00 m)
-        ov: isC ? S.culees.fdim : S.piles.fdim,
+        ov: isC ? Sx.culees.fdim : S.piles.fdim,
       });
       if (fo.mode === 'superficielle' && fo.q / 1000 > S.fond.sigma * 1.001) warn.push((isC ? 'Culée C' : 'Pile P') + j + ' : contrainte sous semelle ' + fr(fo.q / 1000, 3) + ' MPa > ' + fr(S.fond.sigma, 2) + ' MPa admissible.');
       if (fo.mode === 'pieux' && fo.Npieu > fo.Q * 1.001) warn.push((isC ? 'Culée C' : 'Pile P') + j + ' : effort par pieu ' + fr(fo.Npieu / 1000, 2) + ' MN > ' + fr(fo.Q / 1000, 2) + ' MN admissible.');

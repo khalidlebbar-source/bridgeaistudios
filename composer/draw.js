@@ -314,7 +314,7 @@
       const cys = f.split ? f.split.centers : [0];
       cys.forEach((cy) => { const cc = [c[0] + ds[0] * cy, c[1] + ds[1] * cy]; if (B > 0 && L > 0) poly(P, [[cc[0] - u[0] * hb - ds[0] * hL, cc[1] - u[1] * hb - ds[1] * hL], [cc[0] + u[0] * hb - ds[0] * hL, cc[1] + u[1] * hb - ds[1] * hL], [cc[0] + u[0] * hb + ds[0] * hL, cc[1] + u[1] * hb + ds[1] * hL], [cc[0] - u[0] * hb + ds[0] * hL, cc[1] - u[1] * hb + ds[1] * hL]], 'vu'); });
       if (f.mode === 'pieux') for (const cy of cys) for (let r = 0; r < f.nr; r++) for (let m = 0; m < f.m; m++) {
-        const ex = (r - (f.nr - 1) / 2) * f.s, ey = cy + (m - (f.m - 1) / 2) * (f.sy || f.s);
+        const ex = (r - (f.nr - 1) / 2) * f.s, ey = cy + (f.ys ? f.ys[m] : (m - (f.m - 1) / 2) * (f.sy || f.s));
         circ(P, c[0] + u[0] * ex / Math.max(0.3, Math.sin(beta)) + ds[0] * ey, c[1] + u[1] * ex / Math.max(0.3, Math.sin(beta)) + ds[1] * ey, f.D / 2, 'vu');
       }
       if (isC && g.retours) {                          // murs en retour
@@ -457,14 +457,14 @@
     const piles = M.supports.filter((s) => s.kind === 'pile');
     let ref = null, iP = P.length;
     {
-      ref = part === 'culee' || !piles.length ? M.supports[0] : (o.id && M.supports.find((x) => x.id === o.id)) || piles.reduce((a, b) => (b.H > a.H ? b : a));
+      ref = part === 'culee' || !piles.length ? ((o.id && M.supports.find((x) => x.id === o.id && x.kind === 'culee')) || M.supports[0]) : (o.id && M.supports.find((x) => x.id === o.id)) || piles.reduce((a, b) => (b.H > a.H ? b : a));
       iP = P.length;
       let g = ref.geo;
       if (ref.kind === 'culee') {                     // ouvrage à une travée : coupe sur culée
         const so = g.sommier;
         g = {
           ch: so ? { kind: 'chevetre', L: so.L || W, h: so.h, b: so.b } : null,
-          fut: g.colonnes ? { kind: 'colonnes', D: g.colonnes.D, n: g.colonnes.n, s: g.colonnes.s, section: g.colonnes.section } : { kind: 'voile', L: W },
+          fut: g.colonnes ? { kind: 'colonnes', D: g.colonnes.D, b: g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D, n: g.colonnes.n, s: g.colonnes.s, pos: g.colonnes.pos, sec: g.colonnes.section, section: g.colonnes.section } : { kind: 'voile', L: W },
           nervure: g.nervure,
         };
       }
@@ -543,13 +543,18 @@
           if (!i) dim(P, [c0 + f.L / 2, yft], [c0 + f.L / 2, yft - f.e], 'v', 6, frn(f.e));
         });
         yLow = yft - f.e - 0.1;
+        if (ref.kind === 'culee' && ref.geo.gros > 0) {   // gros béton sous la semelle (débord 0,50)
+          const gb = ref.geo.gros; rect(P, -f.L / 2 - 0.5, yft - f.e, f.L / 2 + 0.5, yft - f.e - gb, 'prop');
+          text(P, [0, yft - f.e - gb / 2], 'GROS BÉTON', { ht: 2, lay: 'note' }); dim(P, [f.L / 2 + 0.5, yft - f.e], [f.L / 2 + 0.5, yft - f.e - gb], 'v', 6, frn(gb));
+          yLow = yft - f.e - gb;
+        }
       } else {
         const Lv = Math.min(f.Lp, 4), cs = f.split ? f.split.centers : [0];
         cs.forEach((c0) => {
           rect(P, c0 - f.Ly / 2, yft, c0 + f.Ly / 2, yft - f.e, 'beton');
           rect(P, c0 - f.Ly / 2 - 0.1, yft - f.e, c0 + f.Ly / 2 + 0.1, yft - f.e - 0.1, 'prop');
           for (let i = 0; i < f.m; i++) {
-            const x = c0 - (f.m - 1) * f.sy / 2 + i * f.sy;
+            const x = c0 + pieY(f, i);
             rect(P, x - f.D / 2, yft - f.e - 0.1, x + f.D / 2, yft - f.e - Lv, 'pieu');
             if (Lv < f.Lp) P.push({ k: 'brk', a: [x - f.D / 2 - 0.15, yft - f.e - Lv], b: [x + f.D / 2 + 0.15, yft - f.e - Lv] });
           }
@@ -606,6 +611,7 @@
       poly(P, pts, lay);
     } else rect(P, xc - r, yc - h, xc + r, yc + h, lay);
   }
+  const pieY = (f, k, sy) => (f.ys ? f.ys[k] : -(f.m - 1) * (sy == null ? f.sy : sy) / 2 + k * (sy == null ? f.sy : sy));
   /* section d'un fût en plan : D le long de l'axe (x), b en travers (y) — circulaire, carrée, rectangulaire, octogonale, elliptique */
   function colSec(P, xc, yc, D, b, sec, lay) {
     if (sec === 'carre' || sec === 'rect') return rect(P, xc - D / 2, yc - b / 2, xc + D / 2, yc + b / 2, lay);
@@ -699,7 +705,7 @@
           const qr = lo_(X(rt.mode === 'U' ? R.uf : R.ub), X(rt.mode === 'U' ? R.uE : R.ub + rt.L));
           dim(P, [qr[0], yTop], [qr[1], yTop], 'h', 16, 'mur en retour ' + (rt.mode === 'U' ? 'en U ' : 'suspendu ') + frn(qr[1] - qr[0]) + ' — ép. ' + frn(rt.e));
         } else {
-          if (g.colonnes) { const q = lo_(X(R.uc - g.colonnes.D / 2), X(R.uc + g.colonnes.D / 2)); dim(P, [q[0], (H - hs) * 0.5], [q[1], (H - hs) * 0.5], 'h', 3, 'Ø' + frn(g.colonnes.D)); }
+          if (g.colonnes) { const q = lo_(X(R.uc - g.colonnes.D / 2), X(R.uc + g.colonnes.D / 2)); dim(P, [q[0], (H - hs) * 0.5], [q[1], (H - hs) * 0.5], 'h', 3, (g.colonnes.section === 'circ' ? 'Ø' : '') + frn(g.colonnes.D)); }
           if (rt.mode === 'suspendus' || rt.mode === 'AR') { const qr = lo_(X(R.ub), X(R.ub + rt.L)); dim(P, [qr[0], yTop], [qr[1], yTop], 'h', 16, (rt.mode === 'AR' ? 'petit mur en retour ' : 'mur en retour suspendu ') + frn(rt.L) + ' — ép. ' + frn(rt.e)); }
           else if (rt.mode === 'AV') text(P, [X(R.ub - so.b / 2), yTop], 'murettes latérales ép. ' + frn(rt.e), { ht: 2, dy: 6, lay: 'note' });
           if (g.nervure) { const q = lo_(X(R.uc - g.nervure.b / 2), X(R.uc + g.nervure.b / 2)); dim(P, [q[1], 0], [q[1], g.nervure.h], 'v', 4, frn(g.nervure.h)); text(P, [q[0], g.nervure.h / 2], 'nervure', { ht: 1.8, anchor: 'end', dy: 0, lay: 'note' }); }
@@ -723,7 +729,7 @@
       if (f.mode === 'pieux') {
         const sy = f.sy || f.s;
         for (const cy of cys) for (let i = 0; i < f.nr; i++) for (let k = 0; k < f.m; k++) {
-          const x = cx - (f.nr - 1) * f.s / 2 + i * f.s, y = cy - (f.m - 1) * sy / 2 + k * sy;
+          const x = cx - (f.nr - 1) * f.s / 2 + i * f.s, y = cy + pieY(f, k, sy);
           circ(P, x, y, f.D / 2, PIL, 20); line(P, [x - f.D * 0.7, y], [x + f.D * 0.7, y], 'axe'); line(P, [x, y - f.D * 0.7], [x, y + f.D * 0.7], 'axe');
         }
         if (f.m > 1) dim(P, [cx - (f.nr - 1) * f.s / 2 - (Bf / 2 || f.D) - 0.2, -(f.m - 1) * sy / 2], [cx - (f.nr - 1) * f.s / 2 - (Bf / 2 || f.D) - 0.2, -(f.m - 1) * sy / 2 + sy], 'v', -6, frn(sy));
@@ -748,7 +754,8 @@
         } else if (g.colonnes) {
           const D = g.colonnes.D, nv = g.nervure;
           if (nv) rr(R.uc - nv.b / 2, R.uc + nv.b / 2, -nv.L / 2, nv.L / 2, 'vu');
-          for (let i = 0; i < g.colonnes.n; i++) { const y = -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s; if (g.colonnes.section === 'carre') rr(R.uc - D / 2, R.uc + D / 2, y - D / 2, y + D / 2, FSEC); else circ(P, X(R.uc), y, D / 2, FSEC, 24); }
+          const cb_ = g.colonnes.section === 'rect' ? g.colonnes.b : D;
+          (g.colonnes.pos || colPos(g.colonnes)).forEach((y) => { if (g.colonnes.section !== 'circ') rr(R.uc - D / 2, R.uc + D / 2, y - cb_ / 2, y + cb_ / 2, FSEC); else circ(P, X(R.uc), y, D / 2, FSEC, 24); });
         }
         const Lch = g.sommier.L;
         if (rt.mode !== 'aucun') [-1, 1].forEach((sd) => {   // murs en retour : coupés s'ils descendent sur la semelle (U), vus sinon

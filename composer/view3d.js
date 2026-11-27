@@ -104,7 +104,7 @@
           const xin = back - o * g.sommier.b;
           box(back, xin, -g.sommier.L / 2, g.sommier.L / 2, ySeat, ySeat - g.sommier.h);
           xf = (back + xin) / 2;
-          if (g.colonnes) for (let i = 0; i < g.colonnes.n; i++) cyl(xf, -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s, g.colonnes.D, yft, ySeat - g.sommier.h);
+          if (g.colonnes) (g.colonnes.pos || Array.from({ length: g.colonnes.n }, (_, i) => -(g.colonnes.n - 1) * g.colonnes.s / 2 + i * g.colonnes.s)).forEach((y) => { if (g.colonnes.section === 'circ') cyl(xf, y, g.colonnes.D, yft, ySeat - g.sommier.h); else { const b = g.colonnes.section === 'rect' ? g.colonnes.b : g.colonnes.D; box(xf - g.colonnes.D / 2, xf + g.colonnes.D / 2, y - b / 2, y + b / 2, ySeat - g.sommier.h, yft); } });
           zr0 = ySeat - g.sommier.h + 0.3;
         } else {
           const R = C.culeeProfil(s), X = (u) => s.x + o * u, so = g.sommier, hs = so.h;
@@ -133,7 +133,7 @@
         if (f.e > 0) cys.forEach((cy) => box(xf - f.Lx / 2, xf + f.Lx / 2, cy - f.Ly / 2, cy + f.Ly / 2, yft, zb));
         mat = 'pieu';
         const sy = f.m > 1 ? (f.e === 0 ? (W - f.D - 0.6) / (f.m - 1) : f.sy) : 0;
-        for (const cy of cys) for (let r = 0; r < f.nr; r++) for (let c = 0; c < f.m; c++) cyl(xf + (r - (f.nr - 1) / 2) * f.s, cy - (f.m - 1) * sy / 2 + c * sy, f.D, zb - f.Lp, zb);
+        for (const cy of cys) for (let r = 0; r < f.nr; r++) for (let c = 0; c < f.m; c++) cyl(xf + (r - (f.nr - 1) / 2) * f.s, cy + (f.ys ? f.ys[c] : -(f.m - 1) * sy / 2 + c * sy), f.D, zb - f.Lp, zb);
       }
     });
 
